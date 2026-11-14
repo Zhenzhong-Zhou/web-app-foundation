@@ -731,3 +731,120 @@ screen's states differ from its States section.
   1 where no later round changed a message; the pseudo-language and the
   cut-text test; dependencies again; the reviews; the as-built; after
   the merge, round 1's issues closed and `/triage`.
+
+## Amendment (November 2026) — as built (#577)
+
+Built on 12 and 13 November 2026 on `fix-ups-i18n`, from the brief's 18
+steps, with follow-ups where a step's summary raised a decision. Steps 2
+to 10 ran in a row in 2 h 47 min, about 40 % of the brief's guess. Every
+change to a translation went in through `import`, never by hand (A1).
+
+### Each requirement
+
+| R | As built | Mark |
+| --- | --- | --- |
+| R1 | This amendment and the handoff's tidy, the branch's first commit, with two small fixes before it: round 2's dates, and a handoff line read as a link definition | met |
+| R2 | A decided workbook for each language's round 2, extra round and guides, each message's Reason and Fallback beside it; the table as decided, with four additions below | met, changed |
+| R3 | `import` refuses a correction whose English or translation changed since its export, naming its row (`6c4622d6`); quotes alone count as the same | met |
+| R4 | `scripts/i18n-rules.mjs`, in `scripts/verify.sh`, the Docs workflow and `ci.yml`; it holds more than R4 named, below | met, changed |
+| R5 | The meaning check judged too strictly on its first real run and was rebuilt, below; calibrated on three sets before it decided anything | met, changed |
+| R6 | The extra round through ChatGPT alone, exported at `fe6c7e1d`: 326 French and 369 Chinese messages, and the guides whole, 151 sections a language, in a guides workbook of its own (#150) | met, changed |
+| R7 | Round 1 where no later round changed a message, widened to any message that still breaks the glossary (A2): 21 findings went in, 1,252 were overtaken, 13 no longer held; a closing comment for each of 32 issues, #380 having closed with #477 | met, changed |
+| R8 | The glossary's How it reads, ADR-090's rule for Chinese beside Latin letters, Words not to use, Settled messages, Placeholders filled with Chinese words, each type's singular, and the words settled here | met |
+| R9 | `en-XA` in development and the browser tests only, a production build refusing it; the cut-text test in 16 walks: 390 and 320 px, Standard and Larger text, four languages | met |
+| R10 | Each word settled as the table says, but a missing name's language, below; the phone checks in 中文 stay owed in MC-2406 and MC-2710 | met, changed |
+| R11 | #148, #149, #150, #249, #501 and #511 closed; #486's two, #505's 13, #512's placeholder and #548's singulars in part | met, changed |
+| R12 | `client/src/help/guides.test.ts` holds each bold phrase to a client message in the guide's language, the phrases bold on purpose listed with why | met |
+| R13 | #531 on a branch of its own, next; `adr-check.mjs`'s folder filed under docs as `when-touched` | met |
+| R14 | Both languages beta; MC-1405 says no fluent reader yet, and how the rounds went in | met |
+
+### Built differently
+
+- **The decide step's table gained four rules,** each holding a choice
+  made on the branch:
+  - a message in the glossary's Settled messages keeps its text, whatever
+    a review says, and `import` refuses a correction to it: four, the
+    refused page's 您尚未登录, a missing name's sentence, the invitation's
+    last day and the Account page's 我的账户;
+  - a translation identical to its English is refused (translation
+    tools' "source equals target" check), with 100 messages listed as
+    exceptions, each with why, in `SAME_AS_ENGLISH`;
+  - a space between Chinese and a placeholder that Chinese fills with
+    Chinese words is taken out, the placeholders listed in the glossary;
+  - a plural branch the language never uses, read from
+    `Intl.PluralRules`, is dropped: Chinese shows only `other`, so a
+    `one` branch never shows, and `=1` stays only where the words for
+    exactly one differ.
+- **The meaning check, rebuilt (version 2).** Its first run turned down
+  15 to 32 % of ChatGPT's corrections; the chat read 50 of them and about
+  4 in 5 were false alarms, a text stating what the English only
+  implies. Version 2 writes its reason before its verdict, rejects only
+  a serious change (meaning reversed; a number, date, name, role, screen
+  label or tax word changed; needed information dropped; a claim the
+  English and the message's id do not support), and reads each
+  message's id and the glossary's Terms. Its calibration has three sets:
+  20 planted errors to catch, 20 unchanged texts and 20 of ChatGPT's
+  correct rewrites to pass. It caught 19 and flagged none; the miss was
+  a dropped "can be used once", so a dropped clause can still pass.
+  Fallbacks by meaning fell under 1 %. The API refuses a temperature
+  from version 2026-10-21, so the answer comes as structured output, which
+  always parses, and saved answers are keyed by the model and the check's
+  version.
+- **The amendment's "nothing added"** now allows stating what the
+  context implies; only a claim nothing supports is refused.
+- **A missing name's language** went from three messages, to
+  `Intl.DisplayNames`, to a small table: Chinese names a language for a
+  name written in it 英文, 法文 and 中文, as the exports' columns do, where
+  Intl's 英语 names the spoken language. English and French keep Intl's
+  names. The table is code, copied on the server and the client (#583).
+- **Lists.** Every list a person reads joins in one place on each side,
+  `makeIntl`'s `formatList` and the server's `joinList`, which space a
+  Latin name from 和 and 或 in Chinese; lint refuses any other join. A
+  value filled in beside a Chinese message's own words is #573's.
+- **Validation.** The server's own rules say what to fix in words, with
+  no field path; Work phone and Extension have rules of their own. The
+  23 built-in class-validator rules keep the field's API name, as ADR-054
+  decided, 7 of them reachable from a screen (#574).
+- **Tests read a message by its id,** through the catalogue (`said()`,
+  `saidOn()`, `saidBy()`; `docs/conventions.md`, Tests), so a later round
+  changes no test; only a test whose point is the exact words, a mail
+  snapshot's, types them.
+- **A password field's label sits raised from the start,** in the shared
+  `PasswordField`, as MUI advises beside an adornment; one long French
+  label at 320 px and Larger text is listed as known with #566, which
+  holds the case for labels above the field.
+- **An empty date field shows no format** until typed in: no browser
+  draws its placeholder in the page's language (#512).
+- **ChatGPT's Chinese workbooks** came back with namespace-prefixed tags,
+  which the review's reader now accepts.
+
+### Found
+
+- **The imports ran `--quick`,** which runs no end-to-end test, so a
+  changed word reached tests and manual checks nothing ran until the
+  reviews: 5 server tests, 1 browser test and 11 manual checks. Fixed by
+  reading messages by id; the next round's import step ends with the
+  server and browser suites.
+- **CodeQL** flagged the rules check's tag strip, which ran once, so a
+  nested tag left one behind; it repeats until stable (`48671b7b`).
+- **multer reads an oversize upload to its end** before answering 413,
+  where ADR-059 says it is cut off at the limit (#584).
+- **Dependencies:** both dependency steps took nothing; no update in
+  range was 7 days old before 16 November.
+- **The cost:** the meaning check and its calibrations used about 1.1
+  million tokens in and 120,000 out on the API credit, inside the brief's
+  US$4 to US$9; Claude Code ran on the plan.
+- **Issues filed:** #573 (a filled-in value's spacing in Chinese), #574
+  (the built-in rules), #575 (a deleted person stored as "Deleted
+  User"), #576 (guides naming a label by its id), #578 to #582 (the
+  walkthroughs' screens), #583 (language names in catalogues), #584
+  (multer) and #585 (left from the reviews).
+
+### The next round
+
+`export --since 29cf53a7`, the word fixes' last commit, in a new
+ChatGPT chat per language with the glossary; `--calibrate` first, then
+the decide step with `--meaning`; `import`; then the server and browser
+suites before the commit is pushed. The hand-made fixes after the
+export at `fe6c7e1d` are this as-built's decisions; the one a round
+must not undo, `account.title`, is settled.

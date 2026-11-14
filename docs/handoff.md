@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 12 November 2026
+# web-app-foundation — handoff, 13 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,20 +13,21 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 12 November 2026:
+On 13 November 2026:
 
-- **The translations,** [ADR-054's amendment](adr/0054-languages.md):
-  planned on 12 November on `fix-ups-i18n`, its requirements confirmed
-  before drafting. Round 2 is done: ChatGPT and Claude each reviewed the
-  full export at `19e1b7aa` on 6 and 7 November, before this week's
-  merges; their workbooks are in the ignored `review/` at the
-  repository's root, where
-  `scripts/i18n-review.mjs` reads and writes, and round 1's data stays in
-  the ignored `tmp/i18n-review/`. The reviewer who reads only Chinese
-  stopped on 12 November, so ChatGPT's wording leads, and two checks, the
-  glossary's words and the meaning against the English, stand in for a
-  fluent reader; both languages stay beta. [#531] moves to a branch of
-  its own, next.
+- **The translations,** [ADR-054's amendment](adr/0054-languages.md),
+  with its as-built: planned on 12 November and built on 12 and 13
+  November on `fix-ups-i18n`, pull request [#577], open. No person reads
+  French or Chinese, so ChatGPT's wording leads and two checks stand in:
+  `scripts/i18n-rules.mjs`, the glossary's words, punctuation, settled
+  messages and Chinese spacing, in verify and CI; and a meaning check on
+  the API credit, calibrated before it decides. Round 2 and an extra
+  round, the guides whole among it, went in through `import`; round 1's
+  glossary findings where they still held; a pseudo-language, `en-XA`,
+  and a test for cut text at 390 and 320 px; tests read a message by its
+  id. Both languages stay beta. The next round exports `--since
+  29cf53a7`. Then [#531], a base name in the organization's language, on
+  a branch of its own.
 - **Flows and states,**
   [ADR-090's amendment](adr/0090-the-design-language.md), with short ones
   in ADR-087 and ADR-088: planned and built on 11 November on
@@ -248,8 +249,9 @@ On 12 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 11 November, last, [#568] (flows and states)
-  as a merge commit (cc0beaf8); before it, [#558] ([#547]) as a merge
+- **The last merges:** on 13 November, [#572], Dependabot's raise of
+  `@hono/node-server` in `scripts/fix-issue/`; on 11 November, [#568]
+  (flows and states) as a merge commit (cc0beaf8); before it, [#558] ([#547]) as a merge
   commit, then [#559] ([#557]), the runner's, as a merge commit too
   (c1f7b6d0), by mistake: its branch took `main` in GitHub's conflict
   editor, and a runner's pull request is squashed, with the two lines it
@@ -323,18 +325,13 @@ On 12 November 2026:
 
 ## Dates
 
-- **The second translation review,** done: ChatGPT on its website and
-  Claude each reviewed the full export at `19e1b7aa` (6 November 2026,
-  08:38), both languages by 7 November, the French merge written on 12
-  November; each language's two reviews and their merge are in the
-  ignored `review/`.
-  The reviewer who reads only Chinese stopped on 12 November, before
-  checking any of it. What was set aside for that reviewer, 头像, the
-  refused document's page, ADR-083's two questions and the phone checks
-  in 中文, is settled in [ADR-054's amendment](adr/0054-languages.md), the
-  phone checks staying owed. What `main` changed since `19e1b7aa`, and
-  the guides, go through ChatGPT in an extra round on `fix-ups-i18n`. The
-  first round's export was at `b933b912` (22 October 2026).
+- **The translations, before 30 November:** built by 13 November,
+  [#577]. Round 2 was ChatGPT's and Claude's reviews of the export at
+  `19e1b7aa` (6 November 2026); the extra round, ChatGPT's, of the export
+  at `fe6c7e1d` (12 November); round 1's export was at `b933b912` (22
+  October). Their workbooks stay in the ignored `review/`, round 1's data
+  in the ignored `tmp/i18n-review/`. The phone checks set aside for the
+  reviewer who reads only Chinese stay owed in MC-2406 and MC-2710.
 - **Dependabot, from 2 November:** with its 7-day cooldown ([#366]), it
   opens a pull request only for releases already 7 days old, so each
   merges once green, one at a time. [#403] makes Claude Code Review skip
@@ -408,6 +405,19 @@ On 12 November 2026:
 
 ## Still to do, by hand
 
+- **After [#577]'s merge,** in this order:
+  - `gh pr merge 577 --merge`, never squashed;
+  - round 1's issues closed, each with its comment from
+    `tmp/fix-ups-i18n/close/`, before the clean-up removes that folder
+    (`gh issue close` takes no `--body-file`, so a comment first);
+  - the fix runner's `--probe`, from the main folder on `main`, since
+    [#572] raised a dependency the CI never loads;
+  - one invitation in 中文 and one in French to Gmail and to a QQ or
+    163.com address, each in the inbox with today's words (the review's
+    finding 38);
+  - `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
+    `--yes`; Project knowledge re-synced; `/triage` over `i18n`, `help`,
+    `files` and `ui`.
 - **After [#568]'s merge,** done on 11 and 12 November: the merge, as a
   merge commit; the prune and the clean-up, `tmp/flows-and-states/` with
   it; Project knowledge re-synced; the planning skill packed from `main`
@@ -583,16 +593,12 @@ request or a set of them:
       since v0.7.0 (CSV import moved to [#552]), the code's names for
       Items ([#553]'s first part), the playback in the planning skill and
       [#517], merged on 11 November as [#568];
-   5. the translations, before 30 November, on `fix-ups-i18n`, as
-      [ADR-054's amendment](adr/0054-languages.md) of 12 November says:
-      round 2 decided with ChatGPT's wording leading and two checks; an
-      extra round through ChatGPT for what changed since `19e1b7aa` and
-      for the guides ([#150]); round 1's [#371] to [#398] and [#419] to
-      [#423] closed; a pseudo-language and a test for cut text; the
-      glossary's writing rules and ADR-090's rule for Chinese beside
-      Latin letters; and [#148], [#149], [#249], [#501] and [#511], with
-      parts of [#486], [#505], [#512] and [#548]. Then [#531], a base
-      name in the organization's language, on a branch of its own;
+   5. the translations, built on 12 and 13 November on `fix-ups-i18n`,
+      [ADR-054's amendment](adr/0054-languages.md) with its as-built,
+      pull request [#577]: closes [#148], [#149], [#150], [#249], [#501]
+      and [#511], with parts of [#486], [#505], [#512] and [#548]. Then
+      [#531], a base name in the organization's language, on a branch of
+      its own, its planning first;
    6. Movements ([#470]), ADR-093, drawn on the canvas first, from the
       ignored `tmp/adr-093/from-adr-091/`, ADR-091's panel's reports, and
       Inventory's findings: [#472]'s 6 (the name first, its code grey
@@ -910,3 +916,5 @@ Not repeated here; each list has one home:
 [#568]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/568
 [#569]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/569
 [#570]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/570
+[#572]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/572
+[#577]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/577
