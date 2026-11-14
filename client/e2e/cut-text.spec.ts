@@ -93,7 +93,6 @@ interface Where {
   /** The walk's organization, whose name the top bar shows. */
   organization: string;
   width: number;
-  textSize: (typeof TEXT_SIZES)[number]['name'];
 }
 
 /** Cuts filed to be designed, each with its issue. */
@@ -110,15 +109,16 @@ const KNOWN: {
   },
   {
     // Raised above its field, Confirm new password is still wider than the
-    // field in Change password's dialog at 320 px and Larger text, in
-    // French and en-XA: its label and the outline's gap for it. #566's
-    // 14 px raised label would cut more; labels above the field that wrap,
-    // an ADR-090 amendment, would clear both.
+    // field in Change password's dialog at 320 px, in French and en-XA:
+    // its label and the outline's gap for it. Held by its label at either
+    // text size: on the Mac's fonts it is cut at Larger text only, on CI's
+    // Linux fonts, wider, at Standard too, so one font's measure is not the
+    // rule. #566's 14 px raised label would cut more; labels above the
+    // field that wrap, an ADR-090 amendment, would clear both.
     issue: '#566',
-    is: (cut, { screen, width, textSize }) =>
+    is: (cut, { screen, width }) =>
       screen === 'Change password' &&
       width === 320 &&
-      textSize === 'Larger' &&
       [
         'Confirmer le nouveau mot de passe *',
         '[Çóñfíŕm ñéŵ páššŵóŕď one two] *',
@@ -417,7 +417,6 @@ for (const language of LANGUAGES) {
         const walk = {
           organization: org.organizationName,
           width,
-          textSize: size.name,
         };
 
         await page.goto('/login');

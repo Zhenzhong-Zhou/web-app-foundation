@@ -1139,7 +1139,9 @@ Internet Explorer, and any browser's IE mode, is not supported.
   Linux WebKit, which showed a flake macOS WebKit never did (#232) and
   times a keyboard drag apart from it ([Tests](#tests), 5631d0d8).
   `scripts/verify.sh` in full runs both itself, after the client's
-  Playwright suite: the spec in Firefox, then in Linux WebKit, from one
+  Playwright suite: the spec in Firefox, then in Linux WebKit, then
+  `e2e/cut-text.spec.ts` in Linux Chromium, whose measures depend on the
+  fonts, CI's being Linux's (ADR-054's as-built), from one
   container of its own on a free port, stopped whatever the result; the
   commands above are for a run by hand. A failed run's
   `client/e2e/.output/` is kept in `tmp/linux-browsers/`, and Linux

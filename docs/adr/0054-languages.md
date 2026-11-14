@@ -827,6 +827,10 @@ change to a translation went in through `import`, never by hand (A1).
   server and browser suites.
 - **CodeQL** flagged the rules check's tag strip, which ran once, so a
   nested tag left one behind; it repeats until stable (`48671b7b`).
+- **The cut-text test was proven on the Mac's fonts only;** on CI's
+  Linux fonts the long French label is cut at Standard text too, so its
+  known entry holds the label at 320 px at any text size, and the full
+  verify runs the test in Playwright's Linux image.
 - **multer reads an oversize upload to its end** before answering 413,
   where ADR-059 says it is cut off at the limit (#584).
 - **Dependencies:** both dependency steps took nothing; no update in

@@ -584,6 +584,9 @@ reports success.
   ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
   which a pull request's CI, Chromium alone, does not; Linux WebKit's
   timing differs from the Mac's ([conventions.md, Tests](conventions.md#tests)).
+  Then `e2e/cut-text.spec.ts` in Linux Chromium from the same container,
+  since what it measures depends on the fonts, and CI's are Linux's,
+  wider than the Mac's (ADR-054's as-built).
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 - **A change to a script CI runs is read against
