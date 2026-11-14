@@ -811,20 +811,21 @@ describe('Languages (e2e)', () => {
       // (ADR-054, amended by ADR-092). The fixture names it by its code.
       const refused = await issue().expect(409);
       expect(body<{ message: string }>(refused).message).toBe(
-        'FOCUS-60CT (FOCUS-60CT) has no 简体中文 name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+        'FOCUS-60CT (FOCUS-60CT) has no Chinese name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
       );
 
-      // The language in its own name, as the product page lists it, and the
-      // way out, in the reader's language (#129).
+      // The language and the way out in the reader's language (#129; the
+      // language since ADR-054's November 2026 amendment): 中文, never
+      // 简体中文 run into a French sentence or English into a Chinese one.
       const refusedIn = async (language: string) =>
         body<{ message: string }>(
           await issue().set('Accept-Language', language).expect(409),
         ).message;
       expect(await refusedIn('fr-CA')).toBe(
-        'FOCUS-60CT (FOCUS-60CT) n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',
+        'FOCUS-60CT (FOCUS-60CT) n’a pas de nom en chinois, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',
       );
       expect(await refusedIn('zh-Hans')).toBe(
-        'FOCUS-60CT（FOCUS-60CT）没有简体中文名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。',
+        'FOCUS-60CT（FOCUS-60CT）没有中文名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。',
       );
 
       await alpha.agent
@@ -887,13 +888,13 @@ describe('Languages (e2e)', () => {
         body<{ message: string }>(await issue(language).expect(409)).message;
 
       expect(await refusedIn('en')).toBe(
-        'The variant FOCUS-60CT (60ct) of FOCUS-60CT has no 简体中文 name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+        'The variant FOCUS-60CT (60ct) of FOCUS-60CT has no Chinese name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
       );
       expect(await refusedIn('fr-CA')).toBe(
-        'La variante FOCUS-60CT (60ct) de FOCUS-60CT n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',
+        'La variante FOCUS-60CT (60ct) de FOCUS-60CT n’a pas de nom en chinois, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',
       );
       expect(await refusedIn('zh-Hans')).toBe(
-        'FOCUS-60CT 的规格 FOCUS-60CT（60ct）没有简体中文名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。',
+        'FOCUS-60CT 的规格 FOCUS-60CT（60ct）没有中文名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。',
       );
 
       await alpha.agent

@@ -33,7 +33,7 @@ export class SetCostDto {
       defineMessage({
         id: 'validation.exchangeRate',
         defaultMessage:
-          'exchangeRate must be greater than zero with at most 8 decimal places, sent as a string',
+          'Enter an exchange rate greater than zero, with up to 8 decimal places.',
       }),
     ),
   })

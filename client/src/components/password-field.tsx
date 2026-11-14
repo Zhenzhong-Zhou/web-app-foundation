@@ -26,6 +26,14 @@ import { useIntl } from 'react-intl';
  * Submitting the form hides it again. A sign-in that fails, or a change
  * the server refuses, leaves the person on the page, and a password left
  * showing while they read the error is one anybody nearby can read too.
+ *
+ * Its label sits raised above the field from the start, as MUI raises it
+ * itself for an adornment at a field's start but not at its end: a label
+ * at rest inside the field may run the field's whole width but its
+ * padding, so a long one, « Choisissez un mot de passe » on a 320 px phone
+ * at Larger text, ran under the eye button and was cut (ADR-054's November
+ * 2026 amendment, R9; e2e/cut-text.spec.ts). Raised, it has the field's
+ * top edge to itself.
  */
 export function PasswordField({
   slotProps,
@@ -62,6 +70,10 @@ export function PasswordField({
       type={shown ? 'text' : 'password'}
       slotProps={{
         ...slotProps,
+        inputLabel: {
+          ...(slotProps?.inputLabel as object | undefined),
+          shrink: true,
+        },
         input: {
           ...(slotProps?.input as object | undefined),
           endAdornment: (

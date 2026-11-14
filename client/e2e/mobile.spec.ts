@@ -105,7 +105,7 @@ test('lists Invited as cards on a phone, and invites full screen, in Chinese', a
   expect(box?.width).toBe(viewport?.width);
   await expect(dialog.getByRole('button', { name: '关闭' })).toBeVisible();
   await expect(
-    dialog.getByRole('button', { name: '复制链接，自己发送' }),
+    dialog.getByRole('button', { name: '复制链接', exact: true }),
   ).toBeVisible();
 });
 

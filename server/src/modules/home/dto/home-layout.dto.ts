@@ -30,8 +30,7 @@ const IsPlaced = () =>
       defaultMessage: rule(
         defineMessage({
           id: 'validation.hiddenNotPlaced',
-          defaultMessage:
-            'Each kind in {property} must also be in order — send the hidden ones in their place there too',
+          defaultMessage: 'A hidden tile must keep its place in the order too.',
         }),
       ),
     },

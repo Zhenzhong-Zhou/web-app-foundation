@@ -2,9 +2,17 @@
 
 Home is the first page you see: what needs you today, and the actions you take most. What it shows follows what you may do here, and where you stand:
 
-- **Every day**: the tiles.
-- **In your first two weeks**, after joining by invitation: your welcome card too.
-- **While a new organization is set up**: Getting started too.
+- Every day: the tiles.
+- In your first two weeks, after joining by invitation: your welcome card too.
+- While a new organization is set up: Getting started too.
+
+## Words you’ll meet {#words}
+
+- **Lot**: one batch of an item, with its own code and expiry.
+- **Late**: an order still to ship or receive, past the day it was expected, by the organization’s date.
+- **Out**: an item with none left to sell.
+- **Expiring soon**: a lot that expires within the days the organization has set.
+- **Licences expiring**: a licence within 60 days of its last day, or past it.
 
 ## Every day {#today}
 
@@ -21,15 +29,15 @@ Home reads its counts again when you come back to it after a minute away. **Refr
 
 A tile opens its list with just what it counts, the most urgent first:
 
-- **To ship** and **To receive**: Orders, the sales still to ship or the purchases still to receive, the late first.
-- **Orders · Draft**: Orders, the draft orders, the oldest first, with **Draft** and **Oldest first** chosen. It is hidden until you show it in Customise Home.
+- **To ship** and **To receive**: Orders, the late first.
+- **Orders · Draft**: Orders, the drafts, the oldest first. It is hidden until you show it in Customise Home.
 - **Low stock**: Reorder points, on [Inventory](/inventory#reorder-points), the furthest below their point first.
-- **Expiring soon**: Inventory, the lots expiring within the days the organization has set, the soonest first.
+- **Expiring soon**: Inventory, the lots that expire soonest.
 - **Stock value · Waiting for a cost**: Stock value, where you set the cost of stock that arrived without one.
 - **Invoices · To issue**: Invoices, the drafts.
 - **Open returns**: Returns, the open ones.
 - **Production · In progress**: Production, the runs released and not yet closed.
-- **Licences expiring**: Licences, those within 60 days of expiring or past it, the soonest first.
+- **Licences expiring**: Licences, the soonest to expire first.
 
 The list keeps that choice while you work there: Back from a record returns to it.
 
@@ -93,10 +101,3 @@ On a phone or a tablet, each icon in the top bar has its word under it: **Menu**
 ## With no organization {#no-organization}
 
 Ask someone in an organization to invite your address, then open their link while signed in: you join with this account. A link to set up an organization of your own opens the same way. Where Home offers **Start an organization**, you can also set one up there, as its Owner.
-
-## Words you’ll meet {#words}
-
-- **Late**: an order still to ship or receive, past the day it was expected, by the organization’s date.
-- **Expiring soon**: a lot that expires within the days the organization has set.
-- **Licences expiring**: a licence within 60 days of its last day, or past it.
-- **Out**: an item with a reorder point and nothing to spare: what sales still need takes all that is usable and coming, or more.

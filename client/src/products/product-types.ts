@@ -35,10 +35,46 @@ const LABELS = defineMessages({
   equipment: { id: 'products.type.equipment', defaultMessage: 'Equipment' },
 });
 
-/** A type's name; a value this client does not know is shown as it came. */
+/**
+ * A type's name for many, a tab's or a picker's group (ADR-092); a value
+ * this client does not know is shown as it came.
+ */
 export function productTypeLabel(type: string, intl: IntlShape): string {
   return type in LABELS
     ? intl.formatMessage(LABELS[type as keyof typeof LABELS])
+    : type;
+}
+
+/**
+ * Each type's name for one item (#548): "Raw material · Herbs" under the
+ * item's name, not the tab's "Raw materials". Chinese has one word for
+ * both.
+ */
+const SINGULARS = defineMessages({
+  good: { id: 'products.type.good.one', defaultMessage: 'Product' },
+  material: {
+    id: 'products.type.material.one',
+    defaultMessage: 'Raw material',
+  },
+  packaging: {
+    id: 'products.type.packaging.one',
+    defaultMessage: 'Packaging',
+  },
+  sample: { id: 'products.type.sample.one', defaultMessage: 'Sample' },
+  supply: { id: 'products.type.supply.one', defaultMessage: 'Supply' },
+  equipment: {
+    id: 'products.type.equipment.one',
+    defaultMessage: 'Equipment',
+  },
+});
+
+/**
+ * One item's type: on its page, Edit's Type and Add's choice. A value this
+ * client does not know is shown as it came.
+ */
+export function productTypeSingular(type: string, intl: IntlShape): string {
+  return type in SINGULARS
+    ? intl.formatMessage(SINGULARS[type as keyof typeof SINGULARS])
     : type;
 }
 

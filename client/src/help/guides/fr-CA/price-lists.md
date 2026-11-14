@@ -5,7 +5,7 @@ Une liste de prix donne un prix par article, pour les ventes aux clients ou les 
 ## Créer une liste de prix {#add}
 
 1. Appuyez sur **Nouvelle liste de prix**.
-2. Donnez-lui un **Nom**, tel que les gens la choisiront : Gros CAD, Cascade USD.
+2. Donnez-lui un **Nom**, tel que les gens la choisiront : Vente en gros CAD, Cascade USD.
 3. Choisissez son côté, **Ce que paient les clients** ou **Ce qu’un fournisseur facture**, et sa devise. Ni l’un ni l’autre ne pourra changer plus tard.
 4. Appuyez sur **Créer**.
 
@@ -15,14 +15,14 @@ Une liste de prix donne un prix par article, pour les ventes aux clients ou les 
 2. Choisissez l’article et saisissez son prix unitaire, avant taxes.
 3. Appuyez sur **Enregistrer le prix**.
 
-Sur la ligne d’un article, **Modifier** et **Retirer** corrigent la liste. Une modification s’applique aux lignes ajoutées à partir de là; les commandes déjà tarifées gardent leur prix.
+Sur la ligne d’un article, **Modifier** et **Retirer** corrigent la liste. Une modification s’applique aux lignes ajoutées à partir de là; les commandes qui ont déjà un prix le conservent.
 
 > Seule une personne qui peut créer des listes de prix voit **Nouvelle liste de prix**, et seule une personne qui peut les modifier voit **Ajouter un prix**, **Modifier** et **Retirer**.
 
 ## Donner une liste à un partenaire {#partner}
 
 1. Ouvrez le partenaire dans [Partenaires](/partners).
-2. Choisissez sa liste sous **Ventes à eux**, **Achats auprès d’eux**, ou les deux.
+2. Choisissez sa liste sous **Ventes à ce partenaire**, **Achats auprès d’eux**, ou les deux.
 3. Appuyez sur **Enregistrer les listes de prix**.
 
 > Seule une personne qui peut modifier les partenaires voit **Enregistrer les listes de prix**.

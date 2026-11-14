@@ -28,6 +28,7 @@ import {
   site,
 } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
+import { said } from './utils/said';
 import { captureStatements } from './utils/statements';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
@@ -1075,7 +1076,28 @@ describe('Reorder points (e2e)', () => {
         .split('\r\n');
 
       expect(lines).toEqual([
-        '编码,物品,规格,状态,采购或自制,现有可用,在途,待发,预计可用,库存下限,订货量,固定订货量,最高库存,草稿中,建议订货,单位',
+        (
+          [
+            'exports.column.sku',
+            'exports.column.item',
+            'exports.column.variant',
+            'exports.column.status',
+            'exports.column.boughtOrMade',
+            'exports.column.usable',
+            'exports.column.coming',
+            'exports.column.stillNeeded',
+            'exports.column.position',
+            'exports.column.reorderPoint',
+            'exports.column.rule',
+            'exports.column.fixedQuantity',
+            'exports.column.maximum',
+            'exports.column.inDraft',
+            'exports.column.suggestedOrder',
+            'exports.column.unit',
+          ] as const
+        )
+          .map((id) => said('zh-Hans', id))
+          .join(','),
         'C-OUT,C-OUT,,out,bought,0.0000,0.0000,0.0000,0.0000,10.0000,just_enough,,,0.0000,10.0000,each',
       ]);
       expect(res.headers['content-disposition']).toMatch(

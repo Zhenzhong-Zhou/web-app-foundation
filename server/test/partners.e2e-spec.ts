@@ -513,7 +513,7 @@ describe('Partners (e2e)', () => {
       const refused = {
         en: 'Give an email or a phone, so the contact can be reached',
         'fr-CA':
-          'Indiquez un courriel ou un téléphone, pour que le contact puisse être joint',
+          'Indiquez une adresse courriel ou un numéro de téléphone pour qu’on puisse joindre cette personne',
         'zh-Hans': '请填写电子邮箱或电话，以便联系到对方',
       };
 

@@ -30,6 +30,7 @@ import { EditPartnerDialog } from './edit-partner-dialog';
 import { PartnerDocumentLanguages } from './partner-document-languages';
 
 function formatAddress(address: Address): string {
+  // eslint-disable-next-line no-restricted-syntax -- an address's parts on one line, not names in a list (ADR-071)
   return [
     address.line1,
     address.line2,

@@ -261,7 +261,8 @@ export class ReturnsService {
       }
 
       recordContext({
-        items: summary.join(', '),
+        // A list, which History joins the way its reader's language joins one.
+        items: summary,
         ...(authorization
           ? { returnAuthorization: authorization.rma.number }
           : {}),

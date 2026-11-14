@@ -621,7 +621,7 @@ export class ProductionOrdersService {
       throw new BadRequestException(
         t({
           id: 'production.bomidDoesExist',
-          defaultMessage: 'bomId does not exist',
+          defaultMessage: 'That recipe no longer exists. Choose another one.',
         }),
       );
 

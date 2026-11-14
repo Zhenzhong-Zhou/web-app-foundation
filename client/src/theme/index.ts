@@ -317,6 +317,25 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
       },
     },
     /**
+     * An empty date field shows no format until it is typed in (#512). The
+     * browser writes one in its own language, whatever the screen's,
+     * yyyy-mm-dd beside Chinese labels, and Safari today's date in grey,
+     * as if one were chosen. Its calendar icon stays, so it still reads as
+     * a date, and on focus the format comes back, where typing needs it.
+     * Only a field the screen holds empty, its value '': one it does not
+     * hold says nothing of its value, and is drawn as the browser draws it.
+     */
+    MuiInputBase: {
+      styleOverrides: {
+        input: ({ ownerState }) =>
+          ownerState.type === 'date' &&
+          ownerState.value === '' &&
+          !ownerState.focused
+            ? { WebkitTextFillColor: 'transparent' }
+            : {},
+      },
+    },
+    /**
      * A disabled field's helper text says why it cannot be changed, so it
      * stays readable rather than fading with the field: the field itself is
      * exempt from contrast, its explanation is not.

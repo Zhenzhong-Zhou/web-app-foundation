@@ -59,8 +59,7 @@ export class OrganizationAddressDto {
     message: rule(
       defineMessage({
         id: 'validation.countryCode',
-        defaultMessage:
-          'country must be a two-letter ISO-3166 code, such as CA or US',
+        defaultMessage: 'Enter the country as two letters, such as CA or US.',
       }),
     ),
   })

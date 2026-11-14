@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# What CI runs, on this machine and in CI's order: the Markdown check, the
-# server's checks and both its suites, the tests of scripts/ itself, then
+# What CI runs, on this machine and in CI's order: the Markdown check and
+# the translations' words and punctuation, the server's checks and both
+# its suites, the tests of scripts/ itself, then
 # the client's checks, unit tests and the Playwright suite, and in full
-# the specs every browser runs, in Firefox and Linux WebKit, below. Stops
-# at the first failure, so the last heading printed is what failed.
+# the specs every browser runs, in Firefox and Linux WebKit, and the
+# cut-text spec in Linux Chromium, below. Stops at the first failure, so
+# the last heading printed is what failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
 #   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
-#                                Markdown step and the scripts' format,
-#                                tests and ShellCheck, for a change of docs
-#                                and scripts/ alone; what it refuses is
-#                                where it runs, below
+#                                Markdown and translations steps and the
+#                                scripts' format, tests and ShellCheck,
+#                                for a change of docs and scripts/ alone;
+#                                what it refuses is where it runs, below
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -47,7 +49,10 @@
 # a Mac" does by hand, at the client's Playwright version, and WebKit from
 # the same container. The client's suite runs the Mac's WebKit, whose timing
 # differs from Linux WebKit's (#232, and 5631d0d8 in conventions.md's
-# "Tests").
+# "Tests"). Then client/e2e/cut-text.spec.ts in Chromium from the same
+# container, so it measures text with the Linux fonts CI's Chromium has:
+# proven on the Mac's fonts only, it met a cut on CI's that the Mac's,
+# narrower, never showed (ADR-054's as-built, Found).
 # It needs the network, and stops the run when the container cannot start.
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
@@ -85,6 +90,15 @@ markdown() {
   step 'Markdown: every .md file, as the docs workflow checks it'
   npx --yes markdownlint-cli2@0.23.3
   node scripts/check-docs.mjs
+}
+
+# The glossary's words and punctuation in the French and Chinese
+# catalogues and guides (ADR-054's November 2026 amendment, R4), as the
+# docs workflow checks them too: Node alone, so with --docs as well, where
+# a row added to the glossary's Words not to use can fail it.
+translations() {
+  step "Translations: the glossary's words and punctuation"
+  node scripts/i18n-rules.mjs
 }
 
 # What the regenerated files hold in the working tree, staged or not and
@@ -193,20 +207,21 @@ against_main() {
 }
 
 # The specs every browser runs, as each project's testMatch names them,
-# in Firefox, then in WebKit, each browser in Playwright's Linux image and
+# in Firefox, then in WebKit, then the cut-text spec in Chromium, whose
+# measures depend on the fonts, each browser in Playwright's Linux image and
 # the tests on this machine, connected to it as a remote browser;
 # '<loopback>' lets that browser reach this machine's localhost:5273 and
 # :3100, so the session cookies stay on localhost.
 # E2E_FIREFOX=1 gives the config its firefox project, which it leaves out
 # on a Mac; --project=webkit leaves that project unused. One container
-# serves both browsers, one run after the other, each the same call.
+# serves the three runs, one after the other, each the same call.
 # The image and the playwright it runs are the version of the client's
 # @playwright/test, read here, so a raise needs nothing in this file. The
 # container has a name of its own and a free port, so one started by hand
 # is left alone, and the trap removes it however the run ends. Its own
 # logs are printed when it does not start, at once when it has exited and
 # after 120 seconds when it is running and silent.
-# The container and both browsers run under one hold of the lock the
+# The container and its runs are under one hold of the lock the
 # working folders share, since another folder's full run removes the
 # container by its name: the full run calls this script again, as
 # --linux-browsers, through scripts/one-at-a-time.mjs, in the same bash.
@@ -254,17 +269,23 @@ linux_browsers() {
   done
   address="$(docker port "$BROWSERS_CONTAINER" 3333/tcp)"
 
-  local project status kept trace
-  for project in firefox webkit; do
-    trace=''
-    if [[ "$project" == webkit ]]; then
-      step 'Client: the specs every browser runs, in Linux WebKit, from the same container'
-      trace='--trace=retain-on-failure'
-    fi
+  local project status kept extra
+  for project in firefox webkit chromium; do
+    extra=''
+    case "$project" in
+      webkit)
+        step 'Client: the specs every browser runs, in Linux WebKit, from the same container'
+        extra='--trace=retain-on-failure'
+        ;;
+      chromium)
+        step "Client: the cut-text spec in Linux Chromium, with CI's fonts, from the same container"
+        extra='e2e/cut-text.spec.ts'
+        ;;
+    esac
     status=0
     (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
       PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-      npx playwright test --project="$project" ${trace:+"$trace"}) || status=$?
+      npx playwright test --project="$project" ${extra:+"$extra"}) || status=$?
     if ((status != 0)); then
       # A run that failed before any test, such as one that could not
       # reach the container, leaves no folder: nothing to copy.
@@ -321,6 +342,7 @@ if [[ $mode == docs ]]; then
 fi
 
 markdown
+translations
 
 if [[ $mode == docs ]]; then
   scripts_tests

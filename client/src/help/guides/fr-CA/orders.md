@@ -44,23 +44,23 @@ Les tuiles de l’accueil et ses boutons des retards ouvrent Commandes avec la l
 
 - **Ventes seulement** ou **Achats seulement** : un seul sens.
 - **Brouillon** ou **Confirmée** : un seul statut.
-- **Reste à expédier**, **Reste à recevoir** ou **Reste à expédier ou à recevoir** : les commandes confirmées dont il reste quelque chose à faire passer, la date prévue la plus proche d’abord, jusqu’à ce que vous triiez par une colonne.
+- **Reste à expédier**, **Reste à recevoir** ou **Reste à expédier ou à recevoir** : les commandes confirmées dont il reste des articles à expédier ou à recevoir, la date prévue la plus proche d’abord, jusqu’à ce que vous triiez par une colonne.
 - **En retard** : parmi celles-là, celles prévues avant aujourd’hui.
-- **Les plus anciennes d’abord** : les commandes créées en premier en haut, comme **Commandes · Brouillon** les ouvre depuis l’accueil, pour que le brouillon oublié depuis le plus longtemps se voie d’abord. Retirez-la, et les plus récentes reviennent en premier.
+- **Les plus anciennes d’abord** : les commandes créées en premier en haut, comme **Commandes · Brouillon** les ouvre depuis l’accueil, pour que le brouillon oublié depuis le plus longtemps se voie d’abord. Retirez cette option, et les plus récentes reviennent en premier.
 
 ## Les mots que vous verrez {#words}
 
 - **Brouillon** : rédigée, pas encore convenue.
 - **Confirmée** : convenue avec le partenaire.
 - **Reçue** ou **Expédiée** : close. Le filtre de la liste appelle les deux **Exécutées**.
-- **Annulée** : abandonnée avant que rien ne bouge.
+- **Annulée** : commande annulée avant tout déplacement de marchandises.
 - **Close incomplète** : une ligne qui n’attend plus rien, son écart conservé.
 - **En retard** : confirmée, avec encore quelque chose à expédier ou à recevoir, et prévue avant aujourd’hui.
 
 ## Si quelque chose est refusé {#refused}
 
 - Une vente n’est confirmée qu’une fois que chaque article a un prix. Zéro est un prix.
-- Une commande pour laquelle des marchandises ont bougé ne peut pas être annulée. Clôturez-la plutôt.
+- Une commande pour laquelle des marchandises ont déjà été déplacées ne peut pas être annulée. Choisissez plutôt **Clore la commande**.
 - Aucun article ne peut être ajouté à une commande confirmée. Créez une nouvelle commande pour cet article.
 - Une ligne ne peut plus changer une fois des marchandises reçues dessus. Choisissez **Clore incomplète** sur la ligne, et créez une nouvelle commande pour le reste.
 

@@ -12,7 +12,12 @@ import { useIntl } from 'react-intl';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { LANGUAGE_NAMES, type Locale, SUPPORTED_LOCALES } from '../lib/locales';
+import {
+  LANGUAGE_NAMES,
+  languageWord,
+  type Locale,
+  SUPPORTED_LOCALES,
+} from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
 import type { NameAt } from './name-rows';
 import type { ProductDetail } from './product-detail-page';
@@ -144,7 +149,7 @@ export function TranslationsDialog({
             defaultMessage:
               'A description in {language} needs a name in {language} too.',
           },
-          { language: LANGUAGE_NAMES[orphan] },
+          { language: languageWord(orphan, intl.locale) },
         ),
       );
       return;
@@ -211,7 +216,9 @@ export function TranslationsDialog({
                   },
                   {
                     languages: intl.formatList(
-                      required.map((locale) => LANGUAGE_NAMES[locale]),
+                      required.map((locale) =>
+                        languageWord(locale, intl.locale),
+                      ),
                       { type: 'conjunction' },
                     ),
                   },
@@ -266,7 +273,7 @@ export function TranslationsDialog({
                       id: 'products.translations.name',
                       defaultMessage: 'Name in {language}',
                     },
-                    { language: LANGUAGE_NAMES[locale] },
+                    { language: languageWord(locale, intl.locale) },
                   )}
                   value={form[locale].name}
                   onChange={(event) =>
@@ -283,7 +290,7 @@ export function TranslationsDialog({
                       id: 'products.translations.description',
                       defaultMessage: 'Description in {language}',
                     },
-                    { language: LANGUAGE_NAMES[locale] },
+                    { language: languageWord(locale, intl.locale) },
                   )}
                   value={form[locale].description}
                   onChange={(event) =>
@@ -306,7 +313,7 @@ export function TranslationsDialog({
                       {
                         sku: variant.sku,
                         name: variant.name,
-                        language: LANGUAGE_NAMES[locale],
+                        language: languageWord(locale, intl.locale),
                       },
                     )}
                     value={form[locale].variants[variant.id] ?? ''}

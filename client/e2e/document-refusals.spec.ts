@@ -2,6 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { created, signInAs } from './support/api';
+import { type Language, saidBy, saidOn } from './support/said';
 
 /**
  * A refused PDF opened from its link (ADR-071, amended for #526): Print
@@ -112,7 +113,7 @@ test('a refused PDF shows a page in the app’s language, with the item and the 
     '无法生成此 PDF',
   );
   await expect(
-    tab.getByText('Focus 的规格 FOCUS-60CT（60ct）没有简体中文名称', {
+    tab.getByText('Focus 的规格 FOCUS-60CT（60ct）没有中文名称', {
       exact: false,
     }),
   ).toBeVisible();
@@ -137,4 +138,118 @@ test('a refused PDF shows a page in the app’s language, with the item and the 
   await expect(page).toHaveURL(new RegExp(`/orders/${order.id}$`));
   await expect(page.getByRole('heading', { name: order.number })).toBeVisible();
   await expect(page.getByRole('link', { name: '打印' })).toBeVisible();
+});
+
+/** The languages, as the app's settings and the account write them. */
+const LANGUAGES = ['en', 'fr-CA', 'zh-Hans'] as const satisfies Language[];
+
+/**
+ * Each language named in each, by its language alone, as Intl names it,
+ * and in Chinese as a name's language is written, 英文 as the exports'
+ * columns say, never Intl's 英语: the words both the page and the refusal
+ * must use.
+ */
+const WORDS: Record<Language, Record<Language, string>> = {
+  en: { en: 'English', 'fr-CA': 'French', 'zh-Hans': 'Chinese' },
+  'fr-CA': { en: 'anglais', 'fr-CA': 'français', 'zh-Hans': 'chinois' },
+  'zh-Hans': { en: '英文', 'fr-CA': '法文', 'zh-Hans': '中文' },
+};
+
+/**
+ * Where each says it, read by the message's id (conventions.md, Tests):
+ * the item's page's line, and the refusal.
+ */
+const SAID = {
+  page: (reader: Language, word: string) =>
+    saidOn(reader, 'products.names.which', {
+      row: saidOn(reader, 'products.names.row.item'),
+      language: word,
+    }),
+  refusal: (reader: Language, word: string) =>
+    saidBy(reader, 'invoices.skuLanguageNameWhich', {
+      which: 'item',
+      product: 'Focus',
+      sku: 'FOCUS-60CT',
+      language: word,
+    }),
+};
+
+/**
+ * A missing name's language, named in the reader's language on both sides
+ * (ADR-054's November 2026 amendment): the item's page, which
+ * this browser draws, and the refusal of a document printing in it, which
+ * the server writes, name it alike, each language in each. Every language
+ * required, the item named in none, and a purchase printing in each.
+ */
+test('the item’s page and a refused document name a missing name’s language alike, in each language', async ({
+  page,
+  freshOrg,
+}) => {
+  const api = freshOrg.api;
+  await ok(
+    await api.patch('/v1/organization', {
+      data: { requiredNameLanguages: [...LANGUAGES] },
+    }),
+  );
+  const { product } = await created<{
+    product: { id: string; variants: { id: string }[] };
+  }>(
+    await api.post('/v1/products', {
+      data: { type: 'good', name: 'Focus', variant: { sku: 'FOCUS-60CT' } },
+    }),
+  );
+
+  const orders = {} as Record<Language, string>;
+  for (const language of LANGUAGES) {
+    const { partner } = await created<{ partner: { id: string } }>(
+      await api.post('/v1/partners', {
+        data: {
+          name: `Supplier ${language}`,
+          code: `SUP-${language}`,
+          documentLanguage: language,
+        },
+      }),
+    );
+    const { order } = await created<{ order: { id: string } }>(
+      await api.post('/v1/orders', {
+        data: {
+          partnerId: partner.id,
+          direction: 'purchase',
+          lines: [
+            {
+              variantId: product.variants[0].id,
+              quantityOrdered: '5',
+              unitPrice: '4',
+              currency: 'CAD',
+            },
+          ],
+        },
+      }),
+    );
+    orders[language] = order.id;
+  }
+
+  await signInAs(page, api);
+  for (const reader of LANGUAGES) {
+    await ok(
+      await api.patch('/v1/account/profile', { data: { locale: reader } }),
+    );
+    await page.goto(`/items/${product.id}`);
+
+    for (const language of LANGUAGES) {
+      const word = WORDS[reader][language];
+      await expect(
+        page.getByRole('alert').filter({ hasText: SAID.page(reader, word) }),
+      ).toBeVisible();
+
+      const refused = await api.get(`/v1/orders/${orders[language]}/pdf`, {
+        headers: { 'Accept-Language': reader },
+      });
+      expect(refused.status()).toBe(409);
+      const { message } = (await refused.json()) as { message: string };
+      expect(message, `${language} read in ${reader}`).toContain(
+        SAID.refusal(reader, word),
+      );
+    }
+  }
 });

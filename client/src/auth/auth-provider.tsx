@@ -146,14 +146,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * screens switch to it and this device remembers it, so signing out
    * leaves the sign-in page in it too. Null leaves this device's choice, or
    * the browser's, as it was. A tag this client does not know is ignored
-   * rather than trusted.
+   * rather than trusted. English leaves en-XA on the screens, in
+   * development, since to the account it is English (`follow`).
    */
-  const { setLocale } = useLanguage();
+  const { follow } = useLanguage();
   const accountLocale = state.session?.user.locale;
 
   useEffect(() => {
-    if (isLocale(accountLocale)) void setLocale(accountLocale);
-  }, [accountLocale, setLocale]);
+    if (isLocale(accountLocale)) void follow(accountLocale);
+  }, [accountLocale, follow]);
 
   // The organization's zone decides its day (ADR-072): passed on as this
   // renders, before anything below asks what today is, as the language

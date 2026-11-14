@@ -125,6 +125,52 @@ describe('the type scale', () => {
   });
 });
 
+// The browser writes an empty date's format in its own language, not the
+// screen's: yyyy-mm-dd beside Chinese labels (#512).
+describe('an empty date field', () => {
+  function DateField({ value }: { value: string }) {
+    return (
+      <ThemeProvider theme={themeFor('zh-Hans')}>
+        <TextField
+          type="date"
+          label="预计日期（起）"
+          value={value}
+          onChange={() => {}}
+          slotProps={{ inputLabel: { shrink: true } }}
+        />
+      </ThemeProvider>
+    );
+  }
+  /**
+   * Whether the field's own class hides its text. jsdom computes no
+   * -webkit-text-fill-color, so the rule emotion wrote is read instead.
+   */
+  const hidesText = () => {
+    const input = screen.getByLabelText('预计日期（起）');
+    const own = [...input.classList].find((name) => name.startsWith('css-'));
+    const css = [...document.querySelectorAll('style')]
+      .map((style) => style.textContent)
+      .join('');
+    // Its own rule, not the disabled or autofilled one after it.
+    return new RegExp(
+      `\\.${own}\\{[^}]*-webkit-text-fill-color:transparent`,
+    ).test(css);
+  };
+
+  it('shows no format until it is typed in', async () => {
+    render(<DateField value="" />);
+    expect(hidesText()).toBe(true);
+
+    await userEvent.click(screen.getByLabelText('预计日期（起）'));
+    expect(hidesText()).toBe(false);
+  });
+
+  it('shows its date once it has one', () => {
+    render(<DateField value="2026-11-12" />);
+    expect(hidesText()).toBe(false);
+  });
+});
+
 // A switch off is seen by its track, which MUI draws pale: the theme's is
 // the edge's grey, 3:1 on a panel in both modes (WCAG 1.4.11).
 describe('a switch', () => {

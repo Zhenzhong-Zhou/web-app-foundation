@@ -39,7 +39,7 @@ import { categoryPlaces, pathName } from './item-list';
 import { ItemNames } from './item-names';
 import type { NameAt } from './name-rows';
 import { ProductGallery } from './product-gallery';
-import { productTypeLabel } from './product-types';
+import { productTypeSingular } from './product-types';
 import type { Variant } from './products-page';
 import { TranslationsDialog } from './translations-dialog';
 import { VariantRow } from './variant-row';
@@ -235,7 +235,7 @@ export function ProductDetailPage() {
           </>
         }
         // What it is and where it is filed, under its name (ADR-092).
-        subtitle={[productTypeLabel(product.type, intl), categoryPath]
+        subtitle={[productTypeSingular(product.type, intl), categoryPath]
           .filter(Boolean)
           .join(SEPARATOR)}
       />

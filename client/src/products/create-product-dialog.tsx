@@ -29,8 +29,8 @@ import { useSubmit } from '../lib/use-submit';
 import { CategorySelect } from './category-select';
 import {
   PRODUCT_TYPES,
-  productTypeLabel,
   productTypeLine,
+  productTypeSingular,
 } from './product-types';
 import { unitLabel, UNITS } from './units';
 
@@ -207,7 +207,7 @@ export function CreateProductDialog({
                     label={
                       <Box sx={{ pt: 1 }}>
                         <Typography variant="body1" component="span">
-                          {productTypeLabel(each, intl)}
+                          {productTypeSingular(each, intl)}
                         </Typography>
                         <Typography
                           variant="body2"

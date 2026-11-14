@@ -16,9 +16,11 @@ offers either language (MC-1405).
 | Item | Article | 物品 | Anything the company keeps, of any type: the page, the menu, the top bar's group (ADR-092). In the code, API and database it is `product`, a row of `products`; new names use `product`, and no file is renamed (#553). |
 | Product | Produit | 商品 | The goods it sells, and only those: the type, and its tab (ADR-092). Not 产品, which Chinese keeps only in the licences' regulatory terms. In the code that type is `good`; `product` there means any item (#553). |
 | Products / Raw materials / Packaging / Supplies / Samples / Equipment | Produits / Matières premières / Emballages / Fournitures / Échantillons / Équipement | 商品 / 原材料 / 包装材料 / 耗材 / 样品 / 设备 | An item's type, each its tab's name (ADR-092). 耗材 is what the accounts call 低值易耗品. |
+| Product / Raw material / Packaging / Supply / Sample / Equipment | Produit / Matière première / Emballage / Fourniture / Échantillon / Équipement | 商品 / 原材料 / 包装材料 / 耗材 / 样品 / 设备 | One item's type, in the singular: under the item's name on its page, Edit's Type and Add's choice (#548). The tabs and the pickers' groups keep the plural; Chinese has one word for both. |
 | Variant | Variante | 规格 | The thing counted: "60ct". |
 | Category / Uncategorised | Catégorie / Sans catégorie | 分类 / 未分类 | Items' grouping, one tree per organization; an item is in one or none (ADR-092). |
 | Code | Code | 编码 | A variant's own code, on its label, documents and every CSV; once SKU · UGS · SKU (ADR-092). The organization's export keeps its column's name, `sku`. |
+| English / French / Chinese (a name's language) | anglais / français / chinois | 英文 / 法文 / 中文 | The language a name or a text is written in, inside a sentence: has no English name, n’a pas de nom en anglais, 没有英文名称, and Edit names' 名称（英文）. Chinese says 英文 and 法文, as the exports' columns do (英文名称), never 英语 and 法语, which name the language as spoken or learned; a table beside `languageWord` holds the three, in the server's `translate.ts` and the client's `locales.ts`. Every other reader keeps Intl's names (ADR-054's November 2026 amendment). |
 | Lot | Lot | 批次 | A traced quantity with a code and an expiry. |
 | Location | Emplacement | 库位 | A shelf, bin or site stock sits in. |
 | Site / Zone / Aisle / Shelf / Bin | Site / Zone / Allée / Tablette / Casier | 站点 / 区域 / 通道 / 货架 / 货位 | A location's type by depth, outermost first. |
@@ -113,15 +115,16 @@ as the catalogues word it.
 | Held | Réservé | 已预留 | Kept for a confirmed sale (ADR-045). |
 | Free | Libre | 可用 | What can still be promised. |
 | Backordered | En rupture | 缺货待发 | |
-| Not available | Non disponible | 不可用 | A location whose stock is not for sending (ADR-042). |
+| Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as the opposite of Free's 可用. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
+| Ship out | Sortie de stock | 出库 | Inventory's action that sends stock out with no order; an order's Ship stays Expédier / 发货. |
 | Adjustment | Ajustement | 调整 | A movement's reason, as are the four below. |
 | Transfer | Transfert | 移库 | |
 | Consumption | Consommation | 消耗 | What a run used. |
 | Sample | Échantillon | 样品 | |
 | Unit of measure | Unité de mesure | 计量单位 | |
 | Discontinue / Discontinued | Abandonner / Abandonné | 停用 / 已停用 | An item no longer offered or used. |
-| Retire / Retired | Retirer / Retiré | 停用 / 已停用 | A partner, location or list kept for the records that name it. |
+| Retire / Retired | Retirer / Retiré | 归档 / 已归档 | A partner, location, list or tax code kept for the records that name it. Not 停用, which is Discontinue's. |
 | In use | En usage | 使用中 | The opposite of retired. |
 
 ### Reorder points
@@ -195,7 +198,8 @@ as the catalogues word it.
 | Waiting for a cost | En attente d’un coût | 等待成本 | |
 | Registered address | Adresse du siège | 注册地址 | The seller's address on every invoice. |
 | What we do | Ce que nous faisons | 业务简介 | One line on the organization's Profile, at most 200 characters, shown on Home under the date (ADR-091). |
-| Billing address | Adresse de facturation | 账单地址 | A partner's address marked Invoices go here / Les factures sont envoyées ici / 发票寄往此处. |
+| Billing address | Adresse de facturation | 开票地址 | A partner's address marked Invoices go here / Les factures sont envoyées ici / 发票寄往此处; 开票地址 in every place, beside 开票. |
+| Tax number | Numéro de taxe | 税号 | The organization's or a partner's number for sales tax, 税号 on every screen and on the PDF alike. The Organization page's field and the PDF name it in full, Tax registration number, Numéro d’inscription aux taxes. |
 | Time zone | Fuseau horaire | 时区 | |
 | Prefix | Préfixe | 前缀 | A document number's start (ADR-073). |
 | Exempt | Exonéré | 免税 | A tax code that charges nothing. |
@@ -221,19 +225,155 @@ as the catalogues word it.
 | Undo | Annuler | 撤销 | |
 | New (on People) | Nouveau | 新加入 | Someone who joined in the last two weeks. |
 
+## Words not to use
+
+A word a translation does not use, and the word it uses instead: one the
+terms above replaced, or one that reads as something else. Where says
+where a row holds: Everywhere; Everywhere but, then what it leaves out;
+or Only, then all it holds for. A message is named by its id, in either
+package's catalogue, `licences.*` for every id under `licences.`; a
+guide by its file in `client/src/help/guides/`, in the row's language,
+such as `licences.md`. `scripts/i18n-rules.mjs` reads the table and
+fails on each word a translation uses where its row holds.
+
+| Language | Not | Instead | Where |
+| --- | --- | --- | --- |
+| 简体中文 | 产品 | 商品 for the goods sold, 物品 for any item | Everywhere but the licences' regulatory terms: `licences.*`, `permissions.productLicences.*`, `account.access.thing.licences` and `licences.md` |
+| 简体中文 | 再订货点 | 库存下限 | Everywhere |
+| 简体中文 | 照片 | 头像 | Only where it means a person's picture, not an item's photos: `account.*`, `people.*`, `account.md` and `people.md` |
+| 简体中文 | 账单地址 | 开票地址, as Billing address says: 账单地址 sat beside 开票, one address under two names | Everywhere |
+| 简体中文 | 税务登记号 | 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names | Everywhere |
+| 简体中文 | 退出该组织 | 离开该组织: a member's own Leave is 离开, as the Account page's button says; 退出 is Sign out's word, 退出登录, where it stays right | Everywhere |
+| 简体中文 | 退出组织 | 离开组织, as 退出该组织 says | Everywhere |
+
+## Settled messages
+
+A message whose whole text was decided here, so no round of review
+changes it: the decide step (`scripts/i18n-decide.mjs`) keeps its text
+whatever a review says, its Reason Settled; `import` refuses a
+correction to it, naming it; and `scripts/i18n-rules.mjs` fails where a
+catalogue's text for it differs from its row's. A message is named by
+its id, in either package's catalogue, and its text is in backquotes,
+exactly as the catalogue holds it. A settled message changes only with
+its row here, in the same commit as its catalogue.
+
+| Id | Language | Text | Decided in |
+| --- | --- | --- | --- |
+| `account.title` | 简体中文 | `我的账户` | [ADR-054's November 2026 amendment](adr/0054-languages.md#amendment-november-2026--the-translations-settled-with-no-fluent-reader-chatgpt-leads-two-checks-stand-in): the Account page's title, as its menu item and the guides name it |
+| `documents.refusal.signedOut` | 简体中文 | `您尚未登录` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the refused document's page, signed out |
+| `invoices.skuLanguageNameWhich` | 简体中文 | `{which, select, variant {{product} 的规格 {sku}（{variation}）} other {{product}（{sku}）}}没有{language}名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): a missing name's language, in Chinese |
+| `mail.invitation.expires` | 简体中文 | `链接只能用一次，有效期到 {date}结束，{zone}。密码由您自己设置。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the invitation email's last day |
+
+## Placeholders filled with Chinese words
+
+A placeholder that Chinese always fills with Chinese words, the app's
+own, never a word a person types. ADR-090's space stands only between
+Chinese and Latin letters or digits, so a Chinese message writes none
+between its words and one of these: 由{name}提供支持, 无法加载{language},
+在{list}中查看全部. Where says where a row holds, as Words not to use
+reads it, since one name can mean another value elsewhere: `{list}` in
+an order is a price list's name, as typed. `scripts/i18n-rules.mjs`
+fails on a space between Chinese and a placeholder listed here, a tag
+between or not, and the decide step takes that space out of a text where
+it is the text's only problem, saying so in Reason. A placeholder that a
+person's or an item's name fills, in Latin letters or Chinese, is not
+listed: its message keeps its writer's spacing until #573 settles it. A
+guide has no placeholders; where it quotes one of these labels in bold,
+`client/src/help/guides.test.ts` holds the quote to the message's
+spacing.
+
+| Placeholder | Where | What fills it | Why |
+| --- | --- | --- | --- |
+| `{language}` | Everywhere | A language's name: 英文, 法文 or 中文 in a sentence, or 简体中文 where Chinese failed to load | The app names a language in the reader's words, as English / French / Chinese (a name's language) above |
+| `{languages}` | Everywhere | Languages' names, joined: 英文和法文 | As `{language}` |
+| `{role}` | Only `roles.builtIn.note`, `invitation.organization.owner` and `invitation.organization.keep.body` | A built-in role's name: 所有者, 管理员 or 查看者 | The app translates its built-in roles, and these name only one. Elsewhere `{role}` may be a role made here, named as typed |
+| `{list}` | Only `search.showAll` and `status.goToList` | A page's name: 物品, 销售订单 | A page's name is the app's own. Elsewhere `{list}` is a price list's name |
+| `{tab}` | Everywhere | An item tab's name: 商品, 原材料 | A tab's name is the app's own |
+| `{other}` | Only `products.empty.elsewhere` | Another item tab's name | As `{tab}` |
+| `{type}` | Only `products.edit.movedTo` and `products.row.type` | An item's type: 商品, 原材料 | A type's name is the app's own |
+| `{name}` | Only `brand.poweredBy` | The product's name in Chinese: 品桥 | Set for Chinese on its own, as `VITE_APP_NAME_ZH_HANS` (ADR-082); the rail's foot spaces a Latin one itself (#486) |
+| `{lines}` | Only `roles.editor.*` | Permissions' names, each in “ ”, joined | The app names its permissions |
+| `{line}` | Only `roles.editor.*` | A permission's name, in “ ” | As `{lines}` |
+| `{area}` | Only `roles.editor.*` | An area's name in the role editor: 库存, 订单 | An area's name is the app's own |
+| `{permission}` | Only `production.licence.needsOverride` and `roles.permissionRequires` | A permission's name, in “ ” | As `{lines}` |
+| `{needs}` | Only `roles.permissionRequires` | Permissions' names, each in “ ”, joined | As `{lines}` |
+| `{first}` | Only `settings.numbering.clash` | A document's name: 发票, 装箱单 | A document's name is the app's own |
+| `{second}` | Only `settings.numbering.clash` | A document's name | As `{first}` |
+| `{problem}` | Only `production.licence.*` | A sentence of the app's about the licence, ending in 。 | Chinese takes no space after 。 |
+| `{row}` | Only `products.names.*` | The item or a variant, as the item's page names it: 物品, 规格 {sku} | The app names the row. A variant's ends in its code, whose space beside 的 waits for #573 |
+
 ## Writing conventions
 
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
   apostrophe is ICU's escape character and can swallow a placeholder.
 - **French (Canada):** Quebec typography, as the Office québécois de la
-  langue française recommends: no space before ?, ! or ;, a non-breaking
-  space before : and inside « ». Vouvoiement throughout. This holds in the
-  client's and the server's catalogues alike.
-- **Simplified Chinese:** full-width punctuation (，。？：), a space between
-  Chinese and a Latin word or a number only where it reads better, none
-  around full-width punctuation.
+  langue française recommends: no space before ?, ! or ;, a no-break
+  space (U+00A0) before : and inside « ». Vouvoiement throughout. This
+  holds in the client's and the server's catalogues and the guides alike.
+- **Simplified Chinese:** full-width punctuation (，。？：；！), never a
+  half-width , ? : ; or ! beside Chinese. A space between Chinese and
+  Latin letters or digits, as in 逾期 2 天, 批次 VC-0301 and 我在
+  {organization} 的权限 (ADR-090), and none beside full-width punctuation,
+  inside a date as the reader's calendar writes it, 2026年11月30日, or
+  beside a placeholder that Placeholders filled with Chinese words lists,
+  由{name}提供支持. A list joins with 、 and its last item with 和, a
+  space beside a Latin name. A plural has its other branch alone, since
+  Chinese has no singular form (Intl.PluralRules gives it other only):
+  `{count, plural, other {# 个物品}}`. A one branch is never shown,
+  whatever it says; =1, exactly one, stands only where the words for one
+  differ on purpose, 请先把{items, plural, =1 {它} other {它们}}移到其他分类.
 - **Ellipsis:** the single character … in every language, as the English
-  uses for "Saving…".
+  uses for "Saving…", never three full stops.
 - **Placeholders:** `{name}` and tags like `<link>` are kept exactly, in
   whatever position the sentence needs; `npm run i18n:check` fails
   otherwise.
+- **The check:** `scripts/i18n-rules.mjs`, which `scripts/verify.sh`, CI
+  and the Docs workflow run, fails on the apostrophes, the ellipsis, Quebec
+  typography and the half-width punctuation beside Chinese above, in
+  both packages' French and Chinese catalogues and the guides. It fails
+  too on a translation the same as its English, ignoring case, spaces
+  and punctuation, as "Deleted User" was in a French review, but where
+  the English has no word outside its placeholders, as
+  `{count} / {max}`, and for the messages its `SAME_AS_ENGLISH` lists by
+  language and id, each with why: Total, Code or Lot in French, a unit's
+  symbol, a paper size's name. It fails where a settled message's
+  text is not its row's in Settled messages, on a space between
+  Chinese and a placeholder that Placeholders filled with Chinese words
+  lists, and on a message's plural branch for a category its language
+  never uses, by Intl.PluralRules: one in Chinese. The decide step drops
+  such a branch from a text where it, and those spaces, are the text's
+  only problems, saying so in Reason. The space beside Latin letters and
+  digits, and how a sentence reads, are left to whoever writes and
+  reviews it.
+
+### How it reads
+
+The style round 1's second pass held the wording to (ADR-054's November
+2026 amendment), for whoever writes or reviews a translation. It judges
+how a sentence reads, never its terms: the tables above win.
+
+- **In both languages:** polite and plain, as a careful colleague
+  writes, neither stiff nor chatty. In a guide, a word in bold is the
+  screen's own and a link's text names the page it opens, so both stay
+  as the screen words them.
+- **French:**
+  - A button or a menu item is an infinitive, Enregistrer, not
+    Enregistrez; a title or a column heading, a noun or an infinitive.
+  - French word order, never the English's: no stacked nouns (la liste
+    de prix du fournisseur, not la liste prix fournisseur), and no
+    English turn of phrase translated word for word.
+  - A short status says it once: Enregistré., not A été enregistré avec
+    succès.
+  - Vouvoiement, without a Veuillez before every request.
+  - Quebec usage where it differs from France's, as the terms above are.
+- **Chinese:**
+  - A short status is 已 and the verb: 已保存, not 保存了 or 保存成功了.
+  - No 了 after a verb with its object joined to it: 收货入库：批次
+    VC-0301, not 您收货入库了批次 VC-0301. 了 where natural speech has it
+    (出错了, 物品快不够了, 有了配方), never only to mark the past.
+  - A list of one's own actions is the verb and its object, without 您:
+    创建了订单 SO-1, not 您创建了订单 SO-1.
+  - No 进行 before a verb: 审核, not 进行审核; nor 对……进行.
+  - 您 where a sentence speaks to the person, not in every line.
+  - A button, a title or a column heading is as short as its meaning
+    allows, with no chain of 的.

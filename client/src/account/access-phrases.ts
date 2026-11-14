@@ -66,7 +66,14 @@ export const AREA_LABELS = defineMessages<Area>({
   },
 });
 
-/** The things seen, added or changed, in the order an area names them. */
+/**
+ * The things seen, added or changed, in the order an area names them. A
+ * trade word a newcomer may not know is glossed in brackets, by the
+ * glossary: a lot, recipes, production runs, credit notes and return
+ * authorizations (#505). A sentence names each once; runs and returns,
+ * named again by what is done to them, are named first as seen, which
+ * every permission acting on them needs (PERMISSION_NEEDS).
+ */
 const THINGS = defineMessages({
   onHand: {
     id: 'account.access.thing.onHand',
@@ -78,10 +85,14 @@ const THINGS = defineMessages({
   },
   lotHistory: {
     id: 'account.access.thing.lotHistory',
-    defaultMessage: 'each lot’s history',
+    defaultMessage:
+      'the history of each lot (one batch of an item, with its own code)',
   },
   products: { id: 'account.access.thing.products', defaultMessage: 'items' },
-  recipes: { id: 'account.access.thing.recipes', defaultMessage: 'recipes' },
+  recipes: {
+    id: 'account.access.thing.recipes',
+    defaultMessage: 'recipes (what goes into each item made here)',
+  },
   licences: {
     id: 'account.access.thing.licences',
     defaultMessage: 'product licences',
@@ -96,16 +107,18 @@ const THINGS = defineMessages({
   },
   runs: {
     id: 'account.access.thing.runs',
-    defaultMessage: 'production runs and what they used',
+    defaultMessage:
+      'production runs (each makes one batch from a recipe) and what they used',
   },
   invoices: { id: 'account.access.thing.invoices', defaultMessage: 'invoices' },
   creditNotes: {
     id: 'account.access.thing.creditNotes',
-    defaultMessage: 'credit notes',
+    defaultMessage: 'credit notes (each gives back part or all of an invoice)',
   },
   returns: {
     id: 'account.access.thing.returns',
-    defaultMessage: 'return authorizations',
+    defaultMessage:
+      'return authorizations (agreeing what a customer may send back)',
   },
   costs: { id: 'account.access.thing.costs', defaultMessage: 'costs' },
   exchangeRates: {

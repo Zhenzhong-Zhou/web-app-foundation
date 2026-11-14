@@ -300,6 +300,14 @@ jobs:
         run: npm run i18n:check
         working-directory: server
 
+      # The glossary's words and punctuation in the French and Chinese
+      # catalogues and guides (ADR-054's November 2026 amendment), French
+      # guillemets and colons among them, which check-catalogues.mjs held
+      # here before: in this required job, and in docs.yml for a change of
+      # Markdown alone, which this workflow skips. Node, nothing to install.
+      - name: Check the translations against the glossary
+        run: node scripts/i18n-rules.mjs
+
       # The tests of scripts/ itself, on Node's runner, since neither
       # package's Vitest finds them. Here, where both packages are
       # installed: i18n-review.mjs uses each one's FormatJS.

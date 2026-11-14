@@ -5,7 +5,7 @@ Une autorisation de retour indique ce qu’un client peut renvoyer d’une vente
 ## Autoriser un retour {#authorize}
 
 1. Ouvrez la vente dans [Commandes](/orders) et appuyez sur **Autoriser un retour**.
-2. Indiquez **Pourquoi revient-il**, dans les mots du client.
+2. Indiquez la **Raison du retour**, dans les mots du client.
 3. Pour chaque article, saisissez combien peut revenir et, sous **Ensuite**, choisissez **Crédit**, **Remplacement** ou **Ni crédit ni remplacement**.
 4. Laissez **Le client renvoie la marchandise** coché si une boîte arrivera, et choisissez où elle revient. Décochez-le si le client a été invité à garder ou à détruire la marchandise : le crédit suit alors ce que vous autorisez.
 5. Appuyez sur **Autoriser**. Son PDF peut être envoyé au client.
@@ -15,8 +15,8 @@ Une autorisation de retour indique ce qu’un client peut renvoyer d’une vente
 ## Recevoir la marchandise {#receive}
 
 1. Quand la boîte arrive, ouvrez la vente et appuyez sur **Recevoir un retour**.
-2. Choisissez l’autorisation sous **Sur l’autorisation de retour**, et l’emplacement sous **Placer dans** : habituellement un casier marqué non disponible, pour que rien ne la réexpédie avant vérification.
-3. Appuyez sur **Recevoir le retour**. Rien n’est encore remis en stock : une fois vérifiée, déplacez-la sur une tablette, ou corrigez le compte si elle est radiée.
+2. Choisissez l’autorisation sous **Sur l’autorisation de retour**, et l’emplacement sous **Placer dans** : habituellement un casier marqué non disponible, pour que la marchandise ne puisse pas être expédiée de nouveau avant vérification.
+3. Appuyez sur **Recevoir le retour**. La marchandise n’est pas encore remise dans le stock disponible : une fois vérifiée, déplacez-la sur une tablette ou corrigez le compte si elle doit être radiée.
 
 La marchandise arrivée avant la création de l’autorisation est comptée sur celle-ci avec **Lier un retour**, une seule fois.
 

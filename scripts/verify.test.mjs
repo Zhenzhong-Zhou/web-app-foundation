@@ -54,6 +54,7 @@ const NEW = {
 /** The steps' stand-ins in the repository: they pass. */
 const STAND_INS = [
   "scripts/check-docs.mjs",
+  "scripts/i18n-rules.mjs",
   "scripts/check-shell.sh",
   "server/node_modules/.bin/prettier",
 ];
@@ -298,7 +299,7 @@ test("the full run stops at once, with the container's logs, when the browsers' 
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
 });
 
-test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit, keeping a failed test's trace (#521)", (t) => {
+test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit, keeping a failed test's trace (#521), then the cut-text spec in its Chromium", (t) => {
   const root = fixture(t);
   withPlaywright(root);
   const run = verify(t, root, OLD, {
@@ -310,6 +311,7 @@ test("the full run, once the container listens, runs the specs every browser run
   assert.deepEqual(playwright(run), [
     "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=firefox",
     "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=webkit --trace=retain-on-failure",
+    "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=chromium e2e/cut-text.spec.ts",
   ]);
   assert.equal(
     run.docker.filter((call) => call.startsWith("run ")).length,
@@ -318,9 +320,9 @@ test("the full run, once the container listens, runs the specs every browser run
   );
   assert.match(
     run.stdout,
-    /every browser runs, in Firefox[^]*every browser runs, in Linux WebKit[^]*^== All passed$/m,
+    /every browser runs, in Firefox[^]*every browser runs, in Linux WebKit[^]*cut-text spec in Linux Chromium[^]*^== All passed$/m,
   );
-  // The container and both browsers, under one hold of the lock.
+  // The container and its three runs, under one hold of the lock.
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 0"]);
 });
 

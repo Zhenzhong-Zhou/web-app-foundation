@@ -47,7 +47,7 @@ export function AccountPage() {
         crumbs={[]}
         title={intl.formatMessage({
           id: 'account.title',
-          defaultMessage: 'Account',
+          defaultMessage: 'Your account',
         })}
       />
 

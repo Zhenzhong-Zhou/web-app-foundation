@@ -5,6 +5,91 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+/**
+ * What a member may do is decided in one place (ADR-080): the tables that
+ * say it are refused anywhere else, by name in code and in raw SQL, so a
+ * second answer cannot grow beside it.
+ */
+const MEMBER_TABLES = [
+  'ImportSpecifier[imported.name=/^(membershipRoles|invitationRoles|rolePermissions)$/]',
+  'MemberExpression[property.name=/^(membershipRoles|invitationRoles|rolePermissions)$/]',
+  'Literal[value=/\\b(membership_roles|invitation_roles|role_permissions)\\b/]',
+  'TemplateElement[value.raw=/\\b(membership_roles|invitation_roles|role_permissions)\\b/]',
+].map((selector) => ({
+  selector,
+  message:
+    'Who holds which roles, and what they grant, is read only in ' +
+    'core/authorization (ADR-080): ask PermissionsService, or use ' +
+    'member-roles.ts and owner.ts. The files with a reason to ' +
+    'touch these tables are exempted in eslint.config.mjs.',
+}));
+
+/**
+ * MEMBER_TABLES' exceptions, each with why; a new one adds its line here,
+ * and nothing else lists them.
+ */
+const MEMBER_TABLES_EXEMPT = [
+  // The one place: core/authorization reads and writes them, and offers
+  // the rest of the app its answers and helpers.
+  'src/core/authorization/**',
+  // The tables' own definitions.
+  'src/database/schema/**',
+  // The seed, adding any grant missing from a built-in role on every
+  // deploy, which is how a new permission reaches every Owner.
+  'src/database/seed.ts',
+  // Provisioning, a new organization's built-in roles and their grants.
+  'src/core/organizations/provision-organization.ts',
+  // The export, writing what each role may do and each member's role.
+  'src/core/organizations/organization-export.service.ts',
+  'src/core/organizations/organization-tables.ts',
+  // The table diagrams, naming each table to give it its area; they read
+  // no row (ADR-086).
+  'src/cli/table-diagrams.ts',
+];
+
+/**
+ * A list a person reads goes to t() as an array, and joinList
+ * (src/i18n/translate.ts) joins it in the reader's language: "CAD and
+ * USD", "CAD et USD", and in Chinese "CAD 和 USD", a Latin name spaced
+ * from 和 and 或 (ADR-090, #501), as the screens' intl.formatList does.
+ * A list in an audit payload is an array too, which History joins the
+ * same way. Refused: JavaScript's own list join, and a list joined by
+ * hand, which reads "CAD, USD" in every language.
+ */
+const LISTS = [
+  {
+    selector:
+      "MemberExpression[object.name='Intl'][property.name='ListFormat']",
+    message:
+      "A list a person reads goes to t() as an array, which joinList (src/i18n/translate.ts) joins in the reader's language, spacing a Latin name from 和 and 或 in Chinese (ADR-090, #501); Intl.ListFormat skips it.",
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='join'][arguments.0.value=/^\\s*(,|、|，|and|or|et|ou|和|或)\\s*$/]",
+    message:
+      "A list a person reads goes to t() as an array, or into an audit payload as one, and joinList joins it in the reader's language, with a space between a Latin name and 和 or 或 in Chinese (ADR-090, #501), never by hand.",
+  },
+];
+
+/**
+ * LISTS' exceptions, each with why: a file that joins no list a person
+ * reads. A line that does, in a file that may, says why in its own
+ * eslint-disable comment.
+ */
+const LISTS_EXEMPT = [
+  // Tests, which write the sentence they expect.
+  '**/*.spec.ts',
+  // The one join.
+  'src/i18n/translate.ts',
+  // The seeds and their checks, whose words are English for whoever runs
+  // them, never read in the app.
+  'src/database/**',
+  // Commands run in a terminal, in English for whoever runs them.
+  'src/cli/**',
+  // A CSV row's commas, the format's own, not a list's.
+  'src/common/csv.ts',
+];
+
 export default tseslint.config(
   {
     // scripts/ holds plain CommonJS build helpers and a shell script. There is
@@ -122,51 +207,31 @@ export default tseslint.config(
     },
   },
 
+  /**
+   * MEMBER_TABLES and LISTS, both no-restricted-syntax rather than
+   * no-restricted-imports, which the rule above already sets for most of
+   * these files, and a second setting would replace it. For the same
+   * reason each file gets one setting holding every list that applies to
+   * it: both, MEMBER_TABLES alone, or LISTS alone.
+   */
   {
-    // What a member may do is decided in one place (ADR-080): the tables
-    // that say it are refused anywhere else, by name in code and in raw
-    // SQL, so a second answer cannot grow beside it. Each exception says
-    // why; a new one adds its line here, and nothing else lists them.
-    // no-restricted-syntax rather than no-restricted-imports, which the
-    // rule above already sets for most of these files, and a second
-    // setting would replace it.
     files: ['src/**/*.ts'],
-    ignores: [
-      // The one place: core/authorization reads and writes them, and
-      // offers the rest of the app its answers and helpers.
-      'src/core/authorization/**',
-      // The tables' own definitions.
-      'src/database/schema/**',
-      // The seed, adding any grant missing from a built-in role on every
-      // deploy, which is how a new permission reaches every Owner.
-      'src/database/seed.ts',
-      // Provisioning, a new organization's built-in roles and their grants.
-      'src/core/organizations/provision-organization.ts',
-      // The export, writing what each role may do and each member's role.
-      'src/core/organizations/organization-export.service.ts',
-      'src/core/organizations/organization-tables.ts',
-      // The table diagrams, naming each table to give it its area; they
-      // read no row (ADR-086).
-      'src/cli/table-diagrams.ts',
-    ],
+    ignores: [...MEMBER_TABLES_EXEMPT, ...LISTS_EXEMPT],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...[
-          'ImportSpecifier[imported.name=/^(membershipRoles|invitationRoles|rolePermissions)$/]',
-          'MemberExpression[property.name=/^(membershipRoles|invitationRoles|rolePermissions)$/]',
-          'Literal[value=/\\b(membership_roles|invitation_roles|role_permissions)\\b/]',
-          'TemplateElement[value.raw=/\\b(membership_roles|invitation_roles|role_permissions)\\b/]',
-        ].map((selector) => ({
-          selector,
-          message:
-            'Who holds which roles, and what they grant, is read only in ' +
-            'core/authorization (ADR-080): ask PermissionsService, or use ' +
-            'member-roles.ts and owner.ts. The files with a reason to ' +
-            'touch these tables are exempted in eslint.config.mjs.',
-        })),
-      ],
+      'no-restricted-syntax': ['error', ...MEMBER_TABLES, ...LISTS],
     },
+  },
+  {
+    // A file matches an inner array by matching all of it: in src/, and
+    // exempt.
+    files: LISTS_EXEMPT.map((pattern) => ['src/**/*.ts', pattern]),
+    ignores: MEMBER_TABLES_EXEMPT,
+    rules: { 'no-restricted-syntax': ['error', ...MEMBER_TABLES] },
+  },
+  {
+    files: MEMBER_TABLES_EXEMPT.map((pattern) => ['src/**/*.ts', pattern]),
+    ignores: LISTS_EXEMPT,
+    rules: { 'no-restricted-syntax': ['error', ...LISTS] },
   },
 
   {

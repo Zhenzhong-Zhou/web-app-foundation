@@ -22,7 +22,7 @@ What colleagues see of you is yours to set, on [Your account](/account): a photo
 ## Words you’ll meet {#words}
 
 - **Role**: what the person may do here, such as Owner, Admin or Viewer.
-- **Active today**, **this week** or **this month**: roughly when they last used the app.
+- **Active today**, **Active this week** or **Active this month**: roughly when they last used the app.
 - **Never signed in**: a member who has not signed in yet.
 - **New**: joined in the last two weeks.
 

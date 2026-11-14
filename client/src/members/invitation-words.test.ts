@@ -103,7 +103,7 @@ describe('an invitation in words', () => {
     const intl = intlFor('zh-Hans', zh);
     expect(
       linkStatusLabel({ status: 'emailed', lastDay: '2026-10-26' }, intl),
-    ).toBe('已发邮件 · 有效至10月26日');
+    ).toBe('已发送邮件 · 有效至 10月26日');
     expect(
       invitedByLabel(
         invitation(
@@ -113,6 +113,6 @@ describe('an invitation in words', () => {
         'user-other',
         intl,
       ),
-    ).toBe('由 Mei Lin 今天邀请');
+    ).toBe('邀请人：Mei Lin；邀请时间：今天');
   });
 });

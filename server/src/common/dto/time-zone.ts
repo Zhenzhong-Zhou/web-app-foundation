@@ -15,7 +15,7 @@ const isTimeZone = () =>
         defineMessage({
           id: 'validation.timeZone',
           defaultMessage:
-            '{property} must be a time zone name, such as America/Vancouver',
+            'Choose a time zone by its name, such as America/Vancouver.',
         }),
       ),
     },
@@ -28,7 +28,7 @@ const isTimeZone = () =>
  * (`canonicalTimeZone`), so one zone is never stored two ways, whichever
  * way in it came.
  *
- * `$property` names the field, as IsCurrencyCode() does.
+ * Its refusal says what to choose, never the field's path (#148).
  */
 export const IsTimeZone = () =>
   applyDecorators(

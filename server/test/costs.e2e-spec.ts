@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { SUPPORTED_LOCALES } from '../src/common/locales';
 import { todayIn } from '../src/common/today';
 import {
   type Database,
@@ -21,6 +22,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { said } from './utils/said';
 import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 import {
   buy,
@@ -562,6 +564,44 @@ describe('Costs (e2e)', () => {
         .put('/v1/costs/exchange-rates')
         .send({ currency: 'USD', rateDate: '2026-02-31', rate: '1.37' })
         .expect(400);
+    });
+
+    /**
+     * A rate the dialog lets through, zero or past 8 places, is refused in
+     * words a person acts on, never the field's API name (#148), and so is
+     * one given with a cost.
+     */
+    it('refuses a rate of zero, or past 8 decimal places, in words', async () => {
+      const s = await setup('alpha');
+
+      for (const language of SUPPORTED_LOCALES) {
+        for (const rate of ['0', '1.123456789']) {
+          const refused = await s.agent
+            .put('/v1/costs/exchange-rates')
+            .set('Accept-Language', language)
+            .send({ currency: 'USD', rateDate: '2026-09-28', rate })
+            .expect(400);
+          expect(body<{ message: string[] }>(refused).message).toEqual([
+            said(language, 'validation.rate'),
+          ]);
+        }
+      }
+
+      const extract = await variant(s, 'EXTRACT');
+      const valuation = await valuationOf(
+        db,
+        await buy(s, extract, '100', usd('0.25')),
+      );
+      for (const language of SUPPORTED_LOCALES) {
+        const refused = await s.agent
+          .put(`/v1/costs/valuations/${valuation.id}`)
+          .set('Accept-Language', language)
+          .send({ ...usd('0.25'), exchangeRate: '0' })
+          .expect(400);
+        expect(body<{ message: string[] }>(refused).message).toEqual([
+          said(language, 'validation.exchangeRate'),
+        ]);
+      }
     });
   });
 

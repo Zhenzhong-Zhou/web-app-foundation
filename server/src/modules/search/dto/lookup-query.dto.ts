@@ -14,7 +14,7 @@ const IsLookupQuery = () =>
         defineMessage({
           id: 'validation.lookupQuery',
           defaultMessage:
-            '{property} must be at least 2 characters, or one Chinese character',
+            'Type at least two characters, or one Chinese character.',
         }),
       ),
     },

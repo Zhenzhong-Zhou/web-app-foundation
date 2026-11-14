@@ -43,7 +43,7 @@ describe('organizationInvitationMessage', () => {
       '青禾贸易',
       '2026-10-27',
     );
-    expect(chinese).toContain('「青禾贸易」');
+    expect(chinese).toContain('您受邀创建 青禾贸易。');
     expect(chinese).toContain('2026年10月27日');
 
     const english = organizationInvitationMessage(

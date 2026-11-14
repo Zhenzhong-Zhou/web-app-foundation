@@ -119,7 +119,7 @@ describe('A refused document opened from a link (e2e)', () => {
     expect(html).toContain('<html lang="zh-Hans">');
     expect(html).toContain('<h1>无法生成此 PDF</h1>');
     expect(html).toContain(
-      '<p class="message">Scoop（&lt;b&gt;SC&lt;/b&gt;-1）没有简体中文名称',
+      '<p class="message">Scoop（&lt;b&gt;SC&lt;/b&gt;-1）没有中文名称',
     );
     expect(html).not.toContain('<b>');
     expect(links(html)).toEqual([
@@ -164,7 +164,7 @@ describe('A refused document opened from a link (e2e)', () => {
         path: `/v1/orders/${orderId}/pdf?locale=zh-Hans`,
       });
       expect(refusal.message).toMatch(
-        /^Scoop \(<b>SC<\/b>-1\) has no 简体中文/,
+        /^Scoop \(<b>SC<\/b>-1\) has no Chinese name/,
       );
     }
   });

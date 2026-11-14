@@ -1,4 +1,4 @@
-# Lots
+# Trace a lot
 
 A lot is a quantity with its own code and expiry, received from a supplier or made in a production run. Tracing a lot shows where it is, where it came from, what it went into and who received it: the list a recall has to reach.
 

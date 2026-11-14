@@ -2,11 +2,10 @@ import { ConflictException } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
-import type { Locale } from '../../common/locales';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
-import { t } from '../../i18n/translate';
+import { languageName, t } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 
 /** What an issued line prints, in the invoice's one or two languages. */
@@ -30,17 +29,6 @@ type NameRow = {
   first_variant: string | null;
   second_product: string | null;
   second_variant: string | null;
-};
-
-/**
- * A language in its own name, never translated, as the product page names
- * it (the client's LANGUAGE_NAMES): whoever adds the name finds 简体中文
- * there as the refusal wrote it, in whichever language they read.
- */
-const LANGUAGE_NAMES: Record<Locale, string> = {
-  en: 'English',
-  'fr-CA': 'Français (Canada)',
-  'zh-Hans': '简体中文',
 };
 
 /**
@@ -174,7 +162,8 @@ export async function namedLines(
               sku: untranslated.sku,
               product: untranslated.product_name,
               variation: untranslated.variant_name ?? '',
-              language: LANGUAGE_NAMES[slot.language],
+              // In the reader's language, as the item's page names it.
+              language: languageName(slot.language),
             },
           ),
           ERROR_CODES.itemNameMissing,

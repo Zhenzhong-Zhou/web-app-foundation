@@ -2,7 +2,8 @@ import type { OrganizationFileKind } from '../../database/schema';
 import type { Permission } from '../authorization/permissions';
 import type { Sniffed } from './sniff';
 
-const MB = 1024 * 1024;
+/** A megabyte, as a limit counts one and its refusal names it (#249). */
+export const MB = 1024 * 1024;
 
 /** What each kind of file accepts and who may do what with it (ADR-059). */
 export interface KindRule {

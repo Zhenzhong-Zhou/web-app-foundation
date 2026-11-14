@@ -544,7 +544,7 @@ test('Items, Add item: the dialog, its type chosen from the tab, none from All',
   await page.getByRole('button', { name: 'Add item', exact: true }).click();
   let dialog = page.getByRole('dialog', { name: 'Add an item' });
   await expect(
-    dialog.getByRole('radio', { name: /^Raw materials/ }),
+    dialog.getByRole('radio', { name: /^Raw material(?!s)/ }),
   ).toBeChecked();
   await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(dialog).toBeHidden();
@@ -586,7 +586,9 @@ test('Add an item, Add item: saved, “Added …”; the new item’s page in th
 
   const dialog = page.getByRole('dialog');
   // What it is first; the Products tab has chosen it already (ADR-092).
-  await expect(dialog.getByRole('radio', { name: /^Products/ })).toBeChecked();
+  await expect(
+    dialog.getByRole('radio', { name: /^Product(?!s)/ }),
+  ).toBeChecked();
   await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
   await dialog.getByRole('textbox', { name: 'Code' }).fill(sku);
 
@@ -800,7 +802,8 @@ test('the item’s page, Edit then Save: saved; a new type moves it to that tab'
   await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Edit the item' });
   await dialog.getByRole('combobox', { name: 'Type' }).click();
-  await page.getByRole('option', { name: 'Raw materials' }).click();
+  // One item's type, in the singular; its tab, in the plural (#548).
+  await page.getByRole('option', { name: /^Raw material(?!s)/ }).click();
   await dialog.getByRole('button', { name: 'Save' }).click();
 
   await expect(dialog).toBeHidden();
@@ -808,7 +811,7 @@ test('the item’s page, Edit then Save: saved; a new type moves it to that tab'
   await expect(page.getByText('Moved to Raw materials.')).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/items/${tonic.id}$`));
   // Its type and category under its name.
-  await expect(page.getByText(/^Raw materials · /)).toBeVisible();
+  await expect(page.getByText(/^Raw material · /)).toBeVisible();
 
   // Back: Items, where it has moved to Raw materials.
   await page.goBack();

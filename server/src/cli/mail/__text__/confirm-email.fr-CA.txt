@@ -5,4 +5,4 @@ Bonjour Mei Lin,
 Confirmez votre adresse courriel :
 http://localhost:5173/verify-email?token=sample-token
 
-Le lien expire dans 24 heures. Si vous ne vous êtes pas inscrit, ignorez ce message.
+Le lien expire dans 24 heures. Si vous n’avez pas créé de compte, ignorez ce message.

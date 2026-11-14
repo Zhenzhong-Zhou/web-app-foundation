@@ -4,7 +4,12 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { MARK, MARK_SHAPE } from './src/theme/tokens.ts';
-import { brandSettings, sourceMapUpload, withTokens } from './vite.config.ts';
+import {
+  brandSettings,
+  pseudoLanguageIn,
+  sourceMapUpload,
+  withTokens,
+} from './vite.config.ts';
 
 /**
  * ADR-082's settings as a build reads them, each with what it falls back
@@ -143,6 +148,48 @@ describe('index.html', () => {
   it('asks a browser not to translate the app', () => {
     expect(html).toMatch(/<html [^>]*\btranslate="no"/);
     expect(html).toContain('<meta name="google" content="notranslate" />');
+  });
+});
+
+/**
+ * en-XA is for development and the browser tests only (ADR-054's November
+ * 2026 amendment, R9): every production build stops when a chunk names it,
+ * as the picker would to offer it, or holds src/i18n/pseudo.ts, which makes
+ * it. `npm run build` runs the check on the real chunks.
+ */
+describe('pseudoLanguageIn', () => {
+  const clean = {
+    fileName: 'assets/index.js',
+    code: 'const LOCALES = ["en", "fr-CA", "zh-Hans"];',
+    modules: { '/app/client/src/lib/locales.ts': { renderedLength: 40 } },
+  };
+
+  it('finds nothing in a build without it', () => {
+    expect(pseudoLanguageIn([clean])).toEqual([]);
+  });
+
+  it('names a chunk that names en-XA, as the picker would to offer it', () => {
+    expect(
+      pseudoLanguageIn([
+        clean,
+        { ...clean, fileName: 'assets/intl.js', code: 'x=["en","en-XA"]' },
+      ]),
+    ).toEqual(['assets/intl.js names en-XA']);
+  });
+
+  it('names a chunk that holds the code that makes it, but not one that dropped it', () => {
+    const pseudo = '/app/client/src/i18n/pseudo.ts';
+
+    expect(
+      pseudoLanguageIn([
+        { ...clean, modules: { [pseudo]: { renderedLength: 812 } } },
+      ]),
+    ).toEqual(['assets/index.js holds src/i18n/pseudo.ts']);
+    expect(
+      pseudoLanguageIn([
+        { ...clean, modules: { [pseudo]: { renderedLength: 0 } } },
+      ]),
+    ).toEqual([]);
   });
 });
 

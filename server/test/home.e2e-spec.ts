@@ -1312,7 +1312,7 @@ describe('Home (e2e)', () => {
       }
       expect((await saved()).map((row) => row.homeLayout)).toEqual([arranged]);
 
-      // The hidden kind not placed says how to send it.
+      // The hidden kind not placed says what to fix, in words (#148).
       const { message } = body<{ message: string[] }>(
         await alpha.agent
           .put('/v1/home/layout')
@@ -1320,7 +1320,7 @@ describe('Home (e2e)', () => {
           .expect(400),
       );
       expect(message).toEqual([
-        'Each kind in hidden must also be in order — send the hidden ones in their place there too',
+        'A hidden tile must keep its place in the order too.',
       ]);
 
       // With no order, only order's own refusal: nothing hidden is unplaced.
@@ -1332,7 +1332,7 @@ describe('Home (e2e)', () => {
       ).message;
       expect(missing.length).toBeGreaterThan(0);
       expect(missing.join('\n')).toMatch(/\border\b/);
-      expect(missing.join('\n')).not.toMatch(/must also be in order/);
+      expect(missing.join('\n')).not.toMatch(/keep its place/);
     });
 
     it('keeps a kind the member may not see today, since their roles may change', async () => {

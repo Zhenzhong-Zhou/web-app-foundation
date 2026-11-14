@@ -6,7 +6,7 @@ La façon dont l’organisation fonctionne ici : son profil, ses finances, ses 
 
 ## Profil {#profile}
 
-Sous **Profil**, chaque facture imprime le nom, le numéro de taxes et l’adresse comme vendeur, tels qu’ils étaient le jour de son émission.
+Sous **Profil**, chaque facture imprime le nom, le numéro de taxe et l’adresse du vendeur, tels qu’ils étaient le jour de son émission.
 
 1. Remplissez le **Nom de l’organisation**, le **Numéro d’inscription aux taxes** et l’**Adresse du siège**, en enregistrant chacun.
 2. Sous **Ce que nous faisons**, écrivez une ligne sur ce que fait l’organisation, dans vos propres mots, puis appuyez sur **Enregistrer ce que nous faisons**. L’Accueil l’affiche à chaque membre, sous la date.
@@ -31,22 +31,22 @@ Sous **Documents**, chaque type de document a sa propre série. Une modification
 Sous **Stock**, choisissez ce que fait le lancement d’un ordre quand la licence de sa recette n’est pas encore en vigueur, ou a expiré. Une licence retirée est toujours refusée.
 
 1. Pour **Pas encore en vigueur** et pour **Expirée**, choisissez **Refuser**, **Refuser sauf dérogation, avec un motif**, ou **Permettre, et l’enregistrer**.
-2. Cochez **Une recette doit porter une licence pour être lancée** si chaque ordre en a besoin, puis appuyez sur **Enregistrer la politique de licences**.
+2. Cochez **La recette doit avoir une licence pour permettre le lancement d’un ordre de fabrication** si chaque ordre en a besoin, puis appuyez sur **Enregistrer la politique de licences**.
 
 ## Image de marque {#branding}
 
 Sous **Image de marque**, choisissez l’apparence de l’application pour tout le monde ici.
 
-1. Sous **Logo**, appuyez sur **Téléverser un logo**. Large ou carré, il s’affiche en haut de la barre latérale, et s’imprime sur les factures, les notes de crédit et les bordereaux d’expédition, sauf si **Documents** en décide autrement.
+1. Sous **Logo**, appuyez sur **Téléverser un logo**. Horizontal ou carré, il s’affiche en haut de la barre latérale, et s’imprime sur les factures, les notes de crédit et les bordereaux d’expédition, sauf si **Documents** en décide autrement.
 2. Sous **Logo carré**, appuyez sur **Téléverser un logo carré** pour les petits espaces, comme la barre latérale repliée. La ligne en dessous indique ce qui s’y affiche sans lui.
-3. Choisissez une **Couleur** et la teinte de la **Barre latérale**, puis appuyez sur **Enregistrer l’image de marque**.
+3. Choisissez une **Couleur** et la teinte de la **Barre latérale**, puis appuyez sur **Enregistrer l’apparence**.
 
 ## Déconnexion après inactivité {#idle-sign-out}
 
-Sous **Sécurité**, pour les ordinateurs que plusieurs personnes partagent.
+Sous **Sécurité**, réglez la déconnexion après inactivité pour les ordinateurs partagés.
 
 1. Sous **Après**, choisissez la durée sans utilisation, de 15 minutes à 4 heures, ou **Désactivé**.
-2. Sous **S’applique à**, choisissez seulement les connexions sans **Rester connecté**, ou tout le monde, puis appuyez sur **Enregistrer**.
+2. Sous **S’applique à**, choisissez seulement les connexions sans **Garder ma session ouverte**, ou tout le monde, puis appuyez sur **Enregistrer**.
 
 Une minute avant, un avertissement propose **Rester connecté**. Le réglage ne peut que raccourcir une session, jamais l’allonger.
 

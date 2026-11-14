@@ -480,7 +480,8 @@ export class InvoiceIssuingService {
               '{sku} {count, plural, one {has} other {have}} no tax code — choose one, or Exempt',
           },
           {
-            sku: untaxed.map((line) => line.sku).join(', '),
+            // A list, joined the way each language joins one.
+            sku: untaxed.map((line) => line.sku),
             count: untaxed.length,
           },
         ),
@@ -489,7 +490,10 @@ export class InvoiceIssuingService {
 
     const retired = lines.filter((line) => line.taxCodeActive === false);
     if (retired.length > 0) {
-      const names = [...new Set(retired.map((line) => line.taxCodeName))];
+      // Joined, being retired, so each has its name.
+      const names = [
+        ...new Set(retired.flatMap((line) => line.taxCodeName ?? [])),
+      ];
       throw new ConflictException(
         t(
           {
@@ -497,7 +501,7 @@ export class InvoiceIssuingService {
             defaultMessage:
               '{names} {count, plural, one {is} other {are}} retired — choose a code still in use',
           },
-          { names: names.join(', '), count: names.length },
+          { names, count: names.length },
         ),
       );
     }

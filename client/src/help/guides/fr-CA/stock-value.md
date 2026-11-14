@@ -2,24 +2,24 @@
 
 Ce que vaut le stock en main, dans la devise de base. Chaque lot porte ce qu’il a coûté; le stock sans lot porte un coût moyen courant. Les valeurs sont le coût des matières seulement : ce qui a été acheté, et ce qui est entré dans un lot.
 
-L’équipement n’est compté ni ici ni sous **En attente d’un coût** : les machines et les outils sont gardés, ni vendus ni consommés. [Inventaire](/inventory) montre toujours où chacun se trouve.
+L’équipement n’est compté ni ici ni sous **En attente d’un coût** : les machines et les outils sont conservés, mais ne sont ni vendus ni consommés. [Inventaire](/inventory) montre toujours où chacun se trouve.
 
 ## Donner un coût au stock {#costs}
 
-Le stock arrivé sans rien pour l’évaluer est listé sous **En attente d’un coût**, et **Motif** dit ce qui manque : reçu sans prix, prix dans une devise sans taux en dossier, ajouté à l’inventaire, ou en stock au début de l’évaluation. Tant qu’il n’a pas de coût, la valeur en stock est **Provisoire**.
+Le stock reçu sans information suffisante pour calculer sa valeur figure sous **En attente d’un coût**, et **Motif** indique pourquoi : reçu sans prix, prix dans une devise sans taux en dossier, ajouté à l’inventaire, ou en stock au début de l’évaluation. Tant qu’il n’a pas de coût, la valeur en stock est **Provisoire**.
 
 1. Sur sa ligne, appuyez sur **Fixer le coût**.
 2. Saisissez le **Prix unitaire**, par unité tel que le fournisseur l’a facturé, et sa **Devise**.
 3. Pour une autre devise que celle de base, saisissez le **Taux de change**, ou laissez-le vide pour utiliser le taux en dossier pour le jour de l’arrivée.
 4. Appuyez sur **Fixer le coût**.
 
-Un lot fabriqué par un ordre encore ouvert attend plutôt son ordre : **Ouvrir l’ordre** y mène, et le lot prend son coût à la clôture de l’ordre.
+Un lot fabriqué par un ordre encore ouvert attend plutôt son ordre : **Voir l’ordre de fabrication** y mène, et le lot prend son coût à la clôture de l’ordre.
 
 > Seule une personne qui peut modifier les coûts voit **Fixer le coût**.
 
 ## Lire la valeur {#read}
 
-Le total est **En stock**. **Par article et par lot** liste chaque article et chaque lot avec sa quantité, son **Coût unitaire** et sa **Valeur**; le code d’un lot ouvre sa traçabilité. **Exporter** télécharge la liste dans un fichier de tableur.
+Le total est **En stock**. **Par article et par lot** liste chaque article et chaque lot avec sa quantité, son **Coût unitaire** et sa **Valeur**; le code d’un lot ouvre sa traçabilité. **Exporter** télécharge la liste dans un fichier de feuille de calcul.
 
 ## Les mots que vous verrez {#words}
 

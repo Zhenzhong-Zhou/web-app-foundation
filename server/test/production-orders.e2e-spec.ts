@@ -25,6 +25,7 @@ import {
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { said } from './utils/said';
 
 interface RunResponse {
   id: string;
@@ -1295,6 +1296,103 @@ describe('Production orders (e2e)', () => {
       expect(rows[0].organizationId).toBe(alpha.organizationId);
       // The SKU, not a UUID — a bell nobody can read is a bell nobody opens.
       expect(rows[0].body).toContain('BLEND-D3');
+    });
+
+    /**
+     * Each line off plan, written and joined as the reader's language does:
+     * two components consumed half again over plan, read in Chinese, and
+     * in French, which writes CODE : 50 %.
+     */
+    it('lists each line off plan in the reader’s language', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const site = await makeLocation(alpha, 'SITE');
+      const [shelf, wip] = await Promise.all([
+        makeLocation(alpha, 'SHELF', site),
+        makeLocation(alpha, 'WIP', site),
+      ]);
+      const [output, blend, caps] = await Promise.all([
+        makeVariant(alpha, 'D3-60CT', 'good', true),
+        makeVariant(alpha, 'BLEND-D3', 'material'),
+        makeVariant(alpha, 'CAPS-D3', 'material'),
+      ]);
+      const bomId = body<CreatedBom>(
+        await alpha.agent
+          .post('/v1/boms')
+          .send({
+            outputVariantId: output,
+            outputQuantity: '1000',
+            lines: [
+              { componentVariantId: blend, quantity: '2400' },
+              { componentVariantId: caps, quantity: '1000' },
+            ],
+          })
+          .expect(201),
+      ).bom.id;
+      await alpha.agent.post(`/v1/boms/${bomId}/promote`).expect(204);
+      for (const variantId of [blend, caps]) {
+        await alpha.agent
+          .post('/v1/stock/movements')
+          .send({
+            variantId,
+            toLocationId: shelf,
+            quantity: '10000',
+            reason: 'receipt',
+          })
+          .expect(201);
+      }
+      const run = await createRun(alpha, {
+        outputVariantId: output,
+        bomId,
+        locationId: wip,
+        quantityPlanned: '500',
+      });
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/release`)
+        .send({ sourceLocationId: shelf })
+        .expect(200);
+      const { lines } = body<RunDetailResponse>(
+        await alpha.agent.get(`/v1/production-orders/${run.id}`).expect(200),
+      );
+      const lineOf = (variantId: string) =>
+        lines.find((line) => line.componentVariantId === variantId)!.id;
+
+      // The whole yield, so the lines lead; 1200 and 500 planned, 1800 and
+      // 750 consumed, each 50% over.
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/output`)
+        .send({ quantity: '500', lot: { code: 'B1' } })
+        .expect(201);
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/close`)
+        .send({
+          lines: [
+            { lineId: lineOf(blend), quantityConsumed: '1800' },
+            { lineId: lineOf(caps), quantityConsumed: '750' },
+          ],
+        })
+        .expect(200);
+
+      for (const language of ['zh-Hans', 'fr-CA'] as const) {
+        const [entry] = body<{ entries: { title: string; body: string }[] }>(
+          await alpha.agent
+            .get('/v1/notifications')
+            .set('Accept-Language', language)
+            .expect(200),
+        ).entries;
+        expect(entry.title).toBe(
+          said(language, 'notifications.variance.lines', { count: 2 }),
+        );
+        expect(entry.body).toBe(
+          said(language, 'notifications.variance.body', {
+            lines: ['BLEND-D3', 'CAPS-D3'].map((sku) =>
+              said(language, 'notifications.variance.line', {
+                sku,
+                percent: 0.5,
+              }),
+            ),
+          }),
+        );
+      }
     });
 
     it('says nothing when everything went to plan', async () => {

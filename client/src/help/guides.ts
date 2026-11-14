@@ -18,7 +18,6 @@ export interface Guide {
 }
 
 const labels = defineMessages({
-  lots: { id: 'help.guide.lots', defaultMessage: 'Lots' },
   licences: { id: 'help.guide.licences', defaultMessage: 'Licences' },
 });
 
@@ -112,7 +111,8 @@ export const GUIDES = {
   },
   lots: {
     routes: ['/lots', '/lots/:id'],
-    label: labels.lots,
+    // The menu's name for the page, Trace a lot, not a second one (#149).
+    label: NAV_LABELS.trace,
     sections: ['trace'],
   },
   locations: {

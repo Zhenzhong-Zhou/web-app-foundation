@@ -54,14 +54,16 @@ describe('IsCalendarDay', () => {
     });
 
     it('refuses a day that does not exist', () => {
-      expect(read('2026-02-30').errors).toEqual(['day must be a real date']);
+      expect(read('2026-02-30').errors).toEqual([
+        'That date does not exist. Check its month and day.',
+      ]);
     });
 
     // 07:00Z is midnight in Vancouver: which day it is depends on a time
     // zone, so neither mode guesses.
     it('refuses an instant that is not UTC midnight', () => {
       expect(read('2026-10-10T07:00:00.000Z').errors).toContain(
-        'day must be a calendar day, YYYY-MM-DD',
+        'Enter a date as year-month-day, such as 2026-11-12.',
       );
     });
 
@@ -74,7 +76,7 @@ describe('IsCalendarDay', () => {
     process.env.CALENDAR_DAY_INPUT = 'strict';
 
     expect(read('2026-10-10T00:00:00.000Z').errors).toEqual([
-      'day must be a calendar day, YYYY-MM-DD',
+      'Enter a date as year-month-day, such as 2026-11-12.',
     ]);
     expect(warn).not.toHaveBeenCalled();
   });

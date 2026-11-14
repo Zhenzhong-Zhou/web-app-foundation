@@ -94,7 +94,8 @@ export function AccountPhoto() {
       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'account.photo.rules',
-          defaultMessage: 'PNG, JPEG or WebP, up to 5 MB.',
+          defaultMessage:
+            'A photo or picture, up to 5\u00a0MB (PNG, JPEG or WebP).',
         })}
         <br />
         {intl.formatMessage({

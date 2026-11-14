@@ -511,10 +511,20 @@ describe('Stock valuation (e2e)', () => {
     it('sets one, refusing anything but an ISO code', async () => {
       const s = await setup('alpha', null);
 
-      await s.agent
-        .patch('/v1/organization')
-        .send({ baseCurrency: 'cad' })
-        .expect(400);
+      // Refused in words, with an example, never the field's name (#148).
+      const refusals: [string, string][] = [
+        ['en', 'Enter the currency as three letters, such as CAD or USD.'],
+        ['fr-CA', 'Saisissez la devise en trois lettres, comme CAD ou USD.'],
+        ['zh-Hans', '请用三个字母填写币种，例如 CAD 或 USD。'],
+      ];
+      for (const [language, message] of refusals) {
+        const refused = await s.agent
+          .patch('/v1/organization')
+          .set('Accept-Language', language)
+          .send({ baseCurrency: 'cad' })
+          .expect(400);
+        expect(body<{ message: string[] }>(refused).message).toEqual([message]);
+      }
 
       await s.agent
         .patch('/v1/organization')

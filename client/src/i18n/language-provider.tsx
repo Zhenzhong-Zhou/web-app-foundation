@@ -12,9 +12,13 @@ import { setRequestLanguage } from '../lib/api';
 import { setFormatLocale } from '../lib/format';
 import {
   browserLocale,
+  DEFAULT_LOCALE,
   formattingLocale,
-  isLocale,
+  isScreenLocale,
   type Locale,
+  PSEUDO_LOCALE,
+  type ScreenLocale,
+  serverLocale,
 } from '../lib/locales';
 import { setTabLocale } from '../lib/tab-title';
 import { ChunkLoadError } from '../version/load-chunk';
@@ -25,10 +29,10 @@ import { LanguageContext, type LanguageFailure } from './language-context';
 /** This device's last choice, so the sign-in page opens in it. */
 const STORAGE_KEY = 'language';
 
-function storedLocale(): Locale | null {
+function storedLocale(): ScreenLocale | null {
   try {
     const value = localStorage.getItem(STORAGE_KEY);
-    return isLocale(value) ? value : null;
+    return isScreenLocale(value) ? value : null;
   } catch {
     // Storage refused (a locked-down browser): the browser's language it is.
     return null;
@@ -36,7 +40,7 @@ function storedLocale(): Locale | null {
 }
 
 /** This device's last choice, else the first of the browser's we speak. */
-function startingLocale(): Locale {
+function startingLocale(): ScreenLocale {
   return storedLocale() ?? browserLocale(navigator.languages);
 }
 
@@ -50,7 +54,7 @@ document.documentElement.lang = formattingLocale(
   navigator.languages,
 );
 
-function remember(locale: Locale): void {
+function remember(locale: ScreenLocale): void {
   try {
     localStorage.setItem(STORAGE_KEY, locale);
   } catch {
@@ -59,7 +63,7 @@ function remember(locale: Locale): void {
 }
 
 interface Active {
-  locale: Locale;
+  locale: ScreenLocale;
   intl: IntlShape;
 }
 
@@ -71,24 +75,24 @@ interface Active {
  * (ADR-082). The tag is the language in the browser's own region
  * (formattingLocale).
  */
-function apply(locale: Locale, messages: Messages): Active {
+function apply(locale: ScreenLocale, messages: Messages): Active {
   const tag = formattingLocale(locale, navigator.languages);
   const intl = makeIntl(tag, messages);
 
   setFormatLocale(tag);
   setIntl(intl);
   // The language itself, not the regional tag: the server matches it to
-  // its own catalogues (ADR-054).
-  setRequestLanguage(locale);
+  // its own catalogues (ADR-054), and answers en-XA in English.
+  setRequestLanguage(serverLocale(locale));
   document.documentElement.lang = tag;
-  setTabLocale(locale);
+  setTabLocale(serverLocale(locale));
 
   return { locale, intl };
 }
 
 /** A load asked for, until it loads or another takes its place. */
 interface Request {
-  locale: Locale;
+  locale: ScreenLocale;
   /** Said by the banner if it fails, rather than the toast (LanguageFailure). */
   atStart: boolean;
   /** Remembered on this device once loaded: a choice, not the start. */
@@ -112,7 +116,7 @@ interface Request {
  * inside the theme, and so inside this.
  */
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [initial] = useState<Locale>(startingLocale);
+  const [initial] = useState<ScreenLocale>(startingLocale);
 
   // English is in the bundle, so it is ready at once; anything else waits
   // for its chunk, below.
@@ -123,7 +127,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   // Read by setLocale, which stays the same function: the account and the
   // invitation call it from effects, which would otherwise run again.
-  const shown = useRef<Locale | null>(active?.locale ?? null);
+  const shown = useRef<ScreenLocale | null>(active?.locale ?? null);
   // The load asked for last, loading or failed. A later choice wins over
   // an earlier one still loading, which is ignored when it arrives.
   const latest = useRef<Request | null>(null);
@@ -151,7 +155,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         }
         // Kept as the latest, so Try again loads it and settles it.
         setFailure({
-          locale: request.locale,
+          locale: serverLocale(request.locale),
           atStart: request.atStart,
           why: caught instanceof ChunkLoadError ? caught.failure : 'offline',
         });
@@ -175,7 +179,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [initial, load]);
 
   const setLocale = useCallback(
-    (locale: Locale) =>
+    (locale: ScreenLocale) =>
       new Promise<boolean>((settle) => {
         const previous = latest.current;
         previous?.settle(false);
@@ -200,6 +204,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [load],
   );
 
+  const follow = useCallback(
+    (locale: Locale) =>
+      setLocale(
+        import.meta.env.DEV &&
+          locale === DEFAULT_LOCALE &&
+          shown.current === PSEUDO_LOCALE
+          ? PSEUDO_LOCALE
+          : locale,
+      ),
+    [setLocale],
+  );
+
   const retry = useCallback(() => {
     const request = latest.current;
     if (!request) return;
@@ -219,7 +235,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ locale: active.locale, setLocale, failure, retry, dismiss }}
+      value={{
+        locale: serverLocale(active.locale),
+        shown: active.locale,
+        setLocale,
+        follow,
+        failure,
+        retry,
+        dismiss,
+      }}
     >
       {/* The same object helpers read through intl(), not a second one. */}
       <RawIntlProvider value={active.intl}>{children}</RawIntlProvider>

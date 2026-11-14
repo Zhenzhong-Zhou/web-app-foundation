@@ -5,7 +5,12 @@ import { useIntl } from 'react-intl';
 import { useAuth } from '../auth/use-auth';
 import { useLanguage } from '../i18n/use-language';
 import { api } from '../lib/api';
-import { isLocale, pickerName, SUPPORTED_LOCALES } from '../lib/locales';
+import {
+  isScreenLocale,
+  pickerName,
+  SCREEN_LOCALES,
+  serverLocale,
+} from '../lib/locales';
 import type { PreferenceControl } from './preference-control';
 
 /**
@@ -29,7 +34,10 @@ import type { PreferenceControl } from './preference-control';
  * the one already on screen included, saves.
  *
  * Each language is listed in its own name and marked with its own lang, so
- * a screen reader says 简体中文 in Chinese, whatever the screen is in.
+ * a screen reader says 简体中文 in Chinese, whatever the screen is in. In
+ * development and the browser tests, en-XA is offered last, by its tag
+ * (ADR-054's November 2026 amendment): it switches this device's screens,
+ * and the account, which knows no en-XA, is saved as English.
  */
 export function LanguageSelect({
   account = false,
@@ -43,10 +51,10 @@ export function LanguageSelect({
   control?: PreferenceControl;
 }) {
   const intl = useIntl();
-  const { locale, setLocale } = useLanguage();
+  const { shown, setLocale } = useLanguage();
   const { session, refresh } = useAuth();
   // '' is none chosen, which only the account can be.
-  const chosen = account ? (session?.user.locale ?? '') : locale;
+  const chosen = account ? (session?.user.locale ?? '') : shown;
   const notChosen = intl.formatMessage({
     id: 'language.notChosen',
     defaultMessage: 'Not chosen',
@@ -58,7 +66,9 @@ export function LanguageSelect({
       size="small"
       value={chosen}
       displayEmpty
-      renderValue={(value) => (isLocale(value) ? pickerName(value) : notChosen)}
+      renderValue={(value) =>
+        isScreenLocale(value) ? pickerName(value) : notChosen
+      }
       inputProps={{
         'aria-label': intl.formatMessage({
           id: 'language.label',
@@ -68,20 +78,20 @@ export function LanguageSelect({
       }}
       onChange={(event) => {
         const next = event.target.value;
-        if (!isLocale(next) || next === chosen) return;
+        if (!isScreenLocale(next) || next === chosen) return;
 
         void setLocale(next).then((switched) => {
           if (!switched || !session) return;
           void api('/account/profile', {
             method: 'PATCH',
-            body: JSON.stringify({ locale: next }),
+            body: JSON.stringify({ locale: serverLocale(next) }),
           })
             .then(refresh)
             .catch(() => undefined);
         });
       }}
     >
-      {SUPPORTED_LOCALES.map((tag) => (
+      {SCREEN_LOCALES.map((tag) => (
         <MenuItem key={tag} value={tag} lang={tag}>
           {pickerName(tag)}
         </MenuItem>

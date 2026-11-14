@@ -910,15 +910,14 @@ describe('Invoices (e2e)', () => {
       expect(betaIssued.number).toBe('INV-000001');
     });
 
-    it('refuses a line with no tax code, and leaves the draft as it was', async () => {
+    it('refuses lines with no tax code, naming them as a list, and leaves the draft as it was', async () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
-      const untaxed = r.invoice.lines[0];
 
       await db
         .update(invoiceLines)
         .set({ taxCodeId: null })
-        .where(eq(invoiceLines.id, untaxed.id));
+        .where(eq(invoiceLines.invoiceId, r.invoice.id));
 
       const refused = body<{ message: string; code?: string }>(
         await issue(org, r.invoice.id).expect(409),
@@ -926,6 +925,17 @@ describe('Invoices (e2e)', () => {
       // Codes come where a screen has something to offer; this refusal,
       // like most, carries its message alone.
       expect(refused).not.toHaveProperty('code');
+      // Joined as each language joins a list, a Latin code spaced from 和
+      // in Chinese (ADR-090), never "FOCUS-60CT, SCOOP".
+      expect(refused.message).toBe(
+        'FOCUS-60CT and SCOOP have no tax code — choose one, or Exempt',
+      );
+      const chinese = body<{ message: string }>(
+        await issue(org, r.invoice.id)
+          .set('Accept-Language', 'zh-Hans')
+          .expect(409),
+      );
+      expect(chinese.message).toMatch(/^FOCUS-60CT 和 SCOOP /);
 
       const detail = await readIssued(org, r.invoice.id);
       expect(detail.status).toBe('draft');

@@ -129,6 +129,39 @@ describe('Tax codes (e2e)', () => {
     expect(await listed(org.agent)).toHaveLength(0);
   });
 
+  /**
+   * A rate the dialog lets through, past 4 decimal places or below zero, is
+   * refused in words a person acts on, never components.0.rate or "sent as
+   * a string" (#148), in each language.
+   */
+  it('refuses a rate past 4 decimal places in words, with no field path', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    const refusals: [string, string][] = [
+      [
+        'en',
+        'Enter a rate as a percentage from 0 to 100, with up to 4 decimal places.',
+      ],
+      [
+        'fr-CA',
+        'Saisissez un taux en pourcentage, de 0 à 100, d’au plus 4 décimales.',
+      ],
+      ['zh-Hans', '请以百分比输入税率，在 0 到 100 之间，最多 4 位小数。'],
+    ];
+    for (const [language, message] of refusals) {
+      for (const rate of ['5.12345', '-5']) {
+        const refused = await org.agent
+          .post('/v1/tax-codes')
+          .set('Accept-Language', language)
+          .send({ name: 'Wrong', components: [{ name: 'GST', rate }] })
+          .expect(400);
+        expect(body<{ message: string[] }>(refused).message).toEqual([message]);
+      }
+    }
+
+    expect(await listed(org.agent)).toHaveLength(0);
+  });
+
   it('replaces the components as a set', async () => {
     const org = await registerOrganization(app, 'alpha');
     const code = await created(org.agent);

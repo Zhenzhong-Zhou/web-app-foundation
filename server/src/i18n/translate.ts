@@ -37,9 +37,9 @@ import chinese from './zh-Hans.json';
 /**
  * A value a message can carry: data; a list, joined the way the language
  * joins a list ("CAD and USD", "CAD et USD", "CAD和USD"), whose items may
- * be messages of their own, as a built-in role's name is; or a whole
- * message of its own, rendered in the same language as the sentence
- * around it.
+ * be messages of their own, as a built-in role's name is; a whole message
+ * of its own, rendered in the same language as the sentence around it; or
+ * a language, named in that language too (`languageName`).
  */
 export type MessageValue =
   | string
@@ -48,7 +48,62 @@ export type MessageValue =
   | null
   | undefined
   | readonly (string | Translatable)[]
-  | Translatable;
+  | Translatable
+  | LanguageName;
+
+/** A language as a message's value, named as the sentence is rendered. */
+export interface LanguageName {
+  languageName: Locale;
+}
+
+/**
+ * A language for a message to name in the reader's language, as
+ * `languageWord` names it: has no English name, n’a pas de nom en anglais,
+ * 没有英文名称.
+ */
+export function languageName(language: Locale): LanguageName {
+  return { languageName: language };
+}
+
+/**
+ * Chinese names the language a name or a text is written in 英文, 法文 and
+ * 中文, as the exports' columns do (英文名称) and ADR-054's November 2026
+ * amendment says; Intl's 英语 and 法语 name the language as spoken or
+ * learned. The glossary says so; the client's `languageWord` holds the
+ * same three.
+ */
+const WRITTEN_IN_CHINESE: Record<Locale, string> = {
+  en: '英文',
+  'fr-CA': '法文',
+  'zh-Hans': '中文',
+};
+
+/**
+ * A language named in a reader's, from its language alone: Chinese,
+ * chinois, 中文 for zh-Hans, never Simplified Chinese (ADR-054's November
+ * 2026 amendment). Intl's names, but in Chinese, which names a name's or a
+ * text's language from WRITTEN_IN_CHINESE. Never its own name inside a
+ * sentence, which ran English into Chinese and 简体中文 into French. The
+ * item's page names it the same way (`languageWord` in the client's
+ * lib/locales.ts), so a refusal and the page it sends a person to say it
+ * alike, as client/e2e/document-refusals.spec.ts holds in a browser.
+ */
+export function languageWord(language: Locale, reader: Locale): string {
+  if (reader === 'zh-Hans') return WRITTEN_IN_CHINESE[language];
+  return (
+    new Intl.DisplayNames([reader], { type: 'language' }).of(
+      new Intl.Locale(language).language,
+    ) ?? language
+  );
+}
+
+function isLanguageName(value: unknown): value is LanguageName {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as LanguageName).languageName === 'string'
+  );
+}
 
 /**
  * What a translatable exception carries as its response body. `message` is
@@ -67,15 +122,45 @@ const CATALOGUES: Record<Locale, Record<string, string>> = {
   'zh-Hans': chinese,
 };
 
+/** Chinese text, as 和 is. */
+const HAN = /\p{Script=Han}/u;
+
+/**
+ * What an item may end or start with and still meet 和 with no space:
+ * Chinese, the full-width punctuation that sits beside it, or a space
+ * already.
+ */
+const NO_SPACE = /[\s\p{Script=Han}\u3000-\u303f\uff00-\uffef]/u;
+
 /**
  * A list joined the way the language joins one. English is British, as
  * the copy is, so no comma before the "and": "Owner, Olu Ade and Ada
- * Byrne". The client's lists say the same (`makeIntl`).
+ * Byrne". In Chinese, 和 keeps a space from an item that is not Chinese
+ * where they meet (ADR-090, #501): "Olu Ade 和 Ada Byrne", "李明和王芳";
+ * 、 takes none, being full-width. The client's lists say the same
+ * (`makeIntl`).
  */
 export function joinList(items: readonly string[], locale: Locale): string {
-  return new Intl.ListFormat(locale === 'en' ? 'en-GB' : locale, {
+  const parts = new Intl.ListFormat(locale === 'en' ? 'en-GB' : locale, {
     type: 'conjunction',
-  }).format(items);
+  }).formatToParts(items);
+  if (locale !== 'zh-Hans') return parts.map(({ value }) => value).join('');
+
+  const text = (at: number) =>
+    parts[at]?.type === 'element' ? Array.from(parts[at].value) : [];
+  return parts
+    .map(({ type, value }, at) => {
+      if (type !== 'literal') return value;
+      const words = Array.from(value);
+      const last = text(at - 1).at(-1);
+      const first = text(at + 1).at(0);
+      const before =
+        !!last && HAN.test(words.at(0) ?? '') && !NO_SPACE.test(last);
+      const after =
+        !!first && HAN.test(words.at(-1) ?? '') && !NO_SPACE.test(first);
+      return `${before ? ' ' : ''}${value}${after ? ' ' : ''}`;
+    })
+    .join('');
 }
 
 /** Parsed once per language and message, then reused. */
@@ -100,6 +185,7 @@ function flatValues(
   const nested = (value: Translatable) =>
     locale === DEFAULT_LOCALE ? value.message : translate(value, locale);
   const flatten = (value: MessageValue) => {
+    if (isLanguageName(value)) return languageWord(value.languageName, locale);
     if (isTranslatable(value)) return nested(value);
     if (Array.isArray(value)) {
       return joinList(

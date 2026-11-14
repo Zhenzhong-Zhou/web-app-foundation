@@ -6,13 +6,13 @@ Les mouvements sont toutes les variations de quantité, de la plus récente à l
 
 1. Choisissez une période sous **Enregistré**, comme **Ce mois-ci**.
 2. Limitez-la à un emplacement, ou à un motif sous **Motif**.
-3. Appuyez sur **Charger plus** pour voir les lignes plus anciennes.
+3. Appuyez sur **Afficher plus** pour voir les lignes plus anciennes.
 
 Chaque ligne dit quand, l’article et son lot, la variation, où, pourquoi et par qui.
 
 ## Exporter la liste {#export}
 
-Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filtres, dans un fichier CSV, pour un tableur.
+Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filtres, dans un fichier CSV que vous pourrez ouvrir dans un tableur.
 
 ## Corriger une erreur {#correct}
 
@@ -29,4 +29,4 @@ Un mouvement ne peut pas être modifié. Pour rétablir une quantité, utilisez 
 - **retour** : du stock renvoyé par un client.
 - **Utilisateur supprimé** : une personne dont le compte a été supprimé. Ses mouvements restent.
 
-Voir aussi [Inventaire](/inventory) et [Lots](/lots).
+Voir aussi [Inventaire](/inventory) et [Tracer un lot](/lots).

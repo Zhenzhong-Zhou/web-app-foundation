@@ -73,17 +73,20 @@ describe('what you can do here', () => {
     expect(sentences(VIEWER)).toEqual([
       [
         'Stock and locations',
-        'See what is on hand, where stock is kept and each lot’s history.',
+        'See what is on hand, where stock is kept and the history of each lot (one batch of an item, with its own code).',
       ],
       [
         'Items and licences',
-        'See the catalogue, recipes and product licences.',
+        'See the catalogue, recipes (what goes into each item made here) and product licences.',
       ],
       ['Orders', 'See purchase and sales orders and their prices.'],
-      ['Production', 'See production runs and what they used.'],
+      [
+        'Production',
+        'See production runs (each makes one batch from a recipe) and what they used.',
+      ],
       [
         'Invoices and returns',
-        'See invoices, credit notes and return authorizations.',
+        'See invoices, credit notes (each gives back part or all of an invoice) and return authorizations (agreeing what a customer may send back).',
       ],
       ['Costs, prices and tax', 'See tax codes and their rates.'],
       ['Partners', 'See customers and suppliers.'],
@@ -98,11 +101,11 @@ describe('what you can do here', () => {
     expect(sentences(ADMIN)).toEqual([
       [
         'Stock and locations',
-        'See what is on hand and each lot’s history; receive, ship and move stock; correct a count; add and change locations.',
+        'See what is on hand and the history of each lot (one batch of an item, with its own code); receive, ship and move stock; correct a count; add and change locations.',
       ],
       [
         'Items and licences',
-        'Add and change items, recipes and product licences.',
+        'Add and change items, recipes (what goes into each item made here) and product licences.',
       ],
       [
         'Orders',
@@ -110,11 +113,11 @@ describe('what you can do here', () => {
       ],
       [
         'Production',
-        'See production runs and what they used; plan and release runs; record what runs make.',
+        'See production runs (each makes one batch from a recipe) and what they used; plan and release runs; record what runs make.',
       ],
       [
         'Invoices and returns',
-        'See invoices, credit notes and return authorizations; draft invoices; change and delete drafts; authorize, cancel and close returns.',
+        'See invoices, credit notes (each gives back part or all of an invoice) and return authorizations (agreeing what a customer may send back); draft invoices; change and delete drafts; authorize, cancel and close returns.',
       ],
       ['Costs, prices and tax', 'See tax codes and their rates.'],
       ['Partners', 'Add and change customers and suppliers.'],
@@ -140,7 +143,7 @@ describe('what you can do here', () => {
     ).toEqual([
       [
         'Invoices and returns',
-        'See invoices and credit notes; draft, issue and void invoices.',
+        'See invoices and credit notes (each gives back part or all of an invoice); draft, issue and void invoices.',
       ],
     ]);
     expect(
@@ -170,14 +173,17 @@ describe('what you can do here', () => {
     expect(sentences(['stock.view', 'stock.reorder'])).toEqual([
       [
         'Stock and locations',
-        'See what is on hand and each lot’s history; set reorder points.',
+        'See what is on hand and the history of each lot (one batch of an item, with its own code); set reorder points.',
       ],
     ]);
   });
 
   it('leaves out every area out of reach', () => {
     expect(sentences(['stock.view'])).toEqual([
-      ['Stock and locations', 'See what is on hand and each lot’s history.'],
+      [
+        'Stock and locations',
+        'See what is on hand and the history of each lot (one batch of an item, with its own code).',
+      ],
     ]);
     expect(sentences([])).toEqual([]);
   });
@@ -198,7 +204,7 @@ describe('what you can do here', () => {
     });
     expect(sentences(VIEWER, chinese)[0]).toEqual([
       '库存和库位',
-      '查看现有库存、库存存放的位置和每个批次的历史记录。',
+      '查看现有库存、库存存放的位置和每个批次（一个物品的一批货，有自己的编码）的历史记录。',
     ]);
   });
 });

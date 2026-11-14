@@ -839,7 +839,7 @@ describe('The welcome (e2e)', () => {
           ),
         );
       expect(stored).toEqual([
-        { organizationId: alpha.organizationId, title: 'Sam Lee加入了' },
+        { organizationId: alpha.organizationId, title: 'Sam Lee 已加入' },
       ]);
       expect(await listIn(mei.agent, 'en')).toEqual([
         expect.objectContaining({
@@ -854,7 +854,7 @@ describe('The welcome (e2e)', () => {
         body: 'Sam Lee a accepté votre invitation et fait maintenant partie de alpha Co en tant que Lecteur.',
       });
       expect((await listIn(mei.agent, 'zh-Hans'))[0]?.body).toBe(
-        'Sam Lee接受了您的邀请，以查看者身份加入 alpha Co。',
+        'Sam Lee 接受了您的邀请，并以查看者的身份加入了 alpha Co。',
       );
 
       // Mei's alone, and the bell alone: no email to her. The Owner heard
@@ -880,6 +880,15 @@ describe('The welcome (e2e)', () => {
       ).toEqual([
         'Pat Kim accepted your invitation and joined alpha Co as Office.',
         'Mei Lin accepted your invitation and joined alpha Co as an Admin.',
+      ]);
+      // ADR-090: a built-in role, in Chinese words, meets the Chinese
+      // around it with no space; a made one, as typed and maybe in Latin
+      // letters, keeps one each side (#573).
+      expect(
+        (await listIn(alpha.agent, 'zh-Hans')).map((entry) => entry.body),
+      ).toEqual([
+        'Pat Kim 接受了您的邀请，并以 Office 的身份加入了 alpha Co。',
+        'Mei Lin 接受了您的邀请，并以管理员的身份加入了 alpha Co。',
       ]);
     });
 
@@ -913,7 +922,7 @@ describe('The welcome (e2e)', () => {
         'Sam Lee a accepté votre invitation et fait maintenant partie de alpha Co en tant que Lecteur.',
       );
       expect((await listIn(alpha.agent, 'zh-Hans'))[0]?.body).toBe(
-        'Sam Lee接受了您的邀请，以查看者身份加入 alpha Co。',
+        'Sam Lee 接受了您的邀请，并以查看者的身份加入了 alpha Co。',
       );
     });
 

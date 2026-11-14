@@ -16,14 +16,19 @@ describe('LanguageSelect', () => {
     localStorage.clear();
   });
 
-  it('offers each language in its own name', async () => {
+  it('offers each language in its own name, and en-XA in development and tests', async () => {
     renderWithAuth(<LanguageSelect />);
 
     await userEvent.click(screen.getByRole('combobox', { name: 'Language' }));
 
     expect(
       screen.getAllByRole('option').map((option) => option.textContent),
-    ).toEqual(['English', 'Français (Canada) — bêta', '简体中文（测试版）']);
+    ).toEqual([
+      'English',
+      'Français (Canada) — bêta',
+      '简体中文（测试版）',
+      'en-XA',
+    ]);
     expect(
       screen.getByRole('option', { name: '简体中文（测试版）' }),
     ).toHaveAttribute('lang', 'zh-Hans');
@@ -52,6 +57,28 @@ describe('LanguageSelect', () => {
     expect(document.documentElement.lang).toBe('fr-CA');
     expect(localStorage.getItem('language')).toBe('fr-CA');
     await waitFor(() => expect(saved).toEqual({ locale: 'fr-CA' }));
+  });
+
+  it('switches the screens to en-XA, and saves the account as English', async () => {
+    let saved: unknown = null;
+    server.use(
+      http.patch('/api/v1/account/profile', async ({ request }) => {
+        saved = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderWithAuth(<LanguageSelect />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Language' }));
+    await userEvent.click(screen.getByRole('option', { name: 'en-XA' }));
+
+    expect(
+      await screen.findByRole('combobox', { name: '[Ĺáñğúáğé one]' }),
+    ).toHaveTextContent('en-XA');
+    expect(localStorage.getItem('language')).toBe('en-XA');
+    // The account knows no en-XA: to the server it is English.
+    await waitFor(() => expect(saved).toEqual({ locale: 'en' }));
   });
 
   it('on the Account page, says none is chosen and saves the one on screen (#119)', async () => {

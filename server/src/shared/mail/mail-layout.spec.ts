@@ -267,10 +267,10 @@ describe('writeMail', () => {
     expectInOrder(bodyOf(html), [
       'We will never ask',
       '>https://app.example.com/account</a>',
-      `<p class="muted" style="margin:0;font-size:14px;line-height:1.5;color:#5B6575">按钮打不开时，把这个地址复制到浏览器：<a class="link" href="${href}" style="color:#5546B8;text-decoration:underline;word-break:break-all">${breakable}</a></p>`,
+      `<p class="muted" style="margin:0;font-size:14px;line-height:1.5;color:#5B6575">如果按钮无法打开，请将以下地址复制到浏览器地址栏：<a class="link" href="${href}" style="color:#5546B8;text-decoration:underline;word-break:break-all">${breakable}</a></p>`,
       'Sent for Northside Naturals by Panivo.',
     ]);
-    expect(text).not.toContain('按钮打不开时');
+    expect(text).not.toContain('如果按钮无法打开');
     expect(
       email({ blocks: BLOCKS.filter((block) => block.kind !== 'button') }).html,
     ).not.toContain('If the button doesn’t open');

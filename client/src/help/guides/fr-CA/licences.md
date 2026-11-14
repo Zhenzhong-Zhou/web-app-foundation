@@ -1,6 +1,6 @@
 # Licences
 
-Les licences sont les numéros sous lesquels vos formulations sont enregistrées, comme le NPN d’un produit de santé naturel au Canada. Les recettes sont fabriquées sous ces licences : un lot remonte donc jusqu’à sa licence. Vous l’ouvrez par **Licences**, dans le menu ou dans Articles.
+Les licences sont les numéros sous lesquels vos formulations sont enregistrées, comme le NPN d’un produit de santé naturel au Canada. La fabrication prévue par chaque recette se fait sous une licence, afin que chaque lot puisse être retracé jusqu’à celle-ci. Ouvrez la liste dans **Licences**, depuis le menu ou Articles.
 
 ## Ajouter une licence {#add}
 
@@ -27,9 +27,9 @@ Les personnes qui peuvent modifier les licences ou lancer des ordres de fabricat
 ## Les mots que vous verrez {#words}
 
 - **En vigueur** : valide aujourd’hui.
-- **En vigueur à partir du** : délivrée à compter d’un jour à venir, et utilisable à partir de ce jour.
+- **En vigueur à partir du** : une licence dont la date de prise d’effet est à venir et qui sera utilisable à partir de cette date.
 - **Expire dans** : à moins de 60 jours de sa date **Valide jusqu’au**.
-- **Licences qui expirent** : le filtre des licences à moins de 60 jours de leur date **Valide jusqu’au**, ou au-delà, la plus proche d’abord, comme l’accueil ouvre la liste.
+- **Licences qui expirent** : le filtre des licences dont la date **Valide jusqu’au** se situe dans les 60 prochains jours ou est passée, les dates les plus proches d’abord, comme l’accueil ouvre la liste.
 - **Expirée** : sa date **Valide jusqu’au** est passée. Comme filtre, **Expirées** n’affiche que celles-là jusqu’à ce que vous le retiriez.
 - **Retirée** : plus utilisée, conservée pour ce qui a été fabriqué sous elle.
 

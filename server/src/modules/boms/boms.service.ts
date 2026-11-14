@@ -73,7 +73,7 @@ export class BomsService {
       throw new BadRequestException(
         t({
           id: 'boms.licenceidDoesExist',
-          defaultMessage: 'licenceId does not exist',
+          defaultMessage: 'That licence no longer exists. Choose another one.',
         }),
       );
     }

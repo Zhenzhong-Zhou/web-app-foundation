@@ -405,16 +405,25 @@ three:
   where the meaning is the same, not merely the words.
 - **Values, not sentences.** Data goes in as a value, `{sku}`, `{number}`;
   a count as an ICU plural, never "has"/"have" chosen in code; a status
-  or kind as an ICU select over its stored value; a list as a list (the
-  server joins it per language); a nested sentence as a message of its
-  own. A number for a person is formatted for them (`formatQuantity`,
-  `formatMoney`), a calendar day stays YYYY-MM-DD in a server message.
+  or kind as an ICU select over its stored value; a list as a list,
+  joined per language by the server's `joinList` or the screens'
+  `intl.formatList`, which in Chinese space a Latin name from 和 and 或
+  (ADR-090): on the server an array passed to `t()`, or put in an audit
+  payload, which History joins; lint refuses any other join on both
+  sides, and on the screens names given as elements, which
+  `listNameParts` draws instead; a nested sentence as a message of its
+  own. A number for a person is formatted for them
+  (`formatQuantity`, `formatMoney`), a calendar day stays YYYY-MM-DD in
+  a server message.
 - **Then** `npm run i18n:extract` in that package, and add the same id to
   `fr-CA.json` and `zh-Hans.json`, using `docs/glossary.md`'s words and a
   typographic apostrophe (’), which ICU leaves alone where ' starts a
   quote; English too, where `npm run i18n:check` refuses a straight one
   except where it quotes a brace (#184). It fails until all three agree,
-  placeholders included. Written by whoever adds the English, reviewed by
+  placeholders included. `scripts/i18n-rules.mjs`, which
+  `scripts/verify.sh` runs, fails on a word the glossary's Words not to
+  use names and on its punctuation broken, in the catalogues and the
+  guides. Written by whoever adds the English, reviewed by
   someone fluent before a release (MC-1405, `scripts/i18n-review.mjs`):
   `export` the first time, then `export --since` the commit the last round
   was exported at, which gives the reviewer only what changed.
@@ -598,6 +607,16 @@ The error tracker hears of real faults only (ADR-084).
   an email's words on purpose, as #255 or a translation corrected, runs
   `npm run mail:text -- --update` in `server/` and commits the files with
   the words, in a commit that changes nothing else and names them.
+- **A test checks which message was sent, by its id** (13 November
+  2026): a refusal or a line in French or Chinese, and its English beside
+  them, is read through the catalogue (`said()` in
+  `server/test/utils/said.ts`; `saidOn()` for a screen's and `saidBy()`
+  for the server's in `client/e2e/support/said.ts`), never a typed copy
+  of its words, so a review's import changes no test; five server tests
+  and a browser test broke on fix-ups-i18n's imports. Only a test whose point is the exact
+  words keeps them, as a mail's text part does. Whether the words are
+  right stays the catalogue checks' job (`npm run i18n:check`,
+  `scripts/i18n-rules.mjs`).
 - **The client's unit tests run in Tokyo**, `TZ` set in
   `vitest.config.ts`, so a test that assumes the computer is in UTC, or in
   the organization's zone, fails everywhere, not only on someone else's
@@ -1120,7 +1139,9 @@ Internet Explorer, and any browser's IE mode, is not supported.
   Linux WebKit, which showed a flake macOS WebKit never did (#232) and
   times a keyboard drag apart from it ([Tests](#tests), 5631d0d8).
   `scripts/verify.sh` in full runs both itself, after the client's
-  Playwright suite: the spec in Firefox, then in Linux WebKit, from one
+  Playwright suite: the spec in Firefox, then in Linux WebKit, then
+  `e2e/cut-text.spec.ts` in Linux Chromium, whose measures depend on the
+  fonts, CI's being Linux's (ADR-054's as-built), from one
   container of its own on a free port, stopped whatever the result; the
   commands above are for a run by hand. A failed run's
   `client/e2e/.output/` is kept in `tmp/linux-browsers/`, and Linux

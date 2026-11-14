@@ -2,23 +2,31 @@
 /**
  * The fluent review of ADR-054's French and Chinese (MC-1405, step 4).
  *
- *     node scripts/i18n-review.mjs export            # review/fr-CA.xlsx, review/zh-Hans.xlsx
+ *     node scripts/i18n-review.mjs export            # review/fr-CA.xlsx, review/fr-CA.guides.xlsx, ...
  *     node scripts/i18n-review.mjs export --since b933b912
  *                                                    # review/fr-CA.since-b933b912.xlsx, ...
+ *     node scripts/i18n-review.mjs export --only guides
+ *                                                    # review/fr-CA.guides.xlsx, review/zh-Hans.guides.xlsx
  *     node scripts/i18n-review.mjs import review/fr-CA.xlsx
  *
- * Export writes one workbook per language, covering everything a person
- * reads: the screens (client/src/locales) and the server's refusals,
- * emails, notifications and printed documents (server/src/i18n). One row
- * per message: where it is, the English, the translation as it stands, and
- * an empty Correction column for the reviewer. The placeholders a message
- * must keep are listed beside it, since a translation that drops {sku}
- * would print a blank where the SKU belongs.
+ * Export writes two workbooks per language, covering everything a person
+ * reads. The catalogues' (<language>.xlsx): the screens (client/src/locales)
+ * and the server's refusals, emails, notifications and printed documents
+ * (server/src/i18n). One row per message: where it is, the English, the
+ * translation as it stands, and an empty Correction column for the
+ * reviewer. The placeholders a message must keep are listed beside it,
+ * since a translation that drops {sku} would print a blank where the SKU
+ * belongs. The guides' (<language>.guides.xlsx, #150): Help's guides
+ * (client/src/help/guides), one row per section by its {#id}, Id
+ * <guide>#<id>, with the guide's title and opening, before its first
+ * section, as the row <guide>; each the Markdown as written, its heading
+ * line included, and its section id and links listed as what to keep.
+ * `--only catalogues` or `--only guides` writes one kind alone.
  *
  * With --since and the commit the last round was exported at, it writes
- * only what that reviewer has not seen: the messages new since, or whose
- * English or translation differs from the catalogues as they were then
- * (git show <commit>:<catalogue>). English that differs only in its
+ * only what that reviewer has not seen: the messages and sections new
+ * since, or whose English or translation differs from the files as they
+ * were then (git show <commit>:<file>). English that differs only in its
  * apostrophes or quotation marks (' for ’, " for “ ”) counts as unchanged:
  * #184 changed 29 messages that way, none in what a reviewer checks. Not
  * if the change moved a placeholder, though, since ICU reads ' as a quote.
@@ -26,17 +34,33 @@
  * overwritten, and their last column, "Since <commit>", says why each row
  * is there.
  *
- * Import reads a returned workbook, of either kind, takes every non-empty
- * Correction, and writes it into the right catalogue. It refuses the whole
- * file, writing nothing, if any correction is not valid ICU, does not keep
- * exactly the English's placeholders, or belongs to a message removed
- * since the export (clear that row's Correction); the problems are listed
- * by row. Afterwards, run `npm run i18n:check` in client/ and server/ and
- * look at `git diff`.
+ * Import reads a returned workbook, of any kind, takes every non-empty
+ * Correction, and writes it into the right catalogue, or over its section
+ * in the right guide. It refuses the whole file, writing nothing, if any
+ * correction belongs to a message or section removed since the export or
+ * whose English or translation changed since (its row no longer what the
+ * files say, English changed only in its quotes aside, as for --since);
+ * clear that row's Correction, and the next round reads it at its new
+ * text. A message's correction is refused too if the glossary's Settled
+ * messages hold its text, if it is not valid ICU, or if it does not keep
+ * exactly the English's placeholders; a section's, if its first line is
+ * not its heading with the same {#id} (the opening's, the guide's #
+ * title), another line is a heading, or it does not link to exactly what
+ * the English links to. The problems are listed by row.
+ * Afterwards, run `npm run i18n:check` in client/ and server/ for the
+ * catalogues, `npx vitest run src/help/guides.test.ts` in client/ for the
+ * guides, which checks their Markdown and bold labels, and
+ * `node scripts/i18n-rules.mjs` for both, the glossary's words and
+ * punctuation, and look at `git diff`.
+ *
+ * With no fluent reader, scripts/i18n-decide.mjs stands between the two:
+ * it decides one text for each row from the machine reviews of a workbook
+ * and writes a workbook import reads (ADR-054's November 2026 amendment).
  *
  * No dependencies of its own: a workbook is a zip of XML, and Node has
  * zlib. It uses the FormatJS CLI and ICU parser each package already has,
- * so run `npm install` in client/ and server/ first.
+ * so run `npm install` in client/ and server/ first, and reads the
+ * glossary's Settled messages through i18n-rules.mjs.
  *
  * Its tests, in i18n-review.test.mjs, run it on a small catalogue in a
  * temporary folder: `node --test scripts/`.
@@ -46,8 +70,10 @@
  */
 import { execFileSync } from "node:child_process";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -57,6 +83,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateRawSync, inflateRawSync } from "node:zlib";
+
+import { SECTION, sectionsOf, settledMessages } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LANGUAGES = ["fr-CA", "zh-Hans"];
@@ -90,6 +118,10 @@ const AREAS = [
     ],
   },
 ];
+
+/** Help's guides (ADR-079): guides/<language>/<guide>.md. */
+const GUIDES = "client/src/help/guides";
+export const GUIDE_AREA = "Guides";
 
 const COLUMNS = [
   { title: "Area", width: 10 },
@@ -166,6 +198,38 @@ function placeholders(message) {
   return names;
 }
 
+// ------------------------------------------------------------------ guides
+
+/** Every guide, by the English files' names. */
+const guideNames = () =>
+  readdirSync(path.join(ROOT, GUIDES, "en"))
+    .filter((file) => file.endsWith(".md"))
+    .map((file) => file.slice(0, -3))
+    .sort();
+
+const guideFile = (language, guide) => `${GUIDES}/${language}/${guide}.md`;
+
+/** A guide's text as the review compares it: \n line ends, no trailing blank. */
+const asSection = (text) => text.replace(/\r\n?/g, "\n").trimEnd();
+
+/** A row's Id: <guide> for the opening, <guide>#<id> for a section. */
+const sectionRowId = (guide, id) => (id ? `${guide}#${id}` : guide);
+
+/** Where a section links, sorted: what a correction keeps. */
+const linksOf = (text) =>
+  [...text.matchAll(/\]\((\/[^)\s]*)\)/g)].map((match) => match[1]).sort();
+
+/** What a section's correction must keep: its id, then its links. */
+const sectionKeeps = (id, text) =>
+  [
+    ...(id ? [`{#${id}}`] : []),
+    ...linksOf(text).map((link) => `(${link})`),
+  ].join(" ");
+
+/** The same English section to a reviewer: equal, or only ' ’ " “ ” changed. */
+const sameSection = (then, now) =>
+  then === now || plainQuotes(then) === plainQuotes(now);
+
 // ---------------------------------------------------------------- baseline
 
 /** What git prints, run at the repository's root; its errors unsaid. */
@@ -195,15 +259,19 @@ function commitNamed(name) {
   }
 }
 
+/** A file as it was at a commit: null if it did not exist yet. */
+function textAt(commit, file) {
+  try {
+    return git("show", `${commit}:${file}`);
+  } catch {
+    return null;
+  }
+}
+
 /** A catalogue as it was at a commit: empty if it did not exist yet. */
 function readAt(commit, file) {
-  let text;
-  try {
-    text = git("show", `${commit}:${file}`);
-  } catch {
-    return {};
-  }
-  return JSON.parse(text);
+  const text = textAt(commit, file);
+  return text === null ? {} : JSON.parse(text);
 }
 
 const plainQuotes = (message) =>
@@ -226,13 +294,16 @@ function sameEnglish(then, now) {
 
 // ------------------------------------------------------------------ export
 
-function exportWorkbooks(since) {
-  const baseline = since && commitNamed(since);
-  const columns = baseline
-    ? [...COLUMNS, { title: `Since ${baseline}`, width: 30 }]
-    : COLUMNS;
+/** Each section of a guide's parts, by its id ("" for the opening). */
+const byId = (parts) => new Map(parts.map(({ id, text }) => [id, text]));
 
-  mkdirSync(path.join(ROOT, "review"), { recursive: true });
+/**
+ * What each kind of workbook holds: its file name's suffix, what its rows
+ * are, how its English is compared with the baseline's, and its rows for
+ * a language. A row's `then` is its English and translation at the
+ * baseline, null for one new since, and is there only with a baseline.
+ */
+function catalogueKind(baseline) {
   const sources = AREAS.map((area) => ({
     area,
     english: read(`${area.catalogues}/en.json`),
@@ -240,39 +311,118 @@ function exportWorkbooks(since) {
     found: messagesOf(area),
   }));
 
-  for (const language of LANGUAGES) {
-    const rows = [columns.map((column) => column.title)];
-    let quotesOnly = 0;
+  return {
+    suffix: "",
+    noun: "messages",
+    same: sameEnglish,
+    entries: (language) =>
+      sources.flatMap(({ area, english, englishThen, found }) => {
+        const translated = read(`${area.catalogues}/${language}.json`);
+        const translatedThen =
+          baseline && readAt(baseline, `${area.catalogues}/${language}.json`);
 
-    for (const { area, english, englishThen, found } of sources) {
-      const translated = read(`${area.catalogues}/${language}.json`);
-      const translatedThen =
-        baseline && readAt(baseline, `${area.catalogues}/${language}.json`);
+        return Object.keys(english)
+          .sort()
+          .map((id) => ({
+            area: area.name,
+            id,
+            where: found[id]?.file ? `${area.package}/${found[id].file}` : "",
+            english: english[id],
+            translation: translated[id] ?? "",
+            keep: [...placeholders(english[id])].join(" "),
+            then:
+              baseline &&
+              (id in englishThen
+                ? {
+                    english: englishThen[id],
+                    translation: translatedThen[id] ?? "",
+                  }
+                : null),
+          }));
+      }),
+  };
+}
 
-      for (const id of Object.keys(english).sort()) {
-        const where = found[id]?.file
-          ? `${area.package}/${found[id].file}`
-          : "";
+function guideKind(baseline) {
+  const guides = guideNames();
+  const partsOf = (file) =>
+    existsSync(path.join(ROOT, file))
+      ? sectionsOf(readFileSync(path.join(ROOT, file), "utf8")).parts
+      : [];
+  const partsAt = (file) => {
+    const text = textAt(baseline, file);
+    return text === null ? [] : sectionsOf(text).parts;
+  };
+
+  return {
+    suffix: ".guides",
+    noun: "sections",
+    same: sameSection,
+    entries: (language) =>
+      guides.flatMap((guide) => {
+        const file = guideFile(language, guide);
+        const translated = byId(partsOf(file));
+        const englishThen = baseline && byId(partsAt(guideFile("en", guide)));
+        const translatedThen = baseline && byId(partsAt(file));
+
+        return partsOf(guideFile("en", guide)).map(({ id, text }) => ({
+          area: GUIDE_AREA,
+          id: sectionRowId(guide, id),
+          where: file,
+          english: text,
+          translation: translated.get(id) ?? "",
+          keep: sectionKeeps(id, text),
+          then:
+            baseline &&
+            (englishThen.has(id)
+              ? {
+                  english: englishThen.get(id),
+                  translation: translatedThen.get(id) ?? "",
+                }
+              : null),
+        }));
+      }),
+  };
+}
+
+function exportWorkbooks({ since, only }) {
+  const baseline = since && commitNamed(since);
+  const columns = baseline
+    ? [...COLUMNS, { title: `Since ${baseline}`, width: 30 }]
+    : COLUMNS;
+
+  mkdirSync(path.join(ROOT, "review"), { recursive: true });
+  const kinds = [
+    only !== "guides" && catalogueKind(baseline),
+    only !== "catalogues" && guideKind(baseline),
+  ].filter(Boolean);
+
+  for (const kind of kinds) {
+    for (const language of LANGUAGES) {
+      const rows = [columns.map((column) => column.title)];
+      let quotesOnly = 0;
+
+      for (const entry of kind.entries(language)) {
         const row = [
-          area.name,
-          id,
-          where,
-          english[id],
-          translated[id] ?? "",
+          entry.area,
+          entry.id,
+          entry.where,
+          entry.english,
+          entry.translation,
           "",
           "",
-          [...placeholders(english[id])].join(" "),
+          entry.keep,
         ];
 
         if (baseline) {
-          const isNew = !(id in englishThen);
+          const isNew = entry.then === null;
           const englishChanged =
-            !isNew && !sameEnglish(englishThen[id], english[id]);
+            !isNew && !kind.same(entry.then.english, entry.english);
           const translationChanged =
-            !isNew && translatedThen[id] !== translated[id];
+            !isNew && entry.then.translation !== entry.translation;
 
           if (!isNew && !englishChanged && !translationChanged) {
-            if (englishThen[id] !== english[id]) quotesOnly += 1;
+            if (entry.then.english !== entry.english) quotesOnly += 1;
             continue;
           }
           row.push(
@@ -287,24 +437,178 @@ function exportWorkbooks(since) {
         }
         rows.push(row);
       }
-    }
 
-    const file = path.join(
-      ROOT,
-      "review",
-      baseline ? `${language}.since-${baseline}.xlsx` : `${language}.xlsx`,
-    );
-    writeFileSync(file, workbook(language, columns, rows));
-    console.log(
-      baseline
-        ? `${path.relative(ROOT, file)}: ${rows.length - 1} messages new or changed since ${baseline}; ` +
-            `${quotesOnly} left out, their English changed only in its apostrophes or quotation marks.`
-        : `${path.relative(ROOT, file)}: ${rows.length - 1} messages to review.`,
-    );
+      const file = path.join(
+        ROOT,
+        "review",
+        `${language}${kind.suffix}${baseline ? `.since-${baseline}` : ""}.xlsx`,
+      );
+      writeFileSync(file, workbook(language, columns, rows));
+      console.log(
+        baseline
+          ? `${path.relative(ROOT, file)}: ${rows.length - 1} ${kind.noun} new or changed since ${baseline}; ` +
+              `${quotesOnly} left out, their English changed only in its apostrophes or quotation marks.`
+          : `${path.relative(ROOT, file)}: ${rows.length - 1} ${kind.noun} to review.`,
+      );
+    }
   }
 }
 
 // ------------------------------------------------------------------ import
+
+/**
+ * Where a workbook's rows go, one per Area: each finds a row's English and
+ * translation as they are today (null for one removed since the export),
+ * checks a correction, takes it, and writes what it took.
+ */
+function catalogueTarget(area, language) {
+  const english = read(`${area.catalogues}/en.json`);
+  const translated = read(`${area.catalogues}/${language}.json`);
+  let changed = 0;
+
+  return {
+    cell: (text) => text,
+    same: sameEnglish,
+    find: (id) =>
+      Object.hasOwn(english, id)
+        ? { english: english[id], translation: translated[id] ?? "" }
+        : null,
+    check(id, correction) {
+      let theirs;
+      try {
+        theirs = placeholders(correction);
+      } catch (error) {
+        return `not valid ICU (${error.message})`;
+      }
+      const ours = placeholders(english[id]);
+      const same =
+        theirs.size === ours.size &&
+        [...ours].every((name) => theirs.has(name));
+      return same
+        ? null
+        : `keeps ${[...theirs].join(" ") || "no placeholders"}; ` +
+            `the English has ${[...ours].join(" ") || "none"}`;
+    },
+    take(id, correction) {
+      if (translated[id] === correction) return;
+      translated[id] = correction;
+      changed += 1;
+    },
+    write() {
+      if (changed === 0) return;
+      const sorted = Object.fromEntries(
+        Object.entries(translated).sort(([a], [b]) => (a < b ? -1 : 1)),
+      );
+      writeFileSync(
+        path.join(ROOT, area.catalogues, `${language}.json`),
+        `${JSON.stringify(sorted, null, 2)}\n`,
+      );
+      console.log(`${area.catalogues}/${language}.json: ${changed} corrected.`);
+    },
+  };
+}
+
+function guideTarget(language) {
+  let guides; // listed at the first Guides row: the catalogues' need none
+  const loaded = new Map();
+  const load = (guide) => {
+    if (!loaded.has(guide)) {
+      const text = (file) =>
+        existsSync(path.join(ROOT, file))
+          ? readFileSync(path.join(ROOT, file), "utf8")
+          : "";
+      loaded.set(guide, {
+        english: byId(sectionsOf(text(guideFile("en", guide))).parts),
+        translation: sectionsOf(text(guideFile(language, guide))),
+        corrected: new Map(),
+      });
+    }
+    return loaded.get(guide);
+  };
+  // "home#today" is home's section today; "home", its opening.
+  const named = (id) => {
+    const at = id.indexOf("#");
+    return at < 0 ? [id, ""] : [id.slice(0, at), id.slice(at + 1)];
+  };
+
+  return {
+    cell: asSection,
+    same: sameSection,
+    find(id) {
+      const [guide, section] = named(id);
+      guides ??= new Set(guideNames());
+      if (!guides.has(guide)) return null;
+      const { english, translation } = load(guide);
+      if (!english.has(section)) return null;
+      return {
+        english: english.get(section),
+        translation: byId(translation.parts).get(section) ?? "",
+      };
+    },
+    check(id, correction) {
+      const [guide, section] = named(id);
+      const { english, translation } = load(guide);
+      if (!translation.parts.some((part) => part.id === section)) {
+        return `${guideFile(language, guide)} has no ${section ? `#${section}` : "opening"}; give it the English's sections first`;
+      }
+      const [first, ...rest] = correction.split("\n");
+      if (
+        section ? SECTION.exec(first)?.[1] !== section : !/^# \S/.test(first)
+      ) {
+        return section
+          ? `its first line is not its heading, ## … {#${section}}`
+          : "its first line is not the guide's title, # …";
+      }
+      if (rest.some((line) => line.startsWith("#"))) {
+        return "another of its lines is a heading; a section has one";
+      }
+      const ours = linksOf(english.get(section)).join(" ");
+      const theirs = linksOf(correction).join(" ");
+      return ours === theirs
+        ? null
+        : `links to ${theirs || "nothing"}; the English links to ${ours || "nothing"}`;
+    },
+    take(id, correction) {
+      const [guide, section] = named(id);
+      load(guide).corrected.set(section, correction);
+    },
+    write() {
+      for (const [guide, { translation, corrected }] of loaded) {
+        const { lines, parts } = translation;
+        const written = [];
+        let changed = 0;
+        parts.forEach((part, i) => {
+          const correction = corrected.get(part.id);
+          if (correction !== undefined && correction !== part.text) {
+            written.push(...correction.split("\n"));
+            changed += 1;
+          } else {
+            written.push(...lines.slice(part.start, part.end));
+          }
+          // The blank lines after it, and the file's last line break.
+          written.push(...lines.slice(part.end, parts[i + 1]?.start));
+        });
+        if (changed === 0) continue;
+        writeFileSync(
+          path.join(ROOT, guideFile(language, guide)),
+          written.join("\n"),
+        );
+        console.log(`${guideFile(language, guide)}: ${changed} corrected.`);
+      }
+    },
+  };
+}
+
+/**
+ * Where a workbook's rows go in a language, by their Area: what import
+ * writes through, and what the decide step (i18n-decide.mjs) reads today's
+ * text and import's checks from, writing nothing.
+ */
+export const targetsFor = (language) =>
+  new Map([
+    ...AREAS.map((area) => [area.name, catalogueTarget(area, language)]),
+    [GUIDE_AREA, guideTarget(language)],
+  ]);
 
 function importWorkbook(file) {
   const { sheetName, rows } = readWorkbook(readFileSync(file));
@@ -319,71 +623,89 @@ function importWorkbook(file) {
   }
 
   const header = rows[0] ?? [];
-  const column = (title) => header.indexOf(title);
-  const [areaAt, idAt, correctionAt] = ["Area", "Id", "Correction"].map(column);
-  if ([areaAt, idAt, correctionAt].includes(-1)) {
+  const titles = ["Area", "Id", "English", "Translation", "Correction"];
+  const missing = titles.filter((title) => !header.includes(title));
+  if (missing.length > 0) {
     console.error(
-      "The first row must keep the Area, Id and Correction titles.",
+      `The first row has no ${missing.join(" or ")} title. ` +
+        `Keep the titles export wrote: ${titles.join(", ")}.`,
     );
     process.exit(1);
   }
-
-  const catalogues = Object.fromEntries(
-    AREAS.map((area) => [
-      area.name,
-      {
-        area,
-        english: read(`${area.catalogues}/en.json`),
-        translated: read(`${area.catalogues}/${language}.json`),
-        changed: 0,
-      },
-    ]),
+  const [areaAt, idAt, englishAt, translationAt, correctionAt] = titles.map(
+    (title) => header.indexOf(title),
   );
+
+  const targets = targetsFor(language);
+  let settled;
+  try {
+    settled = settledMessages().get(language);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 
   const problems = [];
 
   rows.slice(1).forEach((row, index) => {
-    const correction = (row[correctionAt] ?? "").trim();
-    if (!correction) return;
-
     const at = `row ${index + 2}`;
-    const target = catalogues[row[areaAt]];
+    const target = targets.get(row[areaAt]);
     const id = row[idAt];
+    const cell = row[correctionAt] ?? "";
+    const correction = (target ? target.cell(cell) : cell).trim();
+    if (!correction) return;
 
     if (!target) {
       problems.push(`${at}: no message ${id} in ${row[areaAt]}`);
       return;
     }
-    if (!(id in target.english)) {
+    const today = target.find(id);
+    if (!today) {
       problems.push(
         `${at} ${id}: removed from ${row[areaAt]} since the export, so there is nothing to correct; clear the row's Correction`,
       );
       return;
     }
 
-    let theirs;
-    try {
-      theirs = placeholders(correction);
-    } catch (error) {
-      problems.push(`${at} ${id}: not valid ICU (${error.message})`);
-      return;
-    }
-
-    const ours = placeholders(target.english[id]);
-    const same =
-      theirs.size === ours.size && [...ours].every((name) => theirs.has(name));
-    if (!same) {
+    // The glossary settled its text, so no review changes it.
+    if (
+      row[areaAt] !== GUIDE_AREA &&
+      settled.has(id) &&
+      correction !== today.translation
+    ) {
       problems.push(
-        `${at} ${id}: keeps ${[...theirs].join(" ") || "no placeholders"}; ` +
-          `the English has ${[...ours].join(" ") || "none"}`,
+        `${at} ${id}: settled, its text held by docs/glossary.md's Settled messages, so clear its Correction, or change its row there first`,
       );
       return;
     }
 
-    if (target.translated[id] !== correction) {
-      target.translated[id] = correction;
-      target.changed += 1;
+    // A correction is to the text the reviewer read; on newer text it would
+    // undo a change no round has seen (ADR-054's November 2026 amendment).
+    const englishChanged = !target.same(
+      target.cell(row[englishAt] ?? ""),
+      today.english,
+    );
+    const translationChanged =
+      target.cell(row[translationAt] ?? "") !== today.translation;
+    if (englishChanged || translationChanged) {
+      const what =
+        englishChanged && translationChanged
+          ? "its English and its translation"
+          : englishChanged
+            ? "its English"
+            : "its translation";
+      problems.push(
+        `${at} ${id}: ${what} changed since the export, so clear its Correction; the next round reads it`,
+      );
+      return;
     }
+
+    const problem = target.check(id, correction);
+    if (problem) {
+      problems.push(`${at} ${id}: ${problem}`);
+      return;
+    }
+    target.take(id, correction);
   });
 
   if (problems.length > 0) {
@@ -393,21 +715,18 @@ function importWorkbook(file) {
     process.exit(1);
   }
 
-  for (const { area, translated, changed } of Object.values(catalogues)) {
-    if (changed === 0) continue;
-    const sorted = Object.fromEntries(
-      Object.entries(translated).sort(([a], [b]) => (a < b ? -1 : 1)),
-    );
-    writeFileSync(
-      path.join(ROOT, area.catalogues, `${language}.json`),
-      `${JSON.stringify(sorted, null, 2)}\n`,
-    );
-    console.log(`${area.catalogues}/${language}.json: ${changed} corrected.`);
-  }
+  for (const target of targets.values()) target.write();
 
-  console.log(
-    "Now run `npm run i18n:check` in client/ and server/, then look at `git diff`.",
-  );
+  const areas = new Set(rows.slice(1).map((row) => row[areaAt]));
+  const checks = [
+    (!areas.has(GUIDE_AREA) || AREAS.some((area) => areas.has(area.name))) &&
+      "`npm run i18n:check` in client/ and server/",
+    areas.has(GUIDE_AREA) &&
+      "`npx vitest run src/help/guides.test.ts` in client/",
+    // The glossary's words and punctuation, catalogues and guides alike.
+    "`node scripts/i18n-rules.mjs`",
+  ].filter(Boolean);
+  console.log(`Now run ${checks.join(", and ")}, then look at \`git diff\`.`);
 }
 
 // ---------------------------------------------------------------- workbook
@@ -487,10 +806,16 @@ export function workbook(sheetName, columns, rows) {
   ]);
 }
 
-/** The sheet name and every row's cell text, from a workbook Excel or Sheets saved. */
+/**
+ * The sheet name and every row's cell text, from a workbook Excel or Sheets
+ * saved, or one whose tags carry a namespace prefix (x:row, x:c), as some
+ * of ChatGPT's do.
+ */
 export function readWorkbook(buffer) {
   const files = unzip(buffer);
   const text = (name) => files.get(name)?.toString("utf8");
+  // A tag's name, with or without a namespace prefix.
+  const tag = (name) => `(?:[\\w.-]+:)?${name}`;
 
   const unescapeXml = (value) =>
     value
@@ -505,23 +830,33 @@ export function readWorkbook(buffer) {
       .replace(/&amp;/g, "&");
   // A cell's text, rich text runs joined.
   const runs = (xml) =>
-    [...xml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)]
+    [
+      ...xml.matchAll(
+        new RegExp(`<${tag("t")}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag("t")}>`, "g"),
+      ),
+    ]
       .map((match) => unescapeXml(match[1]))
       .join("");
 
   const shared = [
-    ...(text("xl/sharedStrings.xml") ?? "").matchAll(/<si>([\s\S]*?)<\/si>/g),
+    ...(text("xl/sharedStrings.xml") ?? "").matchAll(
+      new RegExp(`<${tag("si")}>([\\s\\S]*?)</${tag("si")}>`, "g"),
+    ),
   ].map((match) => runs(match[1]));
 
   const workbookXml = text("xl/workbook.xml") ?? "";
   const sheetName = unescapeXml(
-    /<sheet\s[^>]*name="([^"]*)"/.exec(workbookXml)?.[1] ?? "",
+    new RegExp(`<${tag("sheet")}\\s[^>]*name="([^"]*)"`).exec(
+      workbookXml,
+    )?.[1] ?? "",
   );
 
   // The first sheet, wherever the relationships put it.
-  const relationId = /<sheet\s[^>]*r:id="([^"]*)"/.exec(workbookXml)?.[1];
+  const relationId = new RegExp(`<${tag("sheet")}\\s[^>]*r:id="([^"]*)"`).exec(
+    workbookXml,
+  )?.[1];
   const target = new RegExp(
-    `<Relationship[^>]*Id="${relationId}"[^>]*Target="([^"]*)"`,
+    `<${tag("Relationship")}[^>]*Id="${relationId}"[^>]*Target="([^"]*)"`,
   ).exec(text("xl/_rels/workbook.xml.rels") ?? "")?.[1];
   const sheetPath = target
     ? path.posix.join("xl", target.replace(/^\/?xl\//, ""))
@@ -535,16 +870,23 @@ export function readWorkbook(buffer) {
     ) - 1;
 
   const rows = [];
-  for (const rowMatch of sheet.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+  for (const rowMatch of sheet.matchAll(
+    new RegExp(`<${tag("row")}\\b[^>]*>([\\s\\S]*?)</${tag("row")}>`, "g"),
+  )) {
     const row = [];
     for (const cell of rowMatch[1].matchAll(
-      /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,
+      new RegExp(
+        `<${tag("c")}\\b([^>]*?)(?:/>|>([\\s\\S]*?)</${tag("c")}>)`,
+        "g",
+      ),
     )) {
       const attributes = cell[1];
       const body = cell[2] ?? "";
       const reference = /\br="([A-Z]+\d+)"/.exec(attributes)?.[1];
       const type = /\bt="([^"]*)"/.exec(attributes)?.[1];
-      const value = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1];
+      const value = new RegExp(`<${tag("v")}>([\\s\\S]*?)</${tag("v")}>`).exec(
+        body,
+      )?.[1];
 
       const content =
         type === "s"
@@ -576,7 +918,8 @@ function crc32(buffer) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-function zip(entries) {
+/** A zip of [name, text] entries; its tests write a workbook another program saved with it. */
+export function zip(entries) {
   const locals = [];
   const centrals = [];
   let offset = 0;
@@ -659,23 +1002,37 @@ function unzip(buffer) {
 
 // ------------------------------------------------------------------- main
 
-// Run, not imported: its tests import the workbook's writer and reader.
+/**
+ * export's options, `--since <commit>` and `--only catalogues|guides`, each
+ * at most once and in any order; null for anything else.
+ */
+function exportOptions(args) {
+  const options = {};
+  for (let i = 0; i < args.length; i += 2) {
+    const [flag, value] = [args[i], args[i + 1]];
+    const name = { "--since": "since", "--only": "only" }[flag];
+    if (!name || value === undefined || name in options) return null;
+    if (name === "only" && !["catalogues", "guides"].includes(value)) {
+      return null;
+    }
+    options[name] = value;
+  }
+  return options;
+}
+
+// Run, not imported: its tests import the workbook's writer, reader and
+// zip, and the decide step the reader, targetsFor and GUIDE_AREA.
 if (import.meta.main) {
   const [command, ...args] = process.argv.slice(2);
+  const options = command === "export" && exportOptions(args);
 
-  if (command === "export" && args.length === 0) {
-    exportWorkbooks();
-  } else if (
-    command === "export" &&
-    args[0] === "--since" &&
-    args.length === 2
-  ) {
-    exportWorkbooks(args[1]);
-  } else if (command === "import" && args[0]) {
+  if (options) {
+    exportWorkbooks(options);
+  } else if (command === "import" && args.length === 1) {
     importWorkbook(path.resolve(args[0]));
   } else {
     console.error(
-      "Usage:\n  node scripts/i18n-review.mjs export\n  node scripts/i18n-review.mjs export --since <commit>\n  node scripts/i18n-review.mjs import review/fr-CA.xlsx",
+      "Usage:\n  node scripts/i18n-review.mjs export [--since <commit>] [--only catalogues|guides]\n  node scripts/i18n-review.mjs import review/fr-CA.xlsx",
     );
     process.exit(1);
   }

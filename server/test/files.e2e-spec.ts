@@ -221,16 +221,64 @@ describe('Files (e2e)', () => {
     await alpha.agent.post('/v1/files/product-image').expect(400);
   });
 
-  it('cuts an upload off at its kind’s limit', async () => {
+  /**
+   * Past its kind's limit, refused naming the limit and what to do, in the
+   * reader's language, where Nest said "File too large" in English
+   * (#249), and nothing kept.
+   */
+  it('cuts an upload off at its kind’s limit, saying it in words', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    await alpha.agent
-      .post('/v1/files/logo')
-      .attach('file', Buffer.alloc(2 * 1024 * 1024 + 1, 1), 'huge.png')
-      .expect(413);
-    await alpha.agent
-      .post('/v1/files/square-logo')
-      .attach('file', Buffer.alloc(2 * 1024 * 1024 + 1, 1), 'huge.png')
-      .expect(413);
+    const MB = 1024 * 1024;
+    const refusals: [string, number, Record<string, string>][] = [
+      [
+        '/v1/files/logo',
+        2 * MB + 1,
+        {
+          en: 'A logo can be up to 2\u00a0MB. Choose a smaller file, or save it smaller first.',
+          'fr-CA':
+            'Un logo peut faire jusqu’à 2\u00a0Mo. Choisissez un fichier plus petit, ou réduisez-en d’abord la taille.',
+          'zh-Hans': '标志最大 2\u00a0MB。请选择更小的文件，或先压缩后再上传。',
+        },
+      ],
+      [
+        '/v1/files/square-logo',
+        2 * MB + 1,
+        {
+          en: 'A square logo can be up to 2\u00a0MB. Choose a smaller file, or save it smaller first.',
+          'fr-CA':
+            'Un logo carré peut faire jusqu’à 2\u00a0Mo. Choisissez un fichier plus petit, ou réduisez-en d’abord la taille.',
+          'zh-Hans':
+            '方形标志最大 2\u00a0MB。请选择更小的文件，或先压缩后再上传。',
+        },
+      ],
+      [
+        '/v1/files/product-image',
+        20 * MB + 1,
+        {
+          en: 'A photo can be up to 20\u00a0MB. Choose a smaller file, or save it smaller first.',
+          'fr-CA':
+            'Une photo peut faire jusqu’à 20\u00a0Mo. Choisissez un fichier plus petit, ou réduisez-en d’abord la taille.',
+          'zh-Hans':
+            '照片最大 20\u00a0MB。请选择更小的文件，或先压缩后再上传。',
+        },
+      ],
+    ];
+
+    for (const [route, bytes, messages] of refusals) {
+      const huge = Buffer.alloc(bytes, 1);
+      for (const [language, message] of Object.entries(messages)) {
+        const refused = await alpha.agent
+          .post(route)
+          .set('Accept-Language', language)
+          .attach('file', huge, 'huge.png')
+          .expect(413);
+        expect(body<{ error: string; message: string }>(refused)).toMatchObject(
+          { error: 'PAYLOAD_TOO_LARGE', message },
+        );
+      }
+    }
+
+    expect(await db.select().from(files)).toEqual([]);
   });
 
   it('refuses a raster logo narrower than 256 pixels', async () => {

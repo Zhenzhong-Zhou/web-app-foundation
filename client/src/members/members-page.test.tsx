@@ -173,7 +173,7 @@ describe('MembersPage', () => {
       within(dialog).getByRole('checkbox', { name: 'Stock look-up' }),
     );
     expect(summary).toHaveTextContent(
-      'Stock and locationsSee what is on hand and each lot’s history.',
+      'Stock and locationsSee what is on hand and the history of each lot (one batch of an item, with its own code).',
     );
 
     // None ticked: nothing to save.

@@ -67,7 +67,7 @@ function acceptUtcMidnight({
  *
  * The pattern keeps the shape; strict ISO 8601 refuses a day that does not
  * exist, so 2026-02-30 is a 400 here rather than a 500 from Postgres.
- * `$property` names the field, as IsCurrencyCode() does.
+ * Its refusals say what to enter, never the field's path (#148).
  *
  * Under CALENDAR_DAY_INPUT=lenient, an instant at exactly UTC midnight is
  * also accepted and read as its day; every other instant is refused in both
@@ -81,7 +81,7 @@ export const IsCalendarDay = () =>
       message: rule(
         defineMessage({
           id: 'validation.calendarDay',
-          defaultMessage: '{property} must be a calendar day, YYYY-MM-DD',
+          defaultMessage: 'Enter a date as year-month-day, such as 2026-11-12.',
         }),
       ),
     }),
@@ -91,7 +91,8 @@ export const IsCalendarDay = () =>
         message: rule(
           defineMessage({
             id: 'validation.realDate',
-            defaultMessage: '{property} must be a real date',
+            defaultMessage:
+              'That date does not exist. Check its month and day.',
           }),
         ),
       },

@@ -677,7 +677,7 @@ describe('Roles (e2e)', () => {
           'fr-CA',
           'Vos rôles n’incluent pas toutes les permissions de Finance; vous ne pouvez donc pas l’attribuer.',
         ],
-        ['zh-Hans', '您的角色不包含Finance的全部权限，因此您不能授予此角色。'],
+        ['zh-Hans', '您的角色没有 Finance 的全部权限，因此不能授予该角色。'],
       ]) {
         const refused = body<Refusal>(
           await admin.agent
@@ -1012,7 +1012,7 @@ describe('Roles (e2e)', () => {
         `Votre rôle, Packers, ne comprend pas «\u00a0${french['permissions.costs.view']}\u00a0». Owner, Olu Ade et Ada Byrne peuvent modifier vos rôles.`,
       );
       expect(await refused(packer.agent, 'zh-Hans')).toBe(
-        `您的角色（Packers）不包含“${chinese['permissions.costs.view']}”。Owner、Olu Ade和Ada Byrne 可以更改您的角色。`,
+        `您的角色（Packers）不包含“${chinese['permissions.costs.view']}”。Owner、Olu Ade 和 Ada Byrne 可以更改您的角色。`,
       );
 
       // An Admin may change roles, and is told of the Owners, who can give

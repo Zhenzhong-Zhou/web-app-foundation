@@ -28,9 +28,9 @@ const OPTIONS = {
 };
 const BAD = { reference: 'TOO-LONG', lines: [{ quantity: '-1' }], stray: 1 };
 
-async function refusal(pipe: ValidationPipe) {
+async function refusal(pipe: ValidationPipe, bad: object = BAD) {
   try {
-    await pipe.transform(BAD, { type: 'body', metatype: OrderDto });
+    await pipe.transform(bad, { type: 'body', metatype: OrderDto });
   } catch (error) {
     return (error as BadRequestException).getResponse() as {
       message: string[];
@@ -41,27 +41,58 @@ async function refusal(pipe: ValidationPipe) {
 }
 
 /**
- * The pipe changes no English (ADR-054): what Nest's own ValidationPipe
- * says, in the same order, and beside it an id for each, rendered in
- * another language by the filter.
+ * A built-in rule's English is what Nest's own ValidationPipe says, in the
+ * same order (ADR-054); a DTO's own rule says what to fix in words, its
+ * sentence without Nest's path in front (#148). Beside each, an id,
+ * rendered in another language by the filter.
  */
 describe('TranslatingValidationPipe', () => {
-  it('says in English exactly what ValidationPipe says', async () => {
+  const QUANTITY =
+    'Enter a number greater than zero, with up to 4 decimal places.';
+
+  it('says a built-in rule as ValidationPipe does, and a DTO rule without its path', async () => {
     const ours = await refusal(new TranslatingValidationPipe(OPTIONS));
     const nests = await refusal(new ValidationPipe(OPTIONS));
-    expect(ours.message).toEqual(nests.message);
+
+    expect(nests.message).toContain(`lines.0.${QUANTITY}`);
+    expect(ours.message).toEqual(
+      nests.message.map((line) =>
+        line === `lines.0.${QUANTITY}` ? QUANTITY : line,
+      ),
+    );
   });
 
-  it('renders each message in another language, the field named as the API names it', async () => {
+  it('renders each message in another language, a built-in naming the field as the API does', async () => {
     const { messages } = await refusal(new TranslatingValidationPipe(OPTIONS));
     const french = messages!.map((message) => translate(message, 'fr-CA'));
 
     expect(french).toHaveLength(messages!.length);
-    expect(french.some((line) => line.includes('lines.0.quantity'))).toBe(true);
+    expect(french.some((line) => line.includes('reference'))).toBe(true);
     expect(french.some((line) => line.includes('5'))).toBe(true);
+    expect(french).toContain(
+      'Saisissez un nombre supérieur à zéro, d’au plus 4 décimales.',
+    );
     // Every one of them translated: none is still the English.
     messages!.forEach((message, index) =>
       expect(french[index]).not.toBe(message.message),
     );
+  });
+
+  it('says a DTO rule once, however many lines it refuses', async () => {
+    const { message, messages } = await refusal(
+      new TranslatingValidationPipe(OPTIONS),
+      { reference: 'A-1', lines: [{ quantity: '-1' }, { quantity: '0' }] },
+    );
+
+    expect(message).toEqual([QUANTITY]);
+    expect(messages).toHaveLength(1);
+  });
+
+  it('gives a DTO rule no value, since its sentence names no field', async () => {
+    const { messages } = await refusal(new TranslatingValidationPipe(OPTIONS));
+    const rule = messages!.find((message) => message.message === QUANTITY);
+
+    expect(rule).toBeDefined();
+    expect(rule!.values).toBeUndefined();
   });
 });

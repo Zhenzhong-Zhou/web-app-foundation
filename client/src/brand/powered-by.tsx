@@ -15,11 +15,17 @@ import { ProductLockup, ProductMark } from './product-mark';
  * screen readers and in a tooltip on hover and keyboard focus; a stop of
  * its own on the way through, since a tooltip is how its words are read.
  * The menu drawer ends the same way.
+ *
+ * Open, the gap between the words and the lockup stands for the spaces
+ * around the name, so a name ending in Chinese takes none after it and
+ * runs into the Chinese that follows, as ADR-090 writes it: 由 P
+ * 品桥提供支持, yet 由 P Panivo 提供支持 (#486).
  */
 export function PoweredBy({ folded = false }: { folded?: boolean }) {
   const intl = useIntl();
   const name = useAppName();
   const onDark = useBrand().rail === 'dark';
+  const runsOn = /\p{Script=Han}$/u.test(name);
 
   if (folded) {
     const said = intl.formatMessage(
@@ -78,7 +84,13 @@ export function PoweredBy({ folded = false }: { folded?: boolean }) {
         id="brand.poweredBy"
         defaultMessage="Powered by {name}"
         values={{
-          name: <ProductLockup onDark={onDark} sx={{ color: 'rail.strong' }} />,
+          name: (
+            <ProductLockup
+              onDark={onDark}
+              // Taking back the foot's columnGap after a Chinese name.
+              sx={{ color: 'rail.strong', mr: runsOn ? -0.75 : 0 }}
+            />
+          ),
         }}
       />
     </Typography>

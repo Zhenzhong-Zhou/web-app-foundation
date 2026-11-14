@@ -1,8 +1,9 @@
 import type { MessageFormatElement } from 'react-intl';
 
-import type { Locale } from '../lib/locales';
+import { isLocale, type Locale, type ScreenLocale } from '../lib/locales';
 import { loadChunkOrReload } from '../version/load-chunk';
 import english from './compiled/en.json';
+import { pseudoMessages } from './pseudo';
 
 /**
  * A catalogue as the browser reads it: each message already parsed into
@@ -30,8 +31,15 @@ const LOADERS: Record<Exclude<Locale, 'en'>, () => Promise<unknown>> = {
  * from reaching a release; this keeps it from reaching a screen. Its chunk
  * loads as a page's does (ADR-081): when a newer build is why it failed,
  * the page loads in full from it rather than saying so.
+ *
+ * en-XA is made here from the English, in development and the browser
+ * tests; a production build, which never offers it, drops the branch and
+ * pseudo.ts with it (vite.config.ts's `withoutPseudoLanguage`).
  */
-export async function loadMessages(locale: Locale): Promise<Messages> {
+export async function loadMessages(locale: ScreenLocale): Promise<Messages> {
+  if (!isLocale(locale)) {
+    return import.meta.env.DEV ? pseudoMessages(ENGLISH) : ENGLISH;
+  }
   if (locale === 'en') return ENGLISH;
   return {
     ...ENGLISH,

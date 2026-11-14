@@ -147,3 +147,46 @@ test('switches the screens to French, and the server answers in French', async (
   await expect(issue).toContainText(/choisissez-en un, ou Exonéré/);
   await expect(issue).not.toContainText(/choose one, or Exempt/);
 });
+
+/**
+ * en-XA (ADR-054's November 2026 amendment, R9), the interaction table's
+ * second row: chosen from the picker in development and the browser tests,
+ * every screen in longer, accented English, a server message in plain
+ * English, on the same page, until another language is chosen.
+ */
+test('switches the screens to en-XA, the server answering in plain English, and back', async ({
+  browser,
+}) => {
+  // Signed out, in a browser of its own, so the shared session is left alone.
+  const context = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const page = await context.newPage();
+  await page.goto('/login');
+  await page.getByLabel(/email/i).fill('nobody-here@example.test');
+  await page.getByLabel(/^password/i).fill('definitely-the-wrong-password');
+
+  await page.getByRole('combobox', { name: 'Language' }).click();
+  await page.getByRole('option', { name: 'en-XA', exact: true }).click();
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    '[Šíğñ íñ one]',
+  );
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByRole('button', { name: '[Šíğñ íñ one]' }).click();
+  // The server is asked in English, and answers in it.
+  await expect(page.getByRole('alert')).toHaveText(
+    'Invalid email or password. Check both and try again.',
+  );
+
+  await page.getByRole('combobox', { name: '[Ĺáñğúáğé one]' }).click();
+  await page
+    .getByRole('option', { name: 'Français (Canada) — bêta', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Se connecter',
+  );
+  await expect(page).toHaveURL(/\/login$/);
+
+  await context.close();
+});

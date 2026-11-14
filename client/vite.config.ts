@@ -419,6 +419,55 @@ function versionFile({ build, builtAt, version }: Build): Plugin {
   };
 }
 
+/**
+ * The pseudo-language, en-XA, is for development and the browser tests
+ * (ADR-054's November 2026 amendment, R9): a production build neither has
+ * it nor offers it. Its code sits behind `import.meta.env.DEV`, which a
+ * build makes false, so the picker's line for it goes and
+ * src/i18n/pseudo.ts with it. Named here, not read from src/lib/locales.ts,
+ * which reads import.meta.env as it loads.
+ */
+const PSEUDO_TAG = 'en-XA';
+const PSEUDO_MODULE = 'src/i18n/pseudo.ts';
+
+/** A built chunk, as much of it as the check reads. */
+interface BuiltChunk {
+  fileName: string;
+  code: string;
+  modules: Record<string, { renderedLength: number }>;
+}
+
+/** What of the pseudo-language a build's chunks carry, each a line. */
+export function pseudoLanguageIn(chunks: BuiltChunk[]): string[] {
+  return chunks.flatMap(({ fileName, code, modules }) => [
+    ...(code.includes(PSEUDO_TAG) ? [`${fileName} names ${PSEUDO_TAG}`] : []),
+    ...Object.entries(modules)
+      .filter(
+        ([id, { renderedLength }]) =>
+          renderedLength > 0 && id.endsWith(PSEUDO_MODULE),
+      )
+      .map(() => `${fileName} holds ${PSEUDO_MODULE}`),
+  ]);
+}
+
+/** Stops a build whose chunks carry the pseudo-language, naming where. */
+function withoutPseudoLanguage(): Plugin {
+  return {
+    name: 'without-pseudo-language',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const found = pseudoLanguageIn(
+        Object.values(bundle).filter((output) => output.type === 'chunk'),
+      );
+      if (found.length > 0) {
+        this.error(
+          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind import.meta.env.DEV.`,
+        );
+      }
+    },
+  };
+}
+
 /** The commit checked out, or nothing outside a git checkout. */
 function gitCommit(): string | undefined {
   try {
@@ -487,6 +536,7 @@ export default defineConfig(({ command, mode }) => {
       fromTokens(),
       loadingScript(),
       versionFile(build),
+      withoutPseudoLanguage(),
       upload && sentryVitePlugin(upload),
     ],
     resolve: {

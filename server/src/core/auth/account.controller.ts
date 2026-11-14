@@ -15,7 +15,6 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 
 import { t } from '../../i18n/translate';
@@ -25,6 +24,7 @@ import type { MemberAccess } from '../authorization/dto/member-access-response.d
 import { MemberAccessService } from '../authorization/member-access.service';
 import { PermissionsService } from '../authorization/permissions.service';
 import type { UploadedBinary } from '../files/files.service';
+import { receiveFile } from '../files/receive-file';
 import { AccountService } from './account.service';
 import { AccountDeletionService } from './account-deletion.service';
 import { AccountPhotoService, AVATAR_MAX_BYTES } from './account-photo.service';
@@ -130,14 +130,22 @@ export class AccountController {
 
   /**
    * Your photo (ADR-063): only yours, set here and nowhere else. Cut off at
-   * 5 MB while it arrives; cropped square and re-encoded by the service.
+   * 5 MB while it arrives, and refused in words that name the limit
+   * (#249); cropped square and re-encoded by the service.
    */
   @Post('photo')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
-    FileInterceptor('file', {
-      limits: { fileSize: AVATAR_MAX_BYTES, files: 1 },
-    }),
+    receiveFile(AVATAR_MAX_BYTES, (limit) =>
+      t(
+        {
+          id: 'account.photo.tooLarge',
+          defaultMessage:
+            'A photo can be up to {limit}\u00a0MB. Choose a smaller file, or save it smaller first.',
+        },
+        { limit },
+      ),
+    ),
   )
   async setPhoto(
     @CurrentUser() context: RequestContext,

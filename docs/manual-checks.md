@@ -133,7 +133,8 @@ a second organization.
 
 - **MC-201** Items, at `/items` (`/products` and its pages send there, with
   their query): Add item asks What is it? first, the six types each with
-  a line in everyday words. From the Raw materials tab Raw materials is
+  a line in everyday words, each named for one item (Raw material,
+  Matière première; #548). From the Raw materials tab Raw material is
   chosen; from All none is, and Add item then says "Choose what it is."
   under the types and adds nothing. Under Code a line says it is the
   organization's own code, unique in it, not a barcode, its example the
@@ -251,9 +252,11 @@ a second organization.
   Viewer the tree has no Actions and no Add category, and a
   line says whom to ask. In French and Chinese every word is translated.
 - **MC-214** An item's page, as the demo Owner: under its name, its type
-  and its category's path ("Packaging · Bottles › Caps"), or
+  in the singular and its category's path ("Packaging · Bottles › Caps",
+  "Raw material · Herbs", in Français « Matière première · … »; #548), or
   Uncategorised. Edit opens with its base name, description, category
-  and type; each type has Add item's line under it, and the type says
+  and type; each type is named in the singular with Add item's line
+  under it, and the type says
   the item then shows under its new type, its stock, lots and History as
   they are. Change the
   type and the category and save: "Moved to Packaging." (a save that
@@ -636,7 +639,13 @@ folder by folder; these check what is already in place.
   top names it and says orders and invoices holding the item cannot
   print. Add opens Edit names with that field focused, 简体中文 marked
   required, and its intro no longer says a blank prints the base name
-  there. Once added, the invoice issues, and its printed lines show the
+  there. The line, the intro and the refusal name the language in the
+  reader's language, alike: the Chinese name and has no Chinese name, le
+  nom en chinois and n’a pas de nom en chinois, 物品的中文名称 and
+  没有中文名称; never 简体中文 inside an English or French sentence. With
+  English checked too and the app in 中文, the line says 物品的英文名称 and
+  Edit names' fields 名称（英文）, as the exports' columns say, never 英语
+  or 法语. Once added, the invoice issues, and its printed lines show the
   Chinese names.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
@@ -687,15 +696,19 @@ folder by folder; these check what is already in place.
   prints Chinese only, glyphs Chinese rather than Japanese forms. A PDF
   holds the document only, nothing of the app, in any language.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
-  banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
-  Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
+  banner reads 电子邮箱或密码错误。请检查后重试。, not English; in Français,
+  L’adresse courriel ou le mot de passe est invalide. Vérifiez les deux et
+  réessayez. Signed
   in as the demo Owner, in Français, Move everyone to… on Owner's page,
   to Admin: the refusal, that ownership is transferred first, is French. In 简体中文, ship more than an order has outstanding, cancel an
   order goods have moved against, and release a run under an expired
   licence: each refusal is Chinese, the statuses in it too (已确认, not
   "confirmed"). A request with a field the server refuses, such as a
-  quantity of -1 sent with curl and `Accept-Language: fr-CA`, names the
-  field as the API does (lines.0.quantity) in a French sentence. The same
+  quantity of -1 sent with curl and `Accept-Language: fr-CA`, is refused
+  in a French sentence saying what to fix, naming no field (Saisissez un
+  nombre supérieur à zéro, d’au plus 4 décimales.), once however many
+  lines it refuses; a field the API does not know is named as the API
+  names it. The same
   requests with no Accept-Language answer in English word for word.
 - **MC-1414** With the account's language set to Français, request a
   password reset: the email (Mailpit) is French, subject included. Sign
@@ -708,16 +721,201 @@ folder by folder; these check what is already in place.
   (`update users set locale = null`), the browser's language set to
   Français: change the password, then delete the account and keep it.
   The three emails are in French.
-- **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
-  available, so French and Chinese ship as unreviewed drafts, and release
-  notes say so.* When one is: someone fluent in each language reads every
-  message, screens and server both, and `docs/glossary.md`, and their
-  corrections are in the catalogues:
+- **MC-1415** *(ADR-054's November 2026 amendment, R12)* A guide's bold
+  words are the screen's. In English, Français and 中文, open Help on
+  Home, Items and People: every word in bold is a button, heading, tab,
+  column, filter or status the page shows, as the page words it, such as
+  Customise Home, Show all in Items and Active this week (Actif cette
+  semaine, 本周活跃). Home's three moments (every day, the first two weeks,
+  a new organization), Items' example paths such as Packaging › Bottles,
+  and a row's stock on hand read as plain words, not bold.
+  `client/src/help/guides.test.ts` holds that each bold phrase is the
+  text of a message in the guide's language, and lists with why the few
+  kept on purpose: a chip's ×, Numbering's {YYYY}, the permissions' and
+  templates' names the server sends, and the glossary's words that Words
+  you’ll meet explains; by hand, that each is on the page the guide names.
+- **MC-1416** *(ADR-054's November 2026 amendment, R4 and R8)* The
+  glossary's Words not to use and Quebec typography. In 中文, the Account
+  page's button for a person's picture reads 添加头像, and Help on Account
+  and on People says 头像 for it, never 照片; an item's photos still say
+  照片. A PDF chosen as your own photo is refused with 头像必须是 PNG、JPEG
+  或 WebP 图片, and one added to an item's images with 照片必须是…. Help on Items says 一个商品，两个市场, not 产品. In Français, Add
+  item asks « Qu’est-ce que c’est? » with no space before the ?, and on a
+  phone (390 px) no line of Help on Home or Items starts with a colon.
+  `node scripts/i18n-rules.mjs` holds each, in both packages'
+  catalogues and every guide; by hand, that 头像 reads as the person's
+  picture where it stands. It refuses too a translation the same as its
+  English, ignoring case, spaces and punctuation, unless the English has
+  no word outside its placeholders or the script's `SAME_AS_ENGLISH`
+  lists the message with why, so Inventory → Movements in Français names
+  a deleted member Utilisateur supprimé, never Deleted User. In 中文, a
+  word the app fills in itself meets the Chinese around it with no space:
+  the top bar's lookup ends 在物品中查看全部, a built-in role's page
+  says 如需调整管理员, and in Mailpit an invitation sent as Admin reads
+  邀请您以管理员的身份加入, while one as Warehouse, a role made here,
+  keeps a space each side, 以 Warehouse 的身份加入. The inviter's
+  notification, once it is accepted, says the role the same way,
+  并以管理员的身份加入了, and Members → Invite, given a member's address or
+  after a link is copied, says 角色为管理员 for a built-in role and
+  角色为 Warehouse for a made one; the check refuses a
+  space between Chinese and each placeholder the glossary's Placeholders
+  filled with Chinese words lists, where its row holds. A person's or an item's name keeps its
+  message's spacing (#573). In 中文, Items → tick one item → Set category
+  → its own category: the field's help reads 它已经在这个分类里了。, and
+  with two ticked, 这些物品已经都在这个分类里了。: a plural says exactly
+  one with =1, since the check refuses its one, a category Chinese never
+  uses (Intl.PluralRules), so never shown.
+- **MC-1417** *(ADR-054's November 2026 amendment, R10 and R11; #149)*
+  The words settled for the reviewer who reads only Chinese. In 中文: a
+  shipment's Create invoice reads 创建发票, and the draft's Issue still
+  开具; issuing for a customer with no billing address is refused naming
+  its 开票地址; a location's Not available chip reads 不可发货; a retired
+  partner, address, location, price list or tax code reads 已归档 and its
+  button 归档, while a discontinued item keeps 已停用; Inventory → a row's
+  Ship out opens 出库 (Sortie de stock in Français), and an order's Ship
+  still reads 发货 (Expédier); the Organization page's tax field and an
+  invoice's PDF both say 税号. `node scripts/i18n-rules.mjs` refuses
+  账单地址 and 税务登记号 in any message or guide, by the glossary's Words
+  not to use, so a later round cannot bring them back. The glossary's
+  Settled messages hold four whole texts in 中文: the Account page's
+  title 我的账户, the refused page's 您尚未登录, the refusal's
+  没有{language}名称 and the invitation email's 有效期到 {date}结束. The rules check fails where a catalogue's text for
+  one differs from its row, the decide step keeps today's for each, its
+  Reason Settled, and import refuses a correction to one, naming it. In
+  every language, the top bar's lookup
+  for a lot ends with Show all in Inventory (Tout afficher dans
+  Inventaire, 在库存中查看全部), the page it opens, and for a production
+  run with Show all in Production (Tout afficher dans Production,
+  在生产中查看全部), as the menu names it; Help's list of
+  guides names the page at `/lots` Trace a lot (Tracer un lot, 追溯批次),
+  as the menu does. That guide's own title says it too, and so do the
+  links to it at the foot of the Inventory, Movements and Production
+  guides, in each language. Help in 中文 on Inventory, Locations, Trace a
+  lot, Partners, Price lists, Tax codes, Invoices, Returns and
+  Organization uses the same words.
+- **MC-1418** *(ADR-054's November 2026 amendment, R11; #148)* A refusal
+  says what to do next, in words the screens use, in English, Français
+  and 中文. Locations → a shelf that holds stock → Add inside: the dialog
+  says anything already there has to move to another location first,
+  and adding one anyway is refused with "Move its stock to another
+  location first" (Déplacez d’abord son stock vers un autre emplacement,
+  请先将其库存移至另一个库位), as Help on Locations says; never a child
+  location. Settings → Exchange rates → Set a rate of 0, or 1.123456789:
+  "Enter a rate greater than zero, with up to 8 decimal places.", with
+  no field name and nothing about strings; the same for an exchange rate
+  of 0 in Set cost. Release a run whose item has no recipe: the dialog
+  says to create one and promote it (mettez-la en vigueur, 启用), the
+  recipe's own button. Settings → Tax codes → a rate of 5.12345: "Enter
+  a rate as a percentage from 0 to 100, with up to 4 decimal places.",
+  never components.0.rate; Settings → Organization → a base currency of
+  C4D: "Enter the currency as three letters, such as CAD or USD."; an
+  address's Country of C: "Enter the country as two letters, such as CA
+  or US.". Account → Your details → a Work phone of 604-555-0100 ext 12:
+  "Enter the work phone in digits, such as +1 604-555-0100, and put an
+  extension in Extension."; an Extension of ext 12: "Enter the extension
+  in digits only, such as 214.", and neither is saved. Each in Français
+  and 中文 too, with no field name, index or "sent as a string" in any.
+- **MC-1419** *(ADR-054's November 2026 amendment, R11; #501)* Latin
+  names in a Chinese list keep a space from 和 and 或 (ADR-090). On a
+  freshly seeded demo, in 中文, as Chloé Tremblay (Viewer): Account → 权限
+  ends 需要做更多，请联系 Demo Owner、Anika Sharma 或 Daniel Okafor。, a
+  space each side of 或 and none beside 、; Home's line where its main
+  action would be, and Orders' where a new order would be, name them the
+  same way. As the demo Owner, invite someone as Warehouse and Sales:
+  Members' Invited lists the invitation's roles as Warehouse 和 Sales,
+  while one as Admin and Viewer reads 管理员和查看者, with no space; the
+  invitation's email in Mailpit, sent in 中文, names them Warehouse 和
+  Sales too, since the server's lists join the same way. Every other
+  list joins so: Roles → Delete on a made role two members hold names
+  them with a space each side of 和. So do the server's refusals and
+  History: a new sale of two items with no price, confirmed in 中文, is
+  refused naming the two codes with a space each side of 和, and in
+  English with "and" between them, never a comma alone; ship two lines
+  of a confirmed sale together, and its History's 物品 joins each code
+  and quantity by 和 the same way. Close a run with two components used
+  well over plan: in Français, the bell lists them as BLEND-D3 : 50 % et
+  CAPS-D3 : 50 %, a no-break space before each colon and each %; in
+  English and 中文, BLEND-D3: 50%.
+- **MC-1420** *(ADR-054's November 2026 amendment, R11; #486)* What a
+  file may be, in plain words first, its size never broken from its
+  unit. On the Account page, under your photo: A photo or picture, up to
+  5 MB (PNG, JPEG or WebP). In Branding, each logo's line starts A
+  picture …, and an item's Images, while it has room, Up to 8 photos,
+  each up to 20 MB (…). In 中文 the photo's line reads
+  一张图片，最大 5 MB（PNG、JPEG 或 WebP）。 In each language, on a phone
+  (390 px) and on the laptop at Larger text, 5 MB, 2 MB and 20 MB (5 Mo
+  in Français) each stay on one line. The rail's foot in 中文 is MC-3511.
+- **MC-1421** *(ADR-054's November 2026 amendment, R11; #512)* An empty
+  date field shows no format the reader cannot read. In 中文, in a
+  browser set to English (Canada), Orders' 预计日期（起） and 预计日期（止）
+  are empty boxes with their calendar icon, with no yyyy-mm-dd. Click
+  one: the browser's own format appears, to type into; choose a day and
+  it shows; clear it and leave the field: the box is empty again. The
+  same for every date field left empty, such as Invoices', the audit
+  log's and a new licence's; in Safari, an empty one shows no grey date
+  of today.
+- **MC-1422** *(ADR-054's November 2026 amendment, R11; #505)* The
+  welcome's trade words, said in plain words where they are first met.
+  On a freshly seeded demo, as Chloé Tremblay (Viewer), Account → What
+  you can do here: Stock and locations ends the history of each lot (one
+  batch of an item, with its own code); Items and licences names recipes
+  (what goes into each item made here); Production, production runs
+  (each makes one batch from a recipe); Invoices and returns, credit
+  notes (each gives back part or all of an invoice) and return
+  authorizations (agreeing what a customer may send back). Each is
+  explained once: an Admin's Production goes on to plan and release
+  runs, plainly. Home's welcome card (MC-3207) and a role's page say the
+  same, in Français and 中文 alike, such as
+  每个批次（一个物品的一批货，有自己的编码）的历史记录.
+- **MC-1423** *(ADR-054's November 2026 amendment, R11; #511)* Help on
+  Home starts with its words. As the demo Owner on Home, open Help: under
+  the three moments, Words you’ll meet comes first, ahead of Every day.
+  It says a Lot is one batch of an item, with its own code and expiry,
+  and Out is an item with none left to sell, with no reorder point or
+  usable and coming in it; Late, Expiring soon and Licences expiring
+  follow. Where each tile leads gives each tile one short line, and each
+  still opens the page it names. At 390 px the first screen of Help on
+  Home reaches the words before any tile. In Français (Les mots que
+  vous verrez: Lot, Épuisé) and 中文 (常见词: 批次, 缺货) the same.
+- **MC-1424** *(ADR-054's November 2026 amendment, R9)* The
+  pseudo-language. With `npm run dev`, the sign-in page's and the account
+  menu's language picker offer en-XA last, by its tag. Choosing it turns
+  every screen into longer, accented English, each text bracketed, as
+  [Šíğñ íñ one], on the same page: a word in plain English is one the
+  catalogue lacks, and a text missing a bracket is cut by its box. A
+  server message, such as a wrong password's refusal, stays plain
+  English; signed in, the account is saved as English, and en-XA stays on
+  the screens. Choosing another language puts it back. On a phone the
+  top bar's words give way by en-XA's own width, as each language's do
+  (MC-1561): at 390 px its icons stand alone, and nothing scrolls
+  sideways; from about 529 px wide its words are back under them. The
+  deployed app, or `npm run build` then `npm run preview` in client/,
+  offers no en-XA, and the build stops if a change would ship it.
+- **MC-1405** *Skipped for now (6 October 2026), and still owed (13
+  November 2026): no fluent reader yet. In its place, as ADR-054's
+  November 2026 amendment decided, ChatGPT's review rounds went in, round
+  2 and an extra round in each language and the guides, each text
+  through the decide step's two checks, the rules check and the meaning
+  check, before import; round 1's glossary findings went in, in each
+  language, only on a message no later round changed, where each still
+  held against today's text, and its findings on a message that still
+  broke the glossary, whichever round had read it, since the glossary
+  wins over any round; its other suggestions are overtaken; French and
+  Chinese stay beta, and release notes say so.
+  `client/src/i18n/label-groups.test.ts` holds that the labels a
+  screen shows together, a status set, a filter's choices or a select's
+  options, by their messages' ids, are worded apart in every language.*
+  When one is: someone fluent in each language reads every
+  message, screens and server both, Help's guides, and `docs/glossary.md`,
+  and their corrections are in the catalogues and the guides:
   `node scripts/i18n-review.mjs export` writes `review/fr-CA.xlsx` and
-  `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
+  `review/zh-Hans.xlsx`, and the guides' `review/fr-CA.guides.xlsx` and
+  `review/zh-Hans.guides.xlsx`; each reviewer fills in the Correction column;
   `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
   back, refusing the whole file if any correction loses a placeholder;
-  then `npm run i18n:check` in client/ and server/, and one commit. A
+  then `npm run i18n:check` in client/ and server/ and
+  `node scripts/i18n-rules.mjs`, as import's last line says, and one
+  commit. A
   later round reads only what changed: `node scripts/i18n-review.mjs
   export --since <commit>`, the commit the last round was exported at,
   writes `review/fr-CA.since-<commit>.xlsx` and its Chinese pair beside
@@ -726,7 +924,67 @@ folder by folder; these check what is already in place.
   English changed only in its apostrophes or quotation marks is left out,
   and the count printed. A commit git cannot find is refused. Import reads
   either file, and names a corrected row whose message was removed since,
-  writing nothing until that row's Correction is cleared.
+  or whose English or translation changed since, English changed only in
+  its apostrophes or quotation marks aside, writing nothing until that
+  row's Correction is cleared; the next round reads that message at its
+  new text. A workbook without the English or Translation title is
+  refused, naming it; one whose tags carry a namespace prefix (`x:row`,
+  `x:c`), as some of ChatGPT's do, is read as any other. The guides'
+  workbook (#150) has a row per section, Id `home#today`, and the guide's
+  title and opening as `home`, each the
+  Markdown as written, its heading line included, its id and links listed
+  as what to keep; with `--since`, the sections new or changed since, in
+  `review/fr-CA.guides.since-<commit>.xlsx`. `export --only catalogues` or
+  `--only guides` writes one kind alone. Import writes a corrected section
+  over its own in the guide and nothing else, refused as a message is when
+  its English or translation changed since, and when its first line is
+  not its heading with the same id (the opening's, the guide's title),
+  another line is a heading, or it links elsewhere than the English; then
+  `npx vitest run src/help/guides.test.ts` in client/, as import says.
+  With no fluent reader, `node scripts/i18n-decide.mjs --chatgpt <file>
+  [--claude <file>] --out <file> --meaning` decides each row from
+  ChatGPT's review and Claude's, ChatGPT leading, and writes a workbook
+  import takes whole: a row a review changed whose English or translation
+  changed since the export is set aside, its Correction cleared; each text
+  must pass `scripts/i18n-rules.mjs`, which refuses one left the same as
+  its English, and import's own checks, and, with `--meaning`, Claude's
+  meaning check through the API, or it falls back to the other review's
+  text, else today's, but a text whose only problems are a space beside
+  a placeholder the glossary's Placeholders filled with Chinese words
+  lists, or a plural's branch for a category its language never uses
+  (one in Chinese), has that space taken out and that branch dropped
+  instead, and is today's where they were all a review changed; Reason
+  and Fallback say why beside each
+  row, and the counts are printed. A message the glossary's Settled messages hold
+  keeps today's text whatever a review says, its Reason Settled, and
+  import refuses a correction to one. Where only Claude changed a
+  message, today's stays unless it fails the rules check or, with
+  `--meaning`, the meaning check; then Claude's goes in where it passes
+  both, and the counts say in how many today's was found wrong. The
+  meaning check rejects only a serious change: the meaning reversed or
+  contradicted; a number, date, amount, name, role, screen label or tax
+  wording changed; information the reader needs dropped; a claim the
+  English and the message's id do not support. It passes a text that
+  states what the context implies, uses the glossary's word, or says it
+  more plainly; each request gives the message's id and the glossary's
+  Terms, and each answer its reason before its verdict. Without
+  `ANTHROPIC_API_KEY`, `--meaning` is refused, naming `read -s
+  ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`; its answers are kept in
+  `review/<language>.meaning.json` by the model and the check's version,
+  so a second run asks only what is new, and another model or version
+  asks every text again. Before the first run, `node
+  scripts/i18n-decide.mjs --calibrate` asks the meaning check about 20
+  texts copied from the catalogues, each with one error planted (a "not"
+  dropped or added, a number, a clause, before tax for including tax, a
+  name) and again unchanged, and about 20 of ChatGPT's correct rewrites,
+  read by their ids from round 2's `review/zh-Hans.chatgpt.xlsx` and
+  `review/fr-CA.chatgpt.xlsx`, never one message twice in a request; it
+  prints each caught or missed and passed or flagged, with the three
+  scores, and exits 1 under 18 of 20 caught, or over 2 of 20 unchanged or
+  over 2 of 20 rewrites flagged, a text it leaves unanswered counted as
+  flagged, keeping nothing; a workbook or a rewrite not there is refused
+  before anything is asked. On a failure, run no decide step with
+  `--meaning` until the calibration passes.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -1006,7 +1264,10 @@ Paper is checked first because it must not change at all.
   name becomes "Hide password" (显示密码 / 隐藏密码 in Chinese); pressing again hides
   it. On Change password, showing the new password leaves the current one
   hidden. Leave the page and come back: hidden again. A password manager still
-  fills the sign-in fields.
+  fills the sign-in fields. Each field's label sits above it from the start,
+  empty or not, never inside it under the eye: on a 320 px phone at Larger
+  text, in Français, the invitation's « Choisissez un mot de passe » shows
+  whole, with its asterisk.
 - **MC-1551** On Sign in, show the password, then sign in with a wrong one:
   the error appears and the password is dots again. The same on Change
   password when the current password is wrong: every field shown goes back to
@@ -1072,7 +1333,7 @@ Paper is checked first because it must not change at all.
   a cost, Invoices · To issue and Production · In progress (库存价值 ·
   等待成本, 发票 · 待开具, 生产 · 进行中; Factures · À émettre). What is late is a pale
   red panel headed by how many ("3 things need you now", in 中文
-  有 3 项需要马上处理) over "Choose one to see just those." (no tap with a
+  目前有 3 件事需要您立即处理) over "Choose one to see just those." (no tap with a
   mouse, nothing to act on for a Viewer), with a button per kind saying late, expired or
   out, such as "1 late order to receive": each opens its list with just the
   late ones, Late (Expired for lots and licences, Out for low stock)
@@ -1177,9 +1438,9 @@ Paper is checked first because it must not change at all.
   below, the line saying To ship hidden: under Hidden tiles, below, focus
   on the next tile's handle, its late orders still in the red panel, and a
   red line under the panel says To ship is hidden, and that its late
-  orders still show here (in 中文 “待发货”已隐藏，它的 … 个逾期订单仍然在这里),
+  orders still show here (in 中文 “待发货”已隐藏，但其 … 个逾期订单仍会显示在这里),
   one late order as its 1 late order still shows here (La tuile À
-  expédier est masquée; 1 commande en retard reste ici; 它的 1 个逾期订单);
+  expédier est masquée; 1 commande en retard reste ici; 但其 1 个逾期订单);
   the line is Customise Home's alone, gone from Home after Done. Show
   Orders · Draft: it comes back in its place, after To receive, the line
   saying Orders · Draft shown, 2 of 9, focus on its handle. Under the switch a
@@ -1233,7 +1494,7 @@ Paper is checked first because it must not change at all.
   keyboard alone, then by touch on a phone and on a tablet (a real one
   each, since DevTools' touch does not hold a press). Press Customise
   Home: its words start Drag a tile by its handle, or use Up and Down
-  (用手柄拖动磁贴, Glissez une tuile par sa poignée), and a line
+  (用手柄拖动磁贴, Faites glisser une tuile par sa poignée), and a line
   under them gives the keyboard's keys; on a phone and a tablet that line
   is not there. Drag Expiring soon by its handle,
   the six dots, onto To ship: while it moves it lifts, with a shadow and
@@ -1333,6 +1594,16 @@ await fetch(`${api}/v1/files/product-image`, {
   Objects → `files/` holds the same three objects. The day after the upload,
   the file (never attached) is released; 30 days later its three objects are
   gone from `waf-files`.
+- **MC-1603** *(#249; on any storage)* A file past its limit is refused
+  as it arrives, in the reader's language, naming the limit and what to
+  do, never "File too large". On a phone in 中文, Settings →
+  Organization → Branding → Square logo, choose a 2.6 MB photo: the row
+  says 方形标志最大 2 MB。请选择更小的文件，或先压缩后再上传。, the
+  button still reads 上传方形标志 and no logo shows. In Français, the
+  main logo past 2 MB reads « Un logo peut faire jusqu’à 2 Mo. »; an
+  item's photo past 20 MB, « Une photo peut faire jusqu’à 20 Mo. ». In
+  English, your own photo on the Account page past 5 MB reads "A photo
+  can be up to 5 MB. Choose a smaller file, or save it smaller first."
 
 ## 17. Organization settings (ADR-061)
 
@@ -1463,7 +1734,9 @@ await fetch(`${api}/v1/files/product-image`, {
   why, and signing in returns you to the page. With two tabs open, use
   one and the other does not warn; sign out from the warning in one and
   the other signs out too. A ticked laptop is not signed out. Set
-  Everyone: it is. In 中文 the sign-in page reads 保持登录.
+  Everyone: it is. In 中文 the sign-in page reads 保持登录 and the
+  warning's button 继续使用; in Français, Garder ma session ouverte and
+  Rester connecté, two names for two controls.
 
 ## 22. Covers in the lookup (ADR-066)
 
@@ -1678,11 +1951,12 @@ await fetch(`${api}/v1/files/product-image`, {
   variant has no English name. Press Print: a new tab shows a page, not
   the API's words, and in Chinese as the app is, not in the browser's
   English: 无法生成此 PDF, a sentence naming the variant by its code and
-  its name, 打开物品, which opens the item where its names are, and
+  its name and the language in Chinese, 没有英文名称, never 没有English名称,
+  打开物品, which opens the item where its names are, and
   返回订单, which opens the order. It is light or dark as the browser is,
   and on a phone its links are easy to tap. Download PDF shows the same
   page in place of the app, and 返回订单 brings the order back. Sign out
-  in another tab, then press Print on the order: the page says 您已退出登录
+  in another tab, then press Print on the order: the page says 您尚未登录
   with 登录, which signs you in and opens the order.
 
 ## 26. Each organization's time zone (ADR-072)
@@ -1921,7 +2195,8 @@ Mailpit open.
   role as 管理员 with its line saying what an Admin does, and the note
   under 来自 … 的留言 as typed (the tags shown as text, the line break
   kept). The link works until the end of its seventh day, named with the
-  organization's time zone, and opens `/invitation?token=…` on the app's
+  organization's time zone, written 有效期到 2026年…日结束 with a space
+  before the date (ADR-090), and opens `/invitation?token=…` on the app's
   address, never the API's; the same address is written out for when the
   button does not open, under 接受邀请 with no colon (the plain text, in
   Mailpit's Text tab). It ends 由 … 代 … 发送, naming the app as
@@ -1970,7 +2245,7 @@ Mailpit open.
 - **MC-3009** *(ADR-077)* At 390 px wide in 中文: Invited's rows are cards,
   each with 重新发送, 复制链接 and 收回, its line ending 有效至 and the last
   day, and 邀请 opens the dialog full screen,
-  a close button before its title and 发送邀请 and 复制链接，自己发送 at its foot.
+  a close button before its title and 发送邀请 and 复制链接 at its foot.
   At Larger text (ADR-075), neither Members nor the dialog scrolls
   sideways.
 
@@ -1981,7 +2256,7 @@ The invitation page, in a private window unless a check says otherwise:
   it. It shows the organization's logo and name, 加入 …, who invited you,
   by name and by address as the email does, as 管理员 with what an Admin
   does, the note under 来自 … 的留言, and the address, read-only; at its
-  foot, 此邀请的有效期到 … 结束, the same last day as the email's. The
+  foot, 此邀请有效期至 …, the same last day as the email's. The
   logo is sharp, and the Network tab shows no
   request to `/api/v1/files`. Type a name, then change the page's
   language: the name stays, and the page reads in the new one. Change it
@@ -2002,7 +2277,11 @@ The invitation page, in a private window unless a check says otherwise:
   language, never switched to the invitation's.
 - **MC-3013** *(ADR-077)* Signed in as a member of another organization,
   open a link to that address: You can't join with this account yet,
-  saying why and until when, with Go to your account.
+  saying why and until when, with Go to your account. In 中文 it says to
+  离开该组织 on the “我的账户”页面, as the Account page's button says, never
+  退出, which reads as signing out. `node scripts/i18n-rules.mjs` refuses
+  退出该组织 and 退出组织 in any message or guide, by the glossary's Words
+  not to use, so a later round cannot bring them back.
 - **MC-3014** *(ADR-077, ADR-069)* With that account's deletion set on
   Account, open a link to it: Keep your account to join, naming the
   deletion day; Keep my account, and Join appears.
@@ -2107,16 +2386,19 @@ The pages, in a private window unless a check says otherwise.
   sentence, a screen reader reading the card's heading out. With Home
   open in two tabs, schedule the account's deletion in one; in the other,
   Start an organization is refused and the deletion banner, with Keep my
-  account, appears. In 中文 the first card reads 加入组织, and the
-  sentence 创建新组织需要邀请; in Français it reads « Les nouvelles
-  organisations se créent sur invitation », and the card's line ends
-  « rien d’une organisation précédente n’est repris » (#380).
+  account, appears. In 中文 the first card reads 加入组织, the
+  sentence 创建新组织需要邀请, and the line before 前往您的账户
+  您的资料、设备和个人数据都在“我的账户”页面。; in Français it reads
+  « Les nouvelles organisations se créent sur invitation », and the
+  card's line ends « aucune donnée d’une organisation précédente ne sera
+  transférée »
+  (#380).
 - **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
   Create an account: New here? Accounts start from an invitation, with
   How to get one, which opens Accounts here start from an invitation, with
   Joining where you work, Starting a new organization and Sign in; in
   Français « Ici, on ouvre un compte sur invitation », in 中文
-  这里的账户通过邀请创建, never a word-for-word « commencent par » or
+  创建账户需要邀请, never a word-for-word « commencent par » or
   从邀请开始 (#380). On a phone, an invitation's page names the invited
   address in full under its locked Email field, the domain too, however
   the field cuts it. `/register` typed in the address bar shows the same page; on a slow
@@ -2133,7 +2415,7 @@ The pages, in a private window unless a check says otherwise.
   the Owner, within a minute the bell has … joined, reading … accepted your
   invitation and joined Demo … as a Viewer; Mailpit has no email about it.
   With Account's language set to 中文, the same entry reads …加入了 and
-  …接受了您的邀请，以查看者身份加入 Demo …。 Choosing the entry opens
+  …接受了您的邀请，并以查看者的身份加入了 Demo …。 Choosing the entry opens
   the newcomer's page on People. As an Admin of the demo team, such as
   Daniel Okafor, invite another address, then leave the organization
   before it is accepted, and accept it: neither the Admin's bell, signed
@@ -2206,8 +2488,10 @@ The pages, in a private window unless a check says otherwise.
   订单).
   The guide reads in Chinese, 创建订单 and the other sections, bold and
   links in place, with no space added between Chinese words; All guides
-  reads 所有指南, grouped 工作, 资料, 设置 and 我. Learn more reads 了解更多,
-  right after the words it follows, with no space before it.
+  reads 所有指南, grouped 工作, 资料, 设置 and 我, then
+  “您在这里可以做什么”可在我的账户页面查看。, 我的账户 a link to the page
+  headed 我的账户. Learn more reads 了解更多, right after the words it
+  follows, with no space before it.
 - **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
   demo Owner, invite an address as a Viewer with a note of two lines, and
   accept it from Mailpit in a private window, at 900 px wide or more.
@@ -2275,13 +2559,16 @@ The pages, in a private window unless a check says otherwise.
   with Account's language set to 中文: as MC-3207's Viewer, the card is
   folded to one line above the tiles: 欢迎来到 Demo …，your name, 您的第一周 · 已完成
   0/3, and 展开, a full fingertip tall. 展开 opens it in place and reads
-  收起: 您今天以查看者身份加入。这张卡片在首页显示两周，到 the day, the note,
+  收起: 您今天以查看者身份加入。在您加入后的前两周，这张卡片会显示在首页，直到
+  the day, the note,
   the first week's items, each a row to tap, then 您在这里可以做什么, each
   area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
   sideways at Larger text either. 收起 folds it back to its one line.
-  隐藏 shows 欢迎卡片已隐藏。“您在这里可以做什么”仍保留在“我的账户”中。 with
-  撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
-  我的账户 in the account menu opens a page headed 我的账户.
+  隐藏 shows 欢迎卡片已隐藏。您仍可在“我的账户”页面查看“您在这里可以做什么”。 with
+  撤销. As MC-3209's founder, 您可以在这里进行所有操作，包括更改设置和关闭组织。 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
+  我的账户 in the account menu opens a page headed 我的账户. So in English
+  Your account opens a page headed Your account, and in Français Votre
+  compte one headed Votre compte, as their menus name it.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -2302,9 +2589,10 @@ The pages, in a private window unless a check says otherwise.
   line, and You may do everything here, in one line.
 - **MC-3213** *(ADR-091)* Home's guide. As the demo Owner on Home, open
   Help: Home's guide names Home's three moments (every day, the first two
-  weeks, a new organization), then Every day, Where each tile leads, What
-  is late, Customise Home, Your first two weeks, Getting started, The top bar, With no
-  organization and Words you’ll meet. Every word it puts in bold reads
+  weeks, a new organization), then Words you’ll meet, Every day, Where
+  each tile leads, What is late, Customise Home, Your first two weeks,
+  Getting started, The top bar and With no organization. Every word it
+  puts in bold reads
   the same on the screen: What needs you today, 2 late, Raise an order,
   Recently opened, Refresh; each tile's name, and where the guide says it
   leads is where the tile opens; 2 late orders to ship, and Late, Out and
@@ -2856,7 +3144,7 @@ guides alone. Each try waits a second and tries once more first.
   full by itself (a new document in the Network tab), still in English,
   since nothing was saved. Choose 简体中文 again within a minute, still
   blocked: at the foot of the screen
-  无法加载简体中文，因为此标签页打开期间推出了新版本。重新加载即可使用，不会丢失任何内容。,
+  无法加载简体中文：您打开此标签页期间有新版本发布。重新加载即可使用该语言，内容不会丢失。,
   with 重新加载 and 关闭, never
   the connection's words, and nothing loads by itself; 重新加载 loads the
   page.
@@ -3121,7 +3409,9 @@ private window.
   drawer opens, with the links scrolling above it. Hold the phone
   sideways (or DevTools at 844 × 340): the drawer scrolls as one, Home at
   its top and the foot after the last link, with no fade. In Français, Propulsé par; in 中文 with its setting, 由, the
-  P, 品桥, 提供支持, on one line.
+  P, then 品桥提供支持 with no gap after 品桥, on one line (#486); with
+  no Chinese name set, 由, the P, Panivo and 提供支持, a gap each side
+  of Panivo.
 - **MC-3512** Help's foot. Open Help and scroll to its end: Panivo ·
   Version 0.7.0 · build … · the day, and under it the © line, small and
   grey. In 中文 with its setting, 品桥 · 版本 … ; with no holder set, the
@@ -3161,7 +3451,7 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   the 600 × 400 one: the initials line again. Put the 512 × 512 back, with
   no square logo, Save, and reload with DevTools' Network on Slow 4G:
   while the main logo loads, the first sentence alone, then the
-  about-square line, never the initials first. In 中文, 未设置时，那里显示缩写 …
+  about-square line, never the initials first. In 中文, 未设置时，那里会显示首字母缩写 …
   and 您的标志接近正方形…, each on a line of its own under
   用于小空间，例如折叠的侧栏。, with no space where the sentences meet.
 - **MC-3603** Uploading, heard. VoiceOver on, DevTools' Network on Slow
@@ -3185,7 +3475,7 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   to 400 × 500, 5 : 4 either way; and the SVG drawn at 16 × 16, since an
   SVG of any size is drawn afresh at each size, sharp on the plate and
   beside the name after Save. Upload again after a refusal: the refusal
-  goes. In 中文, 方形标志必须接近正方形，长宽比不超过 5 : 4。较宽的图片请用作主标志。
+  goes. In 中文, 方形标志应接近正方形，最长边与最短边的比例不得超过 5:4。宽幅图片请用作主标志。
   and 方形标志每边至少需要 128 像素。 On a phone, in each language, 5 : 4
   stays on one line, in the refusal and in Help's line for it, however
   the sentence wraps.
@@ -3234,7 +3524,8 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
 - **MC-3609** Both languages, both modes, both rails. Walk MC-3601 to
   MC-3608 again in 中文 and in Dark, each on the dark and the light rail:
   in 中文 the headings read 标志 and 方形标志 with 可选, the button
-  上传方形标志, the hint 接近正方形，每边至少 128 像素。…, and none cut short.
+  上传方形标志, the hint 一张接近正方形的图片，每边至少 128 像素，…, and none
+  cut short.
   The preview's two tiles each show the rail open and folded as the rail
   draws them after Save, side by side on a computer and stacked on a
   phone; the chip's initials clear on the organization's colour in both
@@ -3635,7 +3926,7 @@ site, after a deploy that changes the setting, the route or the relay.
   as soon as the maximum is typed above 200, even after a Save. Add a point
   for D3-1000-120, which has one: under the item, "D3-1000-120 already has
   a reorder point. Edit it", the last two words a link, in 中文 "去编辑",
-  never "请改为修改它" before it, with focus
+  never "请修改现有的库存下限" before it, with focus
   back in the item, where a screen reader reads the refusal with it; Edit
   it opens Edit with what is kept, 240, A fixed quantity of 48, focus in
   the reorder point, as Edit from a row's ⋯ opens.
@@ -3680,8 +3971,8 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
   the button reads 添加库存下限, the switch 采购 and 自制, the cards
   补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
-  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
-  600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
+  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订货
+  600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
   the Owner: the tile after To receive reads 6, Low stock and "1 out",
@@ -3947,11 +4238,11 @@ first.
 - **MC-R79** *(Edit names labelling every language's fields only 名称 or
   描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
   FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
-  through the dialog: each field is read with its language, 名称（English）,
-  描述（English） and FOCUS-120CT：120ct（English）, then the same for
-  Français (Canada) and 简体中文, no two alike. In English they read Name
-  in English, Description in English and FOCUS-120CT: 120ct, in English;
-  in Français, Nom en English.
+  through the dialog: each field is read with its language in Chinese,
+  名称（英文）, 描述（英文） and FOCUS-120CT：120ct（英文）, then the same for
+  法文 and 中文, no two alike, under headings that keep each language's
+  own name. In English they read Name in English, Description in English
+  and FOCUS-120CT: 120ct, in English; in Français, Nom en anglais.
 
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
@@ -4061,7 +4352,7 @@ first.
 
 - **MC-R67** *(Inventory's search not following the address, #301)* As
   the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
-  choose Show all in Lots: the search box reads 2609 and the list narrows
+  choose Show all in Inventory: the search box reads 2609 and the list narrows
   to BF-2609 and FOC-2609-01, with no reload. Type `D3` in the search
   instead and open Reorder points: the same search is in its box and its
   list is narrowed by it. Change it there to `ELDER` and go back to Stock:
@@ -4213,8 +4504,8 @@ first.
   partner, add a contact with a name and nothing in Email or Phone, and
   save: the dialog stays open and says Give an email or a phone, so the
   contact can be reached, never Something went wrong. The same with Primary
-  ticked. In Français Indiquez un courriel ou un téléphone, pour que le
-  contact puisse être joint; in 中文 请填写电子邮箱或电话，以便联系到对方.
+  ticked. In Français Indiquez une adresse courriel ou un numéro de
+  téléphone pour qu’on puisse joindre cette personne; in 中文 请填写电子邮箱或电话，以便联系到对方.
   Fill in either and save: the contact is added. Found while running the
   full suite for ADR-075.
 
@@ -5663,3 +5954,207 @@ first.
   corrected.
 - 2026-11-11: #557, a dark main button under the pointer turns lighter,
   away from its dark text: MC-R103 added.
+- 2026-11-12: ADR-054's November amendment, R3: the review's import
+  refuses a correction whose English or translation changed since its
+  export: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R6 (#150): the review
+  exports Help's guides to a workbook of their own, a row per section,
+  and its import writes a corrected section back: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R12: a guide's bold words
+  are the screen's; Home's three moments, Items' example paths and stock,
+  and People's Active this week and this month, in each language that
+  had them bold or cut short: MC-1415 added.
+- 2026-11-12: ADR-054's November amendment, R12: the guides' check
+  holds that each bold phrase is a message's text: MC-1415 extended.
+- 2026-11-12: ADR-054's November amendment, R4 and R8: 头像 for a
+  person's picture in Account and People, 商品 in Items' guide, and
+  Quebec spacing in two French messages and Help on Home and Items, by
+  the glossary's new Words not to use: MC-1416 added.
+- 2026-11-12: ADR-054's November amendment, R4: scripts/i18n-rules.mjs
+  holds the glossary's words and punctuation, the French guillemets and
+  colons among them, moved from the catalogue checks: MC-1416 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#148): a location that
+  holds stock sends its stock to another location, an exchange rate is
+  refused in words, and a run with no recipe says to promote one:
+  MC-1418 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#249): a file past its
+  limit on any upload route is refused in the reader's language, naming
+  the limit and what to do: MC-1603 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#501): Latin names in a
+  Chinese list keep a space from 和 and 或: MC-1419 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#486): a file's help
+  in plain words first, its size kept whole by a no-break space, and no
+  gap after a Chinese name in the rail's foot: MC-1420 added, MC-3511
+  extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#512): an empty date
+  field shows none of the browser's format until it is typed in:
+  MC-1421 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#505): What you can do
+  here explains a lot, recipes, production runs, credit notes and return
+  authorizations the first time it names them: MC-1422 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#511): Help on Home
+  starts with Words you’ll meet, which now explains a lot and Out, and
+  keeps each tile to a short line: MC-1423 added, MC-3213 updated.
+- 2026-11-12: ADR-054's November amendment, R11 (#149): the page at
+  `/lots` is Trace a lot in its guide's title and in the links to it
+  from the Inventory, Movements and Production guides: MC-1417 extended.
+- 2026-11-12: ADR-054's November amendment, R2 and R5: the decide step
+  writes one text for each row from ChatGPT's and Claude's reviews, set
+  aside where the text changed since the export, each checked by the
+  rules check and the meaning check before it goes in: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R11: the item's page and
+  Edit names name a language inside a sentence in the reader's language,
+  by Intl's names as the server's refusal now does too, 没有英语名称 for
+  没有英文名称: MC-1408 extended, MC-2513 and MC-R79 updated.
+- 2026-11-12: ADR-054's November amendment, R8: the glossary's Words not
+  to use gains 账单地址 and 税务登记号, which the rules check refuses in
+  every message and guide: MC-1417 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#148): every refusal
+  the server's own validation rules write says what to fix in words,
+  with no field path, index, type or "sent as a string": the tax rate,
+  a quantity or price, a date, a currency, a country, a time zone, the
+  lookup and Home's layout: MC-1418 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#501): every list the
+  screens join, and the server's, keeps the space between a Latin name
+  and 和 or 或, not only Whom to ask and a member's roles: MC-1419
+  extended.
+- 2026-11-12: ADR-054's November amendment, R2 and R5: where only Claude
+  changed a message, the decide step asks the meaning check about
+  today's text too, and `--calibrate` tries the meaning check on 20
+  planted errors before a run spends on it: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R11: where Chinese names the
+  language a name or a text is written in, on the item's page, in Edit
+  names and in the refusal, it says 英文, 法文 and 中文, as the exports'
+  columns do, not Intl's 英语 and 法语: MC-1408 extended, MC-2513 and
+  MC-R79 updated.
+- 2026-11-12: ADR-054's November amendment, R11 (#148): Work details'
+  Work phone and Extension refuse letters in words naming the field, not
+  class-validator's "is not in the expected form": MC-1418 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#501): the server's
+  own lists, in refusals, History, a voided invoice's credit notes and a
+  run's variances, join as each language joins one, not with a comma:
+  MC-1419 extended.
+- 2026-11-12: ADR-054's November amendment, R5: `--calibrate` also asks
+  the meaning check about its 20 texts unchanged, and stops over 2 of
+  them flagged as well as under 18 of the planted errors caught, so a
+  check that flags too much never drops a correction: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R5: the meaning check
+  rejects only a serious change, and passes a text that states what the
+  context implies, uses the glossary's word or says it more plainly; each
+  request gives the message's id and the glossary's Terms, each answer
+  its reason before its verdict, and the answers are kept by the model
+  and the check's version, so every text is asked again. `--calibrate`
+  also asks about 20 of ChatGPT's correct rewrites, and stops over 2 of
+  them flagged; the workbook reader takes tags with a namespace prefix:
+  MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R4 and R5: the rules check
+  refuses a translation the same as its English, ignoring case, spaces
+  and punctuation, but those its list names with why, and the decide
+  step falls back from one as from any rule: MC-1416 and MC-1405
+  extended.
+- 2026-11-13: ADR-054's November amendment, R8 and R10: the glossary's
+  Settled messages hold the three Chinese texts settled here; the rules
+  check fails where a catalogue differs from one, the decide step keeps
+  today's for each and import refuses a correction to one: MC-1417 and
+  MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R4 and R5: the glossary's
+  Placeholders filled with Chinese words lists those Chinese fills with
+  its own words; the rules check refuses a space between one and
+  Chinese, and the decide step takes that space out where it is a text's
+  only problem: MC-1416 and MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R2, R6 and R14: ChatGPT's
+  rounds are in, with no fluent reader yet; French and Chinese stay beta,
+  and the labels shown together are held apart in every language: MC-1405
+  extended.
+- 2026-11-13: ADR-054's November amendment, R4 and R5: a Chinese plural
+  has its other branch alone, or =1 where one reads otherwise; the rules
+  check refuses a plural's category its language never uses, by
+  Intl.PluralRules, and the decide step drops one where it is a text's
+  only problem: MC-1416 and MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R2: in 中文 the Account page
+  is headed 我的账户 again, as its menu item and the guides name it, after
+  round 2 had made it 账户: MC-3210 as it was.
+- 2026-11-13: ADR-054's November amendment, R11: in 中文 the invitation
+  email names a built-in role with no space beside the Chinese,
+  以管理员的身份加入, and a role made here with one each side: MC-1416
+  extended.
+- 2026-11-13: ADR-054's November amendment, R11: in 中文 the inviter's
+  notification that an invitation was accepted, and the Invite dialog's
+  lines for a member already here and a copied link, name a built-in role
+  with no space beside the Chinese, as the invitation email does, and a
+  role made here with one: MC-1416 extended.
+- 2026-11-13: ADR-054's November amendment, R2 and R8: the glossary's
+  Settled messages hold the Account page's title in 中文, 我的账户, so no
+  later round renames it again: MC-1417 extended.
+- 2026-11-13: ADR-054's November amendment, R2: in 中文 the eight
+  messages that send a person to the Account page, the welcome's hidden
+  note, two deletion emails, two refusals to delete an organization and
+  three lines of an invitation's page, name it by its title in quotes,
+  “我的账户”页面, where they said “账户”页面: MC-3210's quote follows.
+- 2026-11-13: ADR-054's November amendment, R2: in 中文 Help's foot names
+  the Account page 我的账户, its link's text, and Home with no organization
+  sends a person to the “我的账户”页面, where both said 账户: MC-3206 and
+  MC-3109 extended.
+- 2026-11-13: ADR-054's November amendment, R7: in Français round 1's
+  glossary findings went in on the six messages no later round changed,
+  where each still held, such as Compte corrigé for a corrected count
+  and Date de péremption for a lot's expiry: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R7: in 中文 round 1's
+  glossary findings went in on the nine messages and the one guide
+  sentence no later round changed, where each still held, such as
+  离开了组织 in the account's activity, 库存变动 for a movement and
+  例外批准 in Production's guide: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R9: en-XA, English with
+  accents, about 40 % longer and bracketed, offered by the language
+  picker in development and the browser tests only: MC-1424.
+- 2026-11-13: ADR-054's November amendment, R7 and A2: in Français the
+  production orders' Produced column reads Quantité produite, where
+  Produit read as the glossary's Product, round 1's finding that no
+  later round took: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R7 and A2: in 中文 the
+  invitation's page tells a member of another organization to 离开该组织,
+  as the Account page's button says, where 退出该组织 read as signing out,
+  and Invoices with none says to 创建发票 from a shipment, where 开具 is
+  the glossary's Issue: round 1's findings, the glossary over any round.
+  MC-3013 and MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R8: the glossary's Words not
+  to use gains 退出该组织 and 退出组织, which the rules check refuses in
+  every message and guide; 退出 alone is no row, since 退出登录 is Sign
+  out: MC-3013 extended.
+- 2026-11-13: ADR-054's November amendment, R9: the top bar's words give
+  way in en-XA by its own width, where English's let them run past a
+  390 px phone: MC-1424 extended.
+- 2026-11-13: ADR-054's November amendment, R9: a password field's label
+  sits above the field from the start, where at rest inside it a long one
+  ran under the eye button on a 320 px phone: MC-1550 extended.
+- 2026-11-13: ADR-054's November amendment, R11: the variance bell writes
+  each line off plan as its reader's language writes a label and a
+  percentage, CODE : 50 % in French: MC-1419 extended.
+- 2026-11-13: ADR-054's November amendment, R11 (#149): the top bar's
+  lookup names a production run's Show all after the page it opens,
+  Production, as the menu does: MC-1417 extended.
+- 2026-11-13: ADR-054's November amendment, R11: the Account page is
+  headed Your account in English and Votre compte in French, as the
+  account menu names it, as 我的账户 already was in Chinese: MC-3210
+  extended.
+- 2026-11-13: ADR-054's November amendment, R8 and R11: French says
+  Numéro de taxe for a partner's tax number and its export column, the
+  glossary's word; Délivrée le for a licence's date in History; 120
+  unités in a variation's examples; and dans Paramètres, the page's
+  name, on Home with no organization. No check quoted the old words.
+- 2026-11-13: ADR-054's November amendment, R11: Chinese says an
+  invitation's page works 到 {date}结束, to the end of that day, as round
+  2 had dropped; a credit note dated too early names 其冲减的发票; and a
+  language that failed for a new version says 重新加载, as its button
+  does. No check quoted the old words.
+- 2026-11-13: ADR-054's November amendment, R8: the Chinese Movements
+  guide says 库存变动, the glossary's word, where three of its lines said
+  变动 alone, and the Organization guide's idle section says 退出登录,
+  its heading 闲置后自动退出登录 as the screen's title.
+- 2026-11-13: step 16's review, finding 3: the checks that quoted words
+  the imports of steps 12 and 13 replaced quote today's, in French and
+  Chinese: MC-1413, MC-1559, MC-1564, MC-3109, MC-3201, MC-3210,
+  MC-3420, MC-3604, MC-3609, MC-4212 and MC-R51 updated; MC-1413 also
+  says a DTO rule's refusal names no field (#148). Finding 21: import's
+  last line, and MC-1405 with it, names the rules check, and MC-1405
+  says a failed calibration stops the decide step's `--meaning` runs.

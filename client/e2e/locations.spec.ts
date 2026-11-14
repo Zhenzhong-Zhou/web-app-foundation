@@ -1,5 +1,6 @@
 import { expect, test } from './fixtures';
 import { createLocation, createProduct, signInAs } from './support/api';
+import { saidBy, saidOn } from './support/said';
 
 /**
  * The screen exists to make ADR-024's rule visible rather than something people
@@ -96,14 +97,16 @@ test('refuses a child under a location holding stock', async ({
 
   // Said before the attempt, not after: being refused once a name has been
   // typed is worse than being told what will happen.
-  await expect(dialog).toContainText('has to move into a child location first');
+  await expect(dialog).toContainText(
+    saidOn('en', 'locations.create.parentStopsHolding', { name: site.name }),
+  );
 
   await dialog.getByLabel('Name').fill('E2E Doomed Bin');
   await dialog.getByRole('button', { name: 'Add location' }).click();
 
   // The server is what actually enforces it — the warning above is courtesy.
   await expect(dialog.getByRole('alert', { name: 'Error' })).toContainText(
-    /holds stock/i,
+    saidBy('en', 'locations.locationHoldsStockMove'),
   );
   await expect(page.getByText('E2E Doomed Bin')).toBeHidden();
 });

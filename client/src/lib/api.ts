@@ -272,7 +272,8 @@ export async function refusalFrom(
 ): Promise<ApiError> {
   // ValidationPipe returns message as an array; everything else as a string.
   const message = Array.isArray(body?.message)
-    ? body.message.join(', ')
+    ? // eslint-disable-next-line no-restricted-syntax -- the server's sentences, each whole, not names in a list
+      body.message.join(', ')
     : (body?.message ??
       intl().formatMessage(
         {

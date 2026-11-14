@@ -1,4 +1,4 @@
-# Lots
+# Tracer un lot
 
 Un lot est une quantité avec son propre code et sa date de péremption, reçue d’un fournisseur ou fabriquée par un ordre de fabrication. Tracer un lot montre où il se trouve, d’où il vient, dans quoi il a été utilisé et qui l’a reçu : la liste qu’un rappel doit joindre.
 

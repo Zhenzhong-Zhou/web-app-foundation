@@ -15,6 +15,35 @@ export type { Locale };
 export const DEFAULT_LOCALE: Locale = 'en';
 
 /**
+ * The pseudo-language (ADR-054's November 2026 amendment, R9): English with
+ * accents, about 40 % longer and bracketed at each end (i18n/pseudo.ts), so
+ * a word the catalogue lacks, or a box too narrow for a longer language,
+ * shows without waiting for a translation. In development and the browser
+ * tests only: a production build neither has it nor offers it, which
+ * vite.config.ts's `withoutPseudoLanguage` holds, so it is named only
+ * where `import.meta.env.DEV` guards it. To the server, the account, the
+ * guides and anything else the screens ask for, it is English.
+ */
+export const PSEUDO_LOCALE = 'en-XA';
+
+/** A language the screens can be in: one of the app's, or en-XA. */
+export type ScreenLocale = Locale | typeof PSEUDO_LOCALE;
+
+/** What the language picker offers: the app's, and en-XA in development. */
+export const SCREEN_LOCALES: readonly ScreenLocale[] = import.meta.env.DEV
+  ? [...SUPPORTED_LOCALES, PSEUDO_LOCALE]
+  : SUPPORTED_LOCALES;
+
+export function isScreenLocale(value: unknown): value is ScreenLocale {
+  return (SCREEN_LOCALES as readonly unknown[]).includes(value);
+}
+
+/** The language the server is asked in: English for en-XA. */
+export function serverLocale(locale: ScreenLocale): Locale {
+  return isLocale(locale) ? locale : DEFAULT_LOCALE;
+}
+
+/**
  * Each language in its own name, never translated: someone looking for
  * 简体中文 in a French menu should find it as they would write it.
  */
@@ -40,9 +69,45 @@ export const UNREVIEWED_MARK: Partial<Record<Locale, string>> = {
   'zh-Hans': '（测试版）',
 };
 
-/** A language's name as the picker offers it. */
-export function pickerName(locale: Locale): string {
+/** A language's name as the picker offers it; en-XA by its tag. */
+export function pickerName(locale: ScreenLocale): string {
+  if (!isLocale(locale)) return locale;
   return LANGUAGE_NAMES[locale] + (UNREVIEWED_MARK[locale] ?? '');
+}
+
+/**
+ * Chinese names the language a name or a text is written in 英文, 法文 and
+ * 中文, as the exports' columns do (英文名称) and ADR-054's November 2026
+ * amendment says; Intl's 英语 and 法语 name the language as spoken or
+ * learned. The glossary says so; the server's `languageWord` holds the
+ * same three.
+ */
+const WRITTEN_IN_CHINESE: Record<Locale, string> = {
+  en: '英文',
+  'fr-CA': '法文',
+  'zh-Hans': '中文',
+};
+
+/**
+ * A language named in the reader's language inside a sentence, from its
+ * language alone: Chinese, chinois, 中文 for zh-Hans (ADR-054's November
+ * 2026 amendment). Intl's names, but in Chinese, which names a name's or a
+ * text's language from WRITTEN_IN_CHINESE. Its own name there ran English
+ * into Chinese and 简体中文 into French; a heading or a choice of language
+ * keeps LANGUAGE_NAMES. The server names it the same way in a refusal
+ * (`languageWord` in server/src/i18n/translate.ts), so the refusal and the
+ * item's page it sends a person to say it alike, as
+ * e2e/document-refusals.spec.ts holds in a browser. `reader` is
+ * `intl.locale`, read as the language the app is in.
+ */
+export function languageWord(language: Locale, reader: string): string {
+  const app = matchLocale(reader) ?? DEFAULT_LOCALE;
+  if (app === 'zh-Hans') return WRITTEN_IN_CHINESE[language];
+  return (
+    new Intl.DisplayNames([app], { type: 'language' }).of(
+      new Intl.Locale(language).language,
+    ) ?? language
+  );
 }
 
 export function isLocale(value: unknown): value is Locale {
@@ -96,7 +161,7 @@ export function browserLocale(languages: readonly string[]): Locale {
  * as before ADR-054; otherwise the language itself.
  */
 export function formattingLocale(
-  locale: Locale,
+  locale: ScreenLocale,
   languages: readonly string[],
 ): string {
   const wanted = maximized(locale);

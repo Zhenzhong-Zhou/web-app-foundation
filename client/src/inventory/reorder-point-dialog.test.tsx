@@ -118,7 +118,7 @@ describe('ReorderPointDialog', () => {
 
       expect(
         await screen.findByText(
-          '目前低于 2,000，因此建议生产 2,000，即 2 个 1,000。',
+          '目前低于 2,000，因此建议生产 2,000，按每组 1,000 计算，共 2 组。',
         ),
       ).toBeInTheDocument();
       // The bars say they show the position, not stock on hand.
