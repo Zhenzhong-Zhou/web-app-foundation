@@ -157,18 +157,18 @@ steps; this section stays the rule.
   first step compares the uploaded copy with `main`'s.
 - **The build, through `/build-from-brief`** (from ADR-083; in a row
   from ADR-089; each step on its own model from ADR-089's amendment of
-  November 2026). The brief and the canvas's boards go in `tmp/adr-NNN/`,
+  November 2026). The brief and the canvas's boards go in `tmp/<branch>/`,
   ignored by git and by markdownlint, so `scripts/verify.sh` does not
   lint its Markdown. A brief's steps table names who runs each step:
   Claude Code, Claude Code's main session (the reviews), the chat or
   Bob, and the model of each Claude Code step
   ([Which model runs a step](#which-model-runs-a-step)).
-  `/build-from-brief tmp/adr-NNN/brief.md from <N>` runs step N and
+  `/build-from-brief tmp/<branch>/brief.md from <N>` runs step N and
   each one after it, each in a new `brief-step` subagent on the model its
   row names, whose
   `.claude/agents/brief-step.md` holds the ground rules every brief
   repeated, so a brief holds its decisions and its steps;
-  `/build-from-brief tmp/adr-NNN/brief.md <N>` runs one step the same
+  `/build-from-brief tmp/<branch>/brief.md <N>` runs one step the same
   way. A run stops at a step that is the chat's or Bob's; before a
   main-session step, which it refuses, naming `/review-step`; at a step
   BLOCKED, by a question the brief does not
@@ -398,7 +398,7 @@ Model column, which the chat sets when it plans, from this table:
 
 The last Claude Code step of a brief, before its pull request is opened,
 and the one row whose Who is `Claude Code, main session`. It runs in the
-session, on Opus at high effort, by `/review-step tmp/adr-NNN/brief.md
+session, on Opus at high effort, by `/review-step tmp/<branch>/brief.md
 <N>`; `/build-from-brief` refuses it and names that command. It stays in
 the main session, never in a `brief-step`, because it stops for Bob's
 choices, `/doctor prompt-audit` is typed in the session, and the reviews'
@@ -425,7 +425,7 @@ twice:
       so the ask says `/model opus` first. It changes nothing itself.
 
    Every finding is numbered, together, and written to the file the brief
-   names, usually `tmp/adr-NNN/review.md`. Nothing is fixed, `/simplify`'s
+   names, usually `tmp/<branch>/review.md`. Nothing is fixed, `/simplify`'s
    included: the prompt stops there for Bob's choices in the chat.
 2. **The fixes.** The same command with Bob's choices after the step's
    number, by their numbers. Each fix is its own commit, verified with
@@ -456,12 +456,14 @@ twice:
   anything in the same area, and say which triggers have fired. The
   open issues are gathered with a script (ADR-089), the areas the
   change touches and the issues it names given:
-  `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n,m>`. It
-  writes `tmp/adr-NNN/check.txt`, which the chat reads: each area's
-  open issues ([Issues and labels](#issues-and-labels)), then the text
-  and comments of each issue named and each `when-touched` one. It
-  refuses an area not in `scripts/adr-index.mjs`, writing nothing. That
-  is when a deferred item is cheapest to pick up.
+  `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n,m>`, on
+  the feature's branch. It writes `tmp/<branch>/check.txt`, which the
+  chat reads: each area's open issues
+  ([Issues and labels](#issues-and-labels)), then the text and comments
+  of each issue named and each `when-touched` one. It refuses an area
+  not in `scripts/adr-index.mjs`, and `main` or no branch checked out
+  (`git switch -c <branch>` starts one), writing nothing. That is when
+  a deferred item is cheapest to pick up.
 - **A new ADR,** after the check above: copy
   [the template](adr/template.md) to `NNNN-<slug>.md` in `docs/adr/`,
   its number in four digits and its slug from its title as

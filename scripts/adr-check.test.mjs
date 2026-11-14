@@ -4,12 +4,12 @@
  *
  *     node --test scripts/
  *
- * Each test runs the script in a temporary repository, whose invoices
- * folder makes it an area beside the ones every repository has, with a
- * stand-in gh first on PATH. The stand-in answers only the calls the
- * script makes, from the issues the test gives it, and fails on any
- * other, so a call the check must not make, `gh issue view --comments`
- * among them, fails the test.
+ * Each test runs the script in a temporary repository, on a branch of its
+ * own, whose invoices folder makes it an area beside the ones every
+ * repository has, with a stand-in gh first on PATH. The stand-in answers
+ * only the calls the script makes, from the issues the test gives it, and
+ * fails on any other, so a call the check must not make, `gh issue view
+ * --comments` among them, fails the test.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -18,7 +18,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { folder, repository, write } from "./git-fixture.mjs";
+import { folder, git, repository, write } from "./git-fixture.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -116,11 +116,24 @@ const ISSUES = [
   },
 ];
 
-/** A temporary repository, and a folder holding the stand-in gh. */
-function fixture(t, { signedIn = true, failing = [] } = {}) {
+/** The branch the fixture is on: an amendment's, with no ADR number of its own. */
+const BRANCH = "fix-ups-i18n";
+
+/**
+ * A temporary repository on a branch, and a folder holding the stand-in
+ * gh. `branch: null` leaves a commit checked out with no branch, as a
+ * detached HEAD does.
+ */
+function fixture(t, { signedIn = true, failing = [], branch = BRANCH } = {}) {
   const root = repository(t, "adr-check", {
     "server/src/modules/invoices/index.ts": "",
   });
+  if (branch === null) {
+    git(root, "commit", "--quiet", "--allow-empty", "-m", "A commit");
+    git(root, "switch", "--quiet", "--detach");
+  } else {
+    git(root, "switch", "--quiet", "-c", branch);
+  }
   const bin = folder(t, "adr-check-bin");
   write(bin, "gh", STAND_IN);
   chmodSync(path.join(bin, "gh"), 0o755);
@@ -146,8 +159,8 @@ const run = ({ root, env }, ...args) =>
     { cwd: root, env, encoding: "utf8" },
   );
 
-const check = ({ root }) =>
-  readFileSync(path.join(root, "tmp/adr-089/check.txt"), "utf8");
+const check = ({ root }, branch = BRANCH) =>
+  readFileSync(path.join(root, "tmp", branch, "check.txt"), "utf8");
 
 /** The headings of the issues read whole, in the file's order. */
 const readWhole = (text) => text.match(/^== #\d+/gm);
@@ -159,7 +172,7 @@ test("writes each area's open issues, then each issue named and each when-touche
   assert.equal(written.status, 0, written.stderr);
   assert.equal(
     written.stdout,
-    "Wrote tmp/adr-089/check.txt: 2 areas, 4 open issues, 4 read whole. Attach it to the chat.\n",
+    `Wrote tmp/${BRANCH}/check.txt: 2 areas, 4 open issues, 4 read whole. Attach it to the chat.\n`,
   );
   assert.equal(
     check(repo),
@@ -188,6 +201,19 @@ Two commands are out of date.
 One is fixed.
 `,
   );
+});
+
+test("writes into the branch's folder, an ADR's own branch as an amendment's", (t) => {
+  const repo = fixture(t, { branch: "adr-092-items" });
+
+  const written = run(repo, "092", "--areas", "docs");
+  assert.equal(written.status, 0, written.stderr);
+  assert.match(written.stdout, /^Wrote tmp\/adr-092-items\/check\.txt: /);
+  assert.deepEqual(readWhole(check(repo, "adr-092-items")), [
+    "== #12",
+    "== #40",
+  ]);
+  assert.equal(existsSync(path.join(repo.root, "tmp/adr-092")), false);
 });
 
 test("an issue both named and when-touched is read once", (t) => {
@@ -225,6 +251,26 @@ test("refuses an ADR number not of three digits, and writes nothing", (t) => {
     assert.equal(refused.status, 1, number);
     assert.match(refused.stderr, /^Not an ADR number of three digits: /);
   }
+  assert.equal(existsSync(path.join(repo.root, "tmp")), false);
+});
+
+test("refuses on main, naming the command that starts a branch, and writes nothing", (t) => {
+  const repo = fixture(t, { branch: "main" });
+
+  const refused = run(repo, "089", "--areas", "docs");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /^On main, /);
+  assert.match(refused.stderr, /git switch -c <branch>/);
+  assert.equal(existsSync(path.join(repo.root, "tmp")), false);
+});
+
+test("refuses with no branch checked out, naming the command that starts one, and writes nothing", (t) => {
+  const repo = fixture(t, { branch: null });
+
+  const refused = run(repo, "089", "--areas", "docs");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /^No branch is checked out, /);
+  assert.match(refused.stderr, /git switch -c <branch>/);
   assert.equal(existsSync(path.join(repo.root, "tmp")), false);
 });
 

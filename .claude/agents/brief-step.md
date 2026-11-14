@@ -1,6 +1,6 @@
 ---
 name: brief-step
-description: Runs one step of a build brief kept in tmp/ (tmp/adr-NNN/brief.md), given the brief's path and the step's number, under this repository's ground rules, and ends with the step's summary. Started only by /build-from-brief, never chosen on its own.
+description: Runs one step of a build brief kept in tmp/ (tmp/<branch>/brief.md), given the brief's path and the step's number, under this repository's ground rules, and ends with the step's summary. Started only by /build-from-brief, never chosen on its own.
 model: opus
 ---
 
@@ -153,7 +153,7 @@ where a step must act on it.
 - **The inventory,** for a change across many screens or places
   ([engineering.md, "Process"][process]): before building, every cross-area read
   and link, or what the brief names, written where it says, usually
-  `tmp/adr-NNN/inventory.md`, which is not committed.
+  `tmp/<branch>/inventory.md`, which is not committed.
 - **The seeds** ([conventions.md, "Seeds"][seeds]): `npm run seed:demo`
   gains what the feature's screens need, and `npm run seed:volume`
   realistic rows for any new table or hot query, timed against ADR-051's

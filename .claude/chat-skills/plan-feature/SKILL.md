@@ -63,9 +63,11 @@ anything is drafted. For each area the change touches, by its name in
 - the area's open issues, and the text and comments of each
   `when-touched` one, which rides along with the next branch that
   touches its area. Bob runs `scripts/adr-check.mjs` (ADR-089) from the
-  repository's root, the areas and the issues the feature names filled
-  in, and attaches `tmp/adr-NNN/check.txt`, which it writes. It refuses
-  an area not in `AREAS`, so a typo fails rather than printing nothing.
+  repository's root, on the feature's branch, the areas and the issues
+  the feature names filled in, and attaches `tmp/<branch>/check.txt`,
+  which it writes. It refuses an area not in `AREAS`, so a typo fails
+  rather than printing nothing, and `main`, which has no folder of its
+  own: `git switch -c <branch>` first.
 
   ```bash
   node scripts/adr-check.mjs NNN --areas api,ops,ui --issues 287
@@ -116,11 +118,11 @@ checking**. Each item names its issue or ADR.
 
 ## 4. The brief
 
-`tmp/adr-NNN/brief.md`, in [the brief's shape](reference/brief.md): a
+`tmp/<branch>/brief.md`, in [the brief's shape](reference/brief.md): a
 step per commit, each naming the requirements it meets, each row of the
 interaction table a browser test, its table saying who runs each and, for a Claude Code
 step, on which model. Claude Code's steps run in a row,
-`/build-from-brief tmp/adr-NNN/brief.md from N`, each in a fresh
+`/build-from-brief tmp/<branch>/brief.md from N`, each in a fresh
 `brief-step` subagent on the model its row names, until one needs a
 person (ADR-089). The Model column is set from the table in
 `docs/engineering.md`'s "Which model runs a step", its one home, read
@@ -145,14 +147,14 @@ gets:
 - A question a step hands back: the options, one recommended, and the
   exact text to type.
 - The reviews' choices, by number, after the step's number:
-  `/review-step tmp/adr-NNN/brief.md N` followed by them.
+  `/review-step tmp/<branch>/brief.md N` followed by them.
 - A chat step (the docs, a design, a fix the chat writes): its files as
   [the delivery rules](reference/delivery.md) say, from a clone of the
   branch Bob has pushed, at the commit he names.
 
 ## 6. The as-built and the pull request
 
-- From the notes kept in the chat and `tmp/adr-NNN/summaries.md`, which
+- From the notes kept in the chat and `tmp/<branch>/summaries.md`, which
   Bob attaches: the ADR's amendment, "## Amendment (Month YYYY) — as
   built (#PR)", where building differed from the decisions, each
   requirement marked met, changed or deferred; the handoff; any manual check or runbook line still owed.
