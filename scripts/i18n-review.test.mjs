@@ -678,7 +678,7 @@ test("import writes a corrected section over its own in the guide, and nothing e
   assert.match(run.stdout, /guides\/fr-CA\/orders\.md: 1 corrected\./);
   assert.match(
     run.stdout,
-    /Now run `npx vitest run src\/help\/guides\.test\.ts` in client\/, then look at `git diff`\./,
+    /Now run `npx vitest run src\/help\/guides\.test\.ts` in client\/, and `node scripts\/i18n-rules\.mjs`, then look at `git diff`\./,
   );
 
   const after = allFiles(root);

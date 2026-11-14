@@ -696,15 +696,19 @@ folder by folder; these check what is already in place.
   prints Chinese only, glyphs Chinese rather than Japanese forms. A PDF
   holds the document only, nothing of the app, in any language.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
-  banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
-  Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
+  banner reads 电子邮箱或密码错误。请检查后重试。, not English; in Français,
+  L’adresse courriel ou le mot de passe est invalide. Vérifiez les deux et
+  réessayez. Signed
   in as the demo Owner, in Français, Move everyone to… on Owner's page,
   to Admin: the refusal, that ownership is transferred first, is French. In 简体中文, ship more than an order has outstanding, cancel an
   order goods have moved against, and release a run under an expired
   licence: each refusal is Chinese, the statuses in it too (已确认, not
   "confirmed"). A request with a field the server refuses, such as a
-  quantity of -1 sent with curl and `Accept-Language: fr-CA`, names the
-  field as the API does (lines.0.quantity) in a French sentence. The same
+  quantity of -1 sent with curl and `Accept-Language: fr-CA`, is refused
+  in a French sentence saying what to fix, naming no field (Saisissez un
+  nombre supérieur à zéro, d’au plus 4 décimales.), once however many
+  lines it refuses; a field the API does not know is named as the API
+  names it. The same
   requests with no Accept-Language answer in English word for word.
 - **MC-1414** With the account's language set to Français, request a
   password reset: the email (Mailpit) is French, subject included. Sign
@@ -909,7 +913,9 @@ folder by folder; these check what is already in place.
   `review/zh-Hans.guides.xlsx`; each reviewer fills in the Correction column;
   `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
   back, refusing the whole file if any correction loses a placeholder;
-  then `npm run i18n:check` in client/ and server/, and one commit. A
+  then `npm run i18n:check` in client/ and server/ and
+  `node scripts/i18n-rules.mjs`, as import's last line says, and one
+  commit. A
   later round reads only what changed: `node scripts/i18n-review.mjs
   export --since <commit>`, the commit the last round was exported at,
   writes `review/fr-CA.since-<commit>.xlsx` and its Chinese pair beside
@@ -977,7 +983,8 @@ folder by folder; these check what is already in place.
   scores, and exits 1 under 18 of 20 caught, or over 2 of 20 unchanged or
   over 2 of 20 rewrites flagged, a text it leaves unanswered counted as
   flagged, keeping nothing; a workbook or a rewrite not there is refused
-  before anything is asked. Then no decide step runs with `--meaning`.
+  before anything is asked. On a failure, run no decide step with
+  `--meaning` until the calibration passes.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -1326,7 +1333,7 @@ Paper is checked first because it must not change at all.
   a cost, Invoices · To issue and Production · In progress (库存价值 ·
   等待成本, 发票 · 待开具, 生产 · 进行中; Factures · À émettre). What is late is a pale
   red panel headed by how many ("3 things need you now", in 中文
-  有 3 项需要马上处理) over "Choose one to see just those." (no tap with a
+  目前有 3 件事需要您立即处理) over "Choose one to see just those." (no tap with a
   mouse, nothing to act on for a Viewer), with a button per kind saying late, expired or
   out, such as "1 late order to receive": each opens its list with just the
   late ones, Late (Expired for lots and licences, Out for low stock)
@@ -1487,7 +1494,7 @@ Paper is checked first because it must not change at all.
   keyboard alone, then by touch on a phone and on a tablet (a real one
   each, since DevTools' touch does not hold a press). Press Customise
   Home: its words start Drag a tile by its handle, or use Up and Down
-  (用手柄拖动磁贴, Glissez une tuile par sa poignée), and a line
+  (用手柄拖动磁贴, Faites glisser une tuile par sa poignée), and a line
   under them gives the keyboard's keys; on a phone and a tablet that line
   is not there. Drag Expiring soon by its handle,
   the six dots, onto To ship: while it moves it lifts, with a shadow and
@@ -2383,7 +2390,8 @@ The pages, in a private window unless a check says otherwise.
   sentence 创建新组织需要邀请, and the line before 前往您的账户
   您的资料、设备和个人数据都在“我的账户”页面。; in Français it reads
   « Les nouvelles organisations se créent sur invitation », and the
-  card's line ends « rien d’une organisation précédente n’est repris »
+  card's line ends « aucune donnée d’une organisation précédente ne sera
+  transférée »
   (#380).
 - **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
   Create an account: New here? Accounts start from an invitation, with
@@ -2407,7 +2415,7 @@ The pages, in a private window unless a check says otherwise.
   the Owner, within a minute the bell has … joined, reading … accepted your
   invitation and joined Demo … as a Viewer; Mailpit has no email about it.
   With Account's language set to 中文, the same entry reads …加入了 and
-  …接受了您的邀请，以查看者身份加入 Demo …。 Choosing the entry opens
+  …接受了您的邀请，并以查看者的身份加入了 Demo …。 Choosing the entry opens
   the newcomer's page on People. As an Admin of the demo team, such as
   Daniel Okafor, invite another address, then leave the organization
   before it is accepted, and accept it: neither the Admin's bell, signed
@@ -2551,12 +2559,13 @@ The pages, in a private window unless a check says otherwise.
   with Account's language set to 中文: as MC-3207's Viewer, the card is
   folded to one line above the tiles: 欢迎来到 Demo …，your name, 您的第一周 · 已完成
   0/3, and 展开, a full fingertip tall. 展开 opens it in place and reads
-  收起: 您今天以查看者身份加入。这张卡片在首页显示两周，到 the day, the note,
+  收起: 您今天以查看者身份加入。在您加入后的前两周，这张卡片会显示在首页，直到
+  the day, the note,
   the first week's items, each a row to tap, then 您在这里可以做什么, each
   area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
   sideways at Larger text either. 收起 folds it back to its one line.
   隐藏 shows 欢迎卡片已隐藏。您仍可在“我的账户”页面查看“您在这里可以做什么”。 with
-  撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
+  撤销. As MC-3209's founder, 您可以在这里进行所有操作，包括更改设置和关闭组织。 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
   我的账户 in the account menu opens a page headed 我的账户. So in English
   Your account opens a page headed Your account, and in Français Votre
   compte one headed Votre compte, as their menus name it.
@@ -3135,7 +3144,7 @@ guides alone. Each try waits a second and tries once more first.
   full by itself (a new document in the Network tab), still in English,
   since nothing was saved. Choose 简体中文 again within a minute, still
   blocked: at the foot of the screen
-  无法加载简体中文，因为此标签页打开期间推出了新版本。重新加载即可使用，不会丢失任何内容。,
+  无法加载简体中文：您打开此标签页期间有新版本发布。重新加载即可使用该语言，内容不会丢失。,
   with 重新加载 and 关闭, never
   the connection's words, and nothing loads by itself; 重新加载 loads the
   page.
@@ -3466,7 +3475,7 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   to 400 × 500, 5 : 4 either way; and the SVG drawn at 16 × 16, since an
   SVG of any size is drawn afresh at each size, sharp on the plate and
   beside the name after Save. Upload again after a refusal: the refusal
-  goes. In 中文, 方形标志必须接近正方形，长宽比不超过 5 : 4。较宽的图片请用作主标志。
+  goes. In 中文, 方形标志应接近正方形，最长边与最短边的比例不得超过 5:4。宽幅图片请用作主标志。
   and 方形标志每边至少需要 128 像素。 On a phone, in each language, 5 : 4
   stays on one line, in the refusal and in Help's line for it, however
   the sentence wraps.
@@ -3515,7 +3524,8 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
 - **MC-3609** Both languages, both modes, both rails. Walk MC-3601 to
   MC-3608 again in 中文 and in Dark, each on the dark and the light rail:
   in 中文 the headings read 标志 and 方形标志 with 可选, the button
-  上传方形标志, the hint 接近正方形，每边至少 128 像素。…, and none cut short.
+  上传方形标志, the hint 一张接近正方形的图片，每边至少 128 像素，…, and none
+  cut short.
   The preview's two tiles each show the rail open and folded as the rail
   draws them after Save, side by side on a computer and stacked on a
   phone; the chip's initials clear on the organization's colour in both
@@ -3961,8 +3971,8 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
   the button reads 添加库存下限, the switch 采购 and 自制, the cards
   补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
-  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
-  600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
+  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订货
+  600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
   the Owner: the tile after To receive reads 6, Low stock and "1 out",
@@ -4494,8 +4504,8 @@ first.
   partner, add a contact with a name and nothing in Email or Phone, and
   save: the dialog stays open and says Give an email or a phone, so the
   contact can be reached, never Something went wrong. The same with Primary
-  ticked. In Français Indiquez un courriel ou un téléphone, pour que le
-  contact puisse être joint; in 中文 请填写电子邮箱或电话，以便联系到对方.
+  ticked. In Français Indiquez une adresse courriel ou un numéro de
+  téléphone pour qu’on puisse joindre cette personne; in 中文 请填写电子邮箱或电话，以便联系到对方.
   Fill in either and save: the contact is added. Found while running the
   full suite for ADR-075.
 
@@ -6141,3 +6151,10 @@ first.
   guide says 库存变动, the glossary's word, where three of its lines said
   变动 alone, and the Organization guide's idle section says 退出登录,
   its heading 闲置后自动退出登录 as the screen's title.
+- 2026-11-13: step 16's review, finding 3: the checks that quoted words
+  the imports of steps 12 and 13 replaced quote today's, in French and
+  Chinese: MC-1413, MC-1559, MC-1564, MC-3109, MC-3201, MC-3210,
+  MC-3420, MC-3604, MC-3609, MC-4212 and MC-R51 updated; MC-1413 also
+  says a DTO rule's refusal names no field (#148). Finding 21: import's
+  last line, and MC-1405 with it, names the rules check, and MC-1405
+  says a failed calibration stops the decide step's `--meaning` runs.

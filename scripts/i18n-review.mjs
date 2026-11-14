@@ -48,9 +48,10 @@
  * title), another line is a heading, or it does not link to exactly what
  * the English links to. The problems are listed by row.
  * Afterwards, run `npm run i18n:check` in client/ and server/ for the
- * catalogues, and `npx vitest run src/help/guides.test.ts` in client/ for
- * the guides, which checks their Markdown and bold labels, and look at
- * `git diff`.
+ * catalogues, `npx vitest run src/help/guides.test.ts` in client/ for the
+ * guides, which checks their Markdown and bold labels, and
+ * `node scripts/i18n-rules.mjs` for both, the glossary's words and
+ * punctuation, and look at `git diff`.
  *
  * With no fluent reader, scripts/i18n-decide.mjs stands between the two:
  * it decides one text for each row from the machine reviews of a workbook
@@ -722,6 +723,8 @@ function importWorkbook(file) {
       "`npm run i18n:check` in client/ and server/",
     areas.has(GUIDE_AREA) &&
       "`npx vitest run src/help/guides.test.ts` in client/",
+    // The glossary's words and punctuation, catalogues and guides alike.
+    "`node scripts/i18n-rules.mjs`",
   ].filter(Boolean);
   console.log(`Now run ${checks.join(", and ")}, then look at \`git diff\`.`);
 }
