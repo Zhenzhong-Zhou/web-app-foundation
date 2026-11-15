@@ -265,9 +265,11 @@ async function rename(
 }
 
 /**
- * An entry in each renamed item's History, as its own Save would write
- * it, saying the language it was renamed for: the item's name from and to,
- * or the variant's, by its code.
+ * An entry in each renamed item's History: Item updated, or Item variant
+ * updated with the variant's code, holding the name from and to and the
+ * language chosen. Unlike Edit's Save, whose entry records no name, it
+ * keeps the names, since the change was not made on the item (ADR-054,
+ * amended for #531: "its History says so").
  */
 function historyOf(
   rows: NameToChoose[],

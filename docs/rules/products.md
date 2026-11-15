@@ -810,7 +810,8 @@ How this file is kept is in the [README](README.md).
   set, an image added by its file, a new order of images, and its
   category, when added and from and to, by the category's name, and its
   type and Discontinue from and to. A new name records who and when, not
-  what changed.** A description is never recorded.
+  what changed; one given by choosing the items' language records the
+  name from and to.** A description is never recorded.
   [ADR-018](../adr/0018-audit-log.md#decision--never-record-the-request-body) ·
   [ADR-038](../adr/0038-an-audit-row-names-its-resource-as-it-was-at-the-time.md#decision--snapshot-a-label-at-write-time-in-audit_logresource_label) ·
   [test](../../server/test/audit.e2e-spec.ts) "records no payload for a route that names no fields" ·
@@ -820,6 +821,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "records an item’s category from and to, by name, and a rename beside an unchanged one" ·
   [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "keeps the name chosen on each row: the own one removes the kept, the kept one renames the item as Edit does, History saying so" ·
   partly tested
 - **History keeps each category added, renamed, moved and deleted, by its
   name, and the category it sits under by that one's name,** the name it
