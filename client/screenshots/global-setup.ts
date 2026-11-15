@@ -287,10 +287,11 @@ async function globalSetup(config: FullConfig): Promise<void> {
       api,
       '/stock/lots/search?code=FOC-2609-01',
     );
-    // Items' list is paged (ADR-092): the one product, found by its name.
-    const products = await read<
-      KeysetPage<{ id: string; displayName: string }>
-    >(api, '/products?search=Calm%2090ct&discontinued=include');
+    // Items' list is paged (ADR-092): the one product, found by its code.
+    const products = await read<KeysetPage<{ id: string; sku: string }>>(
+      api,
+      '/products?search=CALM-90CT&discontinued=include',
+    );
 
     const orderId = (reference: string) =>
       orders.entries.find((order) => order.reference === reference)?.id;
@@ -305,8 +306,10 @@ async function globalSetup(config: FullConfig): Promise<void> {
 
     const run = runs.entries.find((each) => each.reference === 'CALM-RUN-01');
     const batch = lots.find((lot) => lot.code === 'FOC-2609-01');
+    // By its code: the demo keeps an English name for it that differs from
+    // its own (#531), so the name an English reader sees is not Calm 90ct.
     const calm = products.entries.find(
-      (product) => product.displayName === 'Calm 90ct',
+      (product) => product.sku === 'CALM-90CT',
     );
 
     const targets: Targets = {
