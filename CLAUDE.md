@@ -70,7 +70,9 @@ Andrej Karpathy's observations on LLM coding pitfalls
   never a spread table row, never `select()` of every column, and a raw
   query's rows typed. A write returns the detail its read returns, or as
   its list shows it where there is no read; or 204 when the screen reads
-  again anyway (a delete, a state change, a settings section). After
+  again anyway (a delete, a state change, a settings section). A write
+  over many rows whose message counts what it did returns those counts,
+  as `PUT /v1/organization/product-name-language` does. After
   any API change, `npm run api` in `server/`, and commit
   `server/openapi.json` with `client/src/api/`. Never edit those two by
   hand. The e2e suite checks every response against the document.
