@@ -947,7 +947,9 @@ folder by folder; these check what is already in place.
     when it is not zero. Not set is offered no more; English shows ticked,
     greyed, Met by each item’s own name. History on the organization
     lists Items named in, from nothing to English, with the copies
-    removed and the items renamed; Calm 90ct's own History, its new name.
+    removed and the items renamed; Calm 90ct's own History, its new name
+    from and to, by the demo Owner, with Renamed by choosing the items’
+    language: English, so it never reads as an edit made on the item.
   - **Nothing to choose:** register a new organization, add an item, and
     choose 简体中文: the dialog says its own name will count as Chinese
     names, no longer as English names, lists no rows, and saves at once.

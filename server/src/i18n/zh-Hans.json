@@ -195,6 +195,7 @@
   "audit.field.reference": "参考号",
   "audit.field.region": "省/州",
   "audit.field.renamed": "改名",
+  "audit.field.renamedByItemsLanguage": "因选择物品名称的语言而改名",
   "audit.field.reopened": "已重新打开",
   "audit.field.reorderPoint": "库存下限",
   "audit.field.requiredNameLanguages": "必须填写名称的语言",

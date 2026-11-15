@@ -266,8 +266,8 @@ async function rename(
 
 /**
  * An entry in each renamed item's History: Item updated, or Item variant
- * updated with the variant's code, holding the name from and to and the
- * language chosen. Unlike Edit's Save, whose entry records no name, it
+ * updated with the variant's code, holding the name from and to and,
+ * as its cause, the language chosen. Unlike Edit's Save, whose entry records no name, it
  * keeps the names, since the change was not made on the item (ADR-054,
  * amended for #531: "its History says so").
  */
@@ -301,7 +301,7 @@ function historyOf(
       payload: {
         ...(row.kind === 'variant' ? { sku: row.sku } : {}),
         ...name,
-        productNameLanguage: language,
+        renamedByItemsLanguage: language,
       },
       ip: actor.ip,
       userAgent: actor.userAgent,

@@ -373,7 +373,7 @@ describe('The language items are named in (e2e)', () => {
           resourceLabel: '专注胶囊',
           payload: {
             name: { from: 'Focus capsules', to: '专注胶囊' },
-            productNameLanguage: 'zh-Hans',
+            renamedByItemsLanguage: 'zh-Hans',
           },
         },
         {
@@ -383,13 +383,14 @@ describe('The language items are named in (e2e)', () => {
           payload: {
             sku: 'FOC-60',
             name: { from: '60ct', to: '60粒' },
-            productNameLanguage: 'zh-Hans',
+            renamedByItemsLanguage: 'zh-Hans',
           },
         },
       ]),
     );
 
-    // As History reads it to a person.
+    // As History reads it to a person: the cause named, so it never reads
+    // as an edit made on the item.
     const { entries } = body<{
       entries: {
         actionName: string;
@@ -403,7 +404,7 @@ describe('The language items are named in (e2e)', () => {
     ).toEqual(
       expect.arrayContaining([
         'Name 专注胶囊',
-        'Items named in Simplified Chinese',
+        'Renamed by choosing the items’ language Simplified Chinese',
       ]),
     );
   });

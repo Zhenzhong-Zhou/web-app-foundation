@@ -195,6 +195,7 @@
   "audit.field.reference": "Reference",
   "audit.field.region": "Province or state",
   "audit.field.renamed": "Renamed",
+  "audit.field.renamedByItemsLanguage": "Renamed by choosing the items’ language",
   "audit.field.reopened": "Reopened",
   "audit.field.reorderPoint": "Reorder point",
   "audit.field.requiredNameLanguages": "Names required in",

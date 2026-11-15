@@ -811,7 +811,9 @@ How this file is kept is in the [README](README.md).
   category, when added and from and to, by the category's name, and its
   type and Discontinue from and to. A new name records who and when, not
   what changed; one given by choosing the items' language records the
-  name from and to.** A description is never recorded.
+  name from and to.** That entry names its cause, the items' language
+  chosen, so it never reads as an edit made on the item. A description is
+  never recorded.
   [ADR-018](../adr/0018-audit-log.md#decision--never-record-the-request-body) ·
   [ADR-038](../adr/0038-an-audit-row-names-its-resource-as-it-was-at-the-time.md#decision--snapshot-a-label-at-write-time-in-audit_logresource_label) ·
   [test](../../server/test/audit.e2e-spec.ts) "records no payload for a route that names no fields" ·

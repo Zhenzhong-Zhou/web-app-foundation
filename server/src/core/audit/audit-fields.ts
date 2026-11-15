@@ -628,6 +628,15 @@ export const AUDIT_FIELDS = {
     read: 'language',
   },
   // What choosing the items' language did (ADR-054, amended for #531).
+  // On an item's own History, the cause of its new name, so it never reads
+  // as an edit made on the item.
+  renamedByItemsLanguage: {
+    name: t({
+      id: 'audit.field.renamedByItemsLanguage',
+      defaultMessage: 'Renamed by choosing the items’ language',
+    }),
+    read: 'language',
+  },
   copiesRemoved: {
     name: t({
       id: 'audit.field.copiesRemoved',
