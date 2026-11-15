@@ -1,71 +1,12 @@
 import { ConflictException } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
-import type { Locale } from '../../common/locales';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
-import { organizations } from '../../database/schema';
 import { languageName, t } from '../../i18n/translate';
+import { missingNames, nameRulesOf } from '../products/product-name-language';
 import { itemName } from '../stock/item-name';
-
-/** How the organization's documents count an item's names. */
-export interface NameRules {
-  /** The languages its documents require a name in. */
-  required: Locale[];
-  /** The language its items are named in, null while not set. */
-  productNameLanguage: Locale | null;
-}
-
-/**
- * Read with no lock, after the names they judge. A choice of the items'
- * language that commits between the two reads leaves those names right:
- * it removes only names kept in that language, which from then on the own
- * names meet.
- */
-export async function nameRulesOf(
-  tx: Transaction,
-  organizationId: string,
-): Promise<NameRules> {
-  const [organization] = await tx
-    .select({
-      required: organizations.requiredNameLanguages,
-      productNameLanguage: organizations.productNameLanguage,
-    })
-    .from(organizations)
-    .where(eq(organizations.id, organizationId));
-  return organization ?? { required: [], productNameLanguage: null };
-}
-
-/** A name a document prints, with those kept for it in other languages. */
-export interface KeptNames {
-  kept: Partial<Record<Locale, string | null>>;
-}
-
-/**
- * What documents will refuse to print (ADR-054, amended by ADR-092 and for
- * #531). This one rule serves issuing and the item's page (#551's 65).
- * It returns each of `names` that has no name kept in a language of
- * `languages` the organization requires. The language its items are named
- * in is left out, since there each item's own name is its name. The result
- * is ordered by language, then as `names` are.
- */
-export function missingNames<Name extends KeptNames>(
-  names: readonly Name[],
-  languages: readonly Locale[],
-  rules: NameRules,
-): { name: Name; locale: Locale }[] {
-  return languages
-    .filter(
-      (locale) =>
-        rules.required.includes(locale) && locale !== rules.productNameLanguage,
-    )
-    .flatMap((locale) =>
-      names
-        .filter((name) => !name.kept[locale])
-        .map((name) => ({ name, locale })),
-    );
-}
 
 /** What an issued line prints, in the invoice's one or two languages. */
 export interface LineNames {
@@ -202,10 +143,22 @@ export async function namedLines(
 
   const [missing] = missingNames(
     rows.flatMap((row) => [
-      { row, which: 'product', kept: keptIn(row, 'product') } as const,
+      {
+        row,
+        which: 'product',
+        own: row.product_name,
+        kept: keptIn(row, 'product'),
+      } as const,
       ...(row.variant_name === null
         ? []
-        : [{ row, which: 'variant', kept: keptIn(row, 'variant') } as const]),
+        : [
+            {
+              row,
+              which: 'variant',
+              own: row.variant_name,
+              kept: keptIn(row, 'variant'),
+            } as const,
+          ]),
     ]),
     filled.map((slot) => slot.language),
     // Read after the names, for nameRulesOf's reason.

@@ -32,11 +32,6 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { languageName, t } from '../../i18n/translate';
-import {
-  missingNames,
-  type NameRules,
-  nameRulesOf,
-} from '../invoices/line-names';
 import { namesIn, productNameOrder } from '../stock/item-name';
 import {
   itemStock,
@@ -83,7 +78,13 @@ import {
 import { itemMatches, itemRank, itemSearch, withOf } from './item-search';
 import type { ProductExportRow } from './product-exports';
 import { coverOf, imagesOf, publicImages } from './product-images';
-import { productNameLanguageOf } from './product-name-language';
+import {
+  missingNames,
+  type NameRules,
+  nameRulesOf,
+  namesByLanguage,
+  productNameLanguageOf,
+} from './product-name-language';
 
 /**
  * A set of names in other languages as one line for the audit log:
@@ -132,6 +133,7 @@ async function refuseItemsLanguage(
  * refuses with, in every language a document may print in.
  */
 function missingNamesOf(
+  own: string,
   translations: { locale: Locale; name: string }[],
   variants: Variant[],
   rules: NameRules,
@@ -141,12 +143,13 @@ function missingNamesOf(
 
   return missingNames(
     [
-      { variantId: null, sku: null, kept: kept(translations) },
+      { variantId: null, sku: null, own, kept: kept(translations) },
       ...variants
         .filter((variant) => variant.name !== null)
         .map((variant) => ({
           variantId: variant.id,
           sku: variant.sku,
+          own: variant.name,
           kept: kept(variant.translations ?? []),
         })),
     ],
@@ -499,13 +502,6 @@ export class ProductsService {
       `);
 
       const { productNameLanguage } = await nameRulesOf(tx, organizationId);
-      const withOwn = (
-        names: Record<string, string> | null,
-        own: string | null,
-      ) =>
-        productNameLanguage && own !== null
-          ? { ...names, [productNameLanguage]: own }
-          : (names ?? {});
 
       return rows.map((row) => ({
         id: row.id,
@@ -517,8 +513,16 @@ export class ProductsService {
         unitOfMeasure: row.unit_of_measure,
         tracksLots: row.tracks_lots,
         discontinued: row.discontinued,
-        productNames: withOwn(row.product_names, row.product_name),
-        variantNames: withOwn(row.variant_names, row.variant_name),
+        productNames: namesByLanguage(
+          row.product_names,
+          row.product_name,
+          productNameLanguage,
+        ),
+        variantNames: namesByLanguage(
+          row.variant_names,
+          row.variant_name,
+          productNameLanguage,
+        ),
       }));
     });
   }
@@ -614,7 +618,12 @@ export class ProductsService {
         description,
       })),
       variants: detailVariants,
-      missingNames: missingNamesOf(translations, detailVariants, rules),
+      missingNames: missingNamesOf(
+        product.name,
+        translations,
+        detailVariants,
+        rules,
+      ),
     };
   }
 

@@ -37,8 +37,10 @@ commit that changes one of those rules updates it (ADR-087).
   under the same permission; the export's come through
   `invoice-documents-export.ts` (ADR-071; [conventions.md, A new printed document](../../docs/conventions.md#a-new-printed-document)).
 - **What documents refuse for a missing name is `missingNames`** over
-  `nameRulesOf` (`line-names.ts`), for every document and the item's
-  detail alike; the language the items are named in needs no kept name
-  (#551's 65; ADR-054, amended for #531).
+  `nameRulesOf`, for every document and the item's detail alike; the
+  language the items are named in needs no kept name, since
+  `namesByLanguage` puts the own name there, for the export too; all three
+  in `products/product-name-language.ts` (#551's 65; ADR-054, amended for
+  #531).
 - **A refusal the screen offers a way out of** carries its code, and a
   numbering one its details, through `withCode` ([conventions.md, Error codes](../../docs/conventions.md#error-codes)).

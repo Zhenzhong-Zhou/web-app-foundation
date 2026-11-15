@@ -25,6 +25,82 @@ export async function productNameLanguageOf(
   return organization?.language ?? null;
 }
 
+/** How the organization's documents count an item's names. */
+export interface NameRules {
+  /** The languages its documents require a name in. */
+  required: Locale[];
+  /** The language its items are named in, null while not set. */
+  productNameLanguage: Locale | null;
+}
+
+/**
+ * Read with no lock, after the names they judge. A choice of the items'
+ * language that commits between the two reads leaves those names right:
+ * it removes only names kept in that language, which from then on the own
+ * names meet.
+ */
+export async function nameRulesOf(
+  tx: Transaction,
+  organizationId: string,
+): Promise<NameRules> {
+  const [organization] = await tx
+    .select({
+      required: organizations.requiredNameLanguages,
+      productNameLanguage: organizations.productNameLanguage,
+    })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId));
+  return organization ?? { required: [], productNameLanguage: null };
+}
+
+/**
+ * The one home of the rule that, in the language the items are named in,
+ * an item's own name is its name (ADR-054, amended for #531): the names
+ * kept in other languages, with the own name under that one once it is
+ * set. Documents, the item's page and the export all read names through it.
+ */
+export function namesByLanguage<Kept extends string | null>(
+  kept: Partial<Record<Locale, Kept>> | null,
+  own: string | null,
+  productNameLanguage: Locale | null,
+): Partial<Record<Locale, Kept | string>> {
+  return productNameLanguage && own !== null
+    ? { ...kept, [productNameLanguage]: own }
+    : { ...kept };
+}
+
+/** A name a document prints: its own, and those kept in other languages. */
+export interface KeptNames {
+  own: string | null;
+  kept: Partial<Record<Locale, string | null>>;
+}
+
+/**
+ * What documents will refuse to print (ADR-054, amended by ADR-092 and for
+ * #531). This one rule serves issuing and the item's page (#551's 65).
+ * It returns each of `names` with no name, by namesByLanguage, in a
+ * language of `languages` the organization requires. The result is
+ * ordered by language, then as `names` are.
+ */
+export function missingNames<Name extends KeptNames>(
+  names: readonly Name[],
+  languages: readonly Locale[],
+  rules: NameRules,
+): { name: Name; locale: Locale }[] {
+  return languages
+    .filter((locale) => rules.required.includes(locale))
+    .flatMap((locale) =>
+      names
+        .filter(
+          (name) =>
+            !namesByLanguage(name.kept, name.own, rules.productNameLanguage)[
+              locale
+            ],
+        )
+        .map((name) => ({ name, locale })),
+    );
+}
+
 /**
  * A name kept in the language that differs from the own name it would
  * replace, as the preview lists it, with what History needs beside it.
