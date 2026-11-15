@@ -4,6 +4,7 @@ import type { Locale } from '../../common/locales';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
 import { MAX_CHANGED_AT_ONCE } from './dto/change-products.dto';
+import type { ProductNameToChoose } from './dto/product-name-language-response.dto';
 
 /**
  * The language the organization's items are named in (ADR-054, amended for
@@ -24,20 +25,11 @@ export async function productNameLanguageOf(
   return organization?.language ?? null;
 }
 
-/** A name kept in the language that differs from the own name it would replace. */
-export interface NameToChoose {
-  kind: 'item' | 'variant';
-  /** The item's id, or the variant's. */
-  id: string;
-  productId: string;
-  /** A variant's code; null for an item. */
-  sku: string | null;
-  /** Null for a variant with no name of its own. */
-  ownName: string | null;
-  keptName: string;
-  /** An item's descriptions; always null for a variant, which has none. */
-  ownDescription: string | null;
-  keptDescription: string | null;
+/**
+ * A name kept in the language that differs from the own name it would
+ * replace, as the preview lists it, with what History needs beside it.
+ */
+export interface NameToChoose extends ProductNameToChoose {
   /** The item's own name, which History labels a variant's row with. */
   itemName: string;
 }
@@ -56,25 +48,9 @@ export interface NamesToChoose {
   differing: NameToChoose[];
 }
 
-/** As Postgres returns it. */
-type ListRow = {
-  items: number;
-  variants: number;
-  copies: number;
-  total: number;
-  differing:
-    | {
-        kind: 'item' | 'variant';
-        id: string;
-        product_id: string;
-        sku: string | null;
-        own_name: string | null;
-        kept_name: string;
-        own_description: string | null;
-        kept_description: string | null;
-        item_name: string;
-      }[]
-    | null;
+/** As Postgres returns it, its columns named as NameToChoose's fields. */
+type ListRow = Omit<NamesToChoose, 'differing'> & {
+  differing: NameToChoose[] | null;
 };
 
 /**
@@ -93,17 +69,17 @@ export async function namesToChoose(
   language: Locale,
 ): Promise<NamesToChoose> {
   const org = sql`${organizationId}::uuid`;
-  const order = sql`item_name collate numeric_order, product_id, kind,
+  const order = sql`"itemName" collate numeric_order, "productId", kind,
     sku collate numeric_order`;
 
   const {
     rows: [row],
   } = await tx.execute<ListRow>(sql`
     with kept as (
-      select 'item' as kind, p.id, p.id as product_id, null::text as sku,
-        p.name as own_name, pt.name as kept_name,
-        p.description as own_description, pt.description as kept_description,
-        p.name as item_name,
+      select 'item' as kind, p.id, p.id as "productId", null::text as sku,
+        p.name as "ownName", pt.name as "keptName",
+        p.description as "ownDescription", pt.description as "keptDescription",
+        p.name as "itemName",
         pt.name = p.name and (pt.description is null
           or pt.description is not distinct from p.description) as copy
       from product_translations pt
@@ -133,21 +109,5 @@ export async function namesToChoose(
       (select json_agg(listed order by ${order}) from listed) as differing
   `);
 
-  return {
-    items: row.items,
-    variants: row.variants,
-    copies: row.copies,
-    total: row.total,
-    differing: (row.differing ?? []).map((each) => ({
-      kind: each.kind,
-      id: each.id,
-      productId: each.product_id,
-      sku: each.sku,
-      ownName: each.own_name,
-      keptName: each.kept_name,
-      ownDescription: each.own_description,
-      keptDescription: each.kept_description,
-      itemName: each.item_name,
-    })),
-  };
+  return { ...row, differing: row.differing ?? [] };
 }
