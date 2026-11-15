@@ -1,0 +1,36 @@
+import { type RefObject, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+
+import { MAIN_CONTENT_ID } from '../layout/skip-link';
+
+/**
+ * A link to a part of a page, its address's `hash`: once that part is
+ * `ready`, it scrolls to where the page's content begins, under the bar,
+ * and its heading takes focus, as a link to a part of a page gives it. Once
+ * per arrival, never again on a later read of the page.
+ */
+export function useArrival(
+  hash: string,
+  ready: boolean,
+  section: RefObject<HTMLElement | null>,
+  heading: RefObject<HTMLElement | null>,
+): void {
+  const location = useLocation();
+  const openedAt = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!ready || location.hash !== hash) return;
+    if (openedAt.current === location.key) return;
+    openedAt.current = location.key;
+    const part = section.current;
+    const main = document.getElementById(MAIN_CONTENT_ID);
+    if (!part || !main) return;
+    window.scrollTo({
+      top:
+        part.getBoundingClientRect().top -
+        main.getBoundingClientRect().top -
+        parseFloat(getComputedStyle(main).paddingTop),
+    });
+    heading.current?.focus({ preventScroll: true });
+  }, [ready, hash, location.hash, location.key, section, heading]);
+}

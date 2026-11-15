@@ -13,14 +13,14 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import {
   defineMessages,
   FormattedMessage,
   type IntlShape,
   useIntl,
 } from 'react-intl';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -31,7 +31,6 @@ import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { MAIN_CONTENT_ID } from '../layout/skip-link';
 import {
   displayQuantity,
   formatDate,
@@ -41,6 +40,7 @@ import {
 } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
+import { useArrival } from '../lib/use-arrival';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useResource } from '../lib/use-resource';
@@ -121,34 +121,16 @@ export function StockValuePage() {
   const refused = read.refused ?? waiting.refused;
   const errorWords = read.error ?? waiting.error;
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
-  const location = useLocation();
   const waitingSection = useRef<HTMLDivElement>(null);
   const waitingHeading = useRef<HTMLHeadingElement>(null);
-  const openedAt = useRef<string | null>(null);
 
   const loading = (read.loading || waiting.loading) && errorWords === null;
   const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('costs.update');
 
-  // Opened at what waits: once it has loaded, its list where the page's
-  // content begins, under the bar, and its heading given focus, as a link
-  // to a part of a page gives it; once per arrival, never again on a read
-  // after a cost is set.
-  useEffect(() => {
-    if (loading || location.hash !== WAITING_HASH) return;
-    if (openedAt.current === location.key) return;
-    openedAt.current = location.key;
-    const section = waitingSection.current;
-    const main = document.getElementById(MAIN_CONTENT_ID);
-    if (!section || !main) return;
-    window.scrollTo({
-      top:
-        section.getBoundingClientRect().top -
-        main.getBoundingClientRect().top -
-        parseFloat(getComputedStyle(main).paddingTop),
-    });
-    waitingHeading.current?.focus({ preventScroll: true });
-  }, [loading, location.hash, location.key]);
+  // Opened at what waits: once it has loaded, its list, its heading
+  // focused; never again on a read after a cost is set.
+  useArrival(WAITING_HASH, !loading, waitingSection, waitingHeading);
 
   /** Both read again, after a cost is set or a refusal's Try again. */
   async function load() {
