@@ -655,8 +655,8 @@ folder by folder; these check what is already in place.
   documents: the missing name reads Missing with Add, and a line at the
   top names it and says orders and invoices holding the item cannot
   print. Add opens Edit names with that field focused, 简体中文 marked
-  required, and its intro no longer says a blank prints the base name
-  there. The line, the intro and the refusal name the language in the
+  required, and its intro no longer says a blank prints the item’s own
+  name there. The line, the intro and the refusal name the language in the
   reader's language, alike: the Chinese name and has no Chinese name, le
   nom en chinois and n’a pas de nom en chinois, 物品的中文名称 and
   没有中文名称; never 简体中文 inside an English or French sentence. With

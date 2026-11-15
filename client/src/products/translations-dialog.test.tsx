@@ -71,10 +71,10 @@ describe('TranslationsDialog', () => {
 
   /**
    * The languages the organization's documents require are marked, and the
-   * intro says a blank prints the base name only of the others, which a
+   * intro says a blank prints the item’s own name only of the others, which a
    * required language does not (ADR-092, #306's 18).
    */
-  it('marks the required languages, saying a blank prints the base name only of the others', () => {
+  it('marks the required languages, saying a blank prints the item’s own name only of the others', () => {
     render(
       <TranslationsDialog
         open
@@ -98,7 +98,7 @@ describe('TranslationsDialog', () => {
     ).toBeVisible();
     expect(
       screen.getByText(
-        'Where another language is left blank, documents in it print the base name, Calm.',
+        'Where another language is left blank, documents in it print the item’s own name, Calm.',
       ),
     ).toBeVisible();
     expect(screen.queryByText(/Where a language is left blank/)).toBeNull();

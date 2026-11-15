@@ -599,7 +599,7 @@ How this file is kept is in the [README](README.md).
   [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../client/src/products/product-detail-page.test.tsx) "shows the item’s and each named variation’s names by language, a missing required one marked" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "opens Edit names at the missing name’s row, the required languages marked" ·
-  [test](../../client/src/products/translations-dialog.test.tsx) "marks the required languages, saying a blank prints the base name only of the others" ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "marks the required languages, saying a blank prints the item’s own name only of the others" ·
   MC-1408
 - **In the language the items are named in, the item's page shows each
   row's own name first, in that language's column, marked as the item's

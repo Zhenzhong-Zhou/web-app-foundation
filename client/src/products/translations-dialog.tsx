@@ -242,7 +242,7 @@ export function TranslationsDialog({
                       {
                         id: 'products.translations.introOthers',
                         defaultMessage:
-                          'Where another language is left blank, documents in it print the base name, {name}.',
+                          'Where another language is left blank, documents in it print the item’s own name, {name}.',
                       },
                       { name: product.name },
                     )
@@ -250,7 +250,7 @@ export function TranslationsDialog({
                       {
                         id: 'products.translations.intro',
                         defaultMessage:
-                          'Where a language is left blank, documents in it print the base name, {name}.',
+                          'Where a language is left blank, documents in it print the item’s own name, {name}.',
                       },
                       { name: product.name },
                     )}
