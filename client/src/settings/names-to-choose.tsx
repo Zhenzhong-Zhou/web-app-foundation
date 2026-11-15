@@ -42,6 +42,7 @@ import {
 export function NamesToChoose({
   idPrefix,
   rows,
+  identities,
   language,
   choices,
   fresh,
@@ -53,6 +54,8 @@ export function NamesToChoose({
   /** Each row's radios are named from it, for the dialog to focus one. */
   idPrefix: string;
   rows: readonly ProductNameToChoose[];
+  /** Each row's identity, worked out once for the list (identityOf). */
+  identities: ReadonlyMap<ProductNameToChoose, string>;
   language: Locale;
   /** Each row's choice, by its identity. */
   choices: Readonly<Record<string, NameKeep>>;
@@ -112,7 +115,7 @@ export function NamesToChoose({
   };
 
   const each = rows.map((row) => {
-    const identity = identityOf(row);
+    const identity = identities.get(row) ?? identityOf(row);
     const left = refused && !choices[identity];
     const rowId = `${idPrefix}-${row.kind}-${row.id}`;
     const headerId = `${rowId}-name`;

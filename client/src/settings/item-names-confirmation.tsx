@@ -11,7 +11,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
@@ -92,14 +92,24 @@ export function ItemNamesConfirmation({
   const [onlyLeft, setOnlyLeft] = useState<Set<string> | null>(null);
   const refusal = useRef<HTMLDivElement>(null);
 
-  const rows = data?.differing ?? [];
-  const left = rows.filter((row) => !choices[identityOf(row)]);
+  // Worked out once for each list read, not at each click, since a list
+  // can hold 500 rows.
+  const rows = useMemo(() => data?.differing ?? [], [data]);
+  const identities = useMemo(
+    () => new Map(rows.map((row) => [row, identityOf(row)])),
+    [rows],
+  );
+  const identity = (row: ProductNameToChoose) =>
+    identities.get(row) ?? identityOf(row);
+  const again = useMemo(
+    () =>
+      before ? readAgain(before, rows) : { fresh: new Set<string>(), gone: [] },
+    [before, rows],
+  );
+  const left = rows.filter((row) => !choices[identity(row)]);
   const shown = onlyLeft
-    ? rows.filter((row) => onlyLeft.has(identityOf(row)))
+    ? rows.filter((row) => onlyLeft.has(identity(row)))
     : rows;
-  const again = before
-    ? readAgain(before, rows)
-    : { fresh: new Set<string>(), gone: [] };
 
   useEffect(() => {
     if (data && over) onTooMany(data.total, data.differing.length);
@@ -168,7 +178,7 @@ export function ItemNamesConfirmation({
   function chooseShown(keep: NameKeep) {
     setChoices((current) => ({
       ...current,
-      ...Object.fromEntries(shown.map((row) => [identityOf(row), keep])),
+      ...Object.fromEntries(shown.map((row) => [identity(row), keep])),
     }));
   }
 
@@ -186,7 +196,7 @@ export function ItemNamesConfirmation({
       choices: rows.map((row) => ({
         kind: row.kind,
         id: row.id,
-        keep: choices[identityOf(row)],
+        keep: choices[identity(row)],
         ownName: row.ownName,
         keptName: row.keptName,
         ownDescription: row.ownDescription,
@@ -215,23 +225,27 @@ export function ItemNamesConfirmation({
   }
 
   const open = !over && (data !== null || readError !== null || slow);
-  const leftLinks = listNameParts(
-    intl,
-    left.map((row) => rowName(row, intl)),
-    { type: 'conjunction' },
-    (name, index) => (
-      <Link
-        key={identityOf(left[index])}
-        component="button"
-        type="button"
-        underline="always"
-        onClick={() => focusRow(left[index])}
-        sx={{ verticalAlign: 'baseline' }}
-      >
-        {name}
-      </Link>
-    ),
-  );
+  // The links to the rows left, built only once Save has asked for them.
+  const leftLinks =
+    refused &&
+    left.length > 0 &&
+    listNameParts(
+      intl,
+      left.map((row) => rowName(row, intl)),
+      { type: 'conjunction' },
+      (name, index) => (
+        <Link
+          key={identity(left[index])}
+          component="button"
+          type="button"
+          underline="always"
+          onClick={() => focusRow(left[index])}
+          sx={{ verticalAlign: 'baseline' }}
+        >
+          {name}
+        </Link>
+      ),
+    );
 
   return (
     <Dialog
@@ -328,7 +342,7 @@ export function ItemNamesConfirmation({
                     )}
                   </Typography>
 
-                  {refused && left.length > 0 && (
+                  {leftLinks && (
                     <FormError
                       message={intl.formatMessage(
                         {
@@ -364,7 +378,7 @@ export function ItemNamesConfirmation({
                         count: left.length,
                         pressed: onlyLeft !== null,
                         onToggle: () =>
-                          setOnlyLeft(new Set(left.map(identityOf))),
+                          setOnlyLeft(new Set(left.map(identity))),
                       },
                     ]}
                   />
@@ -372,6 +386,7 @@ export function ItemNamesConfirmation({
                   <NamesToChoose
                     idPrefix={prefix}
                     rows={shown}
+                    identities={identities}
                     language={language}
                     choices={choices}
                     fresh={again.fresh}
