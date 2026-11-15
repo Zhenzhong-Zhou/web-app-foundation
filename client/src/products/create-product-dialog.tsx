@@ -29,7 +29,6 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, hasCode } from '../lib/api';
 import type { ProductType } from '../lib/api-names';
-import { SEPARATOR } from '../lib/format';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { CategorySelect } from './category-select';
@@ -108,10 +107,7 @@ export function CreateProductDialog({
   const skuRef = useRef<HTMLInputElement>(null);
   const { data: organization } =
     useResource<OrganizationEnvelope>('/organization');
-  const typed = typedIn(
-    organization?.organization.productNameLanguage ?? null,
-    intl,
-  );
+  const itemsLanguage = organization?.organization.productNameLanguage ?? null;
 
   const { submitting, error, errorCode, errorDetails, submit } =
     useSubmit<ProductEnvelope>(
@@ -265,7 +261,7 @@ export function CreateProductDialog({
                       id: 'products.create.needsName',
                       defaultMessage: 'Give it a name.',
                     })
-                  : typed
+                  : typedIn(itemsLanguage, intl)
               }
               slotProps={{ htmlInput: { maxLength: 200 } }}
             />
@@ -368,16 +364,15 @@ export function CreateProductDialog({
               fullWidth
               value={form.variantName}
               onChange={update('variantName')}
-              helperText={[
-                typed,
+              helperText={typedIn(
+                itemsLanguage,
+                intl,
                 intl.formatMessage({
                   id: 'products.variation.helpOptional',
                   defaultMessage:
                     'Optional. 60ct, Large, Blue — leave blank if there is only one.',
                 }),
-              ]
-                .filter(Boolean)
-                .join(SEPARATOR)}
+              )}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 

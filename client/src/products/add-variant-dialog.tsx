@@ -15,7 +15,6 @@ import { useIntl } from 'react-intl';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { SEPARATOR } from '../lib/format';
 import type { Locale } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
 import { typedIn } from './name-language';
@@ -136,15 +135,14 @@ export function AddVariantDialog({
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
               }
-              helperText={[
-                typedIn(language, intl),
+              helperText={typedIn(
+                language,
+                intl,
                 intl.formatMessage({
                   id: 'products.variation.examples',
                   defaultMessage: '120ct, Large, Blue',
                 }),
-              ]
-                .filter(Boolean)
-                .join(SEPARATOR)}
+              )}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
