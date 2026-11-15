@@ -357,6 +357,24 @@ describe('Organization (e2e)', () => {
       });
     });
 
+    // Not a change, so not a history line (#505's 94).
+    it('records nothing when the same words are saved again', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: LINE })
+        .expect(204);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: LINE })
+        .expect(204);
+
+      expect((await entries()).map(({ payload }) => payload)).toEqual([
+        { whatWeDo: 'changed' },
+      ]);
+    });
+
     it('is in the export, as organization.csv’s what_we_do', async () => {
       const org = await registerOrganization(app, 'alpha');
       await org.agent
@@ -673,6 +691,20 @@ describe('Organization (e2e)', () => {
         licenceRequired: false,
       })
       .expect(204);
+
+    const entries = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'organization.updated'));
+
+    expect(entries).toHaveLength(0);
+  });
+
+  // A save that sends nothing changes nothing, so it records nothing.
+  it('records nothing for a save with nothing in it', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    await org.agent.patch('/v1/organization').send({}).expect(204);
 
     const entries = await db
       .select()

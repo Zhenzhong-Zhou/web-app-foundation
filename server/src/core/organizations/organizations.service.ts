@@ -15,7 +15,11 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
-import { recordContext, recordPrevious } from '../audit/audit-context';
+import {
+  recordContext,
+  recordPrevious,
+  recordUnchanged,
+} from '../audit/audit-context';
 import { FilesService } from '../files/files.service';
 import { normalizeHex, safeAccent } from './accent';
 import { assertLanguagePair } from './document-languages';
@@ -338,7 +342,12 @@ export class OrganizationsService {
           : {}),
       };
 
-      if (Object.keys(changes).length === 0) return;
+      // Nothing to write, so nothing to record: What we do's words saved
+      // again, which the log keeps out by name, or a body with nothing in it.
+      if (Object.keys(changes).length === 0) {
+        recordUnchanged();
+        return;
+      }
 
       await tx
         .update(organizations)

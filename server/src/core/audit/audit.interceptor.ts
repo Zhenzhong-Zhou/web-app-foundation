@@ -17,6 +17,7 @@ import {
   type FieldValues,
   takeContext,
   takePrevious,
+  takeUnchanged,
 } from './audit-context';
 import type { AuditField } from './audit-fields';
 import { AUDITED, type AuditOptions } from './audited.decorator';
@@ -141,8 +142,9 @@ export function auditPayload(
 }
 
 /**
- * True only when every recorded field has a previous value equal to the new
- * one — the case the service can prove, because it recorded what was there.
+ * True when the service recorded that it wrote nothing (recordUnchanged), or
+ * when every recorded field has a previous value equal to the new one — the
+ * cases the service can prove, because it read what was there.
  *
  * Deliberately narrow. A bare value, with no previous recorded, may or may
  * not have changed, so any bare value means "write the row". Compared as
@@ -154,6 +156,7 @@ export function auditPayload(
 export function unchanged(
   payload: Record<string, unknown> | undefined,
 ): boolean {
+  if (takeUnchanged()) return true;
   if (!payload) return false;
 
   const values = Object.values(payload);
