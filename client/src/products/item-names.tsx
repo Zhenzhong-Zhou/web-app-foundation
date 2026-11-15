@@ -193,7 +193,7 @@ export function ItemNames({
                 {
                   id: 'products.names.notSet.choose',
                   defaultMessage:
-                    'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Choose it in <link>Organization › Documents</link>.',
+                    'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Choose it in <link>Organization → Documents</link>.',
                 },
                 {
                   link: (chunks: ReactNode[]) => (
@@ -211,7 +211,7 @@ export function ItemNames({
             : intl.formatMessage({
                 id: 'products.names.notSet.ask',
                 defaultMessage:
-                  'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Someone who can change the organization’s settings can choose it in Organization › Documents.',
+                  'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Someone who can change the organization’s settings can choose it in Organization → Documents.',
               })}
         </Typography>
       )}

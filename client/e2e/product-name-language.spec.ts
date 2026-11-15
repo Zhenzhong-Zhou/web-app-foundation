@@ -178,7 +178,7 @@ async function languageOf(api: APIRequestContext) {
 // The interaction table, row by row
 // ---------------------------------------------------------------------------
 
-test('Organization › Documents, Item names, Chinese then Save: the confirmation says what it will do and the copies it removes; Cancel, nothing changed', async ({
+test('Organization → Documents, Item names, Chinese then Save: the confirmation says what it will do and the copies it removes; Cancel, nothing changed', async ({
   page,
   freshOrg,
 }) => {
@@ -501,7 +501,7 @@ test('an item’s page, the items’ language not set, for whoever may choose it
     say('products.names.notSet.choose', { link: TEXT }),
   );
 
-  await page.getByRole('link', { name: 'Organization › Documents' }).click();
+  await page.getByRole('link', { name: 'Organization → Documents' }).click();
   await expect(page).toHaveURL(
     /\/settings\/organization\?tab=documents#item-names$/,
   );
@@ -536,7 +536,7 @@ test('an item’s page, the items’ language not set, for a Viewer: the line sa
     say('products.names.notSet.ask'),
   );
   await expect(
-    page.getByRole('link', { name: 'Organization › Documents' }),
+    page.getByRole('link', { name: 'Organization → Documents' }),
   ).toHaveCount(0);
   await viewer.dispose();
 });

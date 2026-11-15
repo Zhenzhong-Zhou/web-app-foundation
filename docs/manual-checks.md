@@ -647,7 +647,7 @@ folder by folder; these check what is already in place.
   it in grey, and a grey line above the table says the language items
   are named in isn't chosen yet, which a screen reader reads with the
   table as its description. As the demo Owner it ends Choose it in
-  Organization › Documents, the link opening the Documents tab at Item
+  Organization → Documents, the link opening the Documents tab at Item
   names, in view under the bar, its heading focused; as a Viewer it says
   someone who can change the organization's settings can choose it
   there, with no link. In 中文 and Français the line reads in each.
