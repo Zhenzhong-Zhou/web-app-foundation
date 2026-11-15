@@ -193,12 +193,12 @@ export async function namedLines(
     },
   ] as const;
 
+  // The slots that hold a language: the second only when there is one.
+  const filled = slots.flatMap(({ language, ...slot }) =>
+    language === null ? [] : [{ language, ...slot }],
+  );
   const keptIn = (row: NameRow, part: 'product' | 'variant') =>
-    Object.fromEntries(
-      slots.flatMap((slot) =>
-        slot.language === null ? [] : [[slot.language, row[slot[part]]]],
-      ),
-    );
+    Object.fromEntries(filled.map((slot) => [slot.language, row[slot[part]]]));
 
   const [missing] = missingNames(
     rows.flatMap((row) => [
@@ -207,7 +207,7 @@ export async function namedLines(
         ? []
         : [{ row, which: 'variant', kept: keptIn(row, 'variant') } as const]),
     ]),
-    slots.flatMap((slot) => (slot.language === null ? [] : [slot.language])),
+    filled.map((slot) => slot.language),
     // Read after the names, for nameRulesOf's reason.
     await nameRulesOf(tx, organizationId),
   );
