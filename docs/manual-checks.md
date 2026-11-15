@@ -1706,7 +1706,8 @@ await fetch(`${api}/v1/files/product-image`, {
   distribute natural health products.", and its Save is greyed until the
   words change. Change them and Save, then clear them and Save: the
   History button lists What we do as Changed, then Cleared, and never the
-  words. The field takes no more than 200 characters. As a Viewer, the
+  words. The field is one line, Enter saving rather than starting
+  another, and takes no more than 200 characters. As a Viewer, the
   words show greyed, with no Save. In Français the section reads Ce que
   nous faisons; in 中文, 业务简介. On Home, a newcomer whose welcome is
   open reads the words once, under the date, not again in the welcome.
@@ -6229,3 +6230,5 @@ first.
 - 2026-11-14: #487, the Documents tab's Saves: each is off until its
   section changes, Logo on documents and Paper size as the others
   already were: MC-1701 extended.
+- 2026-11-14: #505's 91, What we do on one line, as Home shows it:
+  MC-1704 extended.

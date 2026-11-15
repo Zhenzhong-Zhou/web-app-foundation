@@ -412,6 +412,8 @@ function NameForm({
  * Home shows every member under the date, and a newcomer's welcome too.
  * Empty clears it. Save waits for a change: the log keeps no words
  * (ADR-018), so a save of the same ones would be an entry saying nothing.
+ * One line, as Home shows it: a break typed there would show as nothing
+ * (#505).
  */
 function WhatWeDoForm({
   value,
@@ -464,8 +466,6 @@ function WhatWeDoForm({
           defaultMessage: 'What we do',
         })}
         fullWidth
-        multiline
-        minRows={2}
         value={text}
         onChange={(event) => setText(event.target.value)}
         disabled={readOnly}

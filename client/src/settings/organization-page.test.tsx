@@ -118,4 +118,11 @@ describe('OrganizationPage', () => {
       expect(save).toHaveAttribute('aria-disabled', 'true');
     }
   });
+
+  it('takes What we do on one line', async () => {
+    page('profile');
+
+    const field = await screen.findByRole('textbox', { name: 'What we do' });
+    expect(field.tagName).toBe('INPUT');
+  });
 });
