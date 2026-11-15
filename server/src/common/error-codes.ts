@@ -154,6 +154,13 @@ export const ERROR_CODES = {
    * holds its names, for a page to link to (ADR-071's amendment, #526).
    */
   itemNameMissing: 'item_name_missing',
+  /**
+   * The names to choose between, when choosing the language the items are
+   * named in, changed since the list was shown (ADR-054, amended for #531):
+   * nothing was saved, and the confirmation reads the list again, keeping
+   * each choice whose row still stands.
+   */
+  productNamesChanged: 'product_names_changed',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

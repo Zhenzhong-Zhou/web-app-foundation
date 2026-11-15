@@ -446,6 +446,51 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
   [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants) ·
   MC-1407
+- **Each organization says which language its items are named in. A new
+  one takes the language the person starting it uses, English where the
+  app does not speak theirs; one from before is not set until its Owner
+  chooses.**
+  [ADR-054, amended](../adr/0054-languages.md#decision--each-organization-says-which-language-its-items-are-named-in) ·
+  [test](../../server/test/registration.e2e-spec.ts) "is the sign-up request’s, English for one the app does not speak" ·
+  [test](../../server/test/registration.e2e-spec.ts) "is the request’s for one started from Home" ·
+  [test](../../server/test/organization-invitations.e2e-spec.ts) "is the accepting request’s, with an account and without" ·
+  [test](../../server/test/organization.e2e-spec.ts) "reads as not set for an organization from before"
+- **Choosing that language says first what it will do: how many own names
+  will count as its names, how many names kept in it are copies, the same
+  as their own with the description empty or the same, which it removes,
+  and each that differs, the item's or the variant's, beside its own.**
+  Only those who may change the organization's settings see it, and
+  nothing is changed until the choice is saved.
+  [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "says what choosing a language will do: the own names it counts, the copies, and each name that differs" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses a Viewer the preview and the choice" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "never counts or touches another organization’s names"
+- **Each name that differs is chosen, the own one or the kept one: the
+  own removes the kept, and the kept renames the item or the variant, as
+  Edit does, its description with it where it has one, and History says
+  so. The copies go too, and the language is set; once set, it is never
+  set back to not set, and choosing another later is the same choice.**
+  History records the language from and to, and the copies removed, the
+  names removed and the items renamed.
+  [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "removes the copies, sets the language and records it with the counts" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "keeps the name chosen on each row: the own one removes the kept, the kept one renames the item as Edit does, History saying so" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "changes from one language to another, the own names then counting as the new one’s"
+- **The choice is refused, nothing saved, while a row has no choice, when
+  the names changed since the list was shown, or when more than 500 names
+  differ, saying how many.** A list that changed carries the code
+  `product_names_changed`, for the confirmation to read it again.
+  [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses while a row has no choice, saving nothing" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses with product_names_changed when the list changed since it was shown, saving nothing" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses more than 500 names to choose, naming how many"
+- **No name is kept in the language the items are named in: saving one
+  in it, an item's or a variant's, is refused, saying to change the own
+  name with Edit. A names save made while that language is being chosen
+  waits for the choice, and is then refused in it.**
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses a name kept in the items’ own language, for an item and a variant" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "makes a names save wait for the choice under way, then refuses it in that language"
 - **One name per language, never a blank one, and a description in a
   language needs a name in it.** The dialog says so before saving, naming
   the language; the server refuses a language twice, one it does not

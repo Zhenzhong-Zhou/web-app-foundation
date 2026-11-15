@@ -31,7 +31,7 @@ import {
   variantTranslations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { t } from '../../i18n/translate';
+import { languageName, t } from '../../i18n/translate';
 import { namesIn, productNameOrder } from '../stock/item-name';
 import {
   itemStock,
@@ -77,6 +77,7 @@ import {
 import { itemMatches, itemRank, itemSearch, withOf } from './item-search';
 import type { ProductExportRow } from './product-exports';
 import { coverOf, imagesOf, publicImages } from './product-images';
+import { productNameLanguageOf } from './product-name-language';
 
 /**
  * A set of names in other languages as one line for the audit log:
@@ -88,6 +89,35 @@ function describeNames(translations: { locale: string; name: string }[]) {
         .map((translation) => `${translation.locale} ${translation.name}`)
         .join(' · ')
     : 'none';
+}
+
+/**
+ * No name is kept in the language the items are named in, where an item's
+ * own name is its name (ADR-054, amended for #531). Read under a shared
+ * lock, so a names save waits for that language's choice under way, and is
+ * refused in it once it is made.
+ */
+async function refuseItemsLanguage(
+  tx: Transaction,
+  organizationId: string,
+  translations: { locale: Locale }[],
+) {
+  const language = await productNameLanguageOf(tx, organizationId, 'share');
+  if (
+    language &&
+    translations.some((translation) => translation.locale === language)
+  ) {
+    throw new ConflictException(
+      t(
+        {
+          id: 'products.nameInItemsLanguage',
+          defaultMessage:
+            'Items are named in {language}, so an item’s own name is its {language} name. Change it with Edit.',
+        },
+        { language: languageName(language) },
+      ),
+    );
+  }
 }
 
 /**
@@ -965,6 +995,7 @@ export class ProductsService {
           t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
         );
 
+      await refuseItemsLanguage(tx, organizationId, input.translations);
       recordContext({ names: describeNames(input.translations) });
 
       const kept = input.translations.map((translation) => translation.locale);
@@ -1036,6 +1067,7 @@ export class ProductsService {
           t({ id: 'products.suchVariant', defaultMessage: 'No such variant' }),
         );
 
+      await refuseItemsLanguage(tx, organizationId, input.translations);
       recordContext({
         sku: variant.sku,
         names: describeNames(input.translations),

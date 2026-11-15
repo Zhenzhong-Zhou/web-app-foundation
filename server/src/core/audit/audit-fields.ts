@@ -627,6 +627,25 @@ export const AUDIT_FIELDS = {
     }),
     read: 'language',
   },
+  // What choosing the items' language did (ADR-054, amended for #531).
+  copiesRemoved: {
+    name: t({
+      id: 'audit.field.copiesRemoved',
+      defaultMessage: 'Copies removed',
+    }),
+    read: 'text',
+  },
+  namesRemoved: {
+    name: t({
+      id: 'audit.field.namesRemoved',
+      defaultMessage: 'Names removed',
+    }),
+    read: 'text',
+  },
+  renamed: {
+    name: t({ id: 'audit.field.renamed', defaultMessage: 'Renamed' }),
+    read: 'text',
+  },
   timeZone: {
     name: t({ id: 'audit.field.timeZone', defaultMessage: 'Time zone' }),
     read: 'timeZone',
