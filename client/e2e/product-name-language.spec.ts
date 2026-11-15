@@ -8,7 +8,7 @@ import type {
 } from '@playwright/test';
 
 import { expect, test } from './fixtures';
-import { created, signInAs } from './support/api';
+import { created, createProduct, signInAs } from './support/api';
 import { asOrganizationFromBefore } from './support/database';
 import { saidBy, saidOn } from './support/said';
 
@@ -105,15 +105,9 @@ async function item(
     kept?: { locale: string; name: string }[];
   } = {},
 ) {
-  const { product } = await created<{
-    product: { id: string; variants: { id: string }[] };
-  }>(
-    await api.post('/v1/products', {
-      data: { type: 'good', name, variant: { sku, name: variant } },
-    }),
-  );
+  const product = await createProduct(api, { name, sku, variantName: variant });
   if (kept.length > 0) await keepNames(api, product.id, kept);
-  return { id: product.id, variantId: product.variants[0].id, sku };
+  return product;
 }
 
 /** The Documents tab, open, in the browser of the organization's Owner. */

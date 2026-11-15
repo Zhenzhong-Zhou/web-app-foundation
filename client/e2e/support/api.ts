@@ -125,6 +125,8 @@ export async function createProduct(
     tracksLots: boolean;
     /** Its category on Items (ADR-092), or none. */
     categoryId: string;
+    /** Its variation's own name, or none. */
+    variantName: string;
   }> = {},
 ): Promise<SeededProduct> {
   const sku = overrides.sku ?? unique('SKU').toUpperCase();
@@ -135,7 +137,11 @@ export async function createProduct(
       type: overrides.type ?? 'good',
       name,
       categoryId: overrides.categoryId,
-      variant: { sku, tracksLots: overrides.tracksLots ?? false },
+      variant: {
+        sku,
+        name: overrides.variantName,
+        tracksLots: overrides.tracksLots ?? false,
+      },
     },
   });
 
