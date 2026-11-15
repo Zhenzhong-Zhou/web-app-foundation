@@ -181,4 +181,33 @@ export const SHOTS: Shot[] = [
       await page.getByRole('region', { name: customise }).waitFor();
     },
   },
+  // The language items are named in (ADR-054, amended for #531): where it
+  // is chosen, and the dialogs that name an item.
+  {
+    name: '22-documents',
+    path: () => '/settings/organization?tab=documents',
+  },
+  {
+    name: '23-edit-names',
+    path: (targets) => at(targets.recipeProductId, (id) => `/items/${id}`),
+    windowOnly: true,
+    prepare: async (page, words) => {
+      const edit = words('products.translations.edit');
+      await page.getByRole('button', { name: edit, exact: true }).click();
+      await page.getByRole('dialog').waitFor();
+    },
+  },
+  {
+    name: '24-add-item',
+    path: () => '/items',
+    windowOnly: true,
+    prepare: async (page, words) => {
+      const add = words('products.add');
+      await page
+        .getByRole('button', { name: add, exact: true })
+        .first()
+        .click();
+      await page.getByRole('dialog').waitFor();
+    },
+  },
 ];
