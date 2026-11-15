@@ -915,26 +915,29 @@ folder by folder; these check what is already in place.
   deployed app, or `npm run build` then `npm run preview` in client/,
   offers no en-XA, and the build stops if a change would ship it.
 - **MC-1425** *(ADR-054's amendment for #531, R3, R4 and R8)* Choosing
-  the language items are named in. As the demo Owner, Settings →
-  Organization → Documents: Item names comes first, above Document
-  languages. Items are named in reads Not set; ticking English under
-  Names documents require brings a blue line, never an amber one, saying
-  to choose the language; Save item names stays off until something
-  changes. Choose English and Save, through each of the confirmation's
-  cases:
+  the language items are named in. As the demo Owner of a demo made by
+  `npm run seed:demo` with no email (one seeded into an account that has
+  its language set already keeps no English names to choose between),
+  Settings → Organization → Documents: Item names comes first, above
+  Document languages. Items are named in reads Not set; ticking English
+  under Names documents require brings a blue line, never an amber one,
+  saying to choose the language; Save item names stays off until
+  something changes. Choose English and Save, through each of the
+  confirmation's cases:
   - **Loading:** with the network slowed (the browser's Slow 3G), Name
     items in English? opens with placeholders, its Name items in English
     greyed; never Confirm.
   - **Failed:** offline, it says it could not read, with Try again, which
     reads it once back online.
   - **Rows to choose:** it says the own names of so many items will count
-    as English names and that nothing is translated, then how many
-    copies go, and lists Calm 90ct beside Calm, 90 capsules, with 0 of 1
-    chosen under it. Press Name items in English with the row left:
-    nothing is saved, the row says Choose one to keep, a line above names
-    it as a link, and focus is on its first choice. The Own name heading
-    chooses it on every row shown; All and Only those left show the rows
-    and those still to choose, each with its count.
+    as English names and that nothing is translated, then that 1 copy
+    goes (Vitamin D3's English name, the same as its own), and lists
+    Calm 90ct beside Calm, 90 capsules, with 0 of 1 chosen under it.
+    Press Name items in English with the row left: nothing is saved, the
+    row says Choose one to keep, a line above names it as a link, and
+    focus is on its first choice. The Own name heading chooses it on
+    every row shown; All and Only those left show the rows and those
+    still to choose, each with its count.
   - **A list changed meanwhile:** in a second tab, change Calm 90ct's
     English name in Edit names; back in the first, press Name items in
     English: the refusal, focused, says nothing was saved, and the row,
@@ -6277,3 +6280,7 @@ first.
   items are named in, and that screens and pickers name an item in the
   reader's language; the Organization guide gains Documents: MC-216
   extended, MC-3611 added.
+- 2026-11-14: ADR-054's amendment for #531, R9: `seed:demo` starts the
+  demo's items named in no language, with Vitamin D3's English name the
+  same as its own and Calm 90ct's one that differs: MC-1425 starts from
+  it.

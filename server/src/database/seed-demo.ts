@@ -995,11 +995,14 @@ async function freshAccount(
   // Started a while ago, so the demo reads as settled: no welcome for its
   // Owner (ADR-079). The organization and its first membership begin at
   // the same moment, as registering makes them, which is what makes the
-  // Owner its founder.
+  // Owner its founder. Its items are named in no language yet, as every
+  // organization from before: registering gave it English, and nobody
+  // chose it, so choosing it can be walked from the demo (#531). Written
+  // here, since no route sets it back to not set.
   const founded = daysAgo(FOUNDED_DAYS_AGO);
   await db
     .update(organizations)
-    .set({ createdAt: founded })
+    .set({ createdAt: founded, productNameLanguage: null })
     .where(eq(organizations.id, user.organizationId));
   await db
     .update(memberships)

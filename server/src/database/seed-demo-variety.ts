@@ -1,7 +1,9 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import type { Locale } from '../common/locales';
 import { addDays, todayIn } from '../common/today';
+import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
@@ -11,6 +13,7 @@ import { PartnersService } from '../modules/partners/partners.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
 import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
+import { ProductNameLanguageService } from '../modules/products/product-name-language.service';
 import { ProductsService } from '../modules/products/products.service';
 import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
@@ -227,14 +230,30 @@ export async function addVariety(
   // translated names beside the untranslated rest (ADR-054). Every item
   // given a reorder point (seed-demo-team-work.ts) has all three, so Low
   // stock reads whole in each.
+  //
+  // The items are named in no language yet, as every organization from
+  // before (seed-demo.ts), so two English names are kept beside the own
+  // ones: Vitamin D3's the same as its own, a copy, and Calm's one that
+  // differs. Choosing English from the demo then walks the copies and a
+  // choice (#531). A names save replaces the set, so each keeps its French
+  // and Chinese names in the same save. An account that has set the
+  // language already gets neither: English is refused as a kept name when
+  // it is the items' own language, and a language chosen needs no walk.
+  const { productNameLanguage } = await app.get(OrganizationsService).get();
+  const notSet = productNameLanguage === null;
+  const english = (name: string): { locale: Locale; name: string }[] =>
+    notSet ? [{ locale: 'en', name }] : [];
+
   await products.setTranslations(calm.productId, {
     translations: [
+      ...english('Calm, 90 capsules'),
       { locale: 'fr-CA', name: 'Calme, 90 capsules' },
       { locale: 'zh-Hans', name: '舒缓胶囊 90 粒' },
     ],
   });
   await products.setTranslations(vitaminD.productId, {
     translations: [
+      ...english('Vitamin D3 1000 IU, 120 softgels'),
       { locale: 'fr-CA', name: 'Vitamine D3 1000 UI, 120 capsules molles' },
       { locale: 'zh-Hans', name: '维生素 D3 1000 IU，120 粒软胶囊' },
     ],
@@ -269,6 +288,26 @@ export async function addVariety(
       { locale: 'zh-Hans', name: '锌含片，60 片' },
     ],
   });
+
+  // What choosing English will show, read as the confirmation reads it:
+  // one copy, and Calm the one name that differs.
+  if (notSet) {
+    const confirmation = await app
+      .get(ProductNameLanguageService)
+      .preview('en');
+    const [differs] = confirmation.differing;
+    if (
+      confirmation.copies !== 1 ||
+      confirmation.differing.length !== 1 ||
+      differs.kind !== 'item' ||
+      differs.productId !== calm.productId ||
+      differs.keptName !== 'Calm, 90 capsules'
+    ) {
+      throw new Error(
+        `Choosing English should find one copy and Calm 90ct's name differing, and finds ${confirmation.copies} copies and ${confirmation.differing.length} differing`,
+      );
+    }
+  }
 
   const wholesaler = await partners.create({
     name: 'Prairie Naturals Wholesale',
@@ -591,6 +630,9 @@ export async function addVariety(
     `SO-DEMO-3 a draft started ${DRAFT_STARTED_DAYS_AGO} days ago, ` +
     'SO-DEMO-4 cancelled, SO-DEMO-5 shipped with a draft invoice and a ' +
     'closed RMA, SO-DEMO-6 with a voided invoice, PO-DEMO-6 closed short; ' +
-    'ZINC-60 discontinued, Old Mill Herbs retired'
+    'ZINC-60 discontinued, Old Mill Herbs retired; ' +
+    (notSet
+      ? 'English names kept on D3-1000-120 (a copy) and CALM-90CT (it differs), for choosing the language items are named in'
+      : `no English names kept, the items already named in ${productNameLanguage}`)
   );
 }
