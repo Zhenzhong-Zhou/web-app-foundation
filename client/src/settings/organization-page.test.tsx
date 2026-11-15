@@ -90,4 +90,32 @@ describe('OrganizationPage', () => {
     const logo = await section('Logo on documents');
     expect(within(logo).queryByText(/No logo yet/)).not.toBeInTheDocument();
   });
+
+  it('keeps every Save on Documents off until something changes', async () => {
+    const user = userEvent.setup();
+    page('documents');
+
+    const logo = await section('Logo on documents');
+    const paper = await section('Paper size');
+    const saves = [
+      within(logo).getByRole('button', { name: 'Save logo on documents' }),
+      within(paper).getByRole('button', { name: 'Save paper size' }),
+    ];
+    for (const save of saves) {
+      expect(save).toHaveAttribute('aria-disabled', 'true');
+    }
+
+    await user.click(within(logo).getByRole('switch'));
+    await user.click(within(paper).getByRole('radio', { name: /^A4/ }));
+    for (const save of saves) {
+      expect(save).not.toHaveAttribute('aria-disabled');
+    }
+
+    // Back as saved, nothing to save.
+    await user.click(within(logo).getByRole('switch'));
+    await user.click(within(paper).getByRole('radio', { name: /^Automatic/ }));
+    for (const save of saves) {
+      expect(save).toHaveAttribute('aria-disabled', 'true');
+    }
+  });
 });

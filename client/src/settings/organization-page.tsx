@@ -626,6 +626,7 @@ function LogoOnDocumentsForm({
         id: 'settings.org.printLogo.save',
         defaultMessage: 'Save logo on documents',
       })}
+      saveDisabled={printLogo === value}
     >
       <FormControlLabel
         control={
@@ -741,6 +742,7 @@ function PaperSizeForm({
         id: 'settings.org.paper.save',
         defaultMessage: 'Save paper size',
       })}
+      saveDisabled={paper === (value ?? 'automatic')}
     >
       <RadioGroup
         aria-label={title}

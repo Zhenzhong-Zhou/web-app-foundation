@@ -1665,8 +1665,11 @@ await fetch(`${api}/v1/files/product-image`, {
   Stock and come back: the typing is still there. On a phone the tabs scroll
   sideways. Rename the organization: the rail's top, and below 1200 px the
   top bar, show the new name after Save, the History button lists the
-  change, and an invoice issued before still prints the old name. In 中文
-  the tabs read 概况, 财务, 单据 and 库存.
+  change, and an invoice issued before still prints the old name. On
+  Documents every Save is greyed until its section changes, and again
+  once changed back: Save item names, Save document languages, Save logo
+  on documents, Save paper size and Save numbering. In 中文 the tabs read
+  概况, 财务, 单据 and 库存.
 
 - **MC-1702** Branding (ADR-060). As an owner, Settings → Organization →
   Branding: upload a PNG logo and an SVG one in turn; each previews on both
@@ -6223,3 +6226,6 @@ first.
   MC-1425 added; MC-1408 and MC-1411 rewritten for it.
 - 2026-11-14: #487, the logo on documents: Documents' Logo on documents
   says there is no logo yet and links to Branding: MC-1702 extended.
+- 2026-11-14: #487, the Documents tab's Saves: each is off until its
+  section changes, Logo on documents and Paper size as the others
+  already were: MC-1701 extended.
