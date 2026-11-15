@@ -15,6 +15,7 @@ import {
 } from '../src/database/schema';
 import {
   addViewer,
+  asOrganizationFromBefore,
   body,
   createE2eApp,
   registerOrganization,
@@ -129,14 +130,6 @@ describe('The language items are named in (e2e)', () => {
     return agent.put(ROUTE).send({ language, choices });
   }
 
-  /** As an organization from before: its items named in no language yet. */
-  async function notSet(organizationId: string) {
-    await db
-      .update(organizations)
-      .set({ productNameLanguage: null })
-      .where(eq(organizations.id, organizationId));
-  }
-
   async function languageOf(organizationId: string) {
     const [row] = await db
       .select({ language: organizations.productNameLanguage })
@@ -169,7 +162,7 @@ describe('The language items are named in (e2e)', () => {
 
   it('says what choosing a language will do: the own names it counts, the copies, and each name that differs', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    await notSet(alpha.organizationId);
+    await asOrganizationFromBefore(app, alpha.organizationId);
     const { agent } = alpha;
 
     // Copies: the name the same, the description empty or the same.
@@ -258,7 +251,7 @@ describe('The language items are named in (e2e)', () => {
 
   it('removes the copies, sets the language and records it with the counts', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    await notSet(alpha.organizationId);
+    await asOrganizationFromBefore(app, alpha.organizationId);
     const { agent } = alpha;
     const focus = await item(agent, 'Focus', { sku: 'FOC-60', name: '60ct' });
     await keepNames(agent, focus.productId, [

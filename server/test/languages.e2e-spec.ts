@@ -22,6 +22,7 @@ import {
   variantTranslations,
 } from '../src/database/schema';
 import {
+  asOrganizationFromBefore,
   body,
   createE2eApp,
   createPartner,
@@ -1073,10 +1074,7 @@ describe('Languages (e2e)', () => {
 
       // As an organization from before, not set: English is missing too,
       // by language.
-      await db
-        .update(organizations)
-        .set({ productNameLanguage: null })
-        .where(eq(organizations.id, alpha.organizationId));
+      await asOrganizationFromBefore(app, alpha.organizationId);
       expect(await missing()).toEqual([
         { variantId: null, sku: null, locale: 'en' },
         { variantId: named, sku: 'FOCUS-60CT', locale: 'en' },

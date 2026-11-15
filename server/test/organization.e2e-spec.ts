@@ -13,6 +13,7 @@ import {
 } from '../src/database/schema';
 import {
   addMember,
+  asOrganizationFromBefore,
   body,
   createE2eApp,
   registerOrganization,
@@ -755,11 +756,7 @@ describe('Organization (e2e)', () => {
   describe('the language its items are named in', () => {
     it('reads as not set for an organization from before', async () => {
       const org = await registerOrganization(app, 'alpha');
-      // As migration 0081 leaves every organization it finds.
-      await db
-        .update(organizations)
-        .set({ productNameLanguage: null })
-        .where(eq(organizations.id, org.organizationId));
+      await asOrganizationFromBefore(app, org.organizationId);
 
       expect((await current(org.agent)).productNameLanguage).toBeNull();
     });

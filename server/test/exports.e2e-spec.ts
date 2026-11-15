@@ -5,8 +5,9 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, organizations } from '../src/database/schema';
+import { auditLog } from '../src/database/schema';
 import {
+  asOrganizationFromBefore,
   body,
   createE2eApp,
   createPartner,
@@ -310,10 +311,7 @@ describe('Exports (e2e)', () => {
     // As an organization from before, its items named in no language yet,
     // so an English name is kept beside the own one (ADR-054, amended for
     // #531).
-    await db
-      .update(organizations)
-      .set({ productNameLanguage: null })
-      .where(eq(organizations.id, alpha.organizationId));
+    await asOrganizationFromBefore(app, alpha.organizationId);
     await alpha.agent
       .put(`/v1/products/${created.id}/translations`)
       .send({
