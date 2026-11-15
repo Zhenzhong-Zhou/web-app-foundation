@@ -15,8 +15,8 @@ interface Connection {
 /**
  * The server's own Postgres driver, from its install, which the suite's
  * webServer starts the API from anyway: the client has no driver of its
- * own. The global setup's permission keys use it, and the setups that
- * confirm an owner's address (mail.ts).
+ * own. The global setup's permission keys use it, the setups that confirm
+ * an owner's address (mail.ts), and asOrganizationFromBefore.
  */
 const { Client } = createRequire(`${SERVER}package.json`)('pg') as {
   Client: new (config: { connectionString: string }) => Connection;
@@ -33,5 +33,29 @@ export async function onDatabase<T>(
     return await work(connection);
   } finally {
     await connection.end();
+  }
+}
+
+/**
+ * Makes an organization one from before (ADR-054, amended for #531): its
+ * items named in no language yet. A new one always has a language, and no
+ * route sets it back, so a test needing such an organization writes it
+ * in the e2e database.
+ */
+export async function asOrganizationFromBefore(
+  organizationId: string,
+): Promise<void> {
+  // The config stops the run when DATABASE_URL_E2E is missing.
+  const { rows } = await onDatabase(
+    process.env.DATABASE_URL_E2E as string,
+    (connection) =>
+      connection.query(
+        `update organizations set product_name_language = null
+         where id = $1 returning id`,
+        [organizationId],
+      ),
+  );
+  if (rows.length !== 1) {
+    throw new Error(`No organization ${organizationId} to set back`);
   }
 }

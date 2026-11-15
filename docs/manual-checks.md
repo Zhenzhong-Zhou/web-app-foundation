@@ -264,8 +264,7 @@ a second organization.
   follows, Items shows it on its new tab, and History records the type
   and the category from and to. Emptying the name is refused under it.
   As a Viewer there is no Edit. Its Names in other languages table's
-  item row reads the name it was added with, then "the name it was added
-  with, used in any language without its own name", in three languages.
+  item row reads Item and the name it was added with, and nothing more.
 - **MC-215** The item pickers, as the demo Owner, put the task's types
   first, each under its name, and every other item after them under
   Other items, each item's type at the end of its row. Raise an order,
@@ -296,6 +295,15 @@ a second organization.
   opens Add an item. In Français the title is Articles, the first
   paragraph says UGS ou SKU and Supplies is Fournitures; in 中文 the title
   is 物品, the first paragraph says SKU and 耗材 is 账上的低值易耗品.
+  Variants, images and names says, with the items named in a language
+  (MC-1425), that its column comes first in Names in other languages,
+  each row's own name in it marked Item's own name, never Missing, with
+  no field for it in Edit names, and that a screen or a picker names an
+  item in the language its reader uses; before a language is set, the own
+  name shows in every language with none of its own. Add an item's third
+  step says the name's field names the language, Words you'll meet has
+  Own name, and its link to Organization opens Documents. In Français the
+  column says Propre nom de l'article; in 中文, 物品本身的名称.
   Home's Getting started, Inventory's and Orders' lot steps, Licences' and
   Production's guides say item, article and 物品, never product, produit
   or 产品.
@@ -626,9 +634,26 @@ folder by folder; these check what is already in place.
   Français blank. The page lists the Chinese name; reopening the dialog
   shows all three as saved. Clear the Chinese name and save: it is gone.
   A description typed with no name in that language is refused before
-  saving, saying which language.
-- **MC-1408** With 简体中文 checked under Item names required on
-  invoices, on the Organization page, and a customer set to Chinese,
+  saving, saying which language. Then, with the items named in English
+  (MC-1425): the names table's first column is English, each row's own
+  name in it with Item's own name, or Variant's own name, under it in
+  grey, never Missing; Edit names has no English field, a blue line
+  saying the item's own name, named, is its English name, changed with
+  Edit. Add item's Name and Size or variation, Edit's Name, and Add
+  variant's and a variant's Edit's Size or variation each say In English
+  under them, in 中文 用英文填写; before English is chosen, none says a
+  language, and the table has no own column. Before it is chosen, too,
+  each row's own name has Item's own name, or Variant's own name, under
+  it in grey, and a grey line above the table says the language items
+  are named in isn't chosen yet, which a screen reader reads with the
+  table as its description. As the demo Owner it ends Choose it in
+  Organization → Documents, the link opening the Documents tab at Item
+  names, in view under the bar, its heading focused; as a Viewer it says
+  someone who can change the organization's settings can choose it
+  there, with no link. In 中文 and Français the line reads in each.
+- **MC-1408** With 简体中文 ticked under Item names, Names documents
+  require, on the Organization page's Documents tab, in an organization
+  whose items are not named in 中文, and a customer set to Chinese,
   issuing an invoice for an item with no Chinese name is refused naming
   the item and its code; once it has one, a variant with a name of its
   own and none in Chinese is refused naming the variant by its code and
@@ -638,15 +663,20 @@ folder by folder; these check what is already in place.
   documents: the missing name reads Missing with Add, and a line at the
   top names it and says orders and invoices holding the item cannot
   print. Add opens Edit names with that field focused, 简体中文 marked
-  required, and its intro no longer says a blank prints the base name
-  there. The line, the intro and the refusal name the language in the
+  required, and its intro no longer says a blank prints the item’s own
+  name there. The line, the intro and the refusal name the language in the
   reader's language, alike: the Chinese name and has no Chinese name, le
   nom en chinois and n’a pas de nom en chinois, 物品的中文名称 and
   没有中文名称; never 简体中文 inside an English or French sentence. With
   English checked too and the app in 中文, the line says 物品的英文名称 and
   Edit names' fields 名称（英文）, as the exports' columns say, never 英语
   or 法语. Once added, the invoice issues, and its printed lines show the
-  Chinese names.
+  Chinese names. In an organization registered with the app in 中文, so
+  its items are named in 中文, the Documents tab shows Items are named in
+  简体中文 with no Not set to choose, and 简体中文 under Names documents
+  require ticked and greyed, Met by each item’s own name in green; the
+  same invoice issues with no Chinese name kept, its lines printing each
+  item's own name.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
   blank box. The first offers the
@@ -679,10 +709,11 @@ folder by folder; these check what is already in place.
   has no "default" option and Save stays off without one; the second
   behaves as on a partner. Set Français then English and save; ship to a
   partner with no languages of its own: the shipment carries fr-CA and en.
-  A partner with its own pair is unaffected. Item names required on
-  invoices: checking and unchecking back leaves Save off; checking 简体中文
-  and saving survives a reload. A role without organizations.update sees
-  both sections but cannot save them.
+  A partner with its own pair is unaffected. Item names, above it:
+  ticking and unticking back a language under Names documents require
+  leaves Save item names off; ticking 简体中文 and saving survives a
+  reload. A role without organizations.update sees both sections but
+  cannot save them.
 - **MC-1412** Documents follow the customer, not the reader. With the
   screens in English, a partner set to Français then English: ship, open
   the shipment's Packing slip — every heading in the PDF reads "French /
@@ -891,6 +922,55 @@ folder by folder; these check what is already in place.
   sideways; from about 529 px wide its words are back under them. The
   deployed app, or `npm run build` then `npm run preview` in client/,
   offers no en-XA, and the build stops if a change would ship it.
+- **MC-1425** *(ADR-054's amendment for #531, R3, R4 and R8)* Choosing
+  the language items are named in. As the demo Owner of a demo made by
+  `npm run seed:demo` with no email (one seeded into an account that has
+  its language set already keeps no English names to choose between),
+  Settings → Organization → Documents: Item names comes first, above
+  Document languages. Items are named in reads Not set; ticking English
+  under Names documents require brings a blue line, never an amber one,
+  saying to choose the language; Save item names stays off until
+  something changes. Choose English and Save, through each of the
+  confirmation's cases:
+  - **Loading:** with the network slowed (the browser's Slow 3G), Name
+    items in English? opens with placeholders, its Name items in English
+    greyed; never Confirm.
+  - **Failed:** offline, it says it could not read, with Try again, which
+    reads it once back online.
+  - **Rows to choose:** it says the own names of so many items will count
+    as English names and that nothing is translated, then that 1 copy
+    goes (Vitamin D3's English name, the same as its own), and lists
+    Calm 90ct beside Calm, 90 capsules, with 0 of 1 chosen under it.
+    Press Name items in English with the row left: nothing is saved, the
+    row says Choose one to keep, a line above names it as a link, and
+    focus is on its first choice. The Own name heading chooses it on
+    every row shown; All and Only those left show the rows and those
+    still to choose, each with its count.
+  - **A list changed meanwhile:** in a second tab, change Calm 90ct's
+    English name in Edit names; back in the first, press Name items in
+    English: the refusal, focused, says nothing was saved, and the row,
+    read again, is marked New with no choice.
+  - **Saved:** choose its English name and press the button: "Items are
+    named in English. 1 copy removed and 1 item renamed.", each part only
+    when it is not zero. Not set is offered no more; English shows ticked,
+    greyed, Met by each item’s own name. History on the organization
+    lists Items named in, from nothing to English, with the copies
+    removed and the items renamed; Calm 90ct's own History, its new name
+    from and to, by the demo Owner, with Renamed by choosing the items’
+    language: English, so it never reads as an edit made on the item.
+  - **Nothing to choose:** register a new organization, add an item, and
+    choose 简体中文: the dialog says its own name will count as Chinese
+    names, no longer as English names, lists no rows, and saves at once.
+  - **More than 500:** in `foundation_perf_large`'s largest organization,
+    choosing Français is refused under Items are named in, saying how
+    many differ and that at most 500 can be chosen at once, focus on the
+    field and no dialog.
+
+  On a phone (390 px) the dialog fills the screen, its two buttons pinned
+  at its foot while the list scrolls, each row a card under Every own
+  name and Every English name. In Français the title reads Nommer les
+  articles en anglais?, in 中文 以英文命名物品？. A Viewer sees the
+  section greyed, with no Save.
 - **MC-1405** *Skipped for now (6 October 2026), and still owed (13
   November 2026): no fluent reader yet. In its place, as ADR-054's
   November 2026 amendment decided, ChatGPT's review rounds went in, round
@@ -1320,7 +1400,8 @@ Paper is checked first because it must not change at all.
   Items with `focus` typed and Discontinued pressed exports only what
   the list shows, each item's type in the screen's language, its
   category's path, and its names in English, French and Chinese where it
-  has them; and so does Partners with `mill` and Retired; the Audit
+  has them, the columns of the language its items are named in holding
+  their own names; and so does Partners with `mill` and Retired; the Audit
   log's entry names the filter in words, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
@@ -1613,8 +1694,11 @@ await fetch(`${api}/v1/files/product-image`, {
   Stock and come back: the typing is still there. On a phone the tabs scroll
   sideways. Rename the organization: the rail's top, and below 1200 px the
   top bar, show the new name after Save, the History button lists the
-  change, and an invoice issued before still prints the old name. In 中文
-  the tabs read 概况, 财务, 单据 and 库存.
+  change, and an invoice issued before still prints the old name. On
+  Documents every Save is greyed until its section changes, and again
+  once changed back: Save item names, Save document languages, Save logo
+  on documents, Save paper size and Save numbering. In 中文 the tabs read
+  概况, 财务, 单据 and 库存.
 
 - **MC-1702** Branding (ADR-060). As an owner, Settings → Organization →
   Branding: upload a PNG logo and an SVG one in turn; each previews on both
@@ -1632,7 +1716,10 @@ await fetch(`${api}/v1/files/product-image`, {
   warns it is close to the error red. On Stock set expiry to 180 and 60:
   a lot 150 days out shows amber in Inventory and on Home. Print an invoice
   and a packing slip: the logo at the top left; turn "Print the logo" off on
-  Documents and print again: no logo. A viewer sees no Branding tab. In 中文
+  Documents and print again: no logo. Before any logo is uploaded,
+  Documents' Logo on documents says No logo yet. Add one on Branding.,
+  the link opening Branding with focus on its tab; a viewer, who has no
+  Branding tab, reads no such line. A viewer sees no Branding tab. In 中文
   the tab reads 品牌.
 
 - **MC-1703** The refusal to issue links to Profile. Register a new
@@ -1648,7 +1735,8 @@ await fetch(`${api}/v1/files/product-image`, {
   distribute natural health products.", and its Save is greyed until the
   words change. Change them and Save, then clear them and Save: the
   History button lists What we do as Changed, then Cleared, and never the
-  words. The field takes no more than 200 characters. As a Viewer, the
+  words. The field is one line, Enter saving rather than starting
+  another, and takes no more than 200 characters. As a Viewer, the
   words show greyed, with no Save. In Français the section reads Ce que
   nous faisons; in 中文, 业务简介. On Home, a newcomer whose welcome is
   open reads the words once, under the date, not again in the welcome.
@@ -3539,6 +3627,24 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   at least 128 pixels on each side. Use a wide image as the main logo. In
   中文, 品牌, with 标志, 方形标志 and 保存品牌设置 in bold, and the line
   方形标志必须接近正方形，长宽比不超过 5 : 4，且每边至少需要 128 像素。较宽的图片请用作主标志。
+- **MC-3611** *(ADR-054's amendment for #531, R8)* Help's Documents. On
+  Settings → Organization → Documents, press Help: the Organization guide
+  has Documents between Money and Numbering, in five steps: Item names
+  with Items are named in (Not set until chosen, then changed but never
+  cleared), Names documents require (the items' language ticked and Met
+  by each item's own name, a line when a language is ticked and none is
+  chosen), Save item names, Document languages with Documents print in,
+  Then also in and Save document languages, and Logo on documents with
+  Save logo on documents and the line to add one on Branding; then a
+  paragraph on the confirmation: the copies removed, a name that differs
+  chosen on its row or by a column's heading, Only those left, and that
+  it cannot be undone. Each bold word is on the screen under that name.
+  Under If something is refused, three lines: Choose one to keep, a name
+  that changed while the confirmation was open, and at most 500 names at
+  once, with Edit names. The foot's Items link opens Items' Variants,
+  images and names. In Français the section is Documents, with Noms
+  d'articles, Les articles sont nommés en and Non défini; in 中文, 单据,
+  with 物品名称, 物品名称的语言 and 未设置.
 
 ## 37. The emails (ADR-083)
 
@@ -6158,3 +6264,33 @@ first.
   says a DTO rule's refusal names no field (#148). Finding 21: import's
   last line, and MC-1405 with it, names the rules check, and MC-1405
   says a failed calibration stops the decide step's `--meaning` runs.
+- 2026-11-14: ADR-054's amendment for #531, R5 and R7: a required
+  language the items are named in is met by their own names, on
+  invoices and the other documents, and the items export's columns for
+  it hold them: MC-1408 and MC-1558 extended.
+- 2026-11-14: ADR-054's amendment for #531, R3, R4 and R8: the Documents
+  tab's Item names section, in place of Item names required on invoices,
+  chooses the language items are named in through its confirmation:
+  MC-1425 added; MC-1408 and MC-1411 rewritten for it.
+- 2026-11-14: #487, the logo on documents: Documents' Logo on documents
+  says there is no logo yet and links to Branding: MC-1702 extended.
+- 2026-11-14: #487, the Documents tab's Saves: each is off until its
+  section changes, Logo on documents and Paper size as the others
+  already were: MC-1701 extended.
+- 2026-11-14: #505's 91, What we do on one line, as Home shows it:
+  MC-1704 extended.
+- 2026-11-14: ADR-054's amendment for #531, R5 and R6: the item's page
+  shows the own names in the column of the language items are named in,
+  first, never Missing, what is missing read from the server; Edit names
+  asks for no name in it; Add item, Edit and the variant dialogs say the
+  language a name is typed in; and #306's 12: MC-1407 rewritten, MC-214
+  reworded.
+- 2026-11-14: ADR-054's amendment for #531, R8 and #306's 37: the Items
+  guide's names paragraph says the own name is the name in the language
+  items are named in, and that screens and pickers name an item in the
+  reader's language; the Organization guide gains Documents: MC-216
+  extended, MC-3611 added.
+- 2026-11-14: ADR-054's amendment for #531, R9: `seed:demo` starts the
+  demo's items named in no language, with Vitamin D3's English name the
+  same as its own and Calm 90ct's one that differs: MC-1425 starts from
+  it.

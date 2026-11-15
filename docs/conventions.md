@@ -462,6 +462,8 @@ committed, and neither is edited by hand.
   - A write returns the detail its read returns, or as its list shows it
     where there is no read, such as a return's; or 204 when the screen
     reads again anyway (a delete, a state change, a settings section).
+    A write over many rows whose message counts what it did returns
+    those counts, as `PUT /v1/organization/product-name-language` does.
     CLAUDE.md and `/code-review` say the same. The detail is fetched after
     the write, never the row from `INSERT` or `UPDATE`: one shape per
     resource, whichever call the client made.
@@ -1181,8 +1183,11 @@ names.
   start, and again before the reviews (`npm outdated`, then `npm update`, in
   `server/` and `client/`). No overrides, except a patched release of the
   same major under a package that pins the vulnerable one exactly, as
-  js-yaml's is (ADR-019, amended); a major version is a change of its
-  own.
+  js-yaml's is, or a development tool's copy taken across a major where
+  every command that uses it is shown working, as esbuild's under
+  drizzle-kit and minimatch's under typescript-estree are (ADR-019,
+  amended); each named in its commit with what takes it out. A major
+  version of a package itself is a change of its own.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
   days. Package by package: for each one `npm outdated` lists in range,

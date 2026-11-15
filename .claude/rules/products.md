@@ -49,6 +49,10 @@ commit that changes one of those rules updates it (ADR-087).
   `useVariants`, read as its dialog or page opens, `loading` the hook's
   `!answered`, its `task` the types it lists first (`TYPES_FIRST`,
   ADR-092); Products' search is `useListSearch` (ADR-056, amended).
-- **Other-language names are replaced as a set,** `recordContext({ names })`.
+- **Other-language names are replaced as a set,** `recordContext({ names })`,
+  after `productNameLanguageOf(tx, org, 'share')`: none is kept in the
+  items' own language. Which kept names are copies and which differ is
+  `namesToChoose` alone (`product-name-language.ts`, ADR-054 amended for
+  #531).
 - **Category writes take `lockTree` first** (`category-tree.ts`, ADR-092);
   `changeMany` writes each item's History row itself, in its transaction.

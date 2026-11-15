@@ -10,6 +10,7 @@ import {
 import {
   membershipRoles,
   memberships,
+  organizations,
   permissions,
   rolePermissions,
   roles,
@@ -200,6 +201,23 @@ export async function insertMember(
     [member.roleId],
   );
   return membership.id;
+}
+
+/**
+ * As migration 0081 leaves every organization it finds: its items named in
+ * no language yet (ADR-054, amended for #531), where a new one starts in
+ * the language it was made in. The browser suite has its own, in
+ * client/e2e/support/database.ts.
+ */
+export async function asOrganizationFromBefore(
+  app: INestApplication,
+  organizationId: string,
+): Promise<void> {
+  await app
+    .get<Database>(UNSAFE_GLOBAL_DB)
+    .update(organizations)
+    .set({ productNameLanguage: null })
+    .where(eq(organizations.id, organizationId));
 }
 
 /** The ids of the roles a person holds, in every organization they are in. */

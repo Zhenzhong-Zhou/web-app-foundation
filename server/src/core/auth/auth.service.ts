@@ -182,6 +182,7 @@ export class AuthService implements OnModuleInit {
       const organizationId = await startOrganization(tx, {
         name: input.organizationName,
         timeZone: input.timeZone,
+        language: meta.language,
         userId: created.id,
       });
 

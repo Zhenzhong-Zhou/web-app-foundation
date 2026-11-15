@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "product_name_language" text;

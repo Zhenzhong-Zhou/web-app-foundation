@@ -3060,6 +3060,70 @@
         ]
       }
     },
+    "/v1/organization/product-name-language": {
+      "get": {
+        "operationId": "ProductNameLanguageController_preview_v1",
+        "parameters": [
+          {
+            "name": "language",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductNameLanguagePreview"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductNameLanguage"
+        ]
+      },
+      "put": {
+        "operationId": "ProductNameLanguageController_choose_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseProductNameLanguageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductNameLanguageChosen"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductNameLanguage"
+        ]
+      }
+    },
     "/v1/product-licences": {
       "get": {
         "operationId": "ProductLicencesController_list_v1",
@@ -12746,6 +12810,36 @@
           "sizes"
         ]
       },
+      "MissingName": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "locale"
+        ]
+      },
       "ProductDetail": {
         "type": "object",
         "properties": {
@@ -12776,6 +12870,12 @@
               "$ref": "#/components/schemas/ProductImage"
             }
           },
+          "missingNames": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MissingName"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -12801,6 +12901,7 @@
           "translations",
           "variants",
           "images",
+          "missingNames",
           "id",
           "type",
           "name",
@@ -13189,6 +13290,201 @@
           "fileIds"
         ]
       },
+      "ProductNameToChoose": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "variant",
+              "item"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ownName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keptName": {
+            "type": "string"
+          },
+          "ownDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keptDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "productId",
+          "sku",
+          "ownName",
+          "keptName",
+          "ownDescription",
+          "keptDescription"
+        ]
+      },
+      "ProductNameLanguagePreview": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "items": {
+            "type": "number"
+          },
+          "variants": {
+            "type": "number"
+          },
+          "copies": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "differing": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductNameToChoose"
+            }
+          }
+        },
+        "required": [
+          "language",
+          "items",
+          "variants",
+          "copies",
+          "total",
+          "differing"
+        ]
+      },
+      "ProductNameChoiceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "item",
+              "variant"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keep": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "own",
+              "kept",
+              null
+            ]
+          },
+          "ownName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "keptName": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "ownDescription": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "keptDescription": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "keptName"
+        ]
+      },
+      "ChooseProductNameLanguageDto": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "choices": {
+            "uniqueItems": true,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductNameChoiceDto"
+            }
+          }
+        },
+        "required": [
+          "language",
+          "choices"
+        ]
+      },
+      "ProductNameLanguageChosen": {
+        "type": "object",
+        "properties": {
+          "copiesRemoved": {
+            "type": "number"
+          },
+          "namesRemoved": {
+            "type": "number"
+          },
+          "renamed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "copiesRemoved",
+          "namesRemoved",
+          "renamed"
+        ]
+      },
       "ProductLicence": {
         "type": "object",
         "properties": {
@@ -13472,6 +13768,18 @@
               ]
             }
           },
+          "productNameLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
           "logoFileId": {
             "type": [
               "string",
@@ -13559,6 +13867,7 @@
           "documentLanguage",
           "documentSecondLanguage",
           "requiredNameLanguages",
+          "productNameLanguage",
           "logoFileId",
           "squareLogoFileId",
           "accentColor",
@@ -22261,7 +22570,8 @@
           "reorder_point_exists",
           "reorder_maximum_not_above_point",
           "code_in_use",
-          "item_name_missing"
+          "item_name_missing",
+          "product_names_changed"
         ]
       },
       "ApiVocabulary": {

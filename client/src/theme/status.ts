@@ -29,6 +29,7 @@ export const STATUS_TONES: {
   recipe: Record<BomStatus, ToneName>;
   invitation: Record<InvitationLinkStatus, ToneName>;
   reorder: Record<ReorderStatus, ToneName>;
+  itemNames: Record<'met' | 'new', ToneName>;
 } = {
   order: {
     draft: 'neutral',
@@ -63,6 +64,10 @@ export const STATUS_TONES: {
     enough: 'positive',
     discontinued: 'neutral',
   },
+  // Choosing the items' language (ADR-054, amended for #531): a required
+  // language met by the own names, and a row the list gained when it was
+  // read again.
+  itemNames: { met: 'positive', new: 'info' },
 };
 
 /**

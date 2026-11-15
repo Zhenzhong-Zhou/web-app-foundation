@@ -568,6 +568,13 @@
       "when": 1794249024399,
       "tag": "0080_product_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1794703316082,
+      "tag": "0081_product_name_language",
+      "breakpoints": true
     }
   ]
 }

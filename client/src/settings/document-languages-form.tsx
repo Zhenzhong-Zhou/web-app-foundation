@@ -1,9 +1,4 @@
-import {
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  Typography,
-} from '@mui/material';
+import { Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -13,7 +8,7 @@ import {
 } from '../components/document-language-fields';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
-import { LANGUAGE_NAMES, type Locale, SUPPORTED_LOCALES } from '../lib/locales';
+import type { Locale } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
 
 /**
@@ -100,102 +95,6 @@ export function OrganizationDocumentLanguages({
         onChange={setPair}
         disabled={readOnly}
       />
-    </SettingsSection>
-  );
-}
-
-/**
- * The languages a product must have a name in before an invoice in that
- * language can be issued (ADR-054). The server checks at issue and names
- * the SKUs that lack one; this only chooses which languages it checks.
- * Unchecked, a missing name prints as the product's own name.
- */
-export function RequiredNameLanguages({
-  value,
-  readOnly,
-  onSaved,
-}: {
-  value: Locale[];
-  readOnly: boolean;
-  onSaved: () => Promise<void>;
-}) {
-  const intl = useIntl();
-  const [chosen, setChosen] = useState<Locale[]>(value);
-
-  const { submitting, error, submit } = useSubmit(onSaved, {
-    success: intl.formatMessage({
-      id: 'settings.org.requiredNames.saved',
-      defaultMessage: 'Required names saved',
-    }),
-  });
-
-  // Order-blind: checking and unchecking back is no change.
-  const changed =
-    chosen.length !== value.length ||
-    chosen.some((locale) => !value.includes(locale));
-
-  function toggle(locale: Locale, checked: boolean) {
-    setChosen((current) =>
-      checked
-        ? SUPPORTED_LOCALES.filter(
-            (item) => item === locale || current.includes(item),
-          )
-        : current.filter((item) => item !== locale),
-    );
-  }
-
-  function handleSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    void submit(() =>
-      api('/organization', {
-        method: 'PATCH',
-        body: JSON.stringify({ requiredNameLanguages: chosen }),
-      }),
-    );
-  }
-
-  return (
-    <SettingsSection
-      title={intl.formatMessage({
-        id: 'settings.org.requiredNames.title',
-        defaultMessage: 'Item names required on invoices',
-      })}
-      onSubmit={handleSubmit}
-      error={error}
-      submitting={submitting}
-      readOnly={readOnly}
-      saveLabel={intl.formatMessage({
-        id: 'settings.org.requiredNames.save',
-        defaultMessage: 'Save required names',
-      })}
-      saveDisabled={!changed}
-      notice={
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage({
-            id: 'settings.org.requiredNames.notice',
-            defaultMessage:
-              'An invoice printing in a checked language cannot be issued while any of its items has no name in it. Unchecked, a missing name prints as the item’s own.',
-          })}
-        </Typography>
-      }
-    >
-      <FormGroup row>
-        {SUPPORTED_LOCALES.map((locale) => (
-          <FormControlLabel
-            key={locale}
-            control={
-              <Checkbox
-                checked={chosen.includes(locale)}
-                onChange={(event) => toggle(locale, event.target.checked)}
-                disabled={readOnly}
-              />
-            }
-            // Each language in its own name, as the pickers show them.
-            label={<span lang={locale}>{LANGUAGE_NAMES[locale]}</span>}
-          />
-        ))}
-      </FormGroup>
     </SettingsSection>
   );
 }

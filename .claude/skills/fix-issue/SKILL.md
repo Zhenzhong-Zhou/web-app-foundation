@@ -1,6 +1,6 @@
 ---
 name: fix-issue
-description: Fix one small issue end to end, in a cloud session or on the Mac, as engineering.md's "Cloud sessions" says. Checks main first for a commit that already fixes it, reads it whole, stops when it needs a decision or more than a small fix, works out the files open branches change, then fixes it with a test that fails before, verifies, pushes and opens a pull request that closes it. Runs only when a prompt names it, as /fix-issue <N>.
+description: Fix one small issue end to end, in a cloud session or on the Mac, as engineering.md's "Cloud sessions" says. Reads the issue whole, checks main for a commit that already fixes it, stops when it needs a decision or more than a small fix, works out the files open branches change, then fixes it with a test that fails before, verifies, pushes and opens a pull request that closes it. Runs only when a prompt names it, as /fix-issue <N>.
 argument-hint: <N> [leave <path> ...]
 disable-model-invocation: true
 ---
@@ -21,7 +21,8 @@ same in a cloud session and in Claude Code on the Mac.
 - **One issue, the smallest change that fixes it.** Past about 20
   minutes on the fix itself, counted from step 6, since the setup before
   it can take as long in a cloud session; or more files than the issue
-  names with their tests and `docs/manual-checks.md`: stop. What is done
+  names, with their tests, `docs/manual-checks.md`, the three catalogues
+  and its area's `docs/rules/` file: stop. What is done
   is committed and pushed on its branch, with no pull request, since a
   cloud session's files are gone when it ends; the report says what is
   left, and the maintainer says whether the pull request opens.
@@ -78,8 +79,9 @@ Worked out, never guessed:
   merged or closed (a branch squashed into `main` is never its
   ancestor), or `git merge-base --is-ancestor origin/<branch>
   origin/main` says `main` holds it; otherwise `git diff --name-only
-  origin/main...origin/<branch>`. A branch built on the Mac is pushed at
-  each stop of its run, so it shows here.
+  origin/main...origin/<branch>`. A branch built on the Mac shows here
+  only once it is pushed, which no stop of its run does: one not pushed
+  is named by `leave <path>`.
 - **The paths after `leave`** in the arguments.
 
 `docs/manual-checks.md` and the catalogues (`client/src/locales/*.json`,
@@ -110,8 +112,10 @@ the client's tests fail; then `npm ci` in `server/` and `client/`.
   `git stash`, which would set the new test aside too, so the run before
   proves nothing, and which every working folder of the repository
   shares. For an issue that asks only for tests, the code each test
-  covers set aside the same way for one run. The summary says each run
-  and its result.
+  covers set aside the same way for one run. Then, before its commit,
+  the new or changed test run as `docs/conventions.md`'s "Tests" says: a
+  client unit test or a browser test five times, a server end-to-end
+  test three times. The summary says each run and its result.
 - **A change a person sees:** in `docs/manual-checks.md`, in the same
   commit, a regression check at the top of Regressions, newest first,
   an empty line between entries, numbered one past the highest `MC-R`
@@ -126,8 +130,8 @@ the client's tests fail; then `npm ci` in `server/` and `client/`.
 - **The verify:** `scripts/verify.sh` in full when `docker info`
   answers, as on the Mac, as CLAUDE.md asks before a push; without
   Docker, as in a cloud session, `scripts/verify.sh --quick`, its
-  ShellCheck and check against `main` skipped, which CI runs: the report
-  says so. A proof runs only the changed tests.
+  ShellCheck and the API and migration checks against `main` skipped,
+  which CI runs: the report says so. A proof runs only the changed tests.
 - **No dependency commit,** against `docs/conventions.md`'s Dependencies
   on purpose: a fix this small stays one commit, and the next branch's
   dependency step takes what is 7 days old.

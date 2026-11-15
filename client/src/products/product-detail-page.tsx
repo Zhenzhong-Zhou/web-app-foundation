@@ -74,11 +74,13 @@ export function ProductDetailPage() {
   // The variants' table is named by its heading, as the names' is: two
   // tables on one page, each told apart by what it holds.
   const variantsTitleId = useId();
-  // The languages its documents require, every role's to read (ADR-080):
-  // what the names' table marks, and what it says is missing (ADR-092).
+  // The languages its documents require, every role's to read (ADR-080),
+  // which the names' table marks (ADR-092); and the one items are named
+  // in, which the table and the dialogs say (ADR-054, amended for #531).
   const { data: organization } =
     useResource<OrganizationEnvelope>('/organization');
   const required = organization?.organization.requiredNameLanguages ?? [];
+  const language = organization?.organization.productNameLanguage ?? null;
 
   // The SKU being edited, and its draft value. One at a time: editing several
   // rows before saving any would need a dirty-state map and a way to discard,
@@ -277,7 +279,9 @@ export function ProductDetailPage() {
         <ItemNames
           product={product}
           required={required}
+          language={language}
           canEdit={canEdit}
+          canChoose={can('organizations.update')}
           onEdit={(at) => {
             setNamesAt(at);
             setTranslating(true);
@@ -395,6 +399,7 @@ export function ProductDetailPage() {
       <AddVariantDialog
         open={adding}
         productId={id!}
+        language={language}
         onClose={() => setAdding(false)}
         onCreated={reload}
       />
@@ -403,6 +408,7 @@ export function ProductDetailPage() {
         open={translating}
         product={product}
         required={required}
+        language={language}
         at={namesAt}
         onClose={() => setTranslating(false)}
         onSaved={reload}
@@ -412,6 +418,7 @@ export function ProductDetailPage() {
         <EditItemDialog
           product={product}
           categories={tree?.categories ?? []}
+          language={language}
           onClose={() => setEditingItem(false)}
           onSaved={reload}
         />
@@ -421,6 +428,7 @@ export function ProductDetailPage() {
         open={editingVariant !== null}
         productId={id!}
         variant={editingVariant}
+        language={language}
         onClose={() => setEditingVariant(null)}
         onSaved={reload}
       />

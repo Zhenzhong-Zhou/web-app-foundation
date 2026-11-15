@@ -403,6 +403,8 @@ const KEEP_THE_BASE: Record<string, string> = {
   'POST /v1/invoices/{id}/credit-notes/preview': 'a credit note',
   'POST /v1/invoices/{id}/credit-notes': 'a credit note',
   'GET /v1/credit-notes/{id}': 'a credit note',
+  'GET /v1/organization/product-name-language':
+    'the names to choose between, the own and the kept',
 };
 
 interface Schema {

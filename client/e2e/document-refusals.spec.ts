@@ -2,6 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { created, signInAs } from './support/api';
+import { asOrganizationFromBefore } from './support/database';
 import { type Language, saidBy, saidOn } from './support/said';
 
 /**
@@ -179,13 +180,19 @@ const SAID = {
  * (ADR-054's November 2026 amendment): the item's page, which
  * this browser draws, and the refusal of a document printing in it, which
  * the server writes, name it alike, each language in each. Every language
- * required, the item named in none, and a purchase printing in each.
+ * required, the item named in none, and a purchase printing in each. An
+ * organization from before, since one whose items are named in a language
+ * meets it with their own names (ADR-054, amended for #531).
  */
 test('the item’s page and a refused document name a missing name’s language alike, in each language', async ({
   page,
   freshOrg,
 }) => {
   const api = freshOrg.api;
+  const { organization } = (await (
+    await api.get('/v1/organization')
+  ).json()) as { organization: { id: string } };
+  await asOrganizationFromBefore(organization.id);
   await ok(
     await api.patch('/v1/organization', {
       data: { requiredNameLanguages: [...LANGUAGES] },

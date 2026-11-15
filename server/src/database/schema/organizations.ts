@@ -156,6 +156,14 @@ export const organizations = pgTable(
       .default(sql`'{}'::text[]`),
 
     /**
+     * The language the items are named in (ADR-054, amended for #531): in
+     * it, an item's own name is its name. Null for not set, where an
+     * organization from before stays until its Owner chooses, since no
+     * guess is made about names already typed; once set, never null again.
+     */
+    productNameLanguage: text('product_name_language').$type<Locale>(),
+
+    /**
      * Home's Getting started (ADR-058), the organization's and not one
      * person's: when it was dismissed (null: shown), and when its team step
      * was skipped (null: not), each set by a member who may change these

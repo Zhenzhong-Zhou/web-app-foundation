@@ -150,6 +150,7 @@ export class OrganizationInvitationAcceptanceService {
           invitation,
           dto,
           context.userId,
+          meta.language,
         );
         return { account, organizationId };
       },
@@ -225,6 +226,7 @@ export class OrganizationInvitationAcceptanceService {
           invitation,
           dto,
           created.id,
+          meta.language,
         );
 
         return { ...created, emailVerified: false, organizationId };
@@ -300,6 +302,7 @@ export class OrganizationInvitationAcceptanceService {
     invitation: Live,
     dto: AcceptInvitationDto,
     userId: string,
+    language: string | undefined,
   ): Promise<string> {
     await lockAddress(tx, invitation.email);
     const [held] = await tx
@@ -324,6 +327,7 @@ export class OrganizationInvitationAcceptanceService {
     const organizationId = await startOrganization(tx, {
       name: invitation.organizationName,
       timeZone: dto.timeZone,
+      language,
       userId,
     });
 

@@ -29,6 +29,7 @@ const PRODUCT: ProductDetail = {
     { locale: 'zh-Hans', name: '舒缓胶囊 90 粒', description: null },
   ],
   variants: [],
+  missingNames: [],
 };
 
 function variant(
@@ -63,14 +64,18 @@ function renderPage(
   product: ProductDetail,
   permissions = ['products.view'],
   required: string[] = [],
+  language: string | null = null,
 ) {
   // The categories first: `:id` would match them too.
   server.use(
-    // The languages its documents require; the rest of the organization
-    // is not read here.
+    // The languages its documents require, and the one items are named
+    // in; the rest of the organization is not read here.
     http.get('/api/v1/organization', () =>
       HttpResponse.json({
-        organization: { requiredNameLanguages: required },
+        organization: {
+          requiredNameLanguages: required,
+          productNameLanguage: language,
+        },
       }),
     ),
     http.get('/api/v1/products/categories', () =>
@@ -92,21 +97,21 @@ function renderPage(
 
 describe('ProductDetailPage', () => {
   /**
-   * The heading is the reader's language (ADR-056), so the base name, which
+   * The heading is the reader's language (ADR-056), so the own name, which
    * the edit form fills from and documents print where a language has none,
-   * is said among the names in other languages.
+   * heads the item's row among the names in other languages, labelled the
+   * item's own name while the items' language is not set (ADR-054,
+   * amended for #531).
    */
-  it('names the base name beside the others, under a translated heading', async () => {
+  it('names the own name in the item’s row, under a translated heading', async () => {
     renderPage(PRODUCT);
 
     expect(
       await screen.findByRole('heading', { name: '舒缓胶囊 90 粒' }),
     ).toBeVisible();
-    // The base name says what it is until it has a language of its own
-    // (#531).
     expect(
       screen.getByRole('rowheader', {
-        name: /^Item Calm 90ct\s*·\s*the name it was added with, used in any language without its own name$/,
+        name: /^Item\s*Calm 90ct\s*Item’s own name$/,
       }),
     ).toBeVisible();
     expect(screen.getByRole('cell', { name: '舒缓胶囊 90 粒' })).toBeVisible();
@@ -127,7 +132,9 @@ describe('ProductDetailPage', () => {
    * One table (ADR-092, #526): the item and each variation with a name of
    * its own, a column for each language, those documents require marked
    * so. A missing required name reads Missing, with Add, and a line at the
-   * top names what is missing; a variation with no name has no row.
+   * top names what is missing, as the detail lists it, the server working
+   * it out as documents refuse (#551's 65); a variation with no name has
+   * no row.
    */
   it('shows the item’s and each named variation’s names by language, a missing required one marked', async () => {
     renderPage(
@@ -143,6 +150,7 @@ describe('ProductDetailPage', () => {
           variant('variant-2', 'adasd', '213123', []),
           variant('variant-3', 'FOC-PLAIN', null, []),
         ],
+        missingNames: [{ variantId: 'variant-2', sku: 'adasd', locale: 'en' }],
       },
       ['products.view', 'products.update'],
       ['en'],
@@ -163,9 +171,9 @@ describe('ProductDetailPage', () => {
 
     const rows = within(table).getAllByRole('rowheader');
     expect(rows.map((row) => row.textContent)).toEqual([
-      'ItemFocus · the name it was added with, used in any language without its own name',
-      'Variant FOC-3030 capsules',
-      'Variant adasd213123',
+      'ItemFocusItem’s own name',
+      'Variant FOC-3030 capsulesVariant’s own name',
+      'Variant adasd213123Variant’s own name',
     ]);
     const adasd = within(table).getByRole('row', { name: /adasd/ });
     expect(within(adasd).getByText('Missing')).toBeVisible();
@@ -190,6 +198,10 @@ describe('ProductDetailPage', () => {
       {
         ...PRODUCT,
         variants: [variant('variant-2', 'adasd', '213123', [])],
+        missingNames: [
+          { variantId: null, sku: null, locale: 'en' },
+          { variantId: 'variant-2', sku: 'adasd', locale: 'en' },
+        ],
       },
       ['products.view', 'products.update'],
       ['en'],
@@ -212,6 +224,128 @@ describe('ProductDetailPage', () => {
         name: 'English Required on documents',
       }),
     ).toBeVisible();
+  });
+
+  /**
+   * Once the organization says which language its items are named in, that
+   * column comes first and holds each row's own name, with its `lang`,
+   * marked as the own one in the muted tone of a label, never Missing,
+   * though documents require it: what is missing is the detail's list
+   * alone (ADR-054, amended for #531; #551's 65).
+   */
+  it('holds the own names first, in the column of the language items are named in, never Missing', async () => {
+    renderPage(
+      {
+        ...PRODUCT,
+        variants: [variant('variant-1', 'CALM-90', '90ct', [])],
+        missingNames: [
+          { variantId: null, sku: null, locale: 'en' },
+          { variantId: 'variant-1', sku: 'CALM-90', locale: 'en' },
+        ],
+      },
+      ['products.view', 'products.update'],
+      ['en', 'zh-Hans'],
+      'fr-CA',
+    );
+
+    const table = await screen.findByRole('table', {
+      name: 'Names in other languages',
+    });
+    // The first heading names the rows; the items' own language follows.
+    await waitFor(() =>
+      expect(
+        within(table)
+          .getAllByRole('columnheader')
+          .map((header) => header.textContent),
+      ).toEqual([
+        'Item or variant',
+        'Français (Canada)',
+        'EnglishRequired on documents',
+        '简体中文Required on documents',
+      ]),
+    );
+
+    const item = within(table).getByRole('row', { name: /^Item Calm/ });
+    const own = within(item).getAllByRole('cell')[0];
+    expect(own).toHaveTextContent(/^Calm 90ct\s*Item’s own name$/);
+    expect(within(own).getByText('Calm 90ct')).toHaveAttribute('lang', 'fr-CA');
+    const named = within(table).getByRole('row', { name: /CALM-90/ });
+    expect(within(named).getAllByRole('cell')[0]).toHaveTextContent(
+      /^90ct\s*Variant’s own name$/,
+    );
+    // The kept French name is not shown: the own one is the name there.
+    expect(within(table).queryByText('Calme 90 capsules')).toBeNull();
+
+    // English is missing on both rows, as the detail says; 中文 on
+    // neither, though it is required and kept on the item only.
+    expect(within(item).getAllByText('Missing')).toHaveLength(1);
+    expect(within(named).getAllByText('Missing')).toHaveLength(1);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '2 names documents require are missing: the English name of the item and the English name of variant CALM-90.',
+    );
+  });
+
+  /**
+   * Edit, Add variant and a variant's Edit say under the name the language
+   * items are named in, once it is set, in the reader's words (ADR-054,
+   * amended for #531, R6).
+   */
+  it('says under each name, in Edit and the variant dialogs, the language items are named in', async () => {
+    const user = userEvent.setup();
+    renderPage(
+      { ...PRODUCT, variants: [variant('variant-1', 'CALM-90', '90ct', [])] },
+      ['products.view', 'products.update'],
+      [],
+      'zh-Hans',
+    );
+
+    // Once the organization is read: its language's column comes first.
+    const table = await screen.findByRole('table', {
+      name: 'Names in other languages',
+    });
+    expect(await within(table).findByText('Item’s own name')).toBeVisible();
+
+    // The page's Edit comes first, before the variant's.
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
+    expect(
+      screen.getByRole('textbox', { name: /^Name/ }),
+    ).toHaveAccessibleDescription('In Chinese');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await user.click(screen.getByRole('button', { name: 'Add variant' }));
+    expect(
+      screen.getByRole('textbox', { name: 'Size or variation' }),
+    ).toHaveAccessibleDescription('In Chinese · 120ct, Large, Blue');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    await user.click(
+      within(screen.getByRole('table', { name: 'Variants' })).getByRole(
+        'button',
+        { name: 'Edit' },
+      ),
+    );
+    expect(
+      screen.getByRole('textbox', { name: 'Size or variation' }),
+    ).toHaveAccessibleDescription('In Chinese');
+  });
+
+  /** While it is not set, the own name has no language, and nothing says one. */
+  it('says no language under the name while none is set', async () => {
+    const user = userEvent.setup();
+    renderPage(PRODUCT, ['products.view', 'products.update'], ['en']);
+
+    // Once the organization is read: English marked required.
+    expect(
+      await screen.findByRole('columnheader', {
+        name: 'English Required on documents',
+      }),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(
+      screen.getByRole('textbox', { name: /^Name/ }),
+    ).not.toHaveAccessibleDescription();
   });
 
   /**

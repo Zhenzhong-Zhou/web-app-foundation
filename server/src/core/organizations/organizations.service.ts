@@ -15,7 +15,11 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
-import { recordContext, recordPrevious } from '../audit/audit-context';
+import {
+  recordContext,
+  recordPrevious,
+  recordUnchanged,
+} from '../audit/audit-context';
 import { FilesService } from '../files/files.service';
 import { normalizeHex, safeAccent } from './accent';
 import { assertLanguagePair } from './document-languages';
@@ -24,6 +28,38 @@ import type { OrganizationProfile } from './dto/organization-response.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { lastExportOf } from './last-export';
 import { registeredAddress } from './registered-address';
+
+/**
+ * The organization's settings, as `get` returns them and `update` reads them
+ * before changing them: one list, so a new setting is added in one place
+ * (#282). `recordPrevious` keeps its own, which leaves What we do out by
+ * name, since free text stays out of the log (ADR-018).
+ */
+const SETTINGS_COLUMNS = {
+  name: organizations.name,
+  taxRegistrationNumber: organizations.taxRegistrationNumber,
+  whatWeDo: organizations.whatWeDo,
+  baseCurrency: organizations.baseCurrency,
+  defaultSalePriceListId: organizations.defaultSalePriceListId,
+  licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
+  licenceExpiredPolicy: organizations.licenceExpiredPolicy,
+  licenceRequired: organizations.licenceRequired,
+  documentLanguage: organizations.documentLanguage,
+  documentSecondLanguage: organizations.documentSecondLanguage,
+  requiredNameLanguages: organizations.requiredNameLanguages,
+  productNameLanguage: organizations.productNameLanguage,
+  logoFileId: organizations.logoFileId,
+  squareLogoFileId: organizations.squareLogoFileId,
+  accentColor: organizations.accentColor,
+  rail: organizations.rail,
+  logoOnDocuments: organizations.logoOnDocuments,
+  paperSize: organizations.paperSize,
+  timeZone: organizations.timeZone,
+  expiryWarningDays: organizations.expiryWarningDays,
+  expiryCriticalDays: organizations.expiryCriticalDays,
+  idleSignOutMinutes: organizations.idleSignOutMinutes,
+  idleSignOutScope: organizations.idleSignOutScope,
+};
 
 /**
  * The current organization's own details (ADR-046), and the rules it chose
@@ -54,29 +90,8 @@ export class OrganizationsService {
       const [organization] = await tx
         .select({
           id: organizations.id,
-          name: organizations.name,
           slug: organizations.slug,
-          taxRegistrationNumber: organizations.taxRegistrationNumber,
-          whatWeDo: organizations.whatWeDo,
-          baseCurrency: organizations.baseCurrency,
-          defaultSalePriceListId: organizations.defaultSalePriceListId,
-          licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
-          licenceExpiredPolicy: organizations.licenceExpiredPolicy,
-          licenceRequired: organizations.licenceRequired,
-          documentLanguage: organizations.documentLanguage,
-          documentSecondLanguage: organizations.documentSecondLanguage,
-          requiredNameLanguages: organizations.requiredNameLanguages,
-          logoFileId: organizations.logoFileId,
-          squareLogoFileId: organizations.squareLogoFileId,
-          accentColor: organizations.accentColor,
-          rail: organizations.rail,
-          logoOnDocuments: organizations.logoOnDocuments,
-          paperSize: organizations.paperSize,
-          timeZone: organizations.timeZone,
-          expiryWarningDays: organizations.expiryWarningDays,
-          expiryCriticalDays: organizations.expiryCriticalDays,
-          idleSignOutMinutes: organizations.idleSignOutMinutes,
-          idleSignOutScope: organizations.idleSignOutScope,
+          ...SETTINGS_COLUMNS,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -116,30 +131,7 @@ export class OrganizationsService {
   async update(input: UpdateOrganizationDto) {
     await this.tenantDb.transaction(async (tx, organizationId) => {
       const [existing] = await tx
-        .select({
-          name: organizations.name,
-          taxRegistrationNumber: organizations.taxRegistrationNumber,
-          whatWeDo: organizations.whatWeDo,
-          baseCurrency: organizations.baseCurrency,
-          defaultSalePriceListId: organizations.defaultSalePriceListId,
-          licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
-          licenceExpiredPolicy: organizations.licenceExpiredPolicy,
-          licenceRequired: organizations.licenceRequired,
-          documentLanguage: organizations.documentLanguage,
-          documentSecondLanguage: organizations.documentSecondLanguage,
-          requiredNameLanguages: organizations.requiredNameLanguages,
-          logoFileId: organizations.logoFileId,
-          squareLogoFileId: organizations.squareLogoFileId,
-          accentColor: organizations.accentColor,
-          rail: organizations.rail,
-          logoOnDocuments: organizations.logoOnDocuments,
-          paperSize: organizations.paperSize,
-          timeZone: organizations.timeZone,
-          expiryWarningDays: organizations.expiryWarningDays,
-          expiryCriticalDays: organizations.expiryCriticalDays,
-          idleSignOutMinutes: organizations.idleSignOutMinutes,
-          idleSignOutScope: organizations.idleSignOutScope,
-        })
+        .select(SETTINGS_COLUMNS)
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
@@ -351,7 +343,12 @@ export class OrganizationsService {
           : {}),
       };
 
-      if (Object.keys(changes).length === 0) return;
+      // Nothing to write, so nothing to record: What we do's words saved
+      // again, which the log keeps out by name, or a body with nothing in it.
+      if (Object.keys(changes).length === 0) {
+        recordUnchanged();
+        return;
+      }
 
       await tx
         .update(organizations)

@@ -1,5 +1,5 @@
 import { Button, Paper, Stack, Typography } from '@mui/material';
-import type { ReactNode, SubmitEvent } from 'react';
+import type { ReactNode, Ref, SubmitEvent } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { LearnMoreTarget } from '../help/guides';
@@ -26,6 +26,9 @@ import { FormError } from './form-error';
  *
  * `learnMore`, for a setting that needs more than its own words, opens Help
  * at its section from the end of the heading (ADR-079).
+ *
+ * `headingRef`, for a section a link lands on (useArrival): its heading
+ * can then take focus.
  */
 export function SettingsSection({
   title,
@@ -37,6 +40,7 @@ export function SettingsSection({
   saveDisabled = false,
   notice,
   learnMore,
+  headingRef,
   children,
 }: {
   title: string;
@@ -49,6 +53,7 @@ export function SettingsSection({
   saveDisabled?: boolean;
   notice?: ReactNode;
   learnMore?: LearnMoreTarget;
+  headingRef?: Ref<HTMLHeadingElement>;
   children: ReactNode;
 }) {
   const intl = useIntl();
@@ -69,7 +74,12 @@ export function SettingsSection({
               columnGap: 1.5,
             }}
           >
-            <Typography variant="h6" component="h2">
+            <Typography
+              ref={headingRef}
+              variant="h6"
+              component="h2"
+              tabIndex={headingRef ? -1 : undefined}
+            >
               {title}
             </Typography>
             {learnMore && <LearnMore target={learnMore} variant="beside" />}

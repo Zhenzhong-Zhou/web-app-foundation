@@ -6,8 +6,10 @@
  *     node scripts/adr-check.mjs 089 --areas docs,ops
  *     node scripts/adr-check.mjs 089 --areas docs,ops --issues 348,292
  *
- * Writes tmp/adr-NNN/check.txt in the repository it is run in, making
- * the folder, and prints its path with the counts. The file holds, for
+ * Writes tmp/<branch>/check.txt in the repository it is run in, <branch>
+ * the one checked out, making the folder, and prints its path with the
+ * counts: a branch's brief, patches and check share one folder, whether
+ * it is an ADR's own branch or an amendment's. The file holds, for
  * each area in the order given, `== area:<a>` and its open issues as
  * `gh issue list` prints them; then each issue named and each open
  * `when-touched` one in those areas, in number order and once each:
@@ -18,8 +20,10 @@
  *
  * It refuses, writing nothing, an area not in AREAS
  * (scripts/adr-index.mjs), naming them; an ADR number not of three
- * digits; and gh not signed in. A gh failure stops it, naming the area or
- * the issue, and writes nothing either.
+ * digits, which is checked and no longer names the folder; main, or no
+ * branch checked out, naming the command that starts one; and gh not
+ * signed in. A gh failure stops it, naming the area or the issue, and
+ * writes nothing either.
  *
  * Its tests, in adr-check.test.mjs, run it in a temporary repository
  * with a stand-in gh first on PATH: `node --test scripts/`.
@@ -36,6 +40,11 @@ const USAGE =
 
 /** The root of the repository it is run in, as adr-index.mjs finds it. */
 const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+  encoding: "utf8",
+}).trim();
+
+/** The branch checked out, empty with none, as on a detached HEAD. */
+const BRANCH = execFileSync("git", ["branch", "--show-current"], {
   encoding: "utf8",
 }).trim();
 
@@ -95,6 +104,12 @@ if (notIssues.length > 0) {
   refuse(`Not an issue's number: ${notIssues.join(", ")}. Write #348 as 348.`);
 }
 
+if (BRANCH === "" || BRANCH === "main") {
+  refuse(
+    `${BRANCH === "" ? "No branch is checked out" : "On main"}, so there is no branch's folder for the check, tmp/<branch>/. Start a branch with git switch -c <branch>, then run this again.`,
+  );
+}
+
 try {
   execFileSync("gh", ["auth", "status"], { stdio: "ignore" });
 } catch (error) {
@@ -146,7 +161,7 @@ for (const n of read) {
   }
 }
 
-const file = `tmp/adr-${number}/check.txt`;
+const file = `tmp/${BRANCH}/check.txt`;
 mkdirSync(path.join(ROOT, path.dirname(file)), { recursive: true });
 writeFileSync(path.join(ROOT, file), text.join(""));
 console.log(

@@ -1180,12 +1180,19 @@ export type ProductImage = {
   sizes: ImageSizes;
 };
 
+export type MissingName = {
+  variantId: string | null;
+  sku: string | null;
+  locale: 'en' | 'fr-CA' | 'zh-Hans';
+};
+
 export type ProductDetail = {
   displayName: string;
   categoryId: string | null;
   translations: Array<ProductTranslation>;
   variants: Array<Variant>;
   images: Array<ProductImage>;
+  missingNames: Array<MissingName>;
   id: string;
   type: string;
   name: string;
@@ -1292,6 +1299,47 @@ export type OrderProductImagesDto = {
   fileIds: Array<string>;
 };
 
+export type ProductNameToChoose = {
+  kind: 'variant' | 'item';
+  id: string;
+  productId: string;
+  sku: string | null;
+  ownName: string | null;
+  keptName: string;
+  ownDescription: string | null;
+  keptDescription: string | null;
+};
+
+export type ProductNameLanguagePreview = {
+  language: 'en' | 'fr-CA' | 'zh-Hans';
+  items: number;
+  variants: number;
+  copies: number;
+  total: number;
+  differing: Array<ProductNameToChoose>;
+};
+
+export type ProductNameChoiceDto = {
+  kind: 'item' | 'variant';
+  id: string;
+  keep?: 'own' | 'kept' | null;
+  ownName?: string | null;
+  keptName: string;
+  ownDescription?: string | null;
+  keptDescription?: string | null;
+};
+
+export type ChooseProductNameLanguageDto = {
+  language: 'en' | 'fr-CA' | 'zh-Hans';
+  choices: Array<ProductNameChoiceDto>;
+};
+
+export type ProductNameLanguageChosen = {
+  copiesRemoved: number;
+  namesRemoved: number;
+  renamed: number;
+};
+
 export type ProductLicence = {
   id: string;
   number: string;
@@ -1354,6 +1402,7 @@ export type OrganizationProfile = {
   documentLanguage: 'en' | 'fr-CA' | 'zh-Hans';
   documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
   requiredNameLanguages: Array<'en' | 'fr-CA' | 'zh-Hans'>;
+  productNameLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
   logoFileId: string | null;
   squareLogoFileId: string | null;
   accentColor: string | null;
@@ -3626,6 +3675,7 @@ export const ErrorCode = {
   REORDER_MAXIMUM_NOT_ABOVE_POINT: 'reorder_maximum_not_above_point',
   CODE_IN_USE: 'code_in_use',
   ITEM_NAME_MISSING: 'item_name_missing',
+  PRODUCT_NAMES_CHANGED: 'product_names_changed',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -5300,6 +5350,36 @@ export type ProductsControllerRemoveImageV1Responses = {
 
 export type ProductsControllerRemoveImageV1Response =
   ProductsControllerRemoveImageV1Responses[keyof ProductsControllerRemoveImageV1Responses];
+
+export type ProductNameLanguageControllerPreviewV1Data = {
+  body?: never;
+  path?: never;
+  query: {
+    language: 'en' | 'fr-CA' | 'zh-Hans';
+  };
+  url: '/v1/organization/product-name-language';
+};
+
+export type ProductNameLanguageControllerPreviewV1Responses = {
+  200: ProductNameLanguagePreview;
+};
+
+export type ProductNameLanguageControllerPreviewV1Response =
+  ProductNameLanguageControllerPreviewV1Responses[keyof ProductNameLanguageControllerPreviewV1Responses];
+
+export type ProductNameLanguageControllerChooseV1Data = {
+  body: ChooseProductNameLanguageDto;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/product-name-language';
+};
+
+export type ProductNameLanguageControllerChooseV1Responses = {
+  200: ProductNameLanguageChosen;
+};
+
+export type ProductNameLanguageControllerChooseV1Response =
+  ProductNameLanguageControllerChooseV1Responses[keyof ProductNameLanguageControllerChooseV1Responses];
 
 export type ProductLicencesControllerListV1Data = {
   body?: never;

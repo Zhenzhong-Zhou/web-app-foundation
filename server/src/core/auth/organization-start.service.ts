@@ -74,6 +74,7 @@ export class OrganizationStartService {
         const organizationId = await startOrganization(tx, {
           name: dto.name,
           timeZone: dto.timeZone,
+          language: context.language,
           userId: context.userId,
         });
         return { account, organizationId };

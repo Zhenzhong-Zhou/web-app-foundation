@@ -397,5 +397,44 @@ describe('Documents as PDF (e2e)', () => {
         /^SCOOP \(SCOOP\) has no Chinese name/,
       );
     });
+
+    it('prints the pro forma and the RMA in a required language the items are named in, by their own names', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shippedSale(org.agent);
+      // Named in Chinese, which the organization requires, with no Chinese
+      // name kept (ADR-054, amended for #531).
+      await org.agent
+        .put('/v1/organization/product-name-language')
+        .send({ language: 'zh-Hans', choices: [] })
+        .expect(200);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['zh-Hans'] })
+        .expect(204);
+      await org.agent
+        .patch(`/v1/partners/${s.partnerId}`)
+        .send({ documentLanguage: 'zh-Hans' })
+        .expect(204);
+
+      expect(isPdf(await pdf(org, `/v1/orders/${s.orderId}/pro-forma`))).toBe(
+        true,
+      );
+
+      const rma = body<{ returnAuthorization: { id: string } }>(
+        await org.agent
+          .post('/v1/return-authorizations')
+          .send({
+            orderId: s.orderId,
+            reason: 'Arrived cracked',
+            lines: [
+              { lineId: s.scoopLine, quantity: '1', resolution: 'credit' },
+            ],
+          })
+          .expect(201),
+      ).returnAuthorization.id;
+      expect(
+        isPdf(await pdf(org, `/v1/return-authorizations/${rma}/pdf`)),
+      ).toBe(true);
+    });
   });
 });

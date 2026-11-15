@@ -852,3 +852,438 @@ the decide step with `--meaning`; `import`; then the server and browser
 suites before the commit is pushed. The hand-made fixes after the
 export at `fe6c7e1d` are this as-built's decisions; the one a round
 must not undo, `account.title`, is settled.
+
+## Amendment (November 2026) — an item's own name in the organization's language (#531)
+
+An item's own name, the one typed when it is added, has no language: it
+is shown in every language that has no name of its own (*Decision — a
+product's name and description may be kept in other languages*). A
+language the organization requires on its documents is met only by a
+name kept in that language, never by the own name
+(`server/src/modules/invoices/line-names.ts`). So an organization that
+names its items in Chinese and requires Chinese on its documents types
+every Chinese name twice, and the two copies drift apart (#531).
+
+This amendment gives each organization the language its items are named
+in, so that an item's own name is its name in that language, as Shopify
+and Odoo do: content is written in one language, and translations exist
+only for the others. Planned on 14 November 2026 on `fix-531-base-name`:
+the maintainer confirmed the requirements before drafting, and chose
+each decision as recommended.
+
+### Requirements, as confirmed
+
+Confirmed by the maintainer on 14 November 2026, with the assumptions,
+what is not included and the questions' answers below. Each names its
+step in the brief, and the as-built marks each met, changed or deferred.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | This amendment, as the branch's first commit, with the handoff's tidy: #577 merged and its after-merge steps; Inventory and Movements after #531, with #587 | The amendment with its requirements, its check and its decisions; `scripts/verify.sh --docs` passes | 1 |
+| R2 | The dependencies step takes the fix for Dependabot alerts 11 and 12 at once (#446, minimatch below 11.0.1, dev tools only), in `client/` and `server/` | `npm ls minimatch` in each shows no copy below 11.0.1; an override, if one is needed, named as the maintainer's in its commit; after the merge, both alerts seen fixed | 3, 14, 17 |
+| R3 | Each organization says which language its items are named in, on the Documents tab; not set for an organization from before, the registering person's language for a new one; once set, never back to not set; audited | Server tests save and read it, refuse not set once set, and give a new organization the request's language; the Documents tab shows and saves it | 6, 9 |
+| R4 | Choosing it says first what it will do: how many own names will count as that language's, and nothing translated; a kept name the same as the own one removed; one that differs listed beside it, one name chosen per row, with a choice for every row at once; refused while a row is unchosen, when the list changed since it was shown, or past 500 rows; a names save meanwhile waits for it | Server tests for each case, the two writes at once among them; client tests for the confirmation | 7, 9 |
+| R5 | In that language the own name is the name, for an item, a named variant and a description alike: a document requiring it prints; the item's page shows it in that column, marked as the own name with its `lang`, never Missing; Edit names does not ask for it, and the server refuses a kept name in it; what documents will refuse comes from the server alone (#551's 65) | An invoice in that required language issues with own names only; server and client tests for the rest | 8, 10 |
+| R6 | Add item, Edit and the variant dialogs say the language a name is typed in, once it is set | A client test | 10 |
+| R7 | The items export's columns for that language hold the own names | A server test | 8 |
+| R8 | The Items guide and a Documents section in the Organization guide, in three languages; the rules files and the manual checks; where a required language is ticked and none is set, the section says to choose one | `client/src/help/guides.test.ts` and `scripts/check-docs.mjs` pass; each manual check in its step's commit | 7, 8, 9, 10, 12 |
+| R9 | `seed:demo`: the demo organization starts not set, with one kept English name the same as its item's own and one that differs, so the choice is walked from the demo; `seed:volume` adds nothing, and says why | The seed runs in CI; the manual check starts from it | 13 |
+| R10 | The canvas row "物品名称的语言 第一版 · Item names' language v1"; each row of the interaction table a browser test | The boards drawn; each row's test passes | 2, 11 |
+| R11 | The riders in *Decision — what rides along* | Each closed, or its part said, in the pull request | 4, 5, 8, 9, 10, 12 |
+| R12 | The reviews, the as-built and the pull request, closing #531, #446 and #571 | The pull request open, its `Closes` lines checked against its commits | 15, 16 |
+
+- **Assumptions:**
+  - A1: an amendment, with no number of its own; the branch's working
+    files in `tmp/fix-531-base-name/`, as #571 makes the check write.
+  - A2: search, sorting, History, refusals and CSV exports other than
+    the items export keep the own name, unchanged.
+  - A3: the reads in the reader's language need no change: with no name
+    kept in the organization's language, its readers already see the own
+    name.
+  - A4: one migration, a column; the API grows by a field, two routes
+    and a field on the item's detail, all additive, so the API revision
+    stays (ADR-081).
+  - A5: the new messages are drafted in three languages on the branch,
+    checked by `scripts/i18n-rules.mjs`, and reviewed in the next round's
+    export.
+  - A6: the setting covers items' and variants' names and items'
+    descriptions; categories, tax codes and partners are unchanged.
+- **Not included:**
+  - N1: names swapped when the language changes (*Deferred*).
+  - N2: a default language for the organization's people, this ADR's
+    *Deferred*, its trigger not fired.
+  - N3: categories' names in other languages (ADR-092's *Deferred*).
+  - N4: the CSV import (#552), which will read names in this language.
+  - N5: Inventory and Movements (#587), planned next in a chat of their
+    own while this branch builds.
+- **The questions' answers:** one name per language; an organization
+  from before not set until its Owner chooses; a new one in the
+  registering person's language; one section on the Documents tab, with
+  the required languages; a name that differs chosen in the list, as
+  #531 asked, in place of a refusal naming the items; a small canvas
+  row; the setting apart from the document language. With them, the
+  improvements a check against Shopify's change of a default language
+  brought: the confirmation with its counts, no way back to not set, the
+  lock, a description as a difference too, the own name's `lang`, the
+  Organization guide's Documents section, the line in place, and for the
+  list a choice for every row, a list that changed refused, and 500 rows
+  at most.
+
+### Checked before drafting
+
+On 14 November 2026, from `scripts/adr-check.mjs 054`: the areas
+`products`, `invoices`, `documents`, `organizations`, `database`,
+`help`, `i18n` and `ui`, 102 open issues, and the issues 531 and 571,
+each `when-touched` issue in them read whole, 69 in all; with them, the
+Deferred lines of ADR-054, ADR-056, ADR-061, ADR-071 and ADR-092,
+ADR-051's watch list and Open decisions.
+
+- **Fired, and taken here:**
+  - #531 itself, which proposed the document language as the items'
+    language; this amendment keeps them apart (*Considered and not
+    done*). Its "listed for the organization to choose, never chosen for
+    it" is *Decision — choosing the language*.
+  - #446, the minimatch alerts, made `fix-now` for this branch by the
+    triage of 14 November (R2).
+  - #551's 65: the client copies the rule for what documents will
+    refuse, which this branch changes; the rule moves to the server once.
+  - #282's extract: the organization's settings are listed in two reads
+    in `server/src/core/organizations/organizations.service.ts`, and
+    this branch adds one; one column map first.
+  - #306's 37, the rest of it: the Items guide's names paragraph,
+    rewritten here, says the screens follow the reader's language; and
+    its 12: a unit test for Edit names refusing a description in a
+    language with no name in it.
+  - #487, two parts on the Documents tab: "No logo yet. Add one on
+    Branding." under Logo on documents; and that tab's Save buttons off
+    until something changes.
+  - #505's 91 and 94: What we do as a one-line field, and a test that
+    saving the same words records nothing, on the page and the service
+    this branch changes.
+  - #571: the check writes into the branch's folder. This is the first
+    branch amending an ADR since it was filed, and its check sits in
+    `tmp/adr-054/`; it changes the planning skill, packed and uploaded
+    after the merge.
+- **Not fired, and left:**
+  - Items' screens, #533, #535 to #537, #546, #548's rest, #563, #569
+    and #570: their files are not changed. #562, Add and add another, is
+    a flow with its own browser test, for Items' next turn; this branch
+    changes one line of Add item.
+  - #164 and #264 (invoices), #161 (a design of its own), #278 (no new
+    document) and #555 (documents), #168, #169 and #490
+    (organizations), #314 (database), and of `help`, `i18n` and `ui`
+    #154, #170, #261, #263, #324, #486, #507, #512, #541, #543, #583 and
+    #585: their files are not changed, or not in their part.
+  - #18, #162, #233, #277, #285, #441, #553 and #573 to #576: `later`.
+  - The Deferred lines of ADR-054, ADR-056, ADR-061, ADR-071 and
+    ADR-092; ADR-051's watch, where nothing reads differently; Open
+    decisions, "Bulk create and CSV import" among them, which will read
+    names in this language with #552: none fired.
+- **Found while checking:**
+  - #531's example, the own name "Calm 90ct" beside an English name
+    "Calm", is not in the demo seed: "Calm" is its category's English
+    name. R9 gives the demo a case of each kind.
+  - #226's rule holds for the new reads: the preview, the removal and
+    the lock name the organization in every join and subquery.
+
+### Decision — each organization says which language its items are named in
+
+- **`organizations.item_name_language`,** a supported tag, or null for
+  not set. The DTOs check the tag, as every language column's
+  (`server/src/database/schema/columns.ts`).
+- **An organization from before is not set,** and keeps today's rule
+  until its Owner chooses: no guess about names already typed.
+- **A new organization takes the registering person's language,** the
+  request's, as its time zone takes the browser's (ADR-072), through
+  `startOrganization`, so registration, an organization invitation and
+  Start an organization alike. It can be changed at once, before any
+  item exists.
+- **Once set, it is never set back to not set:** the choice offers
+  languages only. Not set would make documents refuse again what the own
+  names met.
+- **On the Documents tab, one Item names section,** for those who may
+  change the organization: "Items are named in", then the languages
+  documents require, the items' own language shown as met by each item's
+  own name. Where a required language is ticked and none is set, the
+  section's line says to choose one.
+- **Audited** as the organization's other settings are, with the counts
+  of *Decision — choosing the language* beside it.
+
+### Decision — in that language, an item's own name is its name
+
+- **Documents:** a required language that is the items' own is met by
+  the own name; only another required language can still refuse.
+- **No name is kept in it:** saving a name or a description in the
+  items' own language is a 409, "Items are named in 中文, so an item's
+  own name is its 中文 name. Change it with Edit.", and Edit names does
+  not offer it; it shows the own name there instead, read only.
+- **The reads stay:** the reader's language, else the own name
+  (ADR-056, amended), already gives the own name in that language.
+- **The item's page:** the names table's column for that language holds
+  the own name, marked as the item's own and carrying its `lang`, never
+  Missing; the base row's words, "the name it was added with, used in
+  any language without its own name", go.
+- **Add item, Edit and the variant dialogs** say the language a name is
+  typed in, "In 中文", once it is set.
+- **What documents will refuse is worked out once, on the server**
+  (#551's 65): the item's detail carries its missing names, by the rule
+  the issue refuses with, and the page shows them; `missingNames` on the
+  client goes.
+- **The items export:** its columns for that language hold the own
+  names, the variants' too.
+
+### Decision — choosing the language: the same names removed, different ones chosen
+
+- **First, what it will do:** `GET
+  /v1/organization/item-name-language?language=<tag>` answers how many
+  own names will count as that language's, how many names kept in it
+  are the same as their own, and each that differs: the item or the
+  variant, its code, both names and both descriptions.
+- **The confirmation says it in words:** "The own names of 214 items
+  will count as 中文 names. Nothing is translated." A kept name the same
+  as its own, its description empty or the same, is removed as a copy.
+- **One that differs is listed beside the own one,** and the Owner
+  chooses one per row, or Keep every own name, or Use every 中文 name;
+  never chosen for them (#531). Choosing the kept one renames the item,
+  as Edit does, and its History says so.
+- **`PUT /v1/organization/item-name-language`** takes the language and
+  each row's choice with the two names it showed. In one transaction,
+  with the organization's row locked: the list worked out again; refused
+  with `item_names_changed` when it differs from what was shown, the
+  confirmation reading it again and keeping each choice whose row still
+  stands; then the copies removed, each choice applied and the language
+  set.
+- **Refused too:** a row with no choice, and more than 500 rows,
+  several at once's limit, naming how many.
+- **A names save waits for it:** Edit names reads the organization's
+  row under a shared lock before it writes, so no name is kept in a
+  language while that language is being chosen.
+- **Changing from one language to another is the same choice:** the
+  confirmation says the own names typed so far will count as the new
+  language's.
+
+### Decision — what rides along
+
+- **Closed by the pull request:** #531, #446 and #571.
+- **In part, said in the pull request:** #551's 65, #282's extract of
+  the organization's settings, #306's 37 and 12, #487's two on the
+  Documents tab, #505's 91 and 94.
+- **For #571:** `scripts/adr-check.mjs` writes `tmp/<branch>/check.txt`;
+  the planning skill, its `reference/brief.md`, `docs/engineering.md`
+  and ADR-089, amended, name that folder.
+
+### Interaction table
+
+Its wireflow is the canvas row "物品名称的语言 第一版 · Item names'
+language v1": the Item names section, the confirmation and the names on
+the item's page. Each screen's five states follow the States section of
+`docs/design-language.md`; the board draws only the confirmation's,
+which differ: Loading while it reads what the change will do, Failed
+with Try again, As it should be with nothing to choose, and with rows to
+choose.
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Organization › Documents, Item names | Choose 中文 under "Items are named in", then Save | The confirmation reads what it will do: "The own names of 214 items will count as 中文 names. Nothing is translated.", and the copies it removes | The confirmation | Cancel: nothing changed |
+| The confirmation, nothing differing | Confirm | Saved: "Items are named in 中文."; 中文 shows as met under the required languages | The Documents tab | — |
+| The confirmation, names that differ | Choose a name on each row, or Use every 中文 name, then Confirm | Confirm stays off until every row has a choice; saved; each item whose 中文 name was chosen is renamed, its History saying so | The Documents tab | Cancel: nothing changed |
+| The confirmation, a name changed meanwhile | Confirm | "The names changed since this list was shown." The list is read again, each choice kept where its row still stands | The confirmation | Cancel |
+| The confirmation, more than 500 rows | Save | Refused, saying how many differ, at most 500 at once | The Documents tab | — |
+| Item names, a required language ticked and none set | Open the Documents tab | The section's line says to choose the language items are named in, so it is met by their own names | The Documents tab | — |
+| An item's page, Names in other languages | Read the 中文 column | The own name, marked as the item's own, never Missing | The item's page | Back to Items |
+| Edit names | Open it | No 中文 field: a line says the item's own name is its 中文 name, changed with Edit | Edit names | Cancel |
+| An invoice in 中文, required | Issue it, its items named only by their own names | Issued | The invoice | — |
+| Add item | Type the name | The field says "In 中文" | Add item | Cancel |
+| Items | Export | "Name in Chinese" holds the own names | The file | — |
+
+### Considered and not done
+
+- **The document language as the items' language,** as #531 proposed.
+  Changing what documents print in would quietly relabel every own name:
+  a Chinese company printing English documents for export would find
+  its Chinese names counted as English.
+- **Refusing the change while any kept name differs,** each fixed in
+  Edit names, as first confirmed. One trip per item, where #531 asked
+  for the list.
+- **Choosing for the organization,** every own name or every kept one.
+  Shopify's change of a default language deletes the translations in
+  the new one, and they do not become the content; here nothing is
+  chosen without the Owner.
+- **A trigger refusing a kept name in the items' language.** No trigger
+  in this database enforces a business rule; one service writes the
+  kept names, and the lock holds the one race.
+- **Every name kept per language, with no own name,** as SAP and
+  Akeneo do. The own name feeds search, pinyin, sorting, History and the
+  refusals; a far larger change for the same result.
+- **The language filled in for every organization from before,** from
+  its document language: a guess about names already typed, wrong for
+  the example above.
+- **Not set offered again once set.** Documents would refuse what the
+  own names met.
+
+### Deferred — each with what brings it in
+
+- **Names swapped when the language changes:** each item named in the
+  new language taking that name as its own, its own kept in the old.
+  Trigger: an organization changing the language it works in.
+- **More than 500 names to choose at once.** Trigger: an organization
+  with more.
+- **An item's name marked with its language on every screen** (`lang`,
+  WCAG 3.1.2), not only on its page's table. Trigger: the review of the
+  whole app, or a screen-reader user meeting a name read in the wrong
+  voice.
+
+### Consequences
+
+- **Migration 0081:** `organizations.item_name_language`, nullable, no
+  backfill; `npm run migrate:all`, and `foundation_perf_large` migrated
+  as `server/perf/README.md` says.
+- **API:** the field on the organization, the two routes, the missing
+  names on the item's detail; `npm run api`; the revision stays.
+- **Rules files:** `docs/rules/products.md` for the names,
+  `docs/rules/invoices.md` for what issuing refuses, each in its step's
+  commit.
+- **No `seed:volume` rows:** no new table, and the preview is read when
+  the language is chosen, not on any screen's way; timed once at large
+  in its step.
+- **Built in this order,** each step one commit or more: this amendment
+  and the handoff; the canvas row; dependencies, the security fix first;
+  the check in the branch's folder (#571); the organization's settings
+  from one column map; the setting; choosing it; the own name as that
+  language's, on documents, the item's detail and the export; the
+  Documents tab; the item's page and the dialogs; the browser tests; the
+  guides; the seeds; dependencies again; the reviews, with the `set-up`
+  and `items` journeys; the as-built; after the merge, the alerts seen
+  fixed, the skill packed and uploaded, and `/triage`.
+
+## Amendment (November 2026) — as built (#595)
+
+Built on 14 November 2026 on `fix-531-base-name`, 36 commits with this
+one, from the brief's 17 steps: steps 3 to 14 in a row, each on the model
+its row named, then the reviews in two prompts. Steps 3 to 14 took 181
+minutes, about 44 % of the brief's 410; the reviews 141, about 78 % of
+their 180. The code's names follow the glossary's rule that in code an
+item is a product: `organizations.product_name_language`,
+`productNameLanguage`, `/v1/organization/product-name-language` and
+`product_names_changed`, where the decisions above wrote `item`.
+
+### Each requirement
+
+| R | As built | Mark |
+| --- | --- | --- |
+| R1 | This amendment and the handoff's tidy, the branch's first commit (`a3931a33`) | met |
+| R2 | eslint 10.15.0 in `client/` and `server/`, the server's unused `@eslint/eslintrc` removed, and typescript-estree's copy held at minimatch ^11.0.5 by a scoped override, ADR-019 amended below; every copy at 11.0.5 (`599601e1`); both alerts to be seen fixed after the merge | met |
+| R3 | Migration 0081 and the organization's field, a new organization's language from the request's Accept-Language (`1e81dbf3`); the Documents tab's Item names section (`2470f8c0`) | met |
+| R4 | The preview and the choice under the lock (`c083ef2e`); the confirmation as the canvas row v2 draws it (`2470f8c0`), below | met, changed |
+| R5 | Documents, the detail's missing names and the export (`3dfe1920`); the item's page and Edit names (`75a3ecb6`); the rule's one home in `products/` (`70111f49`) | met |
+| R6 | "In {language}" under the name in Add item, Edit and the variant dialogs, and under Add item's Size or variation | met, changed |
+| R7 | The export's columns for the items' language hold the own names, a variant's too | met |
+| R8 | `docs/rules/products.md` and `docs/rules/invoices.md`; MC-214, MC-216, MC-1407, MC-1408, MC-1411, MC-1425, MC-1558 and MC-3611; the Items guide and the Organization guide's Documents section in three languages (`c1ffc364`); the line while not set (`68b3e101`) | met |
+| R9 | `seed:demo` starts not set, Vitamin D3 1000 IU, 120 softgels keeping an English name the same as its own and Calm 90ct keeping "Calm, 90 capsules", the seed checking both through the preview (`73cd1d0a`); `seed:volume` adds nothing | met |
+| R10 | The canvas rows v1, v2 (the confirmation, the tones, the phone) and v3 (the item's page while not set); 10 browser tests for the 11 rows, the 500 row a server test, since no test hook lowers the limit (`0771580d`) | met, changed |
+| R11 | #571 (`f58d995a`); #282's extract (`6fac2ca6`); #505's 94 (`e64906ad`) and 91 (`40a478d9`); #487's two (`fd077fc4`, `b36b1c9d`); #306's 12 and 37; #551's 65 on the server and the client | met |
+| R12 | The reviews: 39 findings, 24 fixed, each its own commit, the rest filed as #588 to #594 or said in the pull request; the full verify, CI and Claude Code Review green; #595 open, its `Closes` lines checked against its commits | met |
+
+### Built differently
+
+- **The confirmation, as the canvas row v2 draws it.** The interaction
+  table's rows 1 and 3 read as v1: its button is never off once the
+  preview is read, and says what it does, "Name items in {language}".
+  Pressed with rows left, it sends nothing, says "Choose one to keep"
+  under each, names them in a line above with links, and focuses the
+  first one's first choice. The rows are a table, each column's heading
+  choosing it on every row shown, with "All" and "Only those left", and
+  "N of M chosen" at its foot; a description that differs is shown and
+  chosen with its name. The saved message counts what was done, its
+  parts joined with "and".
+- **The lock.** The choice reads the organization's row `FOR NO KEY
+  UPDATE`, not `FOR UPDATE` as first built: a foreign key's check takes
+  `FOR KEY SHARE` on the row it points at, which `FOR UPDATE` blocks, so
+  every new row in the organization waited for the choice. A names save
+  reads it `FOR SHARE`, which still waits for the choice.
+- **The choice answers 200 with its counts:** copies removed, names
+  removed and items renamed, which its message needs and no read gives.
+  `docs/conventions.md`, `CLAUDE.md` and `/code-review` gain the case: a
+  write over many rows whose message counts what it did returns those
+  counts. Sent again once made, it answers 200 with nothing done; before
+  the reviews it answered 409.
+- **A row's choice:** `keep` missing or null is a row with no choice; a
+  row missing from the body is a list that changed. A row carries its
+  descriptions, so a changed description changes the row, and a row
+  whose names changed comes back New, its choice cleared.
+- **The choice removes every name kept in the language:** under the
+  lock those are exactly the copies and the rows chosen.
+- **History:** a renamed item's row records its name from and to and
+  names its cause, "Renamed by choosing the items' language", a new
+  audit field; the rules line says so. A language reads by its full
+  name there, "Simplified Chinese", as every language field does.
+- **The routes live in the products module,** under `organization/`, as
+  numbering's do; `MAX_CHANGED_AT_ONCE` stays in the products module,
+  which alone uses it.
+- **The item's page while not set** (the reviews' finding 1, the canvas
+  row v3): the own name is labelled in both states, "Item's own name" or
+  "Variant's own name", and a grey line above the table, its
+  description, says why each language reads "—", with a link to Item
+  names for whoever may change the organization's settings and the
+  place in words for anyone else. The place is written "Organization →
+  Documents", as the app's other place names are; the interaction
+  table's "›" reads "→".
+- **Edit names says "the item's own name",** never "the base name".
+- **One Save changing the language and the required languages** saves
+  the language first; the items' own language is drawn ticked under the
+  required ones while its stored value is kept as it was.
+- **The confirmation opens** once the preview has come, or after 250 ms,
+  so over 500 is refused at the field with no dialog shown.
+- **A new organization's language** is the request's Accept-Language,
+  not the registration's own `locale`; the client sends the app's
+  language as both.
+- **#505's 94:** the service marks a save with nothing to write by
+  `recordUnchanged()`, and the interceptor and the demo seed's auditor
+  then write no row; an empty body records none either. Another route
+  whose only field is kept out of the log would need the same call;
+  none is known.
+- **The 中文 guide** describes the confirmation's button in plain words:
+  its message has the language in the middle, and the guides' check
+  bolds only a message with a value at an end.
+- **`seed:demo` with an email** whose organization's language is set
+  keeps no English names, since a name kept in the items' own language
+  is refused.
+
+### Found
+
+- **Dependencies:** minimatch held at 11.0.5 and brace-expansion at
+  5.0.12, the 7-day rule's versions, by setting their lock entries from
+  the same locks' own entries where npm had resolved releases 3 days
+  old; neither dependency step found anything else 7 days old, the
+  first coming of age on 15 November, 23:12.
+- **ADR-019's October amendment (#270)** already allows an override
+  across a major for a development tool's copy, every command using it
+  shown working; `docs/conventions.md` still said the same major only,
+  and says both now.
+- **The screenshots skipped the item's page** from step 13, finding Calm
+  90ct by an English name the seed had changed; they find it by its code
+  now (`7defd673`).
+- **The preview, timed once at large:** 15 to 23 ms on 5,000 items,
+  2,500 French names that differ.
+- **The small volume database** named in `server/perf/volume-small.json`
+  no longer existed; `foundation_perf_large` alone was migrated.
+- **A step judged its own time wrongly:** steps 9 and 10 said they ran
+  past the 30-minute stop rule, about 65 and 55 minutes, where the
+  loop's clock says 35 and 18. The loop's clock is the one to read.
+- **The brief's own sum was wrong:** its table adds to 410 minutes for
+  steps 3 to 14, not the 6 hours 10 minutes it said.
+- **The canvas row v3** writes "›", the chat's slip; the app writes
+  "→".
+- **47 messages are drafted in French and Chinese with no reviewer**
+  yet: 1 in step 6, 8 in step 7, 32 in step 9, 3 in step 10 and 3 from
+  the reviews, for the next round's export.
+- **The reviews' panel:** every walker finished every task at every
+  size; the main finding was the item's page while not set, which all
+  four items walkers misread. The 21 smaller findings, from before this
+  branch, are #594's boxes; #590, Items' stock badges, waits for
+  Inventory.
+- **Issues filed:** #588 (Documents shows no saved logo), #589 (the
+  names table on a phone), #590 (Items' stock badges), #591 (a category
+  line on a type's tab), #592 (the Documents tab's order and a helper's
+  words), #593 (`subtitle2` to the five type sizes) and #594 (left from
+  the reviews).

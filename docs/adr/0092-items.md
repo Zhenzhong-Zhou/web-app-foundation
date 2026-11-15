@@ -572,3 +572,18 @@ in `tmp/adr-092/`. Where building settled or changed what is above:
 - **A market on a variant,** Items' stock split by market, and a
   customer's market limiting the picker. Trigger: a customer selling one
   product in two markets asking for them.
+
+## Amendment (November 2026) — the own name in its language's column (#531)
+
+ADR-054's amendment of November 2026 gives each organization the
+language its items are named in. In *Decision — each variation's names
+on the item's page*, from then on:
+
+- **The column of the items' own language holds the item's own name,**
+  marked as its own, with its `lang`, never Missing; the base row's
+  words, "the name it was added with, used in any language without its
+  own name", go.
+- **Edit names offers no field in that language:** a line says the own
+  name is its name there, changed with Edit.
+- **What documents will refuse is the server's,** on the item's detail
+  (#551's 65); the page no longer works it out.

@@ -86,7 +86,9 @@ allows, refuses and works out there.
   typed rather than `Record<string, unknown>`.
 - A write returns the detail its read returns, or as its list shows it
   where there is no read; or 204 when the screen reads again anyway (a
-  delete, a state change, a settings section).
+  delete, a state change, a settings section). A write over many rows
+  whose message counts what it did returns those counts, as `PUT
+  /v1/organization/product-name-language` does.
 - `server/openapi.json` and `client/src/api/` regenerated in the same
   change; neither edited by hand.
 - Nothing personal beyond what the screen shows (ADR-063).

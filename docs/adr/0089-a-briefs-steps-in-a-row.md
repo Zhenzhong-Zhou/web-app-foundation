@@ -341,8 +341,10 @@ checked the same day for ADR-008's amendment:
   squashed into `main` is never its ancestor; GitHub deletes a merged
   pull request's branch ("Automatically delete head branches", on since
   2 November), and the fetch prunes what it deleted.
-- **A branch built on the Mac is pushed at each stop of its run,** so
-  its files show. A push to a branch starts no workflow: CI and the docs
+- **A branch built on the Mac shows only once it is pushed,** which no
+  stop of its run does (corrected 14 November 2026, #531's review): one
+  not pushed is named by `leave <path>`. A push to a branch starts no
+  workflow: CI and the docs
   check run on a push to `main` alone, and on pull requests.
 
 ### Decision — each manual check's id given once, checked
@@ -1359,3 +1361,17 @@ this as-built, pull request #554.
 - **CI on #554:** the three Playwright shards passed, the path finding 11
   repaired. Claude Code Review found no issues in a run of 40 seconds,
   #253's pattern.
+
+## Amendment (November 2026) — the check in the branch's folder (#571)
+
+In *Decision — the check before an ADR, as a script*, decided with
+ADR-054's amendment of November 2026 (#531): `scripts/adr-check.mjs`
+writes `tmp/<branch>/check.txt`, the branch it is run on, in place of
+`tmp/adr-NNN/check.txt`. A branch that amends an ADR has no number of
+its own, so its check and its brief sat in two folders, and
+`scripts/clean-local.sh`, which removes a merged branch's folder by its
+name, left the check's behind. The ADR's number stays an argument,
+checked as before. On `main`, or with no branch checked out, it
+refuses, writing nothing and naming the command that starts a branch.
+The planning skill, its `reference/brief.md` and `docs/engineering.md`'s
+Process name the same folder.

@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   FormControlLabel,
+  Link,
   MenuItem,
   Radio,
   RadioGroup,
@@ -13,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type ReactNode, type SubmitEvent, useState } from 'react';
+import { type ReactNode, type SubmitEvent, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { OrganizationProfile } from '../api/types.gen';
@@ -28,19 +29,19 @@ import { SettingsSection } from '../components/settings-section';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api } from '../lib/api';
 import type { LicencePolicy, PaperSize } from '../lib/api-names';
+import { useArrival } from '../lib/use-arrival';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { useTab } from '../lib/use-tab';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
+import { ITEM_NAMES_HASH } from '../products/name-language';
 import { rem } from '../theme/rem';
 import { BrandingForm } from './branding-form';
 import { ClosingSections } from './closing-sections';
-import {
-  OrganizationDocumentLanguages,
-  RequiredNameLanguages,
-} from './document-languages-form';
+import { OrganizationDocumentLanguages } from './document-languages-form';
 import { IdleSignOutForm } from './idle-sign-out-form';
+import { ItemNamesSection } from './item-names-section';
 import { NumberingSection } from './numbering-section';
 import { TimeZoneForm } from './time-zone-form';
 
@@ -65,8 +66,8 @@ const TAB_LABEL = defineMessages({
 /**
  * The organization's settings (ADR-061), in tabs: Profile (the name and
  * what every invoice prints as the seller, ADR-046), Money (the base
- * currency, ADR-048, and the default sale price list), Documents (their
- * languages, ADR-054, and numbering, ADR-073) and Stock (licences at release, ADR-050). Branding
+ * currency, ADR-048, and the default sale price list), Documents (item
+ * names and their languages, ADR-054, and numbering, ADR-073) and Stock (licences at release, ADR-050). Branding
  * joins them with ADR-060.
  *
  * Each tab has its address, `?tab=money`, so a link can open the one it
@@ -91,6 +92,15 @@ export function OrganizationPage() {
     ? ORGANIZATION_TABS
     : READ_TABS;
   const [tab, setTab] = useTab<OrganizationTab>(tabs);
+  // Arrived at Item names by the item's page's link, while the items'
+  // language is not set: the section in view, its heading focused.
+  const itemNames = useRef<HTMLHeadingElement>(null);
+  useArrival(
+    ITEM_NAMES_HASH,
+    organization !== null && tab === 'documents',
+    itemNames,
+    itemNames,
+  );
 
   /** A save the whole app shows: the theme, chips and logo read it. */
   const reloadAll = async () => {
@@ -233,6 +243,18 @@ export function OrganizationPage() {
           {panel(
             'documents',
             <>
+              <ItemNamesSection
+                key={[
+                  'names',
+                  organization.productNameLanguage,
+                  ...organization.requiredNameLanguages,
+                ].join()}
+                language={organization.productNameLanguage}
+                required={organization.requiredNameLanguages}
+                readOnly={!canUpdate}
+                headingRef={itemNames}
+                onSaved={reload}
+              />
               <OrganizationDocumentLanguages
                 key={[
                   organization.documentLanguage,
@@ -243,17 +265,16 @@ export function OrganizationPage() {
                 readOnly={!canUpdate}
                 onSaved={reload}
               />
-              <RequiredNameLanguages
-                key={`names-${organization.requiredNameLanguages.join()}`}
-                value={organization.requiredNameLanguages}
-                readOnly={!canUpdate}
-                onSaved={reload}
-              />
               <LogoOnDocumentsForm
                 key={String(organization.logoOnDocuments)}
                 value={organization.logoOnDocuments}
+                hasLogo={organization.logoFileId !== null}
                 readOnly={!canUpdate}
                 onSaved={reloadAll}
+                onBranding={() => {
+                  setTab('branding');
+                  document.getElementById('organization-tab-branding')?.focus();
+                }}
               />
               <PaperSizeForm
                 key={String(organization.paperSize)}
@@ -403,6 +424,8 @@ function NameForm({
  * Home shows every member under the date, and a newcomer's welcome too.
  * Empty clears it. Save waits for a change: the log keeps no words
  * (ADR-018), so a save of the same ones would be an entry saying nothing.
+ * One line, as Home shows it: a break typed there would show as nothing
+ * (#505).
  */
 function WhatWeDoForm({
   value,
@@ -455,8 +478,6 @@ function WhatWeDoForm({
           defaultMessage: 'What we do',
         })}
         fullWidth
-        multiline
-        minRows={2}
         value={text}
         onChange={(event) => setText(event.target.value)}
         disabled={readOnly}
@@ -564,15 +585,25 @@ function ExpiryDaysForm({
   );
 }
 
-/** Whether invoices, credit notes and packing slips print the logo. */
+/**
+ * Whether invoices, credit notes and packing slips print the logo. Until
+ * there is one, it says where to add it, Branding, which only those who
+ * may change it have (#487).
+ */
 function LogoOnDocumentsForm({
   value,
+  hasLogo,
   readOnly,
   onSaved,
+  onBranding,
 }: {
   value: boolean;
+  /** Whether the organization has the logo documents print. */
+  hasLogo: boolean;
   readOnly: boolean;
   onSaved: () => Promise<void>;
+  /** Opens the Branding tab. */
+  onBranding: () => void;
 }) {
   const intl = useIntl();
   const [printLogo, setPrintLogo] = useState(value);
@@ -607,6 +638,7 @@ function LogoOnDocumentsForm({
         id: 'settings.org.printLogo.save',
         defaultMessage: 'Save logo on documents',
       })}
+      saveDisabled={printLogo === value}
     >
       <FormControlLabel
         control={
@@ -629,6 +661,29 @@ function LogoOnDocumentsForm({
             'At the top left, at most 18 mm tall, once the organization has a logo. Turn off if your printed stationery already carries it.',
         })}
       </Typography>
+      {!hasLogo && !readOnly && (
+        <Typography variant="body2">
+          {intl.formatMessage(
+            {
+              id: 'settings.org.printLogo.noLogo',
+              defaultMessage: 'No logo yet. <link>Add one on Branding.</link>',
+            },
+            {
+              link: (chunks: ReactNode[]) => (
+                <Link
+                  component="button"
+                  type="button"
+                  underline="always"
+                  onClick={onBranding}
+                  sx={{ verticalAlign: 'baseline' }}
+                >
+                  {chunks}
+                </Link>
+              ),
+            },
+          )}
+        </Typography>
+      )}
     </SettingsSection>
   );
 }
@@ -699,6 +754,7 @@ function PaperSizeForm({
         id: 'settings.org.paper.save',
         defaultMessage: 'Save paper size',
       })}
+      saveDisabled={paper === (value ?? 'automatic')}
     >
       <RadioGroup
         aria-label={title}

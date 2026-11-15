@@ -1,6 +1,6 @@
 # A build brief's shape
 
-`tmp/adr-NNN/brief.md`, which git ignores, is run by `/build-from-brief`
+`tmp/<branch>/brief.md`, which git ignores, is run by `/build-from-brief`
 (`.claude/skills/build-from-brief/SKILL.md`), its Claude Code steps in a
 row, each in a fresh subagent (ADR-089). The subagent's file,
 `.claude/agents/brief-step.md`, holds the rules every brief would
@@ -8,7 +8,7 @@ repeat; a brief holds only its decisions and its steps.
 
 1. **The header:** the branch, its base commit, the ADR that holds the
    decisions, and how the steps run: `/build-from-brief
-   tmp/adr-NNN/brief.md from N` for Claude Code's, the chat's here, and
+   tmp/<branch>/brief.md from N` for Claude Code's, the chat's here, and
    Bob's by hand.
 2. **Read first:** the ADR, the issues it takes (`gh issue view <N>
    --comments`), and the docs sections the steps touch.
@@ -37,8 +37,8 @@ repeat; a brief holds only its decisions and its steps.
    - Dependencies first, and again before the reviews.
    - An inventory first for a change across many screens.
    - The seeds where a feature adds a table or a screen.
-   - The reviews, run by `/review-step tmp/adr-NNN/brief.md <N>`, in two
-     prompts: the findings, numbered, to `tmp/adr-NNN/review.md` with
+   - The reviews, run by `/review-step tmp/<branch>/brief.md <N>`, in two
+     prompts: the findings, numbered, to `tmp/<branch>/review.md` with
      nothing fixed; then the same command with the fixes Bob chose after
      the step's number, the full verify, the push and the pull request.
    - The as-built last, by the chat; then what is done by hand after

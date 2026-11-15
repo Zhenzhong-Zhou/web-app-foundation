@@ -53,7 +53,7 @@ L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les c
 
 1. Appuyez sur **Ajouter un article**.
 2. Sous **Qu’est-ce que c’est?**, choisissez son type. Depuis l’onglet d’un type, ce type est déjà choisi; depuis **Tous**, aucun ne l’est.
-3. Saisissez son nom, et choisissez sa **Catégorie**, ou **Aucune**.
+3. Saisissez son nom, et choisissez sa **Catégorie**, ou **Aucune**. Quand votre organisation a défini la langue dans laquelle ses articles sont nommés, le champ du nom l’indique : saisissez le nom dans cette langue.
 4. Saisissez le **Code** : votre propre code pour cet article, unique dans l’organisation, par exemple RM-VITC pour une matière première. Ce n’est pas un code-barres.
 5. Choisissez son unité, ce dans quoi son stock est compté.
 6. S’il existe en plusieurs formats, indiquez le format ou la particularité de cette variante, par exemple 60ct.
@@ -82,9 +82,13 @@ Sur la page d’un article, son type et sa catégorie sont sous le nom.
 - **Ajouter une variante** ajoute un autre format, avec son propre code et l’unité dans laquelle son stock est compté.
 - **Modifier** sur une variante enregistre son poids, ses dimensions et combien d’unités partent par caisse.
 - **Ajouter des images** accepte jusqu’à 8 photos. La première est la couverture, affichée à côté du nom dans les listes.
-- **Modifier les noms** donne son nom dans d’autres langues, pour les documents imprimés dans ces langues.
+- **Modifier les noms** donne son nom dans d’autres langues : un écran ou un sélecteur nomme l’article dans la langue de la personne qui lit, s’il a un nom dans cette langue, et un document le nomme dans la langue dans laquelle il s’imprime.
 
-Le tableau **Noms dans d’autres langues** comporte une ligne pour l’article et une pour chaque variante ayant son propre nom, avec une colonne par langue. La ligne de l’article commence par le nom donné lors de son ajout. Ce nom sert dans toutes les langues qui n’ont pas de nom particulier; un autre nom dans la langue d’origine sert seulement si vous voulez imprimer un nom différent. Les langues dans lesquelles vos documents exigent un nom sont indiquées. Un nom exigé mais absent est indiqué par **Manquant**. **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
+Le tableau **Noms dans d’autres langues** comporte une ligne pour l’article et une pour chaque variante ayant son propre nom, avec une colonne par langue. La ligne de l’article commence par son propre nom, celui donné lors de son ajout.
+
+Quand votre organisation a défini la langue dans laquelle ses articles sont nommés, sous **Les articles sont nommés en** dans [Organisation](/settings/organization#documents), la colonne de cette langue vient en premier et contient le propre nom de chaque ligne, indiqué par **Propre nom de l’article**. C’est le nom dans cette langue : il n’y manque donc jamais, et **Modifier les noms** n’a pas de champ pour lui; changez-le avec **Modifier**. Les noms dans les autres langues sont conservés à côté, et une personne qui lit dans une langue sans nom voit le propre nom. Tant que la langue n’est pas définie, le propre nom s’affiche dans toutes les langues qui n’ont pas de nom particulier; dans la page de l’article, il est indiqué par **Propre nom de l’article** dans sa ligne, et une ligne au-dessus du tableau dit qu’il ne compte encore comme le nom dans aucune langue, et où choisir la langue.
+
+Les langues dans lesquelles vos documents exigent un nom sont indiquées. Un nom exigé mais absent est indiqué par **Manquant**. **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
 
 > Seule une personne qui peut ajouter des articles voit **Ajouter un article**, et seule une personne qui peut les modifier voit **Ajouter une variante**, **Modifier**, **Modifier les noms** et **Abandonner**.
 
@@ -119,6 +123,7 @@ Les codes-barres viendront plus tard. Le Code est le vôtre, ce n’est pas un c
 
 - **Code** : le code sur l’étiquette d’une variante. Chaque variante a le sien.
 - **Variante** : un format ou une sorte d’article, ce dans quoi le stock est compté.
+- **Propre nom** : le nom donné à un article ou à une variante lors de son ajout. Quand les articles sont nommés dans une langue, c’est son nom dans cette langue.
 - **Sans catégorie** : dans aucune catégorie.
 - **Stock bas** et **Épuisé** : sous son point de commande, et plus rien en stock. Voir [Points de commande](/inventory#reorder-points).
 - **Abandonné** : retiré de l’usage avec **Abandonner**, il n’est plus proposé quand on choisit un article. **Réactiver** le rétablit.
@@ -130,7 +135,7 @@ Les codes-barres viendront plus tard. Le Code est le vôtre, ce n’est pas un c
 - Une catégorie qui contient des articles ou d’autres catégories ne peut pas être supprimée. Le refus dit combien de chaque : déplacez-les d’abord dans une autre catégorie.
 - Une catégorie ne peut pas aller sous elle-même, et deux catégories côte à côte ne peuvent pas porter le même nom.
 - Les catégories descendent d’au plus 10 niveaux. Une catégorie ajoutée ou déplacée plus bas est refusée : choisissez un emplacement plus haut.
-- Les commandes et les factures ne peuvent pas s’imprimer dans une langue que votre organisation exige tant qu’un article qui s’y trouve n’a pas de nom dans cette langue. Le refus dit si c’est le nom de l’article ou celui d’une variante qui manque.
+- Les commandes et les factures ne peuvent pas s’imprimer dans une langue que votre organisation exige tant qu’un article qui s’y trouve n’a pas de nom dans cette langue, sauf la langue dans laquelle les articles sont nommés, que le propre nom de chaque article satisfait. Le refus dit si c’est le nom de l’article ou celui d’une variante qui manque.
 - Une recette sans composants ne peut pas être mise en vigueur. Ajoutez d’abord ce qu’elle utilise.
 - Un article a au plus 8 images. Retirez-en une pour en ajouter une autre.
 - Une exportation de plus de 50 000 lignes est refusée. Choisissez un type ou une catégorie, ou faites une recherche, pour la réduire.

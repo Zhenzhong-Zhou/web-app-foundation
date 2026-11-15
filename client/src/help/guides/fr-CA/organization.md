@@ -18,6 +18,18 @@ Tout télécharger et fermer l’organisation se trouvent à la fin de l’ongle
 
 Sous **Finances**, définissez la **Devise de base**, celle dans laquelle le stock est évalué, avant l’arrivée du stock : ce qui est reçu avant attend un coût. La **Liste de prix de vente par défaut** sert aux clients qui n’ont pas de liste à eux.
 
+## Documents {#documents}
+
+Sous **Documents**, indiquez la langue dans laquelle les articles sont nommés, et celle dans laquelle les documents s’impriment. Chaque section a son propre bouton d’enregistrement, désactivé tant que rien n’a changé.
+
+1. Sous **Noms d’articles**, choisissez **Les articles sont nommés en** : la langue dans laquelle le propre nom de chaque article, celui donné lors de son ajout, est saisi. Une nouvelle organisation commence avec la langue de la personne qui l’a créée; une organisation d’avant indique **Non défini** tant que la langue n’est pas choisie, et une fois choisie, elle peut être changée mais pas effacée.
+2. Sous **Noms exigés sur les documents**, cochez chaque langue dans laquelle chaque article d’un document doit avoir un nom : un document qui s’imprime dans cette langue ne peut pas être émis tant que l’un d’eux n’en a pas. La langue dans laquelle les articles sont nommés est déjà cochée, avec la mention **Satisfait par le propre nom de chaque article**. Tant qu’une langue est cochée et qu’aucune n’est choisie, une ligne invite à en choisir une.
+3. Appuyez sur **Enregistrer les noms d’articles**. Choisir une langue demande d’abord une confirmation.
+4. Sous **Langues des documents**, choisissez la langue des bordereaux d’expédition, des factures et des notes de crédit, **Les documents s’impriment en** et **Également en** pour une feuille bilingue, puis appuyez sur **Enregistrer les langues des documents**. Les documents déjà faits gardent les leurs.
+5. Sous **Logo sur les documents**, dites si les factures, les notes de crédit et les bordereaux d’expédition impriment le logo, puis appuyez sur **Enregistrer le logo sur les documents**. Tant qu’il n’y a pas de logo, la section invite à en ajouter un sous **Image de marque**.
+
+Choisir une langue demande d’abord une confirmation. Elle dit combien de propres noms compteront comme des noms dans cette langue, et que rien n’est traduit. Un nom déjà conservé dans cette langue et identique au propre nom est supprimé comme une copie. Un nom qui diffère est listé à côté du propre nom : choisissez celui à garder sur chaque ligne, ou appuyez sur l’en-tête d’une colonne pour le choisir sur toutes les lignes affichées; **Seulement ceux qui restent** n’affiche que les lignes à choisir. Le bouton qui commence par **Nommer les articles en** enregistre le choix, et le message dit combien de copies ont été supprimées et d’articles renommés. Cette action est irréversible : la langue peut être changée, jamais effacée, et les noms supprimés ne peuvent pas être récupérés.
+
 ## Numérotation {#numbering}
 
 Sous **Documents**, chaque type de document a sa propre série. Une modification s’applique à partir du prochain document; un numéro déjà attribué ne change jamais.
@@ -59,8 +71,11 @@ Une minute avant, un avertissement propose **Rester connecté**. Le réglage ne 
 
 - Aucune facture n’est émise tant que l’adresse du siège n’est pas définie.
 - La devise de base ne peut plus changer une fois que du stock porte une valeur dans cette devise.
+- Choisir la langue dans laquelle les articles sont nommés n’enregistre rien tant qu’une ligne à choisir n’a pas de choix : la ligne dit **Choisissez celui à garder**.
+- Un nom qui a changé pendant que la confirmation était ouverte n’enregistre rien : elle le dit et affiche de nouveau la liste, une ligne disparue nommée, une nouvelle marquée, les autres choix conservés.
+- Au plus 500 noms qui diffèrent peuvent être choisis à la fois. Modifiez-en d’abord quelques-uns avec **Modifier les noms** sur leurs articles, puis choisissez de nouveau.
 - Un prochain numéro inférieur à un numéro déjà attribué est refusé; le plus bas permis est proposé.
 - Deux types de documents avec le même préfixe imprimeraient les mêmes numéros : donnez à chacun le sien.
 - Un logo carré doit être presque carré, au plus 5 : 4 dans un sens comme dans l’autre, et faire au moins 128 pixels de côté. Utilisez une image large comme logo principal.
 
-Voir aussi [Taux de change](/settings/exchange-rates) et [Listes de prix](/settings/price-lists).
+Voir aussi [Taux de change](/settings/exchange-rates), [Listes de prix](/settings/price-lists) et [Articles](/items#variants).

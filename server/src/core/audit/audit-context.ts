@@ -12,6 +12,7 @@ export type FieldValues = Partial<Record<AuditField, unknown>>;
 const storage = new AsyncLocalStorage<{
   previous: FieldValues;
   context: FieldValues;
+  unchanged: boolean;
 }>();
 
 /**
@@ -26,7 +27,7 @@ const storage = new AsyncLocalStorage<{
  * it, which is the rest of the request. This is why nestjs-cls does the same.
  */
 export function enterAuditContext(): void {
-  storage.enterWith({ previous: {}, context: {} });
+  storage.enterWith({ previous: {}, context: {}, unchanged: false });
 }
 
 /**
@@ -67,6 +68,22 @@ export function recordContext(values: FieldValues): void {
   if (!store) return;
 
   Object.assign(store.context, values);
+}
+
+/**
+ * Records that the handler wrote nothing, so the request leaves no row.
+ *
+ * For a save the payload cannot judge: a field kept out of the log by name,
+ * as free text is (ADR-018), saved again as it was, or a body with nothing
+ * in it. Only the service knows nothing was written.
+ */
+export function recordUnchanged(): void {
+  const store = storage.getStore();
+  if (store) store.unchanged = true;
+}
+
+export function takeUnchanged(): boolean {
+  return storage.getStore()?.unchanged ?? false;
 }
 
 export function takeContext(): FieldValues | undefined {

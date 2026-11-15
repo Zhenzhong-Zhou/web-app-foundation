@@ -12,6 +12,7 @@ import type {
   OrganizationProfile,
   PriceList,
   ProductionRun,
+  ProductNameChoiceDto,
   ProductsControllerListV1Data,
   ProductSummary,
   RegistrationSetting,
@@ -91,6 +92,13 @@ export type PaperSize = NonNullable<OrganizationProfile['paperSize']>;
  * "Received" on a purchase and "Shipped" on a sale.
  */
 export type OrderStatus = OrderSummary['status'];
+
+/**
+ * The name kept on a row of the list that choosing the items' language
+ * shows (ADR-054, amended for #531): the item's own, or the one kept in
+ * that language, which becomes the own.
+ */
+export type NameKeep = NonNullable<ProductNameChoiceDto['keep']>;
 
 /** What an item is for (ADR-023): one of the six types (ADR-092). */
 export type ProductType = ProductSummary['type'];

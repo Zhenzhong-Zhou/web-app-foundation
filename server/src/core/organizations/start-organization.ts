@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { memberships, users } from '../../database/schema';
+import { localeOf } from '../../i18n/translate';
 import { giveRoles } from '../authorization/member-roles';
 import { provisionOrganization } from './provision-organization';
 import { uniqueSlug } from './slug';
@@ -12,17 +13,27 @@ import { uniqueSlug } from './slug';
  * and Start an organization all do (ADR-004, ADR-078), so no organization
  * ever exists without its Owner. The zone is the browser's when known, as
  * at registration (ADR-072); UTC otherwise, until an Owner sets it on
- * Profile.
+ * Profile. Its items are named in the request's language, the one its
+ * refusals are written in, English when it asks for none the app speaks:
+ * the person starting it types its first names (ADR-054, amended for
+ * #531).
  */
 export async function startOrganization(
   tx: Transaction,
-  input: { name: string; timeZone?: string; userId: string },
+  input: {
+    name: string;
+    timeZone?: string;
+    /** The request's Accept-Language. */
+    language?: string;
+    userId: string;
+  },
 ): Promise<string> {
   const slug = await uniqueSlug(tx, input.name);
   const { organizationId, roleIds } = await provisionOrganization(tx, {
     name: input.name,
     slug,
     timeZone: input.timeZone,
+    productNameLanguage: localeOf(input.language),
   });
 
   // Beginning at the transaction's now(), as the organization does: how

@@ -1,11 +1,11 @@
 import { ConflictException } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
-import { organizations } from '../../database/schema';
 import { languageName, t } from '../../i18n/translate';
+import { missingNames, nameRulesOf } from '../products/product-name-language';
 import { itemName } from '../stock/item-name';
 
 /** What an issued line prints, in the invoice's one or two languages. */
@@ -41,11 +41,13 @@ type NameRow = {
  * out the same as the first: printed once, not twice.
  *
  * A language the organization requires (required_name_languages) has no
- * fallback: a line whose product, or named variant, lacks a translation in
- * it is a 409 before anything is written, as a missing billing address is,
- * naming whether the product's name or the variation's is missing, the
- * variation by its code and its own name (ADR-054, amended by ADR-092);
- * the product's first, since every variation prints it. The refusal carries
+ * fallback, except the one its items are named in, which the own names
+ * meet (missingNames). A line whose product, or named variant, lacks a
+ * translation in any other is a 409 before anything is written, as a
+ * missing billing address is, naming whether the product's name or the
+ * variation's is missing, the variation by its code and its own name
+ * (ADR-054, amended by ADR-092); the product's first, since every
+ * variation prints it. The refusal carries
  * item_name_missing and the item's id either way, for a page to open the
  * item, where its names are (ADR-071, amended). Shipping never waits for
  * this; issuing can, because nothing has left the building on the strength
@@ -119,11 +121,6 @@ export async function namedLines(
     `)
   ).rows;
 
-  const [organization] = await tx
-    .select({ required: organizations.requiredNameLanguages })
-    .from(organizations)
-    .where(eq(organizations.id, organizationId));
-
   const slots = [
     {
       language: languages.language,
@@ -137,40 +134,60 @@ export async function namedLines(
     },
   ] as const;
 
-  for (const slot of slots) {
-    if (slot.language === null) continue;
-    if (!organization?.required.includes(slot.language)) continue;
+  // The slots that hold a language: the second only when there is one.
+  const filled = slots.flatMap(({ language, ...slot }) =>
+    language === null ? [] : [{ language, ...slot }],
+  );
+  const keptIn = (row: NameRow, part: 'product' | 'variant') =>
+    Object.fromEntries(filled.map((slot) => [slot.language, row[slot[part]]]));
 
-    const untranslated = rows.find(
-      (row) =>
-        row[slot.product] === null ||
-        (row.variant_name !== null && row[slot.variant] === null),
-    );
+  const [missing] = missingNames(
+    rows.flatMap((row) => [
+      {
+        row,
+        which: 'product',
+        own: row.product_name,
+        kept: keptIn(row, 'product'),
+      } as const,
+      ...(row.variant_name === null
+        ? []
+        : [
+            {
+              row,
+              which: 'variant',
+              own: row.variant_name,
+              kept: keptIn(row, 'variant'),
+            } as const,
+          ]),
+    ]),
+    filled.map((slot) => slot.language),
+    // Read after the names, for nameRulesOf's reason.
+    await nameRulesOf(tx, organizationId),
+  );
 
-    if (untranslated) {
-      throw new ConflictException(
-        withCode(
-          t(
-            {
-              id: 'invoices.skuLanguageNameWhich',
-              defaultMessage:
-                '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
-            },
-            {
-              which:
-                untranslated[slot.product] === null ? 'product' : 'variant',
-              sku: untranslated.sku,
-              product: untranslated.product_name,
-              variation: untranslated.variant_name ?? '',
-              // In the reader's language, as the item's page names it.
-              language: languageName(slot.language),
-            },
-          ),
-          ERROR_CODES.itemNameMissing,
-          { productId: untranslated.product_id },
+  if (missing) {
+    const { row, which } = missing.name;
+    throw new ConflictException(
+      withCode(
+        t(
+          {
+            id: 'invoices.skuLanguageNameWhich',
+            defaultMessage:
+              '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+          },
+          {
+            which,
+            sku: row.sku,
+            product: row.product_name,
+            variation: row.variant_name ?? '',
+            // In the reader's language, as the item's page names it.
+            language: languageName(missing.locale),
+          },
         ),
-      );
-    }
+        ERROR_CODES.itemNameMissing,
+        { productId: row.product_id },
+      ),
+    );
   }
 
   const nameIn = (row: NameRow, slot: (typeof slots)[number]) =>

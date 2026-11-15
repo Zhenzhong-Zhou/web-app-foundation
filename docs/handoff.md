@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 13 November 2026
+# web-app-foundation — handoff, 15 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,11 +13,26 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 13 November 2026:
+On 15 November 2026:
 
+- **[#531], an item's own name in the organization's language,**
+  [ADR-054's amendment](adr/0054-languages.md) of 14 November, with its
+  as-built: planned and built on 14 November on `fix-531-base-name`, 36
+  commits with the as-built, open as [#595], its checks green, to be
+  merged as a merge commit. Each organization says which language its
+  items are named in, so a required language is met by the items' own
+  names, not typed twice; a name kept in that language and the same as
+  its own goes, and one that differs is chosen by the Owner in a list,
+  never for them. Migration 0081 and two routes, the API revision
+  unchanged. With it: the security fix for Dependabot alerts 11 and 12
+  ([#446]), ADR-019 amended for its override, the check written into
+  the branch's folder ([#571]), and parts of [#282], [#306], [#487],
+  [#505] and [#551]. Its reviews found 39 and fixed 24; their issues
+  are [#588] to [#594], [#590] waiting for Inventory.
 - **The translations,** [ADR-054's amendment](adr/0054-languages.md),
   with its as-built: planned on 12 November and built on 12 and 13
-  November on `fix-ups-i18n`, pull request [#577], open. No person reads
+  November on `fix-ups-i18n`, merged on 14 November as [#577]
+  (4bcc15c5), a merge commit. No person reads
   French or Chinese, so ChatGPT's wording leads and two checks stand in:
   `scripts/i18n-rules.mjs`, the glossary's words, punctuation, settled
   messages and Chinese spacing, in verify and CI; and a meaning check on
@@ -26,8 +41,7 @@ On 13 November 2026:
   glossary findings where they still held; a pseudo-language, `en-XA`,
   and a test for cut text at 390 and 320 px; tests read a message by its
   id. Both languages stay beta. The next round exports `--since
-  29cf53a7`. Then [#531], a base name in the organization's language, on
-  a branch of its own.
+  29cf53a7`.
 - **Flows and states,**
   [ADR-090's amendment](adr/0090-the-design-language.md), with short ones
   in ADR-087 and ADR-088: planned and built on 11 November on
@@ -249,7 +263,8 @@ On 13 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 13 November, [#572], Dependabot's raise of
+- **The last merges:** on 14 November, [#577] (the translations) as a
+  merge commit (4bcc15c5); on 13 November, [#572], Dependabot's raise of
   `@hono/node-server` in `scripts/fix-issue/`; on 11 November, [#568]
   (flows and states) as a merge commit (cc0beaf8); before it, [#558] ([#547]) as a merge
   commit, then [#559] ([#557]), the runner's, as a merge commit too
@@ -325,7 +340,7 @@ On 13 November 2026:
 
 ## Dates
 
-- **The translations, before 30 November:** built by 13 November,
+- **The translations, before 30 November:** merged on 14 November,
   [#577]. Round 2 was ChatGPT's and Claude's reviews of the export at
   `19e1b7aa` (6 November 2026); the extra round, ChatGPT's, of the export
   at `fe6c7e1d` (12 November); round 1's export was at `b933b912` (22
@@ -342,17 +357,24 @@ On 13 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. The releases since then come of age
-  from 15 November, 23:12 (`@vitejs/plugin-react` 6.3.0), to 18
-  November, 13:10 (`@aws-sdk/client-s3` 3.1167.0): the Nest packages at
-  12.4.2, `typescript-eslint` 8.72.2, Sentry 11.12.0, nodemailer 10.5.0,
-  `user-event` 14.6.9, msw 3.0.5, vite 8.3.8 and prettier 3.10.0
-  between, for the next branch's dependencies; [#558]'s branch found none
-  old enough on 10 and 11 November. Held: `@playwright/test` at
-  1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
-  `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
-  TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
-  ([#446]).
+  range that is 7 days old that day. Dependabot alerts 11 and 12
+  ([#446]) were taken at once on `fix-531-base-name`, as a security fix:
+  eslint 10.15.0, the server's unused `@eslint/eslintrc` removed, and a
+  scoped override taking typescript-estree's minimatch to ^11.0.5
+  (ADR-019, amended), gone once a typescript-eslint release after
+  8.72.2 depends on minimatch ^11; every copy is 11.0.5. Nothing else
+  was 7 days old on 14 November. For the next branch's dependencies,
+  each coming of age: `@vitejs/plugin-react` 6.3.0 on 15 November,
+  23:12; `typescript-eslint` 8.72.2 on 16 November; nodemailer 10.5.0,
+  Sentry 11.12.0, msw 3.0.5 and vite 8.3.8 on 17 November;
+  `user-event` 14.6.10 on 18 November; the Nest packages 12.5.0,
+  prettier 3.10.1 and `@formatjs/cli` 6.19.0 on 19 November;
+  `@nestjs/cli` 12.0.13, `@nestjs/swagger` 12.1.2 and
+  `@aws-sdk/client-s3` 3.1169.0 on 20 November; msw 3.0.6 on 21
+  November. Held: `@playwright/test` at 1.64.1, pinned, its Firefox 159
+  crashing in the Linux image ([#521]); `jsdom` at 30.1.3, pinned, 17
+  unit tests failing on 31 ([#522]); TypeScript 7 ([#336]); fontkit 3,
+  outside its range.
 - **The translation review:** done on 2 November with the API credits,
   against the glossary: the catalogues' findings in [#371] to [#397],
   one area each, and the Help guides' in [#398]. A second pass, for how
@@ -405,19 +427,25 @@ On 13 November 2026:
 
 ## Still to do, by hand
 
-- **After [#577]'s merge,** in this order:
-  - `gh pr merge 577 --merge`, never squashed;
-  - round 1's issues closed, each with its comment from
-    `tmp/fix-ups-i18n/close/`, before the clean-up removes that folder
-    (`gh issue close` takes no `--body-file`, so a comment first);
-  - the fix runner's `--probe`, from the main folder on `main`, since
-    [#572] raised a dependency the CI never loads;
-  - one invitation in 中文 and one in French to Gmail and to a QQ or
-    163.com address, each in the inbox with today's words (the review's
-    finding 38);
-  - `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
-    `--yes`; Project knowledge re-synced; `/triage` over `i18n`, `help`,
-    `files` and `ui`.
+- **After [#595]'s merge,** to do: the merge, as a merge commit, from
+  the terminal; Dependabot alerts 11 and 12 seen fixed; the deploy's
+  checks, `/api/health`, migration 0081 applied, the items' language
+  chosen on the live organization and an invoice issued; the planning
+  skill packed from `main` and uploaded, since [#571] changed it, and
+  its evals walked; the prune and the clean-up; Project knowledge
+  re-synced; and `/triage` over `products`, `invoices`, `documents`,
+  `organizations`, `i18n`, `help`, `ui` and `docs`.
+- **After [#577]'s merge,** done on 14 November: the merge, as a merge
+  commit; round 1's 32 issues closed, each with its comment; the fix
+  runner's `--probe`, passed; the prune and the clean-up; Project
+  knowledge re-synced; and `/triage` over `i18n`, `help`, `files` and
+  `ui`, its choices applied the same day: 11 comments and 6 label
+  changes, [#446] made `fix-now` for `fix-531-base-name`, [#573],
+  [#575] and [#576] made `later`, each with its `Needs:` line, [#574]
+  put in the Fix-ups milestone and [#587] given its `Trigger:` line; no
+  close and no new issue. Still to do: one invitation in 中文 and one in
+  French to Gmail and to a QQ or 163.com address, each in the inbox with
+  today's words (the review's finding 38).
 - **After [#568]'s merge,** done on 11 and 12 November: the merge, as a
   merge commit; the prune and the clean-up, `tmp/flows-and-states/` with
   it; Project knowledge re-synced; the planning skill packed from `main`
@@ -595,14 +623,19 @@ request or a set of them:
       [#517], merged on 11 November as [#568];
    5. the translations, built on 12 and 13 November on `fix-ups-i18n`,
       [ADR-054's amendment](adr/0054-languages.md) with its as-built,
-      pull request [#577]: closes [#148], [#149], [#150], [#249], [#501]
-      and [#511], with parts of [#486], [#505], [#512] and [#548]. Then
-      [#531], a base name in the organization's language, on a branch of
-      its own, its planning first;
-   6. Movements ([#470]), ADR-093, drawn on the canvas first, from the
-      ignored `tmp/adr-093/from-adr-091/`, ADR-091's panel's reports, and
-      Inventory's findings: [#472]'s 6 (the name first, its code grey
-      under it), 18, 25 and 37, with [#459]'s and [#471]'s; each person
+      merged on 14 November as [#577]: closes [#148], [#149], [#150],
+      [#249], [#501] and [#511], with parts of [#486], [#505], [#512]
+      and [#548]. Then [#531], an item's own name in the organization's
+      language, planned and built on 14 November on `fix-531-base-name`,
+      ADR-054's amendment of that day with its as-built, with [#446] and
+      [#571], as [#595];
+   6. Inventory and Movements, ADR-093, the direction [#587]: designed
+      together in one planning session and one canvas row, in a chat of
+      their own while [#531] builds, then built as two branches,
+      Inventory first, each from `main` after [#531]'s merge. From the
+      ignored `tmp/adr-093/from-adr-091/`, ADR-091's panel's reports,
+      Movements' board ([#470]) and Inventory's findings: [#472]'s 6 (the name first, its code grey
+      under it), 18, 25 and 37, with [#459]'s and [#471]'s, and [#590], Items' stock badges; each person
       choosing their main action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac; then Orders,
       built to the design language, its findings from ADR-091's panel,
@@ -875,6 +908,7 @@ Not repeated here; each list has one home:
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#483]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/483
 [#486]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/486
+[#487]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/487
 [#501]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/501
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
@@ -916,5 +950,15 @@ Not repeated here; each list has one home:
 [#568]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/568
 [#569]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/569
 [#570]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/570
+[#571]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/571
 [#572]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/572
+[#573]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/573
+[#574]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/574
+[#575]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/575
+[#576]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/576
 [#577]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/577
+[#587]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/587
+[#588]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/588
+[#590]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/590
+[#594]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/594
+[#595]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/595

@@ -79,8 +79,9 @@ done; a check older than a change of host, plan or region is stale.
   host or plan changed since. If so, it goes in the By hand list with the
   runbook's steps.
 - **The API revision.** `server/openapi.json`'s `info.version`,
-  `client/src/api/` and `api-revision.ts` agree; the contract job runs
-  oasdiff; since the last release, every breaking change raised it (read
+  `client/src/api/` and `api-revision.ts` agree; `ci.yml`'s against-main
+  job runs oasdiff (`scripts/check-api-breaking.sh`); since the last
+  release, every breaking change raised it (read
   `git log -p origin/main -- server/openapi.json` back to the last tag).
 - **Migrations against the running release.** Every migration since the
   last release leaves working what the previous release reads: no drop,
@@ -120,9 +121,10 @@ done; a check older than a change of host, plan or region is stale.
   page's reference found in Sentry (MC-4102). Off is a finding. GitHub's
   email for a failed workflow, backups above all, reaches someone who
   reads it (By hand).
-- **Jobs that run hourly** (licence reminders, deletions, the files purge,
-  the invitation sweep) do not run while a free web service sleeps
-  (`render.md`): a finding before real users.
+- **Jobs that run hourly,** the six `render.md` lists (licence reminders,
+  low stock notices, the two deletions, the files purge, the invitation
+  sweep), do not run while a free web service sleeps: a finding before
+  real users.
 - **The database's own record.** `pg_stat_statements` on from the first
   day of real use ([ADR-051, "Production, beyond these measurements"](../../../docs/adr/0051-performance.md#production-beyond-these-measurements)).
 
@@ -203,7 +205,8 @@ done; a check older than a change of host, plan or region is stale.
   (Help, the crash page) and from an email's footer.
 - **From a report to the cause.** The reference on the crash page and in a
   refusal leads to one log line (Monitoring).
-- **Acting for a customer.** `npm run org:invite -- --list` for what
+- **Acting for a customer.** By hand: `npm run org:invite -- --list`
+  against production, which asks for its database's URL, for what
   waits; the operator's console and support access are not built (Open
   decisions): note what a support request could not be answered with
   today.
@@ -267,5 +270,7 @@ rather than inventing findings.
 
 - **Keep the report:** write it to `review/production-readiness-<date>.md`
   (ignored by git).
-- **File issues:** one per finding, by `gh issue create`, its title what
-  is wrong and its body the finding as written, without secrets.
+- **File issues:** as [Issues and labels](../../../docs/engineering.md#issues-and-labels)
+  says, by `gh issue create`: one per finding a person would meet or rule
+  that is wrong, the rest in one, each with `needs-triage` and its
+  `area:` label, its body the finding as written, without secrets.

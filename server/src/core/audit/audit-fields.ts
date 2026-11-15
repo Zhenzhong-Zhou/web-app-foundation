@@ -620,6 +620,41 @@ export const AUDIT_FIELDS = {
     }),
     read: 'language',
   },
+  productNameLanguage: {
+    name: t({
+      id: 'audit.field.productNameLanguage',
+      defaultMessage: 'Items named in',
+    }),
+    read: 'language',
+  },
+  // What choosing the items' language did (ADR-054, amended for #531).
+  // On an item's own History, the cause of its new name, so it never reads
+  // as an edit made on the item.
+  renamedByItemsLanguage: {
+    name: t({
+      id: 'audit.field.renamedByItemsLanguage',
+      defaultMessage: 'Renamed by choosing the items’ language',
+    }),
+    read: 'language',
+  },
+  copiesRemoved: {
+    name: t({
+      id: 'audit.field.copiesRemoved',
+      defaultMessage: 'Copies removed',
+    }),
+    read: 'text',
+  },
+  namesRemoved: {
+    name: t({
+      id: 'audit.field.namesRemoved',
+      defaultMessage: 'Names removed',
+    }),
+    read: 'text',
+  },
+  renamed: {
+    name: t({ id: 'audit.field.renamed', defaultMessage: 'Renamed' }),
+    read: 'text',
+  },
   timeZone: {
     name: t({ id: 'audit.field.timeZone', defaultMessage: 'Time zone' }),
     read: 'timeZone',

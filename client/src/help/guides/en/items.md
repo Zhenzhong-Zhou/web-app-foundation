@@ -53,7 +53,7 @@ The tree, with each category’s items, opens from **Manage categories** at the 
 
 1. Press **Add item**.
 2. Under **What is it?**, choose its type. From a type’s tab that type is chosen already; from **All**, none is.
-3. Type its name, and choose its **Category**, or **None**.
+3. Type its name, and choose its **Category**, or **None**. Once your organization has set the language its items are named in, the name’s field says which: type it in that language.
 4. Type the **Code**: your own code for this item, unique in your organization, such as RM-VITC for a raw material. It is not a barcode.
 5. Choose its unit, what its stock is counted in.
 6. If it comes in more than one size, give this one’s size or variation, such as 60ct.
@@ -82,9 +82,13 @@ On an item’s page, its type and category are under the name.
 - **Add variant** adds another size, with its own code and the unit its stock is counted in.
 - **Edit** on a variant records its weight, its size and how many ship in a case.
 - **Add images** takes up to 8 photos. The first is the cover, shown beside the name in lists.
-- **Edit names** gives its name in other languages, for documents printed in them.
+- **Edit names** gives its name in other languages: a screen or a picker names the item in the language its reader uses, where it has a name in it, and a document names it in the language it prints in.
 
-The **Names in other languages** table has a row for the item, and one for each variant with a name of its own, with a column for each language. The item’s row starts with the name it was added with, which is used in any language without its own name; a name in that name’s own language is only for printing something different. The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
+The **Names in other languages** table has a row for the item, and one for each variant with a name of its own, with a column for each language. The item’s row starts with its own name, the one it was added with.
+
+Once your organization has said which language its items are named in, under **Items are named in** on [Organization](/settings/organization#documents), that language’s column comes first and holds each row’s own name, marked **Item’s own name**. It is the name in that language, so it is never missing there, and **Edit names** has no field for it: change it with **Edit**. The other languages’ names are kept beside it, and a reader in a language with none sees the own name. Until the language is set, the own name is shown in every language that has no name of its own; on the item’s page it is marked **Item’s own name** in its row, and a line above the table says it counts as no language’s name yet, and where the language is chosen.
+
+The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
 
 > Only someone who may add items sees **Add item**, and only someone who may change them sees **Add variant**, **Edit**, **Edit names** and **Discontinue**.
 
@@ -119,6 +123,7 @@ Barcodes come later. The Code is your own, not a barcode.
 
 - **Code**: the code on a variant’s label. Every variant has its own.
 - **Variant**: one size or kind of an item, what stock is counted in.
+- **Own name**: the name an item or a variant was added with. Once items are named in a language, it is the name in that language.
 - **Uncategorised**: in no category.
 - **Low stock** and **Out**: below its reorder point, and none left. See [Reorder points](/inventory#reorder-points).
 - **Discontinued**: taken out of use with **Discontinue**, so no longer offered when an item is chosen. **Reactivate** brings it back.
@@ -130,7 +135,7 @@ Barcodes come later. The Code is your own, not a barcode.
 - A category that holds items or other categories cannot be deleted. The refusal says how many of each: move them to another category first.
 - A category cannot move under itself, and two categories side by side cannot share a name.
 - Categories go at most 10 levels deep. A category added or moved deeper is refused: choose a place higher up.
-- Orders and invoices cannot print in a language your organization requires while an item on them has no name in it. The refusal says whether the item’s name or a variant’s is missing.
+- Orders and invoices cannot print in a language your organization requires while an item on them has no name in it, except in the language items are named in, which each item’s own name meets. The refusal says whether the item’s name or a variant’s is missing.
 - A recipe with no components cannot be promoted. Add what it uses first.
 - An item has at most 8 images. Remove one to add another.
 - An export of more than 50,000 rows is refused. Choose a type or a category, or search, to narrow it.

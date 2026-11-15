@@ -31,6 +31,7 @@ const CREATED: ProductDetail = {
   images: [],
   translations: [],
   variants: [],
+  missingNames: [],
 };
 
 /** Where the router is, so a test can see the form give way to the item. */
@@ -39,8 +40,25 @@ function Where() {
   return <output aria-label="where">{location.pathname}</output>;
 }
 
-function renderDialog(type: ProductType | null) {
+/** Whether the dialog has read the organization, since it last opened. */
+let organizationRead = false;
+
+function renderDialog(
+  type: ProductType | null,
+  language: string | null = null,
+) {
   const user = userEvent.setup();
+  // The language items are named in; the rest of the organization is not
+  // read here.
+  organizationRead = false;
+  server.use(
+    http.get('/api/v1/organization', () => {
+      organizationRead = true;
+      return HttpResponse.json({
+        organization: { productNameLanguage: language },
+      });
+    }),
+  );
   renderWithAuth(
     <ToastProvider>
       <MemoryRouter initialEntries={['/items']}>
@@ -123,6 +141,37 @@ describe('CreateProductDialog', () => {
       screen.getByRole('switch', { name: 'Track lot numbers and expiry' }),
     ).toHaveAccessibleDescription(
       'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It cannot be changed later.',
+    );
+  });
+
+  /**
+   * Once the organization says which language its items are named in, the
+   * name and the variation say it under them, in the reader's words; while
+   * it is not set, they say nothing of one (ADR-054, amended for #531, R6).
+   */
+  it('says under the name and the variation the language items are named in, once it is set', async () => {
+    renderDialog('good', 'zh-Hans');
+    const name = screen.getByRole('textbox', { name: /^Name/ });
+
+    await waitFor(() => expect(name).toHaveAccessibleDescription('In Chinese'));
+    expect(
+      screen.getByRole('textbox', { name: 'Size or variation' }),
+    ).toHaveAccessibleDescription(
+      'In Chinese · Optional. 60ct, Large, Blue — leave blank if there is only one.',
+    );
+  });
+
+  it('says no language under the name while none is set', async () => {
+    renderDialog('good');
+    await waitFor(() => expect(organizationRead).toBe(true));
+
+    expect(
+      screen.getByRole('textbox', { name: /^Name/ }),
+    ).not.toHaveAccessibleDescription();
+    expect(
+      screen.getByRole('textbox', { name: 'Size or variation' }),
+    ).toHaveAccessibleDescription(
+      'Optional. 60ct, Large, Blue — leave blank if there is only one.',
     );
   });
 
@@ -239,9 +288,9 @@ describe('CreateProductDialog', () => {
     expect(
       await screen.findByText('Added “Capsule filling machine”.'),
     ).toBeVisible();
-    expect(screen.getByRole('status', { name: 'where' })).toHaveTextContent(
-      '/items/product-9',
-    );
+    expect(
+      await screen.findByRole('status', { name: 'where' }),
+    ).toHaveTextContent('/items/product-9');
     expect(body!.categoryId).toBe('vitamins');
     expect(body!.variant).toEqual({
       sku: 'EQ-CAP-01',

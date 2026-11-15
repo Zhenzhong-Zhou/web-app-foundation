@@ -21,7 +21,7 @@ upload.
 
 ## 2. The check before an ADR
 
-*Bob attaches `tmp/adr-NNN/check.txt`, written by
+*Bob attaches `tmp/<branch>/check.txt`, written by
 `scripts/adr-check.mjs` for the areas asked for.*
 
 - Fired, not fired and found while checking, each item naming its issue

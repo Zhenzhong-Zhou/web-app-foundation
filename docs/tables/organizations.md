@@ -34,6 +34,7 @@ erDiagram
     text document_language
     text document_second_language
     text[] required_name_languages
+    text product_name_language
     timestamptz getting_started_dismissed_at
     timestamptz team_step_skipped_at
     uuid logo_file_id FK

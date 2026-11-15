@@ -70,7 +70,9 @@ Andrej Karpathy's observations on LLM coding pitfalls
   never a spread table row, never `select()` of every column, and a raw
   query's rows typed. A write returns the detail its read returns, or as
   its list shows it where there is no read; or 204 when the screen reads
-  again anyway (a delete, a state change, a settings section). After
+  again anyway (a delete, a state change, a settings section). A write
+  over many rows whose message counts what it did returns those counts,
+  as `PUT /v1/organization/product-name-language` does. After
   any API change, `npm run api` in `server/`, and commit
   `server/openapi.json` with `client/src/api/`. Never edit those two by
   hand. The e2e suite checks every response against the document.
@@ -130,14 +132,14 @@ Andrej Karpathy's observations on LLM coding pitfalls
 - `/production-readiness`: reviews whether the deployed app is ready for
   real users, report only.
 - `/build-from-brief`: runs a build brief in `tmp/`, one step as
-  `/build-from-brief tmp/adr-NNN/brief.md <N>` or from N in a row as
-  `/build-from-brief tmp/adr-NNN/brief.md from <N>`, each Claude Code
+  `/build-from-brief tmp/<branch>/brief.md <N>` or from N in a row as
+  `/build-from-brief tmp/<branch>/brief.md from <N>`, each Claude Code
   step in a `brief-step` subagent on the model its row names (`opus`,
   `sonnet` or `haiku`; the loop itself on the session's model, kept on
   Opus), stopping where a person is needed; only when a prompt names it.
 - `/review-step`: runs a brief's review step, the one whose Who is
   `Claude Code, main session`, in this session on Opus, as
-  `/review-step tmp/adr-NNN/brief.md <N>` for the findings and with Bob's
+  `/review-step tmp/<branch>/brief.md <N>` for the findings and with Bob's
   choices after the number for the fixes; only when a prompt names it.
 - `/rules-file`: writes an area's rules files from its code and tests.
 - `/triage`: proposes a group, areas or a close for each open issue in

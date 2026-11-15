@@ -446,14 +446,66 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
   [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants) ·
   MC-1407
+- **Each organization says which language its items are named in. A new
+  one takes the language the person starting it uses, English where the
+  app does not speak theirs; one from before is not set until its Owner
+  chooses.**
+  [ADR-054, amended](../adr/0054-languages.md#decision--each-organization-says-which-language-its-items-are-named-in) ·
+  [test](../../server/test/registration.e2e-spec.ts) "is the sign-up request’s, English for one the app does not speak" ·
+  [test](../../server/test/registration.e2e-spec.ts) "is the request’s for one started from Home" ·
+  [test](../../server/test/organization-invitations.e2e-spec.ts) "is the accepting request’s, with an account and without" ·
+  [test](../../server/test/organization.e2e-spec.ts) "reads as not set for an organization from before"
+- **Choosing that language says first what it will do: how many own names
+  will count as its names, how many names kept in it are copies, the same
+  as their own with the description empty or the same, which it removes,
+  and each that differs, the item's or the variant's, beside its own.**
+  Only those who may change the organization's settings see it, and
+  nothing is changed until the choice is saved.
+  [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "says what choosing a language will do: the own names it counts, the copies, and each name that differs" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses a Viewer the preview and the choice" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "never counts or touches another organization’s names" ·
+  MC-1425
+- **Each name that differs is chosen, the own one or the kept one: the
+  own removes the kept, and the kept renames the item or the variant, as
+  Edit does, its description with it where it has one, and History says
+  so. The copies go too, and the language is set; once set, it is never
+  set back to not set, and choosing another later is the same choice.**
+  History records the language from and to, and the copies removed, the
+  names removed and the items renamed. The same choice sent again once it
+  is made, by a second press or after an answer lost on the way, does
+  nothing and records nothing.
+  [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "removes the copies, sets the language and records it with the counts" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "keeps the name chosen on each row: the own one removes the kept, the kept one renames the item as Edit does, History saying so" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "answers the same choice sent again with nothing done, recording nothing" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "changes from one language to another, the own names then counting as the new one’s"
+- **The choice is refused, nothing saved, while a row has no choice, when
+  the names changed since the list was shown, or when more than 500 names
+  differ, saying how many.** A list that changed carries the code
+  `product_names_changed`, for the confirmation to read it again.
+  [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses while a row has no choice, saving nothing" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses with product_names_changed when the list changed since it was shown, saving nothing" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses more than 500 names to choose, naming how many" ·
+  MC-1425
+- **No name is kept in the language the items are named in: saving one
+  in it, an item's or a variant's, is refused, saying to change the own
+  name with Edit. A names save made while that language is being chosen
+  waits for the choice, and is then refused in it.** An item added
+  meanwhile never waits for it.
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses a name kept in the items’ own language, for an item and a variant" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "makes a names save wait for the choice under way, then refuses it in that language" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "never holds an item added while the choice is under way"
 - **One name per language, never a blank one, and a description in a
   language needs a name in it.** The dialog says so before saving, naming
-  the language; the server refuses a language twice, one it does not
-  support, or a blank name.
+  the language, and sends nothing; the server refuses a language twice,
+  one it does not support, or a blank name.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps one name per product and language, never a blank one" ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
-  partly tested ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "refuses a description in a language with no name in it, sending nothing" ·
   MC-1407
 - **Saving the names replaces them all: a language left blank is
   removed.** A variant's names are changed only through its own product.
@@ -483,12 +535,12 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/whole-list-search.e2e-spec.ts) "names what it finds in the reader’s language" ·
   MC-3801 · MC-3803 · MC-3804
 - **A product's page is headed with the name the reader sees, and names
-  its variants and images so too; it says its base name first among its
-  names in other languages; Edit names and Edit start from the base
-  name, and saving keeps it.**
+  its variants and images so too; its own name heads the item's row
+  among its names in other languages; Edit names and Edit start from the
+  own name, and saving keeps it.**
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
   [test](../../server/test/item-names.e2e-spec.ts) "keeps the base name where the product page edits it, for a reader in Chinese (4.2)" ·
-  [test](../../client/src/products/product-detail-page.test.tsx) "names the base name beside the others, under a translated heading" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "names the own name in the item’s row, under a translated heading" ·
   partly tested ·
   MC-3802
 - **A product's description on its page is the base one, whatever the
@@ -511,20 +563,27 @@ How this file is kept is in the [README](README.md).
   MC-3801
 - **Where the organization requires product names in a language, a
   document that prints in it is refused until every item on it, and each
-  of its variants with a name of its own, has a name in that language.
-  The refusal says whether the item's name or the variant's is missing,
-  the item's first, the variant by its code and its own name.** The
+  of its variants with a name of its own, has a name in that language;
+  in the language the items are named in, their own names meet it. The
+  refusal says whether the item's name or the variant's is missing, the
+  item's first, the variant by its code and its own name.** The
   organization chooses which languages, on its page. The refusal carries
   the code `item_name_missing` with the item's id, the item's own for a
   variant's name too, for a way to the item's page, where its names are.
+  The item's detail lists each name missing by the same rule, language
+  by language, the item's before its variants'.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [ADR-054, amended](../adr/0054-languages.md#amendment-november-2026--what-documents-will-refuse-shown-before-they-do-adr-092) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-way-back-and-the-way-out) ·
   [test](../../server/test/languages.e2e-spec.ts) "requires the languages the organization names, as a set of supported tags" ·
   [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
   [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing" ·
   [test](../../server/test/languages.e2e-spec.ts) "carries item_name_missing and the item’s id, for the item’s name and a variant’s alike" ·
+  [test](../../server/test/languages.e2e-spec.ts) "issues in a required language the items are named in by their own names, only another required one refusing" ·
+  [test](../../server/test/languages.e2e-spec.ts) "lists on the item’s detail each name documents will refuse, none in the language its items are named in" ·
   [test](../../server/test/documents.e2e-spec.ts) "names only its own lines, so one not returned refuses nothing" ·
+  [test](../../server/test/documents.e2e-spec.ts) "prints the pro forma and the RMA in a required language the items are named in, by their own names" ·
   MC-1408
 - **The item's page shows its names in other languages as one table: a
   row for the item and one for each variation with a name of its own, a
@@ -532,14 +591,38 @@ How this file is kept is in the [README](README.md).
   marked so. A missing required name reads Missing, with Add opening Edit
   names at that name, and a line at the page's top names each one missing
   and says documents holding the item cannot print until it is added.**
-  Edit names marks the required languages too, and says a blank prints
-  the base name only of the others. Add item does not ask for them: the
-  new item's page shows what is missing.
+  What is missing is the item's detail's list, as documents refuse; the
+  page works out none of it. Edit names marks the required languages
+  too, and says a blank prints the base name only of the others. Add
+  item does not ask for them: the new item's page shows what is missing.
   [ADR-092](../adr/0092-items.md#decision--each-variations-names-on-the-items-page) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../client/src/products/product-detail-page.test.tsx) "shows the item’s and each named variation’s names by language, a missing required one marked" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "opens Edit names at the missing name’s row, the required languages marked" ·
-  [test](../../client/src/products/translations-dialog.test.tsx) "marks the required languages, saying a blank prints the base name only of the others" ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "marks the required languages, saying a blank prints the item’s own name only of the others" ·
   MC-1408
+- **In the language the items are named in, the item's page shows each
+  row's own name first, in that language's column, marked as the item's
+  or the variant's own, never Missing; Edit names has no field in it,
+  and says the own name is the name there, changed with Edit. Add item,
+  Edit and the variant dialogs say under a name the language it is typed
+  in; while none is set, the table has no such column and nothing says
+  a language.** While none is set, each row's own name is marked as the
+  own one in its row, and a line above the table, read as its
+  description, says the own name counts as no language's name yet and
+  where the language is chosen: a link there, landing on Item names, for
+  whoever may change the organization's settings, and who can for anyone
+  else.
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "holds the own names first, in the column of the language items are named in, never Missing" ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "asks for no name in the language items are named in, saying the own name is its name there" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "says under each name, in Edit and the variant dialogs, the language items are named in" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "says no language under the name while none is set" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "names the own name in the item’s row, under a translated heading" ·
+  [test](../../client/e2e/product-name-language.spec.ts) "an item’s page, the items’ language not set, for whoever may choose it: each own name labelled, and the table’s description says why, its link landing on Item names, the heading focused" ·
+  [test](../../client/e2e/product-name-language.spec.ts) "an item’s page, the items’ language not set, for a Viewer: the line says who can choose it, with no link" ·
+  [test](../../client/src/products/create-product-dialog.test.tsx) "says under the name and the variation the language items are named in, once it is set" ·
+  MC-1407
 
 ## Finding a product, and picking an item
 
@@ -681,15 +764,18 @@ How this file is kept is in the [README](README.md).
   top, unit, whether it tracks lots, whether it or its product is
   discontinued, then the product's and the variant's names in English,
   French and Chinese where it has them. Names are the base ones, the
-  headers in the reader's language. Past 50,000 rows it is refused,
-  saying to choose a type or a category, or search. History records each
-  export with its type, category and Discontinued, in words, never what
-  was typed.
+  headers in the reader's language; the columns of the language the
+  items are named in hold the own names, the variants' too. Past 50,000
+  rows it is refused, saying to choose a type or a category, or search.
+  History records each export with its type, category and Discontinued,
+  in words, never what was typed.
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
   [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the catalogue, a row per variant" ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the type and the category in the reader’s words, and every language’s names" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the own names in the columns of the language the items are named in, the variants’ too" ·
   [test](../../server/test/exports.e2e-spec.ts) "refuses past 50,000 rows, naming what narrows the list" ·
   [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
   MC-1558
@@ -732,7 +818,10 @@ How this file is kept is in the [README](README.md).
   set, an image added by its file, a new order of images, and its
   category, when added and from and to, by the category's name, and its
   type and Discontinue from and to. A new name records who and when, not
-  what changed.** A description is never recorded.
+  what changed; one given by choosing the items' language records the
+  name from and to.** That entry names its cause, the items' language
+  chosen, so it never reads as an edit made on the item. A description is
+  never recorded.
   [ADR-018](../adr/0018-audit-log.md#decision--never-record-the-request-body) ·
   [ADR-038](../adr/0038-an-audit-row-names-its-resource-as-it-was-at-the-time.md#decision--snapshot-a-label-at-write-time-in-audit_logresource_label) ·
   [test](../../server/test/audit.e2e-spec.ts) "records no payload for a route that names no fields" ·
@@ -742,6 +831,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "records an item’s category from and to, by name, and a rename beside an unchanged one" ·
   [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "keeps the name chosen on each row: the own one removes the kept, the kept one renames the item as Edit does, History saying so" ·
   partly tested
 - **History keeps each category added, renamed, moved and deleted, by its
   name, and the category it sits under by that one's name,** the name it

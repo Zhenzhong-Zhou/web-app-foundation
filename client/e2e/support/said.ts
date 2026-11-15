@@ -5,7 +5,10 @@ import { createIntl, type IntlShape } from 'react-intl';
 /** The languages a person reads, as the catalogues are named. */
 export type Language = 'en' | 'fr-CA' | 'zh-Hans';
 
-type Values = Record<string, string | number>;
+/** A tag's words read as its text: `<link>` gives `{ link: TEXT }`. */
+export const TEXT = (chunks: string[]): string => chunks.join('');
+
+type Values = Record<string, string | number | typeof TEXT>;
 
 /**
  * A message in a language, read by its id through one folder's
@@ -30,9 +33,10 @@ function sayer(folder: URL) {
     if (typeof message !== 'string') {
       throw new Error(`No message ${id} in ${folder.pathname}${language}.json`);
     }
-    return String(
-      intl.formatters.getMessageFormat(message, language).format(values),
-    );
+    const said = intl.formatters
+      .getMessageFormat(message, language)
+      .format<string>(values);
+    return Array.isArray(said) ? said.join('') : String(said);
   };
 }
 

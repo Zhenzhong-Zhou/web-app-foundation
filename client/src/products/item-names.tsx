@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   Button,
+  Link,
   Paper,
   Stack,
   Table,
@@ -12,11 +13,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useId } from 'react';
+import { type ReactNode, useId } from 'react';
 import { useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { ProductDetail } from '../api/types.gen';
-import { NO_VALUE, SEPARATOR } from '../lib/format';
+import { NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import {
   LANGUAGE_NAMES,
@@ -24,8 +26,10 @@ import {
   type Locale,
   SUPPORTED_LOCALES,
 } from '../lib/locales';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { missingNames, type NameAt, rowsOf } from './name-rows';
+import { ITEM_NAMES_HASH } from './name-language';
+import { type NameAt, rowsOf } from './name-rows';
 
 /**
  * Names in other languages on the item's page (ADR-092, #526): one table,
@@ -35,23 +39,47 @@ import { missingNames, type NameAt, rowsOf } from './name-rows';
  * names at that row; a line above says documents holding it cannot print
  * until it is added. A variation with no name of its own prints the
  * item's, so it has no row.
+ *
+ * The language items are named in comes first, once it is set: its
+ * column holds each row's own name, which is the name there, marked as
+ * the own one, never Missing (ADR-054, amended for #531). While it is not
+ * set, the own name is marked as the own one in its row, and a line above
+ * the table, its description, says why no language holds it, and where
+ * it is chosen: a link there for whoever may choose it. What is missing
+ * is the server's, worked out as documents refuse (#551's 65).
  */
 export function ItemNames({
   product,
   required,
+  language,
   canEdit,
+  canChoose,
   onEdit,
 }: {
   product: ProductDetail;
   required: readonly Locale[];
+  /** The language items are named in; null while it is not set. */
+  language: Locale | null;
   canEdit: boolean;
+  /** May choose the items' language: the line while not set links to it. */
+  canChoose: boolean;
   /** Edit names, at a row and language, or from its top. */
   onEdit: (at: NameAt | null) => void;
 }) {
   const intl = useIntl();
   const titleId = useId();
+  const notSetId = useId();
   const rows = rowsOf(product);
-  const missing = missingNames(product, required);
+  const missing = product.missingNames.map((name) => ({
+    row: name.variantId ?? 'product',
+    sku: name.sku,
+    locale: name.locale,
+  }));
+  const isMissing = (row: string, locale: Locale) =>
+    missing.some((name) => name.row === row && name.locale === locale);
+  const columns = language
+    ? [language, ...SUPPORTED_LOCALES.filter((locale) => locale !== language)]
+    : SUPPORTED_LOCALES;
   const unnamed = product.variants.some((variant) => !variant.name);
 
   const rowWords = (sku: string | null) =>
@@ -67,6 +95,24 @@ export function ItemNames({
           },
           { sku },
         );
+
+  // A label, not a status: muted, as Required on documents is.
+  const ownLabel = (sku: string | null) => (
+    <Typography
+      variant="caption"
+      component="span"
+      sx={{ display: 'block', color: 'text.secondary' }}
+    >
+      {intl.formatMessage(
+        {
+          id: 'products.names.own',
+          defaultMessage:
+            '{kind, select, variant {Variant’s own name} other {Item’s own name}}',
+        },
+        { kind: sku === null ? 'item' : 'variant' },
+      )}
+    </Typography>
+  );
 
   const nameOf = (at: { sku: string | null; locale: Locale }) =>
     intl.formatMessage(
@@ -136,9 +182,47 @@ export function ItemNames({
         )}
       </Stack>
 
+      {!language && (
+        <Typography
+          id={notSetId}
+          variant="body2"
+          sx={{ color: 'text.secondary' }}
+        >
+          {canChoose
+            ? intl.formatMessage(
+                {
+                  id: 'products.names.notSet.choose',
+                  defaultMessage:
+                    'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Choose it in <link>Organization → Documents</link>.',
+                },
+                {
+                  link: (chunks: ReactNode[]) => (
+                    <Link
+                      component={RouterLink}
+                      to={`/settings/organization?tab=documents${ITEM_NAMES_HASH}`}
+                      state={OFFER_BACK}
+                      underline="always"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                },
+              )
+            : intl.formatMessage({
+                id: 'products.names.notSet.ask',
+                defaultMessage:
+                  'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Someone who can change the organization’s settings can choose it in Organization → Documents.',
+              })}
+        </Typography>
+      )}
+
       <Paper variant="outlined">
         <TableContainer>
-          <Table size="small" aria-labelledby={titleId}>
+          <Table
+            size="small"
+            aria-labelledby={titleId}
+            aria-describedby={language ? undefined : notSetId}
+          >
             <TableHead>
               <TableRow>
                 <TableCell>
@@ -149,7 +233,7 @@ export function ItemNames({
                     })}
                   </Box>
                 </TableCell>
-                {SUPPORTED_LOCALES.map((locale) => (
+                {columns.map((locale) => (
                   <TableCell key={locale}>
                     <span lang={locale}>{LANGUAGE_NAMES[locale]}</span>
                     {required.includes(locale) && (
@@ -192,25 +276,18 @@ export function ItemNames({
                           )}
                     </Typography>
                     {row.name}
-                    {/* The base name has no language of its own until
-                        #531: said here, so a name in its language is
-                        not typed twice without reason. */}
-                    {row.sku === null && (
-                      <Box component="span" sx={{ color: 'text.secondary' }}>
-                        {SEPARATOR}
-                        {intl.formatMessage({
-                          id: 'products.names.base',
-                          defaultMessage:
-                            'the name it was added with, used in any language without its own name',
-                        })}
-                      </Box>
-                    )}
+                    {!language && ownLabel(row.sku)}
                   </TableCell>
-                  {SUPPORTED_LOCALES.map((locale) => (
+                  {columns.map((locale) => (
                     <TableCell key={locale}>
-                      {row.names[locale] ? (
+                      {locale === language ? (
+                        <>
+                          <span lang={locale}>{row.name}</span>
+                          {ownLabel(row.sku)}
+                        </>
+                      ) : row.names[locale] ? (
                         <span lang={locale}>{row.names[locale]}</span>
-                      ) : required.includes(locale) ? (
+                      ) : isMissing(row.key, locale) ? (
                         <Stack
                           direction="row"
                           spacing={1}

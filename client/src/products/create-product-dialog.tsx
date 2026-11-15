@@ -20,13 +20,19 @@ import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import type { ProductCategory, ProductEnvelope } from '../api/types.gen';
+import type {
+  OrganizationEnvelope,
+  ProductCategory,
+  ProductEnvelope,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, hasCode } from '../lib/api';
 import type { ProductType } from '../lib/api-names';
+import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { CategorySelect } from './category-select';
+import { typedIn } from './name-language';
 import {
   PRODUCT_TYPES,
   productTypeLine,
@@ -68,6 +74,9 @@ const CODE_EXAMPLES: Record<ProductType, string> = {
  * returns to Items, and the message names what was added. A code in use is
  * refused under Code, opening the item that has it (#306's 35).
  *
+ * The name and the variation say the language items are named in, once
+ * it is set, read as the dialog opens (ADR-054, amended for #531).
+ *
  * Rendered only while open, so each opening starts afresh from the tab.
  */
 export function CreateProductDialog({
@@ -96,6 +105,9 @@ export function CreateProductDialog({
   const typesRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const skuRef = useRef<HTMLInputElement>(null);
+  const { data: organization } =
+    useResource<OrganizationEnvelope>('/organization');
+  const itemsLanguage = organization?.organization.productNameLanguage ?? null;
 
   const { submitting, error, errorCode, errorDetails, submit } =
     useSubmit<ProductEnvelope>(
@@ -249,7 +261,7 @@ export function CreateProductDialog({
                       id: 'products.create.needsName',
                       defaultMessage: 'Give it a name.',
                     })
-                  : undefined
+                  : typedIn(itemsLanguage, intl)
               }
               slotProps={{ htmlInput: { maxLength: 200 } }}
             />
@@ -352,11 +364,15 @@ export function CreateProductDialog({
               fullWidth
               value={form.variantName}
               onChange={update('variantName')}
-              helperText={intl.formatMessage({
-                id: 'products.variation.helpOptional',
-                defaultMessage:
-                  'Optional. 60ct, Large, Blue — leave blank if there is only one.',
-              })}
+              helperText={typedIn(
+                itemsLanguage,
+                intl,
+                intl.formatMessage({
+                  id: 'products.variation.helpOptional',
+                  defaultMessage:
+                    'Optional. 60ct, Large, Blue — leave blank if there is only one.',
+                }),
+              )}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 

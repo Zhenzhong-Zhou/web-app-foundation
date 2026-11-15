@@ -14,8 +14,10 @@ import type { ProductCategory, ProductDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import type { Locale } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
 import { CategorySelect } from './category-select';
+import { typedIn } from './name-language';
 import {
   isProductType,
   PRODUCT_TYPES,
@@ -31,7 +33,8 @@ import {
  * type may change at any time, since it forks nothing (ADR-023): the item
  * shows under its new type, its stock, lots and History stay, and History
  * records the change. Each type has Add item's line under it, so the
- * choice reads the same in both.
+ * choice reads the same in both. The name says the language items are
+ * named in, once it is set (ADR-054, amended for #531).
  *
  * Only what changed is sent, so History records what the person changed.
  * Rendered only while open, so each opening starts from the item as saved.
@@ -39,11 +42,14 @@ import {
 export function EditItemDialog({
   product,
   categories,
+  language,
   onClose,
   onSaved,
 }: {
   product: ProductDetail;
   categories: readonly ProductCategory[];
+  /** The language items are named in; null while it is not set. */
+  language: Locale | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -155,7 +161,7 @@ export function EditItemDialog({
                       id: 'products.create.needsName',
                       defaultMessage: 'Give it a name.',
                     })
-                  : undefined
+                  : typedIn(language, intl)
               }
               slotProps={{ htmlInput: { maxLength: 200 } }}
             />

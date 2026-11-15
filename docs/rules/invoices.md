@@ -125,16 +125,19 @@ is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/invoices.md#if-something-is-refused-refused) ·
   MC-711
 - **Every item on it must be named in each language the organization
-  requires, if the invoice prints in that language,** and each of its
+  requires, if the invoice prints in that language, except the one its
+  items are named in, where each own name is the name,** and each of its
   variants with a name of its own; the refusal names the variant by its
   code and its own name when its name is the one missing. It carries the
   code `item_name_missing` with the item's id, the item's own for a
   variant's name too, for a way to the item's page, where its names are.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-way-back-and-the-way-out) ·
   [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
   [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing" ·
-  [test](../../server/test/languages.e2e-spec.ts) "carries item_name_missing and the item’s id, for the item’s name and a variant’s alike"
+  [test](../../server/test/languages.e2e-spec.ts) "carries item_name_missing and the item’s id, for the item’s name and a variant’s alike" ·
+  [test](../../server/test/languages.e2e-spec.ts) "issues in a required language the items are named in by their own names, only another required one refusing"
 - **Tax is worked out per component on the lines that carry it, and
   rounded once for the invoice,** not line by line. A component two codes
   share, such as GST, is one tax line.
