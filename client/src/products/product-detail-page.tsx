@@ -281,6 +281,7 @@ export function ProductDetailPage() {
           required={required}
           language={language}
           canEdit={canEdit}
+          canChoose={can('organizations.update')}
           onEdit={(at) => {
             setNamesAt(at);
             setTranslating(true);

@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   Button,
+  Link,
   Paper,
   Stack,
   Table,
@@ -12,8 +13,9 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useId } from 'react';
+import { type ReactNode, useId } from 'react';
 import { useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { ProductDetail } from '../api/types.gen';
 import { NO_VALUE } from '../lib/format';
@@ -24,7 +26,9 @@ import {
   type Locale,
   SUPPORTED_LOCALES,
 } from '../lib/locales';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
+import { ITEM_NAMES_HASH } from './name-language';
 import { type NameAt, rowsOf } from './name-rows';
 
 /**
@@ -38,7 +42,10 @@ import { type NameAt, rowsOf } from './name-rows';
  *
  * The language items are named in comes first, once it is set: its
  * column holds each row's own name, which is the name there, marked as
- * the own one, never Missing (ADR-054, amended for #531). What is missing
+ * the own one, never Missing (ADR-054, amended for #531). While it is not
+ * set, the own name is marked as the own one in its row, and a line above
+ * the table, its description, says why no language holds it, and where
+ * it is chosen: a link there for whoever may choose it. What is missing
  * is the server's, worked out as documents refuse (#551's 65).
  */
 export function ItemNames({
@@ -46,6 +53,7 @@ export function ItemNames({
   required,
   language,
   canEdit,
+  canChoose,
   onEdit,
 }: {
   product: ProductDetail;
@@ -53,11 +61,14 @@ export function ItemNames({
   /** The language items are named in; null while it is not set. */
   language: Locale | null;
   canEdit: boolean;
+  /** May choose the items' language: the line while not set links to it. */
+  canChoose: boolean;
   /** Edit names, at a row and language, or from its top. */
   onEdit: (at: NameAt | null) => void;
 }) {
   const intl = useIntl();
   const titleId = useId();
+  const notSetId = useId();
   const rows = rowsOf(product);
   const missing = product.missingNames.map((name) => ({
     row: name.variantId ?? 'product',
@@ -84,6 +95,24 @@ export function ItemNames({
           },
           { sku },
         );
+
+  // A label, not a status: muted, as Required on documents is.
+  const ownLabel = (sku: string | null) => (
+    <Typography
+      variant="caption"
+      component="span"
+      sx={{ display: 'block', color: 'text.secondary' }}
+    >
+      {intl.formatMessage(
+        {
+          id: 'products.names.own',
+          defaultMessage:
+            '{kind, select, variant {Variant’s own name} other {Item’s own name}}',
+        },
+        { kind: sku === null ? 'item' : 'variant' },
+      )}
+    </Typography>
+  );
 
   const nameOf = (at: { sku: string | null; locale: Locale }) =>
     intl.formatMessage(
@@ -153,9 +182,47 @@ export function ItemNames({
         )}
       </Stack>
 
+      {!language && (
+        <Typography
+          id={notSetId}
+          variant="body2"
+          sx={{ color: 'text.secondary' }}
+        >
+          {canChoose
+            ? intl.formatMessage(
+                {
+                  id: 'products.names.notSet.choose',
+                  defaultMessage:
+                    'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Choose it in <link>Organization › Documents</link>.',
+                },
+                {
+                  link: (chunks: ReactNode[]) => (
+                    <Link
+                      component={RouterLink}
+                      to={`/settings/organization?tab=documents${ITEM_NAMES_HASH}`}
+                      state={OFFER_BACK}
+                      underline="always"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                },
+              )
+            : intl.formatMessage({
+                id: 'products.names.notSet.ask',
+                defaultMessage:
+                  'The language items are named in isn’t chosen yet, so an item’s own name doesn’t count as its name in any language. Someone who can change the organization’s settings can choose it in Organization › Documents.',
+              })}
+        </Typography>
+      )}
+
       <Paper variant="outlined">
         <TableContainer>
-          <Table size="small" aria-labelledby={titleId}>
+          <Table
+            size="small"
+            aria-labelledby={titleId}
+            aria-describedby={language ? undefined : notSetId}
+          >
             <TableHead>
               <TableRow>
                 <TableCell>
@@ -209,28 +276,14 @@ export function ItemNames({
                           )}
                     </Typography>
                     {row.name}
+                    {!language && ownLabel(row.sku)}
                   </TableCell>
                   {columns.map((locale) => (
                     <TableCell key={locale}>
                       {locale === language ? (
                         <>
                           <span lang={locale}>{row.name}</span>
-                          {/* A label, not a status: muted, as Required on
-                              documents is. */}
-                          <Typography
-                            variant="caption"
-                            component="span"
-                            sx={{ display: 'block', color: 'text.secondary' }}
-                          >
-                            {intl.formatMessage(
-                              {
-                                id: 'products.names.own',
-                                defaultMessage:
-                                  '{kind, select, variant {Variant’s own name} other {Item’s own name}}',
-                              },
-                              { kind: row.sku === null ? 'item' : 'variant' },
-                            )}
-                          </Typography>
+                          {ownLabel(row.sku)}
                         </>
                       ) : row.names[locale] ? (
                         <span lang={locale}>{row.names[locale]}</span>

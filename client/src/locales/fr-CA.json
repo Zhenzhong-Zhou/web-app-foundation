@@ -1726,6 +1726,8 @@
   "products.names.kind.variant": "Variante {sku}",
   "products.names.missing": "Manquant",
   "products.names.missingLine": "{count, plural, one {Un nom exigé sur les documents manque} other {# noms exigés sur les documents manquent}} : {names}. Les commandes et les factures contenant cet article ne peuvent pas s’imprimer tant {count, plural, one {qu’il n’est pas ajouté} other {qu’ils ne sont pas ajoutés}}.",
+  "products.names.notSet.ask": "La langue dans laquelle les articles sont nommés n’est pas encore choisie, donc le propre nom d’un article ne compte comme son nom dans aucune langue. Une personne qui peut modifier les paramètres de l’organisation peut la choisir dans Organisation › Documents.",
+  "products.names.notSet.choose": "La langue dans laquelle les articles sont nommés n’est pas encore choisie, donc le propre nom d’un article ne compte comme son nom dans aucune langue. Choisissez-la dans <link>Organisation › Documents</link>.",
   "products.names.of": "Article ou variante",
   "products.names.own": "{kind, select, variant {Propre nom de la variante} other {Propre nom de l’article}}",
   "products.names.required": "Requis sur les documents",

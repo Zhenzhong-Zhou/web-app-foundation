@@ -642,7 +642,15 @@ folder by folder; these check what is already in place.
   Edit. Add item's Name and Size or variation, Edit's Name, and Add
   variant's and a variant's Edit's Size or variation each say In English
   under them, in 中文 用英文填写; before English is chosen, none says a
-  language, and the table has no own column.
+  language, and the table has no own column. Before it is chosen, too,
+  each row's own name has Item's own name, or Variant's own name, under
+  it in grey, and a grey line above the table says the language items
+  are named in isn't chosen yet, which a screen reader reads with the
+  table as its description. As the demo Owner it ends Choose it in
+  Organization › Documents, the link opening the Documents tab at Item
+  names, in view under the bar, its heading focused; as a Viewer it says
+  someone who can change the organization's settings can choose it
+  there, with no link. In 中文 and Français the line reads in each.
 - **MC-1408** With 简体中文 ticked under Item names, Names documents
   require, on the Organization page's Documents tab, in an organization
   whose items are not named in 中文, and a customer set to Chinese,

@@ -8,9 +8,17 @@ import type {
 } from '@playwright/test';
 
 import { expect, test } from './fixtures';
-import { created, createProduct, signInAs } from './support/api';
+import {
+  created,
+  createProduct,
+  inviteByLink,
+  joinByLink,
+  signInAs,
+  uniqueEmail,
+} from './support/api';
 import { asOrganizationFromBefore } from './support/database';
-import { saidBy, saidOn } from './support/said';
+import { confirmEmailInDatabase } from './support/mail';
+import { saidBy, saidOn, TEXT } from './support/said';
 
 /**
  * The language items are named in (ADR-054, amended for #531), row by
@@ -36,8 +44,10 @@ import { saidBy, saidOn } from './support/said';
 test.use({ locale: 'en-US' });
 
 /** A screen's line, in English, read by its id (conventions.md, Tests). */
-const say = (id: string, values?: Record<string, string | number>) =>
-  saidOn('en', id, values);
+const say = (
+  id: string,
+  values?: Record<string, string | number | typeof TEXT>,
+) => saidOn('en', id, values);
 
 /** Chinese, as an English reader's screens name it. */
 const CHINESE = 'Chinese';
@@ -465,6 +475,70 @@ test('an item’s page, Names in other languages, the Chinese column: the own na
       }),
     }),
   ).toBeVisible();
+});
+
+test('an item’s page, the items’ language not set, for whoever may choose it: each own name labelled, and the table’s description says why, its link landing on Item names, the heading focused', async ({
+  page,
+  freshOrg,
+}) => {
+  const api = freshOrg.api;
+  await fromBefore(api);
+  const focus = await item(api, 'Focus', { sku: 'FOC-60', variant: '60ct' });
+  await signInAs(page, api);
+  await page.goto(`/items/${focus.id}`);
+
+  const table = page.getByRole('table', {
+    name: say('products.translations.title'),
+  });
+  await expect(table.getByRole('rowheader', { name: /Focus/ })).toContainText(
+    say('products.names.own', { kind: 'item' }),
+  );
+  await expect(table.getByRole('rowheader', { name: /60ct/ })).toContainText(
+    say('products.names.own', { kind: 'variant' }),
+  );
+  // A screen reader hears the line with the table, not only before it.
+  await expect(table).toHaveAccessibleDescription(
+    say('products.names.notSet.choose', { link: TEXT }),
+  );
+
+  await page.getByRole('link', { name: 'Organization › Documents' }).click();
+  await expect(page).toHaveURL(
+    /\/settings\/organization\?tab=documents#item-names$/,
+  );
+  const heading = page.getByRole('heading', {
+    name: say('settings.itemNames.title'),
+  });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
+});
+
+test('an item’s page, the items’ language not set, for a Viewer: the line says who can choose it, with no link', async ({
+  page,
+  freshOrg,
+}) => {
+  const api = freshOrg.api;
+  await fromBefore(api);
+  const focus = await item(api, 'Focus', {
+    sku: 'FOC-60',
+    kept: [{ locale: 'zh-Hans', name: '专注' }],
+  });
+  // An Owner invites only once their own address is confirmed (ADR-077).
+  await confirmEmailInDatabase(freshOrg.email);
+  const { token } = await inviteByLink(api, uniqueEmail('names-viewer'));
+  const viewer = await joinByLink(token, 'E2E Viewer');
+  await signInAs(page, viewer);
+  await page.goto(`/items/${focus.id}`);
+
+  const table = page.getByRole('table', {
+    name: say('products.translations.title'),
+  });
+  await expect(table).toHaveAccessibleDescription(
+    say('products.names.notSet.ask'),
+  );
+  await expect(
+    page.getByRole('link', { name: 'Organization › Documents' }),
+  ).toHaveCount(0);
+  await viewer.dispose();
 });
 
 test('Edit names, open it: no Chinese field; a line says the item’s own name is its Chinese name, changed with Edit', async ({

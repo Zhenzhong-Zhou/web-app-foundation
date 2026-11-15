@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type ReactNode, type SubmitEvent, useState } from 'react';
+import { type ReactNode, type SubmitEvent, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { OrganizationProfile } from '../api/types.gen';
@@ -29,11 +29,13 @@ import { SettingsSection } from '../components/settings-section';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api } from '../lib/api';
 import type { LicencePolicy, PaperSize } from '../lib/api-names';
+import { useArrival } from '../lib/use-arrival';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { useTab } from '../lib/use-tab';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
+import { ITEM_NAMES_HASH } from '../products/name-language';
 import { rem } from '../theme/rem';
 import { BrandingForm } from './branding-form';
 import { ClosingSections } from './closing-sections';
@@ -90,6 +92,15 @@ export function OrganizationPage() {
     ? ORGANIZATION_TABS
     : READ_TABS;
   const [tab, setTab] = useTab<OrganizationTab>(tabs);
+  // Arrived at Item names by the item's page's link, while the items'
+  // language is not set: the section in view, its heading focused.
+  const itemNames = useRef<HTMLHeadingElement>(null);
+  useArrival(
+    ITEM_NAMES_HASH,
+    organization !== null && tab === 'documents',
+    itemNames,
+    itemNames,
+  );
 
   /** A save the whole app shows: the theme, chips and logo read it. */
   const reloadAll = async () => {
@@ -241,6 +252,7 @@ export function OrganizationPage() {
                 language={organization.productNameLanguage}
                 required={organization.requiredNameLanguages}
                 readOnly={!canUpdate}
+                headingRef={itemNames}
                 onSaved={reload}
               />
               <OrganizationDocumentLanguages

@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  type Ref,
   type SubmitEvent,
   useCallback,
   useEffect,
@@ -53,12 +54,15 @@ export function ItemNamesSection({
   language,
   required,
   readOnly,
+  headingRef,
   onSaved,
 }: {
   /** The language the items are named in; null for not set. */
   language: Locale | null;
   required: Locale[];
   readOnly: boolean;
+  /** Its heading, which a link to the section focuses (useArrival). */
+  headingRef?: Ref<HTMLHeadingElement>;
   onSaved: () => Promise<void>;
 }) {
   const intl = useIntl();
@@ -140,6 +144,7 @@ export function ItemNamesSection({
           id: 'settings.itemNames.title',
           defaultMessage: 'Item names',
         })}
+        headingRef={headingRef}
         onSubmit={handleSubmit}
         error={saved.error ?? afterChoice.error}
         submitting={saved.submitting || afterChoice.submitting || confirming}

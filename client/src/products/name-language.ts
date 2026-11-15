@@ -4,6 +4,12 @@ import { SEPARATOR } from '../lib/format';
 import { languageWord, type Locale } from '../lib/locales';
 
 /**
+ * The Documents tab's Item names section, where the language items are
+ * named in is chosen: the hash a link to it lands by.
+ */
+export const ITEM_NAMES_HASH = '#item-names';
+
+/**
  * What a name field says under it once the organization has said which
  * language its items are named in (ADR-054, amended for #531): "In
  * Chinese", in Add item, Edit and the variant dialogs alike; nothing while

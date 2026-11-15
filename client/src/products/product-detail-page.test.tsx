@@ -99,8 +99,9 @@ describe('ProductDetailPage', () => {
   /**
    * The heading is the reader's language (ADR-056), so the own name, which
    * the edit form fills from and documents print where a language has none,
-   * heads the item's row among the names in other languages, with no
-   * words about it (ADR-054, amended for #531).
+   * heads the item's row among the names in other languages, labelled the
+   * item's own name while the items' language is not set (ADR-054,
+   * amended for #531).
    */
   it('names the own name in the item’s row, under a translated heading', async () => {
     renderPage(PRODUCT);
@@ -109,7 +110,9 @@ describe('ProductDetailPage', () => {
       await screen.findByRole('heading', { name: '舒缓胶囊 90 粒' }),
     ).toBeVisible();
     expect(
-      screen.getByRole('rowheader', { name: /^Item\s*Calm 90ct$/ }),
+      screen.getByRole('rowheader', {
+        name: /^Item\s*Calm 90ct\s*Item’s own name$/,
+      }),
     ).toBeVisible();
     expect(screen.getByRole('cell', { name: '舒缓胶囊 90 粒' })).toBeVisible();
   });
@@ -168,9 +171,9 @@ describe('ProductDetailPage', () => {
 
     const rows = within(table).getAllByRole('rowheader');
     expect(rows.map((row) => row.textContent)).toEqual([
-      'ItemFocus',
-      'Variant FOC-3030 capsules',
-      'Variant adasd213123',
+      'ItemFocusItem’s own name',
+      'Variant FOC-3030 capsulesVariant’s own name',
+      'Variant adasd213123Variant’s own name',
     ]);
     const adasd = within(table).getByRole('row', { name: /adasd/ });
     expect(within(adasd).getByText('Missing')).toBeVisible();

@@ -607,12 +607,20 @@ How this file is kept is in the [README](README.md).
   and says the own name is the name there, changed with Edit. Add item,
   Edit and the variant dialogs say under a name the language it is typed
   in; while none is set, the table has no such column and nothing says
-  a language.**
+  a language.** While none is set, each row's own name is marked as the
+  own one in its row, and a line above the table, read as its
+  description, says the own name counts as no language's name yet and
+  where the language is chosen: a link there, landing on Item names, for
+  whoever may change the organization's settings, and who can for anyone
+  else.
   [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../client/src/products/product-detail-page.test.tsx) "holds the own names first, in the column of the language items are named in, never Missing" ·
   [test](../../client/src/products/translations-dialog.test.tsx) "asks for no name in the language items are named in, saying the own name is its name there" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "says under each name, in Edit and the variant dialogs, the language items are named in" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "says no language under the name while none is set" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "names the own name in the item’s row, under a translated heading" ·
+  [test](../../client/e2e/product-name-language.spec.ts) "an item’s page, the items’ language not set, for whoever may choose it: each own name labelled, and the table’s description says why, its link landing on Item names, the heading focused" ·
+  [test](../../client/e2e/product-name-language.spec.ts) "an item’s page, the items’ language not set, for a Viewer: the line says who can choose it, with no link" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "says under the name and the variation the language items are named in, once it is set" ·
   MC-1407
 
