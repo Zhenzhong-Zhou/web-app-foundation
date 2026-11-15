@@ -243,7 +243,9 @@ const NOT_MESSAGES: { words: Record<Locale, string[]>; why: string }[] = [
     why: "A word Words you’ll meet explains, the glossary's name for an idea that the screens use inside sentences, or name by each of its kind.",
   },
   {
-    words: { en: ['New'], 'fr-CA': ['Nouveau'], 'zh-Hans': ['新加入'] },
+    // English and French pass as the mark on a row new to the list that
+    // choosing the items' language shows, New and Nouveau there too.
+    words: { en: [], 'fr-CA': [], 'zh-Hans': ['新加入'] },
     why: "The first word of People's chip, New · joined and the day: the glossary's New (on People).",
   },
 ];

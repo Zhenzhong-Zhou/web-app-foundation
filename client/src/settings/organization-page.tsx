@@ -36,11 +36,9 @@ import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
 import { rem } from '../theme/rem';
 import { BrandingForm } from './branding-form';
 import { ClosingSections } from './closing-sections';
-import {
-  OrganizationDocumentLanguages,
-  RequiredNameLanguages,
-} from './document-languages-form';
+import { OrganizationDocumentLanguages } from './document-languages-form';
 import { IdleSignOutForm } from './idle-sign-out-form';
+import { ItemNamesSection } from './item-names-section';
 import { NumberingSection } from './numbering-section';
 import { TimeZoneForm } from './time-zone-form';
 
@@ -65,8 +63,8 @@ const TAB_LABEL = defineMessages({
 /**
  * The organization's settings (ADR-061), in tabs: Profile (the name and
  * what every invoice prints as the seller, ADR-046), Money (the base
- * currency, ADR-048, and the default sale price list), Documents (their
- * languages, ADR-054, and numbering, ADR-073) and Stock (licences at release, ADR-050). Branding
+ * currency, ADR-048, and the default sale price list), Documents (item
+ * names and their languages, ADR-054, and numbering, ADR-073) and Stock (licences at release, ADR-050). Branding
  * joins them with ADR-060.
  *
  * Each tab has its address, `?tab=money`, so a link can open the one it
@@ -233,6 +231,17 @@ export function OrganizationPage() {
           {panel(
             'documents',
             <>
+              <ItemNamesSection
+                key={[
+                  'names',
+                  organization.productNameLanguage,
+                  ...organization.requiredNameLanguages,
+                ].join()}
+                language={organization.productNameLanguage}
+                required={organization.requiredNameLanguages}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
               <OrganizationDocumentLanguages
                 key={[
                   organization.documentLanguage,
@@ -240,12 +249,6 @@ export function OrganizationPage() {
                 ].join()}
                 documentLanguage={organization.documentLanguage}
                 documentSecondLanguage={organization.documentSecondLanguage}
-                readOnly={!canUpdate}
-                onSaved={reload}
-              />
-              <RequiredNameLanguages
-                key={`names-${organization.requiredNameLanguages.join()}`}
-                value={organization.requiredNameLanguages}
                 readOnly={!canUpdate}
                 onSaved={reload}
               />

@@ -627,8 +627,9 @@ folder by folder; these check what is already in place.
   shows all three as saved. Clear the Chinese name and save: it is gone.
   A description typed with no name in that language is refused before
   saving, saying which language.
-- **MC-1408** With 简体中文 checked under Item names required on
-  invoices, on the Organization page, and a customer set to Chinese,
+- **MC-1408** With 简体中文 ticked under Item names, Names documents
+  require, on the Organization page's Documents tab, in an organization
+  whose items are not named in 中文, and a customer set to Chinese,
   issuing an invoice for an item with no Chinese name is refused naming
   the item and its code; once it has one, a variant with a name of its
   own and none in Chinese is refused naming the variant by its code and
@@ -647,8 +648,11 @@ folder by folder; these check what is already in place.
   Edit names' fields 名称（英文）, as the exports' columns say, never 英语
   or 法语. Once added, the invoice issues, and its printed lines show the
   Chinese names. In an organization registered with the app in 中文, so
-  its items are named in 中文, the same invoice issues with no Chinese
-  name kept, its lines printing each item's own name.
+  its items are named in 中文, the Documents tab shows Items are named in
+  简体中文 with no Not set to choose, and 简体中文 under Names documents
+  require ticked and greyed, Met by each item’s own name in green; the
+  same invoice issues with no Chinese name kept, its lines printing each
+  item's own name.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
   blank box. The first offers the
@@ -681,10 +685,11 @@ folder by folder; these check what is already in place.
   has no "default" option and Save stays off without one; the second
   behaves as on a partner. Set Français then English and save; ship to a
   partner with no languages of its own: the shipment carries fr-CA and en.
-  A partner with its own pair is unaffected. Item names required on
-  invoices: checking and unchecking back leaves Save off; checking 简体中文
-  and saving survives a reload. A role without organizations.update sees
-  both sections but cannot save them.
+  A partner with its own pair is unaffected. Item names, above it:
+  ticking and unticking back a language under Names documents require
+  leaves Save item names off; ticking 简体中文 and saving survives a
+  reload. A role without organizations.update sees both sections but
+  cannot save them.
 - **MC-1412** Documents follow the customer, not the reader. With the
   screens in English, a partner set to Français then English: ship, open
   the shipment's Packing slip — every heading in the PDF reads "French /
@@ -893,6 +898,50 @@ folder by folder; these check what is already in place.
   sideways; from about 529 px wide its words are back under them. The
   deployed app, or `npm run build` then `npm run preview` in client/,
   offers no en-XA, and the build stops if a change would ship it.
+- **MC-1425** *(ADR-054's amendment for #531, R3, R4 and R8)* Choosing
+  the language items are named in. As the demo Owner, Settings →
+  Organization → Documents: Item names comes first, above Document
+  languages. Items are named in reads Not set; ticking English under
+  Names documents require brings a blue line, never an amber one, saying
+  to choose the language; Save item names stays off until something
+  changes. Choose English and Save, through each of the confirmation's
+  cases:
+  - **Loading:** with the network slowed (the browser's Slow 3G), Name
+    items in English? opens with placeholders, its Name items in English
+    greyed; never Confirm.
+  - **Failed:** offline, it says it could not read, with Try again, which
+    reads it once back online.
+  - **Rows to choose:** it says the own names of so many items will count
+    as English names and that nothing is translated, then how many
+    copies go, and lists Calm 90ct beside Calm, 90 capsules, with 0 of 1
+    chosen under it. Press Name items in English with the row left:
+    nothing is saved, the row says Choose one to keep, a line above names
+    it as a link, and focus is on its first choice. The Own name heading
+    chooses it on every row shown; All and Only those left show the rows
+    and those still to choose, each with its count.
+  - **A list changed meanwhile:** in a second tab, change Calm 90ct's
+    English name in Edit names; back in the first, press Name items in
+    English: the refusal, focused, says nothing was saved, and the row,
+    read again, is marked New with no choice.
+  - **Saved:** choose its English name and press the button: "Items are
+    named in English. 1 copy removed and 1 item renamed.", each part only
+    when it is not zero. Not set is offered no more; English shows ticked,
+    greyed, Met by each item’s own name. History on the organization
+    lists Items named in, from nothing to English, with the copies
+    removed and the items renamed; Calm 90ct's own History, its new name.
+  - **Nothing to choose:** register a new organization, add an item, and
+    choose 简体中文: the dialog says its own name will count as Chinese
+    names, no longer as English names, lists no rows, and saves at once.
+  - **More than 500:** in `foundation_perf_large`'s largest organization,
+    choosing Français is refused under Items are named in, saying how
+    many differ and that at most 500 can be chosen at once, focus on the
+    field and no dialog.
+
+  On a phone (390 px) the dialog fills the screen, its two buttons pinned
+  at its foot while the list scrolls, each row a card under Every own
+  name and Every English name. In Français the title reads Nommer les
+  articles en anglais?, in 中文 以英文命名物品？. A Viewer sees the
+  section greyed, with no Save.
 - **MC-1405** *Skipped for now (6 October 2026), and still owed (13
   November 2026): no fluent reader yet. In its place, as ADR-054's
   November 2026 amendment decided, ChatGPT's review rounds went in, round
@@ -6165,3 +6214,7 @@ first.
   language the items are named in is met by their own names, on
   invoices and the other documents, and the items export's columns for
   it hold them: MC-1408 and MC-1558 extended.
+- 2026-11-14: ADR-054's amendment for #531, R3, R4 and R8: the Documents
+  tab's Item names section, in place of Item names required on invoices,
+  chooses the language items are named in through its confirmation:
+  MC-1425 added; MC-1408 and MC-1411 rewritten for it.

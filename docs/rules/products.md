@@ -464,7 +464,8 @@ How this file is kept is in the [README](README.md).
   [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "says what choosing a language will do: the own names it counts, the copies, and each name that differs" ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "refuses a Viewer the preview and the choice" ·
-  [test](../../server/test/product-name-language.e2e-spec.ts) "never counts or touches another organization’s names"
+  [test](../../server/test/product-name-language.e2e-spec.ts) "never counts or touches another organization’s names" ·
+  MC-1425
 - **Each name that differs is chosen, the own one or the kept one: the
   own removes the kept, and the kept renames the item or the variant, as
   Edit does, its description with it where it has one, and History says
@@ -483,7 +484,8 @@ How this file is kept is in the [README](README.md).
   [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "refuses while a row has no choice, saving nothing" ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "refuses with product_names_changed when the list changed since it was shown, saving nothing" ·
-  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses more than 500 names to choose, naming how many"
+  [test](../../server/test/product-name-language.e2e-spec.ts) "refuses more than 500 names to choose, naming how many" ·
+  MC-1425
 - **No name is kept in the language the items are named in: saving one
   in it, an item's or a variant's, is refused, saying to change the own
   name with Edit. A names save made while that language is being chosen
