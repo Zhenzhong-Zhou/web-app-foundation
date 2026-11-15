@@ -295,6 +295,15 @@ a second organization.
   opens Add an item. In Français the title is Articles, the first
   paragraph says UGS ou SKU and Supplies is Fournitures; in 中文 the title
   is 物品, the first paragraph says SKU and 耗材 is 账上的低值易耗品.
+  Variants, images and names says, with the items named in a language
+  (MC-1425), that its column comes first in Names in other languages,
+  each row's own name in it marked Item's own name, never Missing, with
+  no field for it in Edit names, and that a screen or a picker names an
+  item in the language its reader uses; before a language is set, the own
+  name shows in every language with none of its own. Add an item's third
+  step says the name's field names the language, Words you'll meet has
+  Own name, and its link to Organization opens Documents. In Français the
+  column says Propre nom de l'article; in 中文, 物品本身的名称.
   Home's Getting started, Inventory's and Orders' lot steps, Licences' and
   Production's guides say item, article and 物品, never product, produit
   or 产品.
@@ -3605,6 +3614,24 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   at least 128 pixels on each side. Use a wide image as the main logo. In
   中文, 品牌, with 标志, 方形标志 and 保存品牌设置 in bold, and the line
   方形标志必须接近正方形，长宽比不超过 5 : 4，且每边至少需要 128 像素。较宽的图片请用作主标志。
+- **MC-3611** *(ADR-054's amendment for #531, R8)* Help's Documents. On
+  Settings → Organization → Documents, press Help: the Organization guide
+  has Documents between Money and Numbering, in five steps: Item names
+  with Items are named in (Not set until chosen, then changed but never
+  cleared), Names documents require (the items' language ticked and Met
+  by each item's own name, a line when a language is ticked and none is
+  chosen), Save item names, Document languages with Documents print in,
+  Then also in and Save document languages, and Logo on documents with
+  Save logo on documents and the line to add one on Branding; then a
+  paragraph on the confirmation: the copies removed, a name that differs
+  chosen on its row or by a column's heading, Only those left, and that
+  it cannot be undone. Each bold word is on the screen under that name.
+  Under If something is refused, three lines: Choose one to keep, a name
+  that changed while the confirmation was open, and at most 500 names at
+  once, with Edit names. The foot's Items link opens Items' Variants,
+  images and names. In Français the section is Documents, with Noms
+  d'articles, Les articles sont nommés en and Non défini; in 中文, 单据,
+  with 物品名称, 物品名称的语言 and 未设置.
 
 ## 37. The emails (ADR-083)
 
@@ -6245,3 +6272,8 @@ first.
   asks for no name in it; Add item, Edit and the variant dialogs say the
   language a name is typed in; and #306's 12: MC-1407 rewritten, MC-214
   reworded.
+- 2026-11-14: ADR-054's amendment for #531, R8 and #306's 37: the Items
+  guide's names paragraph says the own name is the name in the language
+  items are named in, and that screens and pickers name an item in the
+  reader's language; the Organization guide gains Documents: MC-216
+  extended, MC-3611 added.
