@@ -408,6 +408,45 @@ describe('The language items are named in (e2e)', () => {
     );
   });
 
+  /**
+   * A PUT is a request that may be sent again, by a second press or after
+   * an answer lost on the way: once made, the same choice does nothing and
+   * says so, never refused as a list changed.
+   */
+  it('answers the same choice sent again with nothing done, recording nothing', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await asOrganizationFromBefore(app, alpha.organizationId);
+    const { agent } = alpha;
+    const focus = await item(agent, 'Focus', { sku: 'FOC' });
+    await keepNames(agent, focus.productId, [
+      { locale: 'zh-Hans', name: '专注' },
+    ]).expect(204);
+    const choices = choicesOf(
+      (await preview(agent, 'zh-Hans')).differing,
+      'kept',
+    );
+    await choose(agent, 'zh-Hans', choices).expect(200);
+    const history = () =>
+      db
+        .select({ id: auditLog.id })
+        .from(auditLog)
+        .where(eq(auditLog.organizationId, alpha.organizationId));
+    const recorded = await history();
+
+    const again = await choose(agent, 'zh-Hans', choices).expect(200);
+    expect(body(again)).toEqual({
+      copiesRemoved: 0,
+      namesRemoved: 0,
+      renamed: 0,
+    });
+    expect(await history()).toHaveLength(recorded.length);
+    const [named] = await db
+      .select({ name: products.name })
+      .from(products)
+      .where(eq(products.id, focus.productId));
+    expect(named.name).toBe('专注');
+  });
+
   it('refuses while a row has no choice, saving nothing', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { agent } = alpha;

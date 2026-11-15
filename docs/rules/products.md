@@ -472,10 +472,13 @@ How this file is kept is in the [README](README.md).
   so. The copies go too, and the language is set; once set, it is never
   set back to not set, and choosing another later is the same choice.**
   History records the language from and to, and the copies removed, the
-  names removed and the items renamed.
+  names removed and the items renamed. The same choice sent again once it
+  is made, by a second press or after an answer lost on the way, does
+  nothing and records nothing.
   [ADR-054, amended](../adr/0054-languages.md#decision--choosing-the-language-the-same-names-removed-different-ones-chosen) ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "removes the copies, sets the language and records it with the counts" ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "keeps the name chosen on each row: the own one removes the kept, the kept one renames the item as Edit does, History saying so" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "answers the same choice sent again with nothing done, recording nothing" ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "changes from one language to another, the own names then counting as the new one’s"
 - **The choice is refused, nothing saved, while a row has no choice, when
   the names changed since the list was shown, or when more than 500 names

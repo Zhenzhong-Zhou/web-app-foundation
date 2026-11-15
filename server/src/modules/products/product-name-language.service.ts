@@ -5,7 +5,7 @@ import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
 import { namePinyin } from '../../common/pinyin';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
-import { recordContext } from '../../core/audit/audit-context';
+import { recordContext, recordUnchanged } from '../../core/audit/audit-context';
 import type { RequestContext } from '../../core/auth/request-context';
 import type { Transaction } from '../../database/database.module';
 import {
@@ -90,6 +90,13 @@ export class ProductNameLanguageService {
         organizationId,
         'no key update',
       );
+      // The same choice sent again, by a second press or after an answer
+      // lost on the way: made already, so nothing to do, and nothing to
+      // record. A PUT may be repeated.
+      if (before === language) {
+        recordUnchanged();
+        return { copiesRemoved: 0, namesRemoved: 0, renamed: 0 };
+      }
       const names = await namesToChoose(tx, organizationId, language);
 
       if (names.total > MAX_CHANGED_AT_ONCE) {
