@@ -157,6 +157,60 @@ describe('Registration (e2e)', () => {
     });
   });
 
+  /**
+   * A new organization's items are named in the request's language, the
+   * one its refusals are written in (ADR-054, amended for #531); an
+   * organization invitation's, in organization-invitations.e2e-spec.
+   */
+  describe('the language its items are named in', () => {
+    async function languages() {
+      return db
+        .select({
+          name: organizations.name,
+          language: organizations.productNameLanguage,
+        })
+        .from(organizations)
+        .orderBy(organizations.name);
+    }
+
+    it('is the sign-up request’s, English for one the app does not speak', async () => {
+      await authedAgent(app)
+        .post('/v1/auth/register')
+        .set('Accept-Language', 'zh-CN,zh;q=0.9,en;q=0.8')
+        .send(registration)
+        .expect(201);
+      await authedAgent(app)
+        .post('/v1/auth/register')
+        .set('Accept-Language', 'de-DE,de;q=0.9')
+        .send({
+          ...registration,
+          email: 'other@example.com',
+          organizationName: 'Other Co',
+        })
+        .expect(201);
+
+      expect(await languages()).toEqual([
+        { name: 'New Co', language: 'zh-Hans' },
+        { name: 'Other Co', language: 'en' },
+      ]);
+    });
+
+    it('is the request’s for one started from Home', async () => {
+      process.env.REGISTRATION = 'open';
+      const tom = await noOrganization();
+
+      await tom.agent
+        .post('/v1/organization')
+        .set('Accept-Language', 'fr-CA,fr;q=0.9')
+        .send({ name: 'Reid Supply Co.' })
+        .expect(201);
+
+      expect(await languages()).toEqual([
+        { name: 'Reid Supply Co.', language: 'fr-CA' },
+      ]);
+    });
+  });
+
   describe('Start an organization', () => {
     it('makes one for an account with none, its Owner, in the browser’s zone', async () => {
       process.env.REGISTRATION = 'open';

@@ -620,6 +620,13 @@ export const AUDIT_FIELDS = {
     }),
     read: 'language',
   },
+  productNameLanguage: {
+    name: t({
+      id: 'audit.field.productNameLanguage',
+      defaultMessage: 'Items named in',
+    }),
+    read: 'language',
+  },
   timeZone: {
     name: t({ id: 'audit.field.timeZone', defaultMessage: 'Time zone' }),
     read: 'timeZone',

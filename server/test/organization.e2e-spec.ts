@@ -5,7 +5,12 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { addresses, auditLog, files } from '../src/database/schema';
+import {
+  addresses,
+  auditLog,
+  files,
+  organizations,
+} from '../src/database/schema';
 import {
   addMember,
   body,
@@ -25,6 +30,7 @@ interface OrganizationResponse {
   licenceNotInForcePolicy: string;
   licenceExpiredPolicy: string;
   licenceRequired: boolean;
+  productNameLanguage: string | null;
   squareLogoFileId: string | null;
   address: {
     line1: string;
@@ -739,6 +745,47 @@ describe('Organization (e2e)', () => {
         .send({ licenceExpiredPolicy: 'allow' })
         .expect(403);
     }
+  });
+
+  /**
+   * The language the items are named in (ADR-054, amended for #531),
+   * which a new organization takes from its request (registration.e2e-spec)
+   * and its own route chooses; never PATCH.
+   */
+  describe('the language its items are named in', () => {
+    it('reads as not set for an organization from before', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      // As migration 0081 leaves every organization it finds.
+      await db
+        .update(organizations)
+        .set({ productNameLanguage: null })
+        .where(eq(organizations.id, org.organizationId));
+
+      expect((await current(org.agent)).productNameLanguage).toBeNull();
+    });
+
+    it('is not taken by PATCH', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ productNameLanguage: 'zh-Hans' })
+        .expect(400);
+
+      expect((await current(org.agent)).productNameLanguage).toBe('en');
+    });
+
+    it('reads only the signed-in organization’s', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      await db
+        .update(organizations)
+        .set({ productNameLanguage: 'zh-Hans' })
+        .where(eq(organizations.id, beta.organizationId));
+
+      expect((await current(alpha.agent)).productNameLanguage).toBe('en');
+      expect((await current(beta.agent)).productNameLanguage).toBe('zh-Hans');
+    });
   });
 
   it('only ever shows the signed-in organization', async () => {

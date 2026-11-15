@@ -182,6 +182,7 @@
   "audit.field.postalCode": "邮政编码",
   "audit.field.prefix": "前缀",
   "audit.field.productId": "物品",
+  "audit.field.productNameLanguage": "物品名称的语言",
   "audit.field.purchaseOrder": "采购订单",
   "audit.field.quantity": "数量",
   "audit.field.quantityOrdered": "订购数量",

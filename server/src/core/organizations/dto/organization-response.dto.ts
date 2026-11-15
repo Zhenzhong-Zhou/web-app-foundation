@@ -59,6 +59,11 @@ export class OrganizationProfile {
   documentLanguage!: Locale;
   documentSecondLanguage!: Locale | null;
   requiredNameLanguages!: Locale[];
+  /**
+   * The language the items are named in, in which an item's own name is
+   * its name (ADR-054, amended for #531); null until chosen.
+   */
+  productNameLanguage!: Locale | null;
   /** Branding (ADR-060). */
   logoFileId!: string | null;
   squareLogoFileId!: string | null;

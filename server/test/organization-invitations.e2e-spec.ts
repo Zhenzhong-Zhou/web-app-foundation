@@ -495,6 +495,38 @@ describe('Organization invitations (e2e)', () => {
     });
   });
 
+  // The request's language, as at registration (ADR-054, amended for #531).
+  describe('the language its items are named in', () => {
+    it('is the accepting request’s, with an account and without', async () => {
+      const chen = await invite();
+      const tom = await noOrganization('tom.reid@example.com');
+      const reid = await invite('tom.reid@example.com', 'Reid Supply Co.');
+
+      const fresh = body<Accepted>(
+        await acceptNew(chen.token)
+          .set('Accept-Language', 'zh-CN,zh;q=0.9')
+          .expect(200),
+      ).user;
+      const signedIn = body<Accepted>(
+        await tom.agent
+          .post('/v1/invitations/accept')
+          .set('Accept-Language', 'fr-CA')
+          .send({ token: reid.token, timeZone: 'America/Toronto' })
+          .expect(200),
+      ).user;
+
+      const languageOf = async (id: string) =>
+        (
+          await db
+            .select({ language: organizations.productNameLanguage })
+            .from(organizations)
+            .where(eq(organizations.id, id))
+        )[0]?.language;
+      expect(await languageOf(fresh.organizationId)).toBe('zh-Hans');
+      expect(await languageOf(signedIn.organizationId)).toBe('fr-CA');
+    });
+  });
+
   describe('what is kept', () => {
     it("starts the new organization's audit log empty, either way", async () => {
       const issued = await invite();

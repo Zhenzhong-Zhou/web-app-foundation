@@ -182,6 +182,7 @@
   "audit.field.postalCode": "Code postal",
   "audit.field.prefix": "Préfixe",
   "audit.field.productId": "Article",
+  "audit.field.productNameLanguage": "Articles nommés en",
   "audit.field.purchaseOrder": "Bons de commande",
   "audit.field.quantity": "Quantité",
   "audit.field.quantityOrdered": "Quantité commandée",

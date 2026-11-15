@@ -182,6 +182,7 @@
   "audit.field.postalCode": "Postal code",
   "audit.field.prefix": "Prefix",
   "audit.field.productId": "Item",
+  "audit.field.productNameLanguage": "Items named in",
   "audit.field.purchaseOrder": "Purchase orders",
   "audit.field.quantity": "Quantity",
   "audit.field.quantityOrdered": "Quantity ordered",

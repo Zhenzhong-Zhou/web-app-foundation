@@ -47,6 +47,7 @@ const SETTINGS_COLUMNS = {
   documentLanguage: organizations.documentLanguage,
   documentSecondLanguage: organizations.documentSecondLanguage,
   requiredNameLanguages: organizations.requiredNameLanguages,
+  productNameLanguage: organizations.productNameLanguage,
   logoFileId: organizations.logoFileId,
   squareLogoFileId: organizations.squareLogoFileId,
   accentColor: organizations.accentColor,

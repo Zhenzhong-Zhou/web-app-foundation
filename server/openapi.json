@@ -13472,6 +13472,18 @@
               ]
             }
           },
+          "productNameLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
           "logoFileId": {
             "type": [
               "string",
@@ -13559,6 +13571,7 @@
           "documentLanguage",
           "documentSecondLanguage",
           "requiredNameLanguages",
+          "productNameLanguage",
           "logoFileId",
           "squareLogoFileId",
           "accentColor",

@@ -1354,6 +1354,7 @@ export type OrganizationProfile = {
   documentLanguage: 'en' | 'fr-CA' | 'zh-Hans';
   documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
   requiredNameLanguages: Array<'en' | 'fr-CA' | 'zh-Hans'>;
+  productNameLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
   logoFileId: string | null;
   squareLogoFileId: string | null;
   accentColor: string | null;

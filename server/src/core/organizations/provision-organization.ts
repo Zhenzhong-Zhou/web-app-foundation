@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import type { Transaction } from '../../database/database.module';
 import {
   DEFAULT_NUMBERING,
@@ -39,8 +40,14 @@ export interface ProvisionedOrganization {
 export async function provisionOrganization(
   tx: Transaction,
   // The time zone when one is known (ADR-072); UTC, the column's default,
-  // otherwise.
-  input: { name: string; slug: string; timeZone?: string },
+  // otherwise. The items' language, for a new organization only: one the
+  // seed makes is not set, as one from before is (ADR-054, amended).
+  input: {
+    name: string;
+    slug: string;
+    timeZone?: string;
+    productNameLanguage?: Locale;
+  },
 ): Promise<ProvisionedOrganization> {
   const [organization] = await tx
     .insert(organizations)
