@@ -149,6 +149,16 @@ export class ProductImage {
   sizes!: ImageSizes;
 }
 
+/** A name documents will refuse to print without (ADR-054, amended). */
+export class MissingName {
+  /** The variant's id; null for the item's own name. */
+  variantId!: string | null;
+  /** The variant's code; null for the item. */
+  sku!: string | null;
+  /** The language a document requires it in. */
+  locale!: Locale;
+}
+
 export class ProductDetail extends Product {
   /**
    * Its name as the reader sees it, in their language where it has one
@@ -161,6 +171,13 @@ export class ProductDetail extends Product {
   variants!: Variant[];
   /** Its gallery, the cover first. */
   images!: ProductImage[];
+  /**
+   * The item's names and its named variants' that documents will refuse
+   * to print without, as issuing refuses (#551's 65). None is listed in the
+   * language its items are named in. By language, the item before its
+   * variants.
+   */
+  missingNames!: MissingName[];
 }
 
 /** POST /products: the product as created, with its first variant. */

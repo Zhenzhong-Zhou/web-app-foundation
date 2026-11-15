@@ -364,6 +364,64 @@ describe('Exports (e2e)', () => {
     );
   });
 
+  // In the language the items are named in, an item's own name is its
+  // name (ADR-054, amended for #531): a new organization's is English.
+  it('writes the own names in the columns of the language the items are named in, the variants’ too', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const created = body<{ product: { id: string } }>(
+      await alpha.agent
+        .post('/v1/products')
+        .send({
+          type: 'good',
+          name: 'Ashwagandha',
+          variant: { sku: 'ASH-60', name: '60ct' },
+        })
+        .expect(201),
+    ).product;
+    await alpha.agent
+      .post(`/v1/products/${created.id}/variants`)
+      .send({ sku: 'ASH-120' })
+      .expect(201);
+    await alpha.agent
+      .put(`/v1/products/${created.id}/translations`)
+      .send({ translations: [{ locale: 'zh-Hans', name: '南非醉茄' }] })
+      .expect(204);
+
+    const [header, ...rows] = linesOf(
+      (await alpha.agent.get('/v1/products/export').expect(200)).text,
+    ).map((line) => line.split(','));
+    const names = rows.map((row) =>
+      Object.fromEntries(
+        (
+          [
+            'exports.column.sku',
+            'exports.column.nameEnglish',
+            'exports.column.nameChinese',
+            'exports.column.variantEnglish',
+            'exports.column.variantChinese',
+          ] as const
+        ).map((id) => [id, row[header.indexOf(said('en', id))]]),
+      ),
+    );
+    expect(names).toEqual([
+      {
+        'exports.column.sku': 'ASH-60',
+        'exports.column.nameEnglish': 'Ashwagandha',
+        'exports.column.nameChinese': '南非醉茄',
+        'exports.column.variantEnglish': '60ct',
+        'exports.column.variantChinese': '',
+      },
+      // A variant with no name of its own has none in any language.
+      {
+        'exports.column.sku': 'ASH-120',
+        'exports.column.nameEnglish': 'Ashwagandha',
+        'exports.column.nameChinese': '南非醉茄',
+        'exports.column.variantEnglish': '',
+        'exports.column.variantChinese': '',
+      },
+    ]);
+  });
+
   // Past 50,000 rows the refusal names what narrows this list, which has
   // no dates (#306's 38).
   it('refuses past 50,000 rows, naming what narrows the list', async () => {

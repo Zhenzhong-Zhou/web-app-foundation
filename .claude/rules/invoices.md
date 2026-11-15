@@ -36,5 +36,9 @@ commit that changes one of those rules updates it (ADR-087).
 - **Each PDF is a `Printable`** sent by `documents.send` beside its read,
   under the same permission; the export's come through
   `invoice-documents-export.ts` (ADR-071; [conventions.md, A new printed document](../../docs/conventions.md#a-new-printed-document)).
+- **What documents refuse for a missing name is `missingNames`** over
+  `nameRulesOf` (`line-names.ts`), for every document and the item's
+  detail alike; the language the items are named in needs no kept name
+  (#551's 65; ADR-054, amended for #531).
 - **A refusal the screen offers a way out of** carries its code, and a
   numbering one its details, through `withCode` ([conventions.md, Error codes](../../docs/conventions.md#error-codes)).

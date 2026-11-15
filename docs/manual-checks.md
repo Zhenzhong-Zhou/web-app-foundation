@@ -646,7 +646,9 @@ folder by folder; these check what is already in place.
   English checked too and the app in 中文, the line says 物品的英文名称 and
   Edit names' fields 名称（英文）, as the exports' columns say, never 英语
   or 法语. Once added, the invoice issues, and its printed lines show the
-  Chinese names.
+  Chinese names. In an organization registered with the app in 中文, so
+  its items are named in 中文, the same invoice issues with no Chinese
+  name kept, its lines printing each item's own name.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
   blank box. The first offers the
@@ -1320,7 +1322,8 @@ Paper is checked first because it must not change at all.
   Items with `focus` typed and Discontinued pressed exports only what
   the list shows, each item's type in the screen's language, its
   category's path, and its names in English, French and Chinese where it
-  has them; and so does Partners with `mill` and Retired; the Audit
+  has them, the columns of the language its items are named in holding
+  their own names; and so does Partners with `mill` and Retired; the Audit
   log's entry names the filter in words, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
@@ -6158,3 +6161,7 @@ first.
   says a DTO rule's refusal names no field (#148). Finding 21: import's
   last line, and MC-1405 with it, names the rules check, and MC-1405
   says a failed calibration stops the decide step's `--meaning` runs.
+- 2026-11-14: ADR-054's amendment for #531, R5 and R7: a required
+  language the items are named in is met by their own names, on
+  invoices and the other documents, and the items export's columns for
+  it hold them: MC-1408 and MC-1558 extended.

@@ -31,6 +31,7 @@ const CREATED: ProductDetail = {
   images: [],
   translations: [],
   variants: [],
+  missingNames: [],
 };
 
 /** Where the router is, so a test can see the form give way to the item. */

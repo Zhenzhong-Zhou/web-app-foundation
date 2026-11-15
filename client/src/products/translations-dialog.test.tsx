@@ -31,6 +31,7 @@ const PRODUCT: ProductDetail = {
       translations: [],
     },
   ],
+  missingNames: [],
 };
 
 describe('TranslationsDialog', () => {

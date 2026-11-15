@@ -9,7 +9,7 @@ import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { EXPORT_LIMIT } from '../../common/export';
-import type { Locale } from '../../common/locales';
+import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { searchTerms } from '../../common/search';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -32,6 +32,11 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { languageName, t } from '../../i18n/translate';
+import {
+  missingNames,
+  type NameRules,
+  nameRulesOf,
+} from '../invoices/line-names';
 import { namesIn, productNameOrder } from '../stock/item-name';
 import {
   itemStock,
@@ -49,6 +54,7 @@ import { CreateVariantDto } from './dto/create-variant.dto';
 import type { ExportProductsDto } from './dto/export-products.dto';
 import type { ListProductsDto } from './dto/list-products.dto';
 import type {
+  MissingName,
   ProductChange,
   ProductDetail,
   ProductPage,
@@ -118,6 +124,39 @@ async function refuseItemsLanguage(
       ),
     );
   }
+}
+
+/**
+ * The names documents will refuse to print without, for the item's detail
+ * (#551's 65): the item's and each named variant's, by the rule issuing
+ * refuses with, in every language a document may print in.
+ */
+function missingNamesOf(
+  translations: { locale: Locale; name: string }[],
+  variants: Variant[],
+  rules: NameRules,
+): MissingName[] {
+  const kept = (names: { locale: Locale; name: string }[]) =>
+    Object.fromEntries(names.map(({ locale, name }) => [locale, name]));
+
+  return missingNames(
+    [
+      { variantId: null, sku: null, kept: kept(translations) },
+      ...variants
+        .filter((variant) => variant.name !== null)
+        .map((variant) => ({
+          variantId: variant.id,
+          sku: variant.sku,
+          kept: kept(variant.translations ?? []),
+        })),
+    ],
+    SUPPORTED_LOCALES,
+    rules,
+  ).map(({ name, locale }) => ({
+    variantId: name.variantId,
+    sku: name.sku,
+    locale,
+  }));
 }
 
 /**
@@ -396,8 +435,10 @@ export class ProductsService {
    * The catalogue as a spreadsheet (ADR-057): a row per variant, with its
    * product, of the items the list shows (ADR-092), by its own filters and
    * in its order, each with every variant, by code. Names are the base
-   * ones, with the product's and the variant's in each language they have.
-   * One query, at most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   * ones, with the product's and the variant's in each language they have;
+   * in the language the items are named in, that is the own name (ADR-054,
+   * amended for #531). One query, at most EXPORT_LIMIT + 1 rows, for
+   * withinLimit to judge.
    */
   exportRows(
     query: ExportProductsDto,
@@ -457,6 +498,15 @@ export class ProductsService {
         limit ${EXPORT_LIMIT + 1}
       `);
 
+      const { productNameLanguage } = await nameRulesOf(tx, organizationId);
+      const withOwn = (
+        names: Record<string, string> | null,
+        own: string | null,
+      ) =>
+        productNameLanguage && own !== null
+          ? { ...names, [productNameLanguage]: own }
+          : (names ?? {});
+
       return rows.map((row) => ({
         id: row.id,
         sku: row.sku,
@@ -467,8 +517,8 @@ export class ProductsService {
         unitOfMeasure: row.unit_of_measure,
         tracksLots: row.tracks_lots,
         discontinued: row.discontinued,
-        productNames: row.product_names ?? {},
-        variantNames: row.variant_names ?? {},
+        productNames: withOwn(row.product_names, row.product_name),
+        variantNames: withOwn(row.variant_names, row.variant_name),
       }));
     });
   }
@@ -489,9 +539,9 @@ export class ProductsService {
         t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
-    // Its variants with the names shown, and its gallery, the cover first
-    // (ADR-062).
-    const { variants, images } = await this.tenantDb.transaction(
+    // Its variants with the names shown, its gallery, the cover first
+    // (ADR-062), and how documents count its names.
+    const { variants, images, rules } = await this.tenantDb.transaction(
       async (tx, organizationId) => {
         const shown = namesIn(locale, organizationId);
 
@@ -518,6 +568,7 @@ export class ProductsService {
             )
             .orderBy(asc(productVariants.id)),
           images: await imagesOf(tx, organizationId, productId),
+          rules: await nameRulesOf(tx, organizationId),
         };
       },
     );
@@ -539,6 +590,14 @@ export class ProductsService {
       ),
     ]);
 
+    const detailVariants = variants.map(({ variant, variantName }) => ({
+      ...variantOf(variant),
+      displayName: variantName,
+      translations: variantNames
+        .filter((row) => row.variantId === variant.id)
+        .map(({ locale, name }) => ({ locale, name })),
+    }));
+
     return {
       id: product.id,
       type: product.type,
@@ -554,13 +613,8 @@ export class ProductsService {
         name,
         description,
       })),
-      variants: variants.map(({ variant, variantName }) => ({
-        ...variantOf(variant),
-        displayName: variantName,
-        translations: variantNames
-          .filter((row) => row.variantId === variant.id)
-          .map(({ locale, name }) => ({ locale, name })),
-      })),
+      variants: detailVariants,
+      missingNames: missingNamesOf(translations, detailVariants, rules),
     };
   }
 

@@ -428,6 +428,7 @@ export {
   type Member,
   type MemberAccess,
   type MemberRole,
+  type MissingName,
   type Movement,
   type MovementLotDto,
   type MovementPage,

@@ -1180,12 +1180,19 @@ export type ProductImage = {
   sizes: ImageSizes;
 };
 
+export type MissingName = {
+  variantId: string | null;
+  sku: string | null;
+  locale: 'en' | 'fr-CA' | 'zh-Hans';
+};
+
 export type ProductDetail = {
   displayName: string;
   categoryId: string | null;
   translations: Array<ProductTranslation>;
   variants: Array<Variant>;
   images: Array<ProductImage>;
+  missingNames: Array<MissingName>;
   id: string;
   type: string;
   name: string;

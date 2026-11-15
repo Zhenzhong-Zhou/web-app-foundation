@@ -556,20 +556,27 @@ How this file is kept is in the [README](README.md).
   MC-3801
 - **Where the organization requires product names in a language, a
   document that prints in it is refused until every item on it, and each
-  of its variants with a name of its own, has a name in that language.
-  The refusal says whether the item's name or the variant's is missing,
-  the item's first, the variant by its code and its own name.** The
+  of its variants with a name of its own, has a name in that language;
+  in the language the items are named in, their own names meet it. The
+  refusal says whether the item's name or the variant's is missing, the
+  item's first, the variant by its code and its own name.** The
   organization chooses which languages, on its page. The refusal carries
   the code `item_name_missing` with the item's id, the item's own for a
   variant's name too, for a way to the item's page, where its names are.
+  The item's detail lists each name missing by the same rule, language
+  by language, the item's before its variants'.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [ADR-054, amended](../adr/0054-languages.md#amendment-november-2026--what-documents-will-refuse-shown-before-they-do-adr-092) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-way-back-and-the-way-out) ·
   [test](../../server/test/languages.e2e-spec.ts) "requires the languages the organization names, as a set of supported tags" ·
   [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
   [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing" ·
   [test](../../server/test/languages.e2e-spec.ts) "carries item_name_missing and the item’s id, for the item’s name and a variant’s alike" ·
+  [test](../../server/test/languages.e2e-spec.ts) "issues in a required language the items are named in by their own names, only another required one refusing" ·
+  [test](../../server/test/languages.e2e-spec.ts) "lists on the item’s detail each name documents will refuse, none in the language its items are named in" ·
   [test](../../server/test/documents.e2e-spec.ts) "names only its own lines, so one not returned refuses nothing" ·
+  [test](../../server/test/documents.e2e-spec.ts) "prints the pro forma and the RMA in a required language the items are named in, by their own names" ·
   MC-1408
 - **The item's page shows its names in other languages as one table: a
   row for the item and one for each variation with a name of its own, a
@@ -726,15 +733,18 @@ How this file is kept is in the [README](README.md).
   top, unit, whether it tracks lots, whether it or its product is
   discontinued, then the product's and the variant's names in English,
   French and Chinese where it has them. Names are the base ones, the
-  headers in the reader's language. Past 50,000 rows it is refused,
-  saying to choose a type or a category, or search. History records each
-  export with its type, category and Discontinued, in words, never what
-  was typed.
+  headers in the reader's language; the columns of the language the
+  items are named in hold the own names, the variants' too. Past 50,000
+  rows it is refused, saying to choose a type or a category, or search.
+  History records each export with its type, category and Discontinued,
+  in words, never what was typed.
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
   [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the catalogue, a row per variant" ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the type and the category in the reader’s words, and every language’s names" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the own names in the columns of the language the items are named in, the variants’ too" ·
   [test](../../server/test/exports.e2e-spec.ts) "refuses past 50,000 rows, naming what narrows the list" ·
   [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
   MC-1558

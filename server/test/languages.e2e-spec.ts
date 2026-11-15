@@ -962,6 +962,128 @@ describe('Languages (e2e)', () => {
       expect(variation.details).toEqual({ productId: capsules });
     });
 
+    it('issues in a required language the items are named in by their own names, only another required one refusing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      // Named in Chinese, which the organization requires with English
+      // (ADR-054, amended for #531).
+      await alpha.agent
+        .put('/v1/organization/product-name-language')
+        .send({ language: 'zh-Hans', choices: [] })
+        .expect(200);
+      await alpha.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['zh-Hans', 'en'] })
+        .expect(204);
+
+      const draft = await draftInvoice(alpha);
+      await alpha.agent
+        .patch(`/v1/partners/${draft.partnerId}`)
+        .send({ documentLanguage: 'zh-Hans', documentSecondLanguage: 'en' })
+        .expect(204);
+      const issue = () =>
+        alpha.agent
+          .post(`/v1/invoices/${draft.invoiceId}/issue`)
+          .send({ invoiceDate: TODAY });
+
+      // The capsules' variation with a name of its own, kept in English
+      // alone.
+      const productId = await productOf('FOCUS-60CT');
+      const [capsules] = await db
+        .select({ id: productVariants.id })
+        .from(productVariants)
+        .where(eq(productVariants.sku, 'FOCUS-60CT'));
+      await alpha.agent
+        .patch(`/v1/products/${productId}/variants/${capsules.id}`)
+        .send({ name: '60ct' })
+        .expect(204);
+      await alpha.agent
+        .put(`/v1/products/${productId}/variants/${capsules.id}/translations`)
+        .send({ translations: [{ locale: 'en', name: '60 capsules' }] })
+        .expect(204);
+
+      // No Chinese name is kept, and only the English ones are missing.
+      expect(body<{ message: string }>(await issue().expect(409)).message).toBe(
+        'FOCUS-60CT (FOCUS-60CT) has no English name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+      );
+
+      for (const [sku, name] of [
+        ['FOCUS-60CT', 'Focus capsules'],
+        ['SCOOP', 'Measuring scoop'],
+      ]) {
+        await alpha.agent
+          .put(`/v1/products/${await productOf(sku)}/translations`)
+          .send({ translations: [{ locale: 'en', name }] })
+          .expect(204);
+      }
+      await issue().expect(200);
+
+      expect(await lineNames(draft.invoiceId)).toEqual([
+        {
+          sku: 'FOCUS-60CT',
+          first: 'FOCUS-60CT (60ct)',
+          second: 'Focus capsules (60 capsules)',
+        },
+        { sku: 'SCOOP', first: 'SCOOP', second: 'Measuring scoop' },
+      ]);
+    });
+
+    it('lists on the item’s detail each name documents will refuse, none in the language its items are named in', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['en', 'zh-Hans'] })
+        .expect(204);
+      const { product } = body<{
+        product: { id: string; variants: { id: string }[] };
+      }>(
+        await alpha.agent
+          .post('/v1/products')
+          .send({
+            type: 'good',
+            name: 'Focus',
+            variant: { sku: 'FOCUS-60CT', name: '60ct' },
+          })
+          .expect(201),
+      );
+      const named = product.variants[0].id;
+      // A variation with no name of its own prints the item's: no row.
+      await alpha.agent
+        .post(`/v1/products/${product.id}/variants`)
+        .send({ sku: 'FOCUS-30CT' })
+        .expect(201);
+      const missing = async () =>
+        body<{ missingNames: object[] }>(
+          await alpha.agent.get(`/v1/products/${product.id}`).expect(200),
+        ).missingNames;
+
+      // A new organization's items are named in English: only Chinese is
+      // missing, the item's before its variation's.
+      expect(await missing()).toEqual([
+        { variantId: null, sku: null, locale: 'zh-Hans' },
+        { variantId: named, sku: 'FOCUS-60CT', locale: 'zh-Hans' },
+      ]);
+
+      await alpha.agent
+        .put(`/v1/products/${product.id}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
+        .expect(204);
+      expect(await missing()).toEqual([
+        { variantId: named, sku: 'FOCUS-60CT', locale: 'zh-Hans' },
+      ]);
+
+      // As an organization from before, not set: English is missing too,
+      // by language.
+      await db
+        .update(organizations)
+        .set({ productNameLanguage: null })
+        .where(eq(organizations.id, alpha.organizationId));
+      expect(await missing()).toEqual([
+        { variantId: null, sku: null, locale: 'en' },
+        { variantId: named, sku: 'FOCUS-60CT', locale: 'en' },
+        { variantId: named, sku: 'FOCUS-60CT', locale: 'zh-Hans' },
+      ]);
+    });
+
     it('prints a name once when both languages agree, and a credit copies both', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const draft = await draftInvoice(alpha);

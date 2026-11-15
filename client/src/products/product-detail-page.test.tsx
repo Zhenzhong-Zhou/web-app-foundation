@@ -29,6 +29,7 @@ const PRODUCT: ProductDetail = {
     { locale: 'zh-Hans', name: '舒缓胶囊 90 粒', description: null },
   ],
   variants: [],
+  missingNames: [],
 };
 
 function variant(
