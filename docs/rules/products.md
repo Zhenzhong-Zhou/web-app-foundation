@@ -489,10 +489,12 @@ How this file is kept is in the [README](README.md).
 - **No name is kept in the language the items are named in: saving one
   in it, an item's or a variant's, is refused, saying to change the own
   name with Edit. A names save made while that language is being chosen
-  waits for the choice, and is then refused in it.**
+  waits for the choice, and is then refused in it.** An item added
+  meanwhile never waits for it.
   [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../server/test/product-name-language.e2e-spec.ts) "refuses a name kept in the items’ own language, for an item and a variant" ·
-  [test](../../server/test/product-name-language.e2e-spec.ts) "makes a names save wait for the choice under way, then refuses it in that language"
+  [test](../../server/test/product-name-language.e2e-spec.ts) "makes a names save wait for the choice under way, then refuses it in that language" ·
+  [test](../../server/test/product-name-language.e2e-spec.ts) "never holds an item added while the choice is under way"
 - **One name per language, never a blank one, and a description in a
   language needs a name in it.** The dialog says so before saving, naming
   the language, and sends nothing; the server refuses a language twice,

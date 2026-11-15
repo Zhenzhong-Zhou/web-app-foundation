@@ -685,4 +685,50 @@ describe('The language items are named in (e2e)', () => {
     expect(await languageOf(alpha.organizationId)).toBe('zh-Hans');
     expect(await keptIn(alpha.organizationId, 'zh-Hans')).toEqual([]);
   });
+
+  /**
+   * The choice locks the organization's row against a names save alone,
+   * FOR NO KEY UPDATE, which a new row's check of its key into the
+   * organization (FOR KEY SHARE) passes; FOR UPDATE would hold every row
+   * added anywhere in it, History's included. The test holds a copy the
+   * choice must remove, so the choice holds its lock while an item is
+   * added beside it.
+   */
+  it('never holds an item added while the choice is under way', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const focus = await item(agent, 'Focus', { sku: 'FOC' });
+    await keepNames(agent, focus.productId, [
+      { locale: 'zh-Hans', name: 'Focus' },
+    ]).expect(204);
+    await agent.get('/v1/auth/me').expect(200);
+
+    let choosing!: Promise<{ status: number }>;
+    let adding!: Promise<number | 'held'>;
+    await db.transaction(async (tx) => {
+      await tx
+        .select({ id: productTranslations.productId })
+        .from(productTranslations)
+        .where(eq(productTranslations.productId, focus.productId))
+        .for('update');
+      choosing = choose(agent, 'zh-Hans', []).then((res) => res);
+      await waitingOnLocks(1);
+      // Added, or held: a second waiting on a lock.
+      adding = Promise.race([
+        agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Calm', variant: { sku: 'CALM' } })
+          .then((res) => res.status),
+        waitingOnLocks(2).then(
+          () => 'held' as const,
+          () => new Promise<never>(() => {}),
+        ),
+      ]);
+      await adding;
+    });
+
+    expect(await adding).toBe(201);
+    expect((await choosing).status).toBe(200);
+    expect(await keptIn(alpha.organizationId, 'zh-Hans')).toEqual([]);
+  });
 });

@@ -8,14 +8,16 @@ import type { ProductNameToChoose } from './dto/product-name-language-response.d
 
 /**
  * The language the organization's items are named in (ADR-054, amended for
- * #531), or null while not set, read under a lock on its row: `update` by
- * the choice of it, `share` by each names save, which so waits for a choice
- * under way rather than keep a name in the language being chosen.
+ * #531), or null while not set, read under a lock on its row: `no key
+ * update` by the choice of it, `share` by each names save, which so waits
+ * for a choice under way rather than keep a name in the language being
+ * chosen. Not `update`, which would also hold every row added in the
+ * organization meanwhile, since each checks its key into this row.
  */
 export async function productNameLanguageOf(
   tx: Transaction,
   organizationId: string,
-  lock: 'update' | 'share',
+  lock: 'no key update' | 'share',
 ): Promise<Locale | null> {
   const [organization] = await tx
     .select({ language: organizations.productNameLanguage })

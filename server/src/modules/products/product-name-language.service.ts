@@ -85,7 +85,11 @@ export class ProductNameLanguageService {
     const { language } = input;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const before = await productNameLanguageOf(tx, organizationId, 'update');
+      const before = await productNameLanguageOf(
+        tx,
+        organizationId,
+        'no key update',
+      );
       const names = await namesToChoose(tx, organizationId, language);
 
       if (names.total > MAX_CHANGED_AT_ONCE) {
