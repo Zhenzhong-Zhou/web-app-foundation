@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   FormControlLabel,
+  Link,
   MenuItem,
   Radio,
   RadioGroup,
@@ -255,8 +256,13 @@ export function OrganizationPage() {
               <LogoOnDocumentsForm
                 key={String(organization.logoOnDocuments)}
                 value={organization.logoOnDocuments}
+                hasLogo={organization.logoFileId !== null}
                 readOnly={!canUpdate}
                 onSaved={reloadAll}
+                onBranding={() => {
+                  setTab('branding');
+                  document.getElementById('organization-tab-branding')?.focus();
+                }}
               />
               <PaperSizeForm
                 key={String(organization.paperSize)}
@@ -567,15 +573,25 @@ function ExpiryDaysForm({
   );
 }
 
-/** Whether invoices, credit notes and packing slips print the logo. */
+/**
+ * Whether invoices, credit notes and packing slips print the logo. Until
+ * there is one, it says where to add it, Branding, which only those who
+ * may change it have (#487).
+ */
 function LogoOnDocumentsForm({
   value,
+  hasLogo,
   readOnly,
   onSaved,
+  onBranding,
 }: {
   value: boolean;
+  /** Whether the organization has the logo documents print. */
+  hasLogo: boolean;
   readOnly: boolean;
   onSaved: () => Promise<void>;
+  /** Opens the Branding tab. */
+  onBranding: () => void;
 }) {
   const intl = useIntl();
   const [printLogo, setPrintLogo] = useState(value);
@@ -632,6 +648,29 @@ function LogoOnDocumentsForm({
             'At the top left, at most 18 mm tall, once the organization has a logo. Turn off if your printed stationery already carries it.',
         })}
       </Typography>
+      {!hasLogo && !readOnly && (
+        <Typography variant="body2">
+          {intl.formatMessage(
+            {
+              id: 'settings.org.printLogo.noLogo',
+              defaultMessage: 'No logo yet. <link>Add one on Branding.</link>',
+            },
+            {
+              link: (chunks: ReactNode[]) => (
+                <Link
+                  component="button"
+                  type="button"
+                  underline="always"
+                  onClick={onBranding}
+                  sx={{ verticalAlign: 'baseline' }}
+                >
+                  {chunks}
+                </Link>
+              ),
+            },
+          )}
+        </Typography>
+      )}
     </SettingsSection>
   );
 }

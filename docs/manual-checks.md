@@ -1684,7 +1684,10 @@ await fetch(`${api}/v1/files/product-image`, {
   warns it is close to the error red. On Stock set expiry to 180 and 60:
   a lot 150 days out shows amber in Inventory and on Home. Print an invoice
   and a packing slip: the logo at the top left; turn "Print the logo" off on
-  Documents and print again: no logo. A viewer sees no Branding tab. In 中文
+  Documents and print again: no logo. Before any logo is uploaded,
+  Documents' Logo on documents says No logo yet. Add one on Branding.,
+  the link opening Branding with focus on its tab; a viewer, who has no
+  Branding tab, reads no such line. A viewer sees no Branding tab. In 中文
   the tab reads 品牌.
 
 - **MC-1703** The refusal to issue links to Profile. Register a new
@@ -6218,3 +6221,5 @@ first.
   tab's Item names section, in place of Item names required on invoices,
   chooses the language items are named in through its confirmation:
   MC-1425 added; MC-1408 and MC-1411 rewritten for it.
+- 2026-11-14: #487, the logo on documents: Documents' Logo on documents
+  says there is no logo yet and links to Branding: MC-1702 extended.

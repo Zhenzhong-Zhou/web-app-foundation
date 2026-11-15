@@ -2218,6 +2218,7 @@
   "settings.org.policy.override": "Refuser sauf dérogation, avec un motif",
   "settings.org.printLogo.help": "En haut à gauche, au plus 18 mm de haut, une fois que l’organisation a un logo. Désactivez si votre papier à en-tête le porte déjà.",
   "settings.org.printLogo.label": "Imprimer le logo sur les factures, notes de crédit et bordereaux d’expédition",
+  "settings.org.printLogo.noLogo": "Pas encore de logo. <link>Ajoutez-en un dans Image de marque.</link>",
   "settings.org.printLogo.save": "Enregistrer le logo sur les documents",
   "settings.org.printLogo.saved": "Logo sur les documents enregistré",
   "settings.org.printLogo.title": "Logo sur les documents",

@@ -2218,6 +2218,7 @@
   "settings.org.policy.override": "Refuse unless overridden, with a reason",
   "settings.org.printLogo.help": "At the top left, at most 18 mm tall, once the organization has a logo. Turn off if your printed stationery already carries it.",
   "settings.org.printLogo.label": "Print the logo on invoices, credit notes and packing slips",
+  "settings.org.printLogo.noLogo": "No logo yet. <link>Add one on Branding.</link>",
   "settings.org.printLogo.save": "Save logo on documents",
   "settings.org.printLogo.saved": "Logo on documents saved",
   "settings.org.printLogo.title": "Logo on documents",
