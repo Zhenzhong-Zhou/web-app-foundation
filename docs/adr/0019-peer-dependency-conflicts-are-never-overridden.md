@@ -89,3 +89,14 @@ Consequence's one test of the real limiter is now
 production default and checks what each counter is keyed on: the
 person, the client's own address, sign-in's email and address, and
 sign-up's 5 a minute (ADR-011, amended).
+
+*Amended (November 2026, #446):* typescript-eslint 8.72.2's
+`@typescript-eslint/typescript-estree` depends on minimatch `^10.2.2`,
+below the fix for Dependabot alerts 11 and 12 (minimatch below 11.0.1,
+development tools only). A scoped override in `server/` and `client/`,
+`"@typescript-eslint/typescript-estree": { "minimatch": "^11.0.5" }`,
+takes that one copy to 11.0.5 across a major: the October amendment's
+case (#270), a development tool's copy, lint and every test shown
+working with it (ADR-054's as-built of November 2026). It goes once a
+typescript-eslint release depends on minimatch `^11`, looked for at
+each branch's dependencies step.

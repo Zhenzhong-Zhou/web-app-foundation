@@ -1155,3 +1155,135 @@ choose.
   guides; the seeds; dependencies again; the reviews, with the `set-up`
   and `items` journeys; the as-built; after the merge, the alerts seen
   fixed, the skill packed and uploaded, and `/triage`.
+
+## Amendment (November 2026) — as built (#595)
+
+Built on 14 November 2026 on `fix-531-base-name`, 36 commits with this
+one, from the brief's 17 steps: steps 3 to 14 in a row, each on the model
+its row named, then the reviews in two prompts. Steps 3 to 14 took 181
+minutes, about 44 % of the brief's 410; the reviews 141, about 78 % of
+their 180. The code's names follow the glossary's rule that in code an
+item is a product: `organizations.product_name_language`,
+`productNameLanguage`, `/v1/organization/product-name-language` and
+`product_names_changed`, where the decisions above wrote `item`.
+
+### Each requirement
+
+| R | As built | Mark |
+| --- | --- | --- |
+| R1 | This amendment and the handoff's tidy, the branch's first commit (`a3931a33`) | met |
+| R2 | eslint 10.15.0 in `client/` and `server/`, the server's unused `@eslint/eslintrc` removed, and typescript-estree's copy held at minimatch ^11.0.5 by a scoped override, ADR-019 amended below; every copy at 11.0.5 (`599601e1`); both alerts to be seen fixed after the merge | met |
+| R3 | Migration 0081 and the organization's field, a new organization's language from the request's Accept-Language (`1e81dbf3`); the Documents tab's Item names section (`2470f8c0`) | met |
+| R4 | The preview and the choice under the lock (`c083ef2e`); the confirmation as the canvas row v2 draws it (`2470f8c0`), below | met, changed |
+| R5 | Documents, the detail's missing names and the export (`3dfe1920`); the item's page and Edit names (`75a3ecb6`); the rule's one home in `products/` (`70111f49`) | met |
+| R6 | "In {language}" under the name in Add item, Edit and the variant dialogs, and under Add item's Size or variation | met, changed |
+| R7 | The export's columns for the items' language hold the own names, a variant's too | met |
+| R8 | `docs/rules/products.md` and `docs/rules/invoices.md`; MC-214, MC-216, MC-1407, MC-1408, MC-1411, MC-1425, MC-1558 and MC-3611; the Items guide and the Organization guide's Documents section in three languages (`c1ffc364`); the line while not set (`68b3e101`) | met |
+| R9 | `seed:demo` starts not set, Vitamin D3 1000 IU, 120 softgels keeping an English name the same as its own and Calm 90ct keeping "Calm, 90 capsules", the seed checking both through the preview (`73cd1d0a`); `seed:volume` adds nothing | met |
+| R10 | The canvas rows v1, v2 (the confirmation, the tones, the phone) and v3 (the item's page while not set); 10 browser tests for the 11 rows, the 500 row a server test, since no test hook lowers the limit (`0771580d`) | met, changed |
+| R11 | #571 (`f58d995a`); #282's extract (`6fac2ca6`); #505's 94 (`e64906ad`) and 91 (`40a478d9`); #487's two (`fd077fc4`, `b36b1c9d`); #306's 12 and 37; #551's 65 on the server and the client | met |
+| R12 | The reviews: 39 findings, 24 fixed, each its own commit, the rest filed as #588 to #594 or said in the pull request; the full verify, CI and Claude Code Review green; #595 open, its `Closes` lines checked against its commits | met |
+
+### Built differently
+
+- **The confirmation, as the canvas row v2 draws it.** The interaction
+  table's rows 1 and 3 read as v1: its button is never off once the
+  preview is read, and says what it does, "Name items in {language}".
+  Pressed with rows left, it sends nothing, says "Choose one to keep"
+  under each, names them in a line above with links, and focuses the
+  first one's first choice. The rows are a table, each column's heading
+  choosing it on every row shown, with "All" and "Only those left", and
+  "N of M chosen" at its foot; a description that differs is shown and
+  chosen with its name. The saved message counts what was done, its
+  parts joined with "and".
+- **The lock.** The choice reads the organization's row `FOR NO KEY
+  UPDATE`, not `FOR UPDATE` as first built: a foreign key's check takes
+  `FOR KEY SHARE` on the row it points at, which `FOR UPDATE` blocks, so
+  every new row in the organization waited for the choice. A names save
+  reads it `FOR SHARE`, which still waits for the choice.
+- **The choice answers 200 with its counts:** copies removed, names
+  removed and items renamed, which its message needs and no read gives.
+  `docs/conventions.md`, `CLAUDE.md` and `/code-review` gain the case: a
+  write over many rows whose message counts what it did returns those
+  counts. Sent again once made, it answers 200 with nothing done; before
+  the reviews it answered 409.
+- **A row's choice:** `keep` missing or null is a row with no choice; a
+  row missing from the body is a list that changed. A row carries its
+  descriptions, so a changed description changes the row, and a row
+  whose names changed comes back New, its choice cleared.
+- **The choice removes every name kept in the language:** under the
+  lock those are exactly the copies and the rows chosen.
+- **History:** a renamed item's row records its name from and to and
+  names its cause, "Renamed by choosing the items' language", a new
+  audit field; the rules line says so. A language reads by its full
+  name there, "Simplified Chinese", as every language field does.
+- **The routes live in the products module,** under `organization/`, as
+  numbering's do; `MAX_CHANGED_AT_ONCE` stays in the products module,
+  which alone uses it.
+- **The item's page while not set** (the reviews' finding 1, the canvas
+  row v3): the own name is labelled in both states, "Item's own name" or
+  "Variant's own name", and a grey line above the table, its
+  description, says why each language reads "—", with a link to Item
+  names for whoever may change the organization's settings and the
+  place in words for anyone else. The place is written "Organization →
+  Documents", as the app's other place names are; the interaction
+  table's "›" reads "→".
+- **Edit names says "the item's own name",** never "the base name".
+- **One Save changing the language and the required languages** saves
+  the language first; the items' own language is drawn ticked under the
+  required ones while its stored value is kept as it was.
+- **The confirmation opens** once the preview has come, or after 250 ms,
+  so over 500 is refused at the field with no dialog shown.
+- **A new organization's language** is the request's Accept-Language,
+  not the registration's own `locale`; the client sends the app's
+  language as both.
+- **#505's 94:** the service marks a save with nothing to write by
+  `recordUnchanged()`, and the interceptor and the demo seed's auditor
+  then write no row; an empty body records none either. Another route
+  whose only field is kept out of the log would need the same call;
+  none is known.
+- **The 中文 guide** describes the confirmation's button in plain words:
+  its message has the language in the middle, and the guides' check
+  bolds only a message with a value at an end.
+- **`seed:demo` with an email** whose organization's language is set
+  keeps no English names, since a name kept in the items' own language
+  is refused.
+
+### Found
+
+- **Dependencies:** minimatch held at 11.0.5 and brace-expansion at
+  5.0.12, the 7-day rule's versions, by setting their lock entries from
+  the same locks' own entries where npm had resolved releases 3 days
+  old; neither dependency step found anything else 7 days old, the
+  first coming of age on 15 November, 23:12.
+- **ADR-019's October amendment (#270)** already allows an override
+  across a major for a development tool's copy, every command using it
+  shown working; `docs/conventions.md` still said the same major only,
+  and says both now.
+- **The screenshots skipped the item's page** from step 13, finding Calm
+  90ct by an English name the seed had changed; they find it by its code
+  now (`7defd673`).
+- **The preview, timed once at large:** 15 to 23 ms on 5,000 items,
+  2,500 French names that differ.
+- **The small volume database** named in `server/perf/volume-small.json`
+  no longer existed; `foundation_perf_large` alone was migrated.
+- **A step judged its own time wrongly:** steps 9 and 10 said they ran
+  past the 30-minute stop rule, about 65 and 55 minutes, where the
+  loop's clock says 35 and 18. The loop's clock is the one to read.
+- **The brief's own sum was wrong:** its table adds to 410 minutes for
+  steps 3 to 14, not the 6 hours 10 minutes it said.
+- **The canvas row v3** writes "›", the chat's slip; the app writes
+  "→".
+- **47 messages are drafted in French and Chinese with no reviewer**
+  yet: 1 in step 6, 8 in step 7, 32 in step 9, 3 in step 10 and 3 from
+  the reviews, for the next round's export.
+- **The reviews' panel:** every walker finished every task at every
+  size; the main finding was the item's page while not set, which all
+  four items walkers misread. The 21 smaller findings, from before this
+  branch, are #594's boxes; #590, Items' stock badges, waits for
+  Inventory.
+- **Issues filed:** #588 (Documents shows no saved logo), #589 (the
+  names table on a phone), #590 (Items' stock badges), #591 (a category
+  line on a type's tab), #592 (the Documents tab's order and a helper's
+  words), #593 (`subtitle2` to the five type sizes) and #594 (left from
+  the reviews).
