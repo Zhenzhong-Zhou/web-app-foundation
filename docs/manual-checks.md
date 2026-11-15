@@ -264,8 +264,7 @@ a second organization.
   follows, Items shows it on its new tab, and History records the type
   and the category from and to. Emptying the name is refused under it.
   As a Viewer there is no Edit. Its Names in other languages table's
-  item row reads the name it was added with, then "the name it was added
-  with, used in any language without its own name", in three languages.
+  item row reads Item and the name it was added with, and nothing more.
 - **MC-215** The item pickers, as the demo Owner, put the task's types
   first, each under its name, and every other item after them under
   Other items, each item's type at the end of its row. Raise an order,
@@ -626,7 +625,15 @@ folder by folder; these check what is already in place.
   Français blank. The page lists the Chinese name; reopening the dialog
   shows all three as saved. Clear the Chinese name and save: it is gone.
   A description typed with no name in that language is refused before
-  saving, saying which language.
+  saving, saying which language. Then, with the items named in English
+  (MC-1425): the names table's first column is English, each row's own
+  name in it with Item's own name, or Variant's own name, under it in
+  grey, never Missing; Edit names has no English field, a blue line
+  saying the item's own name, named, is its English name, changed with
+  Edit. Add item's Name and Size or variation, Edit's Name, and Add
+  variant's and a variant's Edit's Size or variation each say In English
+  under them, in 中文 用英文填写; before English is chosen, none says a
+  language, and the table has no own column.
 - **MC-1408** With 简体中文 ticked under Item names, Names documents
   require, on the Organization page's Documents tab, in an organization
   whose items are not named in 中文, and a customer set to Chinese,
@@ -6232,3 +6239,9 @@ first.
   already were: MC-1701 extended.
 - 2026-11-14: #505's 91, What we do on one line, as Home shows it:
   MC-1704 extended.
+- 2026-11-14: ADR-054's amendment for #531, R5 and R6: the item's page
+  shows the own names in the column of the language items are named in,
+  first, never Missing, what is missing read from the server; Edit names
+  asks for no name in it; Add item, Edit and the variant dialogs say the
+  language a name is typed in; and #306's 12: MC-1407 rewritten, MC-214
+  reworded.

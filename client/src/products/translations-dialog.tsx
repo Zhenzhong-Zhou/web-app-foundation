@@ -1,4 +1,5 @@
 import {
+  Alert,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -64,6 +65,11 @@ function formFrom(product: ProductDetail): Form {
  * says a blank prints the base name only of the others (ADR-092, #306's
  * 18). Opened from a missing name's Add, its field has focus.
  *
+ * Once the organization says which language its items are named in, that
+ * language has no field: the own name is its name there, which the server
+ * refuses to keep twice, so a line says so and sends its change to Edit
+ * (ADR-054, amended for #531).
+ *
  * Saved whole, as the routes take it: a language cleared here is removed.
  * The product first, then each named variant, so a refusal on one leaves
  * the others as they were saved.
@@ -72,6 +78,7 @@ export function TranslationsDialog({
   open,
   product,
   required = [],
+  language = null,
   at = null,
   onClose,
   onSaved,
@@ -80,6 +87,8 @@ export function TranslationsDialog({
   product: ProductDetail;
   /** The languages the organization's documents require. */
   required?: readonly Locale[];
+  /** The language items are named in; null while it is not set. */
+  language?: Locale | null;
   /** The name to start at, from its Add; null for the first field. */
   at?: NameAt | null;
   onClose: () => void;
@@ -118,9 +127,10 @@ export function TranslationsDialog({
     onClose();
   }
 
-  const others = SUPPORTED_LOCALES.filter(
-    (locale) => !required.includes(locale),
-  );
+  // The languages with fields: every one but the items' own.
+  const languages = SUPPORTED_LOCALES.filter((locale) => locale !== language);
+  const requiredHere = required.filter((locale) => locale !== language);
+  const others = languages.filter((locale) => !required.includes(locale));
   const startsAt = (row: 'product' | string, locale: Locale) =>
     at !== null && at.row === row && at.locale === locale;
 
@@ -136,7 +146,7 @@ export function TranslationsDialog({
 
     // A description is what a name in that language says more about; on
     // its own it would be refused by the server as a row with no name.
-    const orphan = SUPPORTED_LOCALES.find(
+    const orphan = languages.find(
       (locale) =>
         form[locale].description.trim() !== '' &&
         form[locale].name.trim() === '',
@@ -160,13 +170,13 @@ export function TranslationsDialog({
       await api(`/products/${product.id}/translations`, {
         method: 'PUT',
         body: JSON.stringify({
-          translations: SUPPORTED_LOCALES.filter(
-            (locale) => form[locale].name.trim() !== '',
-          ).map((locale) => ({
-            locale,
-            name: form[locale].name,
-            description: form[locale].description || null,
-          })),
+          translations: languages
+            .filter((locale) => form[locale].name.trim() !== '')
+            .map((locale) => ({
+              locale,
+              name: form[locale].name,
+              description: form[locale].description || null,
+            })),
         }),
       });
 
@@ -176,12 +186,12 @@ export function TranslationsDialog({
           {
             method: 'PUT',
             body: JSON.stringify({
-              translations: SUPPORTED_LOCALES.filter((locale) =>
-                form[locale].variants[variant.id]?.trim(),
-              ).map((locale) => ({
-                locale,
-                name: form[locale].variants[variant.id],
-              })),
+              translations: languages
+                .filter((locale) => form[locale].variants[variant.id]?.trim())
+                .map((locale) => ({
+                  locale,
+                  name: form[locale].variants[variant.id],
+                })),
             }),
           },
         );
@@ -206,7 +216,7 @@ export function TranslationsDialog({
 
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 1 }}>
-            {required.length > 0 && (
+            {requiredHere.length > 0 && (
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage(
                   {
@@ -216,7 +226,7 @@ export function TranslationsDialog({
                   },
                   {
                     languages: intl.formatList(
-                      required.map((locale) =>
+                      requiredHere.map((locale) =>
                         languageWord(locale, intl.locale),
                       ),
                       { type: 'conjunction' },
@@ -227,7 +237,7 @@ export function TranslationsDialog({
             )}
             {others.length > 0 && (
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {required.length > 0
+                {requiredHere.length > 0
                   ? intl.formatMessage(
                       {
                         id: 'products.translations.introOthers',
@@ -249,7 +259,28 @@ export function TranslationsDialog({
 
             {(problem ?? error) && <FormError message={(problem ?? error)!} />}
 
-            {SUPPORTED_LOCALES.map((locale) => (
+            {language && (
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2" component="h3">
+                  <span lang={language}>{LANGUAGE_NAMES[language]}</span>
+                </Typography>
+                <Alert severity="info">
+                  {intl.formatMessage(
+                    {
+                      id: 'products.translations.ownLanguage',
+                      defaultMessage:
+                        'Items are named in {language}, so this item’s own name, {name}, is its {language} name. Change it with Edit.',
+                    },
+                    {
+                      language: languageWord(language, intl.locale),
+                      name: <span lang={language}>{product.name}</span>,
+                    },
+                  )}
+                </Alert>
+              </Stack>
+            )}
+
+            {languages.map((locale) => (
               <Stack key={locale} spacing={1.5}>
                 <Typography variant="subtitle2" component="h3">
                   <span lang={locale}>{LANGUAGE_NAMES[locale]}</span>

@@ -15,7 +15,10 @@ import { useIntl } from 'react-intl';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { SEPARATOR } from '../lib/format';
+import type { Locale } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
+import { typedIn } from './name-language';
 import { unitLabel, UNITS } from './units';
 
 const EMPTY = { sku: '', name: '', unitOfMeasure: 'each' };
@@ -28,15 +31,21 @@ const EMPTY = { sku: '', name: '', unitOfMeasure: 'each' };
  * No lot-tracking switch: that is set once at creation and cannot be changed
  * on a variant that may already hold stock (ADR-023). A new variant inherits
  * nothing, so it defaults to off — worth revisiting if that surprises people.
+ *
+ * Its name says the language items are named in, once it is set, before
+ * its examples (ADR-054, amended for #531).
  */
 export function AddVariantDialog({
   open,
   productId,
+  language,
   onClose,
   onCreated,
 }: {
   open: boolean;
   productId: string;
+  /** The language items are named in; null while it is not set. */
+  language: Locale | null;
   onClose: () => void;
   onCreated: () => Promise<void>;
 }) {
@@ -127,10 +136,15 @@ export function AddVariantDialog({
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
               }
-              helperText={intl.formatMessage({
-                id: 'products.variation.examples',
-                defaultMessage: '120ct, Large, Blue',
-              })}
+              helperText={[
+                typedIn(language, intl),
+                intl.formatMessage({
+                  id: 'products.variation.examples',
+                  defaultMessage: '120ct, Large, Blue',
+                }),
+              ]
+                .filter(Boolean)
+                .join(SEPARATOR)}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 

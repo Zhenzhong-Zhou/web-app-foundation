@@ -495,12 +495,12 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/product-name-language.e2e-spec.ts) "makes a names save wait for the choice under way, then refuses it in that language"
 - **One name per language, never a blank one, and a description in a
   language needs a name in it.** The dialog says so before saving, naming
-  the language; the server refuses a language twice, one it does not
-  support, or a blank name.
+  the language, and sends nothing; the server refuses a language twice,
+  one it does not support, or a blank name.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps one name per product and language, never a blank one" ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
-  partly tested ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "refuses a description in a language with no name in it, sending nothing" ·
   MC-1407
 - **Saving the names replaces them all: a language left blank is
   removed.** A variant's names are changed only through its own product.
@@ -530,12 +530,12 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/whole-list-search.e2e-spec.ts) "names what it finds in the reader’s language" ·
   MC-3801 · MC-3803 · MC-3804
 - **A product's page is headed with the name the reader sees, and names
-  its variants and images so too; it says its base name first among its
-  names in other languages; Edit names and Edit start from the base
-  name, and saving keeps it.**
+  its variants and images so too; its own name heads the item's row
+  among its names in other languages; Edit names and Edit start from the
+  own name, and saving keeps it.**
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
   [test](../../server/test/item-names.e2e-spec.ts) "keeps the base name where the product page edits it, for a reader in Chinese (4.2)" ·
-  [test](../../client/src/products/product-detail-page.test.tsx) "names the base name beside the others, under a translated heading" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "names the own name in the item’s row, under a translated heading" ·
   partly tested ·
   MC-3802
 - **A product's description on its page is the base one, whatever the
@@ -586,14 +586,30 @@ How this file is kept is in the [README](README.md).
   marked so. A missing required name reads Missing, with Add opening Edit
   names at that name, and a line at the page's top names each one missing
   and says documents holding the item cannot print until it is added.**
-  Edit names marks the required languages too, and says a blank prints
-  the base name only of the others. Add item does not ask for them: the
-  new item's page shows what is missing.
+  What is missing is the item's detail's list, as documents refuse; the
+  page works out none of it. Edit names marks the required languages
+  too, and says a blank prints the base name only of the others. Add
+  item does not ask for them: the new item's page shows what is missing.
   [ADR-092](../adr/0092-items.md#decision--each-variations-names-on-the-items-page) ·
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
   [test](../../client/src/products/product-detail-page.test.tsx) "shows the item’s and each named variation’s names by language, a missing required one marked" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "opens Edit names at the missing name’s row, the required languages marked" ·
   [test](../../client/src/products/translations-dialog.test.tsx) "marks the required languages, saying a blank prints the base name only of the others" ·
   MC-1408
+- **In the language the items are named in, the item's page shows each
+  row's own name first, in that language's column, marked as the item's
+  or the variant's own, never Missing; Edit names has no field in it,
+  and says the own name is the name there, changed with Edit. Add item,
+  Edit and the variant dialogs say under a name the language it is typed
+  in; while none is set, the table has no such column and nothing says
+  a language.**
+  [ADR-054, amended](../adr/0054-languages.md#decision--in-that-language-an-items-own-name-is-its-name) ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "holds the own names first, in the column of the language items are named in, never Missing" ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "asks for no name in the language items are named in, saying the own name is its name there" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "says under each name, in Edit and the variant dialogs, the language items are named in" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "says no language under the name while none is set" ·
+  [test](../../client/src/products/create-product-dialog.test.tsx) "says under the name and the variation the language items are named in, once it is set" ·
+  MC-1407
 
 ## Finding a product, and picking an item
 

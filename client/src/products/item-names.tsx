@@ -16,7 +16,7 @@ import { useId } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { ProductDetail } from '../api/types.gen';
-import { NO_VALUE, SEPARATOR } from '../lib/format';
+import { NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import {
   LANGUAGE_NAMES,
@@ -25,7 +25,7 @@ import {
   SUPPORTED_LOCALES,
 } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
-import { missingNames, type NameAt, rowsOf } from './name-rows';
+import { type NameAt, rowsOf } from './name-rows';
 
 /**
  * Names in other languages on the item's page (ADR-092, #526): one table,
@@ -35,15 +35,23 @@ import { missingNames, type NameAt, rowsOf } from './name-rows';
  * names at that row; a line above says documents holding it cannot print
  * until it is added. A variation with no name of its own prints the
  * item's, so it has no row.
+ *
+ * The language items are named in comes first, once it is set: its
+ * column holds each row's own name, which is the name there, marked as
+ * the own one, never Missing (ADR-054, amended for #531). What is missing
+ * is the server's, worked out as documents refuse (#551's 65).
  */
 export function ItemNames({
   product,
   required,
+  language,
   canEdit,
   onEdit,
 }: {
   product: ProductDetail;
   required: readonly Locale[];
+  /** The language items are named in; null while it is not set. */
+  language: Locale | null;
   canEdit: boolean;
   /** Edit names, at a row and language, or from its top. */
   onEdit: (at: NameAt | null) => void;
@@ -51,7 +59,16 @@ export function ItemNames({
   const intl = useIntl();
   const titleId = useId();
   const rows = rowsOf(product);
-  const missing = missingNames(product, required);
+  const missing = product.missingNames.map((name) => ({
+    row: name.variantId ?? 'product',
+    sku: name.sku,
+    locale: name.locale,
+  }));
+  const isMissing = (row: string, locale: Locale) =>
+    missing.some((name) => name.row === row && name.locale === locale);
+  const columns = language
+    ? [language, ...SUPPORTED_LOCALES.filter((locale) => locale !== language)]
+    : SUPPORTED_LOCALES;
   const unnamed = product.variants.some((variant) => !variant.name);
 
   const rowWords = (sku: string | null) =>
@@ -149,7 +166,7 @@ export function ItemNames({
                     })}
                   </Box>
                 </TableCell>
-                {SUPPORTED_LOCALES.map((locale) => (
+                {columns.map((locale) => (
                   <TableCell key={locale}>
                     <span lang={locale}>{LANGUAGE_NAMES[locale]}</span>
                     {required.includes(locale) && (
@@ -192,25 +209,32 @@ export function ItemNames({
                           )}
                     </Typography>
                     {row.name}
-                    {/* The base name has no language of its own until
-                        #531: said here, so a name in its language is
-                        not typed twice without reason. */}
-                    {row.sku === null && (
-                      <Box component="span" sx={{ color: 'text.secondary' }}>
-                        {SEPARATOR}
-                        {intl.formatMessage({
-                          id: 'products.names.base',
-                          defaultMessage:
-                            'the name it was added with, used in any language without its own name',
-                        })}
-                      </Box>
-                    )}
                   </TableCell>
-                  {SUPPORTED_LOCALES.map((locale) => (
+                  {columns.map((locale) => (
                     <TableCell key={locale}>
-                      {row.names[locale] ? (
+                      {locale === language ? (
+                        <>
+                          <span lang={locale}>{row.name}</span>
+                          {/* A label, not a status: muted, as Required on
+                              documents is. */}
+                          <Typography
+                            variant="caption"
+                            component="span"
+                            sx={{ display: 'block', color: 'text.secondary' }}
+                          >
+                            {intl.formatMessage(
+                              {
+                                id: 'products.names.own',
+                                defaultMessage:
+                                  '{kind, select, variant {Variant’s own name} other {Item’s own name}}',
+                              },
+                              { kind: row.sku === null ? 'item' : 'variant' },
+                            )}
+                          </Typography>
+                        </>
+                      ) : row.names[locale] ? (
                         <span lang={locale}>{row.names[locale]}</span>
-                      ) : required.includes(locale) ? (
+                      ) : isMissing(row.key, locale) ? (
                         <Stack
                           direction="row"
                           spacing={1}

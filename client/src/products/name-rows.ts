@@ -2,9 +2,10 @@ import type { ProductDetail } from '../api/types.gen';
 import type { Locale } from '../lib/locales';
 
 /**
- * The rows of Names in other languages on the item's page (ADR-092), and
- * which of their names documents will refuse, kept out of the
- * component's file so it exports components alone.
+ * The rows of Names in other languages on the item's page (ADR-092), kept
+ * out of the component's file so it exports components alone. Which of
+ * their names documents will refuse is the server's, the detail's
+ * `missingNames` (#551's 65).
  */
 
 /** Where Edit names opens: the item's row, or a variation's by its id. */
@@ -45,20 +46,4 @@ export function rowsOf(product: ProductDetail): NameRow[] {
         ),
       })),
   ];
-}
-
-/**
- * Each name a document requires that is missing, as the server checks it
- * before printing (ADR-054, amended): the item's, or a named variation's,
- * in a language the organization requires.
- */
-export function missingNames(
-  product: ProductDetail,
-  required: readonly Locale[],
-): (NameAt & { sku: string | null })[] {
-  return rowsOf(product).flatMap((row) =>
-    required
-      .filter((locale) => !row.names[locale])
-      .map((locale) => ({ row: row.key, sku: row.sku, locale })),
-  );
 }

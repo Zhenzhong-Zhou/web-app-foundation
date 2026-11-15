@@ -14,7 +14,9 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
+import type { Locale } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
+import { typedIn } from './name-language';
 import type { Variant } from './products-page';
 import { unitLabel, UNITS } from './units';
 
@@ -40,17 +42,23 @@ const EMPTY = {
  *
  * SKU is edited inline on the detail page rather than here, because a rename
  * is a different kind of act from correcting a weight.
+ *
+ * Its name says the language items are named in, once it is set (ADR-054,
+ * amended for #531).
  */
 export function EditVariantDialog({
   open,
   productId,
   variant,
+  language,
   onClose,
   onSaved,
 }: {
   open: boolean;
   productId: string;
   variant: Variant | null;
+  /** The language items are named in; null while it is not set. */
+  language: Locale | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -152,6 +160,7 @@ export function EditVariantDialog({
               fullWidth
               value={form.name}
               onChange={update('name')}
+              helperText={typedIn(language, intl)}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
