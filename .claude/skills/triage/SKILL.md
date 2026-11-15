@@ -94,8 +94,8 @@ issue's slug it does not have: stop and say so.
    - **a `later` issue's missing line:** in the same command,
      `--body-file tmp/triage-body-<N>.md`, its body as exported with the
      line added, written beside the script;
-   - **a close:** the home's command as written, with its reason and its
-     one-line comment.
+   - **a close:** the command [Issues and labels](../../../docs/engineering.md#issues-and-labels)
+     gives, as written, with its reason and its one-line comment.
    - **a comment on an issue a merged pull request did in part,** as
      [Issues and labels][labels] asks after a merge, saying what is
      left: `gh issue comment <N> --body-file tmp/triage-comment-<N>.md`,

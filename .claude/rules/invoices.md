@@ -40,7 +40,6 @@ commit that changes one of those rules updates it (ADR-087).
   `nameRulesOf`, for every document and the item's detail alike; the
   language the items are named in needs no kept name, since
   `namesByLanguage` puts the own name there, for the export too; all three
-  in `products/product-name-language.ts` (#551's 65; ADR-054, amended for
-  #531).
+  in `products/product-name-language.ts` (ADR-054, amended for #531).
 - **A refusal the screen offers a way out of** carries its code, and a
   numbering one its details, through `withCode` ([conventions.md, Error codes](../../docs/conventions.md#error-codes)).

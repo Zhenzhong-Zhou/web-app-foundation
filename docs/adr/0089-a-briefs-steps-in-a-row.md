@@ -341,8 +341,10 @@ checked the same day for ADR-008's amendment:
   squashed into `main` is never its ancestor; GitHub deletes a merged
   pull request's branch ("Automatically delete head branches", on since
   2 November), and the fetch prunes what it deleted.
-- **A branch built on the Mac is pushed at each stop of its run,** so
-  its files show. A push to a branch starts no workflow: CI and the docs
+- **A branch built on the Mac shows only once it is pushed,** which no
+  stop of its run does (corrected 14 November 2026, #531's review): one
+  not pushed is named by `leave <path>`. A push to a branch starts no
+  workflow: CI and the docs
   check run on a push to `main` alone, and on pull requests.
 
 ### Decision — each manual check's id given once, checked

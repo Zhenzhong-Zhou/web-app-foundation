@@ -1,6 +1,6 @@
 ---
 name: rules-file
-description: Write one area's rules files from its code and tests (ADR-087), docs/rules/<area>.md for people and .claude/rules/<area>.md for Claude, list it in docs/rules/README.md, run the docs check, and end with what writing them found (no test, partly tested, code and ADR disagreeing, rules no ADR states), written for an issue of its own. Use for /rules-file <area>, or when a brief or a fix-up batch asks for an area's rules files.
+description: Write one area's rules files from its code and tests (ADR-087), docs/rules/<area>.md for people and .claude/rules/<area>.md for Claude, and what writing them found, for an issue of its own. Use for /rules-file <area>, or when a brief or a fix-up batch asks for an area's rules files.
 argument-hint: <area>
 ---
 

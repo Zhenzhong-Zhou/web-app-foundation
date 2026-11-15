@@ -177,11 +177,11 @@ where a step must act on it.
 
 ## 4. The summary for the chat
 
-End every step with it, as your last message, in plain Markdown.
-**The summary is the hand-back itself:** sent once and in full, in a
-turn of its own after every tool call has returned; never a
-placeholder, and never beside another tool call, since only the last
-message reaches the loop.
+End every step with it, in plain Markdown. **The summary is the
+hand-back itself:** sent once and in full, after every other tool call
+has returned, through the hand-back tool where the session gives one,
+otherwise as the last message; never a placeholder, since only that
+report reaches the loop.
 
 **No background task outlives the step:** before the hand-back, every
 one the step started, a command moved to the background or a watch on

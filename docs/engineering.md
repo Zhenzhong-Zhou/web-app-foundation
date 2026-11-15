@@ -252,12 +252,12 @@ steps; this section stays the rule.
   nothing is pulled first; a long session pays for its whole history at
   every step. The prompt is one line, `/fix-issue <N>`
   ([its skill](../.claude/skills/fix-issue/SKILL.md), ADR-089's
-  amendment of November 2026): it checks `main` for a commit that
-  already fixes the issue, reads the issue whole, works out the files to
+  amendment of November 2026): it reads the issue whole, checks `main`
+  for a commit that already fixes it, works out the files to
   leave alone from open pull requests and pushed branches, then fixes,
   proves and verifies, and opens a pull request that closes it. A branch
-  built on the Mac is pushed at each stop of its run, so its files show;
-  `leave <path>` after the number names one that is not. The chat picks
+  built on the Mac shows only once it is pushed, which no stop of its run
+  does; `leave <path>` after the number names one that is not. The chat picks
   from two exports the maintainer attaches (ADR-090): the open `fix-now`
   and `when-touched` issues with their text, `tmp/cloud-picks.json`,
   then the few it shortlists with their comments too,
