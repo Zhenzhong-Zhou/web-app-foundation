@@ -1061,6 +1061,8 @@ Use these rather than writing the thing again on a page:
   hyphen; **`ReferencesWhole`** for text the server wrote, which keeps every
   hyphenated word whole (ADR-081). A code over 16 characters may still
   break, rather than run off a phone's screen; a page heading is left alone.
+- **`LotLink`** for a lot's code wherever it appears: kept whole, a link to
+  its trace, which offers Back (ADR-093; the design language's Rows).
 - **`IconBadge`** for an icon on a tinted square or circle, a tile's, a
   card's, a way in's or a row's mark: square with the control's corner, or
   round, its colours the caller's (#505's 52). Never a box drawn by hand.
