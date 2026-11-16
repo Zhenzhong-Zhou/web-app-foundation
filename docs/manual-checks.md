@@ -118,7 +118,9 @@ holds 60 of its 70, Free 10, not short. Coming reads **ELDER-250**'s 48
 **MAGCAP-SAMPLE** are made and have a reorder point. **VITC-100** was
 **VITC-90**: its first order, **PO-DEMO-8**, and its two receipts say
 VITC-90, and the rest of its ledger VITC-100, since 王建国 corrected the
-code once its first lots arrived.
+code once its first lots arrived. **D3-1000-120**'s **D3-C07**, 20 on Main's
+**Shelf**, has no expiry, so it lists after **D3-A11** (100) and **D3-B02**
+there.
 
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.

@@ -27,6 +27,8 @@ import { daysFromNow } from './seed-demo-variety';
  * - **A made item with a reorder point:** SLEEP-60CT, MAGCAP-SAMPLE.
  * - **A code changed once:** VITC-100, its two receipts in the ledger
  *   under VITC-90 (seed-demo-team-work.ts).
+ * - **A lot with no expiry after dated lots of its code:** D3-C07, on
+ *   Main's Shelf after D3-A11 and D3-B02, as its row opens (R2).
  */
 export async function readBackStock(
   app: INestApplicationContext,
@@ -97,6 +99,20 @@ export async function readBackStock(
     );
   const codesWritten = written.map((row) => row.sku).sort();
 
+  // Where a code's row opens: its place's lots, the undated after the dated.
+  const vitaminD = codes.entries.find((row) => row.sku === 'D3-1000-120');
+  const vitaminDLots = vitaminD
+    ? (await grouped.places(vitaminD.variantId, {}, 'en', true)).places
+        .flatMap((place) => place.lots)
+        .filter((lot) => lot.locationName === 'Shelf')
+        .map((lot) => [lot.lotCode, lot.lotExpiresAt] as const)
+    : [];
+  const undatedLast =
+    vitaminDLots.length > 2 &&
+    vitaminDLots.at(-1)?.[0] === 'D3-C07' &&
+    vitaminDLots.at(-1)?.[1] === null &&
+    vitaminDLots.slice(0, -1).every(([, expiresAt]) => expiresAt !== null);
+
   const missing: string[] = [];
   if (twoPlaces.length === 0) missing.push('a lot in two places');
   if (quarantined.length === 0) {
@@ -112,6 +128,11 @@ export async function readBackStock(
       `a code changed once, VITC-100 kept in the ledger as ${codesWritten.join(' and ')}`,
     );
   }
+  if (!undatedLast) {
+    missing.push(
+      `a lot with no expiry after D3-1000-120's dated lots on Shelf, read ${vitaminDLots.map(([code]) => code).join(', ')}`,
+    );
+  }
   if (missing.length > 0) {
     throw new Error(
       `The demo's Inventory is missing: ${missing.join('; ')}. See seed-demo-stock.ts for where each is made`,
@@ -121,6 +142,7 @@ export async function readBackStock(
   return (
     `Inventory read back: ${twoPlaces.length} lots in two places (${twoPlaces.slice(0, 3).join(', ')}), ` +
     `${quarantined.length} expired in a place not usable, ${short.length} short and ${holdingNotShort.length} holding without being short, ` +
-    `${comingOn.length} coming with a day and ${comingWithNoDay.length} without, ${made} made items with a reorder point, VITC-100 written as VITC-90 once`
+    `${comingOn.length} coming with a day and ${comingWithNoDay.length} without, ${made} made items with a reorder point, VITC-100 written as VITC-90 once, ` +
+    `D3-C07 with no expiry after D3-1000-120's dated lots`
   );
 }
