@@ -1082,6 +1082,9 @@ Use these rather than writing the thing again on a page:
 - **`TableOrCards`** for a list's rows as a table from 600 px and as cards
   below, two grey cards while the cards are read; `useCards` asks the same
   width for the rest of the page (ADR-090's width switch).
+- **`useLocations`** for the locations a filter or a form offers, read when
+  it opens and only for a reader with `locations.view`, as `usePartners`
+  reads the partners (#282).
 - **`treeOf`** (`lib/tree.ts`) for a tree the server sends flat, the
   locations' and the categories': each row's children mapped once, a row
   whose parent is missing at the top, never dropped (#551's 64).

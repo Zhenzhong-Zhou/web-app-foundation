@@ -3,6 +3,7 @@ import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { Movement, StockRow } from '../api/types.gen';
+import { movement } from '../test/factories';
 import { server } from '../test/setup';
 import { MovementHistoryDialog } from './movement-history-dialog';
 
@@ -24,22 +25,7 @@ const ROW: StockRow = {
   quantity: '96.0000',
 };
 
-const MOVEMENT: Movement = {
-  id: 'movement-1',
-  sku: 'VITD-60',
-  productName: '维生素 D',
-  variantName: '60 粒',
-  quantity: '24.0000',
-  reason: 'shipment',
-  reasonDetail: null,
-  note: null,
-  fromLocationName: 'Shelf A',
-  toLocationName: null,
-  lotCode: 'NN-2410-07',
-  actorName: '王建国',
-  actorEmail: 'wang@example.com',
-  createdAt: '2026-10-30T17:00:00.000Z',
-};
+const MOVEMENT = movement();
 
 /** An inventory row's history reads as Movements does (#256). */
 describe('MovementHistoryDialog', () => {
