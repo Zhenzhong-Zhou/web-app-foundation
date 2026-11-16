@@ -1,0 +1,151 @@
+import type { ProductType } from '../../../database/schema';
+import type { ReorderStatus } from '../reorder-status';
+
+/**
+ * Inventory's grouped read as the API returns it (ADR-068; ADR-093): a
+ * row per code, its places and their lots, and the Lot view, each its
+ * own shape. Quantities are numeric(18,4) strings, never parsed into a
+ * number (ADR-025); days are `YYYY-MM-DD` (ADR-052).
+ */
+
+/** A code's figures at the one place chosen (20a). */
+export class StockHere {
+  onHand!: string;
+  /** How many of its lots are here, for "2 lots". */
+  lots!: number;
+  /** The soonest expiry of the usable stock here, or null. */
+  expiresFirst!: string | null;
+}
+
+/**
+ * One code, a variant (A1), with its figures from the one read
+ * (code-figures.ts): On hand and its not-usable parts by why, Free,
+ * Held, Short, Coming with its day, Left, what expires first and the
+ * status, as Where it stands and Reorder read them.
+ */
+export class StockCodeRow {
+  variantId!: string;
+  /** The item, for its page (ADR-092). */
+  productId!: string;
+  /** The item's type, for its icon and its word (#546). */
+  type!: ProductType;
+  /** The product's cover (ADR-062), or null. */
+  coverFileId!: string | null;
+  sku!: string;
+  /** In the reader's language (ADR-056). */
+  productName!: string;
+  variantName!: string | null;
+  unitOfMeasure!: string;
+  /** How many places hold it, "2 places"; 0 is "None on hand". */
+  places!: number;
+  /** How many lots it holds, every place's, for a reader without places. */
+  lots!: number;
+  onHand!: string;
+  usable!: string;
+  /** Expired, issued and unavailable together. */
+  notUsable!: string;
+  expired!: string;
+  issued!: string;
+  unavailable!: string;
+  held!: string;
+  /** Usable less held, never below 0. */
+  free!: string;
+  /** What confirmed sales want beyond what they hold, "20 short". */
+  short!: string;
+  coming!: string;
+  /** The soonest day a purchase is expected; a run has none. */
+  comingOn!: string | null;
+  /** Left: usable, plus coming, less what confirmed sales still want. */
+  position!: string;
+  /** The soonest expiry of the usable stock, or null. */
+  expiresFirst!: string | null;
+  reorderPoint!: string | null;
+  /** Null without a reorder point (A4). */
+  status!: ReorderStatus | null;
+  /** Some of it waits for a cost (ADR-048). */
+  needsCost!: boolean;
+  /** Its figures at the place chosen, or null with none chosen. */
+  here!: StockHere | null;
+}
+
+/** GET /stock/by-code: one page. */
+export class StockCodePage {
+  entries!: StockCodeRow[];
+  /** Pass as `before` for the next page; null when there is no more. */
+  nextCursor!: string | null;
+}
+
+/**
+ * GET /stock/by-code/counts: the rows each quick filter shows, with the
+ * other filters on and its own off.
+ */
+export class StockCodeCounts {
+  low!: number;
+  out!: number;
+  expiring!: number;
+  expired!: number;
+  needsCost!: number;
+}
+
+/**
+ * One pile: a code at one place, in one lot when it tracks lots, as the
+ * row's menu, Move, Edit lot and History read it.
+ */
+export class StockPile {
+  /** The stock row itself. */
+  id!: string;
+  variantId!: string;
+  sku!: string;
+  productName!: string;
+  variantName!: string | null;
+  unitOfMeasure!: string;
+  locationId!: string;
+  /** Null for a reader without `locations.view` (ADR-093, A6). */
+  locationName!: string | null;
+  locationCode!: string | null;
+  lotId!: string | null;
+  lotCode!: string | null;
+  lotExpiresAt!: string | null;
+  /** Whether the code was ours to invent (MovementLotDto). */
+  lotIsAssigned!: boolean | null;
+  quantity!: string;
+}
+
+/** One place holding a code, and its lots there, soonest first. */
+export class StockPlace {
+  locationId!: string;
+  /** Null for a reader without `locations.view` (ADR-093, A6). */
+  locationName!: string | null;
+  locationCode!: string | null;
+  /** False at a place not available, such as quarantine (ADR-042). */
+  isAvailable!: boolean;
+  onHand!: string;
+  /** Its lots here, soonest first, one with no expiry after them. */
+  lots!: StockPile[];
+}
+
+/** GET /stock/by-code/:variantId/places. */
+export class StockCodePlaces {
+  places!: StockPlace[];
+}
+
+/**
+ * One lot at one place (25a), a pile, as Home's Expiring soon counts it,
+ * with how many places its lot is in, "1 of 2 places".
+ */
+export class StockLotRow extends StockPile {
+  productId!: string;
+  type!: ProductType;
+  coverFileId!: string | null;
+  /** False at a place not available, such as quarantine (ADR-042). */
+  isAvailable!: boolean;
+  /** How many places hold its lot. */
+  places!: number;
+}
+
+/** GET /stock/by-lot: one page. */
+export class StockLotPage {
+  entries!: StockLotRow[];
+  /** Pass as `before` for the next page; null when there is no more. */
+  nextCursor!: string | null;
+}

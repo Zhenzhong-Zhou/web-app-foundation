@@ -83,8 +83,8 @@ interface ReorderDetail {
  * One read for a code's figures (ADR-093, R1 and R20): each figure worked
  * out from the movements a person recorded, each sum holding for every
  * code of an organization, and the screens' routes reading the same
- * figures. Inventory's by-code row (step 9) and Where it stands (step 10)
- * join the routes compared here as they are built.
+ * figures. Inventory's by-code row is among the routes compared here;
+ * Where it stands (step 10) joins them as it is built.
  */
 describe('A code’s figures (e2e)', () => {
   let app: INestApplication;
@@ -283,6 +283,31 @@ describe('A code’s figures (e2e)', () => {
       held: figures.held,
       free: figures.free,
       backordered: figures.short,
+    });
+
+    // Inventory's row per code (step 9) reads the same figures.
+    const [byCode] = body<{ entries: Record<string, unknown>[] }>(
+      await alpha.agent
+        .get(`/v1/stock/by-code?productId=${productId}`)
+        .expect(200),
+    ).entries;
+    expect(byCode).toMatchObject({
+      variantId: bottle,
+      onHand: figures.on_hand,
+      usable: figures.usable,
+      notUsable: figures.not_usable,
+      expired: figures.expired,
+      issued: figures.issued,
+      unavailable: figures.unavailable,
+      held: figures.held,
+      free: figures.free,
+      short: figures.short,
+      coming: figures.coming,
+      comingOn: figures.coming_on,
+      position: figures.position,
+      expiresFirst: figures.expires_first,
+      reorderPoint: figures.reorder_point,
+      status: figures.status,
     });
 
     // Reorder's row, and its opened row's lines adding up to it.

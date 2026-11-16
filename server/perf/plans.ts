@@ -34,6 +34,7 @@ import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
+import { StockGroupedService } from '../src/modules/stock/stock-grouped.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
 import { pickCategories } from './categories';
@@ -210,6 +211,7 @@ async function buildProbes(
 ): Promise<Probe[]> {
   const orders = app.get(OrdersService);
   const stock = app.get(StockReadsService);
+  const grouped = app.get(StockGroupedService);
   const availability = app.get(AvailabilityService);
   const invoices = app.get(InvoicesService);
   const traces = app.get(LotTraceService);
@@ -307,6 +309,44 @@ async function buildProbes(
     {
       name: 'inventory: one product',
       run: () => stock.list({ variantId: shelf.variantId }, 'en'),
+    },
+    // Inventory's grouped read (ADR-093): a row per code by each sort and
+    // filter that works out every code, its counts, a code's places, and
+    // the Lot view.
+    { name: 'stock by code', run: () => grouped.byCode({}, 'en') },
+    {
+      name: 'stock by code: search',
+      run: () => grouped.byCode({ search: 'G-001' }, 'en'),
+    },
+    {
+      name: 'stock by code: one shelf',
+      run: () => grouped.byCode({ locationId: shelf.locationId }, 'en'),
+    },
+    {
+      name: 'stock by code: low stock',
+      run: () => grouped.byCode({ low: 'true' }, 'en'),
+    },
+    {
+      name: 'stock by code: by on hand',
+      run: () => grouped.byCode({ sort: 'onHand' }, 'en'),
+    },
+    {
+      name: 'stock by code: by free',
+      run: () => grouped.byCode({ sort: 'free', order: 'desc' }, 'en'),
+    },
+    {
+      name: 'stock by code: by expiry',
+      run: () => grouped.byCode({ sort: 'expires' }, 'en'),
+    },
+    { name: 'stock by code: counts', run: () => grouped.counts({}) },
+    {
+      name: 'stock by code: a code’s places',
+      run: () => grouped.places(shelf.variantId, {}, 'en', true),
+    },
+    { name: 'stock by lot', run: () => grouped.byLot({}, 'en', true) },
+    {
+      name: 'stock by lot: expiring',
+      run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
     },
     { name: 'availability', run: () => availability.list('en') },
     {

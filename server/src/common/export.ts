@@ -56,7 +56,7 @@ export function inWords<T>(
  * with the list's filters, search, range and sort. Refused past
  * EXPORT_LIMIT with a message to narrow it.
  */
-export async function everyRow<T extends { id: string }>(
+export async function everyRow<T>(
   page: (before: string | undefined, limit: number) => Promise<KeysetPage<T>>,
 ): Promise<T[]> {
   const rows: T[] = [];

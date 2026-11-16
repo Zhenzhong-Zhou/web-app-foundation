@@ -130,6 +130,47 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    operation: 'GET /v1/stock/by-code',
+    of: 'item',
+    ask: async (world, language) => {
+      const row = (
+        await read<{ entries: (Omit<Named, 'id'> & { variantId: string })[] }>(
+          world,
+          language,
+          '/v1/stock/by-code',
+        )
+      ).entries.find((entry) => entry.variantId === world.variantId)!;
+      return itemName(row.productName, row.variantName);
+    },
+  },
+  {
+    operation: 'GET /v1/stock/by-code/{variantId}/places',
+    of: 'item',
+    ask: async (world, language) => {
+      const { places } = await read<{ places: { lots: Named[] }[] }>(
+        world,
+        language,
+        `/v1/stock/by-code/${world.variantId}/places`,
+      );
+      const [pile] = places[0].lots;
+      return itemName(pile.productName, pile.variantName);
+    },
+  },
+  {
+    operation: 'GET /v1/stock/by-lot',
+    of: 'item',
+    ask: async (world, language) => {
+      const row = (
+        await read<{ entries: (Named & { variantId: string })[] }>(
+          world,
+          language,
+          '/v1/stock/by-lot',
+        )
+      ).entries.find((entry) => entry.variantId === world.variantId)!;
+      return itemName(row.productName, row.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/availability',
     of: 'item',
     ask: async (world, language) => {

@@ -268,6 +268,29 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     ),
     read('GET /stock, page 21', (org) => `/stock?before=${org.deepStock}`),
     read('GET /stock?search', () => '/stock?search=G-001'),
+    // Inventory's grouped read (ADR-093), beside the old until step 17.
+    read('GET /stock/by-code', () => '/stock/by-code'),
+    read('GET /stock/by-code/counts', () => '/stock/by-code/counts'),
+    read('GET /stock/by-code?search', () => '/stock/by-code?search=G-001'),
+    read('GET /stock/by-code?low', () => '/stock/by-code?low=true'),
+    read('GET /stock/by-code?sort=onHand', () => '/stock/by-code?sort=onHand'),
+    read(
+      'GET /stock/by-code?sort=free',
+      () => '/stock/by-code?sort=free&order=desc',
+    ),
+    read(
+      'GET /stock/by-code?sort=expires',
+      () => '/stock/by-code?sort=expires',
+    ),
+    read(
+      'GET /stock/by-code/:variantId/places',
+      (org) => `/stock/by-code/${org.hot[0].variantId}/places`,
+    ),
+    read('GET /stock/by-lot', () => '/stock/by-lot'),
+    read(
+      'GET /stock/by-lot?expiringWithin',
+      () => '/stock/by-lot?expiringWithin=90',
+    ),
     // The whole list, which no screen asks for any more: kept to watch it.
     read('GET /stock/availability', () => '/stock/availability'),
     read('GET /stock/movements', () => '/stock/movements'),

@@ -684,6 +684,16 @@ describe('Home (e2e)', () => {
       expect({ kind, late: lateRows }).toEqual({ kind, late });
     }
 
+    // The Lot view, which Expiring soon opens once Stock is redrawn
+    // (ADR-093), lists the same rows: a lot at each place.
+    const expiring = cards.find(({ kind }) => kind === 'expiring')!;
+    expect((await rows('/v1/stock/by-lot?expiringWithin=90')).length).toBe(
+      expiring.count,
+    );
+    expect(
+      (await rows('/v1/stock/by-lot?expiringWithin=90&expired=true')).length,
+    ).toBe(expiring.late);
+
     // Every tile has something; the late are those named above.
     expect(
       Object.fromEntries(cards.map(({ kind, late }) => [kind, late])),

@@ -1898,6 +1898,112 @@ export type UpdateLotDto = {
   expiresAt?: string;
 };
 
+export type StockHere = {
+  onHand: string;
+  lots: number;
+  expiresFirst: string | null;
+};
+
+export type StockCodeRow = {
+  variantId: string;
+  productId: string;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  coverFileId: string | null;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  places: number;
+  lots: number;
+  onHand: string;
+  usable: string;
+  notUsable: string;
+  expired: string;
+  issued: string;
+  unavailable: string;
+  held: string;
+  free: string;
+  short: string;
+  coming: string;
+  comingOn: string | null;
+  position: string;
+  expiresFirst: string | null;
+  reorderPoint: string | null;
+  status: 'out' | 'low' | 'discontinued' | 'enough' | null;
+  needsCost: boolean;
+  here: StockHere | null;
+};
+
+export type StockCodePage = {
+  entries: Array<StockCodeRow>;
+  nextCursor: string | null;
+};
+
+export type StockCodeCounts = {
+  low: number;
+  out: number;
+  expiring: number;
+  expired: number;
+  needsCost: number;
+};
+
+export type StockPile = {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  locationId: string;
+  locationName: string | null;
+  locationCode: string | null;
+  lotId: string | null;
+  lotCode: string | null;
+  lotExpiresAt: string | null;
+  lotIsAssigned: boolean | null;
+  quantity: string;
+};
+
+export type StockPlace = {
+  locationId: string;
+  locationName: string | null;
+  locationCode: string | null;
+  isAvailable: boolean;
+  onHand: string;
+  lots: Array<StockPile>;
+};
+
+export type StockCodePlaces = {
+  places: Array<StockPlace>;
+};
+
+export type StockLotRow = {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  locationId: string;
+  locationName: string | null;
+  locationCode: string | null;
+  lotId: string | null;
+  lotCode: string | null;
+  lotExpiresAt: string | null;
+  lotIsAssigned: boolean | null;
+  quantity: string;
+  productId: string;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  coverFileId: string | null;
+  isAvailable: boolean;
+  places: number;
+};
+
+export type StockLotPage = {
+  entries: Array<StockLotRow>;
+  nextCursor: string | null;
+};
+
 export type LotMatch = {
   id: string;
   code: string;
@@ -6039,6 +6145,187 @@ export type StockControllerUpdateLotV1Responses = {
 
 export type StockControllerUpdateLotV1Response =
   StockControllerUpdateLotV1Responses[keyof StockControllerUpdateLotV1Responses];
+
+export type StockGroupedControllerByCodeV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    sort?: 'name' | 'onHand' | 'free' | 'expires';
+    order?: 'asc' | 'desc';
+    before?: string;
+    limit?: number;
+    low?: string;
+    out?: string;
+    expiringWithin?: number;
+    expired?: string;
+    needsCost?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    categoryId?: string;
+    locationId?: string;
+    productId?: string;
+    includeEmpty?: string;
+    search?: string;
+  };
+  url: '/v1/stock/by-code';
+};
+
+export type StockGroupedControllerByCodeV1Responses = {
+  200: StockCodePage;
+};
+
+export type StockGroupedControllerByCodeV1Response =
+  StockGroupedControllerByCodeV1Responses[keyof StockGroupedControllerByCodeV1Responses];
+
+export type StockGroupedControllerCountsV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    low?: string;
+    out?: string;
+    expiringWithin?: number;
+    expired?: string;
+    needsCost?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    categoryId?: string;
+    locationId?: string;
+    productId?: string;
+    includeEmpty?: string;
+    search?: string;
+  };
+  url: '/v1/stock/by-code/counts';
+};
+
+export type StockGroupedControllerCountsV1Responses = {
+  200: StockCodeCounts;
+};
+
+export type StockGroupedControllerCountsV1Response =
+  StockGroupedControllerCountsV1Responses[keyof StockGroupedControllerCountsV1Responses];
+
+export type StockGroupedControllerExportByCodeV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    sort?: 'name' | 'onHand' | 'free' | 'expires';
+    order?: 'asc' | 'desc';
+    before?: string;
+    limit?: number;
+    low?: string;
+    out?: string;
+    expiringWithin?: number;
+    expired?: string;
+    needsCost?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    categoryId?: string;
+    locationId?: string;
+    productId?: string;
+    includeEmpty?: string;
+    search?: string;
+  };
+  url: '/v1/stock/by-code/export';
+};
+
+export type StockGroupedControllerExportByCodeV1Responses = {
+  200: string;
+};
+
+export type StockGroupedControllerExportByCodeV1Response =
+  StockGroupedControllerExportByCodeV1Responses[keyof StockGroupedControllerExportByCodeV1Responses];
+
+export type StockGroupedControllerPlacesV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    variantId: string;
+  };
+  query?: {
+    locationId?: string;
+    includeEmpty?: string;
+  };
+  url: '/v1/stock/by-code/{variantId}/places';
+};
+
+export type StockGroupedControllerPlacesV1Responses = {
+  200: StockCodePlaces;
+};
+
+export type StockGroupedControllerPlacesV1Response =
+  StockGroupedControllerPlacesV1Responses[keyof StockGroupedControllerPlacesV1Responses];
+
+export type StockGroupedControllerByLotV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    low?: string;
+    out?: string;
+    expiringWithin?: number;
+    expired?: string;
+    needsCost?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    categoryId?: string;
+    locationId?: string;
+    productId?: string;
+    includeEmpty?: string;
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/by-lot';
+};
+
+export type StockGroupedControllerByLotV1Responses = {
+  200: StockLotPage;
+};
+
+export type StockGroupedControllerByLotV1Response =
+  StockGroupedControllerByLotV1Responses[keyof StockGroupedControllerByLotV1Responses];
+
+export type StockGroupedControllerExportByLotV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    low?: string;
+    out?: string;
+    expiringWithin?: number;
+    expired?: string;
+    needsCost?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    categoryId?: string;
+    locationId?: string;
+    productId?: string;
+    includeEmpty?: string;
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/by-lot/export';
+};
+
+export type StockGroupedControllerExportByLotV1Responses = {
+  200: string;
+};
+
+export type StockGroupedControllerExportByLotV1Response =
+  StockGroupedControllerExportByLotV1Responses[keyof StockGroupedControllerExportByLotV1Responses];
 
 export type LotTraceControllerSearchV1Data = {
   body?: never;

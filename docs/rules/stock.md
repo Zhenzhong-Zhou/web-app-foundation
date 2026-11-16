@@ -56,6 +56,33 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--a-row-per-code-opening-to-its-places-and-lots) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding"
 
+## Inventory's list
+
+- **A row per code lists every code with stock on hand, wanted by a
+  confirmed sale, coming, or watched by a reorder point,** so Out lists
+  a code at 0; Include empty lists the rest. At one place chosen, what is
+  there, its On hand and Expires first there, Free and Held the whole
+  item's.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per code with its figures, and Include empty the rest" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s"
+- **Each quick filter's count is the rows it shows,** with the other
+  filters on and its own off: Low stock holds the out, and Expiring soon
+  the expired, as Home's tiles do.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on"
+- **The Lot view is a row per lot at each place, soonest first, the
+  expired on top,** a lot's places together, each saying how many there
+  are: the rows Home's Expiring soon counts.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
+  [ADR-091, amended](../adr/0091-home-redesigned.md#amendment-november-2026--the-tiles-lists-after-inventorys-redesign-adr-093) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per lot at each place, soonest first, the expired on top, a lot’s places together" ·
+  [test](../../server/test/home.e2e-spec.ts) "opens, from each tile, as many rows as it counts, the late among them"
+- **A place's name goes only to a reader who may see places;** the rest
+  read the lots and their figures without it.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places"
+
 ## What confirmed sales hold
 
 - **A confirmed sale holds usable stock, the earliest confirmed first;

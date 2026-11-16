@@ -42,6 +42,10 @@ What to keep true when changing stock's code.
   joins its rows takes them from a `materialized` CTE, and nothing adds
   these sums up again (ADR-093, R1 and R20). `code-figures.e2e-spec.ts`
   holds the screens' routes to it.
+- **Inventory's grouped read is `stock-grouped.service.ts`:** a row per
+  code from `codeFigures`, the Lot view from `stockRowsOf`'s rows, so
+  Home's Expiring soon counts its rows; both paged by sorted-page's
+  keys, a place's name sent only with `locations.view` (ADR-093).
 - **A movement's reference is the server's to set:** the movement route
   takes none from the client (ADR-042).
 - **A movement keeps its SKU as text;** an adjustment needs a note, and

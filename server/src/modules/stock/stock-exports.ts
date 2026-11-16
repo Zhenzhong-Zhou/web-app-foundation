@@ -3,6 +3,10 @@ import type { ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
 import type { ReorderPointRow } from './dto/reorder-point-response.dto';
+import type {
+  StockCodeRow,
+  StockLotRow,
+} from './dto/stock-grouped-response.dto';
 import type { StockReadsService } from './stock-reads.service';
 
 type StockRow = Awaited<
@@ -18,11 +22,86 @@ type MovementRow = Awaited<
  */
 const VARIANT = t({ id: 'exports.column.variant', defaultMessage: 'Variant' });
 
+/** Coming, Position and the reorder point: Reorder's and Inventory's. */
+const COMING = t({ id: 'exports.column.coming', defaultMessage: 'Coming' });
+const POSITION = t({
+  id: 'exports.column.position',
+  defaultMessage: 'Position',
+});
+const REORDER_POINT = t({
+  id: 'exports.column.reorderPoint',
+  defaultMessage: 'Reorder point',
+});
+
 /**
  * The inventory export (ADR-057): what is on hand and where. Costs are the
  * stock value export's, beside the valuation they come from.
  */
 export const STOCK_COLUMNS: ExportColumn<StockRow>[] = [
+  { header: HEADERS.sku, value: (row) => row.sku },
+  { header: HEADERS.item, value: (row) => row.productName },
+  { header: VARIANT, value: (row) => row.variantName },
+  { header: HEADERS.lot, value: (row) => row.lotCode },
+  { header: HEADERS.expiry, value: (row) => row.lotExpiresAt },
+  { header: HEADERS.location, value: (row) => row.locationName },
+  { header: HEADERS.quantity, value: (row) => row.quantity },
+  { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
+];
+
+/**
+ * A row per code's export (ADR-093): each code's figures as its row shows
+ * them, from the one read. Step 11 writes its codes in the screen's words.
+ */
+export const STOCK_CODE_COLUMNS: ExportColumn<StockCodeRow>[] = [
+  { header: HEADERS.sku, value: (row) => row.sku },
+  { header: HEADERS.item, value: (row) => row.productName },
+  { header: VARIANT, value: (row) => row.variantName },
+  {
+    header: t({ id: 'exports.column.onHand', defaultMessage: 'On hand' }),
+    value: (row) => row.onHand,
+  },
+  {
+    header: t({ id: 'exports.column.notUsable', defaultMessage: 'Not usable' }),
+    value: (row) => row.notUsable,
+  },
+  {
+    header: t({ id: 'exports.column.free', defaultMessage: 'Free' }),
+    value: (row) => row.free,
+  },
+  {
+    header: t({ id: 'exports.column.held', defaultMessage: 'Held' }),
+    value: (row) => row.held,
+  },
+  {
+    header: t({ id: 'exports.column.short', defaultMessage: 'Short' }),
+    value: (row) => row.short,
+  },
+  { header: COMING, value: (row) => row.coming },
+  {
+    header: t({
+      id: 'exports.column.expectedDate',
+      defaultMessage: 'Expected date',
+    }),
+    value: (row) => row.comingOn,
+  },
+  { header: POSITION, value: (row) => row.position },
+  { header: REORDER_POINT, value: (row) => row.reorderPoint },
+  { header: HEADERS.status, value: (row) => row.status },
+  {
+    header: t({
+      id: 'exports.column.expiresFirst',
+      defaultMessage: 'Expires first',
+    }),
+    value: (row) => row.expiresFirst,
+  },
+  { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
+];
+
+/**
+ * The Lot view's export (ADR-093): a row per lot at each place, its place
+ * named only for a reader who may see places (ADR-080).
+ */
+export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
   { header: HEADERS.item, value: (row) => row.productName },
   { header: VARIANT, value: (row) => row.variantName },
@@ -91,10 +170,7 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
     header: t({ id: 'exports.column.usable', defaultMessage: 'Usable' }),
     value: (row) => row.usable,
   },
-  {
-    header: t({ id: 'exports.column.coming', defaultMessage: 'Coming' }),
-    value: (row) => row.coming,
-  },
+  { header: COMING, value: (row) => row.coming },
   {
     header: t({
       id: 'exports.column.stillNeeded',
@@ -102,17 +178,8 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
     }),
     value: (row) => row.stillNeeded,
   },
-  {
-    header: t({ id: 'exports.column.position', defaultMessage: 'Position' }),
-    value: (row) => row.position,
-  },
-  {
-    header: t({
-      id: 'exports.column.reorderPoint',
-      defaultMessage: 'Reorder point',
-    }),
-    value: (row) => row.reorderPoint,
-  },
+  { header: POSITION, value: (row) => row.position },
+  { header: REORDER_POINT, value: (row) => row.reorderPoint },
   {
     header: t({
       id: 'exports.column.rule',
