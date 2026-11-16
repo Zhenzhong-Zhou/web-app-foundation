@@ -66,6 +66,10 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per code with its figures, and Include empty the rest" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s"
+- **A lot's code searched with a place chosen finds that lot at that
+  place alone,** never a code whose matching lot is held elsewhere.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a lot by its code at the place chosen alone, never one held elsewhere"
 - **Sorted by On hand, Free or Expires first, each page follows the
   figure its rows show, either way,** a code with nothing to expire last
   both ways; at one place chosen, On hand and Expires first are what is

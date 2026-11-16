@@ -110,7 +110,8 @@ function presentOf(query: StockFiltersDto, org: SQL): SQL | undefined {
  * What narrows the codes whatever the quick filters: their presence, one
  * item, its type, its category with every category under it, and the
  * search, the item as every search matches it (ADR-056) or one of its
- * lots on hand by its code. Every join names the organization (ADR-003).
+ * lots on hand by its code, at the place chosen when one is: the list
+ * keeps what is there (20a). Every join names the organization (ADR-003).
  */
 function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
   const org = sql`${organizationId}::uuid`;
@@ -140,6 +141,11 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
             where sl.organization_id = ${org}
               and sl.quantity > 0
               and ${codeMatches(sql`lt.code`, terms)}
+              ${
+                query.locationId
+                  ? sql`and sl.location_id = ${query.locationId}::uuid`
+                  : sql``
+              }
           )`,
         )
       : undefined,

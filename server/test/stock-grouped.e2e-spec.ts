@@ -363,6 +363,33 @@ describe('Inventory, grouped (e2e)', () => {
     });
   });
 
+  it('finds a lot by its code at the place chosen alone, never one held elsewhere', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { shelf, back } = await world(alpha);
+    const lotsAt = async (query: string) =>
+      body<{ entries: Pile[] }>(
+        await alpha.agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      ).entries.map((row) => `${row.lotCode} ${row.locationName}`);
+
+    // VC-FAR is on SHELF alone; VITC is on BACK too, in VC-SOON.
+    expect(
+      skus(await codes(alpha, `?search=VC-FAR&locationId=${shelf}`)),
+    ).toEqual(['VITC']);
+    expect(
+      skus(await codes(alpha, `?search=VC-FAR&locationId=${back}`)),
+    ).toEqual([]);
+    expect(
+      await alpha.agent
+        .get(`/v1/stock/by-code/counts?search=VC-FAR&locationId=${back}`)
+        .expect(200)
+        .then((res) => body<Record<string, number>>(res).low),
+    ).toBe(0);
+    expect(await lotsAt(`search=VC-FAR&locationId=${shelf}`)).toEqual([
+      'VC-FAR SHELF',
+    ]);
+    expect(await lotsAt(`search=VC-FAR&locationId=${back}`)).toEqual([]);
+  });
+
   it('opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { vitc, shelf } = await world(alpha);
