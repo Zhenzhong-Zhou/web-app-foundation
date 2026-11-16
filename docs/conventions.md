@@ -1036,6 +1036,9 @@ Use these rather than writing the thing again on a page:
   sections stay one page.
 - **`FilterRow`** above a list: search, the list's selects, quick filters with
   counts. Never a column of full-width fields.
+- **`FiltersButton`** inside `FilterRow` on a phone, for the fields a phone
+  hides: one button, "Filters · 2", opening a sheet named by its heading
+  with those fields, Clear and Show 12 (ADR-093, #481). Items' first.
 - **`FilterChips`** under it: what a link narrowed or ordered that no button
   shows, each chip's × undoing it, focus then on the chip left or the page's
   heading (#505's 57).

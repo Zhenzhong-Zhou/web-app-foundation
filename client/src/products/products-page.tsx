@@ -1,8 +1,6 @@
-import Tune from '@mui/icons-material/Tune';
 import {
   Box,
   Button,
-  Drawer,
   MenuItem,
   Paper,
   Stack,
@@ -29,6 +27,7 @@ import {
   type QuickFilter,
   QuickFilterPill,
 } from '../components/filter-row';
+import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
 import { PageHeader } from '../components/page-header';
 import { TableOrCards } from '../components/table-or-cards';
@@ -92,9 +91,6 @@ const ADDRESS_FILTERS = {
   },
   discontinued: oneOf<DiscontinuedShown>(['', 'only', 'include'], ''),
 };
-
-/** The phone sheet's heading, which names it. */
-const SHEET_TITLE_ID = 'items-sheet-title';
 
 /** Name, A to Z, unless a header is chosen (ADR-092). */
 const BY_NAME: ListSort<ItemSort> = { key: 'name', order: 'asc' };
@@ -205,7 +201,6 @@ export function ProductsPage() {
   const chosenCategory = options.find((option) => option.id === category);
 
   const [creating, setCreating] = useState(false);
-  const [sheet, setSheet] = useState(false);
 
   // Show 50 more: focus on the first new row once it is there.
   const firstNewRef = useRef<HTMLAnchorElement>(null);
@@ -361,21 +356,51 @@ export function ProductsPage() {
         }}
         quick={phone ? [] : [discontinuedFilter]}
       >
+        {/* On a phone the category, the sort and Discontinued go in the
+            Filters button's sheet (ADR-093, #481); Clear clears the
+            filters with the sort, in one write. */}
         {phone ? (
-          <Button
-            variant="outlined"
-            startIcon={<Tune />}
-            onClick={() => setSheet(true)}
+          <FiltersButton
+            on={filtersOn}
+            shown={total}
+            onClear={() => clearSort({ category: null, discontinued: null })}
           >
-            {intl.formatMessage(
-              {
-                id: 'products.filters',
-                defaultMessage:
-                  '{count, plural, =0 {Filters} other {Filters · #}}',
-              },
-              { count: filtersOn },
-            )}
-          </Button>
+            {categoryFilter(true)}
+            <TextField
+              select
+              size="small"
+              id="items-sort"
+              label={intl.formatMessage({
+                id: 'products.sort',
+                defaultMessage: 'Sort',
+              })}
+              // A header's other way, Name Z to A, shows as its column.
+              value={
+                `${sort.key}:${sort.order}` in PHONE_SORTS
+                  ? `${sort.key}:${sort.order}`
+                  : (Object.keys(PHONE_SORTS).find((value) =>
+                      value.startsWith(`${sort.key}:`),
+                    ) ?? 'name:asc')
+              }
+              onChange={(event) => {
+                const [key, order] = event.target.value.split(':') as [
+                  ItemSort,
+                  SortOrder,
+                ];
+                setSort(key, order);
+              }}
+            >
+              {Object.entries(PHONE_SORTS).map(([value, label]) => (
+                <MenuItem key={value} value={value}>
+                  {intl.formatMessage(label)}
+                </MenuItem>
+              ))}
+            </TextField>
+            <QuickFilterPill
+              filter={discontinuedFilter}
+              sx={{ alignSelf: 'flex-start' }}
+            />
+          </FiltersButton>
         ) : (
           categoryFilter(false)
         )}
@@ -548,96 +573,6 @@ export function ProductsPage() {
           </Button>
         </Stack>
       )}
-
-      {/* On a phone the category, the sort and Discontinued rise in a
-          sheet from the bottom, scrolling inside so its buttons stay in
-          reach (ADR-090, #481): a dialog, named by its heading, as Help's
-          sheet is (WCAG 4.1.2). */}
-      <Drawer
-        anchor="bottom"
-        open={sheet}
-        onClose={() => setSheet(false)}
-        slotProps={{
-          paper: {
-            'aria-labelledby': SHEET_TITLE_ID,
-            sx: { maxHeight: '80vh' },
-          },
-        }}
-      >
-        <Stack spacing={2} sx={{ p: 2 }}>
-          <Typography variant="h6" component="h2" id={SHEET_TITLE_ID}>
-            {intl.formatMessage({
-              id: 'products.filtersAndSort',
-              defaultMessage: 'Filters and sort',
-            })}
-          </Typography>
-          {categoryFilter(true)}
-          <TextField
-            select
-            size="small"
-            id="items-sort"
-            label={intl.formatMessage({
-              id: 'products.sort',
-              defaultMessage: 'Sort',
-            })}
-            // A header's other way, Name Z to A, shows as its column.
-            value={
-              `${sort.key}:${sort.order}` in PHONE_SORTS
-                ? `${sort.key}:${sort.order}`
-                : (Object.keys(PHONE_SORTS).find((value) =>
-                    value.startsWith(`${sort.key}:`),
-                  ) ?? 'name:asc')
-            }
-            onChange={(event) => {
-              const [key, order] = event.target.value.split(':') as [
-                ItemSort,
-                SortOrder,
-              ];
-              setSort(key, order);
-            }}
-          >
-            {Object.entries(PHONE_SORTS).map(([value, label]) => (
-              <MenuItem key={value} value={value}>
-                {intl.formatMessage(label)}
-              </MenuItem>
-            ))}
-          </TextField>
-          <QuickFilterPill
-            filter={discontinuedFilter}
-            sx={{ alignSelf: 'flex-start' }}
-          />
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ justifyContent: 'flex-end' }}
-          >
-            {/* The filters with the sort, in one write. */}
-            <Button
-              variant="text"
-              onClick={() => clearSort({ category: null, discontinued: null })}
-            >
-              {intl.formatMessage({
-                id: 'products.filters.clear',
-                defaultMessage: 'Clear',
-              })}
-            </Button>
-            <Button onClick={() => setSheet(false)}>
-              {total === null
-                ? intl.formatMessage({
-                    id: 'products.filters.done',
-                    defaultMessage: 'Done',
-                  })
-                : intl.formatMessage(
-                    {
-                      id: 'products.filters.show',
-                      defaultMessage: 'Show {count}',
-                    },
-                    { count: total },
-                  )}
-            </Button>
-          </Stack>
-        </Stack>
-      </Drawer>
 
       {/* Its type from the open tab, none from All (ADR-092); once added,
           the new item's page opens in the list's place. */}
