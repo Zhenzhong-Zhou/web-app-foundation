@@ -97,7 +97,7 @@ Each with what holds it in the code today, or the issue that will.
 - The name first, then the code: "Omega-3 fish oil · OMG-120". A second
   code says what it is ("their ref. SO-DEMO-1").
 - A table's Code column comes after its name, each table moved when its
-  list is next changed, Inventory's in Movements' turn (ADR-093).
+  list is next changed, Inventory's on ADR-093's Inventory branch.
 - A picker's option reads "Vitamin C 500 mg · VITC-100", the code grey
   after the name, a typed code still finding it and an exact one still
   leading its group (#563; `VariantPicker` puts the code first today).
@@ -124,7 +124,8 @@ Each with what holds it in the code today, or the issue that will.
   it is worked out. Items' Low and Out are to open "Where it stands", the
   figure they judge; today only the stock on hand beside them links, to
   Inventory for that item alone (`item-rows.tsx`), as ADR-090's as-built
-  for flows and states says.
+  for flows and states says. ADR-093's Inventory branch builds it, the
+  badge and the quantity beside it read from one count (#590).
 
 ### Sorting and filters
 
@@ -407,6 +408,7 @@ refused.
 | A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
 | The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
 | Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: a failed page, with Try again, as Items' has |
+| The opening row, a row's places or a place's lots (`aria-expanded`) | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | ADR-093: built with Inventory, its words and count on the button, "Reading…" past 250 ms |
 | A drag handle (Customise Home's) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 
 - **✓ marks a state the piece has,** and — one it has not; in To

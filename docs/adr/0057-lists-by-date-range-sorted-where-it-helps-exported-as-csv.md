@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-08
 areas: [api, ui]
-amended-by: [ADR-072, ADR-076, ADR-091]
+amended-by: [ADR-072, ADR-076, ADR-091, ADR-093]
 ---
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
@@ -234,3 +234,18 @@ As built (7 November 2026): the planner reads the orders' primary key
 forward, not the organization's index backwards, about 1 ms for the
 drafts at large. Past 10 ms, `npm run perf:plans` fails and says to widen
 the orders' status index.
+
+## Amendment (November 2026) — Inventory's and Movements' sorts (ADR-093)
+
+"More sortable columns" fires for Inventory and Movements, since the
+sorts were asked for (#473's 16):
+
+- **Stock** sorts by the item's name, the default, and by On hand, Free
+  and Expires first; **by lot,** by expiry, the expired first;
+  **Reorder** by the suggested order, most first; **Movements** by
+  when, newest first.
+- **Each sort comes with its index and its timing;** a sort by a
+  worked-out figure past its budget at large is dropped before the
+  merge or its figure kept in a column, a decision then.
+- **Each export writes the screen's words,** its headers and values in
+  the reader's language (#473's 29).

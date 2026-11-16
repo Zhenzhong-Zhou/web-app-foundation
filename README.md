@@ -240,7 +240,7 @@ work under updates it.
 | A new table                            | Its area in `TABLE_AREAS`, then `npm run diagrams` in `server/`; commit what it writes in `docs/tables/`                                        |
 | A deploy that changes the tracker      | `npm run error-tracker:test -- <site>` in `server/` ([render.md](docs/runbooks/render.md#the-error-tracker-adr-084))                            |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`                                                                      |
-| The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
+| The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; in claude.ai, Edit on its plugin's page; walk `evals.md`                        |
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/<branch>/check.txt` to the chat                                 |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
 | Every feature branch's review step     | `/review-step <brief> <N>` for the findings, then again with Bob's choices after it ([which reviews](docs/engineering.md#the-review-step))      |

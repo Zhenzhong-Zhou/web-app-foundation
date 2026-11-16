@@ -112,8 +112,16 @@ as the catalogues word it.
 
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
+| On hand | En stock | 现有 | Every unit at every place, usable or not: 现有 is 现有可用 and 现有不可用 together (ADR-093). |
 | Held | Réservé | 已预留 | Kept for a confirmed sale (ADR-045). |
-| Free | Libre | 可用 | What can still be promised. |
+| Free | Libre | 可用 | What can still be promised: usable stock less what is held, never below 0 (ADR-093). |
+| Short | manquant(s) | 缺 | Backordered said in a line: what confirmed orders want beyond what they hold, "20 short", « 20 manquants », 缺 20 (ADR-093). |
+| Not usable | Inutilisable | 现有不可用 | On hand that is not usable, its reason beside it in the words the app already uses: expired, 已过期; issued to a run, 已领用; at a place not available, 不可发货 (ADR-093). The pair of Usable's 现有可用; never bare 不可用, which reads as Free's opposite. |
+| Where it stands | État du stock | 库存情况 | The item's page's first section: its stock, what is held and coming, and its position (ADR-093). |
+| Group by / Item / Lot | Regrouper par / Article / Lot | 分组 / 按物品 / 按批次 | Inventory's grouping, by item or by lot (ADR-093). |
+| Expires first | Expire en premier | 最早到期 | A row's lot that expires soonest. |
+| In / Out / Balance | Entrée / Sortie / Solde | 收入 / 发出 / 结存 | Movements for one code, as a stock card reads (ADR-093). |
+| Opening balance | Solde d’ouverture | 期初结存 | A stock card's balance at its date range's start. |
 | Backordered | En rupture | 缺货待发 | |
 | Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as the opposite of Free's 可用. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
@@ -131,15 +139,18 @@ as the catalogues word it.
 
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
-| Reorder point | Point de commande | 库存下限 | An item's level below which it is low (ADR-085). Inventory's tab of the same name lists them. Chinese says the word inventory software uses, a pair with 最高库存, not 再订货点, the English word for word (ADR-091). |
-| Low stock | Stock bas | 库存不足 | Home's tile, Reorder points' filter it opens, which holds the out too, and the bell's notice (ADR-091). |
+| Reorder point | Point de commande | 库存下限 | An item's level below which it is low (ADR-085). Inventory's Reorder tab lists them (ADR-093). Chinese says the word inventory software uses, a pair with 最高库存, not 再订货点, the English word for word (ADR-091). |
+| Reorder | Réapprovisionner | 补货 | Inventory's tab for what is low, named for what is done there (ADR-093); once Reorder points. |
+| Low stock | Stock bas | 库存不足 | Home's tile, Reorder's filter it opens, which holds the out too, and the bell's notice (ADR-091). |
 | Low / Out / Enough | Bas / Épuisé / Suffisant | 不足 / 缺货 / 充足 | Where an item stands: below its point, at zero or less, or at or above it. The filter for the low is Low stock. |
 | Position | Position | 预计可用 | Usable + coming − still needed: what the point is compared with. |
+| Left | Il en reste | 剩 | Position said in a line: "10 left · reorder at 36", « Il en reste 10 · point de commande 36 », 剩 10 · 下限 36 (#459, ADR-093). Its sum keeps Position. |
 | Usable | Utilisable | 现有可用 | Stock at locations marked available, less expired lots and what runs were issued. |
 | Coming | À venir | 在途 | Confirmed purchases still to receive, and released runs' output still to come. |
 | Still needed | Encore requis | 待发 | Confirmed sales still to ship. |
 | In draft / Drafted | En brouillon / Brouillon fait | 草稿中 / 已下草稿 | Draft purchases and runs: shown, never counted as coming. Drafted: what is in draft leaves nothing to suggest. |
 | Suggested order | Commande suggérée | 建议订货 | For a made item, 建议生产. |
+| Buy / Make | Acheter / Fabriquer | 采购 / 生产 | Reorder's buttons, each with how many: Buy 30, Acheter 30, 采购 30; Make 1,000, Fabriquer 1 000, 生产 1,000 (ADR-093). |
 | Bought / Made | Acheté / Fabriqué | 采购 / 自制 | How an item with a point is replenished. |
 | Just enough / A fixed quantity / Up to a maximum | Juste assez / Quantité fixe / Jusqu’à un maximum | 补足到库存下限 / 固定订货量 / 补到最高库存 | The three rules for how much to order. |
 

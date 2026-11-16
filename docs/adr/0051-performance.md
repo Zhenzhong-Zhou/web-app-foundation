@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-01
 areas: [database, ops]
 amends: [ADR-071]
-amended-by: [ADR-081, ADR-082, ADR-091, ADR-092]
+amended-by: [ADR-081, ADR-082, ADR-091, ADR-092, ADR-093]
 ---
 
 # ADR-051 — Performance: a volume seed, response-time budgets, plan checks
@@ -867,3 +867,15 @@ with this as-built, pull request #558.
   - Two releases newer than the handoff's Dates, prettier 3.10.0 and
     `@aws-sdk/client-s3` 3.1167.0; the last now comes of age on 18
     November, 13:10.
+
+## Amendment (November 2026) — Inventory's grouped read and Movements in the budgets (ADR-093)
+
+- **The grouped read joins the budgets** in ADR-093's Inventory branch:
+  a row per code, its counts, a code's places and the Lot view, and the
+  item's Where it stands, each timed at small and large and each in the
+  plan check. The Watch's lines on `GET /stock`'s sort by names and on
+  Availability's promised list move to them, since `GET /stock` and the
+  promised table go.
+- **Movements for one shelf joins the budgets** in its Movements branch,
+  so its trigger fires: the indexes on the source and the destination
+  location, each with the organization and the id, come with it.

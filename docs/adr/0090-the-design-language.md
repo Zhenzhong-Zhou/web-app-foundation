@@ -3,7 +3,7 @@ status: accepted
 date: 2026-11-04
 areas: [docs, i18n, ui]
 amends: [ADR-055, ADR-089]
-amended-by: [ADR-091, ADR-092]
+amended-by: [ADR-091, ADR-092, ADR-093]
 ---
 
 # ADR-090 — The design language: eight principles and their patterns, at every screen size (amends ADR-055 and ADR-089)
@@ -876,3 +876,14 @@ is old enough on the day.
 
 **Deferred, added:** a gate in CI for duplication. Trigger: a clone that
 reaches `main` unread.
+
+## Amendment (November 2026) — the opening row, and Inventory's rows (ADR-093)
+
+- **A new piece, the opening row:** a button with its words and count,
+  "2 places", that opens a row's places or a place's lots after it, with
+  `aria-expanded`, focus kept and "Reading…" past 250 ms. Its states are
+  in `docs/design-language.md`'s Each piece's states and on the canvas
+  row "库存与库存变动 第一版 · Inventory and Movements v1".
+- **Rows and Numbers' lines that waited for it:** Inventory's Code
+  column moves on ADR-093's Inventory branch, and Items' Low and Out open
+  Where it stands, their badge and quantity read from one count (#590).

@@ -3,6 +3,7 @@ status: accepted
 date: 2026-10-30
 areas: [home, stock, notifications]
 amends: [ADR-058]
+amended-by: [ADR-093]
 ---
 
 # ADR-085 — Low stock: a reorder point per item, against usable stock and what is on its way (amends ADR-058)
@@ -370,3 +371,19 @@ differed from the decisions above, or settled what they left open:
   and #222. The time zone's label went to `main` on its own (#344).
 - **Filed for later:** #331 and #333 (expired lots), #339, #340, #342,
   #345 to #348, and #352 to #360.
+
+## Amendment (November 2026) — the tab named Reorder, and Buy and Make on its rows (ADR-093)
+
+- **The tab is Reorder · Réapprovisionner · 补货,** named for what is done
+  there; the setting keeps its word, reorder point · 库存下限. An address
+  with the old tab's name still opens it.
+- **Each row says where it stands,** "10 left · reorder at 36", a link
+  to the item's Where it stands, with the bar as this ADR drew it and
+  its legend.
+- **Each row has its own button, with how many:** Buy 30 on a bought
+  row, Make 1,000 on a made one, each opening its form filled in, the
+  supplier asked first, nothing saved until confirmed. Ticked rows share
+  "Buy 2 on one purchase order".
+- **How an item orders reads in the glossary's words,** "Bought · just
+  enough" or "Bought · a fixed quantity of 12"; purchase packs stay
+  deferred.

@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-09
 areas: [products, i18n, ui]
 amends: [ADR-048, ADR-051, ADR-054, ADR-056, ADR-068, ADR-090, ADR-091]
+amended-by: [ADR-093]
 ---
 
 # ADR-092 — Items: everything the company keeps, by type and category (amends ADR-048, ADR-051, ADR-054, ADR-056, ADR-068, ADR-090 and ADR-091)
@@ -587,3 +588,12 @@ on the item's page*, from then on:
   name is its name there, changed with Edit.
 - **What documents will refuse is the server's,** on the item's detail
   (#551's 65); the page no longer works it out.
+
+## Amendment (November 2026) — Where it stands on the item's page (ADR-093)
+
+- **The item's page's stock** promised above, by location, is ADR-093's
+  Where it stands: the first section under the title, per code, each
+  part shown by permission.
+- **Items' Low and Out open it** (#570), and the badge and the quantity
+  beside it read from one count, what the badge leaves out said beside
+  it (#590).
