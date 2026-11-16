@@ -4,6 +4,7 @@ import type {
   ProductCounts,
 } from '../api/types.gen';
 import type { DiscontinuedShown, ItemSort } from '../lib/api-names';
+import { treeOf } from '../lib/tree';
 import { PRODUCT_TYPES } from './product-types';
 
 /**
@@ -81,16 +82,11 @@ export interface CategoryOption extends CategoryPlace {
 export function categoryPlaces(
   categories: readonly ProductCategory[],
 ): CategoryPlace[] {
-  const children = new Map<string | null, ProductCategory[]>();
-  for (const category of categories) {
-    const siblings = children.get(category.parentId) ?? [];
-    siblings.push(category);
-    children.set(category.parentId, siblings);
-  }
+  const childrenOf = treeOf(categories);
 
   const places: CategoryPlace[] = [];
   const walk = (parentId: string | null, depth: number, above: string[]) => {
-    for (const category of children.get(parentId) ?? []) {
+    for (const category of childrenOf(parentId)) {
       const path = [...above, category.name];
       places.push({
         id: category.id,

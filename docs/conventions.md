@@ -757,7 +757,7 @@ The error tracker hears of real faults only (ADR-084).
 ### What is worth a component test
 
 Pure functions first — no rendering, most logic per test:
-`lib/validation.ts`, `lib/format.ts`, `locations/tree.ts` including the
+`lib/validation.ts`, `lib/format.ts`, `lib/tree.ts` including the
 orphan case, `edit-location-dialog`'s `eligibleParents` (a real graph walk,
 currently covered only by one expensive e2e test), and `lib/api.ts` —
 `ApiError` construction, the 204 path, the array-message flattening.
@@ -1062,6 +1062,9 @@ Use these rather than writing the thing again on a page:
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
+- **`treeOf`** (`lib/tree.ts`) for a tree the server sends flat, the
+  locations' and the categories': each row's children mapped once, a row
+  whose parent is missing at the top, never dropped (#551's 64).
 
 The whole app asks a browser not to translate it: `translate="no"` on the
 html element and Google's `notranslate` meta tag in client/index.html (#245).

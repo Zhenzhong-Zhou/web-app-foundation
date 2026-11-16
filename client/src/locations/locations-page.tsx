@@ -8,13 +8,13 @@ import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { openDialog } from '../lib/open-dialog';
+import { treeOf } from '../lib/tree';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreateLocationDialog } from './create-location-dialog';
 import { EditLocationDialog } from './edit-location-dialog';
 import { LocationNode } from './location-node';
 import { SiteAddressDialog } from './site-address-dialog';
-import { childrenOf } from './tree';
 
 /**
  * Where the layout is set up. Unremarkable on its own, and the thing that
@@ -44,7 +44,8 @@ export function LocationsPage() {
   const canCreate = can('locations.create');
   const showSkeleton = useDelayedFlag(loading);
 
-  const roots = items ? childrenOf(items, null) : [];
+  const childrenOf = treeOf(items ?? []);
+  const roots = childrenOf(null);
 
   if (refused) {
     return (
@@ -102,7 +103,7 @@ export function LocationsPage() {
               <LocationNode
                 key={location.id}
                 location={location}
-                all={items ?? []}
+                childrenOf={childrenOf}
                 depth={0}
                 canCreate={canCreate}
                 canEdit={canEdit}

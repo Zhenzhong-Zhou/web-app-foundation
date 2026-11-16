@@ -8,7 +8,6 @@ import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { addressLine } from './address-line';
 import { locationTypeLabel } from './location-types';
-import { childrenOf } from './tree';
 
 /**
  * One row and everything beneath it.
@@ -17,12 +16,12 @@ import { childrenOf } from './tree';
  * data, and flattening it here would mean computing depth twice — once to
  * order the rows and again to indent them.
  *
- * Takes the whole list rather than its own children, because leaf-ness is a
+ * Takes the tree rather than its own children, because leaf-ness is a
  * question about the list and cannot be answered from a row alone.
  */
 export function LocationNode({
   location,
-  all,
+  childrenOf,
   depth,
   canCreate,
   canEdit,
@@ -31,7 +30,8 @@ export function LocationNode({
   onAddress,
 }: {
   location: Location;
-  all: Location[];
+  /** The tree's children of a location, `treeOf` the whole list. */
+  childrenOf: (parentId: string | null) => Location[];
   depth: number;
   /** Add inside makes a location, so it needs locations.create. */
   canCreate: boolean;
@@ -43,7 +43,7 @@ export function LocationNode({
 }) {
   const isSite = location.type === 'site';
   const intl = useIntl();
-  const children = childrenOf(all, location.id);
+  const children = childrenOf(location.id);
 
   return (
     <>
@@ -172,7 +172,7 @@ export function LocationNode({
         <LocationNode
           key={child.id}
           location={child}
-          all={all}
+          childrenOf={childrenOf}
           depth={depth + 1}
           canCreate={canCreate}
           canEdit={canEdit}
