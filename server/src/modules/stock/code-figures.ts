@@ -1,6 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import { holdsSql } from './availability';
+import { openSaleLines } from './availability';
 import { statusOf } from './reorder-status';
 import { onHandByItem, onHandByUse, usableByItem } from './usable-stock';
 
@@ -14,8 +14,9 @@ import { onHandByItem, onHandByUse, usableByItem } from './usable-stock';
  * - `usable`, and `not_usable` beside it by why, `expired`, `issued` and
  *   `unavailable`, the one rule for usable stock (usable-stock.ts); the
  *   three add up to `not_usable`, and it and `usable` to `on_hand`;
- * - `held`: what confirmed sales hold of the usable, the earliest
- *   confirmed first (ADR-045, availability.ts's holds);
+ * - `held`: what confirmed sales hold of the usable, the holds' total,
+ *   the least of the usable and what they still need (heldOf; ADR-045,
+ *   availability.ts's holds, line by line);
  * - `free`: usable less held, never below 0;
  * - `still_needed`: what confirmed sales still want to ship, and `short`,
  *   the part of it no stock holds;
@@ -29,14 +30,17 @@ import { onHandByItem, onHandByUse, usableByItem } from './usable-stock';
  * - `reorder_point` and `status`, out, low, enough or discontinued
  *   (reorder-status.ts), both null without a point.
  *
- * Usable stock is read once, for on hand and for the holds alike, and
- * each sum once for all the items, materialized, so a planner that
- * misjudges how many items there are cannot work them out again for each
- * (the export of 1,001 points in reorder-points.e2e-spec.ts). A caller
- * that joins the rows to others reads them from a materialized CTE of
- * its own, for the same reason. Every join names the organization
- * (ADR-003, ADR-051). Quantities are numeric, for the caller to cast as
- * its answer sends them.
+ * Its shape keeps a wrong guess of how many items there are cheap
+ * (ADR-093, 34a): each part is one pass grouped by item, the stock at
+ * each place grouped before its place is joined (usable-stock.ts), and
+ * the parts are unioned and grouped once by item, never joined. A
+ * planner that guesses 100 items for 1,000 then neither pairs each item
+ * with every place nor reads a part again for each item (the export of
+ * 1,001 points in reorder-points.e2e-spec.ts; step 13's explain at the
+ * large volume). A caller that joins the rows to others reads them from
+ * a materialized CTE of its own, for the same reason. Every join names
+ * the organization (ADR-003, ADR-051). Quantities are numeric, for the
+ * caller to cast as its answer sends them.
  */
 export function codeFigures(
   organizationId: string,
@@ -46,23 +50,58 @@ export function codeFigures(
   const org = sql`${organizationId}::uuid`;
 
   return sql`
-    with stock as materialized (${onHandByUse(organizationId, today, variants)}),
-    holds as materialized (${heldOf(
-      organizationId,
-      today,
-      variants,
-      sql`select st.variant_id, st.usable from stock st`,
-    )}),
-    coming as materialized (
+    with figures as (
       select
-        cm.variant_id,
-        sum(cm.quantity) as quantity,
-        min(cm.expected_at) as first_expected
+        p.variant_id,
+        sum(p.on_hand) as on_hand,
+        sum(p.usable) as usable,
+        sum(p.expired) as expired,
+        sum(p.issued) as issued,
+        sum(p.unavailable) as unavailable,
+        sum(p.still_needed) as still_needed,
+        sum(p.coming) as coming,
+        min(p.coming_on) as coming_on,
+        min(p.expires_first) as expires_first,
+        max(p.reorder_point) as reorder_point,
+        bool_or(p.has_point) as has_point,
+        bool_or(p.active) as active
       from (
         select
-          ol.variant_id,
-          ol.quantity_ordered - ol.quantity_fulfilled as quantity,
-          o.expected_at
+          v.id as variant_id,
+          0::numeric as on_hand,
+          0::numeric as usable,
+          0::numeric as expired,
+          0::numeric as issued,
+          0::numeric as unavailable,
+          0::numeric as still_needed,
+          0::numeric as coming,
+          null::date as coming_on,
+          null::date as expires_first,
+          rp.reorder_point,
+          rp.id is not null as has_point,
+          v.is_active and pr.is_active as active
+        from product_variants v
+        join products pr
+          on pr.id = v.product_id
+          and pr.organization_id = ${org}
+        left join reorder_points rp
+          on rp.variant_id = v.id
+          and rp.organization_id = ${org}
+        where v.organization_id = ${org}
+          and v.id in ${variants}
+        union all
+        select
+          st.variant_id, st.on_hand, st.usable, st.expired, st.issued,
+          st.unavailable, 0, 0, null, null, null, null, null
+        from (${onHandByUse(organizationId, today, variants)}) st
+        union all
+        select nd.variant_id, 0, 0, 0, 0, 0, nd.still_needed, 0, null, null, null, null, null
+        from (${stillNeededOf(organizationId, variants)}) nd
+        union all
+        select
+          ol.variant_id, 0, 0, 0, 0, 0, 0,
+          ol.quantity_ordered - ol.quantity_fulfilled,
+          o.expected_at, null, null, null, null
         from order_lines ol
         join orders o
           on o.id = ol.order_id
@@ -76,64 +115,43 @@ export function codeFigures(
           and ol.quantity_ordered > ol.quantity_fulfilled
         union all
         select
-          po.output_variant_id,
+          po.output_variant_id, 0, 0, 0, 0, 0, 0,
           greatest(0, po.quantity_planned - po.quantity_produced),
-          null::date
+          null, null, null, null, null
         from production_orders po
         where po.organization_id = ${org}
           and po.status = 'released'
           and po.output_variant_id in ${variants}
-      ) cm
-      group by cm.variant_id
+        union all
+        select ex.variant_id, 0, 0, 0, 0, 0, 0, 0, null, ex.expires_first, null, null, null
+        from (${expiresFirstOf(organizationId, today, variants)}) ex
+      ) p
+      group by p.variant_id
+      -- Only a code of this organization's items: its own row is there.
+      having bool_or(p.active) is not null
     ),
-    expiry as materialized (${expiresFirstOf(organizationId, today, variants)}),
-    figures as (
+    held as (
+      select f.*, ${heldOf(sql`f.usable`, sql`f.still_needed`)} as held
+      from figures f
+    ),
+    worked as (
       select
-        v.id as variant_id,
-        coalesce(s.on_hand, 0) as on_hand,
-        coalesce(s.usable, 0) as usable,
-        coalesce(s.on_hand, 0) - coalesce(s.usable, 0) as not_usable,
-        coalesce(s.expired, 0) as expired,
-        coalesce(s.issued, 0) as issued,
-        coalesce(s.unavailable, 0) as unavailable,
-        coalesce(h.held, 0) as held,
-        ${freeOf(sql`coalesce(s.usable, 0)`, sql`coalesce(h.held, 0)`)} as free,
-        coalesce(h.still_needed, 0) as still_needed,
-        coalesce(h.still_needed, 0) - coalesce(h.held, 0) as short,
-        coalesce(c.quantity, 0) as coming,
-        c.first_expected as coming_on,
-        coalesce(s.usable, 0) + coalesce(c.quantity, 0)
-          - coalesce(h.still_needed, 0) as position,
-        e.expires_first,
-        rp.reorder_point,
-        rp.id is not null as has_point,
-        v.is_active and pr.is_active as active
-      from product_variants v
-      join products pr
-        on pr.id = v.product_id
-        and pr.organization_id = ${org}
-      left join stock s on s.variant_id = v.id
-      left join holds h on h.variant_id = v.id
-      left join coming c on c.variant_id = v.id
-      left join expiry e on e.variant_id = v.id
-      left join reorder_points rp
-        on rp.variant_id = v.id
-        and rp.organization_id = ${org}
-      where v.organization_id = ${org}
-        and v.id in ${variants}
+        h.*,
+        h.usable + h.coming - h.still_needed as position
+      from held h
     )
     select
       f.variant_id,
       f.on_hand,
       f.usable,
-      f.not_usable,
+      f.on_hand - f.usable as not_usable,
       f.expired,
       f.issued,
       f.unavailable,
       f.held,
-      f.free,
+      ${freeOf(sql`f.usable`, sql`f.held`)} as free,
       f.still_needed,
-      f.short,
+      f.still_needed - f.held as short,
       f.coming,
       f.coming_on,
       f.position,
@@ -148,7 +166,7 @@ export function codeFigures(
         inDraft: sql`0`,
         active: sql`f.active`,
       })} end as status
-    from figures f
+    from worked f
   `;
 }
 
@@ -160,8 +178,8 @@ export type SortedFigure = 'onHand' | 'free' | 'expires';
  * sorted by it reads before it reads its page's codes in full (ADR-093,
  * 29a). Built from codeFigures' own parts, so the figure is the one the
  * row shows, never a second copy of its rule: On hand from on hand by
- * item, Free from the usable and the holds, Expires first from the
- * expiry. Rows `variant_id, value`, one per item with any; the others
+ * item, Free from the usable and what sales still need, held as
+ * codeFigures holds it, Expires first from the expiry. Rows `variant_id, value`, one per item with any; the others
  * have none, 0 or no expiry.
  *
  * Narrow on purpose: a list that keeps every code gives the planner no
@@ -190,20 +208,18 @@ export function sortedFigure(
     `;
   }
   return sql`
-    with usable as materialized (${usableByItem(organizationId, today, variants)}),
-    holds as materialized (${heldOf(
-      organizationId,
-      today,
-      variants,
-      sql`select us.variant_id, us.usable from usable us`,
-    )})
     select
       fr.variant_id,
-      ${freeOf(sql`sum(fr.usable)`, sql`sum(fr.held)`)} as value
+      ${freeOf(
+        sql`sum(fr.usable)`,
+        heldOf(sql`sum(fr.usable)`, sql`sum(fr.still_needed)`),
+      )} as value
     from (
-      select us.variant_id, us.usable, 0 as held from usable us
+      select us.variant_id, us.usable, 0::numeric as still_needed
+      from (${usableByItem(organizationId, today, variants)}) us
       union all
-      select hd.variant_id, 0, hd.held from holds hd
+      select nd.variant_id, 0, nd.still_needed
+      from (${stillNeededOf(organizationId, variants)}) nd
     ) fr
     group by fr.variant_id
   `;
@@ -215,23 +231,29 @@ function freeOf(usable: SQL, held: SQL): SQL {
 }
 
 /**
- * What confirmed sales hold of the `supply`, rows `variant_id, usable`,
- * and what they still need, per item: rows `variant_id, held,
- * still_needed` (availability.ts's holds).
+ * Held, a code's total: what confirmed sales hold of its usable stock,
+ * the least of the usable and what they still need (ADR-045, amended by
+ * ADR-093, 34a). The holds share the usable out line by line, the
+ * earliest confirmed first, each line taking what is left up to its
+ * need (availability.ts's holdsSql), so their sum is this whenever every
+ * line needs more than nothing, as every open line does;
+ * code-figures.e2e-spec.ts holds the two equal on every code it walks.
+ * An order's own lines, and the guard on a shipment, read the holds.
  */
-function heldOf(
-  organizationId: string,
-  today: string,
-  variants: SQL,
-  supply: SQL,
-): SQL {
+function heldOf(usable: SQL, stillNeeded: SQL): SQL {
+  return sql`least(${usable}, ${stillNeeded})`;
+}
+
+/**
+ * What confirmed sales still want to ship per item, the holds' demand
+ * summed (availability.ts's openSaleLines): rows `variant_id,
+ * still_needed`.
+ */
+function stillNeededOf(organizationId: string, variants: SQL): SQL {
   return sql`
-    select
-      hl.variant_id,
-      sum(hl.held) as held,
-      sum(hl.outstanding) as still_needed
-    from (${holdsSql(organizationId, today, variants, supply)}) hl
-    group by hl.variant_id
+    select ln.variant_id, sum(ln.outstanding) as still_needed
+    from (${openSaleLines(organizationId, variants)}) ln
+    group by ln.variant_id
   `;
 }
 
@@ -247,19 +269,23 @@ function expiresFirstOf(
   const org = sql`${organizationId}::uuid`;
 
   return sql`
-    select sl.variant_id, min(lt.expires_at) as expires_first
-    from stock_levels sl
+    select ep.variant_id, min(ep.expires_first) as expires_first
+    from (
+      select sl.variant_id, sl.location_id, min(lt.expires_at) as expires_first
+      from stock_levels sl
+      join lots lt
+        on lt.id = sl.lot_id
+        and lt.organization_id = ${org}
+      where sl.organization_id = ${org}
+        and sl.variant_id in ${variants}
+        and sl.quantity > 0
+        and lt.expires_at >= ${today}::date
+      group by sl.variant_id, sl.location_id
+    ) ep
     join locations loc
-      on loc.id = sl.location_id
+      on loc.id = ep.location_id
       and loc.organization_id = ${org}
-    join lots lt
-      on lt.id = sl.lot_id
-      and lt.organization_id = ${org}
-    where sl.organization_id = ${org}
-      and sl.variant_id in ${variants}
-      and sl.quantity > 0
       and loc.is_available
-      and lt.expires_at >= ${today}::date
-    group by sl.variant_id
+    group by ep.variant_id
   `;
 }

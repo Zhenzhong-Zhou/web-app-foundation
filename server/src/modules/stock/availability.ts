@@ -32,51 +32,37 @@ export interface LineHold {
  * stock, the one rule (usable-stock.ts; ADR-045 amended by ADR-093): at
  * locations marked available, since a retention or quarantine bin holds
  * stock nobody can promise (ADR-042), less lots expired by the
- * organization's `today` and what released runs were issued. A caller
- * that has read it already passes it as `supply`, rows `variant_id,
- * usable`, so it is read once (code-figures.ts).
+ * organization's `today` and what released runs were issued.
  *
- * One query for one product or for many, so the rule exists once: a
- * code's figures and the check that guards a shipment cannot disagree.
+ * One query for one product or for many, so the rule exists once: an
+ * order's own lines and the check that guards a shipment read it, and a
+ * code's figures its total, the least of the usable and what the lines
+ * still need, which every line's hold sums to (code-figures.ts; ADR-093,
+ * 34a).
  */
 export function holdsSql(
   organizationId: string,
   today: string,
   variants: SQL,
-  supply: SQL = usableByItem(organizationId, today, variants),
 ): SQL {
   return sql`
     with demand as (
       select
-        ol.variant_id,
-        ol.id as line_id,
-        o.id as order_id,
-        ol.quantity_ordered - ol.quantity_fulfilled as outstanding,
+        ln.variant_id,
+        ln.line_id,
+        ln.order_id,
+        ln.outstanding,
         coalesce(
-          sum(ol.quantity_ordered - ol.quantity_fulfilled) over (
-            partition by ol.variant_id
-            order by o.confirmed_at, o.id, ol.id
+          sum(ln.outstanding) over (
+            partition by ln.variant_id
+            order by ln.confirmed_at, ln.order_id, ln.line_id
             rows between unbounded preceding and 1 preceding
           ),
           0
         ) as before
-      from order_lines ol
-      join orders o on o.id = ol.order_id
-      where ol.organization_id = ${organizationId}::uuid
-        -- Redundant for correctness, since a line's order is in its
-        -- organization, but without it Postgres cannot use
-        -- orders_org_status_idx and reads every tenant's confirmed sales
-        -- to join them (ADR-051's plan check found it).
-        and o.organization_id = ${organizationId}::uuid
-        and o.direction = 'sale'
-        and o.status = 'confirmed'
-        -- order_lines_open_idx is built on exactly these two conditions;
-        -- change them together or the index stops being used.
-        and not ol.is_closed_short
-        and ol.quantity_ordered > ol.quantity_fulfilled
-        and ol.variant_id in ${variants}
+      from (${openSaleLines(organizationId, variants)}) ln
     ),
-    supply as (${supply})
+    supply as (${usableByItem(organizationId, today, variants)})
     select
       d.variant_id,
       d.line_id,
@@ -87,6 +73,39 @@ export function holdsSql(
       greatest(0, least(d.outstanding, coalesce(s.usable, 0) - d.before))::numeric(18, 4) as held
     from demand d
     left join supply s on s.variant_id = d.variant_id
+  `;
+}
+
+/**
+ * The demand holds share out (ADR-045): every open confirmed sale line
+ * of the items in `variants`, what it still needs, and when its order was
+ * confirmed. Rows `variant_id, line_id, order_id, confirmed_at,
+ * outstanding`; the holds read them line by line, a code's figures their
+ * sum (code-figures.ts).
+ */
+export function openSaleLines(organizationId: string, variants: SQL): SQL {
+  return sql`
+    select
+      ol.variant_id,
+      ol.id as line_id,
+      o.id as order_id,
+      o.confirmed_at,
+      ol.quantity_ordered - ol.quantity_fulfilled as outstanding
+    from order_lines ol
+    join orders o on o.id = ol.order_id
+    where ol.organization_id = ${organizationId}::uuid
+      -- Redundant for correctness, since a line's order is in its
+      -- organization, but without it Postgres cannot use
+      -- orders_org_status_idx and reads every tenant's confirmed sales
+      -- to join them (ADR-051's plan check found it).
+      and o.organization_id = ${organizationId}::uuid
+      and o.direction = 'sale'
+      and o.status = 'confirmed'
+      -- order_lines_open_idx is built on exactly these two conditions;
+      -- change them together or the index stops being used.
+      and not ol.is_closed_short
+      and ol.quantity_ordered > ol.quantity_fulfilled
+      and ol.variant_id in ${variants}
   `;
 }
 

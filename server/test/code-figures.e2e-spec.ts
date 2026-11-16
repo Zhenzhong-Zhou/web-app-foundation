@@ -6,6 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
+import { holdsSql } from '../src/modules/stock/availability';
 import { codeFigures } from '../src/modules/stock/code-figures';
 import {
   addMember,
@@ -461,7 +462,7 @@ describe('A code’s figures (e2e)', () => {
     );
   });
 
-  it('walks every code of an organization: on hand is the ledger’s, and every sum holds', async () => {
+  it('walks every code of an organization: on hand is the ledger’s, held the holds’ total, and every sum holds', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await world(alpha);
     const { agent } = alpha;
@@ -496,13 +497,18 @@ describe('A code’s figures (e2e)', () => {
     expect(every).toHaveLength(6);
     expect(every.map((row) => row.variant_id)).not.toContain(theirs);
 
+    const codes = sql`(select v.id from product_variants v
+      where v.organization_id = ${alpha.organizationId}::uuid)`;
     const { rows: broken } = await db.execute<{ variant_id: string }>(sql`
-      with f as (${codeFigures(
-        alpha.organizationId,
-        TODAY,
-        sql`(select v.id from product_variants v
-          where v.organization_id = ${alpha.organizationId}::uuid)`,
-      )}),
+      with f as (${codeFigures(alpha.organizationId, TODAY, codes)}),
+      -- Held, a code's total, is what its sales' lines hold one by one,
+      -- the earliest confirmed first (34a): BOTTLE's first order keeps
+      -- its hold and the last goes short, WANTED holds nothing.
+      lines as (
+        select h.variant_id, sum(h.held) as held
+        from (${holdsSql(alpha.organizationId, TODAY, codes)}) h
+        group by h.variant_id
+      ),
       ledger as (
         select
           m.variant_id,
@@ -516,7 +522,9 @@ describe('A code’s figures (e2e)', () => {
       select f.variant_id
       from f
       left join ledger l on l.variant_id = f.variant_id
+      left join lines h on h.variant_id = f.variant_id
       where f.on_hand <> coalesce(l.on_hand, 0)
+        or f.held <> coalesce(h.held, 0)
         or f.on_hand <> f.usable + f.not_usable
         or f.not_usable <> f.expired + f.issued + f.unavailable
         or f.usable < 0 or f.expired < 0 or f.issued < 0 or f.unavailable < 0

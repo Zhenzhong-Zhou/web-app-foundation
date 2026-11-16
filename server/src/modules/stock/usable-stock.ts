@@ -17,6 +17,11 @@ import { type SQL, sql } from 'drizzle-orm';
  * expired, never below zero, so stock moved off a run's location is not
  * left out twice.
  *
+ * The stock is summed per item and place before its place is joined,
+ * here and in onHandByItem (ADR-093, 34a): joined first, a planner that
+ * guesses too few items pairs each with every place and looks each pair
+ * up, 125,000 lookups for 1,000 items at the large volume.
+ *
  * Raw SQL with every table aliased, so a caller may name the outer
  * tables as it likes.
  */
@@ -45,18 +50,18 @@ export function usableByLocation(
           where lt.expires_at is null or lt.expires_at >= ${today}::date
         ), 0) as unexpired
       from stock_levels sl
-      join locations loc
-        on loc.id = sl.location_id
-        and loc.organization_id = ${org}
       left join lots lt
         on lt.id = sl.lot_id
         and lt.organization_id = ${org}
       where sl.organization_id = ${org}
         and sl.variant_id in ${variants}
         and sl.quantity > 0
-        and loc.is_available
       group by sl.variant_id, sl.location_id
     ) s
+    join locations loc
+      on loc.id = s.location_id
+      and loc.organization_id = ${org}
+      and loc.is_available
     left join (
       select
         pol.component_variant_id as variant_id,
@@ -98,7 +103,9 @@ export function usableByItem(
  * usable, and the not usable by why, expired or issued to a run at a
  * place marked available, or at a place not available (ADR-042). The
  * four add up to on hand. Rows `variant_id, on_hand, usable, expired,
- * issued, unavailable`, for the items in `variants` with stock anywhere.
+ * issued, unavailable`, for the items in `variants` with stock anywhere;
+ * its two halves unioned and grouped by item, never joined, as
+ * codeFigures' parts are.
  */
 export function onHandByUse(
   organizationId: string,
@@ -108,21 +115,25 @@ export function onHandByUse(
   return sql`
     select
       h.variant_id,
-      h.on_hand,
-      coalesce(u.usable, 0) as usable,
-      coalesce(u.expired, 0) as expired,
-      coalesce(u.issued, 0) as issued,
-      h.unavailable
-    from (${onHandByItem(organizationId, variants)}) h
-    left join (
+      sum(h.on_hand) as on_hand,
+      sum(h.usable) as usable,
+      sum(h.expired) as expired,
+      sum(h.issued) as issued,
+      sum(h.unavailable) as unavailable
+    from (
       select
-        a.variant_id,
-        sum(a.usable) as usable,
-        sum(a.expired) as expired,
-        sum(a.issued) as issued
+        oh.variant_id,
+        oh.on_hand,
+        0::numeric as usable,
+        0::numeric as expired,
+        0::numeric as issued,
+        oh.unavailable
+      from (${onHandByItem(organizationId, variants)}) oh
+      union all
+      select a.variant_id, 0, a.usable, a.expired, a.issued, 0
       from (${usableByLocation(organizationId, today, variants)}) a
-      group by a.variant_id
-    ) u on u.variant_id = h.variant_id
+    ) h
+    group by h.variant_id
   `;
 }
 
@@ -137,17 +148,21 @@ export function onHandByItem(organizationId: string, variants: SQL): SQL {
 
   return sql`
     select
-      sl.variant_id,
-      sum(sl.quantity) as on_hand,
-      coalesce(sum(sl.quantity) filter (where not loc.is_available), 0)
+      s.variant_id,
+      sum(s.quantity) as on_hand,
+      coalesce(sum(s.quantity) filter (where not loc.is_available), 0)
         as unavailable
-    from stock_levels sl
+    from (
+      select sl.variant_id, sl.location_id, sum(sl.quantity) as quantity
+      from stock_levels sl
+      where sl.organization_id = ${org}
+        and sl.variant_id in ${variants}
+        and sl.quantity > 0
+      group by sl.variant_id, sl.location_id
+    ) s
     join locations loc
-      on loc.id = sl.location_id
+      on loc.id = s.location_id
       and loc.organization_id = ${org}
-    where sl.organization_id = ${org}
-      and sl.variant_id in ${variants}
-      and sl.quantity > 0
-    group by sl.variant_id
+    group by s.variant_id
   `;
 }

@@ -35,13 +35,13 @@ What to keep true when changing stock's code.
   and Reorder's position read `usableByLocation`, `usableByItem` or
   `onHandByUse`, never a copy of their sums (ADR-045 and ADR-085, as
   ADR-093 amends them).
-- **A code's figures are one read,** `codeFigures` in `code-figures.ts`:
-  on hand and its not-usable parts, held, free, short, coming, Left
-  (the position), what expires first and the status. Every screen's
-  figures read it, Reorder's `positionsOf` among them; a reader that
-  joins its rows takes them from a `materialized` CTE, and nothing adds
-  these sums up again (ADR-093, R1 and R20). `code-figures.e2e-spec.ts`
-  holds the screens' routes to it.
+- **A code's figures are one read,** `codeFigures` (`code-figures.ts`):
+  on hand and its not-usable parts, held, free, short, coming, Left,
+  what expires first and the status; every screen reads it, never a
+  sum of its own (ADR-093, R1, R20). Its parts are unioned and grouped
+  by item, never joined, stock summed per place before the place is
+  joined (34a); held is `least(usable, still needed)`, an order's lines
+  and the guard read `holdsSql`.
 - **Inventory's grouped read is `stock-grouped.service.ts`:** a row per
   code from `codeFigures`, a figure sort `sortedFigure` unioned with
   the codes, never joined (29a); the Lot view from `stockRowsOf`'s rows,

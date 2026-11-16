@@ -39,10 +39,12 @@ file is kept is in the [README](README.md).
   [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code" ·
   partly tested
 - **The figures add up, for every code:** on hand is the ledger's,
-  usable and not usable; free is usable less held, never below 0; short
-  is what confirmed sales still want beyond what they hold.
+  usable and not usable; held is the least of usable and what confirmed
+  sales still want, the sum of every line's hold; free is usable less
+  held, never below 0; short is what confirmed sales still want beyond
+  what they hold.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "walks every code of an organization: on hand is the ledger’s, and every sum holds"
+  [test](../../server/test/code-figures.e2e-spec.ts) "walks every code of an organization: on hand is the ledger’s, held the holds’ total, and every sum holds"
 - **Coming is what confirmed purchases still have to receive and what
   released runs still have to make,** its day the soonest a purchase is
   expected; a run has no day. **Left is usable, plus coming, less what
