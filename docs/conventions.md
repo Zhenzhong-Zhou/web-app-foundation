@@ -945,8 +945,10 @@ destination goes into a group in `navigation.ts`, never into the bar.
 A screen's layout follows the same rule: CSS `display` at the breakpoint decides
 what shows. The exception is a list whose table and cards would each draw every
 row: CSS `display` would draw every row twice, one copy hidden, so it switches
-with `useMediaQuery` and `noSsr: true`, which gives the first draw the width, as
-Items and Members do
+with `useMediaQuery` and `noSsr: true`, which gives the first draw the width:
+`TableOrCards` draws one or the other, as Items does, and `useCards` is the
+same question for the rest of its page; Members asks it by hand until it is
+next changed
 ([ADR-090, The width switch](adr/0090-the-design-language.md#decision--the-width-switch)).
 Help's switch is a fix (#505); the other screens that branch on the width wait
 in #567, each judged when next touched.
@@ -1062,6 +1064,9 @@ Use these rather than writing the thing again on a page:
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
+- **`TableOrCards`** for a list's rows as a table from 600 px and as cards
+  below, two grey cards while the cards are read; `useCards` asks the same
+  width for the rest of the page (ADR-090's width switch).
 - **`treeOf`** (`lib/tree.ts`) for a tree the server sends flat, the
   locations' and the categories': each row's children mapped once, a row
   whose parent is missing at the top, never dropped (#551's 64).

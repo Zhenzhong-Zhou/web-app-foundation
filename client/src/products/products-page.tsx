@@ -5,12 +5,9 @@ import {
   Drawer,
   MenuItem,
   Paper,
-  Skeleton,
   Stack,
   TextField,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -34,12 +31,13 @@ import {
 } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { PageHeader } from '../components/page-header';
+import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import type { DiscontinuedShown, ItemSort } from '../lib/api-names';
 import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useCards } from '../lib/use-cards';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { id, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -145,8 +143,7 @@ const NO_ADD = defineMessages({
 export function ProductsPage() {
   const intl = useIntl();
   const can = useCan();
-  const theme = useTheme();
-  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  const phone = useCards();
 
   /**
    * The last counts read, kept while another tab's or search's first page
@@ -235,8 +232,6 @@ export function ProductsPage() {
     setFirstNew(null);
     setTicked(new Set());
   }
-
-  const showPlaceholders = useDelayedFlag(loading);
 
   /** Each tab's count: this answer's, grey while it is read, "—" failed. */
   const count = (of: ItemTab) =>
@@ -454,34 +449,29 @@ export function ProductsPage() {
       {!failed && (
         <Paper variant="outlined">
           {loading || items?.length ? (
-            phone ? (
-              loading ? (
-                showPlaceholders && (
-                  <Stack sx={{ p: 2 }} spacing={1} aria-hidden>
-                    <Skeleton height={64} />
-                    <Skeleton height={64} />
-                  </Stack>
-                )
-              ) : (
+            <TableOrCards
+              loading={loading}
+              cards={
                 <ItemCards
                   items={items}
                   ticks={ticks}
                   withType={tab === 'all'}
                   firstNew={newRow}
                 />
-              )
-            ) : (
-              <ItemTable
-                items={items}
-                loading={loading}
-                withType={tab === 'all'}
-                sort={sort}
-                header={header}
-                onDate={(key) => setSort(key, 'desc')}
-                ticks={ticks}
-                firstNew={newRow}
-              />
-            )
+              }
+              table={
+                <ItemTable
+                  items={items}
+                  loading={loading}
+                  withType={tab === 'all'}
+                  sort={sort}
+                  header={header}
+                  onDate={(key) => setSort(key, 'desc')}
+                  ticks={ticks}
+                  firstNew={newRow}
+                />
+              }
+            />
           ) : (
             <ItemsEmpty
               search={search}

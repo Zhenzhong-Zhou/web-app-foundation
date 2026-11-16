@@ -30,9 +30,9 @@ what to keep true when a component styles itself (ADR-055;
 - **Breakpoint props where a layout breaks,** CSS `display` deciding what
   shows, not a `useMediaQuery` branch
   ([conventions.md](../../docs/conventions.md#responsive-layout)); a list
-  whose table and cards would each draw every row switches with
-  `useMediaQuery` and `noSsr: true`, as Items and Members do (ADR-090,
-  "The width switch").
+  whose table and cards would each draw every row switches by
+  `TableOrCards`, the rest of its page asking `useCards` (ADR-090, "The
+  width switch").
 - **The shared pieces first:** `ExpiryChip`, `displayQuantity`,
   `DetailLayout`, `FilterRow`, `EmptyState`, `ListError`, `Reference`,
   `UndoSnackbar`, `PasswordField`, `IconBadge`
