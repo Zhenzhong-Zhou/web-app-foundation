@@ -266,7 +266,8 @@ Use these rather than writing the thing again. The client's are under
   pages through `sorted-page.ts`: `pagedBy` for a kept column, the cursor
   a row's id; `orderOf`, `afterKeys`, `cursorOf` and `readKeys` for a
   worked-out figure, the cursor its values; `notInThisList`, every list's
-  refusal of a cursor.
+  refusal of a cursor. An export through `export.ts`: `everyRow`,
+  `csvFile`, and `inWords` for a code it writes as the screen's word.
 - **`core/documents/`:** `sheet.ts` (`masthead`, `party`, `linesTable`,
   `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
   for who and where it names, and `DocumentsService.send` with a

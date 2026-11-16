@@ -19,10 +19,36 @@ export const EXPORT_LIMIT = 50_000;
 /** Rows read per query while collecting an export. */
 const BATCH = 1_000;
 
-/** One column of an export: its header, and its value for a row. */
+/**
+ * One column of an export: its header, and its value for a row, given the
+ * reader's language for a value written in words (inWords).
+ */
 export interface ExportColumn<T> {
   header: Translatable;
-  value: (row: T) => CsvValue;
+  value: (row: T, locale: Locale) => CsvValue;
+}
+
+/**
+ * A column whose value the app keeps as a code, `out`, `bought` or
+ * `each`, written as the screen's word for it in the reader's language
+ * (ADR-057, amended for ADR-093; #473's 29): Out, Rupture, 缺货. A code
+ * with no word is written as it is stored, as History reads one.
+ * Quantities, days and moments stay data, as csv.ts writes them.
+ */
+export function inWords<T>(
+  header: Translatable,
+  words: Readonly<Record<string, Translatable>>,
+  code: (row: T) => string | null,
+): ExportColumn<T> {
+  return {
+    header,
+    value: (row, locale) => {
+      const kept = code(row);
+      return kept !== null && Object.hasOwn(words, kept)
+        ? translate(words[kept], locale)
+        : kept;
+    },
+  };
 }
 
 /**
@@ -70,10 +96,10 @@ export function withinLimit<T>(rows: T[], refusal?: Translatable): T[] {
 }
 
 /**
- * The file: headers in the reader's language, then a row per record, sent
- * as an attachment named for the list and today, `invoices-2026-10-07.csv`:
- * the organization's today (ADR-072). Times inside stay UTC and say so
- * (ADR-057, amended).
+ * The file: headers and words in the reader's language, then a row per
+ * record, sent as an attachment named for the list and today,
+ * `invoices-2026-10-07.csv`: the organization's today (ADR-072). Times
+ * inside stay UTC and say so (ADR-057, amended).
  */
 export function csvFile<T>(
   res: Response,
@@ -91,7 +117,7 @@ export function csvFile<T>(
 
   return toCsv(
     columns.map((column) => translate(column.header, locale)),
-    rows.map((row) => columns.map((column) => column.value(row))),
+    rows.map((row) => columns.map((column) => column.value(row, locale))),
   );
 }
 
