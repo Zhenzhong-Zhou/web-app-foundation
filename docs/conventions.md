@@ -1053,6 +1053,9 @@ Use these rather than writing the thing again on a page:
 - **`useKeysetList`** with **`LoadMoreButton`** for a list read a page at a
   time: one hook for every list's Load more (#33), the cursor's name and what
   the first page carries beside its rows, such as Items' counts, its options.
+  The button says "Show 50 more" given its page's size, and a next page that
+  failed, "The next 50 could not be loaded." with Try again, given `failed`
+  (#544): Items and Stock pass it, the other lists as they are next changed.
 - **`PlaceholderRows`** in a list's table body while it reads, its head kept on
   the page, so a header pressed to sort keeps its focus (#505's 54).
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
@@ -1082,8 +1085,10 @@ Use these rather than writing the thing again on a page:
 - **`OpeningButton`** with **`useOpenRows`** for a row that opens to the
   rows under it, a code's places or a place's lots: a disclosure button
   with its words and count, "2 places", its rows read each time it opens,
-  "Reading…" past 250 ms, focus kept on it (ADR-093). Never a chevron
-  alone.
+  "Reading…" past 250 ms, focus kept on it (ADR-093), read again while
+  open whenever its `again` changes, as after stock moved. Its name holds
+  its words first, "2 places: show where … is" (WCAG 2.5.3). Never a
+  chevron alone.
 - **`TableOrCards`** for a list's rows as a table from 600 px and as cards
   below, two grey cards while the cards are read; `useCards` asks the same
   width for the rest of the page (ADR-090's width switch).

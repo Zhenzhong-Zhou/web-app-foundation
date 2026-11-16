@@ -4,8 +4,15 @@ import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
-import type { StockRow } from '../api/types.gen';
+import type { StockPile } from '../api/types.gen';
 import type { MoveMode } from './move-stock-dialog';
+
+/**
+ * One pile: a code at one place, in one lot when it tracks lots (ADR-093),
+ * as a lot's row on Stock carries it, what this menu and the dialogs it
+ * opens read. Its place's name is null for a reader without places.
+ */
+export type Pile = StockPile;
 
 type Choice = MoveMode | 'history' | 'lot' | 'trace' | 'reorder';
 
@@ -15,7 +22,7 @@ type Choice = MoveMode | 'history' | 'lot' | 'trace' | 'reorder';
  * for each on every line makes the numbers — the thing people actually came
  * for — harder to scan.
  *
- * For everyone who may see stock: History and Trace lot only read, and a
+ * For everyone who may see stock: Movements and Trace lot only read, and a
  * Viewer's first week asks them to look a lot up (ADR-079). What changes
  * stock is offered only to those who may change it.
  */
@@ -29,16 +36,16 @@ export function StockActions({
   canReorder,
   onReorder,
 }: {
-  row: StockRow;
+  row: Pile;
   /** stock.move: moving, shipping out, sampling and a lot's details. */
   canMove: boolean;
   canAdjust: boolean;
-  onSelect: (mode: MoveMode, row: StockRow) => void;
-  onHistory: (row: StockRow) => void;
-  onEditLot: (row: StockRow) => void;
+  onSelect: (mode: MoveMode, row: Pile) => void;
+  onHistory: (row: Pile) => void;
+  onEditLot: (row: Pile) => void;
   /** stock.reorder: setting the item's reorder point (ADR-085). */
   canReorder: boolean;
-  onReorder: (row: StockRow) => void;
+  onReorder: (row: Pile) => void;
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -71,13 +78,25 @@ export function StockActions({
       {/* Says it opens a menu, and whether it is open, as Members' does. */}
       <IconButton
         size="small"
-        aria-label={intl.formatMessage(
-          {
-            id: 'inventory.actions.label',
-            defaultMessage: 'Actions for {sku} at {location}',
-          },
-          { sku: row.sku, location: row.locationName },
-        )}
+        aria-label={
+          row.locationName !== null
+            ? intl.formatMessage(
+                {
+                  id: 'inventory.actions.label',
+                  defaultMessage: 'Actions for {sku} at {location}',
+                },
+                { sku: row.sku, location: row.locationName },
+              )
+            : // A reader without places: the lot names the pile (A6).
+              intl.formatMessage(
+                {
+                  id: 'inventory.actions.labelLot',
+                  defaultMessage:
+                    '{lot, select, none {Actions for {sku}} other {Actions for {sku}, lot {lot}}}',
+                },
+                { sku: row.sku, lot: row.lotCode ?? 'none' },
+              )
+        }
         aria-haspopup="menu"
         aria-expanded={!!anchor}
         aria-controls={anchor ? menuId : undefined}
@@ -189,9 +208,11 @@ export function StockActions({
             setAnchor(null);
           }}
         >
+          {/* Movements, as a code's row says it (ADR-093); the history
+              dialog until Movements' branch. */}
           {intl.formatMessage({
-            id: 'inventory.actions.history',
-            defaultMessage: 'History',
+            id: 'layout.nav.movements',
+            defaultMessage: 'Movements',
           })}
         </MenuItem>
         {/* The item's, not the row's: one point across every location

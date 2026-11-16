@@ -163,7 +163,7 @@ describe('LookupBox', () => {
     // Named after the page it opens, Inventory, not the group (#149).
     await user.click(await screen.findByText('Show all in Inventory'));
     expect(screen.getByTestId('where').textContent).toBe(
-      '/inventory?search=bf',
+      '/inventory?group=lot&search=bf',
     );
   });
 

@@ -321,8 +321,10 @@ const SAME_AS_ENGLISH = [
       "costs.set.entryWithLot",
       "documents.lot",
       "exports.column.lot",
+      "inventory.groupBy.lot",
       "inventory.lot",
       "inventory.lot.title",
+      "inventory.stock.lots",
       "products.lots",
       "recent.kind.lot",
       "search.kind.lot",
@@ -408,6 +410,7 @@ const SAME_AS_ENGLISH = [
     [
       "audit.field.type",
       "exports.column.type",
+      "inventory.stock.type",
       "locations.typeLabel",
       "products.tabs",
       "products.typeLabel",

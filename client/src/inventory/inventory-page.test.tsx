@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { StockRow } from '../api/types.gen';
+import type { StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -18,195 +18,395 @@ import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
 import { LotSearchPage } from './lot-trace-page';
 
-const ROW: StockRow = {
-  id: 'stock-1',
+const PRODUCT = '00000000-0000-4000-8000-000000000001';
+
+/** A code with stock in two places, part of it not usable, and short. */
+const CODE: StockCodeRow = {
   variantId: 'variant-1',
+  productId: PRODUCT,
+  type: 'good',
+  coverFileId: null,
   sku: 'VITD-60',
   productName: 'Vitamin D',
   variantName: '60ct',
-  coverFileId: null,
   unitOfMeasure: 'each',
-  locationId: 'loc-1',
-  locationName: 'Shelf A',
-  locationCode: 'A-01',
-  lotId: 'lot-1',
-  lotCode: 'NN-2410-07',
-  lotExpiresAt: '2027-10-01',
-  lotIsAssigned: false,
-  quantity: '120.0000',
+  places: 2,
+  lots: 2,
+  onHand: '42.0000',
+  usable: '30.0000',
+  notUsable: '12.0000',
+  expired: '12.0000',
+  issued: '0.0000',
+  unavailable: '12.0000',
+  held: '30.0000',
+  free: '0.0000',
+  short: '20.0000',
+  coming: '0.0000',
+  comingOn: null,
+  position: '10.0000',
+  expiresFirst: '2027-10-01',
+  reorderPoint: '36.0000',
+  status: 'low',
+  needsCost: false,
+  here: null,
 };
+
+/** One pile, a lot at a place, as a place's lots carry it. */
+function pile(id: string, lot: string, expiresAt: string | null, at: string) {
+  return {
+    id,
+    variantId: 'variant-1',
+    sku: 'VITD-60',
+    productName: 'Vitamin D',
+    variantName: '60ct',
+    unitOfMeasure: 'each',
+    locationId: at === 'Shelf A' ? 'loc-1' : 'loc-2',
+    locationName: at,
+    locationCode: null,
+    lotId: `lot-${id}`,
+    lotCode: lot,
+    lotExpiresAt: expiresAt,
+    lotIsAssigned: false,
+    quantity: '10.0000',
+  };
+}
+
+const PLACES: StockPlace[] = [
+  {
+    locationId: 'loc-2',
+    locationName: 'Quarantine',
+    locationCode: null,
+    isAvailable: false,
+    onHand: '12.0000',
+    lots: [pile('3', 'NN-2401', '2026-01-01', 'Quarantine')],
+  },
+  {
+    locationId: 'loc-1',
+    locationName: 'Shelf A',
+    locationCode: null,
+    isAvailable: true,
+    onHand: '30.0000',
+    lots: [
+      pile('1', 'NN-2410-07', '2027-10-01', 'Shelf A'),
+      pile('2', 'NN-2412-01', null, 'Shelf A'),
+    ],
+  },
+];
+
+const COUNTS = { low: 1, out: 0, expiring: 0, expired: 0, needsCost: 0 };
+
+/**
+ * The grouped read answering with these rows, its counts and the code's
+ * places, each query asked kept.
+ */
+function answer(entries: StockCodeRow[] = [CODE]) {
+  const asked: Record<
+    'codes' | 'counts' | 'lots' | 'lotCounts',
+    URLSearchParams[]
+  > = {
+    codes: [],
+    counts: [],
+    lots: [],
+    lotCounts: [],
+  };
+  server.use(
+    http.get('/api/v1/stock/by-code', ({ request }) => {
+      asked.codes.push(new URL(request.url).searchParams);
+      return HttpResponse.json({ entries, nextCursor: null });
+    }),
+    http.get('/api/v1/stock/by-code/counts', ({ request }) => {
+      asked.counts.push(new URL(request.url).searchParams);
+      return HttpResponse.json(COUNTS);
+    }),
+    http.get('/api/v1/stock/by-code/variant-1/places', () =>
+      HttpResponse.json({ places: PLACES }),
+    ),
+    http.get('/api/v1/stock/by-lot', ({ request }) => {
+      asked.lots.push(new URL(request.url).searchParams);
+      return HttpResponse.json({ entries: [], nextCursor: null });
+    }),
+    http.get('/api/v1/stock/by-lot/counts', ({ request }) => {
+      asked.lotCounts.push(new URL(request.url).searchParams);
+      return HttpResponse.json({
+        low: 2,
+        expiring: 1,
+        expired: 1,
+        needsCost: 0,
+      });
+    }),
+  );
+  return asked;
+}
+
+function renderAt(address: string, permissions: string[]) {
+  return renderWithAuth(
+    <MemoryRouter initialEntries={[address]}>
+      <InventoryPage />
+    </MemoryRouter>,
+    { permissions },
+  );
+}
 
 const CHANGES = ['Move', 'Ship out', 'Send sample', 'Edit lot details'];
 
 describe('InventoryPage', () => {
-  /** The page with one row, and that row's ⋯. */
-  async function rowActions(permissions: string[]) {
-    server.use(
-      http.get('/api/v1/stock', () =>
-        HttpResponse.json({ entries: [ROW], nextCursor: null }),
-      ),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 0, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
-    );
-    renderWithAuth(
-      <MemoryRouter>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions },
-    );
-    return screen.findByRole('button', {
-      name: 'Actions for VITD-60 at Shelf A',
+  describe('a row per code', () => {
+    it('draws its figures and the lines behind them, each a link to its item', async () => {
+      answer();
+      renderAt('/inventory', ['stock.view', 'locations.view']);
+
+      const name = await screen.findByRole('link', {
+        name: 'Vitamin D (60ct)',
+      });
+      expect(name).toHaveAttribute('href', `/items/${PRODUCT}`);
+      expect(screen.getByText('VITD-60 · Product')).toBeVisible();
+      expect(screen.getByText('12 not usable')).toBeVisible();
+      // 20 short opens the item's page at Held (16a).
+      expect(screen.getByRole('link', { name: '20 short' })).toHaveAttribute(
+        'href',
+        `/items/${PRODUCT}#held`,
+      );
+      expect(
+        screen.getByRole('link', { name: '10 left · reorder at 36' }),
+      ).toHaveAttribute('href', `/items/${PRODUCT}#stock`);
+      expect(screen.getByText('Low')).toBeVisible();
+      // The quick filters with their counts (R3).
+      expect(
+        await screen.findByRole('button', { name: /Low stock\s*1/ }),
+      ).toBeVisible();
     });
-  }
 
-  async function openActions(permissions: string[]) {
-    await userEvent.click(await rowActions(permissions));
-  }
+    it('opens to its places, then a place to its lots, soonest first, by a button with its words', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory', ['stock.view', 'locations.view']);
 
-  // A screen reader hears a menu button, not a plain one (#358).
-  it('says a row’s ⋯ opens a menu, and whether it is open', async () => {
-    const actions = await rowActions(['stock.view']);
-    expect(actions).toHaveAttribute('aria-haspopup', 'menu');
-    expect(actions).toHaveAttribute('aria-expanded', 'false');
-    expect(actions).not.toHaveAttribute('aria-controls');
+      const places = await screen.findByRole('button', {
+        name: '2 places: show where Vitamin D (60ct) is',
+      });
+      expect(places).toHaveAttribute('aria-expanded', 'false');
+      await user.click(places);
 
-    await userEvent.click(actions);
-    const menu = await screen.findByRole('menu');
-    expect(actions).toHaveAttribute('aria-expanded', 'true');
-    const controls = actions.getAttribute('aria-controls');
-    expect(controls && document.getElementById(controls)).toContainElement(
-      menu,
-    );
+      expect(places).toHaveAttribute('aria-expanded', 'true');
+      expect(places).toHaveAccessibleName(
+        '2 places: hide where Vitamin D (60ct) is',
+      );
+      expect(places).toHaveFocus();
+      expect(await screen.findByText('Shelf A')).toBeVisible();
+      expect(
+        screen.getByText('Not usable: a place not available'),
+      ).toBeVisible();
+
+      await user.click(
+        screen.getByRole('button', {
+          name: '2 lots: show the lots at Shelf A',
+        }),
+      );
+      const lots = screen
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+        .filter((text) => text?.startsWith('NN-24'));
+      // Soonest first, the lot with no expiry last.
+      expect(lots).toEqual(['NN-2410-07', 'NN-2412-01']);
+      expect(screen.getByRole('link', { name: 'NN-2410-07' })).toHaveAttribute(
+        'href',
+        '/lots/lot-1',
+      );
+    });
+
+    it('opens straight to the lots for a reader without places, never naming a place', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory', ['stock.view']);
+
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 lots: show where Vitamin D (60ct) is',
+        }),
+      );
+      expect(await screen.findByText('NN-2410-07')).toBeVisible();
+      expect(screen.queryByText('Shelf A')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('combobox', { name: 'Location' }),
+      ).not.toBeInTheDocument();
+    });
+
+    // A screen reader hears a menu button, not a plain one (#358).
+    it('says a row’s ⋯ opens a menu, its Movements for everyone and its reorder point by permission', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory', ['stock.view']);
+
+      const actions = await screen.findByRole('button', {
+        name: 'Actions for VITD-60',
+      });
+      expect(actions).toHaveAttribute('aria-haspopup', 'menu');
+      expect(actions).toHaveAttribute('aria-expanded', 'false');
+      await user.click(actions);
+      const menu = await screen.findByRole('menu');
+      expect(actions).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        within(menu).getByRole('menuitem', { name: 'Movements' }),
+      ).toBeVisible();
+      expect(
+        within(menu).queryByRole('menuitem', { name: 'Reorder point…' }),
+      ).not.toBeInTheDocument();
+    });
   });
 
-  // A Viewer's first week asks them to look a lot up (ADR-079).
-  it('gives someone who may only see stock the actions that read', async () => {
-    await openActions(['stock.view']);
-
-    expect(
-      screen.getByRole('menuitem', { name: 'Trace lot' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('menuitem', { name: 'History' }),
-    ).toBeInTheDocument();
-    for (const name of [...CHANGES, 'Correct the count']) {
-      expect(screen.queryByRole('menuitem', { name })).not.toBeInTheDocument();
+  describe('a lot’s own actions', () => {
+    /** The page, the code's row opened to its Shelf A lots, and a lot's ⋯. */
+    async function lotActions(permissions: string[]) {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory', ['stock.view', 'locations.view', ...permissions]);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 lots: show the lots at Shelf A',
+        }),
+      );
+      await user.click(
+        screen.getAllByRole('button', {
+          name: 'Actions for VITD-60 at Shelf A',
+        })[0],
+      );
+      return screen.findByRole('menu');
     }
+
+    // A Viewer's first week asks them to look a lot up (ADR-079).
+    it('gives someone who may only see stock the actions that read', async () => {
+      const menu = await lotActions([]);
+
+      expect(
+        within(menu).getByRole('menuitem', { name: 'Trace lot' }),
+      ).toBeInTheDocument();
+      expect(
+        within(menu).getByRole('menuitem', { name: 'Movements' }),
+      ).toBeInTheDocument();
+      for (const name of [...CHANGES, 'Correct the count']) {
+        expect(
+          within(menu).queryByRole('menuitem', { name }),
+        ).not.toBeInTheDocument();
+      }
+    });
+
+    it('adds what changes stock for someone who may move it, and correcting with both permissions', async () => {
+      const menu = await lotActions(['stock.move', 'stock.adjust']);
+
+      for (const name of [...CHANGES, 'Correct the count']) {
+        expect(
+          within(menu).getByRole('menuitem', { name }),
+        ).toBeInTheDocument();
+      }
+    });
   });
 
-  it('adds what changes stock for someone who may move it, and correcting for someone who may adjust', async () => {
-    await openActions(['stock.view', 'stock.move']);
-
-    for (const name of CHANGES) {
-      expect(screen.getByRole('menuitem', { name })).toBeInTheDocument();
-    }
-    expect(
-      screen.queryByRole('menuitem', { name: 'Correct the count' }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('offers Correct the count with both permissions', async () => {
-    await openActions(['stock.view', 'stock.move', 'stock.adjust']);
-
-    expect(
-      screen.getByRole('menuitem', { name: 'Correct the count' }),
-    ).toBeInTheDocument();
-  });
-
-  it('shows only why a first read failed, with Try again, never Nothing here yet. (#195)', async () => {
+  it('shows only why a first read failed, with Try again, never the empty list (#195)', async () => {
     let reads = 0;
+    answer();
     server.use(
-      http.get('/api/v1/stock', () => {
+      http.get('/api/v1/stock/by-code', () => {
         reads += 1;
         return reads === 1
           ? apiError(500, 'Internal server error')
           : HttpResponse.json({ entries: [], nextCursor: null });
       }),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 0, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
     );
-    renderWithAuth(
-      <MemoryRouter>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions: ['stock.view'] },
-    );
+    renderAt('/inventory', ['stock.view']);
 
     const failed = await screen.findByRole('alert');
     expect(failed).toHaveTextContent('Internal server error');
-    expect(screen.queryByText('Nothing here yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No stock yet/)).not.toBeInTheDocument();
+    // The filters stay.
+    expect(screen.getByRole('button', { name: /Low stock/ })).toBeVisible();
 
     await userEvent.click(
       within(failed).getByRole('button', { name: 'Try again' }),
     );
-    expect(await screen.findByText('Nothing here yet.')).toBeVisible();
+    expect(await screen.findByText(/No stock yet/)).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  // Named in the reader's language beside the SKU, as Stock names it (#296).
-  it('names each item promised to customers beside its SKU', async () => {
+  it('keeps the rows when the next 50 cannot be read, with Try again (#544)', async () => {
+    const user = userEvent.setup();
+    let pages = 0;
     server.use(
-      http.get('/api/v1/stock', () =>
-        HttpResponse.json({ entries: [ROW], nextCursor: null }),
-      ),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 0, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () =>
-        HttpResponse.json([
-          {
-            variantId: 'variant-1',
-            sku: 'VITD-60',
-            productName: '维生素 D',
-            variantName: '60 粒',
-            unitOfMeasure: 'each',
-            onHand: '120.0000',
-            notUsable: '0.0000',
-            expired: '0.0000',
-            issued: '0.0000',
-            unavailable: '0.0000',
-            held: '24.0000',
-            free: '96.0000',
-            backordered: '0.0000',
-          },
-        ]),
-      ),
+      http.get('/api/v1/stock/by-code', ({ request }) => {
+        if (!new URL(request.url).searchParams.has('before')) {
+          return HttpResponse.json({ entries: [CODE], nextCursor: 'next' });
+        }
+        pages += 1;
+        return pages === 1
+          ? apiError(500, 'Internal server error')
+          : HttpResponse.json({
+              entries: [{ ...CODE, variantId: 'variant-2', sku: 'VITD-90' }],
+              nextCursor: null,
+            });
+      }),
     );
-    renderWithAuth(
-      <MemoryRouter>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions: ['stock.view'] },
-    );
+    renderAt('/inventory', ['stock.view']);
 
-    const promised = (
-      await screen.findByRole('heading', { name: 'Promised to customers' })
-    ).parentElement as HTMLElement;
-    const row = within(promised).getAllByRole('row')[1];
-    expect(within(row).getByRole('cell', { name: 'VITD-60' })).toBeVisible();
+    await user.click(
+      await screen.findByRole('button', { name: 'Show 50 more' }),
+    );
     expect(
-      within(row).getByRole('cell', { name: '维生素 D (60 粒)' }),
+      await screen.findByText('The next 50 could not be loaded.'),
     ).toBeVisible();
+    expect(screen.getByText('VITD-60 · Product')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('VITD-90 · Product')).toBeVisible();
     expect(
-      within(promised).getByRole('columnheader', { name: 'Item' }),
-    ).toBeVisible();
+      screen.queryByText('The next 50 could not be loaded.'),
+    ).not.toBeInTheDocument();
+  });
+
+  describe('the Lot view', () => {
+    // Home's Expiring soon opens it (ADR-091, amended).
+    it('lists a row per lot with its own counts, Out not among its filters', async () => {
+      const asked = answer();
+      renderAt('/inventory?group=lot&expiring=1', ['stock.view']);
+
+      expect(
+        await screen.findByText('Soonest first, the expired on top.'),
+      ).toBeVisible();
+      await expect.poll(() => asked.lots.length).toBeGreaterThan(0);
+      expect(asked.lots[0].get('expiringWithin')).toBe('90');
+      expect(asked.codes).toHaveLength(0);
+      await expect
+        .poll(() => asked.lotCounts[0]?.get('expiringWithin'))
+        .toBe('90');
+      expect(
+        await screen.findByRole('button', { name: /Low stock\s*2/ }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole('button', { name: /^Out/ }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('says items that are out have no lots, with Group by Item', async () => {
+      const user = userEvent.setup();
+      const asked = answer();
+      renderAt('/inventory?group=lot&out=1', ['stock.view']);
+
+      expect(
+        await screen.findByText('Items that are out have no lots.'),
+      ).toBeVisible();
+      expect(asked.lots).toHaveLength(0);
+
+      await user.click(screen.getByRole('button', { name: 'Group by Item' }));
+      await expect.poll(() => asked.codes.at(-1)?.get('out')).toBe('true');
+    });
   });
 
   // Home's Receive stock opens the dialog, not only the list (#502).
   it('opens Receive stock from ?receive; closing keeps the list, Back returns Home', async () => {
-    server.use(
-      http.get('/api/v1/stock', () =>
-        HttpResponse.json({ entries: [ROW], nextCursor: null }),
-      ),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 0, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
-    );
+    answer();
     function Address() {
       const { search } = useLocation();
       return <output aria-label="address">{search}</output>;
@@ -245,7 +445,7 @@ describe('InventoryPage', () => {
     await expect
       .poll(() => screen.queryByRole('dialog', { name: 'Receive stock' }))
       .toBeNull();
-    expect(screen.getByText('VITD-60')).toBeVisible();
+    expect(screen.getByText('VITD-60 · Product')).toBeVisible();
     expect(
       screen.getByRole('status', { name: 'address' }),
     ).toBeEmptyDOMElement();
@@ -256,15 +456,7 @@ describe('InventoryPage', () => {
 
   // Trace a lot is a top-level page: Back returns here (#341).
   it('opens Trace a lot with Back to Inventory', async () => {
-    server.use(
-      http.get('/api/v1/stock', () =>
-        HttpResponse.json({ entries: [ROW], nextCursor: null }),
-      ),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 0, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
-    );
+    answer();
     renderWithAuth(
       <MemoryRouter initialEntries={['/inventory']}>
         <Routes>
@@ -274,185 +466,98 @@ describe('InventoryPage', () => {
       </MemoryRouter>,
       { permissions: ['stock.view'] },
     );
-    await screen.findByText('VITD-60');
+    await screen.findByText('VITD-60 · Product');
 
     await userEvent.click(screen.getByRole('link', { name: 'Trace a lot' }));
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(await screen.findByText('VITD-60')).toBeVisible();
+    expect(await screen.findByText('VITD-60 · Product')).toBeVisible();
   });
 
   /**
    * Expiring soon lists the soonest first whenever it is on (ADR-091): the
    * panel's senior stopped at which lot expires first.
    */
-  it('sorts Expiring soon by expiry, soonest first, until a header is chosen', async () => {
+  it('sorts Expiring soon by what expires first, soonest first, until a header is chosen', async () => {
     const user = userEvent.setup();
-    const asked: URLSearchParams[] = [];
-    server.use(
-      http.get('/api/v1/stock', ({ request }) => {
-        asked.push(new URL(request.url).searchParams);
-        return HttpResponse.json({ entries: [ROW], nextCursor: null });
-      }),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 1, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
-    );
-    renderWithAuth(
-      <MemoryRouter initialEntries={['/inventory?expiring=1']}>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions: ['stock.view'] },
-    );
-    await screen.findByText('VITD-60');
+    const asked = answer();
+    renderAt('/inventory?expiring=1', ['stock.view']);
+    await screen.findByText('VITD-60 · Product');
 
-    expect(Object.fromEntries(asked[0])).toMatchObject({
+    expect(Object.fromEntries(asked.codes[0])).toMatchObject({
       expiringWithin: '90',
-      sort: 'expiry',
+      sort: 'expires',
       order: 'asc',
     });
     expect(
-      screen.getByRole('columnheader', { name: 'Expires' }),
+      screen.getByRole('columnheader', { name: 'Expires first' }),
     ).toHaveAttribute('aria-sort', 'ascending');
 
-    // Off, the list is in its own order again; on, soonest first again.
-    const expiring = screen.getByRole('button', { name: /Expiring soon/ });
-    await user.click(expiring);
-    await expect.poll(() => asked.at(-1)?.has('expiringWithin')).toBe(false);
-    expect(asked.at(-1)?.has('sort')).toBe(false);
-    await user.click(expiring);
-    await expect.poll(() => asked.at(-1)?.get('sort')).toBe('expiry');
-
-    // The header chosen replaces it: the latest first.
-    await user.click(screen.getByRole('button', { name: 'Expires' }));
-    await expect.poll(() => asked.at(-1)?.get('order')).toBe('desc');
+    await user.click(screen.getByRole('button', { name: 'Expires first' }));
+    await expect.poll(() => asked.codes.at(-1)?.get('order')).toBe('desc');
   });
 
-  /**
-   * Home's late button for Expiring soon opens the expired lots alone
-   * (ADR-091), soonest first, Expired a chip that clears it.
-   */
-  it('lists the expired when the address asks, soonest first, until cleared', async () => {
+  it('sorts by a figure from its header, in the address', async () => {
     const user = userEvent.setup();
-    const asked: URLSearchParams[] = [];
-    server.use(
-      http.get('/api/v1/stock', ({ request }) => {
-        asked.push(new URL(request.url).searchParams);
-        return HttpResponse.json({ entries: [ROW], nextCursor: null });
-      }),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 1, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
-    );
-    renderWithAuth(
-      <MemoryRouter initialEntries={['/inventory?expiring=1&expired=1']}>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions: ['stock.view'] },
-    );
+    const asked = answer();
+    renderAt('/inventory', ['stock.view']);
+    await screen.findByText('VITD-60 · Product');
+    expect(asked.codes[0].has('sort')).toBe(false);
 
-    const chip = await screen.findByRole('button', { name: 'Expired' });
-    await expect.poll(() => asked.length).toBeGreaterThan(0);
-    expect(Object.fromEntries(asked[0])).toMatchObject({
-      expiringWithin: '90',
-      expired: 'true',
-      sort: 'expiry',
-      order: 'asc',
-    });
-
-    // Cleared, every lot expiring soon, still soonest first.
-    chip.focus();
-    await user.keyboard('{Delete}');
+    await user.click(screen.getByRole('button', { name: 'On hand' }));
+    await expect.poll(() => asked.codes.at(-1)?.get('sort')).toBe('onHand');
+    expect(asked.codes.at(-1)?.get('order')).toBe('asc');
     expect(
-      screen.queryByRole('button', { name: 'Expired' }),
+      screen.getByRole('columnheader', { name: 'On hand' }),
+    ).toHaveAttribute('aria-sort', 'ascending');
+    // Free is no sort (35a): its header is words alone.
+    expect(
+      screen.queryByRole('button', { name: 'Free' }),
     ).not.toBeInTheDocument();
-    await expect.poll(() => asked.at(-1)?.has('expired')).toBe(false);
-    expect(asked.at(-1)?.get('sort')).toBe('expiry');
   });
 
-  // A row's stock on Items (ADR-092): the item alone, every variant in
-  // every location, its counts too, named on a chip whose × removes it.
+  // A row's stock on Items (ADR-092): the item alone, its counts too,
+  // named on a chip whose × removes it.
   it('lists one item alone when the address names it, named on a chip that removes it', async () => {
     const user = userEvent.setup();
-    const ITEM = '00000000-0000-4000-8000-000000000001';
-    const asked = {
-      stock: [] as URLSearchParams[],
-      counts: [] as URLSearchParams[],
-      promised: [] as URLSearchParams[],
-      item: 0,
-    };
+    const asked = answer();
+    let read = 0;
     server.use(
-      http.get('/api/v1/stock', ({ request }) => {
-        asked.stock.push(new URL(request.url).searchParams);
-        return HttpResponse.json({ entries: [ROW], nextCursor: null });
-      }),
-      http.get('/api/v1/stock/counts', ({ request }) => {
-        asked.counts.push(new URL(request.url).searchParams);
-        return HttpResponse.json({ expiring: 0, needsCost: 0 });
-      }),
-      http.get('/api/v1/stock/availability', ({ request }) => {
-        asked.promised.push(new URL(request.url).searchParams);
-        return HttpResponse.json([]);
-      }),
-      http.get(`/api/v1/products/${ITEM}`, () => {
-        asked.item += 1;
-        // The item itself, as GET /v1/products/:id answers.
+      http.get(`/api/v1/products/${PRODUCT}`, () => {
+        read += 1;
         return HttpResponse.json({ displayName: 'Vitamine D' });
       }),
     );
-    renderWithAuth(
-      <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions: ['stock.view', 'products.view'] },
-    );
+    renderAt(`/inventory?productId=${PRODUCT}`, [
+      'stock.view',
+      'products.view',
+    ]);
 
     // Named by its rows, in the reader's language, with no read of the
     // item's own (ADR-092's review, 58).
     const chip = await screen.findByRole('button', {
       name: 'Item: Vitamin D',
     });
-    expect(asked.item).toBe(0);
-    expect(asked.stock[0].get('productId')).toBe(ITEM);
-    await expect.poll(() => asked.counts[0]?.get('productId')).toBe(ITEM);
-    // Promised to customers, the item's alone too (ADR-092's review, 6).
-    expect(asked.promised.map((query) => query.get('productId'))).toEqual([
-      ITEM,
-    ]);
+    expect(read).toBe(0);
+    expect(asked.codes[0].get('productId')).toBe(PRODUCT);
+    await expect.poll(() => asked.counts[0]?.get('productId')).toBe(PRODUCT);
 
     await user.click(within(chip).getByTestId('CancelIcon'));
-    await expect.poll(() => asked.stock.at(-1)?.has('productId')).toBe(false);
-    await expect
-      .poll(() => asked.promised.at(-1)?.has('productId'))
-      .toBe(false);
-    expect(
-      screen.queryByRole('button', { name: 'Item: Vitamin D' }),
-    ).not.toBeInTheDocument();
+    await expect.poll(() => asked.codes.at(-1)?.has('productId')).toBe(false);
   });
 
   // It said only "Nothing here yet." (ADR-092's review, 90).
   it('says the item a row’s stock opened has no stock yet, by its name', async () => {
-    const ITEM = '00000000-0000-4000-8000-000000000001';
+    answer([]);
     server.use(
-      http.get('/api/v1/stock', () =>
-        HttpResponse.json({ entries: [], nextCursor: null }),
-      ),
-      http.get('/api/v1/stock/counts', () =>
-        HttpResponse.json({ expiring: 0, needsCost: 0 }),
-      ),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
-      http.get(`/api/v1/products/${ITEM}`, () =>
+      http.get(`/api/v1/products/${PRODUCT}`, () =>
         HttpResponse.json({ displayName: 'Vitamin D' }),
       ),
     );
-    renderWithAuth(
-      <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
-        <InventoryPage />
-      </MemoryRouter>,
-      { permissions: ['stock.view', 'products.view'] },
-    );
+    renderAt(`/inventory?productId=${PRODUCT}`, [
+      'stock.view',
+      'products.view',
+    ]);
 
     expect(
       await screen.findByText('Vitamin D has no stock yet.'),
@@ -463,81 +568,61 @@ describe('InventoryPage', () => {
   });
 
   describe('the search', () => {
-    function answer() {
-      const asked: Record<'stock' | 'points', (string | null)[]> = {
-        stock: [],
-        points: [],
-      };
+    it('follows the address while open, as Show all in the lookup changes it', async () => {
+      const asked = answer();
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/inventory']}>
+          <Link to="/inventory?group=lot&search=NN-2410">Show all</Link>
+          <InventoryPage />
+        </MemoryRouter>,
+        { permissions: ['stock.view'] },
+      );
+      await screen.findByText('VITD-60 · Product');
+
+      await userEvent.click(screen.getByRole('link', { name: 'Show all' }));
+
+      expect(
+        screen.getByRole('searchbox', { name: 'Search items, codes or lots' }),
+      ).toHaveValue('NN-2410');
+      await expect.poll(() => asked.lots.at(-1)?.get('search')).toBe('NN-2410');
+    });
+
+    it('is one search on Stock and Reorder points, either way', async () => {
+      const user = userEvent.setup();
+      const asked = answer();
+      const points: (string | null)[] = [];
       server.use(
-        http.get('/api/v1/stock', ({ request }) => {
-          asked.stock.push(new URL(request.url).searchParams.get('search'));
-          return HttpResponse.json({ entries: [ROW], nextCursor: null });
-        }),
-        http.get('/api/v1/stock/counts', () =>
-          HttpResponse.json({ expiring: 0, needsCost: 0 }),
-        ),
-        http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
         http.get('/api/v1/stock/reorder-points', ({ request }) => {
-          asked.points.push(new URL(request.url).searchParams.get('search'));
+          points.push(new URL(request.url).searchParams.get('search'));
           return HttpResponse.json({ entries: [], nextCursor: null });
         }),
         http.get('/api/v1/stock/reorder-points/counts', () =>
           HttpResponse.json({ all: 0, low: 0, out: 0 }),
         ),
       );
-      return asked;
-    }
-
-    it('follows the address while open, as Show all in the lookup changes it', async () => {
-      const asked = answer();
-      renderWithAuth(
-        <MemoryRouter initialEntries={['/inventory']}>
-          <Link to="/inventory?search=NN-2410">Show all</Link>
-          <InventoryPage />
-        </MemoryRouter>,
-        { permissions: ['stock.view'] },
-      );
-      await screen.findByText('VITD-60');
-
-      await userEvent.click(screen.getByRole('link', { name: 'Show all' }));
-
-      expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue(
-        'NN-2410',
-      );
-      await expect.poll(() => asked.stock.at(-1)).toBe('NN-2410');
-    });
-
-    it('is one search on Stock and Reorder points, either way', async () => {
-      const user = userEvent.setup();
-      const asked = answer();
-      renderWithAuth(
-        <MemoryRouter initialEntries={['/inventory']}>
-          <InventoryPage />
-        </MemoryRouter>,
-        { permissions: ['stock.view'] },
-      );
-      await screen.findByText('VITD-60');
+      renderAt('/inventory', ['stock.view']);
+      await screen.findByText('VITD-60 · Product');
 
       await user.type(
-        screen.getByRole('searchbox', { name: 'Search' }),
+        screen.getByRole('searchbox', { name: 'Search items, codes or lots' }),
         'vitd',
       );
-      await expect.poll(() => asked.stock.at(-1)).toBe('vitd');
+      await expect.poll(() => asked.codes.at(-1)?.get('search')).toBe('vitd');
       await user.click(screen.getByRole('tab', { name: 'Reorder points' }));
 
       const box = screen.getByRole('searchbox', { name: 'Search' });
       expect(box).toHaveValue('vitd');
-      await expect.poll(() => asked.points).toEqual(['vitd']);
+      await expect.poll(() => points).toEqual(['vitd']);
 
       await user.clear(box);
       await user.type(box, 'd3');
-      await expect.poll(() => asked.points.at(-1)).toBe('d3');
+      await expect.poll(() => points.at(-1)).toBe('d3');
       await user.click(screen.getByRole('tab', { name: 'Stock' }));
 
-      expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue(
-        'd3',
-      );
-      await expect.poll(() => asked.stock.at(-1)).toBe('d3');
+      expect(
+        screen.getByRole('searchbox', { name: 'Search items, codes or lots' }),
+      ).toHaveValue('d3');
+      await expect.poll(() => asked.codes.at(-1)?.get('search')).toBe('d3');
     });
   });
 });

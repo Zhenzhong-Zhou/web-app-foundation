@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 import { INDICATOR_DELAY_MS } from './use-delayed-flag';
 
@@ -29,9 +29,14 @@ const CLOSED = {
  * `busy` once the read has taken past 250 ms, nothing before, so a quick
  * answer never flashes "Reading…"; `failure` when it could not be read,
  * with `retry`, the partial state's Try again beside the rows. Closing it
- * drops its rows, and an answer that comes after is ignored.
+ * drops its rows, and an answer that comes after is ignored. Whenever
+ * `again` changes while it is open, as when stock has moved, it reads
+ * them again, the rows shown kept until the new ones come.
  */
-export function useOpenRows<T>(read: () => Promise<T>): {
+export function useOpenRows<T>(
+  read: () => Promise<T>,
+  again?: unknown,
+): {
   open: boolean;
   rows: T | null;
   busy: boolean;
@@ -40,22 +45,47 @@ export function useOpenRows<T>(read: () => Promise<T>): {
   retry: () => void;
 } {
   const [state, setState] = useState<Opened<T>>({ ...CLOSED, ask: 0 });
+  const [seen, setSeen] = useState(again);
+  if (seen !== again) {
+    setSeen(again);
+    if (state.open) {
+      setState((was) => ({
+        ...was,
+        ask: was.ask + 1,
+        reading: true,
+        slow: false,
+        failure: null,
+      }));
+    }
+  }
 
-  function start() {
-    const ask = state.ask + 1;
+  // The read for each ask, and the wait before it says "Reading…".
+  const readRows = useEffectEvent(read);
+  const { ask, open, reading } = state;
+  useEffect(() => {
+    if (!open || !reading) return;
     const ours = (change: (was: Opened<T>) => Opened<T>) =>
       setState((was) => (was.ask === ask ? change(was) : was));
 
-    setState({ ...CLOSED, open: true, ask, reading: true });
-    setTimeout(
+    const wait = setTimeout(
       () => ours((was) => (was.reading ? { ...was, slow: true } : was)),
       INDICATOR_DELAY_MS,
     );
-    void read().then(
+    void readRows().then(
       (rows) => ours((was) => ({ ...was, rows, reading: false })),
       (failure: unknown) =>
         ours((was) => ({ ...was, failure, reading: false })),
     );
+    return () => clearTimeout(wait);
+  }, [ask, open, reading]);
+
+  function start() {
+    setState((was) => ({
+      ...CLOSED,
+      open: true,
+      ask: was.ask + 1,
+      reading: true,
+    }));
   }
 
   function toggle() {

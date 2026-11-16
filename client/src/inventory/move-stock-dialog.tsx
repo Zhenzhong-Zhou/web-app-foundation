@@ -11,7 +11,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
-import type { Location, StockRow } from '../api/types.gen';
+import type { Location, StockPile } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
@@ -120,7 +120,7 @@ export function MoveStockDialog({
   onMoved,
 }: {
   mode: MoveMode;
-  row: StockRow | null;
+  row: StockPile | null;
   locations: Location[];
   /**
    * partners.view, from the page: a sample's Given to lists partners, which
@@ -276,7 +276,7 @@ export function MoveStockDialog({
                       {
                         sku: <Reference>{row.sku}</Reference>,
                         lot: <Reference>{row.lotCode}</Reference>,
-                        location: row.locationName,
+                        location: row.locationName ?? '',
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
                     )
@@ -288,7 +288,7 @@ export function MoveStockDialog({
                       },
                       {
                         sku: <Reference>{row.sku}</Reference>,
-                        location: row.locationName,
+                        location: row.locationName ?? '',
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
                     )}
@@ -303,7 +303,7 @@ export function MoveStockDialog({
                     defaultMessage:
                       '{location} is marked not available, so nothing can be sent from it. Move the stock to an available location first.',
                   },
-                  { location: row?.locationName },
+                  { location: row?.locationName ?? '' },
                 )}
               </Alert>
             )}

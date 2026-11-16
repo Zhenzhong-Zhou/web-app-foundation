@@ -407,8 +407,8 @@ refused.
 | A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 | A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
 | The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
-| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: a failed page, with Try again, as Items' has |
-| The opening row, a row's places or a place's lots (`aria-expanded`) | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | ADR-093: built with Inventory, its words and count on the button, "Reading…" past 250 ms |
+| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: each list but Items and Stock passes its failed page |
+| The opening row, a row's places or a place's lots (`aria-expanded`) | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | — |
 | A drag handle (Customise Home's) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 
 - **✓ marks a state the piece has,** and — one it has not; in To

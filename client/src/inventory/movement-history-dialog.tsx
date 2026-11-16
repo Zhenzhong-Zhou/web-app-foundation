@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import type { Movement, StockRow } from '../api/types.gen';
+import type { Movement, StockPile } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { Reference } from '../components/reference';
@@ -41,12 +41,22 @@ import {
 const PAGE_SIZE = 25;
 
 /**
+ * What the dialog shows the movements of: a code, or one of its lots; a
+ * Stock row per code passes the code alone (ADR-093, until Movements'
+ * branch).
+ */
+export type HistoryOf = Pick<
+  StockPile,
+  'variantId' | 'sku' | 'productName' | 'variantName' | 'lotId' | 'lotCode'
+>;
+
+/**
  * Scoped to the lot when the row has one, because the dialog's own title
  * claims it is: "History for WIDGET-1 · lot L2024-A" over every movement of
  * the variant is the answer to a different question, and the wrong one to act
  * on during a recall.
  */
-function queryFor(row: StockRow): string {
+function queryFor(row: HistoryOf): string {
   const params = new URLSearchParams({
     variantId: row.variantId,
     limit: String(PAGE_SIZE),
@@ -73,7 +83,7 @@ export function MovementHistoryDialog({
   row,
   onClose,
 }: {
-  row: StockRow | null;
+  row: HistoryOf | null;
   onClose: () => void;
 }) {
   const intl = useIntl();

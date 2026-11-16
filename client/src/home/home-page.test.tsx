@@ -249,7 +249,7 @@ describe('HomePage', () => {
       ]),
     ).toEqual([
       ['2 late orders to ship', '/orders?direction=sale&outstanding=1&late=1'],
-      ['1 expired lot', '/inventory?expiring=1&expired=1'],
+      ['1 expired lot', '/inventory?group=lot&expiring=1&expired=1'],
       ['1 expired licence', '/licences?expiring=1&expired=1'],
     ]);
     // The number in bold, the words after.
@@ -257,7 +257,7 @@ describe('HomePage', () => {
     // The tile opens all of its kind, the late first; the button just those.
     expect(
       screen.getByRole('link', { name: 'Expiring soon, 4, 1 expired' }),
-    ).toHaveAttribute('href', '/inventory?expiring=1');
+    ).toHaveAttribute('href', '/inventory?group=lot&expiring=1');
   });
 
   /**

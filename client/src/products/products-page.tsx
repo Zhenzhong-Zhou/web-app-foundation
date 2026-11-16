@@ -29,6 +29,7 @@ import {
 } from '../components/filter-row';
 import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
+import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -524,54 +525,28 @@ export function ProductsPage() {
       )}
 
       {/* Show 50 more, and how many of the tab's are shown; failing, the
-          rows stay, with a line saying so and Try again. */}
-      {!failed && items && (hasMore || error) && (
-        <Stack
-          direction="row"
-          useFlexGap
-          sx={{
-            flexWrap: 'wrap',
-            gap: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {total !== null && (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage(
-                {
-                  id: 'products.showing',
-                  defaultMessage: 'Showing {shown} of {total}',
-                },
-                { shown: items.length, total },
-              )}
-            </Typography>
-          )}
-          {error && (
-            <Typography variant="body2" sx={{ color: 'error.main' }}>
-              {intl.formatMessage({
-                id: 'products.moreFailed',
-                defaultMessage: 'The next 50 could not be loaded.',
-              })}
-            </Typography>
-          )}
-          <Button variant="text" disabled={loadingMore} onClick={showMore}>
-            {loadingMore
-              ? intl.formatMessage({
-                  id: 'common.loading',
-                  defaultMessage: 'Loading…',
-                })
-              : error
-                ? intl.formatMessage({
-                    id: 'common.tryAgain',
-                    defaultMessage: 'Try again',
-                  })
-                : intl.formatMessage({
-                    id: 'products.showMore',
-                    defaultMessage: 'Show 50 more',
-                  })}
-          </Button>
-        </Stack>
+          rows stay, with a line saying so and Try again (#544). */}
+      {!failed && items && (
+        <LoadMoreButton
+          hasMore={hasMore}
+          loading={loadingMore}
+          failed={!!error}
+          pageSize={50}
+          onLoadMore={showMore}
+          before={
+            total !== null && (
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {intl.formatMessage(
+                  {
+                    id: 'products.showing',
+                    defaultMessage: 'Showing {shown} of {total}',
+                  },
+                  { shown: items.length, total },
+                )}
+              </Typography>
+            )
+          }
+        />
       )}
 
       {/* Its type from the open tab, none from All (ADR-092); once added,

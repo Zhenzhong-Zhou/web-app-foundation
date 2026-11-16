@@ -493,9 +493,9 @@ test('Items, a row’s stock: Inventory, that item alone; Back, Items as it was'
   await expect(
     page.getByRole('button', { name: 'Item: E2E Shelf Tonic' }),
   ).toBeVisible();
-  // Its variants in every location, and nothing else's.
+  // Its one code, in two places (ADR-093), and nothing else's.
   await expect(page.getByRole('row', { name: /E2E Shelf Tonic/ })).toHaveCount(
-    2,
+    1,
   );
   await expect(page.getByRole('row', { name: /E2E Shelf Other/ })).toHaveCount(
     0,

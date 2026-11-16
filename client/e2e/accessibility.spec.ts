@@ -251,6 +251,12 @@ const SCREENS: Screen[] = [
       page.getByRole('button', { name: 'Drag To receive', exact: true }),
   },
   { name: 'inventory', path: () => '/inventory', ready: heading },
+  // The Lot view (ADR-093, R4).
+  {
+    name: 'inventory, by lot',
+    path: () => '/inventory?group=lot',
+    ready: heading,
+  },
   {
     // A low row opened and chosen: its four boxes and the floating bar
     // (ADR-085).

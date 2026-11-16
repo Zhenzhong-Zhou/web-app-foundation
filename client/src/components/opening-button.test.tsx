@@ -5,8 +5,14 @@ import { useOpenRows } from '../lib/use-open-rows';
 import { OpeningButton } from './opening-button';
 
 /** A row's places, as Stock opens them (ADR-093). */
-function Places({ read }: { read: () => Promise<string[]> }) {
-  const places = useOpenRows(read);
+function Places({
+  read,
+  again,
+}: {
+  read: () => Promise<string[]>;
+  again?: number;
+}) {
+  const places = useOpenRows(read, again);
 
   return (
     <>
@@ -122,5 +128,27 @@ describe('OpeningButton with useOpenRows', () => {
     expect(screen.queryByText('Shelf B')).not.toBeInTheDocument();
     await act(async () => second.answer(['Shelf C']));
     expect(screen.getByText('Shelf C')).toBeVisible();
+  });
+
+  // Stock moved: an open row reads its places again, a closed one does
+  // not (ADR-093).
+  it('reads its rows again while open whenever its again changes', async () => {
+    let shelves = ['Shelf A'];
+    const read = vi.fn(() => Promise.resolve(shelves));
+    const { rerender } = render(<Places read={read} again={0} />);
+
+    rerender(<Places read={read} again={1} />);
+    expect(read).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Show where Vitamin C is' }),
+    );
+    expect(await screen.findByText('Shelf A')).toBeVisible();
+    expect(read).toHaveBeenCalledTimes(1);
+
+    shelves = ['Shelf A', 'Shelf B'];
+    rerender(<Places read={read} again={2} />);
+    expect(await screen.findByText('Shelf B')).toBeVisible();
+    expect(read).toHaveBeenCalledTimes(2);
   });
 });

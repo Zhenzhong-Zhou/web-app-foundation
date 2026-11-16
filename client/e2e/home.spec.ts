@@ -444,7 +444,8 @@ test('Expiring soon opens Inventory’s expiring lots, and nothing late is one c
   await expect(page.getByText('Nothing is late today.')).toBeVisible();
   await page.getByRole('link', { name: 'Expiring soon, 1' }).click();
 
-  await expect(page).toHaveURL(/\/inventory\?expiring=1$/);
+  // The Lot view, soonest first (ADR-091, amended by ADR-093).
+  await expect(page).toHaveURL(/\/inventory\?group=lot&expiring=1$/);
   await expect(
     page.getByRole('button', { name: /^Expiring soon/ }),
   ).toHaveAttribute('aria-pressed', 'true');

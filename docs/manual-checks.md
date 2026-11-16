@@ -204,8 +204,7 @@ a second organization.
   type after its name. Clicking anywhere on a row opens the item;
   clicking its stock opens Inventory for that item alone, every variant
   in every location (on a touch screen its link is a fingertip tall, so
-  a near miss does not open the item), with a chip "Item: …" whose × shows all stock again
-  and Promised to customers below it listing that item alone,
+  a near miss does not open the item), with a chip "Item: …" whose × shows all stock again,
   and Back returns to Items as it was; for an item with no stock, it says
   "… has no stock yet." by the item's name. At 390 px each row is a card: the
   name, its code and category on one line, then the stock and its status;
@@ -338,17 +337,47 @@ a second organization.
 
 ## 3. Stock
 
-- **MC-301** Inventory shows stock 50 rows at a time, by location, then code,
-  then lot. Load more continues with no row repeated or skipped, and the
-  location filter, "Show emptied" and the search apply to the whole list,
-  not only the rows on screen (ADR-051). The Location filter reads
-  Everywhere in its box, its label above, until a place is chosen, never a
-  blank box (#274); Partout in Français, 全部库位 in 中文.
-- **MC-308** Inventory search finds a row by any part of its code, its item's
-  name or its lot code; a search with no match says so.
-- **MC-309** "Promised to customers" lists only products something is held or
-  backordered for, with on hand, held, free and backordered, and it updates
-  after a receipt or a sample.
+- **MC-301** *(ADR-093)* Inventory's Stock shows one row per code, 50 at a
+  time, by the item's name. Show 50 more continues with no row repeated or
+  skipped, and the filters and the search apply to the whole list, not
+  only the rows on screen (ADR-051). The Location filter reads Everywhere
+  in its box until a place is chosen, never a blank box (#274), and lists
+  the places stock sits in under their warehouse; Partout in Français,
+  全部库位 in 中文.
+- **MC-308** Inventory search finds a code by any part of its code, its
+  item's name or a lot's code; a search with no match says no items match
+  these filters, with Show all stock.
+- **MC-309** *(ADR-093)* As the demo Owner, Stock's FOCUS-60CT row reads On
+  hand with "11 not usable" under it, Free 0 each with "162 short" in red
+  under it, Held, and Low with "… left · reorder at …" under its chip.
+  "162 short" and the line open FOCUS-60CT's page; the item's name opens
+  it too, and so does a click anywhere else on the row. There is no
+  "Promised to customers" table below the list.
+- **MC-312** *(ADR-093)* D3-1000-120's "2 places" button opens its places
+  under the row, the button pressed in the accent and read as "Hide where
+  … is"; Main's Shelf's "3 lots" opens D3-A11, D3-B02 and D3-C07, the
+  undated D3-C07 last, each lot's code a link to its trace. VITC-100's
+  Quarantine reads "Not usable: a place not available" in red. As Fatima
+  Haddad (Sales), with no `locations.view`, the button reads "… lots" and
+  opens the lots alone, no place named.
+- **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
+  soonest first, the expired on top; D3-B02's two rows read "1 of 2
+  places" and "2 of 2 places". Its quick filters are Low stock, Expiring
+  soon, Expired and Waiting for a cost, each count the rows it shows.
+  `/inventory?group=lot&out=1` says items that are out have no lots, with
+  Group by Item, which lists the out.
+- **MC-314** *(ADR-093)* Choose Main's Shelf under Location: a chip names
+  it, the line above the list says Free and Held count every place, and
+  the headers read Lots here, On hand here, Free, every place, Held, every
+  place and Expires first here. Search D3-B02 at Richmond's Shelf 1-B:
+  D3-1000-120 is listed; search D3-A11 there: nothing.
+- **MC-315** *(ADR-093)* Sort by On hand and Expires first from their
+  headers, each turned round by a second press, Free's header words
+  alone (35a); a code with nothing to expire last either way; each kept
+  in the address and after a reload.
+  At 390 px, Stock is cards, each with On hand and Free, Filters holding
+  Type, Category, Location and the sort; from 600 to 899 px Held and
+  Coming leave the table.
 - **MC-302** Move stock: a transfer between bins, an adjustment in, an
   adjustment out (a note is required), and a sample to a customer. Each one
   appears under Movements with who, when and why.
@@ -361,15 +390,17 @@ a second organization.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
-- **MC-310** As a Viewer, a row's actions on Inventory offer History, and
-  Trace lot on a lot's row, and nothing that changes stock. As an Admin,
-  they also offer Move, Ship out, Send sample, Correct the count and, on a
-  lot's row, Edit lot details.
-- **MC-311** *(ADR-091)* Inventory's Expired. As the demo Owner, open
-  `/inventory?expiring=1&expired=1`: Expiring soon is pressed, a chip
-  reads Expired, and the list holds only the lots past their day, VC-0301
-  first, with Expires marked as the sort. Remove Expired: every lot
-  expiring soon, the expired still first. In Français the chip reads
+- **MC-310** As a Viewer, a code's Actions offer Movements, and a lot's row,
+  opened under its place, offers Movements and Trace lot, and nothing that
+  changes stock. As an Admin, a lot's row also offers Move, Ship out, Send
+  sample, Correct the count and Edit lot details, and a code's Actions
+  Reorder point….
+- **MC-311** *(ADR-091, amended by ADR-093)* Inventory's Expired. As the
+  demo Owner, Home's Expiring soon opens the Lot view at
+  `/inventory?group=lot&expiring=1`, and its late button adds
+  `&expired=1`: Expiring soon and Expired are pressed, and the list holds
+  only the lots past their day, VC-0301 first. Unpress Expired: every lot
+  expiring soon, the expired still first. In Français the button reads
   Périmés; in 中文, 已过期.
 
 ## 4. Buying
@@ -1277,21 +1308,20 @@ Paper is checked first because it must not change at all.
   message, and Raise an order stays where it always is, in the page header;
   with Fulfilled pressed and none fulfilled, only "No orders match that
   filter."
-- **MC-1528** Inventory's filters are one row: Search, Location, then Expiring
-  soon with its count and Show emptied. Pressing Expiring soon shows only lots
-  within 90 days, ELD-24A among them, and nothing untracked, the soonest
-  first, so the expired VC-0301 leads, with Expires marked as the sort
-  (ADR-091); pressing Expires turns it round. The count is the number of
-  rows it shows. With a search that matches none of them, the count drops
-  to 0.
-- **MC-1529** Expires shows days left within 90 days, amber, and within 30
-  days red (ELD-24A: "20 days left"), the date beside each; a lot two years
-  off shows only its date. Quantities read "400 each", and the Promised to
-  customers table reads without padding zeros too.
-- **MC-1530** Receive stock, Ship out or Correct the count on a lot within 90
-  days: the list and the Expiring soon count both update without a reload.
-  With Expiring soon pressed and none due, the list says no lot here expires
-  within 90 days.
+- **MC-1528** Inventory's filters are one row: Search, Type, Category,
+  Location and Group by, then Low stock, Out, Expiring soon, Expired,
+  Waiting for a cost and Show emptied, each with its count. Pressing
+  Expiring soon keeps the codes with a lot within 90 days, ELD-24A's
+  among them, the expired VC-0301's too. Each count is the number of rows
+  it shows with the others on; with a search that matches none of them,
+  the counts drop to 0.
+- **MC-1529** Expires first shows days left within 90 days, amber, and
+  within 30 days red (ELD-24A: "20 days left"), the date beside each; a
+  lot two years off shows only its date. Quantities read "400 each".
+- **MC-1530** Receive stock, Ship out or Correct the count on a lot within
+  90 days: the list, its opened row and the counts all update without a
+  reload. With Expiring soon pressed and none due, the list says no items
+  match these filters, with Show all stock.
 - **MC-1531** Invoices has a page title with its one-line explanation under
   it, then All, To issue, Issued and Voided as a row of buttons where the
   tabs were, All pressed; To issue, the word of Home's Invoices · To
@@ -4391,7 +4421,7 @@ first.
 
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
-  Home, Your access on Account, and History from a Stock row's ⋯ show no
+  Home, Your access on Account, and Movements from a Stock row's ⋯ show no
   grey placeholder before their content; with the network throttled to
   Slow 4G (DevTools → Network), each shows one while it reads. With
   VoiceOver on, a Stock row's ⋯ and the ⋯ on PO-DEMO-12's line read as a
@@ -4464,7 +4494,7 @@ first.
   库存变动: D3-1000-120's move of 40 to Richmond reads D3-1000-120 in
   bold, then 维生素 D3 1000 IU，120 粒软胶囊, then its lot; its change
   reads 40, not 40.0000; 操作人 reads 王建国 with their email beneath,
-  whole on hover. Open D3-1000-120's History on an Inventory row: its
+  whole on hover. Open D3-1000-120's Movements on an Inventory row: its
   title names the item beside the code (and the lot, for a lot's row),
   and its rows read their changes and who the same way. A member who has
   since deleted their account shows as 已删除的用户, with no email. In
@@ -4701,10 +4731,11 @@ first.
   the red line, with Try again, and nothing under it, never Nothing open.
   nor an empty table. Unblock it and press Try again: the orders. The same
   on Inventory, Movements, Invoices, Credit notes, Returns, Production,
-  the audit log, a record's History, and an inventory row's History
+  the audit log, a record's History, and an inventory row's Movements
   dialog. A Load more that fails keeps the rows, with the red line above
-  them and no Try again. In Français Réessayer, in 中文 重试. Found while
-  building ADR-081.
+  them and no Try again; on Items and Inventory, "The next 50 could not
+  be loaded." beside Try again under the rows (#544). In Français
+  Réessayer, in 中文 重试. Found while building ADR-081.
 
 - **MC-R45** *(a request's fields on its own log line only, #193)* With
   `npm run start:dev` in `server/`, ask
@@ -6333,3 +6364,8 @@ first.
   demo's items named in no language, with Vitamin D3's English name the
   same as its own and Calm 90ct's one that differs: MC-1425 starts from
   it.
+- 2026-11-16: ADR-093's Stock, a row per code opening to its places and
+  lots, the Lot view, the five quick filters with their counts, one place,
+  the figure sorts and cards; Promised to customers no longer drawn:
+  MC-301, MC-308 to MC-311 and MC-1528 to MC-1530 rewritten, MC-312 to
+  MC-315 added, MC-208's promised line taken out.

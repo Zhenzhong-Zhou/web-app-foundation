@@ -77,10 +77,10 @@ test('raises an order, receives against it, and moves the stock', async ({
    */
   await page.goto('/inventory');
   await expect(
-    page.getByRole('row', { name: /E2E-ORD-1/ }).getByRole('cell', {
-      name: '15 each',
-      exact: true,
-    }),
+    page
+      .getByRole('row', { name: /E2E-ORD-1/ })
+      .getByRole('cell', { name: '15 each', exact: true })
+      .first(),
   ).toBeVisible();
 });
 
