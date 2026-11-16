@@ -1,3 +1,5 @@
+import type { Locator, Page } from '@playwright/test';
+
 import { expect, test } from './fixtures';
 import { createApiContext, E2E_PASSWORD, signInAs } from './support/api';
 
@@ -21,6 +23,21 @@ async function canSignIn(email: string, password: string): Promise<boolean> {
   } finally {
     await api.dispose();
   }
+}
+
+/**
+ * Opens Change password's dialog from Your account, once the page is still.
+ *
+ * Your access fills in when its read returns, moving the cards below it down
+ * by its role's lines. A click as it does pressed the button and released
+ * beside it: the button had focus, no click reached it and no dialog opened
+ * (#596). The role shown means nothing above the button is still to move.
+ */
+async function openChangePassword(page: Page): Promise<Locator> {
+  await page.goto('/account');
+  await expect(page.getByText('Owner', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Change password' }).click();
+  return page.getByRole('dialog');
 }
 
 test('saves a new display name', async ({ page, freshOrg }) => {
@@ -48,9 +65,7 @@ test('changes the password and keeps this session', async ({
 
   // The form opens in a dialog from Sign-in and security, whose own submit
   // is also Change password, so everything after is within the dialog.
-  await page.goto('/account');
-  await page.getByRole('button', { name: 'Change password' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = await openChangePassword(page);
   await dialog.getByLabel('Current password').fill(E2E_PASSWORD);
   await dialog.locator('#newPassword').fill(newPassword);
   await dialog.getByLabel('Confirm new password').fill(newPassword);
@@ -86,9 +101,7 @@ test('refuses a wrong current password and changes nothing', async ({
 }) => {
   await signInAs(page, freshOrg.api);
 
-  await page.goto('/account');
-  await page.getByRole('button', { name: 'Change password' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = await openChangePassword(page);
   await dialog.getByLabel('Current password').fill('not-the-right-one');
   await dialog.locator('#newPassword').fill('e2e-other-password-1');
   await dialog.getByLabel('Confirm new password').fill('e2e-other-password-1');
@@ -120,9 +133,7 @@ test('emails a reset link after a refused password, still signed in', async ({
 }) => {
   await signInAs(page, freshOrg.api);
 
-  await page.goto('/account');
-  await page.getByRole('button', { name: 'Change password' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = await openChangePassword(page);
   await dialog.getByLabel('Current password').fill('not-the-right-one');
   await dialog.locator('#newPassword').fill('e2e-other-password-1');
   await dialog.getByLabel('Confirm new password').fill('e2e-other-password-1');
