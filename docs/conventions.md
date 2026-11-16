@@ -273,7 +273,8 @@ Use these rather than writing the thing again. The client's are under
   `return-authorizations/lock-open.ts`. Also `stock/rates.ts`
   (`baseCurrency`, `rateOnOrBefore`), `stock/availability.ts`
   (`inVariantOrder`, the one order product locks are taken in),
-  `orders/order-line-pricing.ts` (`pricedCurrencies`,
+  `stock/usable-stock.ts` (`usableByLocation`, the one rule for usable
+  stock), `orders/order-line-pricing.ts` (`pricedCurrencies`,
   `assertOneSaleCurrency`), `orders/lot-items.ts` (what a shipment or
   return moved), `return-authorizations/lines-with-progress.ts`,
   `invoices/issued-invoice.ts` (`partiesOf`, `stored`) and

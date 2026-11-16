@@ -39,13 +39,9 @@ import {
   noPoint,
   refuseMaximumAtOrBelowPoint,
 } from './reorder-points.service';
-import {
-  positionsOf,
-  type ReorderStatus,
-  statusOf,
-  usableByLocation,
-} from './reorder-position';
+import { positionsOf, type ReorderStatus, statusOf } from './reorder-position';
 import type { Tx } from './stock.service';
+import { usableByLocation } from './usable-stock';
 
 /** A page of the list unless the caller asks for fewer (ADR-051). */
 const PAGE_SIZE = 50;
