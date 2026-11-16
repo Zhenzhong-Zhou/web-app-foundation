@@ -481,11 +481,10 @@ export class ReorderPointsReadsService {
       `);
 
       return {
-        // Text columns its check constraints hold to the two lists.
         point: {
-          source: point.source as ReorderSource,
+          source: point.source,
           reorderPoint: point.reorderPoint,
-          rule: point.rule as ReorderRule,
+          rule: point.rule,
           fixedQuantity: point.fixedQuantity,
           maximumQuantity: point.maximumQuantity,
         },

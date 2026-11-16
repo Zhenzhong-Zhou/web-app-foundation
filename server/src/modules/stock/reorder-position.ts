@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
+import type { ReorderRule, ReorderSource } from '../../database/schema';
 import { usableByLocation } from './usable-stock';
 
 /**
@@ -23,9 +24,9 @@ export type ReorderStatus = (typeof REORDER_STATUSES)[number];
  * rule does not use is null.
  */
 export interface TypedPoint {
-  source: string;
+  source: ReorderSource;
   reorderPoint: string;
-  rule: string;
+  rule: ReorderRule;
   fixedQuantity: string | null;
   maximumQuantity: string | null;
 }

@@ -13,7 +13,12 @@ import {
   type FieldValues,
   recordContext,
 } from '../../core/audit/audit-context';
-import { productVariants, reorderPoints } from '../../database/schema';
+import {
+  productVariants,
+  reorderPoints,
+  type ReorderRule,
+  type ReorderSource,
+} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { SetReorderPointDto } from './dto/set-reorder-point.dto';
@@ -21,9 +26,9 @@ import type { Tx } from './stock.service';
 
 /** A point's own columns, as kept and as the log reads them. */
 interface PointValues {
-  source: string;
+  source: ReorderSource;
   reorderPoint: string;
-  rule: string;
+  rule: ReorderRule;
   fixedQuantity: string | null;
   maximumQuantity: string | null;
 }
