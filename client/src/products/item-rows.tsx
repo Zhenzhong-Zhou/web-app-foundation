@@ -18,7 +18,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { type MouseEvent, type Ref, useState } from 'react';
@@ -27,19 +26,17 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { ProductSummary } from '../api/types.gen';
 import { PlaceholderRows } from '../components/placeholder-rows';
-import { ProductCover } from '../components/product-cover';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import type { ItemSort } from '../lib/api-names';
 import { formatDate, SEPARATOR } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import { pathName } from './item-list';
-import { productTypeIcon, productTypeLabel } from './product-types';
+import { NameAndCode } from './name-and-code';
 import { displayWithUnit } from './units';
 
 /** The date column's two dates: which it shows follows the sort. */
@@ -169,24 +166,6 @@ function RowStatus({ item }: { item: ProductSummary }) {
     );
   }
   return null;
-}
-
-/**
- * On All, where rows of every type sit together and the type shows only
- * as the tile's icon, the type said after the name to a screen reader, as
- * part of the item's link (ADR-092's review, 17); on a type's tab every
- * row is that type, so nothing.
- */
-function TypeAfterName({ item }: { item: ProductSummary }) {
-  const intl = useIntl();
-  return (
-    <Box component="span" sx={HIDDEN}>
-      {intl.formatMessage(
-        { id: 'products.row.type', defaultMessage: ', {type}' },
-        { type: productTypeLabel(item.type, intl) },
-      )}
-    </Box>
-  );
 }
 
 /** Inventory for the item alone, with Back to Items as it was (ADR-092). */
@@ -319,36 +298,15 @@ export function ItemTable({
                 </TableCell>
               )}
               <TableCell>
-                <Stack
-                  direction="row"
-                  spacing={1.5}
-                  sx={{ alignItems: 'center' }}
-                >
-                  <ProductCover
-                    fileId={item.coverFileId}
-                    name={item.displayName}
-                    icon={productTypeIcon(item.type)}
-                  />
-                  <Stack sx={{ minWidth: 0 }}>
-                    <Link
-                      component={RouterLink}
-                      to={`/items/${item.id}`}
-                      ref={firstNew?.index === index ? firstNew.ref : undefined}
-                      underline="hover"
-                      color="inherit"
-                      sx={{ fontWeight: 600 }}
-                    >
-                      {item.displayName}
-                      {withType && <TypeAfterName item={item} />}
-                    </Link>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: 'text.secondary' }}
-                    >
-                      {codes(item)}
-                    </Typography>
-                  </Stack>
-                </Stack>
+                <NameAndCode
+                  name={item.displayName}
+                  code={codes(item)}
+                  type={item.type}
+                  coverFileId={item.coverFileId}
+                  to={`/items/${item.id}`}
+                  linkRef={firstNew?.index === index ? firstNew.ref : undefined}
+                  withType={withType}
+                />
               </TableCell>
               <TableCell
                 sx={item.category ? undefined : { color: 'text.secondary' }}
@@ -542,22 +500,19 @@ export function ItemCards({
               minHeight: rem(44),
             }}
           >
-            <ProductCover
-              fileId={item.coverFileId}
+            <NameAndCode
               name={item.displayName}
-              icon={productTypeIcon(item.type)}
+              code={
+                <>
+                  {codes(item)}
+                  {SEPARATOR}
+                  {category(item)}
+                </>
+              }
+              type={item.type}
+              coverFileId={item.coverFileId}
+              withType={withType}
             />
-            <Stack sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontWeight: 600 }}>
-                {item.displayName}
-                {withType && <TypeAfterName item={item} />}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {codes(item)}
-                {SEPARATOR}
-                {category(item)}
-              </Typography>
-            </Stack>
           </Link>
           <Link
             component={RouterLink}

@@ -1064,6 +1064,11 @@ Use these rather than writing the thing again on a page:
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
+- **`NameAndCode`** (`products/name-and-code.tsx`) for an item in a list's
+  row or card: the cover or the type's icon, the name first in bold and the
+  code grey under it, the name the row's one link (ADR-093; the design
+  language's Rows). Items' rows first; the others move as their screens are
+  next changed.
 - **`TableOrCards`** for a list's rows as a table from 600 px and as cards
   below, two grey cards while the cards are read; `useCards` asks the same
   width for the rest of the page (ADR-090's width switch).
