@@ -97,8 +97,11 @@ rule, so the review judges each notice.
   item and partner pickers, how each matches, ranks and refuses, written
   from the code and the tests on 28 October 2026, and brought up to
   ADR-092 on 9 November 2026.
+- [Stock](stock.md): usable stock, what confirmed sales hold and what
+  may be taken, begun from the code and the tests on 16 November 2026
+  by ADR-093's Inventory branch, which grows it.
 
-The other areas, stock, orders, return authorizations and the rest of
+The other areas, orders, return authorizations and the rest of
 the ADRs' [areas](../adr/README.md#by-area), follow, each written by
 [`/rules-file <area>`](../../.claude/skills/rules-file/SKILL.md) from
 its code and tests: each fix-up batch writes the rules files of the

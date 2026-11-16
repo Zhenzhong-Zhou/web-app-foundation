@@ -74,3 +74,70 @@ export function usableByLocation(
     ) i on i.variant_id = s.variant_id and i.location_id = s.location_id
   `;
 }
+
+/**
+ * Usable stock per item, the one rule above summed over the locations
+ * marked available: what holds draw on (ADR-045, amended by ADR-093),
+ * and what Reorder's position counts (ADR-085). Rows `variant_id,
+ * usable`, for the items in `variants`.
+ */
+export function usableByItem(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+): SQL {
+  return sql`
+    select u.variant_id, sum(u.usable) as usable
+    from (${usableByLocation(organizationId, today, variants)}) u
+    group by u.variant_id
+  `;
+}
+
+/**
+ * On hand per item at every place, split by the one rule (ADR-093, R1):
+ * usable, and the not usable by why, expired or issued to a run at a
+ * place marked available, or at a place not available (ADR-042). The
+ * four add up to on hand. Rows `variant_id, on_hand, usable, expired,
+ * issued, unavailable`, for the items in `variants` with stock anywhere.
+ */
+export function onHandByUse(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select
+      h.variant_id,
+      h.on_hand,
+      coalesce(u.usable, 0) as usable,
+      coalesce(u.expired, 0) as expired,
+      coalesce(u.issued, 0) as issued,
+      h.unavailable
+    from (
+      select
+        sl.variant_id,
+        sum(sl.quantity) as on_hand,
+        coalesce(sum(sl.quantity) filter (where not loc.is_available), 0)
+          as unavailable
+      from stock_levels sl
+      join locations loc
+        on loc.id = sl.location_id
+        and loc.organization_id = ${org}
+      where sl.organization_id = ${org}
+        and sl.variant_id in ${variants}
+        and sl.quantity > 0
+      group by sl.variant_id
+    ) h
+    left join (
+      select
+        a.variant_id,
+        sum(a.usable) as usable,
+        sum(a.expired) as expired,
+        sum(a.issued) as issued
+      from (${usableByLocation(organizationId, today, variants)}) a
+      group by a.variant_id
+    ) u on u.variant_id = h.variant_id
+  `;
+}

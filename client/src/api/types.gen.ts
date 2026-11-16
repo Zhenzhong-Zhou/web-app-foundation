@@ -1980,6 +1980,10 @@ export type Availability = {
   variantName: string | null;
   unitOfMeasure: string;
   onHand: string;
+  notUsable: string;
+  expired: string;
+  issued: string;
+  unavailable: string;
   held: string;
   free: string;
   backordered: string;
@@ -3676,6 +3680,7 @@ export const ErrorCode = {
   CODE_IN_USE: 'code_in_use',
   ITEM_NAME_MISSING: 'item_name_missing',
   PRODUCT_NAMES_CHANGED: 'product_names_changed',
+  STOCK_NOT_USABLE: 'stock_not_usable',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

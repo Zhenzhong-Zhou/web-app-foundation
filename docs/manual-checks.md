@@ -481,11 +481,16 @@ a second organization.
 - **MC-606** Confirming an unpriced sale is refused, with which line is
   unpriced.
 - **MC-607** Two confirmed sales for more than is in stock: the first holds
-  what exists, the second shows the rest as backordered, and Inventory's
-  availability agrees (ADR-045).
+  what is usable, the second shows the rest as backordered, and Inventory's
+  availability agrees (ADR-045). Receive a lot already expired, or release
+  a run made where the item is kept: on hand grows, but nothing more is
+  held and Free stays as it was (ADR-093).
 - **MC-608** Ship part of a sale without choosing lots: earliest expiry goes
   first. Ship the rest choosing a lot by hand.
-- **MC-609** Shipping cannot take stock held for an earlier order.
+- **MC-609** Shipping cannot take stock held for an earlier order. With an
+  expired lot on the shelf, shipping the later order more than it holds is
+  refused, saying how many are expired or issued and that the item's Where
+  it stands shows which (ADR-093).
 - **MC-610** Void a shipment: its stock returns to the shelf, the order's
   shipped quantity goes back down, and the shipment shows as voided.
 - **MC-611** The shipment dialog previews the lots before anything moves,

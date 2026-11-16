@@ -1,7 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
 import type { ReorderRule, ReorderSource } from '../../database/schema';
-import { usableByLocation } from './usable-stock';
+import { usableByItem } from './usable-stock';
 
 /**
  * Where an item with a reorder point stands (ADR-085): out at zero or
@@ -108,7 +108,7 @@ export function draftedOf(f: PositionFigures): SQL {
  * asked for: as a subquery's rows, one per point, for the list, its
  * counts and Home's card to read alike.
  *
- * - usable: usableByLocation's, summed;
+ * - usable: usableByItem's, as the holds read it (availability.ts);
  * - coming: confirmed purchases' lines still to receive (ordered less
  *   received, unless closed short), and released runs' output still to
  *   come (planned less produced, never below zero);
@@ -205,9 +205,8 @@ export function positionsOf(
       }
     ),
     usable as (
-      select u.variant_id, sum(u.usable) as quantity
-      from (${usableByLocation(organizationId, today, asked)}) u
-      group by u.variant_id
+      select u.variant_id, u.usable as quantity
+      from (${usableByItem(organizationId, today, asked)}) u
     ),
     coming as (
       select ol.variant_id, ol.quantity_ordered - ol.quantity_fulfilled as quantity

@@ -1071,6 +1071,7 @@
   "stock.suchItem": "Article introuvable",
   "stock.suchLot": "Lot introuvable",
   "stock.suchValuation": "Évaluation introuvable",
+  "stock.takeableSkuNotUsable": "Vous ne pouvez prélever que {takeable} de {sku} : {held} est réservé pour {orders}, et {notUsable} de plus est périmé ou déjà prélevé pour un ordre de fabrication. L’État du stock, sur la page de l’article, indique lesquels.",
   "stock.takeableSkuTakenHeld": "Vous ne pouvez prélever que {takeable} de {sku} : {held} est réservé pour {orders}.",
   "stock.transferNeedsBothSource": "Un transfert exige un emplacement source et un emplacement de destination",
   "stock.unknownLocation": "Cet emplacement ne fait pas partie de cette organisation. Choisissez-en un dans la liste.",

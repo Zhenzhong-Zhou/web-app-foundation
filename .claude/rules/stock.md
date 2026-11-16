@@ -31,6 +31,10 @@ What to keep true when changing stock's code.
 - **Holds are computed, never stored.** What spends unheld stock takes
   `lockProduct`, several in `inVariantOrder`; adjustments and transfers
   are not checked (ADR-045).
+- **Usable stock is one rule,** `usable-stock.ts`: the holds, the guard
+  and Reorder's position read `usableByLocation`, `usableByItem` or
+  `onHandByUse`, never a copy of their sums (ADR-045 and ADR-085, as
+  ADR-093 amends them).
 - **A movement's reference is the server's to set:** the movement route
   takes none from the client (ADR-042).
 - **A movement keeps its SKU as text;** an adjustment needs a note, and

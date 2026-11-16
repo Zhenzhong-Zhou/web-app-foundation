@@ -16271,6 +16271,18 @@
           "onHand": {
             "type": "string"
           },
+          "notUsable": {
+            "type": "string"
+          },
+          "expired": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          },
+          "unavailable": {
+            "type": "string"
+          },
           "held": {
             "type": "string"
           },
@@ -16288,6 +16300,10 @@
           "variantName",
           "unitOfMeasure",
           "onHand",
+          "notUsable",
+          "expired",
+          "issued",
+          "unavailable",
           "held",
           "free",
           "backordered"
@@ -22571,7 +22587,8 @@
           "reorder_maximum_not_above_point",
           "code_in_use",
           "item_name_missing",
-          "product_names_changed"
+          "product_names_changed",
+          "stock_not_usable"
         ]
       },
       "ApiVocabulary": {

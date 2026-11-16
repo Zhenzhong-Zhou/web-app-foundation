@@ -11,11 +11,19 @@ export class Availability {
   productName!: string;
   variantName!: string | null;
   unitOfMeasure!: string;
-  /** Stock at locations marked available: what could be promised. */
+  /** Every unit at every place, usable or not (ADR-093). */
   onHand!: string;
-  /** Held for confirmed sales, earliest confirmed first. */
+  /** On hand less usable: the next three added up. */
+  notUsable!: string;
+  /** In lots past their expiry, at places marked available. */
+  expired!: string;
+  /** Issued to released runs and not yet consumed, at places marked available. */
+  issued!: string;
+  /** At places not available, such as quarantine (ADR-042). */
+  unavailable!: string;
+  /** Held for confirmed sales from usable stock, earliest confirmed first. */
   held!: string;
-  /** Neither held nor unavailable: free to promise, sample or use. */
+  /** Usable less held, never below 0: free to promise, sample or use. */
   free!: string;
   /** Wanted by confirmed sales beyond what exists. */
   backordered!: string;
