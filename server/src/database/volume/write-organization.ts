@@ -36,9 +36,17 @@ interface Item {
   homeBinId: string;
   /** Cents, so a price is formatted without a float. */
   priceCents: number;
+  /** In its home bin, what the seed's sales, runs and counts draw on. */
   onHand: number;
   /** Held for confirmed sales not yet shipped (ADR-045). */
   committed: number;
+  /**
+   * Put away in other bins (ADR-093, R18): on hand all the same, but never
+   * drawn on here, so a sale ships only what its home bin holds.
+   */
+  elsewhere: number;
+  /** Receipts so far, which decide by position which are put away apart. */
+  receipts: number;
 }
 
 interface Recipe {
@@ -121,6 +129,14 @@ const PARTNER_KINDS = [
 ] as const;
 
 /**
+ * One receipt in this many is put away in two bins, a third of it in a
+ * second one, so a code is in several places and a lot in two (ADR-093,
+ * R18). By position, never from the random source, so the rest of the year
+ * is the year it was.
+ */
+const APART_EVERY = 6;
+
+/**
  * Writes one organization's year (ADR-051), a week at a time.
  *
  * In the order a business does things, so every step is one the services
@@ -143,6 +159,8 @@ export class OrganizationWriter {
   private itemsByVariant = new Map<string, Item>();
   private recipes: Recipe[] = [];
   private goodsByBin = new Map<string, Item[]>();
+  private rawBinIds: string[] = [];
+  private aisleBinIds: string[] = [];
   private pending: PendingShipment[] = [];
   private traceLotId: string | null = null;
 
@@ -205,7 +223,7 @@ export class OrganizationWriter {
       this.items.map((item) => ({
         variantId: item.variantId,
         made: made.has(item.variantId),
-        free: free(item),
+        free: free(item) + item.elsewhere,
       })),
     );
     this.calls += points;
@@ -341,6 +359,8 @@ export class OrganizationWriter {
     const bins = [...this.goodsByBin.keys()];
     const materialBins = bins.slice(0, this.volume.materialBins);
     const goodsBins = bins.slice(this.volume.materialBins);
+    this.rawBinIds = materialBins;
+    this.aisleBinIds = goodsBins;
 
     // About thirty categories, three levels deep, before the items that
     // sit in them (ADR-092).
@@ -410,6 +430,8 @@ export class OrganizationWriter {
         priceCents: this.random.int(500, 8_000),
         onHand: 0,
         committed: 0,
+        elsewhere: 0,
+        receipts: 0,
       };
 
       this.items.push(item);
@@ -542,19 +564,39 @@ export class OrganizationWriter {
           this.actorId,
         );
 
+        // Most of it goes to its home bin; now and then a third of it to
+        // another, so the lot is in two places.
+        const apart = this.putAwayApart(item, Number(quantity));
+
         await this.services.stock.record(
           {
             variantId: item.variantId,
             lotId: receipt.lotId,
             fromLocationId: this.dockId,
             toLocationId: item.homeBinId,
-            quantity,
+            quantity: apart > 0 ? String(Number(quantity) - apart) : quantity,
             reason: 'transfer',
           },
           this.actorId,
         );
 
-        item.onHand += Number(quantity);
+        if (apart > 0) {
+          await this.services.stock.record(
+            {
+              variantId: item.variantId,
+              lotId: receipt.lotId,
+              fromLocationId: this.dockId,
+              toLocationId: this.otherBinOf(item),
+              quantity: String(apart),
+              reason: 'transfer',
+            },
+            this.actorId,
+          );
+          this.calls++;
+        }
+
+        item.onHand += Number(quantity) - apart;
+        item.elsewhere += apart;
         this.calls += 2;
       }
     }
@@ -1036,6 +1078,29 @@ export class OrganizationWriter {
     const days = this.random.int(minDays, maxDays);
     expires.setUTCDate(expires.getUTCDate() + days);
     return { code, expiresAt: expires.toISOString().slice(0, 10) };
+  }
+
+  /**
+   * How much of a receipt is put away apart from the item's home bin: a
+   * third of every `APART_EVERY`th receipt of it, nothing of the rest.
+   */
+  private putAwayApart(item: Item, quantity: number): number {
+    item.receipts += 1;
+    if (item.receipts % APART_EVERY !== 0) return 0;
+    return Math.max(1, Math.floor(quantity / 3));
+  }
+
+  /**
+   * Another bin of the item's kind, the next one along from its home and
+   * then the one after, receipt by receipt, never its home: a code reaches
+   * a few places over the year, by position.
+   */
+  private otherBinOf(item: Item): string {
+    const group = item.kind === 'material' ? this.rawBinIds : this.aisleBinIds;
+    const at = group.indexOf(item.homeBinId);
+    const nth = item.receipts / APART_EVERY;
+    const step = 1 + ((nth - 1) % (group.length - 1));
+    return group[(at + step) % group.length];
   }
 
   private next(): number {

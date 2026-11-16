@@ -53,8 +53,9 @@ export interface TeamAnchors {
  *
  * - 王建国 (warehouse): a second site with zones, an aisle, shelves, a
  *   quarantine and an address; receipts there; a transfer between sites; a
- *   count that found two short and one over; a write-off; a lot whose
- *   expiry turned out to be past, moved to quarantine.
+ *   count that found two short and one over; a write-off; a vitamin C
+ *   code corrected after its receipts; a lot whose expiry turned out to
+ *   be past, moved to quarantine.
  * - Daniel (operations): a product in three sizes, named in French and
  *   Chinese; equipment; three suppliers, one billing in euros; four
  *   purchases, one of them late and priced from the supplier's list.
@@ -707,10 +708,13 @@ export async function addTeamWork(
       );
     }
 
+    // Typed with the code the first order was written under, VITC-90, and
+    // corrected to VITC-100 after its first receipts (below): the ledger
+    // keeps each movement under the code it had (ADR-093, 7a).
     const vitaminC = await product(actor, {
       type: 'good',
       name: 'Vitamin C 500 mg, 100 tablets',
-      variant: { sku: 'VITC-100', unitOfMeasure: 'each', tracksLots: true },
+      variant: { sku: 'VITC-90', unitOfMeasure: 'each', tracksLots: true },
     });
     await audited(
       actor,
@@ -775,6 +779,7 @@ export async function addTeamWork(
       magcap120: variants[1].id,
       magcap240: variants[2].id,
       vitaminC: vitaminC.variants[0].id,
+      vitaminCProductId: vitaminC.id,
       chamomile: chamomile.variants[0].id,
       melatonin: melatonin.variants[0].id,
       amberBottle: amberBottle.variants[0].id,
@@ -1004,6 +1009,28 @@ export async function addTeamWork(
       expiresInDays: 420,
     });
     await setStatus(actor, bought.id, 'fulfilled');
+
+    // The vitamin C arrived labelled VITC-100, as its name says, not the
+    // VITC-90 its order was written under, so 王建国 corrects the code
+    // before anything of it moves: a code changed once, after its first
+    // movements. Those two receipts keep VITC-90 in the ledger and
+    // PO-DEMO-8 on its line; the rest reads VITC-100 (ADR-093, 7a).
+    await audited(
+      actor,
+      {
+        action: AUDIT_ACTIONS.PRODUCT_VARIANT_UPDATED,
+        type: 'product',
+        id: catalogue.vitaminCProductId,
+        body: { sku: 'VITC-100' },
+        fields: ['sku'],
+      },
+      () =>
+        products.updateVariant(
+          catalogue.vitaminCProductId,
+          catalogue.vitaminC,
+          { sku: 'VITC-100' },
+        ),
+    );
 
     await receive(actor, machine, catalogue.filler, '1', richmond.cage);
     await setStatus(actor, machine.id, 'fulfilled');
@@ -1730,6 +1757,7 @@ export async function addTeamWork(
     'MAGCAP in three sizes',
     'PO-DEMO-7 in euros, PO-DEMO-9 late, a capsule filler in the cage',
     'PO-DEMO-11 waiting to be received',
+    'VITC-90 corrected to VITC-100 after its two receipts',
     'VC-0301 expired and quarantined',
     'SLEEP-BLEND-01 from hand-picked CHA-0522',
     'SLEEP-60-01 made 450 + 520 of 1000',

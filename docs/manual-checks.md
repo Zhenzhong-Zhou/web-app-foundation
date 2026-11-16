@@ -102,6 +102,24 @@ Among the products, **VITC-100** is Out and the rest of the nine reorder
 points leave several Low. Equipment is **EQ-CAPFILL-01**, received at
 18,500.00 CAD and left out of stock value (MC-802).
 
+For Inventory's screens (ADR-093), nothing is set up by hand; the seed reads
+each of these back and stops if one is gone. **D3-B02** is in two places, 80
+on Main's **Shelf** and 40 on Richmond's **Shelf 1-B**, as are **THE-0812**,
+**ASH-0601** and **MAG-0703**, and **FOC-2609-01** is in three. **VC-0301**
+is expired in Richmond's **Quarantine**, and **VC-0402** past its date on its
+shelf, so **VITC-100** has 72 on hand and none usable. **BOTTLE-90**,
+**ASH-EXT-5**, **THEANINE** and **MAG-GLY** have stock issued to
+**CALM-RUN-01**, 1,000, 15, 5 and 20, which Free leaves out. **FOCUS-60CT**
+has 538 held for its confirmed sales, **SO-DEMO-1** and **SO-DEMO-2**, Free 0
+and 162 short, and 11 more not usable in Retention and Returns; **ELDER-250**
+holds 60 of its 70, Free 10, not short. Coming reads **ELDER-250**'s 48
+(**PO-DEMO-12**) and **CARTON-24**'s 240 with their days, both late, and
+**CALM-90CT**'s 1,000 from the released run, with none. **SLEEP-60CT** and
+**MAGCAP-SAMPLE** are made and have a reorder point. **VITC-100** was
+**VITC-90**: its first order, **PO-DEMO-8**, and its two receipts say
+VITC-90, and the rest of its ledger VITC-100, since 王建国 corrected the
+code once its first lots arrived.
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 

@@ -87,6 +87,13 @@ again, its tables staying under autovacuum's threshold: before trusting a
 figure over budget, run `vacuum analyze` on it (Home at large read 337 ms
 before, 190–225 ms after).
 
+One receipt in six is put away in two bins, a third of it in a second one,
+so a code reaches several places over the year and a lot sits in two (ADR-093):
+what Inventory's rows open to and its Lot view groups. The seed's sales,
+runs and counts draw on the first bin alone, so none is refused, and the
+reorder points are set on the whole stock. By position, not from the random
+source: the rest of the year is the year it was.
+
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
