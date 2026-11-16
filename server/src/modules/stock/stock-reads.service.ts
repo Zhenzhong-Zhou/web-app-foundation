@@ -244,6 +244,15 @@ export class StockReadsService {
       );
       const today = await todayOf(tx, organizationId);
       const scope = filtersOf(query, organizationId, today);
+      // Every join names the organization, as stockRowsOf's do (#551).
+      const variantOf = and(
+        eq(productVariants.id, stockLevels.variantId),
+        eq(productVariants.organizationId, organizationId),
+      );
+      const locationOf = and(
+        eq(locations.id, stockLevels.locationId),
+        eq(locations.organizationId, organizationId),
+      );
       const lotOf = lotJoin(organizationId);
       const shown = namesIn(locale, organizationId);
 
@@ -263,11 +272,8 @@ export class StockReadsService {
             id: stockLevels.id,
           })
           .from(stockLevels)
-          .innerJoin(
-            productVariants,
-            eq(productVariants.id, stockLevels.variantId),
-          )
-          .innerJoin(locations, eq(locations.id, stockLevels.locationId))
+          .innerJoin(productVariants, variantOf)
+          .innerJoin(locations, locationOf)
           .leftJoin(lots, lotOf)
           .where(
             and(
@@ -314,10 +320,7 @@ export class StockReadsService {
           quantity: stockLevels.quantity,
         })
         .from(stockLevels)
-        .innerJoin(
-          productVariants,
-          eq(productVariants.id, stockLevels.variantId),
-        )
+        .innerJoin(productVariants, variantOf)
         // Inner: every variant belongs to a product, and the product name
         // is what people recognise — most variants have no name of their own.
         .innerJoin(
@@ -327,7 +330,7 @@ export class StockReadsService {
             eq(products.organizationId, organizationId),
           ),
         )
-        .innerJoin(locations, eq(locations.id, stockLevels.locationId))
+        .innerJoin(locations, locationOf)
         // Left, because lot_id is null for every untracked variant and an
         // inner join would silently drop most of the warehouse.
         .leftJoin(lots, lotOf)
