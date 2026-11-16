@@ -784,6 +784,7 @@
   "inventory.trace.cameFrom": "D’où il vient",
   "inventory.trace.cameFrom.empty": "Aucune réception ni production n’est enregistrée pour ce lot. Il a peut-être été ajouté au stock par une correction.",
   "inventory.trace.expires": "périme le {day}",
+  "inventory.trace.leftOn": "Date",
   "inventory.trace.lotCode": "Code de lot",
   "inventory.trace.lotCode.help": "Vous pouvez chercher avec n’importe quelle partie du code — le numéro de lot suffit généralement. Appuyez sur Entrée pour lancer la recherche.",
   "inventory.trace.madeFrom": "Fabriqué à partir de",

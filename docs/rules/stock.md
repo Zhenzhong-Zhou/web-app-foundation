@@ -89,6 +89,16 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--how-it-behaves) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language"
 
+## A lot's trace
+
+- **A lot's recall list is everyone who received it or anything made
+  from it,** each with how much was shipped, sampled and returned and
+  the day it first left; its export is the same rows, in the reader's
+  language, for a reader with stock.view.
+  [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-recall-lists-export-and-a-lots-expired-days-adr-093) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words"
+
 ## Where it stands
 
 - **Where it stands lists an item's codes, the out first, then the low,

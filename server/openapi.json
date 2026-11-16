@@ -5784,6 +5784,44 @@
         ]
       }
     },
+    "/v1/stock/lots/{id}/recipients/export": {
+      "get": {
+        "operationId": "LotTraceController_exportRecipients_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "LotTrace"
+        ]
+      }
+    },
     "/v1/stock/availability": {
       "get": {
         "operationId": "AvailabilityController_list_v1",
@@ -17590,6 +17628,12 @@
           },
           "returned": {
             "type": "string"
+          },
+          "leftOn": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -17604,7 +17648,8 @@
           "sku",
           "shipped",
           "sampled",
-          "returned"
+          "returned",
+          "leftOn"
         ]
       },
       "LotTrace": {

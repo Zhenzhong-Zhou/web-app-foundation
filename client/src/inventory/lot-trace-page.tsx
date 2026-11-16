@@ -27,6 +27,7 @@ import {
 
 import type { LotMatch, LotTrace } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ExportButton } from '../components/export-button';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { LotCostPanel } from '../costs/lot-cost-panel';
@@ -423,6 +424,14 @@ export function LotTracePage() {
           id: 'inventory.trace.receivedBy',
           defaultMessage: 'Who received it',
         })}
+        // The recall list as a file, for a recall letter (ADR-044, amended).
+        action={
+          trace.recipients.length > 0 && (
+            <ExportButton
+              path={`/stock/lots/${trace.lot.id}/recipients/export`}
+            />
+          )
+        }
       >
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
@@ -476,6 +485,10 @@ export function LotTracePage() {
                 id: 'inventory.trace.returned',
                 defaultMessage: 'Returned',
               }),
+              intl.formatMessage({
+                id: 'inventory.trace.leftOn',
+                defaultMessage: 'Date',
+              }),
             ]}
             rows={trace.recipients.map((row) => [
               row.partnerId ? (
@@ -517,6 +530,7 @@ export function LotTracePage() {
               formatQuantity(row.shipped),
               formatQuantity(row.sampled),
               formatQuantity(row.returned),
+              row.leftOn ? formatDay(row.leftOn) : NO_VALUE,
             ])}
             alignRight={[3, 4, 5]}
           />
@@ -699,12 +713,33 @@ function Onward({
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  /** The section's own action, beside its heading. */
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <Stack spacing={1}>
-      <Typography variant="h6" component="h2">
-        {title}
-      </Typography>
+      <Stack
+        direction="row"
+        spacing={2}
+        useFlexGap
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography variant="h6" component="h2">
+          {title}
+        </Typography>
+        {action}
+      </Stack>
       {children}
     </Stack>
   );

@@ -2,7 +2,8 @@ import { csvMoment } from '../../common/csv';
 import { type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { UNIT_WORDS } from '../../common/units';
-import { t } from '../../i18n/translate';
+import { t, translate } from '../../i18n/translate';
+import type { LotRecipient } from './dto/lot-trace-response.dto';
 import type { ReorderPointRow } from './dto/reorder-point-response.dto';
 import type {
   StockCodeRow,
@@ -219,4 +220,57 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
     value: (row) => row.suggestion,
   },
   { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
+];
+
+/**
+ * A lot's recall list, its trace's Who received it (ADR-044, amended;
+ * #473's 17): each customer who received the lot or anything made from
+ * it, the order, the lot, how much and the day it first left, in the
+ * screen's words. A row with no recipient on record says so, as the
+ * screen does.
+ */
+export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
+  {
+    header: t({ id: 'exports.column.who', defaultMessage: 'Who' }),
+    value: (row, locale) =>
+      row.partnerName ??
+      translate(
+        t({
+          id: 'exports.value.noRecipient',
+          defaultMessage: 'No recipient recorded',
+        }),
+        locale,
+      ),
+  },
+  {
+    header: t({ id: 'exports.column.order', defaultMessage: 'Order' }),
+    value: (row, locale) =>
+      row.orderNumber && row.isSampleOrder
+        ? translate(
+            t(
+              {
+                id: 'exports.value.sampleOrder',
+                defaultMessage: '{reference} (sample)',
+              },
+              { reference: row.orderNumber },
+            ),
+            locale,
+          )
+        : row.orderNumber,
+  },
+  { header: HEADERS.lot, value: (row) => row.lotCode },
+  { header: HEADERS.sku, value: (row) => row.sku },
+  {
+    header: t({ id: 'exports.column.shipped', defaultMessage: 'Shipped' }),
+    value: (row) => row.shipped,
+  },
+  {
+    header: t({ id: 'exports.column.sampled', defaultMessage: 'Sampled' }),
+    value: (row) => row.sampled,
+  },
+  {
+    header: t({ id: 'exports.column.returned', defaultMessage: 'Returned' }),
+    value: (row) => row.returned,
+  },
+  { header: HEADERS.date, value: (row) => row.leftOn },
 ];

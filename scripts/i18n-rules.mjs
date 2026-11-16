@@ -270,6 +270,7 @@ const SAME_AS_ENGLISH = [
     [
       "documents.dateOn",
       "exports.column.date",
+      "inventory.trace.leftOn",
       "invoices.date",
       "orders.documents.date",
     ],

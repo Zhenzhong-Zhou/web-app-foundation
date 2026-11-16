@@ -2071,6 +2071,7 @@ export type LotRecipient = {
   shipped: string;
   sampled: string;
   returned: string;
+  leftOn: string | null;
 };
 
 export type LotTrace = {
@@ -6434,6 +6435,25 @@ export type LotTraceControllerTraceV1Responses = {
 
 export type LotTraceControllerTraceV1Response =
   LotTraceControllerTraceV1Responses[keyof LotTraceControllerTraceV1Responses];
+
+export type LotTraceControllerExportRecipientsV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/stock/lots/{id}/recipients/export';
+};
+
+export type LotTraceControllerExportRecipientsV1Responses = {
+  200: string;
+};
+
+export type LotTraceControllerExportRecipientsV1Response =
+  LotTraceControllerExportRecipientsV1Responses[keyof LotTraceControllerExportRecipientsV1Responses];
 
 export type AvailabilityControllerListV1Data = {
   body?: never;

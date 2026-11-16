@@ -74,6 +74,11 @@ export class LotRecipient {
   shipped!: string;
   sampled!: string;
   returned!: string;
+  /**
+   * The day it first left for them, shipped or sampled, in the
+   * organization's days (ADR-052); null when only a return is recorded.
+   */
+  leftOn!: string | null;
 }
 
 /** GET /stock/lots/:id/trace. */

@@ -566,6 +566,12 @@ search to having the list of customers; the target is **under two minutes**.
   made from.
 - **MC-904** Balances: where every unit of the batch is now.
 - **MC-905** Record the time here and in the release notes.
+- **MC-906** *(ADR-044, amended)* On BF-2609's trace, Who received it's
+  Export saves the recall list: each row as the table shows it, who, the
+  order, the lot and its code, shipped, sampled and returned, and the
+  day it first left, also a column on the table. In 中文 the headers read
+  收货方 to 日期, and a row with nobody on record 未记录收货方. The audit
+  log's line for it names a lot's recall list.
 
 ## 10. Audit
 

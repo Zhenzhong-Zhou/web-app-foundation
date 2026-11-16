@@ -79,6 +79,7 @@ const TRACE: LotTrace = {
       shipped: '5.0000',
       sampled: '0.0000',
       returned: '0.0000',
+      leftOn: '2026-10-20',
     },
   ],
 };
@@ -135,6 +136,20 @@ describe('LotTracePage', () => {
       'href',
       '/production/run-1',
     );
+  });
+
+  // A recall letter goes to everyone on it (ADR-044, amended; #473's 17).
+  it('exports the recall list beside Who received it, each row with its day', async () => {
+    renderTrace(['stock.view']);
+
+    const heading = await screen.findByRole('heading', {
+      name: 'Who received it',
+    });
+    expect(heading.parentElement).toContainElement(
+      screen.getByRole('button', { name: 'Export' }),
+    );
+    expect(screen.getByRole('columnheader', { name: 'Date' })).toBeVisible();
+    expect(screen.getByText('Oct 20, 2026')).toBeVisible();
   });
 
   // Stock look-up's reader (ADR-080): stock, but none of the three.

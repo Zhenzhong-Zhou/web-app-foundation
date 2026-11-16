@@ -189,6 +189,10 @@ const LIST_WORDS: Record<string, Translatable> = {
     id: 'audit.value.list.inventoryLots',
     defaultMessage: 'Inventory, by lot',
   }),
+  recall: t({
+    id: 'audit.value.list.recall',
+    defaultMessage: 'A lot’s recall list',
+  }),
   movements: t({
     id: 'audit.value.list.movements',
     defaultMessage: 'Movements',
