@@ -89,8 +89,12 @@ export class StockFiltersDto {
   search?: string;
 }
 
-/** What a row per code is sorted by (ADR-057, amended by ADR-093). */
-export const STOCK_CODE_SORTS = ['name', 'onHand', 'free', 'expires'] as const;
+/**
+ * What a row per code is sorted by (ADR-057, amended by ADR-093). Not
+ * Free: worked out for every code, it took 335 ms at the large volume,
+ * past ADR-051's headroom (35a).
+ */
+export const STOCK_CODE_SORTS = ['name', 'onHand', 'expires'] as const;
 export type StockCodeSort = (typeof STOCK_CODE_SORTS)[number];
 
 /** The page of a list paged by its key's values (sorted-page.ts). */
@@ -112,7 +116,7 @@ class ValuesPageDto extends StockFiltersDto {
 
 /** A row per code, fifty at a time (ADR-093, R1 and R16). */
 export class ListStockByCodeDto extends ValuesPageDto {
-  /** By the item's name unless asked; by On hand, Free or Expires first. */
+  /** By the item's name unless asked; by On hand or Expires first. */
   @IsOptional()
   @IsIn(STOCK_CODE_SORTS)
   sort?: StockCodeSort;

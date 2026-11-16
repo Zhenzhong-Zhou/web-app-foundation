@@ -72,12 +72,15 @@ file is kept is in the [README](README.md).
   place alone,** never a code whose matching lot is held elsewhere.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a lot by its code at the place chosen alone, never one held elsewhere"
-- **Sorted by On hand, Free or Expires first, each page follows the
-  figure its rows show, either way,** a code with nothing to expire last
-  both ways; at one place chosen, On hand and Expires first are what is
-  there.
+- **Sorted by On hand or Expires first, each page follows the figure
+  its rows show, either way,** a code with nothing to expire last both
+  ways; at one place chosen, On hand and Expires first are what is
+  there. Free is not a sort: worked out for every code it took 335 ms
+  at the large volume, past ADR-051's 240 ms headroom (35a), and the
+  route refuses it.
   [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "reads each figure sort’s pages in the order of the figures they show, either way"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "reads each figure sort’s pages in the order of the figures they show, either way" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "sorts by name, On hand and Expires first, and pages without skipping or repeating"
 - **Each quick filter's count is the rows it shows,** with the other
   filters on and its own off: Low stock holds the out, and Expiring soon
   the expired, as Home's tiles do.

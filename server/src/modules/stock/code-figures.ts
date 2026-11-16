@@ -2,7 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import { openSaleLines } from './availability';
 import { statusOf } from './reorder-status';
-import { onHandByItem, onHandByUse, usableByItem } from './usable-stock';
+import { onHandByItem, onHandByUse } from './usable-stock';
 
 /**
  * The one read for a code's figures (ADR-093, R1 and R20): Inventory's
@@ -171,23 +171,22 @@ export function codeFigures(
 }
 
 /** The figures a list of codes sorts by besides the name (ADR-057, amended). */
-export type SortedFigure = 'onHand' | 'free' | 'expires';
+export type SortedFigure = 'onHand' | 'expires';
 
 /**
  * One of a code's figures alone, for every item in `variants`: what a list
  * sorted by it reads before it reads its page's codes in full (ADR-093,
  * 29a). Built from codeFigures' own parts, so the figure is the one the
  * row shows, never a second copy of its rule: On hand from on hand by
- * item, Free from the usable and what sales still need, held as
- * codeFigures holds it, Expires first from the expiry. Rows `variant_id, value`, one per item with any; the others
- * have none, 0 or no expiry.
+ * item, Expires first from the expiry. Rows `variant_id, value`, one per
+ * item with any; the others have none, 0 or no expiry. Free is no sort
+ * (35a).
  *
  * Narrow on purpose: a list that keeps every code gives the planner no
  * good guess of how many there are, and it then joins the full figures'
  * parts row by row, thirteen times the cost of reading them (step 13's
- * explain). Each form here is one pass grouped by item, Free its two
- * sums unioned rather than joined, so no guess makes it work one item
- * at a time.
+ * explain). Each form here is one pass grouped by item, so no guess
+ * makes it work one item at a time.
  */
 export function sortedFigure(
   organizationId: string,
@@ -201,27 +200,9 @@ export function sortedFigure(
       from (${onHandByItem(organizationId, variants)}) oh
     `;
   }
-  if (figure === 'expires') {
-    return sql`
-      select ex.variant_id, ex.expires_first as value
-      from (${expiresFirstOf(organizationId, today, variants)}) ex
-    `;
-  }
   return sql`
-    select
-      fr.variant_id,
-      ${freeOf(
-        sql`sum(fr.usable)`,
-        heldOf(sql`sum(fr.usable)`, sql`sum(fr.still_needed)`),
-      )} as value
-    from (
-      select us.variant_id, us.usable, 0::numeric as still_needed
-      from (${usableByItem(organizationId, today, variants)}) us
-      union all
-      select nd.variant_id, 0, nd.still_needed
-      from (${stillNeededOf(organizationId, variants)}) nd
-    ) fr
-    group by fr.variant_id
+    select ex.variant_id, ex.expires_first as value
+    from (${expiresFirstOf(organizationId, today, variants)}) ex
   `;
 }
 

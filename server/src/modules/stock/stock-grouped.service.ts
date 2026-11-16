@@ -347,14 +347,14 @@ export class StockGroupedService {
 
   /**
    * A page of codes, sorted by the item's name, the default, or by On
-   * hand, Free or Expires first (ADR-057, amended), each then by name,
-   * code and id; paged by the sort's values (sorted-page.ts), since a
-   * figure is worked out, not kept. By name with no Low stock or Out,
-   * only the page's codes are worked out; a sort by a figure works out
-   * that figure alone for every code the other filters keep (29a), and
-   * Low stock and Out the figures of the codes with a point; then the
-   * page's codes in full. At one place, On hand and Expires first sort by
-   * what is there, as the row shows it.
+   * hand or Expires first (ADR-057, amended; Free is none, 35a), each
+   * then by name, code and id; paged by the sort's values
+   * (sorted-page.ts), since a figure is worked out, not kept. By name
+   * with no Low stock or Out, only the page's codes are worked out; a
+   * sort by a figure works out that figure alone for every code the other
+   * filters keep (29a), and Low stock and Out the figures of the codes
+   * with a point; then the page's codes in full. At one place, On hand
+   * and Expires first sort by what is there, as the row shows it.
    *
    * Items named in the locale given, or by their base names for null, as
    * the CSV export reads them (ADR-056).
@@ -420,12 +420,6 @@ export class StockGroupedService {
           { ...id, order: way },
         ],
         onHand: [
-          { value: sql`coalesce(c.value, 0)`, type: 'numeric', order: way },
-          name,
-          code,
-          id,
-        ],
-        free: [
           { value: sql`coalesce(c.value, 0)`, type: 'numeric', order: way },
           name,
           code,

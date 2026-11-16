@@ -227,7 +227,7 @@ describe('Inventory, grouped (e2e)', () => {
     ]);
   });
 
-  it('sorts by name, On hand, Free and Expires first, and pages without skipping or repeating', async () => {
+  it('sorts by name, On hand and Expires first, and pages without skipping or repeating', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await world(alpha);
 
@@ -236,8 +236,6 @@ describe('Inventory, grouped (e2e)', () => {
       '?order=desc': ['VITC', 'MAG', 'FOCUS', 'ELDER'],
       '?sort=onHand': ['MAG', 'ELDER', 'VITC', 'FOCUS'],
       '?sort=onHand&order=desc': ['FOCUS', 'VITC', 'ELDER', 'MAG'],
-      // Two at 0, by name.
-      '?sort=free': ['ELDER', 'MAG', 'VITC', 'FOCUS'],
       // Nothing to expire last, either way.
       '?sort=expires': ['VITC', 'ELDER', 'FOCUS', 'MAG'],
       '?sort=expires&order=desc': ['VITC', 'ELDER', 'FOCUS', 'MAG'],
@@ -270,9 +268,11 @@ describe('Inventory, grouped (e2e)', () => {
       await alpha.agent.get('/v1/stock/by-code?limit=1').expect(200),
     );
     await alpha.agent
-      .get(`/v1/stock/by-code?sort=free&before=${nextCursor}`)
+      .get(`/v1/stock/by-code?sort=onHand&before=${nextCursor}`)
       .expect(400);
     await alpha.agent.get('/v1/stock/by-code?sort=quantity').expect(400);
+    // Free is no sort: worked out for every code, past the budget (35a).
+    await alpha.agent.get('/v1/stock/by-code?sort=free').expect(400);
   });
 
   it('reads each figure sort’s pages in the order of the figures they show, either way', async () => {
@@ -281,7 +281,6 @@ describe('Inventory, grouped (e2e)', () => {
 
     type Figures = {
       onHand: string;
-      free: string;
       expiresFirst: string | null;
       here: { onHand: string; expiresFirst: string | null } | null;
     };
@@ -289,7 +288,6 @@ describe('Inventory, grouped (e2e)', () => {
     /** The figure a row shows for the sort: at the place chosen, its own. */
     const shown: Record<string, (row: CodeRow) => string | null> = {
       onHand: (row) => of(row).here?.onHand ?? of(row).onHand,
-      free: (row) => of(row).free,
       expires: (row) => {
         const { here, expiresFirst } = of(row);
         return here ? here.expiresFirst : expiresFirst;

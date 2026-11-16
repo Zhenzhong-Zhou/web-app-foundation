@@ -338,10 +338,6 @@ async function buildProbes(
       run: () => grouped.byCode({ sort: 'onHand' }, 'en'),
     },
     {
-      name: 'stock by code: by free',
-      run: () => grouped.byCode({ sort: 'free', order: 'desc' }, 'en'),
-    },
-    {
       name: 'stock by code: by expiry',
       run: () => grouped.byCode({ sort: 'expires' }, 'en'),
     },

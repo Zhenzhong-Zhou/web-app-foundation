@@ -295,10 +295,6 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read('GET /stock/by-code?low', () => '/stock/by-code?low=true'),
     read('GET /stock/by-code?sort=onHand', () => '/stock/by-code?sort=onHand'),
     read(
-      'GET /stock/by-code?sort=free',
-      () => '/stock/by-code?sort=free&order=desc',
-    ),
-    read(
       'GET /stock/by-code?sort=expires',
       () => '/stock/by-code?sort=expires',
     ),

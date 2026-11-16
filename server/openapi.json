@@ -4890,7 +4890,6 @@
               "enum": [
                 "name",
                 "onHand",
-                "free",
                 "expires"
               ]
             }
@@ -5191,7 +5190,6 @@
               "enum": [
                 "name",
                 "onHand",
-                "free",
                 "expires"
               ]
             }
