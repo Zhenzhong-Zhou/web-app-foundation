@@ -303,6 +303,7 @@
   "common.loading": "Chargement…",
   "common.name": "Nom",
   "common.notes": "Notes",
+  "common.reading": "Lecture…",
   "common.refresh": "Actualiser",
   "common.requestFailed": "Impossible de traiter la demande ({status})",
   "common.retired": "Retiré",

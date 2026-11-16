@@ -1074,6 +1074,11 @@ Use these rather than writing the thing again on a page:
   code grey under it, the name the row's one link (ADR-093; the design
   language's Rows). Items' rows first; the others move as their screens are
   next changed.
+- **`OpeningButton`** with **`useOpenRows`** for a row that opens to the
+  rows under it, a code's places or a place's lots: a disclosure button
+  with its words and count, "2 places", its rows read each time it opens,
+  "Reading…" past 250 ms, focus kept on it (ADR-093). Never a chevron
+  alone.
 - **`TableOrCards`** for a list's rows as a table from 600 px and as cards
   below, two grey cards while the cards are read; `useCards` asks the same
   width for the rest of the page (ADR-090's width switch).

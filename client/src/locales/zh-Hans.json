@@ -303,6 +303,7 @@
   "common.loading": "正在加载…",
   "common.name": "名称",
   "common.notes": "备注",
+  "common.reading": "正在读取…",
   "common.refresh": "刷新",
   "common.requestFailed": "请求失败（{status}）",
   "common.retired": "已归档",

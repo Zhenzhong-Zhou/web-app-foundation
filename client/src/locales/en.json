@@ -303,6 +303,7 @@
   "common.loading": "Loading…",
   "common.name": "Name",
   "common.notes": "Notes",
+  "common.reading": "Reading…",
   "common.refresh": "Refresh",
   "common.requestFailed": "Request failed ({status})",
   "common.retired": "Retired",
