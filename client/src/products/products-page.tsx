@@ -41,14 +41,14 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
-import {
-  id,
-  oneOf,
-  useAddressWrite,
-  useListFilters,
-} from '../lib/use-list-filters';
+import { id, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
-import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
+import {
+  type ListSort,
+  type SortOrder,
+  useListSort,
+  withSort,
+} from '../lib/use-list-sort';
 import { useResource } from '../lib/use-resource';
 import { useTab } from '../lib/use-tab';
 import { rem } from '../theme/rem';
@@ -147,7 +147,6 @@ export function ProductsPage() {
   const can = useCan();
   const theme = useTheme();
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
-  const write = useAddressWrite();
 
   /**
    * The last counts read, kept while another tab's or search's first page
@@ -167,7 +166,12 @@ export function ProductsPage() {
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
   const { category, discontinued } = filters;
   const { text, setText, search } = useListSearch();
-  const { sort: chosen, header } = useListSort(ITEM_SORTS, BY_NAME);
+  const {
+    sort: chosen,
+    header,
+    set: setSort,
+    clear: clearSort,
+  } = useListSort(ITEM_SORTS, BY_NAME);
   const sort = chosen ?? BY_NAME;
 
   const query = new URLSearchParams();
@@ -473,7 +477,7 @@ export function ProductsPage() {
                 withType={tab === 'all'}
                 sort={sort}
                 header={header}
-                onDate={(key) => write({ sort: key, order: 'desc' })}
+                onDate={(key) => setSort(key, 'desc')}
                 ticks={ticks}
                 firstNew={newRow}
               />
@@ -595,8 +599,11 @@ export function ProductsPage() {
                   ) ?? 'name:asc')
             }
             onChange={(event) => {
-              const [key, order] = event.target.value.split(':');
-              write({ sort: key, order });
+              const [key, order] = event.target.value.split(':') as [
+                ItemSort,
+                SortOrder,
+              ];
+              setSort(key, order);
             }}
           >
             {Object.entries(PHONE_SORTS).map(([value, label]) => (
@@ -614,18 +621,10 @@ export function ProductsPage() {
             spacing={1}
             sx={{ justifyContent: 'flex-end' }}
           >
-            {/* One write: two would each start from the address as it
-                was, and the second would put back what the first cleared. */}
+            {/* The filters with the sort, in one write. */}
             <Button
               variant="text"
-              onClick={() =>
-                write({
-                  category: null,
-                  discontinued: null,
-                  sort: null,
-                  order: null,
-                })
-              }
+              onClick={() => clearSort({ category: null, discontinued: null })}
             >
               {intl.formatMessage({
                 id: 'products.filters.clear',
