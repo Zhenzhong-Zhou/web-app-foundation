@@ -25,6 +25,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { LotCost, LotCostEntry } from '../api/types.gen';
 import { LabelledValue } from '../components/labelled-value';
 import {
+  displayQuantity,
   formatDate,
   formatMoney,
   formatQuantity,
@@ -90,6 +91,20 @@ function describe(entry: LotCostEntry, intl: IntlShape): string {
     default:
       return entry.reason ?? entry.kind;
   }
+}
+
+/**
+ * What was paid, in its own currency: the base currency's as the panel's
+ * other money, any other with its code, "USD 4.20", since a symbol such
+ * as $ names more than one (ADR-055; #472's 24).
+ */
+function paid(entry: LotCostEntry, base: string | null): string {
+  return formatUnitCost(
+    entry.unitPrice,
+    entry.currency,
+    undefined,
+    entry.currency === base ? 'symbol' : 'code',
+  );
 }
 
 /**
@@ -173,7 +188,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
               id: 'inventory.promised.onHand',
               defaultMessage: 'On hand',
             })}
-            value={formatQuantity(cost.quantity)}
+            value={displayQuantity(cost.quantity)}
           />
           <LabelledValue
             label={intl.formatMessage({
@@ -250,7 +265,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                     </TableCell>
                     <TableCell align="right">
                       {entry.kind === 'movement' || entry.kind === 'opening'
-                        ? formatQuantity(entry.quantity)
+                        ? displayQuantity(entry.quantity)
                         : NO_VALUE}
                     </TableCell>
                     <TableCell align="right">
@@ -265,10 +280,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                                 defaultMessage: '{price} at {rate}',
                               },
                               {
-                                price: formatUnitCost(
-                                  entry.unitPrice,
-                                  entry.currency,
-                                ),
+                                price: paid(entry, currency),
                                 // Trailing zeros dropped on the string, then
                                 // the language's decimal separator.
                                 rate: formatQuantity(
@@ -276,7 +288,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                                 ),
                               },
                             )
-                          : formatUnitCost(entry.unitPrice, entry.currency)
+                          : paid(entry, currency)
                         : NO_VALUE}
                     </TableCell>
                   </TableRow>

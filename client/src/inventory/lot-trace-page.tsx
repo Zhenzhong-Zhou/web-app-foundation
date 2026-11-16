@@ -34,18 +34,20 @@ import { LotCostPanel } from '../costs/lot-cost-panel';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import {
+  displayQuantity,
   formatDate,
   formatDay,
-  formatQuantity,
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
 import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useExpiryStatus } from '../lib/use-expiry-status';
 import { useResource } from '../lib/use-resource';
 import { LicenceAtRelease } from '../licences/licence-at-release';
-import { withUnit } from '../products/units';
+import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
+import { COLOR_OF_TONE } from '../theme/status';
 
 /**
  * Finding a lot by the start of its code (ADR-044).
@@ -228,6 +230,8 @@ export function LotTracePage() {
   useRecordOpened('lot', id, trace !== null && trace !== undefined);
 
   const showSkeleton = useDelayedFlag(loading);
+  // Carried from the list to the lot's own page, beside its title (#479).
+  const expiry = useExpiryStatus(trace?.lot.expiresAt ?? null);
 
   if (error) {
     return (
@@ -279,6 +283,11 @@ export function LotTracePage() {
           { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
           { code: trace.lot.code },
         )}
+        status={
+          expiry
+            ? { label: expiry.label, color: COLOR_OF_TONE[expiry.tone] }
+            : undefined
+        }
         subtitle={[
           trace.lot.sku,
           trace.lot.description,
@@ -335,7 +344,7 @@ export function LotTracePage() {
                   />
                 )}
               </>,
-              withUnit(row.quantity, trace.lot.unitOfMeasure, intl),
+              displayWithUnit(row.quantity, trace.lot.unitOfMeasure, intl),
             ])}
             alignRight={[1]}
           />
@@ -373,7 +382,7 @@ export function LotTracePage() {
                         linkToLicences={can('product_licences.view')}
                       />
                     ),
-                    amount: withUnit(
+                    amount: displayWithUnit(
                       source.quantity,
                       trace.lot.unitOfMeasure,
                       intl,
@@ -527,9 +536,9 @@ export function LotTracePage() {
               <Link component={RouterLink} to={`/lots/${row.lotId}`}>
                 {row.lotCode}
               </Link>,
-              formatQuantity(row.shipped),
-              formatQuantity(row.sampled),
-              formatQuantity(row.returned),
+              displayQuantity(row.shipped),
+              displayQuantity(row.sampled),
+              displayQuantity(row.returned),
               row.leftOn ? formatDay(row.leftOn) : NO_VALUE,
             ])}
             alignRight={[3, 4, 5]}

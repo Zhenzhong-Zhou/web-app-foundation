@@ -41,7 +41,14 @@ const TRACE: LotTrace = {
     unitOfMeasure: 'kg',
     description: 'Fish oil',
   },
-  balances: [],
+  balances: [
+    {
+      locationId: 'loc-1',
+      locationName: 'Shelf A',
+      isAvailable: true,
+      quantity: '48.0000',
+    },
+  ],
   sources: [
     SOURCE,
     {
@@ -150,6 +157,36 @@ describe('LotTracePage', () => {
     );
     expect(screen.getByRole('columnheader', { name: 'Date' })).toBeVisible();
     expect(screen.getByText('Oct 20, 2026')).toBeVisible();
+  });
+
+  // The page's numbers (#472's 24), and a lot past its day says so (#479).
+  it('writes its quantities as the page does, and how long ago an expired lot expired', async () => {
+    server.use(
+      http.get('/api/v1/stock/lots/lot-1/trace', () =>
+        HttpResponse.json({
+          ...TRACE,
+          lot: { ...TRACE.lot, expiresAt: '2020-01-01' },
+        }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/lots/lot-1']}>
+        <Routes>
+          <Route path="/lots/:id" element={<LotTracePage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    expect(
+      await screen.findByText(/^Expired \d[\d,]* days ago$/),
+    ).toBeVisible();
+    expect(screen.getByText(/expires Jan 1, 2020/)).toBeVisible();
+    expect(screen.getByText('48 kg')).toBeVisible();
+    expect(screen.getByText(/Acme Supplies/).parentElement).toHaveTextContent(
+      '10 kg',
+    );
+    expect(screen.queryByText(/\.0000/)).not.toBeInTheDocument();
   });
 
   // Stock look-up's reader (ADR-080): stock, but none of the three.

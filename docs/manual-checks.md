@@ -572,6 +572,14 @@ search to having the list of customers; the target is **under two minutes**.
   day it first left, also a column on the table. In 中文 the headers read
   收货方 to 日期, and a row with nobody on record 未记录收货方. The audit
   log's line for it names a lot's recall list.
+- **MC-907** *(ADR-044, amended)* Open VC-0301's trace, a lot past its
+  expiry: beside its title a red chip reads "Expired 4 days ago", with
+  as many days as it is, its date in the line under the title; in 中文
+  已过期 4 天. Every quantity on the page reads as Inventory's do, "48 kg"
+  and "48", never "48.0000". On a lot bought in another currency than the
+  organization's, Cost's Paid names its currency's code, "USD 4.20 at
+  1.37"; one bought in the organization's own currency reads as the
+  panel's other money.
 
 ## 10. Audit
 
