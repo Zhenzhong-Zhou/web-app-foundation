@@ -1104,8 +1104,10 @@ export type ProductSummary = {
   createdAt: string;
   updatedAt: string;
   onHand: string | null;
+  notUsable: string | null;
   unitOfMeasure: string | null;
   stockStatus: 'out' | 'low' | null;
+  stockStatusCodes: number | null;
 };
 
 export type ProductTypeCount = {
@@ -1117,6 +1119,7 @@ export type ProductCounts = {
   types: Array<ProductTypeCount>;
   all: number;
   discontinued: number;
+  low: number;
 };
 
 export type ProductPage = {
@@ -2199,6 +2202,74 @@ export type SetReorderPointDto = {
   rule: 'just_enough' | 'fixed' | 'maximum';
   fixedQuantity?: string | null;
   maximumQuantity?: string | null;
+};
+
+export type StockHold = {
+  orderId: string;
+  number: string;
+  partnerName: string;
+  expectedAt: string | null;
+  wanted: string;
+  held: string;
+  short: string;
+};
+
+export type ComingPurchase = {
+  orderId: string;
+  number: string;
+  partnerName: string;
+  quantity: string;
+  expectedAt: string | null;
+  late: boolean;
+};
+
+export type ComingRun = {
+  runId: string;
+  reference: string | null;
+  partnerName: string | null;
+  quantity: string;
+};
+
+export type UsableLot = {
+  lotId: string | null;
+  lotCode: string | null;
+  expiresAt: string | null;
+  quantity: string;
+  places: number;
+};
+
+export type CodeStanding = {
+  variantId: string;
+  sku: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  isActive: boolean;
+  onHand: string;
+  usable: string;
+  notUsable: string;
+  expired: string;
+  issued: string;
+  unavailable: string;
+  held: string;
+  free: string;
+  stillNeeded: string;
+  short: string;
+  coming: string;
+  comingOn: string | null;
+  position: string;
+  expiresFirst: string | null;
+  reorderPoint: string | null;
+  status: 'out' | 'low' | 'discontinued' | 'enough' | null;
+  heldOrders: number;
+  holds: Array<StockHold> | null;
+  purchases: Array<ComingPurchase> | null;
+  runs: Array<ComingRun> | null;
+  places: Array<StockPlace> | null;
+  lots: Array<UsableLot> | null;
+};
+
+export type ProductStock = {
+  codes: Array<CodeStanding>;
 };
 
 export type LookupResult = {
@@ -5220,6 +5291,7 @@ export type ProductsControllerListV1Data = {
       'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
     category?: string;
     discontinued?: 'only' | 'include';
+    low?: string;
     sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
     order?: 'asc' | 'desc';
     search?: string;
@@ -5276,6 +5348,7 @@ export type ProductsControllerExportProductsV1Data = {
       'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
     category?: string;
     discontinued?: 'only' | 'include';
+    low?: string;
     sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
     order?: 'asc' | 'desc';
     search?: string;
@@ -6546,6 +6619,25 @@ export type ReorderPointsControllerPreviewV1Responses = {
 
 export type ReorderPointsControllerPreviewV1Response =
   ReorderPointsControllerPreviewV1Responses[keyof ReorderPointsControllerPreviewV1Responses];
+
+export type WhereItStandsControllerReadV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/products/{id}/stock';
+};
+
+export type WhereItStandsControllerReadV1Responses = {
+  200: ProductStock;
+};
+
+export type WhereItStandsControllerReadV1Response =
+  WhereItStandsControllerReadV1Responses[keyof WhereItStandsControllerReadV1Responses];
 
 export type LookupControllerLookupV1Data = {
   body?: never;

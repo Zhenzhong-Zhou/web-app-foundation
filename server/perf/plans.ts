@@ -36,6 +36,7 @@ import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
 import { StockGroupedService } from '../src/modules/stock/stock-grouped.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
+import { WhereItStandsService } from '../src/modules/stock/where-it-stands.service';
 import { type Captured, QueryCapture } from './capture';
 import { pickCategories } from './categories';
 import { readManifest } from './manifest';
@@ -212,6 +213,7 @@ async function buildProbes(
   const orders = app.get(OrdersService);
   const stock = app.get(StockReadsService);
   const grouped = app.get(StockGroupedService);
+  const standing = app.get(WhereItStandsService);
   const availability = app.get(AvailabilityService);
   const invoices = app.get(InvoicesService);
   const traces = app.get(LotTraceService);
@@ -276,6 +278,11 @@ async function buildProbes(
     );
   }
   const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
+  // An item with a code low, or any in stock, for Where it stands.
+  const lowProductId = (
+    (await grouped.byCode({ low: 'true', limit: 1 }, 'en')).entries[0] ??
+    (await grouped.byCode({ limit: 1 }, 'en')).entries[0]
+  ).productId;
 
   const probes: Probe[] = [
     { name: 'orders: open', run: () => orders.list({}) },
@@ -347,6 +354,26 @@ async function buildProbes(
     {
       name: 'stock by lot: expiring',
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
+    },
+    // Where it stands (ADR-093, R8), as an Owner reads it, every part;
+    // and as a reader without places, its usable lots instead.
+    {
+      name: 'where it stands',
+      run: () =>
+        standing.read(lowProductId, 'en', {
+          places: true,
+          orders: true,
+          runs: true,
+        }),
+    },
+    {
+      name: 'where it stands: without places',
+      run: () =>
+        standing.read(lowProductId, 'en', {
+          places: false,
+          orders: false,
+          runs: false,
+        }),
     },
     { name: 'availability', run: () => availability.list('en') },
     {
@@ -518,6 +545,12 @@ async function buildProbes(
     {
       name: 'products: by stock',
       run: () => products.list({ sort: 'stock' }, 'zh-Hans'),
+    },
+    // Items' Low stock (ADR-093, 21a): the codes with a point worked out,
+    // as Reorder's read starts, their items the filter.
+    {
+      name: 'products: low stock',
+      run: () => products.list({ low: 'true' }, 'zh-Hans'),
     },
     {
       name: 'products: by stock, page 2',

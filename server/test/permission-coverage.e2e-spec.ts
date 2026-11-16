@@ -109,6 +109,10 @@ const GATED_INSIDE = new Map<string, string>([
   ],
   ['RecentController.clear', 'A person’s own history only (ADR-058)'],
   [
+    'WhereItStandsController.read',
+    'stock.view for the section, demanded in the handler; places, sales and runs each by its own view permission, in the service (ADR-093)',
+  ],
+  [
     'FilesController.read',
     'The kind’s own view permission, checked in the service once the file is read (ADR-059)',
   ],

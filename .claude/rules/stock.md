@@ -46,6 +46,12 @@ What to keep true when changing stock's code.
   code from `codeFigures`, the Lot view from `stockRowsOf`'s rows, so
   Home's Expiring soon counts its rows; both paged by sorted-page's
   keys, a place's name sent only with `locations.view` (ADR-093).
+- **The lines behind a code's figures are `code-lines.ts`:** Coming's
+  documents, Held's sales and the usable lots without places, each read
+  by the rule its figure is, so they add up. Where it stands
+  (`where-it-stands.service.ts`, `GET /v1/products/:id/stock`) reads
+  them, gated inside: each part only for a reader who may see it
+  (ADR-080; ADR-093).
 - **A movement's reference is the server's to set:** the movement route
   takes none from the client (ADR-042).
 - **A movement keeps its SKU as text;** an adjustment needs a note, and

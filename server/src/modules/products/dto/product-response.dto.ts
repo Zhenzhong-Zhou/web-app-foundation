@@ -46,18 +46,27 @@ export class ProductSummary {
   createdAt!: Date;
   updatedAt!: Date;
   /**
-   * On hand in every location, as Inventory lists it, summed in its unit;
-   * null where its variants' units differ, which the row shows as its
-   * number of variants instead. Never stored on the item.
+   * On hand in every location, its codes' figures as Inventory reads them
+   * (ADR-093), summed in its unit; null where its variants' units differ,
+   * which the row shows as its number of variants instead. Never stored
+   * on the item.
    */
   onHand!: string | null;
+  /**
+   * The part of `onHand` not usable: expired, issued to a run, or at a
+   * place not available, "72 not usable" (#590); null as `onHand` is.
+   */
+  notUsable!: string | null;
   /** The unit `onHand` is in; null where the units differ. */
   unitOfMeasure!: string | null;
   /**
-   * From its reorder points (ADR-085): out where any variant is out, else
-   * low where any is low; null otherwise, or with no point.
+   * Its worst code's status, from its reorder points (ADR-085; ADR-093):
+   * out where any code is out, else low where any is low; null otherwise,
+   * or with no point.
    */
   stockStatus!: ItemStockStatus | null;
+  /** How many of its codes share `stockStatus`, "1 of 3 codes"; null without one. */
+  stockStatusCodes!: number | null;
 }
 
 /** How many items one type's tab shows. */
@@ -68,7 +77,8 @@ export class ProductTypeCount {
 
 /**
  * The list's counts (ADR-092), following its search and its category:
- * each tab's, as the Discontinued chip leaves the list, and the chip's.
+ * each tab's, as the Discontinued and Low stock chips leave the list, and
+ * each chip's, with the other on and its own off.
  */
 export class ProductCounts {
   /**
@@ -81,6 +91,12 @@ export class ProductCounts {
   all!: number;
   /** The discontinued items on the open tab: the Discontinued chip's. */
   discontinued!: number;
+  /**
+   * The items low or out on the open tab, as the list leaves the rest:
+   * the Low stock chip's (ADR-093, 21a), counting items where Reorder
+   * and Home count codes.
+   */
+  low!: number;
 }
 
 /** GET /products: a page of Items' list. */

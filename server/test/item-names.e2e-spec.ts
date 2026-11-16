@@ -157,6 +157,17 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    operation: 'GET /v1/products/{id}/stock',
+    of: 'item',
+    ask: async (world, language) => {
+      const { codes } = await read<{
+        codes: { places: { lots: Named[] }[] }[];
+      }>(world, language, `/v1/products/${world.productId}/stock`);
+      const [pile] = codes[0].places[0].lots;
+      return itemName(pile.productName, pile.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/by-lot',
     of: 'item',
     ask: async (world, language) => {

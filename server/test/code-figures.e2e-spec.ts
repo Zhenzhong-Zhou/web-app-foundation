@@ -7,7 +7,13 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { codeFigures } from '../src/modules/stock/code-figures';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  addMember,
+  body,
+  createE2eApp,
+  customRole,
+  registerOrganization,
+} from './utils/fixtures';
 import {
   item,
   order,
@@ -69,6 +75,60 @@ interface ReorderRow {
   stillNeeded: string;
   position: string;
   status: string;
+}
+
+interface Pile {
+  lotCode: string | null;
+  quantity: string;
+}
+
+interface Place {
+  locationName: string | null;
+  lots: Pile[];
+}
+
+/** A code of Where it stands, as GET /v1/products/:id/stock sends it. */
+interface Standing {
+  variantId: string;
+  sku: string;
+  onHand: string;
+  usable: string;
+  notUsable: string;
+  expired: string;
+  issued: string;
+  unavailable: string;
+  held: string;
+  free: string;
+  stillNeeded: string;
+  short: string;
+  coming: string;
+  comingOn: string | null;
+  position: string;
+  expiresFirst: string | null;
+  reorderPoint: string | null;
+  status: string | null;
+  heldOrders: number;
+  holds:
+    | {
+        number: string;
+        partnerName: string;
+        wanted: string;
+        held: string;
+        short: string;
+      }[]
+    | null;
+  purchases:
+    { number: string; quantity: string; expectedAt: string | null }[] | null;
+  runs: { reference: string | null; quantity: string }[] | null;
+  places: Place[] | null;
+  lots:
+    | {
+        lotCode: string | null;
+        expiresAt: string | null;
+        quantity: string;
+        places: number;
+      }[]
+    | null;
 }
 
 interface ReorderDetail {
@@ -209,6 +269,29 @@ describe('A code’s figures (e2e)', () => {
     return { bottle, focus };
   }
 
+  /** An item's id, by its code. */
+  async function productOf(org: Org, sku: string): Promise<string> {
+    return body<{ entries: { id: string }[] }>(
+      await org.agent.get(`/v1/products?search=${sku}`).expect(200),
+    ).entries[0].id;
+  }
+
+  /** Where it stands, as the agent's role reads it. */
+  async function standing(
+    agent: Org['agent'],
+    productId: string,
+  ): Promise<Standing[]> {
+    return body<{ codes: Standing[] }>(
+      await agent.get(`/v1/products/${productId}/stock`).expect(200),
+    ).codes;
+  }
+
+  /** A member of alpha holding exactly these permissions. */
+  async function memberWith(org: Org, name: string, keys: string[]) {
+    await customRole(app, org.organizationId, name, keys);
+    return addMember(app, org, `${name.toLowerCase()}@example.com`, name);
+  }
+
   it('works out each figure of a code from the movements recorded, each sum holding', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { bottle, focus } = await world(alpha);
@@ -309,6 +392,45 @@ describe('A code’s figures (e2e)', () => {
       reorderPoint: figures.reorder_point,
       status: figures.status,
     });
+
+    // Where it stands, on the item's page (step 10), and its lines
+    // adding up to its figures.
+    const [stands] = await standing(alpha.agent, productId);
+    expect(stands).toMatchObject({
+      variantId: bottle,
+      onHand: figures.on_hand,
+      usable: figures.usable,
+      notUsable: figures.not_usable,
+      expired: figures.expired,
+      issued: figures.issued,
+      unavailable: figures.unavailable,
+      held: figures.held,
+      free: figures.free,
+      stillNeeded: figures.still_needed,
+      short: figures.short,
+      coming: figures.coming,
+      comingOn: figures.coming_on,
+      position: figures.position,
+      expiresFirst: figures.expires_first,
+      reorderPoint: figures.reorder_point,
+      status: figures.status,
+    });
+    expect(await sumOf(stands.holds!.map((line) => line.held))).toBe(
+      figures.held,
+    );
+    expect(await sumOf(stands.holds!.map((line) => line.short))).toBe(
+      figures.short,
+    );
+    expect(await sumOf(stands.purchases!.map((line) => line.quantity))).toBe(
+      figures.coming,
+    );
+    expect(
+      await sumOf(
+        stands.places!.flatMap((place) =>
+          place.lots.map((lot) => lot.quantity),
+        ),
+      ),
+    ).toBe(figures.on_hand);
 
     // Reorder's row, and its opened row's lines adding up to it.
     const reorder = body<{ entries: ReorderRow[] }>(
@@ -419,5 +541,254 @@ describe('A code’s figures (e2e)', () => {
       short: '12.0000',
     });
     expect(byId.get(emptied)).toMatchObject({ on_hand: '0.0000' });
+  });
+
+  it('stands an item’s codes the low first, each figure with the lines behind it', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { bottle, focus } = await world(alpha);
+    const productId = await productOf(alpha, 'BOTTLE');
+    // A second code of the item, watched and with nothing: out, so first.
+    const small = body<{ variant: { id: string } }>(
+      await alpha.agent
+        .post(`/v1/products/${productId}/variants`)
+        .send({ sku: 'BOTTLE-S', name: 'Small', unitOfMeasure: 'each' })
+        .expect(201),
+    ).variant.id;
+    await point(alpha.agent, small, '5');
+
+    const codes = await standing(alpha.agent, productId);
+    expect(codes.map((code) => [code.sku, code.status])).toEqual([
+      ['BOTTLE-S', 'out'],
+      ['BOTTLE', 'low'],
+    ]);
+    const stands = codes[1];
+    expect(stands.variantId).toBe(bottle);
+
+    // Held, oldest confirmed first: the first holds its 400, the last
+    // holds the 60 left and is 40 short.
+    expect(stands.heldOrders).toBe(2);
+    expect(
+      stands.holds!.map((line) => [
+        line.partnerName,
+        line.wanted,
+        line.held,
+        line.short,
+      ]),
+    ).toEqual([
+      ['Northside Pharmacy', '400.0000', '400.0000', '0.0000'],
+      ['Northside Pharmacy', '100.0000', '60.0000', '40.0000'],
+    ]);
+    // Coming, the sooner first.
+    expect(
+      stands.purchases!.map((line) => [line.quantity, line.expectedAt]),
+    ).toEqual([
+      ['50.0000', '2026-11-25'],
+      ['200.0000', '2026-12-01'],
+    ]);
+    expect(stands.runs).toEqual([]);
+    // By place and lot, each place's lots soonest first.
+    expect(
+      stands.places!.map((place) => [
+        place.locationName,
+        place.lots.map((lot) => `${lot.lotCode} ${lot.quantity}`),
+      ]),
+    ).toEqual([
+      ['KITCHEN', ['L-OLD 40.0000', 'L-NEW 60.0000']],
+      ['QUARANTINE', ['L-NEW 30.0000']],
+      ['SHELF', ['L-SOON 20.0000', 'L-NEW 440.0000']],
+    ]);
+    expect(stands.lots).toBeNull();
+
+    // A run's output coming, on the item it makes.
+    const [making] = await standing(
+      alpha.agent,
+      await productOf(alpha, 'FOCUS'),
+    );
+    expect(making.variantId).toBe(focus);
+    expect(making.runs!.map((line) => line.quantity)).toEqual(['100.0000']);
+
+    // Another organization's item is not here.
+    const beta = await registerOrganization(app, 'beta');
+    await beta.agent.get(`/v1/products/${productId}/stock`).expect(404);
+  });
+
+  it('sends Where it stands only to a reader with stock.view, refused in their words', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await world(alpha);
+    const productId = await productOf(alpha, 'BOTTLE');
+    const invoicer = await memberWith(alpha, 'Invoicer', [
+      'products.view',
+      'invoices.view',
+    ]);
+
+    const refused = await invoicer
+      .get(`/v1/products/${productId}/stock`)
+      .expect(403);
+    expect(JSON.stringify(refused.body)).not.toContain('590');
+    expect(body<{ message: string }>(refused).message).toMatch(/Invoicer/);
+  });
+
+  it('leaves out places without locations.view: the usable lots alone, adding up to usable', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await world(alpha);
+    const productId = await productOf(alpha, 'BOTTLE');
+    const counter = await memberWith(alpha, 'Counter', ['stock.view']);
+
+    const response = await counter
+      .get(`/v1/products/${productId}/stock`)
+      .expect(200);
+    const [stands] = body<{ codes: Standing[] }>(response).codes;
+    expect(stands.places).toBeNull();
+    for (const place of ['SHELF', 'KITCHEN', 'QUARANTINE']) {
+      expect(response.text).not.toContain(place);
+    }
+    // The run's 60 issued at the kitchen are not a usable lot; the
+    // expired and the quarantined are the one line, Not usable 130.
+    expect(
+      stands.lots!.map((lot) => [
+        lot.lotCode,
+        lot.expiresAt,
+        lot.quantity,
+        lot.places,
+      ]),
+    ).toEqual([
+      ['L-SOON', '2027-03-14', '20.0000', 1],
+      ['L-NEW', '2099-01-01', '440.0000', 1],
+    ]);
+    expect(await sumOf(stands.lots!.map((lot) => lot.quantity))).toBe(
+      stands.usable,
+    );
+    expect(stands.notUsable).toBe('130.0000');
+  });
+
+  it('leaves out the sales and purchases without orders.view, the number of orders kept', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await world(alpha);
+    const productId = await productOf(alpha, 'BOTTLE');
+    const counter = await memberWith(alpha, 'Counter', [
+      'stock.view',
+      'locations.view',
+    ]);
+
+    const response = await counter
+      .get(`/v1/products/${productId}/stock`)
+      .expect(200);
+    const [stands] = body<{ codes: Standing[] }>(response).codes;
+    expect(stands).toMatchObject({
+      held: '460.0000',
+      heldOrders: 2,
+      holds: null,
+      coming: '250.0000',
+      comingOn: '2026-11-25',
+      purchases: null,
+    });
+    for (const name of ['Northside', 'Harbour', 'SO-', 'PO-']) {
+      expect(response.text).not.toContain(name);
+    }
+
+    // With orders.view, the sales and purchases by number.
+    const sales = await memberWith(alpha, 'Sales', [
+      'stock.view',
+      'orders.view',
+    ]);
+    const [theirs] = await standing(sales, productId);
+    expect(theirs.holds).toHaveLength(2);
+    expect(theirs.purchases).toHaveLength(2);
+    expect(theirs.runs).toBeNull();
+  });
+
+  it('leaves out the runs without production.view', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await world(alpha);
+    const productId = await productOf(alpha, 'FOCUS');
+    const runId = body<{ entries: { id: string }[] }>(
+      await alpha.agent
+        .get('/v1/production-orders?status=released')
+        .expect(200),
+    ).entries[0].id;
+    const sales = await memberWith(alpha, 'Sales', [
+      'stock.view',
+      'orders.view',
+    ]);
+
+    const response = await sales
+      .get(`/v1/products/${productId}/stock`)
+      .expect(200);
+    const [stands] = body<{ codes: Standing[] }>(response).codes;
+    expect(stands).toMatchObject({ coming: '100.0000', runs: null });
+    expect(response.text).not.toContain(runId);
+
+    const maker = await memberWith(alpha, 'Maker', [
+      'stock.view',
+      'production.view',
+    ]);
+    const [theirs] = await standing(maker, productId);
+    expect(theirs.runs).toHaveLength(1);
+    expect(theirs.purchases).toBeNull();
+  });
+
+  it('counts Low stock as items on Items and as codes on Reorder and Home, one number each', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    // Two items with a code low or out: one with both codes so, one with
+    // one of two; and one item enough.
+    const twice = await item(agent, 'TWICE-1');
+    const twiceId = await productOf(alpha, 'TWICE-1');
+    const twiceOut = body<{ variant: { id: string } }>(
+      await agent
+        .post(`/v1/products/${twiceId}/variants`)
+        .send({ sku: 'TWICE-2', name: 'Two', unitOfMeasure: 'each' })
+        .expect(201),
+    ).variant.id;
+    const once = await item(agent, 'ONCE-1');
+    const onceId = await productOf(alpha, 'ONCE-1');
+    const onceEnough = body<{ variant: { id: string } }>(
+      await agent
+        .post(`/v1/products/${onceId}/variants`)
+        .send({ sku: 'ONCE-2', name: 'Two', unitOfMeasure: 'each' })
+        .expect(201),
+    ).variant.id;
+    const enough = await item(agent, 'ENOUGH');
+    await receive(agent, twice, shelf, '5');
+    await receive(agent, once, shelf, '5');
+    await receive(agent, onceEnough, shelf, '500');
+    await receive(agent, enough, shelf, '500');
+    for (const variant of [twice, twiceOut, once, onceEnough, enough]) {
+      await point(agent, variant, '100');
+    }
+    const itemOf = new Map([
+      [twice, twiceId],
+      [twiceOut, twiceId],
+      [once, onceId],
+      [onceEnough, onceId],
+    ]);
+
+    const reorder = body<{ entries: ReorderRow[] }>(
+      await agent.get('/v1/stock/reorder-points?status=low').expect(200),
+    ).entries;
+    const reorderCounts = body<{ low: number }>(
+      await agent.get('/v1/stock/reorder-points/counts').expect(200),
+    );
+    const items = body<{
+      entries: { id: string }[];
+      counts: { low: number };
+    }>(await agent.get('/v1/products?low=true').expect(200));
+    const cards = body<{ cards: { kind: string; count: number }[] }>(
+      await agent.get('/v1/home').expect(200),
+    ).cards;
+
+    expect(reorder).toHaveLength(3);
+    expect(reorderCounts.low).toBe(3);
+    // Home counts codes, as Reorder does.
+    expect(cards.find((card) => card.kind === 'lowStock')?.count).toBe(
+      reorderCounts.low,
+    );
+    // Items counts items: the distinct items among Reorder's codes.
+    const distinct = new Set(reorder.map((row) => itemOf.get(row.variantId)));
+    expect(items.counts.low).toBe(distinct.size);
+    expect(items.entries.map((row) => row.id).sort()).toEqual(
+      [...distinct].sort(),
+    );
   });
 });

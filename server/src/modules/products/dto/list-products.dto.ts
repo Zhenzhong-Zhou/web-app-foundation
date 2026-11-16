@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBooleanString,
   IsIn,
   IsInt,
   IsOptional,
@@ -35,8 +36,8 @@ export const UNCATEGORISED = 'uncategorised';
 
 /**
  * What Items' list shows (ADR-092): narrowed by its type, its category and
- * its search, discontinued items hidden unless asked, and sorted. Its
- * export takes the same (ADR-057).
+ * its search, discontinued items hidden unless asked, the low alone when
+ * asked (ADR-093), and sorted. Its export takes the same (ADR-057).
  */
 export class ItemFiltersDto extends SearchQueryDto {
   /** One type, a tab; every type without it, All. */
@@ -59,6 +60,14 @@ export class ItemFiltersDto extends SearchQueryDto {
   @IsOptional()
   @IsIn(DISCONTINUED_SHOWN)
   discontinued?: DiscontinuedShown;
+
+  /**
+   * `true` for the items low or out alone (ADR-093, 21a): an item with a
+   * code low or out, as Reorder and Home count codes.
+   */
+  @IsOptional()
+  @IsBooleanString()
+  low?: string;
 
   /** Name unless asked; while a search is typed, its rank comes first. */
   @IsOptional()

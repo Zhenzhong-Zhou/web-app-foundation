@@ -281,6 +281,8 @@ Use these rather than writing the thing again. The client's are under
   `stock/usable-stock.ts` (`usableByLocation`, the one rule for usable
   stock), `stock/code-figures.ts` (`codeFigures`, the one read for a
   code's figures, which Inventory, Where it stands and Reorder share),
+  `stock/code-lines.ts` (the lines behind them: Coming's documents,
+  Held's sales, the usable lots),
   `stock/reorder-status.ts` (`statusOf`, the one rule for a code's
   status), `orders/order-line-pricing.ts` (`pricedCurrencies`,
   `assertOneSaleCurrency`), `orders/lot-items.ts` (what a shipment or

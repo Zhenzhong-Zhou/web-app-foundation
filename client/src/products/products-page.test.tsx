@@ -36,8 +36,10 @@ function product(name: string): ProductSummary {
     createdAt: '2026-11-09T12:00:00.000Z',
     updatedAt: '2026-11-09T12:00:00.000Z',
     onHand: '0.0000',
+    notUsable: '0.0000',
     unitOfMeasure: 'each',
     stockStatus: null,
+    stockStatusCodes: null,
   };
 }
 
@@ -60,6 +62,7 @@ function countsOf(
     types: entries.map(([type, count]) => ({ type, count })),
     all: entries.reduce((sum, [, count]) => sum + count, 0),
     discontinued,
+    low: 0,
   };
 }
 

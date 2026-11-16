@@ -18,6 +18,8 @@ import { StockService } from './stock.service';
 import { StockGroupedController } from './stock-grouped.controller';
 import { StockGroupedService } from './stock-grouped.service';
 import { StockReadsService } from './stock-reads.service';
+import { WhereItStandsController } from './where-it-stands.controller';
+import { WhereItStandsService } from './where-it-stands.service';
 
 /**
  * Exports StockService because receiving against an order line writes a
@@ -38,11 +40,13 @@ import { StockReadsService } from './stock-reads.service';
     LotTraceController,
     AvailabilityController,
     ReorderPointsController,
+    WhereItStandsController,
   ],
   providers: [
     StockService,
     StockReadsService,
     StockGroupedService,
+    WhereItStandsService,
     LotsService,
     AdjustmentGuard,
     LotTraceService,

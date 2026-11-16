@@ -704,57 +704,15 @@ export class StockGroupedService {
         );
       }
 
-      const org = sql`${organizationId}::uuid`;
-      const { rows } = await tx.execute<PileRow>(sql`
-        select
-          ${pileColumns(organizationId, locale)},
-          ${quantity(
-            sql`sum(${stockLevels.quantity}) over (partition by ${stockLevels.locationId})`,
-          )} as place_on_hand
-        from ${stockLevels}
-        join ${productVariants}
-          on ${productVariants.id} = ${stockLevels.variantId}
-          and ${productVariants.organizationId} = ${org}
-        join ${products}
-          on ${products.id} = ${productVariants.productId}
-          and ${products.organizationId} = ${org}
-        join ${locations}
-          on ${locations.id} = ${stockLevels.locationId}
-          and ${locations.organizationId} = ${org}
-        left join ${lots}
-          on ${lots.id} = ${stockLevels.lotId}
-          and ${lots.organizationId} = ${org}
-        where ${and(
-          sql`${stockLevels.organizationId} = ${org}`,
-          sql`${stockLevels.variantId} = ${variantId}::uuid`,
-          query.locationId
-            ? sql`${stockLevels.locationId} = ${query.locationId}::uuid`
-            : undefined,
-          query.includeEmpty === 'true'
-            ? undefined
-            : sql`${stockLevels.quantity} > 0`,
-        )}
-        order by ${locations.name}, ${locations.id},
-          ${lots.expiresAt} asc nulls last, ${lots.code}, ${stockLevels.id}
-      `);
-
-      const places: StockPlace[] = [];
-      for (const row of rows) {
-        let place = places.at(-1);
-        if (place?.locationId !== row.location_id) {
-          place = {
-            locationId: row.location_id,
-            locationName: seesPlaces ? row.location_name : null,
-            locationCode: seesPlaces ? row.location_code : null,
-            isAvailable: row.is_available,
-            onHand: row.place_on_hand!,
-            lots: [],
-          };
-          places.push(place);
-        }
-        place.lots.push(pileOf(row, seesPlaces));
-      }
-      return { places };
+      const places = await placesOf(
+        tx,
+        organizationId,
+        locale,
+        sql`(${variantId}::uuid)`,
+        query,
+        seesPlaces,
+      );
+      return { places: places.get(variantId) ?? [] };
     });
   }
 
@@ -908,6 +866,80 @@ export class StockGroupedService {
       };
     });
   }
+}
+
+/**
+ * Each code's places and each place's lots (ADR-093, R2), for the items
+ * in `variants`, a parenthesised list or subquery of ids: the places by
+ * name, the lots soonest first, one with no expiry after those with one,
+ * each a pile the row's menu, Move, Edit lot and History read. At the
+ * place chosen alone; emptied piles with Include empty. Inventory's
+ * opened row and Where it stands read it alike; a place's name only for
+ * a reader who may see places (A6).
+ */
+export async function placesOf(
+  tx: Transaction,
+  organizationId: string,
+  locale: Locale | null,
+  variants: SQL,
+  query: StockPlacesDto,
+  seesPlaces: boolean,
+): Promise<Map<string, StockPlace[]>> {
+  const org = sql`${organizationId}::uuid`;
+  const { rows } = await tx.execute<PileRow>(sql`
+    select
+      ${pileColumns(organizationId, locale)},
+      ${quantity(
+        sql`sum(${stockLevels.quantity}) over (
+          partition by ${stockLevels.variantId}, ${stockLevels.locationId}
+        )`,
+      )} as place_on_hand
+    from ${stockLevels}
+    join ${productVariants}
+      on ${productVariants.id} = ${stockLevels.variantId}
+      and ${productVariants.organizationId} = ${org}
+    join ${products}
+      on ${products.id} = ${productVariants.productId}
+      and ${products.organizationId} = ${org}
+    join ${locations}
+      on ${locations.id} = ${stockLevels.locationId}
+      and ${locations.organizationId} = ${org}
+    left join ${lots}
+      on ${lots.id} = ${stockLevels.lotId}
+      and ${lots.organizationId} = ${org}
+    where ${and(
+      sql`${stockLevels.organizationId} = ${org}`,
+      sql`${stockLevels.variantId} in ${variants}`,
+      query.locationId
+        ? sql`${stockLevels.locationId} = ${query.locationId}::uuid`
+        : undefined,
+      query.includeEmpty === 'true'
+        ? undefined
+        : sql`${stockLevels.quantity} > 0`,
+    )}
+    order by ${stockLevels.variantId}, ${locations.name}, ${locations.id},
+      ${lots.expiresAt} asc nulls last, ${lots.code}, ${stockLevels.id}
+  `);
+
+  const placed = new Map<string, StockPlace[]>();
+  for (const row of rows) {
+    const places = placed.get(row.variant_id) ?? [];
+    placed.set(row.variant_id, places);
+    let place = places.at(-1);
+    if (place?.locationId !== row.location_id) {
+      place = {
+        locationId: row.location_id,
+        locationName: seesPlaces ? row.location_name : null,
+        locationCode: seesPlaces ? row.location_code : null,
+        isAvailable: row.is_available,
+        onHand: row.place_on_hand!,
+        lots: [],
+      };
+      places.push(place);
+    }
+    place.lots.push(pileOf(row, seesPlaces));
+  }
+  return placed;
 }
 
 /** The organization's warning days, Expiring soon's (ADR-060). */

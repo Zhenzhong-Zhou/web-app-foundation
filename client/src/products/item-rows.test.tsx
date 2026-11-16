@@ -22,8 +22,10 @@ function item(sku: string, variantCount: number): ProductSummary {
     createdAt: '2026-11-09T12:00:00.000Z',
     updatedAt: '2026-11-09T12:00:00.000Z',
     onHand: '0.0000',
+    notUsable: '0.0000',
     unitOfMeasure: 'each',
     stockStatus: null,
+    stockStatusCodes: null,
   };
 }
 

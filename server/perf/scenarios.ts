@@ -56,6 +56,8 @@ export interface Org {
   categoryBottom: string;
   /** The first page of the invoices issued, which the PDF read takes in turn. */
   issuedInvoiceIds: string[];
+  /** An item with a code low, whose Where it stands is timed (ADR-093). */
+  lowProductId: string;
 }
 
 export interface Scenario {
@@ -171,6 +173,23 @@ export async function discover(
     );
   }
 
+  // An item with a code low, or any item in stock: Where it stands reads
+  // its codes, their lines and places (ADR-093).
+  const [low] = (
+    await session.json<{ entries: { productId: string }[] }>(
+      'GET',
+      '/stock/by-code?low=true&limit=1',
+    )
+  ).entries;
+  const lowProductId =
+    low?.productId ??
+    (
+      await session.json<{ entries: { productId: string }[] }>(
+        'GET',
+        '/stock/by-code?limit=1',
+      )
+    ).entries[0].productId;
+
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
   const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
@@ -192,6 +211,7 @@ export async function discover(
     categoryTop: picked.top,
     categoryBottom: picked.bottom,
     issuedInvoiceIds: issued.entries.map((entry) => entry.id),
+    lowProductId,
   };
 }
 
@@ -291,6 +311,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /stock/by-lot?expiringWithin',
       () => '/stock/by-lot?expiringWithin=90',
     ),
+    // Where it stands (ADR-093, R8): an item's codes from the one read,
+    // their sales, purchases, runs, places and lots, as an Owner reads it.
+    read(
+      'GET /products/:id/stock',
+      (org) => `/products/${org.lowProductId}/stock`,
+    ),
     // The whole list, which no screen asks for any more: kept to watch it.
     read('GET /stock/availability', () => '/stock/availability'),
     read('GET /stock/movements', () => '/stock/movements'),
@@ -336,6 +362,10 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Items sorted by stock (ADR-092): every item's stock summed to order
     // them, where the other sorts read the page's alone.
     read('GET /products?sort=stock', () => '/products?sort=stock', 'zh-Hans'),
+    // Items' Low stock (ADR-093, 21a): the items with a code low or out,
+    // worked out from the codes with a reorder point alone, as Reorder's
+    // read starts (#534's question of a status filter's budget).
+    read('GET /products?low', () => '/products?low=true', 'zh-Hans'),
     // The category tree (ADR-092): every category with its items by type,
     // read each time Items opens, for its filter's counts.
     read('GET /products/categories', () => '/products/categories', 'zh-Hans'),

@@ -4,7 +4,7 @@ import type { Locale } from '../../common/locales';
 import type { KeyPart } from '../../common/sorted-page';
 import { PRODUCT_TYPES, products } from '../../database/schema';
 import { productNameOrder } from '../stock/item-name';
-import { itemStock } from '../stock/item-stock';
+import { itemStock, lowItemsOf } from '../stock/item-stock';
 import { categoryPaths } from './category-tree';
 import {
   type ItemFiltersDto,
@@ -136,11 +136,32 @@ function discontinuedAs(query: ItemFiltersDto): SQL | undefined {
   return eq(products.isActive, query.discontinued !== 'only');
 }
 
-/** The open tab's type, and Discontinued as asked. */
-export function shownOf(query: ItemFiltersDto): SQL | undefined {
+/**
+ * Items' Low stock (ADR-093, 21a): the items low or out (lowItemsOf),
+ * worked out once for a statement as its `low_items` CTE, and the
+ * condition an item is among them, for the list, its counts and its
+ * export alike.
+ */
+export function lowStockOf(
+  organizationId: string,
+  today: string,
+): { cte: SQL; among: SQL } {
+  return {
+    cte: sql`low_items as materialized (${lowItemsOf(organizationId, today)})`,
+    among: sql`${products.id} in (select li.product_id from low_items li)`,
+  };
+}
+
+/**
+ * The open tab's type, Discontinued as asked, and the low alone when
+ * asked, given `low`, lowStockOf's condition, in a statement holding its
+ * CTE.
+ */
+export function shownOf(query: ItemFiltersDto, low?: SQL): SQL | undefined {
   return and(
     query.type ? eq(products.type, query.type) : undefined,
     discontinuedAs(query),
+    query.low === 'true' ? low : undefined,
   );
 }
 
@@ -149,13 +170,16 @@ export interface TypeCount {
   type: string;
   count: number;
   discontinued: number;
+  low: number;
 }
 
 /**
  * The counts beside the list (ADR-092), each with its search and its
- * category: every type's tab, as Discontinued leaves it, and its
- * discontinued items, as one value for the first page's statement, which
- * reads itemSearch's result once for the page and its counts (#547).
+ * category: every type's tab, as Discontinued and Low stock leave it,
+ * its discontinued items with Low stock as asked, and its items low or
+ * out with Discontinued as asked (ADR-093), as one value for the first
+ * page's statement, which reads itemSearch's result once for the page
+ * and its counts (#547), and lowStockOf's CTE, `low` its condition.
  * A type is counted while the organization holds any item of it, so a
  * tab keeps its place while a search finds none there.
  */
@@ -163,17 +187,23 @@ export function countedOf(
   organizationId: string,
   query: ItemFiltersDto,
   matched: SQL | undefined,
+  low: SQL,
 ): SQL {
-  const found = matched ?? sql`true`;
+  const found = and(
+    matched ?? sql`true`,
+    query.low === 'true' ? low : undefined,
+  )!;
+  const kept = discontinuedAs(query) ?? sql`true`;
   return sql`
     select coalesce(json_agg(c), '[]'::json) as counts from (
       select ${products.type} as type,
-        (count(*) filter (
-          where ${found} and ${discontinuedAs(query) ?? sql`true`}
-        ))::int as count,
+        (count(*) filter (where ${found} and ${kept}))::int as count,
         (count(*) filter (
           where ${found} and not ${products.isActive}
-        ))::int as discontinued
+        ))::int as discontinued,
+        (count(*) filter (
+          where ${matched ?? sql`true`} and ${kept} and ${low}
+        ))::int as low
       from ${products}
       where ${products.organizationId} = ${organizationId}::uuid
       group by ${products.type}
@@ -183,7 +213,7 @@ export function countedOf(
 
 /**
  * The counts from countedOf's: every type's tab, All's, and the
- * Discontinued chip's, on the open tab.
+ * Discontinued and Low stock chips', on the open tab.
  */
 export function countsOf(
   rows: TypeCount[],
@@ -199,5 +229,6 @@ export function countsOf(
     types,
     all: types.reduce((sum, type) => sum + type.count, 0),
     discontinued: open.reduce((sum, row) => sum + row.discontinued, 0),
+    low: open.reduce((sum, row) => sum + row.low, 0),
   };
 }

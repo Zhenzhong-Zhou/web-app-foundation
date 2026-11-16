@@ -83,6 +83,36 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places"
 
+## Where it stands
+
+- **Where it stands lists an item's codes, the out first, then the low,
+  each with its figures from the one read and the lines behind them:**
+  Held's confirmed sales, the earliest confirmed first, each with what it
+  wants, holds and is short; Coming's purchases, the sooner first, and
+  its runs; and each place with its lots, soonest first. The lines add
+  up to the figures.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "stands an item’s codes the low first, each figure with the lines behind it" ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code"
+- **Where it stands is sent only to a reader with stock.view,** and the
+  others are refused in their own words, naming whom to ask.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "sends Where it stands only to a reader with stock.view, refused in their words"
+- **Each part beyond the figures goes only to a reader who may see it,
+  the number kept:** places by name with locations.view, else the usable
+  lots alone, adding up to usable, the not usable one line; Held's sales
+  and Coming's purchases with orders.view, else how many orders wait;
+  Coming's runs with production.view.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "leaves out places without locations.view: the usable lots alone, adding up to usable" ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the sales and purchases without orders.view, the number of orders kept" ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the runs without production.view"
+- **Items counts items, Reorder and Home count codes:** Items' Low stock
+  is the items among Reorder's low and out codes, and Home's Low stock is
+  Reorder's count.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each"
+
 ## What confirmed sales hold
 
 - **A confirmed sale holds usable stock, the earliest confirmed first;

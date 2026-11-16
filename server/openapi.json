@@ -2446,6 +2446,14 @@
             }
           },
           {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -2613,6 +2621,14 @@
                 "only",
                 "include"
               ]
+            }
+          },
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -6248,6 +6264,44 @@
         },
         "tags": [
           "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/products/{id}/stock": {
+      "get": {
+        "operationId": "WhereItStandsController_read_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductStock"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WhereItStands"
         ]
       }
     },
@@ -13315,6 +13369,12 @@
               "null"
             ]
           },
+          "notUsable": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "unitOfMeasure": {
             "type": [
               "string",
@@ -13331,6 +13391,12 @@
               "low",
               null
             ]
+          },
+          "stockStatusCodes": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -13345,8 +13411,10 @@
           "createdAt",
           "updatedAt",
           "onHand",
+          "notUsable",
           "unitOfMeasure",
-          "stockStatus"
+          "stockStatus",
+          "stockStatusCodes"
         ]
       },
       "ProductTypeCount": {
@@ -13386,12 +13454,16 @@
           },
           "discontinued": {
             "type": "number"
+          },
+          "low": {
+            "type": "number"
           }
         },
         "required": [
           "types",
           "all",
-          "discontinued"
+          "discontinued",
+          "low"
         ]
       },
       "ProductPage": {
@@ -18110,6 +18182,324 @@
           "source",
           "reorderPoint",
           "rule"
+        ]
+      },
+      "StockHold": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wanted": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "expectedAt",
+          "wanted",
+          "held",
+          "short"
+        ]
+      },
+      "ComingPurchase": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "late": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "quantity",
+          "expectedAt",
+          "late"
+        ]
+      },
+      "ComingRun": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "runId",
+          "reference",
+          "partnerName",
+          "quantity"
+        ]
+      },
+      "UsableLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "places": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lotId",
+          "lotCode",
+          "expiresAt",
+          "quantity",
+          "places"
+        ]
+      },
+      "CodeStanding": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "usable": {
+            "type": "string"
+          },
+          "notUsable": {
+            "type": "string"
+          },
+          "expired": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          },
+          "unavailable": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "free": {
+            "type": "string"
+          },
+          "stillNeeded": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          },
+          "coming": {
+            "type": "string"
+          },
+          "comingOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "type": "string"
+          },
+          "expiresFirst": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reorderPoint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "out",
+              "low",
+              "discontinued",
+              "enough",
+              null
+            ]
+          },
+          "heldOrders": {
+            "type": "number"
+          },
+          "holds": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StockHold"
+            }
+          },
+          "purchases": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ComingPurchase"
+            }
+          },
+          "runs": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ComingRun"
+            }
+          },
+          "places": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StockPlace"
+            }
+          },
+          "lots": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/UsableLot"
+            }
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "variantName",
+          "unitOfMeasure",
+          "isActive",
+          "onHand",
+          "usable",
+          "notUsable",
+          "expired",
+          "issued",
+          "unavailable",
+          "held",
+          "free",
+          "stillNeeded",
+          "short",
+          "coming",
+          "comingOn",
+          "position",
+          "expiresFirst",
+          "reorderPoint",
+          "status",
+          "heldOrders",
+          "holds",
+          "purchases",
+          "runs",
+          "places",
+          "lots"
+        ]
+      },
+      "ProductStock": {
+        "type": "object",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeStanding"
+            }
+          }
+        },
+        "required": [
+          "codes"
         ]
       },
       "LookupResult": {

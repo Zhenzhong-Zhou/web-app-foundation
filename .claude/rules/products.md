@@ -42,8 +42,8 @@ commit that changes one of those rules updates it (ADR-087).
 - **Items' list orders by `itemOrder`'s parts, its cursor holding them**
   (`item-list.ts`, paged by `common/sorted-page.ts`'s keys, as any list
   sorted by a worked-out figure is); a row's stock and status are
-  `itemStock` and `itemStockStatus` (`stock/item-stock.ts`), read for its
-  page (ADR-092).
+  `itemFigures`, on `codeFigures`, read for its page; Low stock is
+  `lowStockOf` (`stock/item-stock.ts`, ADR-092, ADR-093).
 - **A cover is `coverOf()`,** its product named by its table; a gallery
   change locks the product with `lockProduct` and keeps the positions 0
   to n − 1, at most `MAX_PRODUCT_IMAGES` (ADR-062, ADR-066).

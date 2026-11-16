@@ -17,6 +17,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemMatches } from '../products/item-search';
+import { comingLinesOf } from './code-lines';
 import type { ListReorderPointsDto } from './dto/list-reorder-points.dto';
 import type {
   ComingSupply,
@@ -415,47 +416,17 @@ export class ReorderPointsReadsService {
       `);
       const [anywhere] = usable.rows;
 
+      // Line by line, as Where it stands lists them (code-lines.ts).
       const coming = await tx.execute<ComingRow>(sql`
-        select * from (
-          select
-            'purchase' as kind,
-            o.id,
-            o.number,
-            pa.name as partner_name,
-            ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity,
-            o.expected_at::text as expected_at,
-            coalesce(o.expected_at < ${today}::date, false) as late
-          from order_lines ol
-          join orders o
-            on o.id = ol.order_id
-            and o.organization_id = ${org}
-          join partners pa
-            on pa.id = o.partner_id
-            and pa.organization_id = ${org}
-          where ol.organization_id = ${org}
-            and ol.variant_id = ${item}
-            and o.direction = 'purchase'
-            and o.status = 'confirmed'
-            and not ol.is_closed_short
-            and ol.quantity_ordered > ol.quantity_fulfilled
-          union all
-          select
-            'run' as kind,
-            po.id,
-            po.reference,
-            pa.name,
-            ${quantity(sql`po.quantity_planned - po.quantity_produced`)},
-            null,
-            false
-          from production_orders po
-          left join partners pa
-            on pa.id = po.partner_id
-            and pa.organization_id = ${org}
-          where po.organization_id = ${org}
-            and po.output_variant_id = ${item}
-            and po.status = 'released'
-            and po.quantity_planned > po.quantity_produced
-        ) c
+        select
+          c.kind,
+          c.id,
+          c.number,
+          c.partner_name,
+          ${quantity(sql`c.quantity`)} as quantity,
+          c.expected_at::text as expected_at,
+          c.late
+        from (${comingLinesOf(organizationId, today, sql`(${item})`)}) c
         order by c.kind, c.expected_at nulls last, c.id
       `);
 
