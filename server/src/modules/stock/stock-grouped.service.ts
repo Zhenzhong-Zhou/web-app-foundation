@@ -41,12 +41,17 @@ import type {
   StockCodePage,
   StockCodePlaces,
   StockCodeRow,
+  StockLotCounts,
   StockLotPage,
   StockPlace,
 } from './dto/stock-grouped-response.dto';
 import { namesIn, productNameOrder } from './item-name';
 import type { ReorderStatus } from './reorder-status';
-import { stockRowsOf, UNKNOWN_ITEM } from './stock-reads.service';
+import {
+  quickFiltersOf,
+  stockRowsOf,
+  UNKNOWN_ITEM,
+} from './stock-reads.service';
 
 /** A page of Inventory, fifty codes or lots unless asked (ADR-093, R16). */
 const PAGE_SIZE = 50;
@@ -800,50 +805,20 @@ export class StockGroupedService {
         after = afterKeys(parts, cursor.keys);
       }
 
-      const status =
-        query.out === 'true'
-          ? sql`'out'`
-          : query.low === 'true'
-            ? sql`'low', 'out'`
-            : undefined;
-      const pointedCodes = sql`(
-        select rp.variant_id from reorder_points rp
-        where rp.organization_id = ${org}
-      )`;
+      const {
+        rows: from,
+        facets,
+        asked,
+      } = lotFilters(query, organizationId, today, query.expiringWithin);
 
-      // stockRowsOf's FROM and WHERE, Home's Expiring soon's rows, and the
-      // Lot view's own conditions after them.
       const { rows } = await tx.execute<PileRow>(sql`
         select ${pileColumns(organizationId, locale)}
-        from ${stockRowsOf(
-          {
-            locationId: query.locationId,
-            productId: query.productId,
-            includeEmpty: query.includeEmpty,
-            search: query.search,
-            expiringWithin: query.expiringWithin,
-            expired: query.expired,
-            needsCost: query.needsCost,
-          },
-          organizationId,
-          today,
-        )}
+        from ${from}
         and ${and(
-          sql`${stockLevels.lotId} is not null`,
-          query.type ? sql`${products.type} = ${query.type}` : undefined,
-          query.categoryId
-            ? sql`${products.categoryId} in (
-                select cp.id from ${categoryPaths(organizationId)} cp
-                where ${query.categoryId}::uuid = any(cp.ids)
-              )`
-            : undefined,
-          status
-            ? sql`${stockLevels.variantId} in (
-                select f.variant_id
-                from (${codeFigures(organizationId, today, pointedCodes)}) f
-                where f.status in (${status})
-              )`
-            : undefined,
+          sql`true`,
+          ...LOT_FACETS.filter((facet) => asked[facet]).map(
+            (facet) => facets[facet],
+          ),
           after,
         )}
         order by ${sql.join(orderOf(parts), sql`, `)}
@@ -882,6 +857,132 @@ export class StockGroupedService {
       };
     });
   }
+
+  /**
+   * How many rows each of the Lot view's quick filters shows (ADR-093, R3;
+   * 30a), with the other filters on and its own off, the four in one
+   * statement: lots at each place, as its rows are, never codes. Expiring
+   * soon within the organization's warning days unless asked otherwise,
+   * the expired among it. No Out: a code that is out keeps no lot to list
+   * (31a).
+   */
+  lotCounts(query: StockFiltersDto): Promise<StockLotCounts> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      await assertOwnIds(
+        tx,
+        products,
+        organizationId,
+        [query.productId],
+        UNKNOWN_ITEM,
+      );
+      const today = await todayOf(tx, organizationId);
+      const days =
+        query.expiringWithin ?? (await warningDays(tx, organizationId));
+      const {
+        rows: from,
+        facets,
+        asked,
+      } = lotFilters(query, organizationId, today, days);
+
+      const countOf = (counted: LotFacet) =>
+        sql`(count(*) filter (where ${and(
+          sql`r.${sql.identifier(counted)}`,
+          ...LOT_FACETS.filter(
+            (other) => other !== counted && asked[other],
+          ).map((other) => sql`r.${sql.identifier(other)}`),
+        )}))::int as ${sql.identifier(counted)}`;
+
+      const {
+        rows: [counts],
+      } = await tx.execute<Record<LotFacet, number>>(sql`
+        with r as materialized (
+          select ${sql.join(
+            LOT_FACETS.map(
+              (facet) => sql`(${facets[facet]}) as ${sql.identifier(facet)}`,
+            ),
+            sql`, `,
+          )}
+          from ${from}
+        )
+        select ${sql.join(LOT_FACETS.map(countOf), sql`, `)}
+        from r
+      `);
+      return counts;
+    });
+  }
+}
+
+/** The Lot view's quick filters, each counted beside its button (30a). */
+const LOT_FACETS = ['low', 'expiring', 'expired', 'needsCost'] as const;
+type LotFacet = (typeof LOT_FACETS)[number];
+
+/**
+ * The Lot view's filters (ADR-093, R3 and R4; 30a), one builder for its
+ * rows, its counts and so its export. `rows` is stockRowsOf's FROM and
+ * WHERE, Home's Expiring soon's rows, under the filters every count keeps:
+ * a lot's rows alone, the item, its type and category, one place, the
+ * search, Include empty, and Out, by the code's status. `facets` is each
+ * quick filter's condition on them, `asked` the ones the reader chose:
+ * Low stock by the code's status, the out among it, as Reorder counts it;
+ * Expiring soon, Expired and Waiting for a cost by the row's own lot, as
+ * the list of stock rows reads them (quickFiltersOf).
+ */
+function lotFilters(
+  query: StockFiltersDto,
+  organizationId: string,
+  today: string,
+  days: number | undefined,
+): {
+  rows: SQL;
+  facets: Record<LotFacet, SQL>;
+  asked: Record<LotFacet, boolean>;
+} {
+  const quick = quickFiltersOf(organizationId, today, days);
+  const pointedCodes = sql`(
+    select rp.variant_id from reorder_points rp
+    where rp.organization_id = ${organizationId}::uuid
+  )`;
+  const statusIn = (statuses: SQL) => sql`${stockLevels.variantId} in (
+    select f.variant_id
+    from (${codeFigures(organizationId, today, pointedCodes)}) f
+    where f.status in (${statuses})
+  )`;
+
+  return {
+    rows: sql`${stockRowsOf(
+      {
+        locationId: query.locationId,
+        productId: query.productId,
+        includeEmpty: query.includeEmpty,
+        search: query.search,
+      },
+      organizationId,
+      today,
+    )}
+    and ${and(
+      sql`${stockLevels.lotId} is not null`,
+      query.type ? sql`${products.type} = ${query.type}` : undefined,
+      query.categoryId
+        ? sql`${products.categoryId} in (
+            select cp.id from ${categoryPaths(organizationId)} cp
+            where ${query.categoryId}::uuid = any(cp.ids)
+          )`
+        : undefined,
+      query.out === 'true' ? statusIn(sql`'out'`) : undefined,
+    )}`,
+    facets: {
+      low: statusIn(sql`'low', 'out'`),
+      expiring: quick.expiring ?? sql`false`,
+      expired: quick.expired,
+      needsCost: quick.needsCost,
+    },
+    asked: {
+      low: query.low === 'true',
+      expiring: query.expiringWithin !== undefined,
+      expired: query.expired === 'true',
+      needsCost: query.needsCost === 'true',
+    },
+  };
 }
 
 /**

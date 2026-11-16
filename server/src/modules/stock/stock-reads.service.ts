@@ -111,31 +111,46 @@ function filtersOf(
     );
   }
 
-  if (query.expiringWithin) {
-    scope.push(
-      // The organization's today (ADR-072), not the database session's
-      // current_date, which depends on how the database is configured.
-      sql`${lots.expiresAt} <= ${today}::date + ${query.expiringWithin}::int`,
-    );
-  }
+  const quick = quickFiltersOf(organizationId, today, query.expiringWithin);
+  if (quick.expiring) scope.push(quick.expiring);
+  if (query.expired === 'true') scope.push(quick.expired);
+  if (query.needsCost === 'true') scope.push(quick.needsCost);
 
-  if (query.expired === 'true') {
-    scope.push(expiredLot(today));
-  }
+  return scope;
+}
 
-  /**
-   * The same pool as a waiting cost row: its variant, and its lot or none.
-   *
-   * The waiting pools are worked out once, as a set, as the valuation's are
-   * (CostsService.stockValuation). As an EXISTS per stock row it read every
-   * row the organization holds to find the few waiting, twice on each Home,
-   * for the costs card's count and its rows (#276). MATERIALIZED keeps
-   * Postgres from folding the set back into that lookup, and the nil uuid
-   * stands in for "no lot" so the match is an equality a hash can use; IS
-   * NOT DISTINCT FROM cannot.
-   */
-  if (query.needsCost === 'true') {
-    scope.push(sql`(
+/**
+ * The quick filters a stock row is read by, as conditions on stockRowsOf's
+ * tables: Expiring soon, a lot expiring within `days` of the
+ * organization's today, the expired among it (absent without days);
+ * Expired; and Waiting for a cost. The list's filters and the Lot view's
+ * counts (ADR-093, 30a) read them, so a count is the rows its filter
+ * shows.
+ */
+export function quickFiltersOf(
+  organizationId: string,
+  today: string,
+  days: number | undefined,
+): { expiring: SQL | undefined; expired: SQL; needsCost: SQL } {
+  return {
+    expiring: days
+      ? // The organization's today (ADR-072), not the database session's
+        // current_date, which depends on how the database is configured.
+        sql`${lots.expiresAt} <= ${today}::date + ${days}::int`
+      : undefined,
+    expired: expiredLot(today),
+    /**
+     * The same pool as a waiting cost row: its variant, and its lot or none.
+     *
+     * The waiting pools are worked out once, as a set, as the valuation's are
+     * (CostsService.stockValuation). As an EXISTS per stock row it read every
+     * row the organization holds to find the few waiting, twice on each Home,
+     * for the costs card's count and its rows (#276). MATERIALIZED keeps
+     * Postgres from folding the set back into that lookup, and the nil uuid
+     * stands in for "no lot" so the match is an equality a hash can use; IS
+     * NOT DISTINCT FROM cannot.
+     */
+    needsCost: sql`(
       ${stockLevels.variantId},
       coalesce(${stockLevels.lotId}, '00000000-0000-0000-0000-000000000000'::uuid)
     ) in (
@@ -143,10 +158,8 @@ function filtersOf(
       select o.variant_id,
              coalesce(o.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)
       from open o
-    )`);
-  }
-
-  return scope;
+    )`,
+  };
 }
 
 /**

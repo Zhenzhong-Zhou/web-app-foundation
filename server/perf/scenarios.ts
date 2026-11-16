@@ -311,6 +311,7 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /stock/by-lot?expiringWithin',
       () => '/stock/by-lot?expiringWithin=90',
     ),
+    read('GET /stock/by-lot/counts', () => '/stock/by-lot/counts'),
     // Where it stands (ADR-093, R8): an item's codes from the one read,
     // their sales, purchases, runs, places and lots, as an Owner reads it.
     read(

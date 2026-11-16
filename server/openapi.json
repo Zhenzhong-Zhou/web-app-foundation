@@ -5561,6 +5561,130 @@
         ]
       }
     },
+    "/v1/stock/by-lot/counts": {
+      "get": {
+        "operationId": "StockGroupedController_lotCounts_v1",
+        "parameters": [
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockLotCounts"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
     "/v1/stock/by-lot/export": {
       "get": {
         "operationId": "StockGroupedController_exportByLot_v1",
@@ -17341,6 +17465,29 @@
         "required": [
           "entries",
           "nextCursor"
+        ]
+      },
+      "StockLotCounts": {
+        "type": "object",
+        "properties": {
+          "low": {
+            "type": "number"
+          },
+          "expiring": {
+            "type": "number"
+          },
+          "expired": {
+            "type": "number"
+          },
+          "needsCost": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "expiring",
+          "expired",
+          "needsCost"
         ]
       },
       "LotMatch": {

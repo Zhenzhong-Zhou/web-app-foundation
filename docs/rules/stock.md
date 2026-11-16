@@ -84,6 +84,12 @@ file is kept is in the [README](README.md).
   [ADR-091, amended](../adr/0091-home-redesigned.md#amendment-november-2026--the-tiles-lists-after-inventorys-redesign-adr-093) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per lot at each place, soonest first, the expired on top, a lot’s places together" ·
   [test](../../server/test/home.e2e-spec.ts) "opens, from each tile, as many rows as it counts, the late among them"
+- **The Lot view's counts are its rows, lots at each place, never
+  codes:** Low stock, Expiring soon, Expired and Waiting for a cost, each
+  with the other filters on and its own off; no Out, since a code that
+  is out keeps no lot. Its export is the same rows.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each of the Lot view’s quick filters as the lots it shows, with the other filters on, and exports those rows"
 - **A place's name goes only to a reader who may see places;** the rest
   read the lots and their figures without it.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·

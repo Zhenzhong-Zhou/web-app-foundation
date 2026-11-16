@@ -355,6 +355,7 @@ async function buildProbes(
       name: 'stock by lot: expiring',
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
     },
+    { name: 'stock by lot: counts', run: () => grouped.lotCounts({}) },
     // Where it stands (ADR-093, R8), as an Owner reads it, every part;
     // and as a reader without places, its usable lots instead.
     {

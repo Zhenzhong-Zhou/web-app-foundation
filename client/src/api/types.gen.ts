@@ -2007,6 +2007,13 @@ export type StockLotPage = {
   nextCursor: string | null;
 };
 
+export type StockLotCounts = {
+  low: number;
+  expiring: number;
+  expired: number;
+  needsCost: number;
+};
+
 export type LotMatch = {
   id: string;
   code: string;
@@ -6368,6 +6375,33 @@ export type StockGroupedControllerByLotV1Responses = {
 
 export type StockGroupedControllerByLotV1Response =
   StockGroupedControllerByLotV1Responses[keyof StockGroupedControllerByLotV1Responses];
+
+export type StockGroupedControllerLotCountsV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    low?: string;
+    out?: string;
+    expiringWithin?: number;
+    expired?: string;
+    needsCost?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    categoryId?: string;
+    locationId?: string;
+    productId?: string;
+    includeEmpty?: string;
+    search?: string;
+  };
+  url: '/v1/stock/by-lot/counts';
+};
+
+export type StockGroupedControllerLotCountsV1Responses = {
+  200: StockLotCounts;
+};
+
+export type StockGroupedControllerLotCountsV1Response =
+  StockGroupedControllerLotCountsV1Responses[keyof StockGroupedControllerLotCountsV1Responses];
 
 export type StockGroupedControllerExportByLotV1Data = {
   body?: never;

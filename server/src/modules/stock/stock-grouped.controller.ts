@@ -29,6 +29,7 @@ import type {
   StockCodeCounts,
   StockCodePage,
   StockCodePlaces,
+  StockLotCounts,
   StockLotPage,
 } from './dto/stock-grouped-response.dto';
 import { STOCK_CODE_COLUMNS, STOCK_LOT_COLUMNS } from './stock-exports';
@@ -122,6 +123,13 @@ export class StockGroupedController {
       localeOf(acceptLanguage),
       await this.seesPlaces(user),
     );
+  }
+
+  /** The lots each of the Lot view's quick filters shows, beside its button (R3; 30a). */
+  @Get('by-lot/counts')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  lotCounts(@Query() query: StockFiltersDto): Promise<StockLotCounts> {
+    return this.grouped.lotCounts(query);
   }
 
   /** Every lot the filters match, as CSV (ADR-057): the list's own query, every page. */

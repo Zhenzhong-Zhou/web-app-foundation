@@ -88,6 +88,18 @@ export class StockCodeCounts {
 }
 
 /**
+ * GET /stock/by-lot/counts: the Lot view's rows each quick filter shows,
+ * lots at each place, with the other filters on and its own off (ADR-093,
+ * 30a). No Out: a code that is out keeps no lot (31a).
+ */
+export class StockLotCounts {
+  low!: number;
+  expiring!: number;
+  expired!: number;
+  needsCost!: number;
+}
+
+/**
  * One pile: a code at one place, in one lot when it tracks lots, as the
  * row's menu, Move, Edit lot and History read it.
  */

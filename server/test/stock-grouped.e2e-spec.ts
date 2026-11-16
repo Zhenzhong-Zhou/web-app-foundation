@@ -490,6 +490,74 @@ describe('Inventory, grouped (e2e)', () => {
     expect(await lotCodes('low=true&search=VC-FAR')).toEqual(['VC-FAR SHELF']);
   });
 
+  it('counts each of the Lot view’s quick filters as the lots it shows, with the other filters on, and exports those rows', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { shelf } = await world(alpha);
+    const filters: Record<string, string> = {
+      low: 'low=true',
+      expiring: 'expiringWithin=90',
+      expired: 'expired=true',
+      needsCost: 'needsCost=true',
+    };
+    const lotsOf = async (query: string) => {
+      const page = body<{ entries: Pile[]; nextCursor: string | null }>(
+        await alpha.agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      );
+      expect(page.nextCursor).toBeNull();
+      return page.entries;
+    };
+    const countsOf = async (query: string) =>
+      body<Record<string, number>>(
+        await alpha.agent.get(`/v1/stock/by-lot/counts?${query}`).expect(200),
+      );
+
+    // Lots at each place, not codes: VITC's four rows are low, as VITC is;
+    // MAG, out, keeps none.
+    expect(await countsOf('')).toEqual({
+      low: 4,
+      expiring: 3,
+      expired: 1,
+      needsCost: 4,
+    });
+
+    for (const others of [
+      '',
+      'low=true',
+      'search=VC-SOON',
+      `locationId=${shelf}`,
+    ]) {
+      const counts = await countsOf(others);
+      for (const [name, filter] of Object.entries(filters)) {
+        const query = [...new Set([others, filter])].filter(Boolean).join('&');
+        expect({ name, others, count: (await lotsOf(query)).length }).toEqual({
+          name,
+          others,
+          count: counts[name],
+        });
+      }
+    }
+
+    // The export is the rows, filters and all.
+    for (const query of [
+      'low=true',
+      'expiringWithin=90',
+      `locationId=${shelf}`,
+    ]) {
+      const lines = (
+        await alpha.agent.get(`/v1/stock/by-lot/export?${query}`).expect(200)
+      ).text
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+      const lot = lines[0].indexOf('Lot');
+      expect({ query, lots: lines.slice(1).map((line) => line[lot]) }).toEqual({
+        query,
+        lots: (await lotsOf(query)).map((row) => row.lotCode),
+      });
+    }
+  });
+
   it('exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await world(alpha);
