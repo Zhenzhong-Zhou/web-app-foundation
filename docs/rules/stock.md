@@ -29,6 +29,33 @@ file is kept is in the [README](README.md).
   [ADR-042](../adr/0042-samples-and-stock-that-is-not-for-sending.md#decision--unavailable-locations-hold-stock-that-is-not-for-sending) ·
   [test](../../server/test/reservations.e2e-spec.ts) "leaves an expired lot, an issued quantity and a place not available out of Free, each said beside On hand"
 
+## A code's figures
+
+- **Each code's figures are worked out by one read,** so Inventory,
+  the item's Where it stands and Reorder cannot disagree: on hand and
+  what of it is not usable, why; held; free; short; coming; Left; what
+  expires first; and the status.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code" ·
+  partly tested
+- **The figures add up, for every code:** on hand is the ledger's,
+  usable and not usable; free is usable less held, never below 0; short
+  is what confirmed sales still want beyond what they hold.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "walks every code of an organization: on hand is the ledger’s, and every sum holds"
+- **Coming is what confirmed purchases still have to receive and what
+  released runs still have to make,** its day the soonest a purchase is
+  expected; a run has no day. **Left is usable, plus coming, less what
+  confirmed sales still want,** Reorder's position.
+  [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding"
+- **What expires first is the usable stock's soonest expiry:** a lot
+  already expired, or at a place not available, is not it, and a code
+  with no lots has none.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--a-row-per-code-opening-to-its-places-and-lots) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding"
+
 ## What confirmed sales hold
 
 - **A confirmed sale holds usable stock, the earliest confirmed first;

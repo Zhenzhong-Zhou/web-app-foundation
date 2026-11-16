@@ -1,22 +1,8 @@
 import { type SQL, sql } from 'drizzle-orm';
 
 import type { ReorderRule, ReorderSource } from '../../database/schema';
-import { usableByItem } from './usable-stock';
-
-/**
- * Where an item with a reorder point stands (ADR-085): out at zero or
- * less, nothing usable and nothing coming; low below its point; enough
- * otherwise. A discontinued item, or one of a discontinued product,
- * keeps its point and is never low.
- */
-export const REORDER_STATUSES = [
-  'out',
-  'low',
-  'enough',
-  'discontinued',
-] as const;
-
-export type ReorderStatus = (typeof REORDER_STATUSES)[number];
+import { codeFigures } from './code-figures';
+import { type PositionFigures, statusOf } from './reorder-status';
 
 /**
  * A point as the dialog holds it before saving (ADR-085): the preview
@@ -31,31 +17,9 @@ export interface TypedPoint {
   maximumQuantity: string | null;
 }
 
-/** A point's figures, as SQL, for the status and the suggestion. */
-export interface PositionFigures {
-  position: SQL;
-  reorderPoint: SQL;
-  rule: SQL;
-  fixedQuantity: SQL;
-  maximumQuantity: SQL;
-  inDraft: SQL;
-  /** Neither the variant nor its product discontinued. */
-  active: SQL;
-}
-
 /** Below its point and not discontinued: the out among the low. */
 function isLow(f: PositionFigures): SQL {
   return sql`(${f.active} and ${f.position} < ${f.reorderPoint})`;
-}
-
-/** Out, low, enough or discontinued, as REORDER_STATUSES names them. */
-export function statusOf(f: PositionFigures): SQL {
-  return sql`case
-    when not ${f.active} then 'discontinued'
-    when ${f.position} <= 0 then 'out'
-    when ${f.position} < ${f.reorderPoint} then 'low'
-    else 'enough'
-  end`;
 }
 
 /**
@@ -108,21 +72,15 @@ export function draftedOf(f: PositionFigures): SQL {
  * asked for: as a subquery's rows, one per point, for the list, its
  * counts and Home's card to read alike.
  *
- * - usable: usableByItem's, as the holds read it (availability.ts);
- * - coming: confirmed purchases' lines still to receive (ordered less
- *   received, unless closed short), and released runs' output still to
- *   come (planned less produced, never below zero);
- * - still needed: confirmed sales' lines still to ship, unless closed
- *   short, as ADR-045 counts them;
+ * - usable, coming, still needed and position: a code's figures, the one
+ *   read Inventory's row and Where it stands share (code-figures.ts;
+ *   ADR-093), so Reorder's row cannot disagree with them;
  * - in draft: draft purchases' quantities and draft runs' planned output,
  *   which do not change the position, since a draft may never be sent;
- * - position: usable, plus coming, less still needed;
  * - drafted: low, and what is in draft leaves nothing to suggest, so
  *   nobody orders it twice.
  *
- * The open lines are read on order_lines_open_idx's own predicate, as
- * the holds are (availability.ts): keep the two the same. Draft
- * purchases' lines are read from the drafts, which are few, never from
+ * Draft purchases' lines are read from the drafts, which are few, never from
  * the items' every line: by item, the low list read 40,000 lines at
  * ADR-051's large scale to find a few hundred. Every join names the
  * organization (ADR-003, ADR-051).
@@ -204,42 +162,7 @@ export function positionsOf(
               ${only}`
       }
     ),
-    usable as (
-      select u.variant_id, u.usable as quantity
-      from (${usableByItem(organizationId, today, asked)}) u
-    ),
-    coming as (
-      select ol.variant_id, ol.quantity_ordered - ol.quantity_fulfilled as quantity
-      from order_lines ol
-      join orders o
-        on o.id = ol.order_id
-        and o.organization_id = ${org}
-      where ol.organization_id = ${org}
-        and ol.variant_id in ${asked}
-        and o.direction = 'purchase'
-        and o.status = 'confirmed'
-        and not ol.is_closed_short
-        and ol.quantity_ordered > ol.quantity_fulfilled
-      union all
-      select po.output_variant_id, greatest(0, po.quantity_planned - po.quantity_produced)
-      from production_orders po
-      where po.organization_id = ${org}
-        and po.status = 'released'
-        and po.output_variant_id in ${asked}
-    ),
-    needed as (
-      select ol.variant_id, ol.quantity_ordered - ol.quantity_fulfilled as quantity
-      from order_lines ol
-      join orders o
-        on o.id = ol.order_id
-        and o.organization_id = ${org}
-      where ol.organization_id = ${org}
-        and ol.variant_id in ${asked}
-        and o.direction = 'sale'
-        and o.status = 'confirmed'
-        and not ol.is_closed_short
-        and ol.quantity_ordered > ol.quantity_fulfilled
-    ),
+    code as materialized (${codeFigures(organizationId, today, asked)}),
     draft_lines as materialized (
       select ol.variant_id, ol.quantity_ordered as quantity
       from orders o
@@ -264,19 +187,13 @@ export function positionsOf(
     figures as (
       select
         p.*,
-        coalesce(u.quantity, 0) as usable,
-        coalesce(c.quantity, 0) as coming,
-        coalesce(n.quantity, 0) as still_needed,
+        c.usable,
+        c.coming,
+        c.still_needed,
         coalesce(d.quantity, 0) as in_draft,
-        coalesce(u.quantity, 0) + coalesce(c.quantity, 0) - coalesce(n.quantity, 0) as position
+        c.position
       from points p
-      left join usable u on u.variant_id = p.variant_id
-      left join (
-        select variant_id, sum(quantity) as quantity from coming group by variant_id
-      ) c on c.variant_id = p.variant_id
-      left join (
-        select variant_id, sum(quantity) as quantity from needed group by variant_id
-      ) n on n.variant_id = p.variant_id
+      join code c on c.variant_id = p.variant_id
       left join (
         select variant_id, sum(quantity) as quantity from drafted group by variant_id
       ) d on d.variant_id = p.variant_id

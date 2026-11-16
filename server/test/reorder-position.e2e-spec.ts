@@ -8,11 +8,13 @@ import {
 import {
   draftedOf,
   multiplesOf,
-  type PositionFigures,
   positionsOf,
-  statusOf,
   suggestionOf,
 } from '../src/modules/stock/reorder-position';
+import {
+  type PositionFigures,
+  statusOf,
+} from '../src/modules/stock/reorder-status';
 import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import {
   closeShort,

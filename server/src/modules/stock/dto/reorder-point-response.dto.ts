@@ -1,5 +1,5 @@
 import type { ReorderRule, ReorderSource } from '../../../database/schema';
-import type { ReorderStatus } from '../reorder-position';
+import type { ReorderStatus } from '../reorder-status';
 
 /**
  * Reorder points as the API returns them (ADR-068, ADR-085): each item

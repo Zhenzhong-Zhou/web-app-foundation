@@ -2,13 +2,11 @@ import { ConflictException } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
-import type { Locale } from '../../common/locales';
 import { todayOf } from '../../core/organizations/time-zone';
 import { productVariants } from '../../database/schema';
 import { t } from '../../i18n/translate';
-import { namesIn } from './item-name';
 import type { Tx } from './stock.service';
-import { onHandByUse, usableByItem, usableByLocation } from './usable-stock';
+import { usableByItem, usableByLocation } from './usable-stock';
 
 /** One open sale line's hold on a product (ADR-045). */
 export interface LineHold {
@@ -24,7 +22,8 @@ export interface LineHold {
 }
 
 /**
- * Every open confirmed sale line, with what each holds (ADR-045).
+ * Every open confirmed sale line of the items in `variants`, a
+ * parenthesised list or subquery of ids, with what each holds (ADR-045).
  *
  * Computed, never stored. A line holds what is left of its product's supply
  * after every earlier-confirmed line, up to what it still needs — so when
@@ -33,24 +32,19 @@ export interface LineHold {
  * stock, the one rule (usable-stock.ts; ADR-045 amended by ADR-093): at
  * locations marked available, since a retention or quarantine bin holds
  * stock nobody can promise (ADR-042), less lots expired by the
- * organization's `today` and what released runs were issued.
+ * organization's `today` and what released runs were issued. A caller
+ * that has read it already passes it as `supply`, rows `variant_id,
+ * usable`, so it is read once (code-figures.ts).
  *
- * One query for one product or for all of them, so the rule exists once: the
- * availability list and the check that guards a shipment cannot disagree.
+ * One query for one product or for many, so the rule exists once: a
+ * code's figures and the check that guards a shipment cannot disagree.
  */
-function holdsSql(
+export function holdsSql(
   organizationId: string,
   today: string,
-  variantId?: string,
+  variants: SQL,
+  supply: SQL = usableByItem(organizationId, today, variants),
 ): SQL {
-  const onlyDemand = variantId
-    ? sql`and ol.variant_id = ${variantId}::uuid`
-    : sql``;
-  // Supply only for what is wanted: the one item, or the items in demand.
-  const wanted = variantId
-    ? sql`(${variantId}::uuid)`
-    : sql`(select dd.variant_id from demand dd)`;
-
   return sql`
     with demand as (
       select
@@ -80,9 +74,9 @@ function holdsSql(
         -- change them together or the index stops being used.
         and not ol.is_closed_short
         and ol.quantity_ordered > ol.quantity_fulfilled
-        ${onlyDemand}
+        and ol.variant_id in ${variants}
     ),
-    supply as (${usableByItem(organizationId, today, wanted)})
+    supply as (${supply})
     select
       d.variant_id,
       d.line_id,
@@ -131,7 +125,7 @@ export async function holdsFor(
         h.outstanding::text as outstanding,
         h.held::text as held,
         (h.outstanding - h.held)::text as short
-      from (${holdsSql(organizationId, today, variantId)}) h
+      from (${holdsSql(organizationId, today, sql`(${variantId}::uuid)`)}) h
     `)
   ).rows as {
     variant_id: string;
@@ -154,112 +148,6 @@ export async function holdsFor(
       short: row.short,
     })),
   };
-}
-
-/**
- * Per product: on hand at every place, what of it is not usable and why,
- * held, free and backordered. Free is usable less held, never below 0,
- * the one rule both the holds and Reorder read (ADR-045 amended by
- * ADR-093). Only products with stock or open demand are listed; with
- * `promisedOnly`, only those with open demand: what the Inventory page's
- * "Promised to customers" table shows. That list grows with open orders,
- * not with the catalogue, where the full one was 5,000 rows at ADR-051's
- * large scale. With `productId`, that item's variants alone (ADR-092).
- * Each item named in the reader's language (ADR-056).
- */
-export async function availability(
-  tx: Tx,
-  organizationId: string,
-  locale: Locale,
-  promisedOnly = false,
-  productId?: string,
-) {
-  const org = sql`${organizationId}::uuid`;
-  const today = await todayOf(tx, organizationId);
-  const listed = promisedOnly
-    ? sql`h.variant_id is not null`
-    : sql`(s.variant_id is not null or h.variant_id is not null)`;
-  const ofItem = productId ? sql`and pr.id = ${productId}::uuid` : sql``;
-  // Stock read only for the items that can be listed.
-  const variants = promisedOnly
-    ? sql`(select hh.variant_id from holds hh)`
-    : productId
-      ? sql`(select iv.id from product_variants iv
-          where iv.organization_id = ${org}
-            and iv.product_id = ${productId}::uuid)`
-      : sql`(select ov.id from product_variants ov
-          where ov.organization_id = ${org})`;
-  const shown = namesIn(locale, organizationId, {
-    product: 'pr',
-    variant: 'pv',
-  });
-
-  const rows = (
-    await tx.execute(sql`
-      with holds as (
-        select
-          h.variant_id,
-          sum(h.held) as held,
-          sum(h.outstanding) as demand
-        from (${holdsSql(organizationId, today)}) h
-        group by h.variant_id
-      ),
-      stock as (${onHandByUse(organizationId, today, variants)})
-      select
-        pv.id as variant_id,
-        pv.sku,
-        ${shown.productName} as product_name,
-        ${shown.variantName} as variant_name,
-        pv.unit_of_measure,
-        coalesce(s.on_hand, 0)::numeric(18, 4)::text as on_hand,
-        (coalesce(s.on_hand, 0) - coalesce(s.usable, 0))::numeric(18, 4)::text as not_usable,
-        coalesce(s.expired, 0)::numeric(18, 4)::text as expired,
-        coalesce(s.issued, 0)::numeric(18, 4)::text as issued,
-        coalesce(s.unavailable, 0)::numeric(18, 4)::text as unavailable,
-        coalesce(h.held, 0)::numeric(18, 4)::text as held,
-        greatest(0, coalesce(s.usable, 0) - coalesce(h.held, 0))::numeric(18, 4)::text as free,
-        (coalesce(h.demand, 0) - coalesce(h.held, 0))::numeric(18, 4)::text as backordered
-      from product_variants pv
-      join products pr
-        on pr.id = pv.product_id and pr.organization_id = ${org}
-      left join stock s on s.variant_id = pv.id
-      left join holds h on h.variant_id = pv.id
-      where pv.organization_id = ${org}
-        and ${listed}
-        ${ofItem}
-      order by pv.sku
-    `)
-  ).rows as {
-    variant_id: string;
-    sku: string;
-    product_name: string;
-    variant_name: string | null;
-    unit_of_measure: string;
-    on_hand: string;
-    not_usable: string;
-    expired: string;
-    issued: string;
-    unavailable: string;
-    held: string;
-    free: string;
-    backordered: string;
-  }[];
-
-  return rows.map((row) => ({
-    variantId: row.variant_id,
-    sku: row.sku,
-    productName: row.product_name,
-    variantName: row.variant_name,
-    unitOfMeasure: row.unit_of_measure,
-    onHand: row.on_hand,
-    notUsable: row.not_usable,
-    expired: row.expired,
-    issued: row.issued,
-    unavailable: row.unavailable,
-    held: row.held,
-    free: row.free,
-    backordered: row.backordered,
-  }));
 }
 
 /**

@@ -36,7 +36,8 @@ import {
   noPoint,
   refuseMaximumAtOrBelowPoint,
 } from './reorder-points.service';
-import { positionsOf, type ReorderStatus, statusOf } from './reorder-position';
+import { positionsOf } from './reorder-position';
+import { type ReorderStatus, statusOf } from './reorder-status';
 import type { Tx } from './stock.service';
 import { usableByLocation } from './usable-stock';
 

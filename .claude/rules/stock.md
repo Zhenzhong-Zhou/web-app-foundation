@@ -3,7 +3,7 @@ paths:
   - "server/src/modules/stock/**"
   - "server/src/database/schema/{stock-levels,stock-movements,stock-valuations,valuation-pools,lots,reorder-points}.ts"
   - "client/src/inventory/**"
-  - "server/test/{stock,lot-trace,valuation,reservations,samples,reorder-points,reorder-position,low-stock-notices}.e2e-spec.ts"
+  - "server/test/{stock,lot-trace,valuation,reservations,samples,reorder-points,reorder-position,low-stock-notices,code-figures}.e2e-spec.ts"
   - "server/test/utils/{valuation,reorder-world}.ts"
   - "client/e2e/{inventory,movements}.spec.ts"
 ---
@@ -35,6 +35,13 @@ What to keep true when changing stock's code.
   and Reorder's position read `usableByLocation`, `usableByItem` or
   `onHandByUse`, never a copy of their sums (ADR-045 and ADR-085, as
   ADR-093 amends them).
+- **A code's figures are one read,** `codeFigures` in `code-figures.ts`:
+  on hand and its not-usable parts, held, free, short, coming, Left
+  (the position), what expires first and the status. Every screen's
+  figures read it, Reorder's `positionsOf` among them; a reader that
+  joins its rows takes them from a `materialized` CTE, and nothing adds
+  these sums up again (ADR-093, R1 and R20). `code-figures.e2e-spec.ts`
+  holds the screens' routes to it.
 - **A movement's reference is the server's to set:** the movement route
   takes none from the client (ADR-042).
 - **A movement keeps its SKU as text;** an adjustment needs a note, and
