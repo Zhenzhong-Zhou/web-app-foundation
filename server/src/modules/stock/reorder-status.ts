@@ -1,5 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
+import { t, type Translatable } from '../../i18n/translate';
+
 /**
  * Where an item with a reorder point stands (ADR-085): out at zero or
  * less, nothing usable and nothing coming; low below its point; enough
@@ -14,6 +16,20 @@ export const REORDER_STATUSES = [
 ] as const;
 
 export type ReorderStatus = (typeof REORDER_STATUSES)[number];
+
+/**
+ * Each status as the screens say it, Home's words (ADR-091): an export's
+ * Status column (#473's 29).
+ */
+export const REORDER_STATUS_WORDS: Record<ReorderStatus, Translatable> = {
+  out: t({ id: 'stock.status.out', defaultMessage: 'Out' }),
+  low: t({ id: 'stock.status.low', defaultMessage: 'Low' }),
+  enough: t({ id: 'stock.status.enough', defaultMessage: 'Enough' }),
+  discontinued: t({
+    id: 'stock.status.discontinued',
+    defaultMessage: 'Discontinued',
+  }),
+};
 
 /** A point's figures, as SQL, for the status and the suggestion. */
 export interface PositionFigures {

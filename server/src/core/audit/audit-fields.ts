@@ -185,6 +185,10 @@ const LIST_WORDS: Record<string, Translatable> = {
     id: 'audit.value.list.inventory',
     defaultMessage: 'Inventory',
   }),
+  'inventory-lots': t({
+    id: 'audit.value.list.inventoryLots',
+    defaultMessage: 'Inventory, by lot',
+  }),
   movements: t({
     id: 'audit.value.list.movements',
     defaultMessage: 'Movements',

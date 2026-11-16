@@ -82,6 +82,12 @@ file is kept is in the [README](README.md).
   read the lots and their figures without it.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places"
+- **An export is the rows its list shows, with its filters, in the
+  screen's words and the reader's language:** a status as Low, Out or
+  Enough, a unit as "each", never a stored code; quantities and days
+  stay data.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--how-it-behaves) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language"
 
 ## Where it stands
 

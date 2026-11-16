@@ -1,12 +1,14 @@
 import { csvMoment } from '../../common/csv';
-import type { ExportColumn } from '../../common/export';
+import { type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
+import { UNIT_WORDS } from '../../common/units';
 import { t } from '../../i18n/translate';
 import type { ReorderPointRow } from './dto/reorder-point-response.dto';
 import type {
   StockCodeRow,
   StockLotRow,
 } from './dto/stock-grouped-response.dto';
+import { REORDER_STATUS_WORDS } from './reorder-status';
 import type { StockReadsService } from './stock-reads.service';
 
 type StockRow = Awaited<
@@ -48,9 +50,15 @@ export const STOCK_COLUMNS: ExportColumn<StockRow>[] = [
   { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
 ];
 
+/** A unit in the reader's words, "each", « unité », 个 (#473's 29). */
+function unitInWords<T extends { unitOfMeasure: string }>(): ExportColumn<T> {
+  return inWords(HEADERS.unit, UNIT_WORDS, (row) => row.unitOfMeasure);
+}
+
 /**
  * A row per code's export (ADR-093): each code's figures as its row shows
- * them, from the one read. Step 11 writes its codes in the screen's words.
+ * them, from the one read, its status and unit in the screen's words in
+ * the reader's language (#473's 29).
  */
 export const STOCK_CODE_COLUMNS: ExportColumn<StockCodeRow>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
@@ -86,7 +94,7 @@ export const STOCK_CODE_COLUMNS: ExportColumn<StockCodeRow>[] = [
   },
   { header: POSITION, value: (row) => row.position },
   { header: REORDER_POINT, value: (row) => row.reorderPoint },
-  { header: HEADERS.status, value: (row) => row.status },
+  inWords(HEADERS.status, REORDER_STATUS_WORDS, (row) => row.status),
   {
     header: t({
       id: 'exports.column.expiresFirst',
@@ -94,12 +102,13 @@ export const STOCK_CODE_COLUMNS: ExportColumn<StockCodeRow>[] = [
     }),
     value: (row) => row.expiresFirst,
   },
-  { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
+  unitInWords(),
 ];
 
 /**
  * The Lot view's export (ADR-093): a row per lot at each place, its place
- * named only for a reader who may see places (ADR-080).
+ * named only for a reader who may see places (ADR-080), its unit in the
+ * reader's words.
  */
 export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
@@ -109,7 +118,7 @@ export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   { header: HEADERS.expiry, value: (row) => row.lotExpiresAt },
   { header: HEADERS.location, value: (row) => row.locationName },
   { header: HEADERS.quantity, value: (row) => row.quantity },
-  { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
+  unitInWords(),
 ];
 
 /** The movements export (ADR-057): the ledger, as recorded. */

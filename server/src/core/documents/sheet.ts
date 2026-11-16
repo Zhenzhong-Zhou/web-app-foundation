@@ -9,6 +9,7 @@ import type {
 } from 'pdfmake/interfaces';
 
 import type { Locale } from '../../common/locales';
+import { UNIT_WORDS } from '../../common/units';
 import { t, type Translatable, translate } from '../../i18n/translate';
 import type { DocumentText } from './document-text';
 import { piecesOf } from './fonts';
@@ -510,25 +511,13 @@ export function notice(lines: string[], emphasis = false): Content {
   };
 }
 
-/** A unit of measure by name, in each language; any other as stored. */
-const UNITS: Record<string, Translatable> = {
-  each: t({ id: 'products.unit.each', defaultMessage: 'each' }),
-  kg: t({ id: 'products.unit.kg', defaultMessage: 'kg' }),
-  g: t({ id: 'products.unit.g', defaultMessage: 'g' }),
-  litre: t({ id: 'products.unit.litre', defaultMessage: 'litre' }),
-  ml: t({ id: 'products.unit.ml', defaultMessage: 'ml' }),
-  case: t({ id: 'products.unit.case', defaultMessage: 'case' }),
-  box: t({ id: 'products.unit.box', defaultMessage: 'box' }),
-  pallet: t({ id: 'products.unit.pallet', defaultMessage: 'pallet' }),
-};
-
 /** "20 box": the figure once, the unit in each language. */
 export function quantityWithUnit(
   doc: DocumentText,
   quantity: string,
   unitOfMeasure: string,
 ): string {
-  const unit = UNITS[unitOfMeasure];
+  const unit = UNIT_WORDS[unitOfMeasure];
   return [
     formatQuantity(quantity, doc.locale),
     unit ? doc.label(unit) : unitOfMeasure,

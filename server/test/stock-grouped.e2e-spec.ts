@@ -414,4 +414,62 @@ describe('Inventory, grouped (e2e)', () => {
     expect(await lotCodes('out=true')).toEqual([]);
     expect(await lotCodes('low=true&search=VC-FAR')).toEqual(['VC-FAR SHELF']);
   });
+
+  it('exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await world(alpha);
+
+    /** The CSV's lines, without its BOM, each split at its commas. */
+    const csv = async (path: string, language: string) =>
+      (
+        await alpha.agent.get(path).set('Accept-Language', language).expect(200)
+      ).text
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+
+    // Low stock holds the out: VITC low, MAG out, each its word and unit.
+    const byCode = await csv('/v1/stock/by-code/export?low=true', 'zh-Hans');
+    const head = byCode[0];
+    expect(head).toEqual(
+      expect.arrayContaining([
+        '编码',
+        '物品',
+        '现有',
+        '可用',
+        '已预留',
+        '状态',
+        '单位',
+      ]),
+    );
+    const cell = (row: string[], name: string) => row[head.indexOf(name)];
+    expect(byCode.slice(1).map((row) => cell(row, '编码'))).toEqual([
+      'MAG',
+      'VITC',
+    ]);
+    expect(byCode.slice(1).map((row) => cell(row, '状态'))).toEqual([
+      '缺货',
+      '不足',
+    ]);
+    expect(byCode.slice(1).map((row) => cell(row, '单位'))).toEqual([
+      '个',
+      '个',
+    ]);
+
+    const english = await csv('/v1/stock/by-code/export', 'en');
+    const status = english[0].indexOf('Status');
+    expect(english.slice(1).map((row) => row[status])).toEqual([
+      '',
+      '',
+      'Out',
+      'Low',
+    ]);
+
+    // The Lot view's, its filters kept: the expired lot alone.
+    const byLot = await csv('/v1/stock/by-lot/export?expired=true', 'fr-CA');
+    expect(byLot).toHaveLength(2);
+    expect(byLot[1][byLot[0].indexOf('Lot')]).toBe('VC-OLD');
+    expect(byLot[1][byLot[0].indexOf('Unité')]).toBe('unité');
+  });
 });
