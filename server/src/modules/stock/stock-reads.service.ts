@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   and,
   asc,
@@ -17,7 +17,11 @@ import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
-import { afterCursor, sortedOrder } from '../../common/sorted-page';
+import {
+  afterCursor,
+  notInThisList,
+  sortedOrder,
+} from '../../common/sorted-page';
 import { todayOf } from '../../core/organizations/time-zone';
 import { assertOwnIds } from '../../database/own-ids';
 import {
@@ -273,16 +277,8 @@ export class StockReadsService {
           );
 
         // Another tenant's row, or no row: either way not a place in this
-        // list, and a 400 rather than a 404 says nothing about whether it
-        // exists elsewhere.
-        if (!cursor) {
-          throw new BadRequestException(
-            t({
-              id: 'stock.cursorList',
-              defaultMessage: 'That cursor is not in this list',
-            }),
-          );
-        }
+        // list.
+        if (!cursor) throw notInThisList();
 
         scope.push(
           byExpiry

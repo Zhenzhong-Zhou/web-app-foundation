@@ -262,7 +262,11 @@ Use these rather than writing the thing again. The client's are under
   `dto/calendar-day.ts` (`IsCalendarDay`, which reads
   `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`),
   `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`). A DTO never
-  restates a rule's message; `$property` names the field.
+  restates a rule's message; `$property` names the field. A list sorted
+  pages through `sorted-page.ts`: `pagedBy` for a kept column, the cursor
+  a row's id; `orderOf`, `afterKeys`, `cursorOf` and `readKeys` for a
+  worked-out figure, the cursor its values; `notInThisList`, every list's
+  refusal of a cursor.
 - **`core/documents/`:** `sheet.ts` (`masthead`, `party`, `linesTable`,
   `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
   for who and where it names, and `DocumentsService.send` with a

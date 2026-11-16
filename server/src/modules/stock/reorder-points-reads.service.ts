@@ -1,14 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
+import { notInThisList } from '../../common/sorted-page';
 import { todayOf } from '../../core/organizations/time-zone';
 import {
   products,
@@ -258,14 +255,7 @@ export class ReorderPointsReadsService {
             ),
           );
 
-        if (!cursor) {
-          throw new BadRequestException(
-            t({
-              id: 'stock.cursorList',
-              defaultMessage: 'That cursor is not in this list',
-            }),
-          );
-        }
+        if (!cursor) throw notInThisList();
 
         conditions.push(sql`(p.low_first, p.share, ${productVariants.sku}, p.id) > (
           select c.low_first, c.share, cv.sku, c.id

@@ -12,6 +12,12 @@ import { EXPORT_LIMIT } from '../../common/export';
 import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { searchTerms } from '../../common/search';
+import {
+  afterKeys,
+  cursorOf,
+  orderOf,
+  readKeys,
+} from '../../common/sorted-page';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import type { RequestContext } from '../../core/auth/request-context';
@@ -64,14 +70,10 @@ import type {
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import {
-  afterKeys,
   countedOf,
   countsOf,
-  cursorOf,
   itemOrder,
   matchedBy,
-  orderOf,
-  readCursor,
   shownOf,
   type TypeCount,
 } from './item-list';
@@ -287,7 +289,7 @@ export class ProductsService {
       );
       const matched = matchedBy(query, search, organizationId);
       const after = query.cursor
-        ? afterKeys(parts, readCursor(query.cursor, order, parts))
+        ? afterKeys(parts, readKeys(query.cursor, order, parts))
         : undefined;
       const shown = and(
         eq(products.organizationId, organizationId),

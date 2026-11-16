@@ -1,10 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
 import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
-import type { SortOrder } from '../../common/sorted-page';
+import type { KeyPart } from '../../common/sorted-page';
 import { PRODUCT_TYPES, products } from '../../database/schema';
-import { t } from '../../i18n/translate';
 import { productNameOrder } from '../stock/item-name';
 import { itemStock } from '../stock/item-stock';
 import { categoryPaths } from './category-tree';
@@ -17,118 +15,9 @@ import type { ProductCounts } from './dto/product-response.dto';
 import type { ItemSearch } from './item-search';
 
 /**
- * Items' order and its cursor (ADR-092): the list is sorted by a key of
- * several parts, the id last, and paged by keyset, the cursor holding the
- * last row's parts, compared as a row. Unlike every other list's cursor,
- * a row's id read back, it carries the values themselves: a rank or a
- * stock is worked out, not kept on the row, and reading it back would
- * place the cursor where the row is now, not where the page left it.
- */
-
-/** What a part compares as: its cursor's text is cast back to it. */
-type KeyType = 'text' | 'int' | 'numeric' | 'uuid';
-
-/** One part of the order: never null, so a row comparison holds. */
-interface KeyPart {
-  value: SQL;
-  type: KeyType;
-  order: SortOrder;
-}
-
-const SHAPES: Record<KeyType, (value: string) => boolean> = {
-  text: () => true,
-  int: (value) => /^-?\d{1,9}$/.test(value),
-  numeric: (value) => /^-?\d{1,18}(\.\d{1,8})?$/.test(value),
-  uuid: (value) =>
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      value,
-    ),
-};
-
-const NOT_IN_THIS_LIST = () =>
-  new BadRequestException(
-    t({
-      id: 'stock.cursorList',
-      defaultMessage: 'That cursor is not in this list',
-    }),
-  );
-
-/** The parts as ORDER BY, each its own way. */
-export function orderOf(parts: KeyPart[]): SQL[] {
-  return parts.map((part) =>
-    part.order === 'asc' ? sql`${part.value} asc` : sql`${part.value} desc`,
-  );
-}
-
-/** A part's cursor value, cast back to what the part compares as. */
-function typed(part: KeyPart, value: string): SQL {
-  return sql`${value}::${sql.raw(part.type)}`;
-}
-
-/**
- * The rows after the cursor's, in orderOf's order: the first part beyond
- * its value, or equal and the rest after theirs. Written out part by part
- * rather than as one row comparison, which Postgres reads one way only,
- * while a part such as a search's rank runs ascending whichever way the
- * sort does.
- */
-export function afterKeys(parts: KeyPart[], values: string[]): SQL {
-  const [part, ...rest] = parts;
-  const [value, ...others] = values;
-  const beyond = part.order === 'asc' ? sql`>` : sql`<`;
-  const cast = typed(part, value);
-
-  if (rest.length === 0) return sql`${part.value} ${beyond} ${cast}`;
-  return sql`(${part.value} ${beyond} ${cast}
-    or (${part.value} = ${cast} and ${afterKeys(rest, others)}))`;
-}
-
-/**
- * The cursor after a row: the order it was made in, so a cursor from
- * another sort, direction or language is refused rather than misplaced,
- * and the row's parts as text. Base64url, so the address carries it as it
- * is.
- */
-export function cursorOf(order: string, values: string[]): string {
-  return Buffer.from(JSON.stringify({ o: order, v: values })).toString(
-    'base64url',
-  );
-}
-
-/**
- * The cursor's values, each checked against its part, or a 400: one made
- * for another order, or not made here, is no place in this list.
- */
-export function readCursor(
-  cursor: string,
-  order: string,
-  parts: KeyPart[],
-): string[] {
-  let read: unknown;
-  try {
-    read = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-  } catch {
-    throw NOT_IN_THIS_LIST();
-  }
-
-  const { o, v } = (read ?? {}) as { o?: unknown; v?: unknown };
-  if (
-    o !== order ||
-    !Array.isArray(v) ||
-    v.length !== parts.length ||
-    !v.every(
-      (value, index) =>
-        typeof value === 'string' && SHAPES[parts[index].type](value),
-    )
-  ) {
-    throw NOT_IN_THIS_LIST();
-  }
-  return v as string[];
-}
-
-/**
  * Items' order (ADR-092): its parts, the order's name for its cursor, and
- * what the query joins to sort by, each a left join.
+ * what the query joins to sort by, each a left join. Paged by sorted-page's
+ * keys, the cursor holding the last row's parts.
  *
  * - **Name,** the default: the name the reader sees, a Chinese one by its
  *   pinyin, the others accent-free (ADR-056), a number in it by its value
