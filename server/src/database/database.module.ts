@@ -57,6 +57,15 @@ export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
           idleTimeoutMillis: 30_000,
           // Fail fast rather than hanging forever on an unreachable database.
           connectionTimeoutMillis: 5_000,
+          // JIT off (ADR-051). Postgres compiles a statement estimated past
+          // jit_above_cost to machine code before running it: at the large
+          // volume that took 90 to 145 ms on each of Inventory's counts,
+          // more than the 84 to 95 ms of the work itself. The app's reads
+          // are short, so the compile never pays for itself. Set on the
+          // pool, so production, the tests, the timed runs and the plan
+          // check, which uses this pool, all read the same way. A
+          // DATABASE_URL carrying its own `options` would replace this.
+          options: '-c jit=off',
         });
       },
     },
