@@ -105,8 +105,6 @@ export function onHandByUse(
   today: string,
   variants: SQL,
 ): SQL {
-  const org = sql`${organizationId}::uuid`;
-
   return sql`
     select
       h.variant_id,
@@ -115,21 +113,7 @@ export function onHandByUse(
       coalesce(u.expired, 0) as expired,
       coalesce(u.issued, 0) as issued,
       h.unavailable
-    from (
-      select
-        sl.variant_id,
-        sum(sl.quantity) as on_hand,
-        coalesce(sum(sl.quantity) filter (where not loc.is_available), 0)
-          as unavailable
-      from stock_levels sl
-      join locations loc
-        on loc.id = sl.location_id
-        and loc.organization_id = ${org}
-      where sl.organization_id = ${org}
-        and sl.variant_id in ${variants}
-        and sl.quantity > 0
-      group by sl.variant_id
-    ) h
+    from (${onHandByItem(organizationId, variants)}) h
     left join (
       select
         a.variant_id,
@@ -139,5 +123,31 @@ export function onHandByUse(
       from (${usableByLocation(organizationId, today, variants)}) a
       group by a.variant_id
     ) u on u.variant_id = h.variant_id
+  `;
+}
+
+/**
+ * On hand per item at every place, usable or not, and the part of it at
+ * places not available (ADR-042): onHandByUse's first half, and alone
+ * what a list sorted by On hand reads (ADR-093, 29a). Rows `variant_id,
+ * on_hand, unavailable`, for the items in `variants` with stock anywhere.
+ */
+export function onHandByItem(organizationId: string, variants: SQL): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select
+      sl.variant_id,
+      sum(sl.quantity) as on_hand,
+      coalesce(sum(sl.quantity) filter (where not loc.is_available), 0)
+        as unavailable
+    from stock_levels sl
+    join locations loc
+      on loc.id = sl.location_id
+      and loc.organization_id = ${org}
+    where sl.organization_id = ${org}
+      and sl.variant_id in ${variants}
+      and sl.quantity > 0
+    group by sl.variant_id
   `;
 }

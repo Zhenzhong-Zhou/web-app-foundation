@@ -2,7 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import { holdsSql } from './availability';
 import { statusOf } from './reorder-status';
-import { onHandByUse } from './usable-stock';
+import { onHandByItem, onHandByUse, usableByItem } from './usable-stock';
 
 /**
  * The one read for a code's figures (ADR-093, R1 and R20): Inventory's
@@ -47,19 +47,12 @@ export function codeFigures(
 
   return sql`
     with stock as materialized (${onHandByUse(organizationId, today, variants)}),
-    holds as materialized (
-      select
-        hl.variant_id,
-        sum(hl.held) as held,
-        sum(hl.outstanding) as still_needed
-      from (${holdsSql(
-        organizationId,
-        today,
-        variants,
-        sql`select st.variant_id, st.usable from stock st`,
-      )}) hl
-      group by hl.variant_id
-    ),
+    holds as materialized (${heldOf(
+      organizationId,
+      today,
+      variants,
+      sql`select st.variant_id, st.usable from stock st`,
+    )}),
     coming as materialized (
       select
         cm.variant_id,
@@ -93,22 +86,7 @@ export function codeFigures(
       ) cm
       group by cm.variant_id
     ),
-    expiry as materialized (
-      select sl.variant_id, min(lt.expires_at) as expires_first
-      from stock_levels sl
-      join locations loc
-        on loc.id = sl.location_id
-        and loc.organization_id = ${org}
-      join lots lt
-        on lt.id = sl.lot_id
-        and lt.organization_id = ${org}
-      where sl.organization_id = ${org}
-        and sl.variant_id in ${variants}
-        and sl.quantity > 0
-        and loc.is_available
-        and lt.expires_at >= ${today}::date
-      group by sl.variant_id
-    ),
+    expiry as materialized (${expiresFirstOf(organizationId, today, variants)}),
     figures as (
       select
         v.id as variant_id,
@@ -119,7 +97,7 @@ export function codeFigures(
         coalesce(s.issued, 0) as issued,
         coalesce(s.unavailable, 0) as unavailable,
         coalesce(h.held, 0) as held,
-        greatest(0, coalesce(s.usable, 0) - coalesce(h.held, 0)) as free,
+        ${freeOf(sql`coalesce(s.usable, 0)`, sql`coalesce(h.held, 0)`)} as free,
         coalesce(h.still_needed, 0) as still_needed,
         coalesce(h.still_needed, 0) - coalesce(h.held, 0) as short,
         coalesce(c.quantity, 0) as coming,
@@ -171,5 +149,117 @@ export function codeFigures(
         active: sql`f.active`,
       })} end as status
     from figures f
+  `;
+}
+
+/** The figures a list of codes sorts by besides the name (ADR-057, amended). */
+export type SortedFigure = 'onHand' | 'free' | 'expires';
+
+/**
+ * One of a code's figures alone, for every item in `variants`: what a list
+ * sorted by it reads before it reads its page's codes in full (ADR-093,
+ * 29a). Built from codeFigures' own parts, so the figure is the one the
+ * row shows, never a second copy of its rule: On hand from on hand by
+ * item, Free from the usable and the holds, Expires first from the
+ * expiry. Rows `variant_id, value`, one per item with any; the others
+ * have none, 0 or no expiry.
+ *
+ * Narrow on purpose: a list that keeps every code gives the planner no
+ * good guess of how many there are, and it then joins the full figures'
+ * parts row by row, thirteen times the cost of reading them (step 13's
+ * explain). Each form here is one pass grouped by item, Free its two
+ * sums unioned rather than joined, so no guess makes it work one item
+ * at a time.
+ */
+export function sortedFigure(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+  figure: SortedFigure,
+): SQL {
+  if (figure === 'onHand') {
+    return sql`
+      select oh.variant_id, oh.on_hand as value
+      from (${onHandByItem(organizationId, variants)}) oh
+    `;
+  }
+  if (figure === 'expires') {
+    return sql`
+      select ex.variant_id, ex.expires_first as value
+      from (${expiresFirstOf(organizationId, today, variants)}) ex
+    `;
+  }
+  return sql`
+    with usable as materialized (${usableByItem(organizationId, today, variants)}),
+    holds as materialized (${heldOf(
+      organizationId,
+      today,
+      variants,
+      sql`select us.variant_id, us.usable from usable us`,
+    )})
+    select
+      fr.variant_id,
+      ${freeOf(sql`sum(fr.usable)`, sql`sum(fr.held)`)} as value
+    from (
+      select us.variant_id, us.usable, 0 as held from usable us
+      union all
+      select hd.variant_id, 0, hd.held from holds hd
+    ) fr
+    group by fr.variant_id
+  `;
+}
+
+/** Free, the one rule: usable less held, never below 0 (ADR-045, amended). */
+function freeOf(usable: SQL, held: SQL): SQL {
+  return sql`greatest(0, ${usable} - ${held})`;
+}
+
+/**
+ * What confirmed sales hold of the `supply`, rows `variant_id, usable`,
+ * and what they still need, per item: rows `variant_id, held,
+ * still_needed` (availability.ts's holds).
+ */
+function heldOf(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+  supply: SQL,
+): SQL {
+  return sql`
+    select
+      hl.variant_id,
+      sum(hl.held) as held,
+      sum(hl.outstanding) as still_needed
+    from (${holdsSql(organizationId, today, variants, supply)}) hl
+    group by hl.variant_id
+  `;
+}
+
+/**
+ * The soonest expiry of the usable stock per item, lots not expired at
+ * places marked available: rows `variant_id, expires_first`.
+ */
+function expiresFirstOf(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select sl.variant_id, min(lt.expires_at) as expires_first
+    from stock_levels sl
+    join locations loc
+      on loc.id = sl.location_id
+      and loc.organization_id = ${org}
+    join lots lt
+      on lt.id = sl.lot_id
+      and lt.organization_id = ${org}
+    where sl.organization_id = ${org}
+      and sl.variant_id in ${variants}
+      and sl.quantity > 0
+      and loc.is_available
+      and lt.expires_at >= ${today}::date
+    group by sl.variant_id
   `;
 }

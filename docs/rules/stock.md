@@ -66,6 +66,12 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per code with its figures, and Include empty the rest" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s"
+- **Sorted by On hand, Free or Expires first, each page follows the
+  figure its rows show, either way,** a code with nothing to expire last
+  both ways; at one place chosen, On hand and Expires first are what is
+  there.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "reads each figure sort’s pages in the order of the figures they show, either way"
 - **Each quick filter's count is the rows it shows,** with the other
   filters on and its own off: Low stock holds the out, and Expiring soon
   the expired, as Home's tiles do.

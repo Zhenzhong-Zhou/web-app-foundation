@@ -45,6 +45,11 @@ interface Item {
    * drawn on here, so a sale ships only what its home bin holds.
    */
   elsewhere: number;
+  /**
+   * In lots expired already (ADR-093, 32a): on hand, but never drawn on,
+   * since no sale may hold it.
+   */
+  expired: number;
   /** Receipts so far, which decide by position which are put away apart. */
   receipts: number;
 }
@@ -137,6 +142,23 @@ const PARTNER_KINDS = [
 const APART_EVERY = 6;
 
 /**
+ * Every this many lots expires within the year after the seed's day, and
+ * every `PAST_EVERY`th has expired already (ADR-093, 32a), so Expiring
+ * soon and Expired have rows whenever the volume is read in that year,
+ * GitHub's cached one included. By position, never from the random
+ * source: the rest of the year is the year it was.
+ */
+const WITHIN_YEAR_EVERY = 5;
+const PAST_EVERY = 100;
+
+/**
+ * A step through the year's days, prime to 365, so the dated lots spread
+ * evenly over it however few there are. From the second day after the
+ * seed's: an organization ahead of UTC may already be on the next.
+ */
+const DAY_STRIDE = 53;
+
+/**
  * Writes one organization's year (ADR-051), a week at a time.
  *
  * In the order a business does things, so every step is one the services
@@ -165,6 +187,7 @@ export class OrganizationWriter {
   private traceLotId: string | null = null;
 
   private sequence = 0;
+  private lotCount = 0;
   private calls = 0;
   private skippedSales = 0;
 
@@ -431,6 +454,7 @@ export class OrganizationWriter {
         onHand: 0,
         committed: 0,
         elsewhere: 0,
+        expired: 0,
         receipts: 0,
       };
 
@@ -553,13 +577,14 @@ export class OrganizationWriter {
         const item = this.itemFor(line.variantId);
         const quantity = line.quantityOrdered;
 
+        const lot = item.tracked ? this.newLot(120, 900) : undefined;
         const receipt = await this.services.receipts.receive(
           order.id,
           line.id,
           {
             toLocationId: this.dockId,
             quantity,
-            lot: item.tracked ? this.newLot(120, 900) : undefined,
+            lot,
           },
           this.actorId,
         );
@@ -595,8 +620,12 @@ export class OrganizationWriter {
           this.calls++;
         }
 
-        item.onHand += Number(quantity) - apart;
-        item.elsewhere += apart;
+        if (this.isExpired(lot)) {
+          item.expired += Number(quantity);
+        } else {
+          item.onHand += Number(quantity) - apart;
+          item.elsewhere += apart;
+        }
         this.calls += 2;
       }
     }
@@ -646,9 +675,10 @@ export class OrganizationWriter {
       const loss = this.random.int(0, Math.floor(planned * 0.03));
       const produced = planned - loss;
 
+      const lot = this.newLot(365, 1_000);
       const output = await this.services.execution.recordOutput(
         run.id,
-        { quantity: String(produced), lot: this.newLot(365, 1_000) },
+        { quantity: String(produced), lot },
         this.actorId,
       );
 
@@ -667,7 +697,8 @@ export class OrganizationWriter {
         this.actorId,
       );
 
-      recipe.output.onHand += produced;
+      if (this.isExpired(lot)) recipe.output.expired += produced;
+      else recipe.output.onHand += produced;
       this.traceLotId ??= output.lotId;
       this.calls += 5;
     }
@@ -1066,18 +1097,40 @@ export class OrganizationWriter {
       : `${word} ${kind} ${pad(index, 4)}`;
   }
 
-  /** A lot code unique in the organization, expiring in a range of days. */
-  private newLot(minDays: number, maxDays: number) {
+  /**
+   * A lot code unique in the organization, expiring in a range of days;
+   * by its position, within the year after the seed's day or already
+   * past (32a).
+   */
+  private newLot(
+    minDays: number,
+    maxDays: number,
+  ): { code: string; expiresAt?: string } {
     const code = `LV-${pad(this.next(), 7)}`;
+    const position = ++this.lotCount;
 
     // A tenth never expire, so earliest-expiry-first has undated lots to
-    // sort last, as it does with real stock (ADR-039).
-    if (this.random.chance(0.1)) return { code };
+    // sort last, as it does with real stock (ADR-039). Drawn as before
+    // whatever the position says, so the random source stays in step.
+    const drawn = this.random.chance(0.1)
+      ? null
+      : this.random.int(minDays, maxDays);
+    const days =
+      position % PAST_EVERY === 0
+        ? -(2 + ((position / PAST_EVERY) % 60))
+        : position % WITHIN_YEAR_EVERY === 0
+          ? 2 + (((position / WITHIN_YEAR_EVERY) * DAY_STRIDE) % 363)
+          : drawn;
+    if (days === null) return { code };
 
     const expires = new Date();
-    const days = this.random.int(minDays, maxDays);
     expires.setUTCDate(expires.getUTCDate() + days);
     return { code, expiresAt: expires.toISOString().slice(0, 10) };
+  }
+
+  /** A lot already expired on the seed's day, which no sale may hold. */
+  private isExpired(lot: { expiresAt?: string } | undefined): boolean {
+    return lot?.expiresAt !== undefined && lot.expiresAt < this.today;
   }
 
   /**

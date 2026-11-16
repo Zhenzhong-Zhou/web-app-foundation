@@ -29,7 +29,7 @@ import { t } from '../../i18n/translate';
 import { categoryPaths } from '../products/category-tree';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
-import { codeFigures } from './code-figures';
+import { codeFigures, type SortedFigure, sortedFigure } from './code-figures';
 import type {
   ListStockByCodeDto,
   ListStockByLotDto,
@@ -188,6 +188,46 @@ function pointed(organizationId: string): SQL {
 }
 
 /**
+ * The CTEs `s` and `k` a list sorted by a figure reads (ADR-093, 29a),
+ * after `codes`: the figure alone for every code kept, from codeFigures'
+ * own parts (sortedFigure), or at the place chosen what is there
+ * (hereOf); then `k`, a row per code with its figure as `value`, null
+ * for a code with none, which the list reads as `c` as it reads `codes`. The codes and their figures are unioned and
+ * grouped rather than joined, so however few codes the planner guesses,
+ * it never reads the figures again for each.
+ */
+function sortedKeys(
+  organizationId: string,
+  today: string,
+  sort: SortedFigure,
+  here: string | undefined,
+): SQL {
+  const codes = sql`(select c.variant_id from codes c)`;
+  const empty = sort === 'expires' ? sql`null::date` : sql`null::numeric`;
+  const figure = here
+    ? sql`
+        select hr.variant_id,
+          ${sort === 'expires' ? sql`hr.expires_first` : sql`hr.on_hand`} as value
+        from (${hereOf(organizationId, today, here, codes)}) hr
+      `
+    : sortedFigure(organizationId, today, codes, sort);
+
+  return sql`
+    s as materialized (${figure}),
+    k as materialized (
+      select kc.variant_id,
+        ${sort === 'expires' ? sql`min(kc.value)` : sql`sum(kc.value)`} as value
+      from (
+        select c.variant_id, ${empty} as value from codes c
+        union all
+        select s.variant_id, s.value from s
+      ) kc
+      group by kc.variant_id
+    )
+  `;
+}
+
+/**
  * Each code's stock at one place (20a), for the items in `variants`:
  * on hand there, its lots there, and the soonest expiry of the usable
  * stock there, as a code's own expires first is the usable stock's.
@@ -299,10 +339,11 @@ export class StockGroupedService {
    * hand, Free or Expires first (ADR-057, amended), each then by name,
    * code and id; paged by the sort's values (sorted-page.ts), since a
    * figure is worked out, not kept. By name with no Low stock or Out,
-   * only the page's codes are worked out; a sort by a figure, or either
-   * filter, works out every code the other filters keep, Low stock and
-   * Out only those with a point. At one place, On hand and Expires first
-   * sort by what is there, as the row shows it.
+   * only the page's codes are worked out; a sort by a figure works out
+   * that figure alone for every code the other filters keep (29a), and
+   * Low stock and Out the figures of the codes with a point; then the
+   * page's codes in full. At one place, On hand and Expires first sort by
+   * what is there, as the row shows it.
    *
    * Items named in the locale given, or by their base names for null, as
    * the CSV export reads them (ADR-056).
@@ -335,12 +376,6 @@ export class StockGroupedService {
           : query.low === 'true'
             ? sql`f.status in ('low', 'out')`
             : undefined;
-      const figuresOf =
-        sort !== 'name'
-          ? sql`(select c.variant_id from codes c)`
-          : status
-            ? pointed(organizationId)
-            : undefined;
 
       const rows = rowFilters(
         query,
@@ -367,7 +402,6 @@ export class StockGroupedService {
         type: 'uuid',
         order: 'asc',
       };
-      const expiresFirst = here ? sql`h.expires_first` : sql`f.expires_first`;
       const byKey: Record<typeof sort, KeyPart[]> = {
         name: [
           { ...name, order: way },
@@ -375,29 +409,21 @@ export class StockGroupedService {
           { ...id, order: way },
         ],
         onHand: [
-          {
-            value: here ? sql`coalesce(h.on_hand, 0)` : sql`f.on_hand`,
-            type: 'numeric',
-            order: way,
-          },
+          { value: sql`coalesce(c.value, 0)`, type: 'numeric', order: way },
           name,
           code,
           id,
         ],
         free: [
-          { value: sql`f.free`, type: 'numeric', order: way },
+          { value: sql`coalesce(c.value, 0)`, type: 'numeric', order: way },
           name,
           code,
           id,
         ],
         expires: [
+          { value: sql`(c.value is null)::int`, type: 'int', order: 'asc' },
           {
-            value: sql`(${expiresFirst} is null)::int`,
-            type: 'int',
-            order: 'asc',
-          },
-          {
-            value: sql`coalesce(${expiresFirst} - date '1970-01-01', 0)`,
+            value: sql`coalesce(c.value - date '1970-01-01', 0)`,
             type: 'int',
             order: way,
           },
@@ -426,35 +452,25 @@ export class StockGroupedService {
           )}
         )
         ${
-          figuresOf
-            ? sql`, f as materialized (${codeFigures(organizationId, today, figuresOf)})`
+          status
+            ? sql`, f as materialized (${codeFigures(organizationId, today, pointed(organizationId))})`
             : sql``
         }
-        ${
-          here
-            ? sql`, h as materialized (${hereOf(
-                organizationId,
-                today,
-                here,
-                sql`(select c.variant_id from codes c)`,
-              )})`
-            : sql``
-        }
+        ${sort === 'name' ? sql`` : sql`, ${sortedKeys(organizationId, today, sort, here)}`}
         select
           ${productVariants.id} as id,
           array[${sql.join(
             parts.map((part) => sql`(${part.value})::text`),
             sql`, `,
           )}] as keys
-        from codes c
+        from ${sort === 'name' ? sql`codes c` : sql`k c`}
         join ${productVariants}
           on ${productVariants.id} = c.variant_id
           and ${productVariants.organizationId} = ${org}
         join ${products}
           on ${products.id} = ${productVariants.productId}
           and ${products.organizationId} = ${org}
-        ${figuresOf ? sql`left join f on f.variant_id = c.variant_id` : sql``}
-        ${here ? sql`left join h on h.variant_id = c.variant_id` : sql``}
+        ${status ? sql`left join f on f.variant_id = c.variant_id` : sql``}
         where ${and(
           sql`true`,
           status,

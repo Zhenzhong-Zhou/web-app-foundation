@@ -275,6 +275,81 @@ describe('Inventory, grouped (e2e)', () => {
     await alpha.agent.get('/v1/stock/by-code?sort=quantity').expect(400);
   });
 
+  it('reads each figure sort’s pages in the order of the figures they show, either way', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { shelf } = await world(alpha);
+
+    type Figures = {
+      onHand: string;
+      free: string;
+      expiresFirst: string | null;
+      here: { onHand: string; expiresFirst: string | null } | null;
+    };
+    const of = (row: CodeRow) => row as unknown as Figures;
+    /** The figure a row shows for the sort: at the place chosen, its own. */
+    const shown: Record<string, (row: CodeRow) => string | null> = {
+      onHand: (row) => of(row).here?.onHand ?? of(row).onHand,
+      free: (row) => of(row).free,
+      expires: (row) => {
+        const { here, expiresFirst } = of(row);
+        return here ? here.expiresFirst : expiresFirst;
+      },
+    };
+    /** -1, 0 or 1 as a comes before, with or after b; no expiry last. */
+    const compare = (sort: string, a: string | null, b: string | null) => {
+      if (sort === 'expires') {
+        if (a === b) return 0;
+        if (a === null) return 1;
+        if (b === null) return -1;
+        return a < b ? -1 : 1;
+      }
+      return Math.sign(Number(a) - Number(b));
+    };
+
+    for (const sort of Object.keys(shown)) {
+      for (const order of ['asc', 'desc']) {
+        for (const place of ['', `&locationId=${shelf}`]) {
+          const query = `sort=${sort}&order=${order}${place}`;
+          const rows: CodeRow[] = [];
+          let before: string | null = null;
+          do {
+            const page: { entries: CodeRow[]; nextCursor: string | null } =
+              body(
+                await alpha.agent
+                  .get(
+                    `/v1/stock/by-code?${query}&limit=2${before ? `&before=${before}` : ''}`,
+                  )
+                  .expect(200),
+              );
+            rows.push(...page.entries);
+            before = page.nextCursor;
+          } while (before);
+
+          // Every code once, as the whole list has them.
+          expect({ query, skus: skus(rows).sort() }).toEqual({
+            query,
+            skus: skus(await codes(alpha, `?${query}`)).sort(),
+          });
+          // Each next to the one before, as its figure says; no expiry
+          // last either way.
+          for (let i = 1; i < rows.length; i++) {
+            const [a, b] = [shown[sort](rows[i - 1]), shown[sort](rows[i])];
+            const way =
+              sort === 'expires' && (a === null || b === null)
+                ? compare(sort, a, b)
+                : compare(sort, a, b) * (order === 'desc' ? -1 : 1);
+            expect({ query, a, b, inOrder: way <= 0 }).toEqual({
+              query,
+              a,
+              b,
+              inOrder: true,
+            });
+          }
+        }
+      }
+    }
+  });
+
   it('keeps what is at one place, its figures there, Free and Held the whole item’s', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { shelf } = await world(alpha);

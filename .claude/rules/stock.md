@@ -43,9 +43,10 @@ What to keep true when changing stock's code.
   these sums up again (ADR-093, R1 and R20). `code-figures.e2e-spec.ts`
   holds the screens' routes to it.
 - **Inventory's grouped read is `stock-grouped.service.ts`:** a row per
-  code from `codeFigures`, the Lot view from `stockRowsOf`'s rows, so
-  Home's Expiring soon counts its rows; both paged by sorted-page's
-  keys, a place's name sent only with `locations.view` (ADR-093).
+  code from `codeFigures`, a figure sort `sortedFigure` unioned with
+  the codes, never joined (29a); the Lot view from `stockRowsOf`'s rows,
+  as Home counts them; a place's name only with `locations.view`
+  (ADR-093).
 - **The lines behind a code's figures are `code-lines.ts`:** Coming's
   documents, Held's sales and the usable lots without places, each read
   by the rule its figure is, so they add up. Where it stands

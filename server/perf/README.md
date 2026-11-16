@@ -94,6 +94,13 @@ runs and counts draw on the first bin alone, so none is refused, and the
 reorder points are set on the whole stock. By position, not from the random
 source: the rest of the year is the year it was.
 
+One lot in five expires within the year after the seed's day, spread
+evenly over it, and one in a hundred has expired already, also by position
+(ADR-093): so Inventory's Expiring soon and Expired, and the sorts by
+Expires first, have rows whenever the volume is read that year, GitHub's
+cached one included. The expired are never drawn on by the seed's sales,
+since no sale may hold them.
+
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
