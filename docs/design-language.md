@@ -154,10 +154,12 @@ Each with what holds it in the code today, or the issue that will.
   - its scrolling part taking keyboard focus, with a name;
   - a detail opened from a row opening below it, the scroll kept, never
     sliding the table sideways.
-- The next cards are Inventory's two tabs, Stock and Reorder points, in
-  Movements' turn (ADR-093), and the item's names table in Items' next.
-- Reorder points' card holds the name, the status, "12 left · reorder at
-  36" and the main action; at `sm`, the suggested order too.
+- Inventory's two tabs have their cards (ADR-093): Stock's holds the
+  name, the status, On hand, Free and Expires first, and opens to Held,
+  Coming and its lots; Reorder's holds the name, the status, "12 left ·
+  reorder at 36" and the main action; at `sm`, the suggested order too.
+  The next cards are Movements', in its branch, and the item's names
+  table, in Items' next.
 
 ### A main action the role cannot use
 
