@@ -114,43 +114,52 @@ test('Reorder, a row, Buy 80: a purchase order filled in with this item and 80, 
   await expect(names(page)).toHaveCount(4);
 });
 
-test('Reorder, a row, Make 1,000: Plan a run, filled in, nothing saved until Plan run; then its draft in the row', async ({
-  page,
-  freshOrg,
-}) => {
-  await reorderScene(freshOrg.api);
-  await signInAs(page, freshOrg.api);
-  await reorderFrom(page);
+for (const width of [1366, 820]) {
+  test(`Reorder, a row, Make 1,000: Plan a run, filled in, nothing saved until Plan run; then its draft in the row, focus on it, at ${width} px`, async ({
+    page,
+    freshOrg,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await reorderScene(freshOrg.api);
+    await signInAs(page, freshOrg.api);
+    await reorderFrom(page);
 
-  await row(page, 'E2E Focus')
-    .getByRole('button', { name: 'Make 1,000 of E2E Focus' })
-    .click();
+    await row(page, 'E2E Focus')
+      .getByRole('button', { name: 'Make 1,000 of E2E Focus' })
+      .click();
 
-  const dialog = page.getByRole('dialog', { name: 'Plan a run' });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/^Filled from Reorder: 1,000/)).toBeVisible();
-  await expect(
-    dialog.getByRole('textbox', { name: 'Quantity to make' }),
-  ).toHaveValue('1000');
+    const dialog = page.getByRole('dialog', { name: 'Plan a run' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText(/^Filled from Reorder: 1,000/)).toBeVisible();
+    await expect(
+      dialog.getByRole('textbox', { name: 'Quantity to make' }),
+    ).toHaveValue('1000');
 
-  const runs = async () =>
-    (
-      (await (await freshOrg.api.get('/v1/production-orders')).json()) as {
-        entries: unknown[];
-      }
-    ).entries.length;
-  expect(await runs()).toBe(0);
+    const runs = async () =>
+      (
+        (await (await freshOrg.api.get('/v1/production-orders')).json()) as {
+          entries: unknown[];
+        }
+      ).entries.length;
+    expect(await runs()).toBe(0);
 
-  await dialog.getByRole('combobox', { name: 'Made at' }).click();
-  await page
-    .getByRole('option', { name: 'E2E Shelf A2', exact: true })
-    .and(page.locator('[data-value]'))
-    .click();
-  await dialog.getByRole('button', { name: 'Plan run' }).click();
-  await expect(dialog).toBeHidden();
-  await expect(row(page, 'E2E Focus')).toContainText(/Drafted in .* · 1,000/);
-  expect(await runs()).toBe(1);
-});
+    await dialog.getByRole('combobox', { name: 'Made at' }).click();
+    await page
+      .getByRole('option', { name: 'E2E Shelf A2', exact: true })
+      .and(page.locator('[data-value]'))
+      .click();
+    await dialog.getByRole('button', { name: 'Plan run' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(row(page, 'E2E Focus')).toContainText(/Drafted in .* · 1,000/);
+    expect(await runs()).toBe(1);
+    // Make is gone from the row: focus is on the run just drafted, not the
+    // page's start, at either width (WCAG 2.4.3).
+    await expect(page.locator(':focus')).toHaveAttribute(
+      'href',
+      /^\/production\//,
+    );
+  });
+}
 
 test('Reorder, ticks two rows: the bar names them and their quantities, with Buy 2 on one purchase order; Clear, the ticks gone', async ({
   page,

@@ -515,8 +515,10 @@ function PointRow({
         </TableCell>
         <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
           <Suggestion row={row} />
+          {/* Focus goes to whichever copy shows: focus on a hidden one does
+              nothing (WCAG 2.4.3, review 60). */}
           <Box sx={{ ...NARROW_ONLY, mt: 0.5, textAlign: 'left' }}>
-            {!!row.drafts.length && <Drafts row={row} />}
+            {!!row.drafts.length && <Drafts row={row} focused={planned} />}
           </Box>
         </TableCell>
         <TableCell sx={WIDE_ONLY}>

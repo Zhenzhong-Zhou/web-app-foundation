@@ -4352,7 +4352,7 @@ site, after a deploy that changes the setting, the route or the relay.
   Cancel saves nothing. Plan it again at 24, Made at Office, Plan run:
   "Run planned", and the row's In draft reads Drafted in the run, without
   reloading the page, and focus is on the run's link, not the page's
-  start. Production's own Plan a run shows Uses too, once an
+  start; at 820 px too, the draft under Suggested. Production's own Plan a run shows Uses too, once an
   item with a recipe and a quantity are in. Fatima Haddad (Sales) and
   Chloé Tremblay (Viewer), who plan no runs, see no Make. In 中文:
   计划生产, the note 已按库存下限填写, and 用料.
@@ -6593,3 +6593,5 @@ first.
   MC-317.
 - 2026-11-17: ADR-093's review, 59: a point saved from Stock's Actions
   reads the row and the counts again: MC-4210.
+- 2026-11-17: ADR-093's review, 60: after Make at 600–899 px, focus on
+  the run's link under Suggested: MC-4216.
