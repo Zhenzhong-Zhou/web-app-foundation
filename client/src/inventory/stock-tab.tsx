@@ -20,7 +20,6 @@ import {
 
 import { WhomToAskRead } from '../account/whom-to-ask';
 import type {
-  Location,
   ProductCategoryList,
   ProductDetail,
   StockCodeCounts,
@@ -79,6 +78,7 @@ import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
 import type { Pile } from './stock-actions';
 import { StockCodes, type StockHandlers } from './stock-codes';
 import { StockLots } from './stock-lots';
+import { byWarehouse } from './stock-places';
 
 /** A page of Inventory, fifty codes or lots (ADR-093, R16). */
 const PAGE_SIZE = 50;
@@ -929,34 +929,4 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       )}
     </Stack>
   );
-}
-
-/**
- * The places stock can sit in, under the place at the top of the tree
- * they are in, their warehouse or site (20a), each group by name as the
- * tree sends them.
- */
-function byWarehouse(
-  all: Location[],
-  leaves: Location[],
-): [Location, Location[]][] {
-  const byId = new Map(all.map((location) => [location.id, location]));
-  const topOf = (location: Location): Location => {
-    let at = location;
-    const seen = new Set<string>();
-    while (at.parentId && byId.has(at.parentId) && !seen.has(at.id)) {
-      seen.add(at.id);
-      at = byId.get(at.parentId)!;
-    }
-    return at;
-  };
-
-  const groups = new Map<string, [Location, Location[]]>();
-  for (const leaf of leaves) {
-    const top = topOf(leaf);
-    const entry = groups.get(top.id) ?? [top, []];
-    entry[1].push(leaf);
-    groups.set(top.id, entry);
-  }
-  return [...groups.values()];
 }

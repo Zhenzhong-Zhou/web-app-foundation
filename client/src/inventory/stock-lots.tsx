@@ -22,6 +22,7 @@ import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { EmptiedLine } from './emptied-line';
 import { PileActions, type StockHandlers } from './stock-codes';
+import { withPlaceNumbers } from './stock-places';
 
 /** The words of its headers and figures. */
 const HEADS = defineMessages({
@@ -180,18 +181,6 @@ export function StockLots({
       }
     />
   );
-}
-
-/** Each row with which of its lot's places it is, by the rows read so far. */
-function withPlaceNumbers(
-  rows: StockLotRow[],
-): { row: StockLotRow; index: number }[] {
-  const seen = new Map<string, number>();
-  return rows.map((row) => {
-    const index = (seen.get(row.lotId ?? row.id) ?? 0) + 1;
-    seen.set(row.lotId ?? row.id, index);
-    return { row, index };
-  });
 }
 
 /** The place, "1 of 2 places" when its lot is in several, and why not usable. */
