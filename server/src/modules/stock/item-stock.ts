@@ -1,6 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
 import { codeFigures } from './code-figures';
+import { onHandByItem } from './usable-stock';
 
 /**
  * What a row of Items' list says of its stock (ADR-092): its worst code's
@@ -28,11 +29,10 @@ export function itemStock(organizationId: string): SQL {
       case when count(distinct pv.unit_of_measure) = 1
         then coalesce(sum(st.quantity), 0)::numeric(18, 4) end as on_hand
     from product_variants pv
+    -- A code's on hand by the figures' own rule (usable-stock.ts).
     left join (
-      select sl.variant_id, sum(sl.quantity) as quantity
-      from stock_levels sl
-      where sl.organization_id = ${org}
-      group by sl.variant_id
+      select oh.variant_id, oh.on_hand as quantity
+      from (${onHandByItem(organizationId)}) oh
     ) st on st.variant_id = pv.id
     where pv.organization_id = ${org}
     group by pv.product_id

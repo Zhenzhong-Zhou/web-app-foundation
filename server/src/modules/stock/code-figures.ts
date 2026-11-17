@@ -169,16 +169,18 @@ export function sortedFigure(
   today: string,
   variants: SQL,
   figure: SortedFigure,
+  /** At one place alone, what is there (ADR-093, 20a). */
+  locationId?: string,
 ): SQL {
   if (figure === 'onHand') {
     return sql`
       select oh.variant_id, oh.on_hand as value
-      from (${onHandByItem(organizationId, variants)}) oh
+      from (${onHandByItem(organizationId, variants, locationId)}) oh
     `;
   }
   return sql`
     select ex.variant_id, ex.expires_first as value
-    from (${expiresFirstOf(organizationId, today, variants)}) ex
+    from (${expiresFirstOf(organizationId, today, variants, locationId)}) ex
   `;
 }
 
@@ -218,10 +220,12 @@ function stillNeededOf(organizationId: string, variants: SQL): SQL {
  * The soonest expiry of the usable stock per item, lots not expired at
  * places marked available: rows `variant_id, expires_first`.
  */
-function expiresFirstOf(
+export function expiresFirstOf(
   organizationId: string,
   today: string,
   variants: SQL,
+  /** At one place alone, Stock's place chosen (ADR-093, 20a). */
+  locationId?: string,
 ): SQL {
   const org = sql`${organizationId}::uuid`;
 
@@ -235,6 +239,7 @@ function expiresFirstOf(
         and lt.organization_id = ${org}
       where sl.organization_id = ${org}
         and sl.variant_id in ${variants}
+        ${locationId ? sql`and sl.location_id = ${locationId}::uuid` : sql``}
         and sl.quantity > 0
         and lt.expires_at >= ${today}::date
       group by sl.variant_id, sl.location_id

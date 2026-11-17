@@ -32,6 +32,7 @@ import { coverOf } from '../products/product-images';
 import { comingOf, openSaleLines } from './availability';
 import {
   codeFigures,
+  expiresFirstOf,
   figureColumns,
   type FigureRow,
   figuresOf,
@@ -60,6 +61,7 @@ import {
   stockRowsOf,
   UNKNOWN_ITEM,
 } from './stock-reads.service';
+import { onHandByItem } from './usable-stock';
 
 /** A page of Inventory, fifty codes or lots unless asked (ADR-093, R16). */
 const PAGE_SIZE = 50;
@@ -212,13 +214,7 @@ function sortedKeys(
 ): SQL {
   const codes = sql`(select c.variant_id from codes c)`;
   const empty = sort === 'expires' ? sql`null::date` : sql`null::numeric`;
-  const figure = here
-    ? sql`
-        select hr.variant_id,
-          ${sort === 'expires' ? sql`hr.expires_first` : sql`hr.on_hand`} as value
-        from (${hereOf(organizationId, today, here, codes)}) hr
-      `
-    : sortedFigure(organizationId, today, codes, sort);
+  const figure = sortedFigure(organizationId, today, codes, sort, here);
 
   return sql`
     s as materialized (${figure}),
@@ -248,27 +244,32 @@ function hereOf(
 ): SQL {
   const org = sql`${organizationId}::uuid`;
 
+  // On hand and Expires first by the figures' own rules, at this place
+  // (.claude/rules/stock.md: never a sum of its own), each read once for
+  // the codes, not again for each; its lots counted.
   return sql`
+    with oh as materialized (
+      ${onHandByItem(organizationId, variants, locationId)}
+    ),
+    ex as materialized (
+      ${expiresFirstOf(organizationId, today, variants, locationId)}
+    )
     select
-      sl.variant_id,
-      sum(sl.quantity) as on_hand,
-      count(distinct sl.lot_id) filter (where sl.quantity > 0) as lots,
-      min(lt.expires_at) filter (
-        where sl.quantity > 0
-          and loc.is_available
-          and lt.expires_at >= ${today}::date
-      ) as expires_first
-    from stock_levels sl
-    join locations loc
-      on loc.id = sl.location_id
-      and loc.organization_id = ${org}
-    left join lots lt
-      on lt.id = sl.lot_id
-      and lt.organization_id = ${org}
-    where sl.organization_id = ${org}
-      and sl.location_id = ${locationId}::uuid
-      and sl.variant_id in ${variants}
-    group by sl.variant_id
+      lt.variant_id,
+      coalesce(oh.on_hand, 0) as on_hand,
+      lt.lots,
+      ex.expires_first
+    from (
+      select sl.variant_id,
+        count(distinct sl.lot_id) filter (where sl.quantity > 0) as lots
+      from stock_levels sl
+      where sl.organization_id = ${org}
+        and sl.location_id = ${locationId}::uuid
+        and sl.variant_id in ${variants}
+      group by sl.variant_id
+    ) lt
+    left join oh on oh.variant_id = lt.variant_id
+    left join ex on ex.variant_id = lt.variant_id
   `;
 }
 

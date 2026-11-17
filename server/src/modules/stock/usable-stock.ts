@@ -143,7 +143,13 @@ export function onHandByUse(
  * what a list sorted by On hand reads (ADR-093, 29a). Rows `variant_id,
  * on_hand, unavailable`, for the items in `variants` with stock anywhere.
  */
-export function onHandByItem(organizationId: string, variants: SQL): SQL {
+export function onHandByItem(
+  organizationId: string,
+  /** Those items alone; none, every item of the organization's. */
+  variants?: SQL,
+  /** At one place alone, Stock's place chosen (ADR-093, 20a). */
+  locationId?: string,
+): SQL {
   const org = sql`${organizationId}::uuid`;
 
   return sql`
@@ -156,7 +162,8 @@ export function onHandByItem(organizationId: string, variants: SQL): SQL {
       select sl.variant_id, sl.location_id, sum(sl.quantity) as quantity
       from stock_levels sl
       where sl.organization_id = ${org}
-        and sl.variant_id in ${variants}
+        ${variants ? sql`and sl.variant_id in ${variants}` : sql``}
+        ${locationId ? sql`and sl.location_id = ${locationId}::uuid` : sql``}
         and sl.quantity > 0
       group by sl.variant_id, sl.location_id
     ) s
