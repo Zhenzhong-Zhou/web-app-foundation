@@ -443,6 +443,39 @@ describe('Exports (e2e)', () => {
     await alpha.agent.get('/v1/products/export?type=material').expect(200);
   });
 
+  // Node 26 can abort while Express measures a large string (#602): the
+  // file leaves as bytes, and reads back whole past a megabyte.
+  it('sends an export past a megabyte whole, its length and its mark', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const created = body<{ product: { id: string } }>(
+      await alpha.agent
+        .post('/v1/products')
+        .send({
+          type: 'good',
+          name: '深海鱼油 Bulk',
+          variant: { sku: 'BULK-0' },
+        })
+        .expect(201),
+    ).product;
+    await db.execute(sql`
+      insert into product_variants (organization_id, product_id, sku)
+      select ${alpha.organizationId}::uuid, ${created.id}::uuid, 'BULK-' || n
+      from generate_series(1, 20000) n
+    `);
+
+    const res = await alpha.agent.get('/v1/products/export').expect(200);
+
+    const length = Number(res.headers['content-length']);
+    expect(length).toBeGreaterThan(1_000_000);
+    expect(Buffer.byteLength(res.text)).toBe(length);
+    expect(res.text.startsWith('\uFEFF')).toBe(true);
+    const lines = linesOf(res.text);
+    expect(lines).toHaveLength(20_002);
+    expect(lines.slice(1).every((line) => line.includes('深海鱼油 Bulk'))).toBe(
+      true,
+    );
+  });
+
   it('writes the partners the list shows: its search and Retired', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await createPartner(alpha.agent, { name: 'Northside Pharmacy' });

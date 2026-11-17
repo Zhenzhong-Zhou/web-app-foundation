@@ -4600,11 +4600,8 @@ export type AuditControllerExportAuditV1Data = {
 };
 
 export type AuditControllerExportAuditV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type AuditControllerExportAuditV1Response =
-  AuditControllerExportAuditV1Responses[keyof AuditControllerExportAuditV1Responses];
 
 export type AuditControllerListActionsV1Data = {
   body?: never;
@@ -5049,11 +5046,8 @@ export type WorkControllerExportActivityV1Data = {
 };
 
 export type WorkControllerExportActivityV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type WorkControllerExportActivityV1Response =
-  WorkControllerExportActivityV1Responses[keyof WorkControllerExportActivityV1Responses];
 
 export type UsersControllerListV1Data = {
   body?: never;
@@ -5344,11 +5338,8 @@ export type ProductsControllerExportProductsV1Data = {
 };
 
 export type ProductsControllerExportProductsV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type ProductsControllerExportProductsV1Response =
-  ProductsControllerExportProductsV1Responses[keyof ProductsControllerExportProductsV1Responses];
 
 export type ProductsControllerListVariantsV1Data = {
   body?: never;
@@ -6081,11 +6072,8 @@ export type StockControllerExportMovementsV1Data = {
 };
 
 export type StockControllerExportMovementsV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type StockControllerExportMovementsV1Response =
-  StockControllerExportMovementsV1Responses[keyof StockControllerExportMovementsV1Responses];
 
 export type StockControllerListLotsV1Data = {
   body?: never;
@@ -6208,11 +6196,8 @@ export type StockGroupedControllerExportByCodeV1Data = {
 };
 
 export type StockGroupedControllerExportByCodeV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type StockGroupedControllerExportByCodeV1Response =
-  StockGroupedControllerExportByCodeV1Responses[keyof StockGroupedControllerExportByCodeV1Responses];
 
 export type StockGroupedControllerPlacesV1Data = {
   body?: never;
@@ -6321,11 +6306,8 @@ export type StockGroupedControllerExportByLotV1Data = {
 };
 
 export type StockGroupedControllerExportByLotV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type StockGroupedControllerExportByLotV1Response =
-  StockGroupedControllerExportByLotV1Responses[keyof StockGroupedControllerExportByLotV1Responses];
 
 export type LotTraceControllerSearchV1Data = {
   body?: never;
@@ -6375,11 +6357,8 @@ export type LotTraceControllerExportRecipientsV1Data = {
 };
 
 export type LotTraceControllerExportRecipientsV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type LotTraceControllerExportRecipientsV1Response =
-  LotTraceControllerExportRecipientsV1Responses[keyof LotTraceControllerExportRecipientsV1Responses];
 
 export type AvailabilityControllerForOrderV1Data = {
   body?: never;
@@ -6460,11 +6439,8 @@ export type ReorderPointsControllerExportReorderPointsV1Data = {
 };
 
 export type ReorderPointsControllerExportReorderPointsV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type ReorderPointsControllerExportReorderPointsV1Response =
-  ReorderPointsControllerExportReorderPointsV1Responses[keyof ReorderPointsControllerExportReorderPointsV1Responses];
 
 export type ReorderPointsControllerItemsV1Data = {
   body?: never;
@@ -6895,11 +6871,8 @@ export type CostsControllerExportValuationV1Data = {
 };
 
 export type CostsControllerExportValuationV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type CostsControllerExportValuationV1Response =
-  CostsControllerExportValuationV1Responses[keyof CostsControllerExportValuationV1Responses];
 
 export type CostsControllerLotCostV1Data = {
   body?: never;
@@ -7045,11 +7018,8 @@ export type PriceListsControllerExportPriceListV1Data = {
 };
 
 export type PriceListsControllerExportPriceListV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type PriceListsControllerExportPriceListV1Response =
-  PriceListsControllerExportPriceListV1Responses[keyof PriceListsControllerExportPriceListV1Responses];
 
 export type PriceListsControllerFindOneV1Data = {
   body?: never;
@@ -7167,11 +7137,8 @@ export type PartnersControllerExportPartnersV1Data = {
 };
 
 export type PartnersControllerExportPartnersV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type PartnersControllerExportPartnersV1Response =
-  PartnersControllerExportPartnersV1Responses[keyof PartnersControllerExportPartnersV1Responses];
 
 export type PartnersControllerFindV1Data = {
   body?: never;
@@ -7405,11 +7372,8 @@ export type OrdersControllerExportOrdersV1Data = {
 };
 
 export type OrdersControllerExportOrdersV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type OrdersControllerExportOrdersV1Response =
-  OrdersControllerExportOrdersV1Responses[keyof OrdersControllerExportOrdersV1Responses];
 
 export type OrdersControllerFindV1Data = {
   body?: never;
@@ -7976,11 +7940,8 @@ export type InvoicesControllerExportInvoicesV1Data = {
 };
 
 export type InvoicesControllerExportInvoicesV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type InvoicesControllerExportInvoicesV1Response =
-  InvoicesControllerExportInvoicesV1Responses[keyof InvoicesControllerExportInvoicesV1Responses];
 
 export type InvoicesControllerDeleteV1Data = {
   body?: never;
@@ -8175,11 +8136,8 @@ export type CreditNotesControllerExportCreditNotesV1Data = {
 };
 
 export type CreditNotesControllerExportCreditNotesV1Responses = {
-  200: string;
+  200: unknown;
 };
-
-export type CreditNotesControllerExportCreditNotesV1Response =
-  CreditNotesControllerExportCreditNotesV1Responses[keyof CreditNotesControllerExportCreditNotesV1Responses];
 
 export type CreditNotesControllerGetV1Data = {
   body?: never;

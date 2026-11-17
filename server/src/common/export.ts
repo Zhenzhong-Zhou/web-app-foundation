@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, StreamableFile } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { requestTimeZone } from '../database/tenant-context';
@@ -100,6 +100,10 @@ export function withinLimit<T>(rows: T[], refusal?: Translatable): T[] {
  * record, sent as an attachment named for the list and today,
  * `invoices-2026-10-07.csv`: the organization's today (ADR-072). Times
  * inside stay UTC and say so (ADR-057, amended).
+ *
+ * The text leaves as bytes TextEncoder writes, never as a string for Express
+ * to encode: Node 26 can abort the process while Buffer measures a large
+ * string the BOM was joined to (#602).
  */
 export function csvFile<T>(
   res: Response,
@@ -107,7 +111,7 @@ export function csvFile<T>(
   columns: ExportColumn<T>[],
   rows: T[],
   locale: Locale,
-): string {
+): StreamableFile {
   const today = todayIn(requestTimeZone());
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader(
@@ -115,10 +119,12 @@ export function csvFile<T>(
     `attachment; filename="${name}-${today}.csv"`,
   );
 
-  return toCsv(
+  const csv = toCsv(
     columns.map((column) => translate(column.header, locale)),
     rows.map((row) => columns.map((column) => column.value(row, locale))),
   );
+  const bytes = new TextEncoder().encode(csv);
+  return new StreamableFile(bytes, { length: bytes.length });
 }
 
 /**
