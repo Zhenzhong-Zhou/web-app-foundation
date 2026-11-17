@@ -844,18 +844,28 @@ export class StockGroupedService {
         asked,
       } = lotFilters(query, organizationId, today, query.expiringWithin);
 
+      // The page's piles found by their keys first, then their columns
+      // (names, the cover) worked out for those alone (review 44): built
+      // for every pile the filters keep, the cover was looked up 11,323
+      // times at the large volume to show 50.
       const { rows } = await tx.execute<PileRow>(sql`
+        with k as materialized (
+          select ${stockLevels.id} as id
+          from ${from}
+          and ${and(
+            sql`true`,
+            ...LOT_FACETS.filter((facet) => asked[facet]).map(
+              (facet) => facets[facet],
+            ),
+            after,
+          )}
+          order by ${sql.join(orderOf(parts), sql`, `)}
+          limit ${limit + 1}
+        )
         select ${pileColumns(organizationId, locale)}
-        from ${from}
-        and ${and(
-          sql`true`,
-          ...LOT_FACETS.filter((facet) => asked[facet]).map(
-            (facet) => facets[facet],
-          ),
-          after,
-        )}
+        from ${stockRowsOf({ includeEmpty: 'true' }, organizationId, today)}
+        and ${stockLevels.id} in (select k.id from k)
         order by ${sql.join(orderOf(parts), sql`, `)}
-        limit ${limit + 1}
       `);
 
       const page = pageOf(rows, limit);
