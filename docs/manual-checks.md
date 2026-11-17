@@ -4134,16 +4134,16 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4201** *(ADR-085)* The bell, once each time an item falls below
   its reorder point. On a fresh demo, the server's first start tells the
   eight low items in one notice: "8 items are low on stock", the tile's Low stock (库存不足, Stock bas),
-  then "MAGCAP-240, VITC-100 and 6 more. Order or plan them from
-  Reorder points.". As the demo Owner, on Reorder, give a bought
+  then "MAGCAP-240, VITC-100 and 6 more. Buy or make them from
+  Reorder.". As the demo Owner, on Reorder, give a bought
   item with stock a point above what it has, and restart the server (it
   checks at start, then hourly): the bell gets one notice, "… is low
-  on stock" with the item's code, then its name and "Raise a
-  purchase order from Reorder points.", with no quantity anywhere.
+  on stock" with the item's code, then its name and "Buy it from
+  Reorder.", with no quantity anywhere.
   Restart again: no second notice. Give two more items points above what
   they have, one of them made, and restart: one notice, "2 items fell
-  below their reorder point", naming both codes, then "Order or plan them
-  from Reorder points.". Daniel Okafor (Admin) has the same; Tom Becker
+  below their reorder point", naming both codes, then "Buy or make them
+  from Reorder.". Daniel Okafor (Admin) has the same; Tom Becker
   (Warehouse) and Chloé Tremblay (Viewer), neither. Receive enough of the
   first item to pass its point and restart: nothing. Confirm a sale that
   needs it back below, and restart: told again. With the Owner's account
@@ -4326,12 +4326,15 @@ site, after a deploy that changes the setting, the route or the relay.
   below their reorder point" opens Inventory's Reorder on Low stock,
   with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
   raises orders but plans no runs: her notice names only the six bought
-  items, "MAGCAP-240, VITC-100 and 4 more. Order them from Reorder
-  points.". As the Owner, give two bought items with stock points above
-  what they have, and restart the server: one notice, both codes, then
-  "Order them from Reorder points.", though the Owner may plan runs too.
-  Two made items: "Plan them from Reorder points."; one of each: "Order
-  or plan them from Reorder points.".
+  items, "MAGCAP-240, VITC-100 and 4 more. Buy them from Reorder.". As
+  the Owner, give two bought items with stock points above what they have,
+  and restart the server: one notice, both codes, then "Buy them from
+  Reorder.", though the Owner may plan runs too. Two made items: "Make
+  them from Reorder."; one of each: "Buy or make them from Reorder.". In
+  Français, « … depuis Réapprovisionner »; in 中文, 请在“补货”中采购. A
+  run or a purchase order filled from Reorder reads « Prérempli à partir
+  de Réapprovisionner » and « Commande préparée à partir de
+  Réapprovisionner » in Français.
 - **MC-4215** *(ADR-085; ADR-093)* Buy, filled in from the list. On a
   fresh demo, as the Owner, Reorder on Low stock: D3-1000-120's Buy 96
   opens New order with Buying chosen and one line, D3-1000-120 at 96,
@@ -6613,3 +6616,7 @@ first.
   as a word, one shape with Stock's and the lookup's: MC-313.
 - 2026-11-17: ADR-093's review, 64: Help's Inventory guide names Make, the
   row's button, where it said Plan a run, in three languages: MC-4217.
+- 2026-11-17: ADR-093's review, 65: the bell's low-stock words name
+  Reorder and its Buy and Make, in three languages; the French notes of a
+  run or an order filled from it, and the audit log's list, say Reorder:
+  MC-4201 and MC-4214 reworded.

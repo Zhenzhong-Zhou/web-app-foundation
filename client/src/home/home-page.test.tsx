@@ -202,7 +202,7 @@ describe('HomePage', () => {
 
   // The ninth tile (ADR-085): red with its out count, opening Reorder
   // points on Low, and its late button on Out.
-  it('shows Low stock with its out count, opening Reorder points on Low, and Out from what is late', async () => {
+  it('shows Low stock with its out count, opening Reorder on Low, and Out from what is late', async () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [

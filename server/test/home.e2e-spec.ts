@@ -538,7 +538,7 @@ describe('Home (e2e)', () => {
   /**
    * Each tile opens its list (ADR-091): the count is the rows the list
    * returns at the address the tile opens, and the late count the rows
-   * its late button opens: Orders' Late, Reorder points' Out, and the
+   * its late button opens: Orders' Late, Reorder's Out, and the
    * lots' and Licences' Expired. Licences open on Expiring, soonest first,
    * the expired leading.
    */

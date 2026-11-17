@@ -173,7 +173,7 @@ const GROUPS: { shown: string; ids: string[] }[] = [
     ],
   },
   {
-    shown: "Reorder points' filters",
+    shown: "Reorder's filters",
     ids: [
       'inventory.reorder.filter.all',
       'inventory.reorder.filter.low',

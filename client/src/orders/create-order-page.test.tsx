@@ -53,7 +53,7 @@ function renderPage(state?: unknown, from?: string) {
     [
       { path: '/orders/new', element: <CreateOrderPage /> },
       { path: '/orders/:id', element: <p>The order</p> },
-      { path: '/inventory', element: <p>Reorder points</p> },
+      { path: '/inventory', element: <p>Reorder</p> },
     ],
     {
       initialEntries: [
@@ -240,7 +240,7 @@ describe('CreateOrderPage Partner', () => {
  * suggestion, a note saying so, and the supplier left to choose; nothing
  * is saved until it is raised.
  */
-describe('CreateOrderPage filled from Reorder points', () => {
+describe('CreateOrderPage filled from Reorder', () => {
   it('opens as a purchase with a line per item at its suggestion, and raises them as typed', async () => {
     const sent = serve();
     renderPage(
@@ -329,7 +329,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
       .toEqual(['2000', '12.5']);
   });
 
-  it('leaves Back to Reorder points once raised, not the lines filled again', async () => {
+  it('leaves Back to Reorder once raised, not the lines filled again', async () => {
     serve();
     const router = renderPage(
       fillState({
@@ -347,11 +347,11 @@ describe('CreateOrderPage filled from Reorder points', () => {
 
     await router.navigate(-1);
 
-    expect(await screen.findByText('Reorder points')).toBeInTheDocument();
+    expect(await screen.findByText('Reorder')).toBeInTheDocument();
     expect(screen.queryByText(/Filled from Reorder/)).not.toBeInTheDocument();
   });
 
-  it('goes back to Reorder points on Cancel, not to Orders', async () => {
+  it('goes back to Reorder on Cancel, not to Orders', async () => {
     serve();
     renderPage(
       fillState({
@@ -363,7 +363,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
     await screen.findByText(/Filled from Reorder/);
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(await screen.findByText('Reorder points')).toBeInTheDocument();
+    expect(await screen.findByText('Reorder')).toBeInTheDocument();
   });
 
   it('opens empty, with no note, from a link that fills nothing', async () => {
