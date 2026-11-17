@@ -1,6 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import { openSaleLines } from './availability';
+import { comingOf, openSaleLines } from './availability';
 import { type ReorderStatus, statusOf } from './reorder-status';
 import { onHandByItem, onHandByUse } from './usable-stock';
 
@@ -99,29 +99,9 @@ export function codeFigures(
         from (${stillNeededOf(organizationId, variants)}) nd
         union all
         select
-          ol.variant_id, 0, 0, 0, 0, 0, 0,
-          ol.quantity_ordered - ol.quantity_fulfilled,
-          o.expected_at, null, null, null, null
-        from order_lines ol
-        join orders o
-          on o.id = ol.order_id
-          and o.organization_id = ${org}
-        where ol.organization_id = ${org}
-          and ol.variant_id in ${variants}
-          and o.direction = 'purchase'
-          and o.status = 'confirmed'
-          -- order_lines_open_idx's own predicate, as the holds read it.
-          and not ol.is_closed_short
-          and ol.quantity_ordered > ol.quantity_fulfilled
-        union all
-        select
-          po.output_variant_id, 0, 0, 0, 0, 0, 0,
-          greatest(0, po.quantity_planned - po.quantity_produced),
-          null, null, null, null, null
-        from production_orders po
-        where po.organization_id = ${org}
-          and po.status = 'released'
-          and po.output_variant_id in ${variants}
+          c.variant_id, 0, 0, 0, 0, 0, 0, c.quantity,
+          c.expected_at, null, null, null, null
+        from (${comingOf(organizationId, variants)}) c
         union all
         select ex.variant_id, 0, 0, 0, 0, 0, 0, 0, null, ex.expires_first, null, null, null
         from (${expiresFirstOf(organizationId, today, variants)}) ex

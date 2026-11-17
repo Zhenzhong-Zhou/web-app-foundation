@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
+import { comingOf } from './availability';
 import { holdsSql } from './availability';
 import { usableByLocation } from './usable-stock';
 
@@ -27,48 +28,21 @@ export function comingLinesOf(
 ): SQL {
   const org = sql`${organizationId}::uuid`;
 
+  // The figure's own lines (comingOf), each with its supplier or maker.
   return sql`
     select
-      ol.variant_id,
-      'purchase' as kind,
-      o.id,
-      o.number,
+      c.variant_id,
+      c.kind,
+      c.id,
+      c.number,
       pa.name as partner_name,
-      ol.quantity_ordered - ol.quantity_fulfilled as quantity,
-      o.expected_at,
-      coalesce(o.expected_at < ${today}::date, false) as late
-    from order_lines ol
-    join orders o
-      on o.id = ol.order_id
-      and o.organization_id = ${org}
-    join partners pa
-      on pa.id = o.partner_id
-      and pa.organization_id = ${org}
-    where ol.organization_id = ${org}
-      and ol.variant_id in ${variants}
-      and o.direction = 'purchase'
-      and o.status = 'confirmed'
-      -- order_lines_open_idx's own predicate, as the figures read it.
-      and not ol.is_closed_short
-      and ol.quantity_ordered > ol.quantity_fulfilled
-    union all
-    select
-      po.output_variant_id,
-      'run',
-      po.id,
-      po.reference,
-      pa.name,
-      po.quantity_planned - po.quantity_produced,
-      null::date,
-      false
-    from production_orders po
+      c.quantity,
+      c.expected_at,
+      coalesce(c.expected_at < ${today}::date, false) as late
+    from (${comingOf(organizationId, variants)}) c
     left join partners pa
-      on pa.id = po.partner_id
+      on pa.id = c.partner_id
       and pa.organization_id = ${org}
-    where po.organization_id = ${org}
-      and po.output_variant_id in ${variants}
-      and po.status = 'released'
-      and po.quantity_planned > po.quantity_produced
   `;
 }
 

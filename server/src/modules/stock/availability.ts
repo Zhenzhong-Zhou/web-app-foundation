@@ -83,7 +83,11 @@ export function holdsSql(
  * outstanding`; the holds read them line by line, a code's figures their
  * sum (code-figures.ts).
  */
-export function openSaleLines(organizationId: string, variants: SQL): SQL {
+export function openSaleLines(
+  organizationId: string,
+  /** Those items' lines alone; none, every item's. */
+  variants?: SQL,
+): SQL {
   return sql`
     select
       ol.variant_id,
@@ -105,7 +109,59 @@ export function openSaleLines(organizationId: string, variants: SQL): SQL {
       -- change them together or the index stops being used.
       and not ol.is_closed_short
       and ol.quantity_ordered > ol.quantity_fulfilled
-      and ol.variant_id in ${variants}
+      ${variants ? sql`and ol.variant_id in ${variants}` : sql``}
+  `;
+}
+
+/**
+ * What is coming, line by line (ADR-093): each confirmed purchase's line
+ * still to receive, and each released run's output still to make. The
+ * one rule a code's Coming figure sums, its lines list and the codes a
+ * list holds read. Rows `variant_id, kind ('purchase' or 'run'), id,
+ * number, partner_id, quantity, expected_at`; a run has no day.
+ */
+export function comingOf(
+  organizationId: string,
+  /** Those items' alone; none, every item's. */
+  variants?: SQL,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select
+      ol.variant_id,
+      'purchase' as kind,
+      o.id,
+      o.number,
+      o.partner_id,
+      ol.quantity_ordered - ol.quantity_fulfilled as quantity,
+      o.expected_at
+    from order_lines ol
+    join orders o
+      on o.id = ol.order_id
+      and o.organization_id = ${org}
+    where ol.organization_id = ${org}
+      and o.direction = 'purchase'
+      and o.status = 'confirmed'
+      -- order_lines_open_idx is built on exactly these two conditions;
+      -- change them together or the index stops being used.
+      and not ol.is_closed_short
+      and ol.quantity_ordered > ol.quantity_fulfilled
+      ${variants ? sql`and ol.variant_id in ${variants}` : sql``}
+    union all
+    select
+      po.output_variant_id,
+      'run',
+      po.id,
+      po.reference,
+      po.partner_id,
+      po.quantity_planned - po.quantity_produced,
+      null::date
+    from production_orders po
+    where po.organization_id = ${org}
+      and po.status = 'released'
+      and po.quantity_planned > po.quantity_produced
+      ${variants ? sql`and po.output_variant_id in ${variants}` : sql``}
   `;
 }
 

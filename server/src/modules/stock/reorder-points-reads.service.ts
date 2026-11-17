@@ -19,6 +19,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
+import { openSaleLines } from './availability';
 import { quantity } from './code-figures';
 import { comingLinesOf } from './code-lines';
 import type { ListReorderPointsDto } from './dto/list-reorder-points.dto';
@@ -481,20 +482,15 @@ export class ReorderPointsReadsService {
           o.id as order_id,
           o.number,
           pa.name as partner_name,
-          ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity
-        from order_lines ol
+          ${quantity(sql`s.outstanding`)} as quantity
+        -- The lines Still needed sums (availability.ts), with their orders.
+        from (${openSaleLines(organizationId, sql`(${item})`)}) s
         join orders o
-          on o.id = ol.order_id
+          on o.id = s.order_id
           and o.organization_id = ${org}
         join partners pa
           on pa.id = o.partner_id
           and pa.organization_id = ${org}
-        where ol.organization_id = ${org}
-          and ol.variant_id = ${item}
-          and o.direction = 'sale'
-          and o.status = 'confirmed'
-          and not ol.is_closed_short
-          and ol.quantity_ordered > ol.quantity_fulfilled
         order by o.expected_at nulls last, o.number, o.id
       `);
 

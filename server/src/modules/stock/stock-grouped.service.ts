@@ -29,6 +29,7 @@ import { t } from '../../i18n/translate';
 import { categoryPaths } from '../products/category-tree';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
+import { comingOf, openSaleLines } from './availability';
 import {
   codeFigures,
   figureColumns,
@@ -71,7 +72,11 @@ const PAGE_SIZE = 50;
  * what is there, its emptied rows with Include empty (20a). The outer
  * query names `product_variants` by its table.
  */
-function presentOf(query: StockFiltersDto, org: SQL): SQL | undefined {
+function presentOf(
+  query: StockFiltersDto,
+  organizationId: string,
+): SQL | undefined {
+  const org = sql`${organizationId}::uuid`;
   const kept = query.includeEmpty === 'true' ? sql`` : sql`and sl.quantity > 0`;
 
   if (query.locationId) {
@@ -88,20 +93,10 @@ function presentOf(query: StockFiltersDto, org: SQL): SQL | undefined {
     select sl.variant_id from stock_levels sl
     where sl.organization_id = ${org} and sl.quantity > 0
     union all
-    select ol.variant_id from order_lines ol
-    join orders o
-      on o.id = ol.order_id
-      and o.organization_id = ${org}
-    where ol.organization_id = ${org}
-      and o.status = 'confirmed'
-      -- order_lines_open_idx's own predicate, as the holds read it.
-      and not ol.is_closed_short
-      and ol.quantity_ordered > ol.quantity_fulfilled
+    -- Still needed and coming, by the rules the figures sum (availability.ts).
+    select sl2.variant_id from (${openSaleLines(organizationId)}) sl2
     union all
-    select po.output_variant_id from production_orders po
-    where po.organization_id = ${org}
-      and po.status = 'released'
-      and po.quantity_planned > po.quantity_produced
+    select c.variant_id from (${comingOf(organizationId)}) c
     union all
     select rp.variant_id from reorder_points rp
     where rp.organization_id = ${org}
@@ -121,7 +116,7 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
 
   return and(
     sql`${productVariants.organizationId} = ${org}`,
-    presentOf(query, org),
+    presentOf(query, organizationId),
     query.productId
       ? sql`${products.id} = ${query.productId}::uuid`
       : undefined,
