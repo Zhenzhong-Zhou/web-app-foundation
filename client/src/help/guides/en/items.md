@@ -13,7 +13,7 @@ Every item is one of six types. Each type is a tab on Items, with its count, and
 - **Samples**: given away, not sold.
 - **Equipment**: machines and tools. Equipment is received, moved and counted where it stands, but it is not stock value, because it is an asset, not inventory to sell.
 
-The type can be changed at any time with **Edit** on the item’s page. The item moves to its new tab, and its stock, lots and History stay as they are.
+The type can be changed at any time with **Edit item** on the item’s page. The item moves to its new tab, and its stock, lots and History stay as they are.
 
 ## Find items {#find}
 
@@ -21,6 +21,7 @@ Items opens on Products, or on the first type that has items. **All** shows ever
 
 - The **Search** box finds an item by part of a code, or of its name or a variant’s in any language, with or without accents; a Chinese name by its pinyin too, or by a single character. Each tab’s count follows the search. When this tab has no match, the list says where the matches are, with a button there.
 - The **Category** list offers the categories that have items on this tab, with their counts, and **Uncategorised** for the items in none. Choosing one shows its items and those of every category under it, and a chip names it; **×** on the chip shows every category again.
+- **Low stock** shows the items with a code below its reorder point, or out, with their count; it sits beside **Discontinued** and is kept in the address. It counts items, not codes: an item with three codes under their points counts once.
 - **Discontinued** shows the discontinued items alone, with their count. Otherwise they are hidden. **Show all in Items** in the top bar opens All with the search and the discontinued items included, and a chip saying so.
 - Press **Name**, **Category**, **In stock** or the date at the head of a column to sort by it; press it again to reverse. The date column shows the date the list is sorted by, and its menu switches between **Last changed** and **Date added**.
 - The list reads fifty items at a time. **Show 50 more** adds the next fifty.
@@ -32,10 +33,26 @@ On a phone, each item is a card, and **Filters** opens the category, the sort an
 
 - The cover photo, or an icon for its type, then the name with its code under it. An item with several variants shows how many, and their codes.
 - Its category, as a path from the top, such as Bottles › Caps.
-- The stock on hand in every location, added up in the item’s unit. Where its variants are counted in different units, the row says how many variants instead.
-- **Low stock** or **Out** beside the stock, from the item’s reorder points. The same words and colours are on Home and Inventory.
+- The stock on hand in every location, added up in the item’s unit, with “72 not usable” beside it where part of it is expired, issued to a run or at a place not available. Where its variants are counted in different units, the row says how many variants instead.
+- **Low stock** or **Out** beside the stock, from the item’s reorder points: its worst code’s status, and for an item with several codes how many share it, as “Low stock · 1 of 3 codes”. The same words and colours are on Home and Inventory. Press it to open the item’s page at **Where it stands**.
 
 Press the row to open the item. Press its stock to open Inventory for that item alone; **×** on the chip there shows all stock again, and Back returns to Items as it was.
+
+## Where it stands {#stands}
+
+First under an item’s title, **Where it stands** shows each of its codes, the low ones first, and says why each figure is what it is. A part shows only when there is something to say, and only to someone who may see it.
+
+- The code’s status and “10 left · reorder at 36”: stock that can be used, plus what is coming, less what confirmed sales still need.
+- **On hand**, with what is not usable and why: expired, issued to a run, or at a place not available.
+- **Free**, what you can still promise, or “20 short: orders want 90” when confirmed orders want more than there is.
+- **Held**, the sales holding stock, each a link, the earliest confirmed first, with how much each holds of what it wants.
+- **Coming**, the purchase orders and runs still to bring stock, each with its day.
+- **Left**, with its sum in plain words: “30 usable + 0 coming − 20 for orders”.
+- **By place and lot**, each place with its lots, soonest first, each lot’s code a link to its trace, and **Move**.
+
+The actions are **Change reorder point**, **Buy 30** or **Make 1,000**, and **Move**, each shown by what your role may do; where it may not, a line says whom to ask. **Buy** and **Make** open their form filled in with the suggested order and save nothing until you create it. A code with nothing on hand or coming reads “None on hand, nothing coming.” with **Set a reorder point** and **Receive stock**.
+
+> Only someone who may see stock sees **Where it stands**. Without permission to see locations, **Usable lots** and one “not usable” line replace the places; without permission to see orders, a number says how many orders wait; the runs need permission to see production.
 
 ## Categories {#categories}
 
@@ -45,7 +62,7 @@ The tree, with each category’s items, opens from **Manage categories** at the 
 
 1. Press **Add category**, type its name, and choose what it sits **Under**, or none to put it at the top.
 2. **Actions** on a row has **Rename**, **Move** and **Delete**. A category cannot move under itself, so its own branch is not offered.
-3. Choose a category for an item with **Edit** on its page, or for many with **Set category**.
+3. Choose a category for an item with **Edit item** on its page, or for many with **Set category**.
 
 > Only someone who may change items sees **Add category** and **Actions**. Anyone who can see items can read the tree.
 
@@ -78,7 +95,7 @@ Each change says what it did and offers **Undo** for 10 seconds, which puts ever
 
 On an item’s page, its type and category are under the name.
 
-- **Edit** changes the name, the description, the category and the type.
+- **Edit item** changes the name, the description, the category and the type.
 - **Add variant** adds another size, with its own code and the unit its stock is counted in.
 - **Edit** on a variant records its weight, its size and how many ship in a case.
 - **Add images** takes up to 8 photos. The first is the cover, shown beside the name in lists.
@@ -86,11 +103,11 @@ On an item’s page, its type and category are under the name.
 
 The **Names in other languages** table has a row for the item, and one for each variant with a name of its own, with a column for each language. The item’s row starts with its own name, the one it was added with.
 
-Once your organization has said which language its items are named in, under **Items are named in** on [Organization](/settings/organization#documents), that language’s column comes first and holds each row’s own name, marked **Item’s own name**. It is the name in that language, so it is never missing there, and **Edit names** has no field for it: change it with **Edit**. The other languages’ names are kept beside it, and a reader in a language with none sees the own name. Until the language is set, the own name is shown in every language that has no name of its own; on the item’s page it is marked **Item’s own name** in its row, and a line above the table says it counts as no language’s name yet, and where the language is chosen.
+Once your organization has said which language its items are named in, under **Items are named in** on [Organization](/settings/organization#documents), that language’s column comes first and holds each row’s own name, marked **Item’s own name**. It is the name in that language, so it is never missing there, and **Edit names** has no field for it: change it with **Edit item**. The other languages’ names are kept beside it, and a reader in a language with none sees the own name. Until the language is set, the own name is shown in every language that has no name of its own; on the item’s page it is marked **Item’s own name** in its row, and a line above the table says it counts as no language’s name yet, and where the language is chosen.
 
 The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
 
-> Only someone who may add items sees **Add item**, and only someone who may change them sees **Add variant**, **Edit**, **Edit names** and **Discontinue**.
+> Only someone who may add items sees **Add item**, and only someone who may change them sees **Add variant**, **Edit item**, **Edit**, **Edit names** and **Discontinue**.
 
 ## Write its recipe {#recipe}
 
@@ -125,7 +142,7 @@ Barcodes come later. The Code is your own, not a barcode.
 - **Variant**: one size or kind of an item, what stock is counted in.
 - **Own name**: the name an item or a variant was added with. Once items are named in a language, it is the name in that language.
 - **Uncategorised**: in no category.
-- **Low stock** and **Out**: below its reorder point, and none left. See [Reorder points](/inventory#reorder-points).
+- **Low stock** and **Out**: below its reorder point, and none left, said of an item by its worst code. See [Reorder points](/inventory#reorder-points) and [what each count counts](/inventory#counts).
 - **Discontinued**: taken out of use with **Discontinue**, so no longer offered when an item is chosen. **Reactivate** brings it back.
 - **Draft**, **active** and **archived**: a recipe being written, the one in use, and one replaced.
 

@@ -1,6 +1,38 @@
 # Inventory
 
-Inventory shows what you have and where: each item, at each location, by lot. From here you receive stock that came without an order, move it, and correct a count. Its second tab, **Reorder**, says which items run short, and buys or makes them.
+Inventory shows what you have and where: a row for each code, opening to the places it is in and the lots at each. From here you receive stock that came without an order, move it, and correct a count. Its second tab, **Reorder**, says which items run short, and buys or makes them.
+
+## Read the stock {#stock}
+
+On **Stock**, each row is a code, the code on a variant’s label, so an item that comes in three sizes has three rows. It lists every code with stock on hand, wanted by a confirmed sale, coming, or watched by a reorder point; **Show emptied** adds the rest. It reads fifty rows at a time, and **Show 50 more** adds the next fifty.
+
+- The name first, its code under it in grey, and its type. Press the name, or the row, to open the item’s page.
+- **Where**: how many places hold it, such as “2 places”. Press it to open the places, and a place’s lots to open them: the lots that expire first on top, the expired above them, a lot with no expiry last. A lot’s code opens its trace.
+- **On hand**: every unit at every place, usable or not. What is not usable is said under it, such as “12 not usable”: expired, issued to a run, or at a place not available.
+- **Free**: what you can still promise, usable stock less what is held, never below 0. What confirmed orders want beyond it is said under it, such as “20 short”; press it to see the orders waiting.
+- **Held**: kept for confirmed sales, the earliest confirmed first.
+- **Coming**: what confirmed purchases and released runs still have to bring, with the soonest day.
+- **Status**: **Low**, **Out** or **Enough**, with “10 left · reorder at 36” under it for a code with a reorder point. Press the line to see where the code stands.
+- **Expires first**: the soonest expiry of the usable stock.
+- **Actions**: the row’s actions, below.
+
+Below 600 px each code is a card with **On hand** and **Free**, and **Filters** holds what the screen has no room for. From 600 to 899 px **Held** and **Coming** leave the table.
+
+> Someone who may not see locations reads “3 lots” in place of the places, opens the lots alone, and has no **Location** list.
+
+## Find stock {#find}
+
+- The quick filters show only what they name, each with its count: **Low stock** (the out ones too), **Out**, **Expiring soon** (the expired ones too), **Expired** and **Waiting for a cost**. A count is the rows the filter shows, with the other filters on, so press one and the list is that long.
+- **Type**, **Category** and **Location** narrow the list, and **Search items, codes or lots** finds a code, an item’s name or a lot’s code. A message says when nothing matches, with **Show all stock**.
+- Press **On hand** or **Expires first** at the head of a column to sort by it, and again to reverse; the name is the default. A code with nothing to expire comes last either way. Free is not a sort.
+- Choose a place under **Location** and the list shows what is there: **On hand here**, **Lots here** and **Expires first here** are that place’s, while **Free, every place** and **Held, every place** count every place, since a sale holds an item, not a shelf. A lot’s code searched with a place chosen finds that lot at that place only.
+- Every filter, the group and the sort are in the address, so a reload and Back keep them. **Export** writes the rows the list shows, with its filters, in the screen’s words and your language.
+
+## Group by lot {#lots}
+
+Choosing **Lot** under **Group by** turns the list into one row for each lot at each place: the lot that expires first on top, the expired above it, a lot’s places together, and each saying “1 of 2 places” so its rows read as one lot. Its filters are **Low stock**, **Expiring soon**, **Expired** and **Waiting for a cost**; there is no **Out**, since an item that is out has no lots, and choosing it says “Items that are out have no lots.” with **Group by Item** to go back.
+
+Home’s **Expiring soon** opens this view, soonest first, the expired on top, and counts these rows.
 
 ## Receive stock {#receive}
 
@@ -20,13 +52,20 @@ Each row’s actions offer:
 - **Ship out**: stock that leaves with no order. A customer’s goods ship from their sale on Orders.
 - **Send sample**: a hand-out, with whom it was given to, so a recall can find it.
 - **Correct the count**: how many more or fewer the shelf has than recorded, why, and what happened.
-- **Edit lot details**, **Trace lot** and **History**: the row’s lot, where it went, and its movements.
+- **Edit lot details**, **Trace lot** and **Movements**: the row’s lot, where it went, and its movements.
+- **Reorder point…**: the item’s reorder point, below.
 
 > Only someone who may move stock sees **Receive stock** and each row’s actions, and only someone who may correct counts sees **Correct the count**.
 
-## Promised to customers {#promised}
+## What each count counts {#counts}
 
-Once a confirmed sale holds stock or waits for it, this table shows each item’s stock on hand where it can be sent from, what is held, what is free and what is backordered. Held stock goes to the earliest confirmed sale first.
+A number on a filter or a tile counts one kind of thing, and the kind is the same wherever you meet it.
+
+- **Stock**, by item, counts codes: a **Low stock** count of 4 is four codes, wherever they sit.
+- **Stock**, by lot, counts lots at each place: a lot in two places is two rows and counts twice.
+- **Reorder**, and Home’s **Low stock**, count codes, so an item with three codes under their points counts three.
+- Home’s **Expiring soon** counts lots at each place, the rows of the Lot view.
+- **Items** counts items: its **Low stock** counts an item once, however many of its codes are low, and its badge says “Low stock · 1 of 3 codes”. See [Items](/items#rows).
 
 ## Reorder points {#reorder-points}
 
@@ -43,7 +82,7 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 ## Where an item stands {#position}
 
-An item’s position = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another.
+An item’s position = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another. Said in a line it is “10 left · reorder at 36”, and a press on it opens the item’s page at [Where it stands](/items#stands), which lists what makes each figure up.
 
 An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The furthest below their point come first, and **Low stock** shows the out ones too. Open a row to see what makes up its position, late orders marked.
 
@@ -77,6 +116,7 @@ Nothing is saved until you create it, and what you create shows on the row at on
 - Stock goes only into a location with nothing inside it. Choose one of the places inside it.
 - Nothing is sent from a location marked not available. Move the stock to an available location first.
 - Stock held for a confirmed sale cannot be taken for anything else. Ship it on that sale, or take only what is free.
+- Expired stock, or stock issued to a run, is on the shelf but holds nothing for anyone. Taking it when another order needs the usable stock is refused, saying how many are expired or issued, with a link to the item’s page, where its places show which.
 - A lot code printed on the boxes cannot be renamed. Move the stock to the correct lot instead.
 - An item has one reorder point at most. Edit the one it has: the refusal links to it.
 - A reorder point and its quantities are above zero, and a maximum is above the point.

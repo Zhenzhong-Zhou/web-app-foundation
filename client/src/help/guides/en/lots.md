@@ -8,7 +8,7 @@ A lot is a quantity with its own code and expiry, received from a supplier or ma
 2. Type any part of the lot code; the batch number is usually enough. Press Enter.
 3. Choose the lot from those listed. Its whole code opens it at once.
 
-You can also find a lot by its code in **Search everything**, or open it with **Trace lot** on a row of Inventory.
+You can also find a lot by its code in **Search everything**, or press a lot’s code wherever one is listed: on Inventory, under **Where it stands** on an item’s page, and under **Waiting for a cost** on Stock value. **Trace lot** on a row of Inventory opens it too.
 
 ## Read a trace {#read}
 
@@ -19,6 +19,8 @@ You can also find a lot by its code in **Search everything**, or open it with **
 - **Who received it**: every customer this lot, or anything made from it, was shipped or sampled to, and what came back.
 
 Some may have left with no recipient on record: shipped without an order, or sampled without a name. They are listed with no partner.
+
+Beside **Who received it**, **Export** writes the recall list: the same rows, in your language, with how much was shipped, sampled and returned and the day it first left. Quantities and dates are in your language’s format, money shows its currency, and an expiry already past says how long ago: “Expired 4 days ago”.
 
 > Only someone who may see costs sees the lot’s cost and how its value changed.
 

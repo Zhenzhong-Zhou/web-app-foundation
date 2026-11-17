@@ -310,7 +310,7 @@ a second organization.
   the headings are the tabs' names, with Autres articles and 其他物品.
 - **MC-216** The Items guide, as the demo Owner, on Items: Help opens
   Items' guide, its sections The types, Find items, What a row shows,
-  Categories, Add an item, Change several at once, Variants, images and
+  Where it stands, Categories, Add an item, Change several at once, Variants, images and
   names, Write its recipe, One product for two markets, Words you'll
   meet and If something is refused. One product for two markets says one
   item with a variant per market, each with its own code, recipe,
@@ -434,6 +434,24 @@ a second organization.
   At 390 px, Stock is cards, each with On hand and Free, Filters holding
   Type, Category, Location and the sort; from 600 to 899 px Held and
   Coming leave the table.
+- **MC-316** *(ADR-093, R19)* Help's Inventory, Items and Trace a lot
+  guides. As the demo Owner, on Inventory, Help opens its guide with Read
+  the stock, Find stock, Group by lot, Receive stock, Move, ship or
+  correct, What each count counts, Reorder points, Where an item stands,
+  How much to order, Order or make what is low, Words you'll meet and If
+  something is refused, and no Promised to customers. Each header it names
+  (Where, On hand, Free, Held, Coming, Status, Expires first) is on the
+  screen under that name, and "12 not usable" and "20 short" read as in
+  the list. What each count counts says Stock by item counts codes, by lot
+  counts lots at each place, Reorder and Home's Low stock count codes,
+  Home's Expiring soon counts lots at each place, and Items counts items;
+  the demo's MAGCAP, with three codes, shows it: Items' Low stock counts
+  it once, "Low stock · 1 of 3 codes" in the row. On an item's page, Help
+  has Where it stands after What a row shows, and on Trace a lot's page it
+  says the recall list's Export is in your language, with money showing
+  its currency. In Français the title is Inventaire and the guide reads
+  Lire le stock, Trouver du stock and Regrouper par lot; in 中文,
+  读懂库存, 查找库存 and 按批次分组.
 - **MC-302** Move stock: a transfer between bins, an adjustment in, an
   adjustment out (a note is required), and a sample to a customer. Each one
   appears under Movements with who, when and why.
@@ -1215,7 +1233,7 @@ folder by folder; these check what is already in place.
       and the partner, address and contact dialogs;
   - locations: the tree with its chips, and the add and edit dialogs,
       each location type by name;
-  - inventory: the stock list and what is promised, the action menu, the
+  - inventory: the stock list in each grouping, the action menu, the
       receive, move, sample, correct and lot dialogs, a pile's history,
       the movements page with its reasons, and tracing a lot;
   - orders: the list with its filter and statuses, raising an order,
@@ -4312,11 +4330,11 @@ site, after a deploy that changes the setting, the route or the relay.
   is short. …", ends with Learn more, which opens Help at Where an item
   stands.
   The Inventory guide has Reorder points, Where an item stands, How much
-  to order and Order or make what is low after Promised to customers,
-  and two more refusals; every button it names reads the same on the
+  to order and Order or make what is low after What each count counts
+  (MC-316), and its refusals; every button it names reads the same on the
   screen, Add reorder point ending Add's steps, with Save when editing.
-  Home's guide has Low stock under Where each tile leads, opening Reorder
-  points, and Out among its words. In 中文: 了解更多 follows 待发 with no space and opens
+  Home's guide has Low stock under Where each tile leads, opening Reorder,
+  and Out among its words. In 中文: 了解更多 follows 待发 with no space and opens
   物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
   opens Où en est un article.
 
@@ -4588,11 +4606,11 @@ first.
   and reload: Chrome offers no translation, and asked to translate into
   English, the page stays in Chinese.
 
-- **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
-  As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
-  编码: ELDER-250, which SO-DEMO-9 and SO-DEMO-10 wait for, reads
-  接骨木莓糖浆…, as Stock above it names it. In English the same row
-  reads its base name.
+- **MC-R71** *(a stock table naming an item by its SKU alone, #296)*
+  As the demo Owner in 中文, on Inventory, ELDER-250's row names the item
+  接骨木莓糖浆… in bold with the code grey under it, as Items does, and
+  on its page Where it stands' Held lists SO-DEMO-9 and SO-DEMO-10 under
+  the same name. In English the row reads its base name.
 
 - **MC-R70** *(Movements naming an item by its SKU alone, with padding
   zeros, and who by email alone, #256)* As the demo Owner in 中文, on
@@ -6511,3 +6529,10 @@ first.
 - 2026-11-16: ADR-093's old stock reads removed, the list of piles and
   the promised table's, the API revision raised to 5: MC-3424's raise
   now 4 to 5, a tab left on Inventory.
+- 2026-11-16: ADR-093's Help: the Inventory guide reads the stock, finds
+  it, groups it by lot and says what each count counts, without
+  Promised to customers; the Items guide gains Where it stands and names
+  Edit item, Low stock and "72 not usable"; Trace a lot's guide says the
+  recall list's Export and the lot's link; Home's and Orders' guides say
+  Reorder: MC-316 added, MC-216 and MC-4217 reworded, MC-R71 rewritten
+  for Stock, the language walkthrough's list.
