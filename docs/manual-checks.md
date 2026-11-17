@@ -401,7 +401,11 @@ a second organization.
   the places stock sits in under their warehouse; Partout in Français,
   全部库位 in 中文. With the places' read failing (DevTools → Network,
   block `locations`), Stock says it could not read them, with Try again,
-  never "Add a location", and keeps `?locationId=` in the address.
+  never "Add a location", and keeps `?locationId=` in the address. At
+  820 px, Held and Coming leave the table, and a row opened to its places
+  and lots keeps each cell under its header: a lot's expiry under Expires
+  first, its Actions under Actions, nothing scrolling sideways; Reorder's
+  opened row too.
 - **MC-308** Inventory search finds a code by any part of its code, its
   item's name or a lot's code; a search with no match says no items match
   these filters, with Show all stock.
@@ -6572,3 +6576,5 @@ first.
   its lots to choose one; a place's give its Movements there; a lot's no
   longer the reorder point; "None on hand" only at none: MC-310 rewritten,
   MC-4210 reworded; Help's Inventory guide says each row's Actions.
+- 2026-11-17: ADR-093's review, 54: at 600–899 px every row under a code,
+  and Reorder's opened row, has a cell for each header shown: MC-301.

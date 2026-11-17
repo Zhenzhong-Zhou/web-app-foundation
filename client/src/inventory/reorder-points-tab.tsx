@@ -553,9 +553,11 @@ function PointRow({
       </TableRow>
       {open && (
         <TableRow id={detailId}>
-          <TableCell colSpan={columns} sx={{ pt: 0 }}>
+          <TableCell colSpan={columns - 1} sx={{ pt: 0 }}>
             <ReorderPointDetail row={row} />
           </TableCell>
+          {/* In draft's column, gone below 900 px with its header (R14). */}
+          <TableCell sx={{ ...WIDE_ONLY, pt: 0 }} />
         </TableRow>
       )}
     </>
@@ -1249,7 +1251,9 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {loading && <PlaceholderRows columns={columns} />}
+                      {loading && (
+                        <PlaceholderRows columns={columns} wideOnly={1} />
+                      )}
                       {!loading &&
                         rows?.map((row) => (
                           <PointRow

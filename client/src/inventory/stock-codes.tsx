@@ -118,6 +118,20 @@ const NONE = '0.0000';
 /** Held and Coming leave the table between 600 and 899 px (R14). */
 const WIDE_ONLY = { display: { xs: 'none', md: 'table-cell' } } as const;
 
+/**
+ * Held's and Coming's places in a row under a code: two empty cells, gone
+ * between 600 and 899 px with their headers, so no row spans a column the
+ * head does not show there (R14).
+ */
+function WideOnlyCells() {
+  return (
+    <>
+      <TableCell sx={WIDE_ONLY} />
+      <TableCell sx={WIDE_ONLY} />
+    </>
+  );
+}
+
 /** The item's page, at Where it stands or one of its parts (ADR-093, R8). */
 function whereItStands(productId: string, part = 'stock'): string {
   return `/items/${productId}#${part}`;
@@ -206,7 +220,7 @@ export function StockCodes({
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading && <PlaceholderRows columns={9} />}
+              {loading && <PlaceholderRows columns={9} wideOnly={2} />}
               {rows?.map((row) => (
                 <CodeTableRow key={row.variantId} row={row} {...opened} />
               ))}
@@ -763,7 +777,7 @@ function PlacesRows({
   if (failure) {
     return (
       <TableRow id={id}>
-        <TableCell colSpan={9}>
+        <TableCell colSpan={7}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Typography variant="body2" sx={{ color: 'error.main' }}>
               {intl.formatMessage({
@@ -779,6 +793,7 @@ function PlacesRows({
             </Button>
           </Stack>
         </TableCell>
+        <WideOnlyCells />
       </TableRow>
     );
   }
@@ -786,9 +801,10 @@ function PlacesRows({
 
   const line = choosing && (
     <TableRow sx={{ bgcolor: 'action.hover' }}>
-      <TableCell colSpan={9} sx={{ pl: 6 }}>
+      <TableCell colSpan={7} sx={{ pl: 6 }}>
         <ChooseLine places={places} />
       </TableCell>
+      <WideOnlyCells />
     </TableRow>
   );
 
@@ -912,7 +928,11 @@ function PlaceTableRow({
         <TableCell align="right">
           {displayWithUnit(place.onHand, row.unitOfMeasure, intl)}
         </TableCell>
-        <TableCell colSpan={5} />
+        {/* Free, Held, Coming, then Status and Expires first: a cell for
+            each the head shows at this width (R14). */}
+        <TableCell />
+        <WideOnlyCells />
+        <TableCell colSpan={2} />
         <TableCell padding="checkbox">
           {/* Not tracked by lot: the place's one pile is the row. Tracked:
               the code's Movements at this place. */}
@@ -1042,7 +1062,10 @@ function LotTableRow({
       <TableCell align="right">
         {displayWithUnit(lot.quantity, row.unitOfMeasure, intl)}
       </TableCell>
-      <TableCell colSpan={4} />
+      {/* Free, Held, Coming and Status, as the head shows them. */}
+      <TableCell />
+      <WideOnlyCells />
+      <TableCell />
       <TableCell>
         <ExpiryChip expiresAt={lot.lotExpiresAt} />
       </TableCell>

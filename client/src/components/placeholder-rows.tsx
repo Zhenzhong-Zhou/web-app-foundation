@@ -16,7 +16,17 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
  * head's own sort says what changed. `columns` is the head's number of
  * cells, which each bar spans.
  */
-export function PlaceholderRows({ columns }: { columns: number }) {
+export function PlaceholderRows({
+  columns,
+  wideOnly = 0,
+}: {
+  columns: number;
+  /**
+   * How many of them leave the table below 900 px (`md`), so a bar spans
+   * no column the head does not show there.
+   */
+  wideOnly?: number;
+}) {
   const shown = useDelayedFlag(true);
 
   if (!shown) return null;
@@ -25,11 +35,15 @@ export function PlaceholderRows({ columns }: { columns: number }) {
     <>
       {[0, 1].map((row) => (
         <TableRow key={row} aria-hidden>
-          <TableCell colSpan={columns}>
+          <TableCell colSpan={columns - wideOnly}>
             <Skeleton height={48} />
           </TableCell>
+          {wideOnly > 0 && <TableCell colSpan={wideOnly} sx={WIDE_ONLY} />}
         </TableRow>
       ))}
     </>
   );
 }
+
+/** A cell shown from 900 px (`md`), as a table's wide-only columns are. */
+const WIDE_ONLY = { display: { xs: 'none', md: 'table-cell' } } as const;
