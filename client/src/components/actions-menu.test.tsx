@@ -19,6 +19,10 @@ describe('ActionsMenu', () => {
       name: 'Actions for Vitamin C',
     });
     expect(button).toHaveTextContent('Actions');
+    // Its small down arrow after the word, as the boards draw it.
+    expect(
+      within(button).getByTestId('KeyboardArrowDownIcon'),
+    ).toBeInTheDocument();
     expect(button).toHaveAttribute('aria-haspopup', 'menu');
     expect(button).toHaveAttribute('aria-expanded', 'false');
 

@@ -502,7 +502,8 @@ a second organization.
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
 - **MC-310** *(ADR-093, v3)* Each row's Actions, a button in words, by
-  permission: the word grey with no border, tinted in the accent only
+  permission: the word grey with a small down arrow after it and no
+  border, tinted in the accent only
   under the pointer or the keyboard's focus; VoiceOver names it "Actions
   for" the item, or "Actions for lot …" at its place. As the demo Owner,
   an item's menu has three groups: Move…, Ship out…, Send sample…,
@@ -6694,3 +6695,5 @@ first.
   status's own word, "Low · 1 of 3 codes" (Bas, 不足), as Reorder's chip
   does, not the filter's Low stock; Help in three languages: MC-208 and
   MC-316.
+- 2026-11-17: ADR-093's review, Bob's second message (1): the Actions
+  button keeps its small down arrow after the word: MC-310.

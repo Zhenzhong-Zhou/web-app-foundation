@@ -1,3 +1,4 @@
+import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import {
   Button,
   Divider,
@@ -26,7 +27,7 @@ export interface Action {
 
 /**
  * A row's Actions, in words (the design language's Rows; ADR-093, R6): a
- * button reading "Actions", named for its row ("Actions for Vitamin C",
+ * button reading "Actions" with a small down arrow after it, named for its row ("Actions for Vitamin C",
  * "Actions for lot VC-0302 at Shelf A2"), that opens a menu of what the
  * reader may do there, in groups with a divider between them, and a line
  * above them where one says what comes next. Nothing to offer, no button.
@@ -62,9 +63,9 @@ export function ActionsMenu({
 
   return (
     <>
-      {/* The word in grey, no border; the tint and the accent only under
-          the pointer or the keyboard's focus, centred on the word, as v2's
-          board draws it (ADR-093). */}
+      {/* The word in grey and its small down arrow, no border; the tint and
+          the accent only under the pointer or the keyboard's focus, centred
+          on the word, as v2's and v3's boards draw it (ADR-093). */}
       <Button
         ref={buttonRef}
         size="small"
@@ -74,6 +75,7 @@ export function ActionsMenu({
         aria-expanded={!!anchor}
         aria-controls={anchor ? menuId : undefined}
         onClick={(event) => setAnchor(event.currentTarget)}
+        endIcon={<KeyboardArrowDown fontSize="small" />}
         sx={{
           whiteSpace: 'nowrap',
           minWidth: 0,

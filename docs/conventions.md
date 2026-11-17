@@ -1079,8 +1079,8 @@ Use these rather than writing the thing again on a page:
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
-- **`ActionsMenu`** for a row's actions: a button reading Actions, named
-  for its row, "Actions for VITC-100", opening a menu of what the reader
+- **`ActionsMenu`** for a row's actions: a button reading Actions with a
+  small down arrow after it, named for its row, "Actions for VITC-100", opening a menu of what the reader
   may do there, each choice run once the menu has closed; nothing to
   offer, no button (ADR-093; the design language's Rows). Stock's and
   Reorder's rows first; the others move as their screens are next changed.
