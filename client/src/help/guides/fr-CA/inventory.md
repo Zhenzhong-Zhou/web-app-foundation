@@ -90,7 +90,7 @@ Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock
 
 La position d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les bons de commande confirmés qui restent à recevoir et la production des ordres lancés qui reste à venir; moins les commandes clients confirmées qui restent à expédier. Ainsi, un bon de commande déjà créé ne déclenche pas une nouvelle commande. Résumée en une ligne, elle se lit « Il en reste 10 · point de commande 36 », et appuyer dessus ouvre la page de l’article à [État du stock](/items#stands), qui énumère ce qui compose chaque chiffre.
 
-Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les articles les plus loin sous leur point apparaissent en premier, et **Stock bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui compose sa position et quelles commandes sont en retard; sur un téléphone, où chaque article est une carte, touchez la ligne qui dit combien il en reste, qui ouvre le stock de l’article.
+Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. La liste s’ouvre avec les plus grandes quantités à commander en premier; appuyez sur **Statut** pour mettre d’abord les plus loin sous leur point, ou, sur un téléphone, choisissez **Stock bas d’abord** sous **Tri**. **Stock bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui compose sa position et quelles commandes sont en retard; sur un téléphone, où chaque article est une carte, touchez la ligne qui dit combien il en reste, qui ouvre le stock de l’article.
 
 ## Combien commander {#how-much}
 

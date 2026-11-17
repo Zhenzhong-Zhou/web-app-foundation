@@ -86,8 +86,15 @@ type Filter = (typeof FILTERS)[number];
 /** The view in the address (ADR-091), All left out: `?status=low`. */
 const ADDRESS_FILTERS = { status: oneOf<Filter>(FILTERS, '') };
 
-/** What the list sorts by besides its own order (ADR-093; #473's 16). */
-const SORTS = ['suggested'] as const;
+/**
+ * What the list sorts by (ADR-093; #473's 16): the suggested order, or
+ * its own, Low first, the furthest below their point first, which the
+ * server reads with no sort asked.
+ */
+const SORTS = ['suggested', 'low'] as const;
+
+/** Reorder's order unless another is chosen: what to order most of first (ADR-093, R7). */
+const BY_SUGGESTED = { key: 'suggested', order: 'desc' } as const;
 
 /** A path on the list's routes, its filter and search added. */
 function pathOf(base: string, query: Record<string, string>): string {
@@ -790,7 +797,13 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     setFilters({ status });
   };
   const { text, setText, search } = useListSearch();
-  const { sort, set: setSort, clear: clearSort } = useListSort(SORTS);
+  const {
+    sort,
+    set: setSort,
+    clear: clearSort,
+  } = useListSort(SORTS, BY_SUGGESTED);
+  // What the server is asked to sort by: Low first is its own order.
+  const served = sort?.key === 'suggested' ? sort : null;
   const phone = useCards();
   // By item, kept while the search changes and through Back from the
   // purchase order they were sent to (reorder-ticks.ts).
@@ -810,7 +823,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const query = { status: filter, search };
   const listPath = withSort(
     pathOf('/stock/reorder-points', { ...query, limit: String(PAGE_SIZE) }),
-    sort,
+    served,
   );
   const countsPath = pathOf('/stock/reorder-points/counts', { search });
 
@@ -964,9 +977,9 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
         id: 'products.sort',
         defaultMessage: 'Sort',
       })}
-      value={sort ? `${sort.key}:${sort.order}` : 'own'}
+      value={sort ? `${sort.key}:${sort.order}` : 'suggested:desc'}
       onChange={(event) => {
-        if (event.target.value === 'own') clearSort();
+        if (event.target.value === 'low:asc') setSort('low', 'asc');
         else
           setSort(
             'suggested',
@@ -974,18 +987,20 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           );
       }}
     >
-      {(['own', 'suggested:desc', 'suggested:asc'] as const).map((value) => (
-        <MenuItem key={value} value={value}>
-          {intl.formatMessage(
-            {
-              id: 'inventory.reorder.sortBy',
-              defaultMessage:
-                '{value, select, desc {Suggested order, most first} asc {Suggested order, least first} other {Low first}}',
-            },
-            { value: value === 'own' ? 'own' : value.split(':')[1] },
-          )}
-        </MenuItem>
-      ))}
+      {(['suggested:desc', 'suggested:asc', 'low:asc'] as const).map(
+        (value) => (
+          <MenuItem key={value} value={value}>
+            {intl.formatMessage(
+              {
+                id: 'inventory.reorder.sortBy',
+                defaultMessage:
+                  '{value, select, desc {Suggested order, most first} asc {Suggested order, least first} other {Low first}}',
+              },
+              { value: value === 'low:asc' ? 'own' : value.split(':')[1] },
+            )}
+          </MenuItem>
+        ),
+      )}
     </TextField>
   );
 
@@ -1036,7 +1051,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
               <ExportButton
                 path={withSort(
                   pathOf('/stock/reorder-points/export', query),
-                  sort,
+                  served,
                 )}
               />
             )}
@@ -1145,12 +1160,17 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                             defaultMessage: 'Item',
                           })}
                         </TableCell>
-                        <TableCell>
-                          {intl.formatMessage({
+                        {/* Low first, the list's own order, the furthest
+                            below their point first (ADR-085). */}
+                        <SortHeader
+                          label={intl.formatMessage({
                             id: 'common.status',
                             defaultMessage: 'Status',
                           })}
-                        </TableCell>
+                          active={sort?.key === 'low'}
+                          order="asc"
+                          onSort={() => setSort('low', 'asc')}
+                        />
                         <TableCell>
                           {intl.formatMessage({
                             id: 'products.stock.title',

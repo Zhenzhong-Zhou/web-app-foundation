@@ -4167,8 +4167,10 @@ site, after a deploy that changes the setting, the route or the relay.
   Inventory → Reorder: the address gains `?tab=reorder`, the switch reads
   All 11 · Low stock 8 · Out 2, and "Buy or make what is short. Tick
   several to buy them on one purchase order." sits above the list, with
-  Learn more. MAGCAP-240 and VITC-100 come first, every low row before
-  every other, and the rest by code. Each row names its item first, in
+  Learn more. The list opens with the most to order first, Suggested
+  order marked so; Status puts the low first instead,
+  `?sort=low&order=asc`: MAGCAP-240 and VITC-100 at the top, every low
+  row before every other, and the rest by code. Each row names its item first, in
   bold, a link to its page, with its cover or its type's icon, and under
   it in grey its code and how it is got: "Bought · in multiples of 48"
   for D3-1000-120, "Made · makes what is short" for SLEEP-60CT, "Bought ·
@@ -4184,8 +4186,8 @@ site, after a deploy that changes the setting, the route or the relay.
   kept", with no chevron. A click on a row's status or empty space opens
   nothing; its name opens its item's page, and its links and buttons do
   their own. Press Suggested
-  order: the most to order first, `?sort=suggested&order=desc`; again,
-  the least first; Back undoes each. The digits line up down each
+  order: the least first, `?sort=suggested&order=asc`; again, the most
+  first; Back undoes each. The digits line up down each
   column. At 820 px the In draft column leaves, the draft under the
   suggestion; at 390 px each row is a card, its box, the name and code,
   the status with where it stands, Suggested, the draft, and Buy or Make
@@ -6685,3 +6687,6 @@ first.
   Rien en stock; an order line's short is 缺 and « manquants »; Left's sum
   says 待发, not 订单待发; Stock value and a lot’s trace say 现有库存:
   MC-209.
+- 2026-11-17: ADR-093's review, A5 from the chat: Reorder opens sorted by
+  the suggested order, most first, and Status puts the low first; Help
+  says so in three languages: MC-4202.

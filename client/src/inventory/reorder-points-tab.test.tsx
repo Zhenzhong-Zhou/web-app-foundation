@@ -288,17 +288,17 @@ describe('Reorder', () => {
     ).toBeInTheDocument();
   });
 
-  it('sorts by the suggested order, most first on the first press, in the address', async () => {
+  // ADR-093, R7 (A5): what to order most of first, unless another order
+  // is chosen; Status puts the list's own order back, Low first.
+  it('opens sorted by the suggested order, most first; its header turns it, and Status puts Low first', async () => {
     const asked = open(['stock.view']);
 
-    const header = await screen.findByRole('button', {
-      name: 'Suggested order',
+    const header = await screen.findByRole('columnheader', {
+      name: /Suggested order/,
     });
-    await userEvent.click(header);
-    await expect
-      .poll(() => asked.at(-1)?.searchParams.get('sort'))
-      .toBe('suggested');
-    expect(asked.at(-1)?.searchParams.get('order')).toBe('desc');
+    expect(header).toHaveAttribute('aria-sort', 'descending');
+    expect(asked[0].searchParams.get('sort')).toBe('suggested');
+    expect(asked[0].searchParams.get('order')).toBe('desc');
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Suggested order' }),
@@ -306,6 +306,12 @@ describe('Reorder', () => {
     await expect
       .poll(() => asked.at(-1)?.searchParams.get('order'))
       .toBe('asc');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Status' }));
+    await expect.poll(() => asked.at(-1)?.searchParams.has('sort')).toBe(false);
+    expect(
+      screen.getByRole('columnheader', { name: /Status/ }),
+    ).toHaveAttribute('aria-sort', 'ascending');
   });
 
   // Reorder was Reorder points (ADR-093): a kept address still opens it.

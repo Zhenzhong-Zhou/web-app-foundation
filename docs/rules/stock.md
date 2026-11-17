@@ -205,7 +205,8 @@ file is kept is in the [README](README.md).
   furthest below its point as a share of it first, then the rest by
   code; sorted by the suggested order when asked, most first unless
   asked otherwise, the list's own order breaking its ties, page after
-  page. Its export is the same rows, in that order, its status, Bought
+  page. The screen asks for the suggested order, most first, unless
+  Status, Low first, is chosen. Its export is the same rows, in that order, its status, Bought
   or made, How much to order and unit in the screen's words in the
   reader's language.
   [ADR-085](../adr/0085-low-stock.md#decision--a-reorder-point-per-item-bought-or-made-with-a-rule-for-how-much) ·
@@ -213,6 +214,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/reorder-points.e2e-spec.ts) "puts the low first, the furthest below its point as a share of it first, then the rest by code" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "sorts by the suggested order, most first unless asked, the list’s own order breaking ties, page after page" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "writes the list as CSV, filtered as asked, with headers in the reader’s language, and records it" ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "opens sorted by the suggested order, most first; its header turns it, and Status puts Low first" ·
   [Help](../../client/src/help/guides/en/inventory.md#order-or-make-what-is-low-order) ·
   MC-4202 · MC-4203
 - **An opened row names its places only to a reader who may see

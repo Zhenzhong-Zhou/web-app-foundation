@@ -339,7 +339,7 @@ test('Reorder, a row, Drafted in its draft · 60: the draft; Back, Reorder as it
   await expect(names(page)).toHaveCount(4);
 });
 
-test('Reorder, Sort › Suggested order: most to order first; ?sort=suggested; again, least first', async ({
+test('Reorder, Sort › opens with the most to order first; Suggested order again, least first; Status, Low first', async ({
   page,
   freshOrg,
 }) => {
@@ -347,8 +347,7 @@ test('Reorder, Sort › Suggested order: most to order first; ?sort=suggested; a
   await signInAs(page, freshOrg.api);
   await reorderFrom(page, '/inventory?tab=reorder&status=low');
 
-  await page.getByRole('button', { name: 'Suggested order' }).click();
-  await expect(page).toHaveURL(/sort=suggested&order=desc/);
+  // The suggested order unless another is chosen (ADR-093, R7).
   await expect(names(page).first()).toHaveText('E2E Focus');
   await expect(
     page.getByRole('columnheader', { name: 'Suggested order' }),
@@ -358,6 +357,14 @@ test('Reorder, Sort › Suggested order: most to order first; ?sort=suggested; a
   await expect(page).toHaveURL(/sort=suggested&order=asc/);
   await expect(names(page).first()).not.toHaveText('E2E Focus');
   await expect(names(page).last()).toHaveText('E2E Focus');
+
+  // The list's own order, the furthest below their point first.
+  await page.getByRole('button', { name: 'Status' }).click();
+  await expect(page).toHaveURL(/sort=low&order=asc/);
+  await expect(
+    page.getByRole('columnheader', { name: 'Status' }),
+  ).toHaveAttribute('aria-sort', 'ascending');
+  await expect(names(page)).toHaveCount(4);
 });
 
 // ---------------------------------------------------------------------------
