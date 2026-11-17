@@ -587,9 +587,31 @@ describe('Inventory, grouped (e2e)', () => {
 
   it('exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    await world(alpha);
+    const { shelf } = await world(alpha);
 
-    /** The CSV's lines, without its BOM, each split at its commas. */
+    /** A CSV line's cells, a quoted one's commas and quotes its own. */
+    const cellsOf = (line: string) => {
+      const cells: string[] = [];
+      let cell = '';
+      let quoted = false;
+      for (let at = 0; at < line.length; at += 1) {
+        const char = line[at];
+        if (quoted && char === '"' && line[at + 1] === '"') {
+          cell += '"';
+          at += 1;
+        } else if (char === '"') {
+          quoted = !quoted;
+        } else if (char === ',' && !quoted) {
+          cells.push(cell);
+          cell = '';
+        } else {
+          cell += char;
+        }
+      }
+      return [...cells, cell];
+    };
+
+    /** The CSV's lines, without its BOM, each split into its cells. */
     const csv = async (path: string, language: string) =>
       (
         await alpha.agent.get(path).set('Accept-Language', language).expect(200)
@@ -597,7 +619,7 @@ describe('Inventory, grouped (e2e)', () => {
         .replace(/^\uFEFF/, '')
         .trimEnd()
         .split('\r\n')
-        .map((line) => line.split(','));
+        .map(cellsOf);
 
     // Low stock holds the out: VITC low, MAG out, each its word and unit.
     const byCode = await csv('/v1/stock/by-code/export?low=true', 'zh-Hans');
@@ -636,6 +658,38 @@ describe('Inventory, grouped (e2e)', () => {
       'Low',
     ]);
 
+    // At one place chosen, that place's On hand and Expires first, as
+    // the list's own rows say them, and no Not usable (review 56).
+    const atShelf = await csv(
+      `/v1/stock/by-code/export?locationId=${shelf}`,
+      'en',
+    );
+    const column = (name: string) => atShelf[0].indexOf(name);
+    expect(column('On hand here')).toBeGreaterThan(-1);
+    expect(column('Expires first here')).toBeGreaterThan(-1);
+    expect(column('Free, every place')).toBeGreaterThan(-1);
+    expect(column('Not usable')).toBe(-1);
+    const listed = await codes(alpha, `?locationId=${shelf}`);
+    const here = (row: CodeRow) =>
+      row.here as { onHand: string; expiresFirst: string | null };
+    expect(
+      atShelf
+        .slice(1)
+        .map((row) => [
+          row[column('Code')],
+          row[column('On hand here')],
+          row[column('Expires first here')],
+        ]),
+    ).toEqual(
+      listed.map((row) => [
+        row.sku,
+        here(row).onHand,
+        here(row).expiresFirst ?? '',
+      ]),
+    );
+    // VITC is in three places: the shelf's is not the item's.
+    const vitcRow = listed.find((row) => row.sku === 'VITC')!;
+    expect(here(vitcRow).onHand).not.toBe(vitcRow.onHand);
     // The Lot view's, its filters kept: the expired lot alone.
     const byLot = await csv('/v1/stock/by-lot/export?expired=true', 'fr-CA');
     expect(byLot).toHaveLength(2);

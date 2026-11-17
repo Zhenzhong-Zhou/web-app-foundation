@@ -32,7 +32,7 @@ import type {
   StockLotCounts,
   StockLotPage,
 } from './dto/stock-grouped-response.dto';
-import { STOCK_CODE_COLUMNS, STOCK_LOT_COLUMNS } from './stock-exports';
+import { STOCK_LOT_COLUMNS, stockCodeColumns } from './stock-exports';
 import { StockGroupedService } from './stock-grouped.service';
 
 /**
@@ -87,7 +87,7 @@ export class StockGroupedController {
     return csvFile(
       res,
       'inventory',
-      STOCK_CODE_COLUMNS,
+      stockCodeColumns(!!query.locationId),
       rows,
       localeOf(acceptLanguage),
     );

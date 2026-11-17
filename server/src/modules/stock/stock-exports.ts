@@ -43,52 +43,91 @@ function unitInWords<T extends { unitOfMeasure: string }>(): ExportColumn<T> {
 /**
  * A row per code's export (ADR-093): each code's figures as its row shows
  * them, from the one read, its status and unit in the screen's words in
- * the reader's language (#473's 29).
+ * the reader's language (#473's 29); at one place chosen, that place's
+ * (review 56).
  */
-export const STOCK_CODE_COLUMNS: ExportColumn<StockCodeRow>[] = [
-  { header: HEADERS.sku, value: (row) => row.sku },
-  { header: HEADERS.item, value: (row) => row.productName },
-  { header: VARIANT, value: (row) => row.variantName },
-  {
-    header: t({ id: 'exports.column.onHand', defaultMessage: 'On hand' }),
-    value: (row) => row.onHand,
-  },
-  {
-    header: t({ id: 'exports.column.notUsable', defaultMessage: 'Not usable' }),
-    value: (row) => row.notUsable,
-  },
-  {
-    header: t({ id: 'exports.column.free', defaultMessage: 'Free' }),
-    value: (row) => row.free,
-  },
-  {
-    header: t({ id: 'exports.column.held', defaultMessage: 'Held' }),
-    value: (row) => row.held,
-  },
-  {
-    header: t({ id: 'exports.column.short', defaultMessage: 'Short' }),
-    value: (row) => row.short,
-  },
-  { header: COMING, value: (row) => row.coming },
-  {
-    header: t({
-      id: 'exports.column.expectedDate',
-      defaultMessage: 'Expected date',
-    }),
-    value: (row) => row.comingOn,
-  },
-  { header: POSITION, value: (row) => row.position },
-  { header: REORDER_POINT, value: (row) => row.reorderPoint },
-  inWords(HEADERS.status, REORDER_STATUS_WORDS, (row) => row.status),
-  {
-    header: t({
-      id: 'exports.column.expiresFirst',
-      defaultMessage: 'Expires first',
-    }),
-    value: (row) => row.expiresFirst,
-  },
-  unitInWords(),
-];
+export function stockCodeColumns(here: boolean): ExportColumn<StockCodeRow>[] {
+  return [
+    { header: HEADERS.sku, value: (row) => row.sku },
+    { header: HEADERS.item, value: (row) => row.productName },
+    { header: VARIANT, value: (row) => row.variantName },
+    // At one place chosen, what is there, as the screen's headers say
+    // (20a): On hand and Expires first here, Free and Held every place's,
+    // and no Not usable, which the screen leaves out there.
+    here
+      ? {
+          header: t({
+            id: 'exports.column.onHandHere',
+            defaultMessage: 'On hand here',
+          }),
+          value: (row) => row.here?.onHand ?? null,
+        }
+      : {
+          header: t({ id: 'exports.column.onHand', defaultMessage: 'On hand' }),
+          value: (row) => row.onHand,
+        },
+    ...(here
+      ? []
+      : [
+          {
+            header: t({
+              id: 'exports.column.notUsable',
+              defaultMessage: 'Not usable',
+            }),
+            value: (row: StockCodeRow) => row.notUsable,
+          },
+        ]),
+    {
+      header: here
+        ? t({
+            id: 'exports.column.freeEverywhere',
+            defaultMessage: 'Free, every place',
+          })
+        : t({ id: 'exports.column.free', defaultMessage: 'Free' }),
+      value: (row) => row.free,
+    },
+    {
+      header: here
+        ? t({
+            id: 'exports.column.heldEverywhere',
+            defaultMessage: 'Held, every place',
+          })
+        : t({ id: 'exports.column.held', defaultMessage: 'Held' }),
+      value: (row) => row.held,
+    },
+    {
+      header: t({ id: 'exports.column.short', defaultMessage: 'Short' }),
+      value: (row) => row.short,
+    },
+    { header: COMING, value: (row) => row.coming },
+    {
+      header: t({
+        id: 'exports.column.expectedDate',
+        defaultMessage: 'Expected date',
+      }),
+      value: (row) => row.comingOn,
+    },
+    { header: POSITION, value: (row) => row.position },
+    { header: REORDER_POINT, value: (row) => row.reorderPoint },
+    inWords(HEADERS.status, REORDER_STATUS_WORDS, (row) => row.status),
+    here
+      ? {
+          header: t({
+            id: 'exports.column.expiresFirstHere',
+            defaultMessage: 'Expires first here',
+          }),
+          value: (row) => row.here?.expiresFirst ?? null,
+        }
+      : {
+          header: t({
+            id: 'exports.column.expiresFirst',
+            defaultMessage: 'Expires first',
+          }),
+          value: (row) => row.expiresFirst,
+        },
+    unitInWords(),
+  ];
+}
 
 /**
  * The Lot view's export (ADR-093): a row per lot at each place, its place

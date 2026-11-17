@@ -469,7 +469,10 @@ a second organization.
   Out or Enough and a unit as "each", never a stored code; the audit log's
   line for it reads the filters. Group by Lot, Export saves one row per
   lot at each place, the same rows the list shows. In 中文 the headers and
-  the words read in Chinese.
+  the words read in Chinese. With Main's Shelf chosen under Location, the
+  file's headers read On hand here, Free, every place, Held, every place
+  and Expires first here, with no Not usable, and D3-1000-120's On hand is
+  the shelf's, as its row says.
 - **MC-302** Move stock: a transfer between bins, an adjustment in, an
   adjustment out (a note is required), and a sample to a customer. Each one
   appears under Movements with who, when and why.
@@ -6584,3 +6587,6 @@ first.
 - 2026-11-17: ADR-093's review, 52 and 1: the cut-text test on Inventory's
   screens switched on and passing; an expiry chip wraps, a card's lot line
   wraps, Add variant wraps: MC-301.
+- 2026-11-17: ADR-093's review, 56: Stock's Export at one place writes
+  that place's On hand and Expires first, its headers as the screen's:
+  MC-317.
