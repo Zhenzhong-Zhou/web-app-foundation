@@ -1906,6 +1906,7 @@ export type StockCodeRow = {
   reorderPoint: string | null;
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   needsCost: boolean;
+  stocked: boolean;
   here: StockHere | null;
 };
 
@@ -1937,6 +1938,7 @@ export type StockPile = {
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
   quantity: string;
+  emptiedOn: string | null;
 };
 
 export type StockPlace = {
@@ -1967,6 +1969,7 @@ export type StockLotRow = {
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
   quantity: string;
+  emptiedOn: string | null;
   productId: string;
   type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
   coverFileId: string | null;

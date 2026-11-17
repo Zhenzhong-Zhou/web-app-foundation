@@ -517,6 +517,54 @@ describe('Inventory, grouped (e2e)', () => {
     expect(await lotCodes('low=true&search=VC-FAR')).toEqual(['VC-FAR SHELF']);
   });
 
+  // Whether an item was ever stocked where the row stands, and the day a
+  // pile was emptied: what its Actions grey and say (ADR-093 v3).
+  it('says whether a code was ever stocked here, and the day each emptied pile was emptied', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { shelf, back, elder, focus } = await world(alpha);
+    // ELDER's 10 on the shelf, counted away: an emptied pile.
+    await alpha.agent
+      .post('/v1/stock/movements')
+      .send({
+        variantId: elder,
+        fromLocationId: shelf,
+        quantity: '10',
+        reason: 'adjustment',
+        reasonDetail: 'damaged',
+        note: 'Broken in the move',
+      })
+      .expect(201);
+
+    const stocked = async (filters: string) =>
+      Object.fromEntries(
+        (await codes(alpha, filters)).map((row) => [row.sku, row.stocked]),
+      );
+    // MAG has a point and was never received: never stocked.
+    expect(await stocked('?includeEmpty=true')).toMatchObject({
+      MAG: false,
+      ELDER: true,
+      FOCUS: true,
+    });
+    // At the back, the list holds only what was stocked there.
+    expect(await stocked(`?includeEmpty=true&locationId=${back}`)).toEqual({
+      VITC: true,
+    });
+
+    const { places } = body<{
+      places: { lots: { quantity: string; emptiedOn: string | null }[] }[];
+    }>(
+      await alpha.agent
+        .get(`/v1/stock/by-code/${elder}/places?includeEmpty=true`)
+        .expect(200),
+    );
+    expect(places[0].lots[0].quantity).toBe('0.0000');
+    expect(places[0].lots[0].emptiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const held = body<{
+      places: { lots: { emptiedOn: string | null }[] }[];
+    }>(await alpha.agent.get(`/v1/stock/by-code/${focus}/places`).expect(200));
+    expect(held.places[0].lots[0].emptiedOn).toBeNull();
+  });
+
   it('counts each of the Lot view’s quick filters as the lots it shows, with the other filters on, and exports those rows', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { shelf } = await world(alpha);

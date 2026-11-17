@@ -16510,6 +16510,9 @@
           "needsCost": {
             "type": "boolean"
           },
+          "stocked": {
+            "type": "boolean"
+          },
           "here": {
             "anyOf": [
               {
@@ -16548,6 +16551,7 @@
           "reorderPoint",
           "status",
           "needsCost",
+          "stocked",
           "here"
         ]
       },
@@ -16664,6 +16668,12 @@
           },
           "quantity": {
             "type": "string"
+          },
+          "emptiedOn": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -16680,7 +16690,8 @@
           "lotCode",
           "lotExpiresAt",
           "lotIsAssigned",
-          "quantity"
+          "quantity",
+          "emptiedOn"
         ]
       },
       "StockPlace": {
@@ -16803,6 +16814,12 @@
           "quantity": {
             "type": "string"
           },
+          "emptiedOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "productId": {
             "type": "string"
           },
@@ -16845,6 +16862,7 @@
           "lotExpiresAt",
           "lotIsAssigned",
           "quantity",
+          "emptiedOn",
           "productId",
           "type",
           "coverFileId",

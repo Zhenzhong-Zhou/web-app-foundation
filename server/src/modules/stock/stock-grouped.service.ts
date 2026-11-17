@@ -303,6 +303,7 @@ type CodeRow = {
   reorder_point: string | null;
   status: ReorderStatus | null;
   needs_cost: boolean;
+  stocked: boolean;
   here_on_hand: string | null;
   here_lots: number | null;
   here_expires_first: string | null;
@@ -328,6 +329,7 @@ type PileRow = {
   lot_expires_at: string | null;
   lot_is_assigned: boolean | null;
   quantity: string;
+  emptied_on: string | null;
   /** The places' read alone: on hand at the pile's place. */
   place_on_hand?: string;
 };
@@ -572,6 +574,14 @@ export class StockGroupedService {
         ${quantity(sql`f.reorder_point`)} as reorder_point,
         f.status,
         ${needsCost} as needs_cost,
+        -- Ever stocked where the row stands, an emptied pile counted: an
+        -- item never stocked here has nothing to correct (ADR-093 v3).
+        exists (
+          select 1 from ${stockLevels} ever
+          where ever.organization_id = ${org}
+            and ever.variant_id = ${productVariants.id}
+            ${locationId ? sql`and ever.location_id = ${locationId}::uuid` : sql``}
+        ) as stocked,
         ${
           locationId
             ? sql`${quantity(sql`coalesce(h.on_hand, 0)`)} as here_on_hand,
@@ -618,6 +628,7 @@ export class StockGroupedService {
         reorderPoint: row.reorder_point,
         status: row.status,
         needsCost: row.needs_cost,
+        stocked: row.stocked,
         here: locationId
           ? {
               onHand: row.here_on_hand!,
@@ -1097,7 +1108,14 @@ function pileColumns(organizationId: string, locale: Locale | null): SQL {
     ${lots.code} as lot_code,
     ${lots.expiresAt}::text as lot_expires_at,
     ${lots.isAssigned} as lot_is_assigned,
-    ${quantity(sql`${stockLevels.quantity}`)} as quantity
+    ${quantity(sql`${stockLevels.quantity}`)} as quantity,
+    -- An emptied pile's day, the organization's: its last change left none.
+    case when ${stockLevels.quantity} = 0 then (
+      ${stockLevels.updatedAt} at time zone (
+        select ${organizations.timeZone} from ${organizations}
+        where ${organizations.id} = ${organizationId}::uuid
+      )
+    )::date::text end as emptied_on
   `;
 }
 
@@ -1118,5 +1136,6 @@ function pileOf(row: PileRow, seesPlaces: boolean) {
     lotExpiresAt: row.lot_expires_at,
     lotIsAssigned: row.lot_is_assigned,
     quantity: row.quantity,
+    emptiedOn: row.emptied_on,
   };
 }

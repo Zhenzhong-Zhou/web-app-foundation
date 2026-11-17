@@ -49,6 +49,7 @@ const CODE: StockCodeRow = {
   reorderPoint: '36.0000',
   status: 'low',
   needsCost: false,
+  stocked: true,
   here: null,
 };
 
@@ -69,6 +70,7 @@ function pile(id: string, lot: string, expiresAt: string | null, at: string) {
     lotExpiresAt: expiresAt,
     lotIsAssigned: false,
     quantity: '10.0000',
+    emptiedOn: null,
   };
 }
 

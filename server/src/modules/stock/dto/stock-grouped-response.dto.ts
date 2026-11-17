@@ -64,6 +64,11 @@ export class StockCodeRow {
   status!: ReorderStatus | null;
   /** Some of it waits for a cost (ADR-048). */
   needsCost!: boolean;
+  /**
+   * Ever stocked where the row stands, at the place chosen or any: false
+   * for an item never received there, with nothing to correct (ADR-093).
+   */
+  stocked!: boolean;
   /** Its figures at the place chosen, or null with none chosen. */
   here!: StockHere | null;
 }
@@ -121,6 +126,11 @@ export class StockPile {
   /** Whether the code was ours to invent (MovementLotDto). */
   lotIsAssigned!: boolean | null;
   quantity!: string;
+  /**
+   * The organization's day it was emptied, its last change leaving none;
+   * null while it holds stock (ADR-093: "Emptied 14 Nov").
+   */
+  emptiedOn!: string | null;
 }
 
 /** One place holding a code, and its lots there, soonest first. */

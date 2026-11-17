@@ -22,6 +22,7 @@ const ROW: StockPile = {
   lotExpiresAt: '2027-10-01',
   lotIsAssigned: false,
   quantity: '96.0000',
+  emptiedOn: null,
 };
 
 const MOVEMENT = movement();
