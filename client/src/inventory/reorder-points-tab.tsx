@@ -1239,7 +1239,10 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                         </TableCell>
                         {/* Every header named (R6), this one to a screen
                             reader: each row's button says its word. */}
-                        <TableCell padding="checkbox">
+                        <TableCell
+                          padding="checkbox"
+                          sx={{ position: 'relative' }}
+                        >
                           <Box component="span" sx={HIDDEN}>
                             {intl.formatMessage({
                               id: 'common.actions',

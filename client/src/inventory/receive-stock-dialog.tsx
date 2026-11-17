@@ -43,17 +43,24 @@ export function ReceiveStockDialog({
   open,
   locations,
   defaultLocationId,
+  defaultVariantId = '',
   onClose,
   onReceived,
 }: {
   open: boolean;
   locations: Location[];
   defaultLocationId: string;
+  /** The item filled in, from an item's Receive stock… (ADR-093 v3). */
+  defaultVariantId?: string;
   onClose: () => void;
   onReceived: () => Promise<void>;
 }) {
   const intl = useIntl();
-  const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
+  const [form, setForm] = useState({
+    ...EMPTY,
+    locationId: defaultLocationId,
+    variantId: defaultVariantId,
+  });
   /**
    * What the form says under a field it refused: one left empty (#310), or
    * a quantity typed with a thousands separator (ADR-054).

@@ -278,6 +278,8 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
 
   // Dialogs.
   const [receiving, setReceiving] = useState(false);
+  /** The item an item's Receive stock… opened the dialog for, filled in. */
+  const [receivingItem, setReceivingItem] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
   const routed = useLocation();
   // The rows open, in the address so Back finds them open (ADR-093's
@@ -306,6 +308,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     onHistory: setViewing,
     onEditLot: setEditingLot,
     onReorder: setReordering,
+    onReceive: (variantId) => {
+      setReceivingItem(variantId);
+      setReceiving(true);
+    },
   };
 
   if (list.refused) {
@@ -877,11 +883,14 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       )}
 
       <ReceiveStockDialog
+        key={receivingItem ?? 'any'}
         open={receiving || (asked && leaves.length > 0)}
         locations={leaves}
         defaultLocationId={locationId}
+        defaultVariantId={receivingItem ?? ''}
         onClose={() => {
           setReceiving(false);
+          setReceivingItem(null);
           if (asked) {
             setParams(
               (current) => {

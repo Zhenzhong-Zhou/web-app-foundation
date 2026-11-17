@@ -53,6 +53,8 @@ import { useOpenRows } from '../lib/use-open-rows';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { STATUS_TONES } from '../theme/status';
+import { EmptiedLine } from './emptied-line';
+import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import type { HistoryOf } from './movement-history-dialog';
 import type { ReorderItem } from './reorder-point-dialog';
@@ -67,6 +69,8 @@ export interface StockHandlers {
   onHistory: (of: HistoryOf) => void;
   onEditLot: (row: Pile) => void;
   onReorder: (item: ReorderItem) => void;
+  /** Receive stock, the dialog with this item filled in (ADR-093 v3). */
+  onReceive: (variantId: string) => void;
 }
 
 type Header = (column: StockCodeSort) => {
@@ -232,7 +236,7 @@ export function StockCodes({
                 />
                 {/* Every header named (R6), this one to a screen reader:
                     each row's button says its word. */}
-                <TableCell padding="checkbox">
+                <TableCell padding="checkbox" sx={{ position: 'relative' }}>
                   <Box component="span" sx={HIDDEN}>
                     {intl.formatMessage(HEADS.actions)}
                   </Box>
@@ -286,19 +290,21 @@ interface Opened extends Returning {
 function readPlaces(
   row: StockCodeRow,
   { place, includeEmpty }: Opened,
+  /** The emptied piles too, to correct a count with nothing on hand. */
+  emptied = false,
 ): Promise<StockPlace[]> {
   const params = new URLSearchParams();
   if (place) params.set('locationId', place.id);
-  if (includeEmpty) params.set('includeEmpty', 'true');
+  if (includeEmpty || emptied) params.set('includeEmpty', 'true');
   return api<StockCodePlaces>(
     `/stock/by-code/${row.variantId}/places?${params.toString()}`,
   ).then((answer) => answer.places);
 }
 
 /** A code's places and their lots, read as its row opens (R2). */
-function usePlaces(row: StockCodeRow, opened: Opened) {
+function usePlaces(row: StockCodeRow, opened: Opened, emptied = false) {
   return useOpenRows(
-    () => readPlaces(row, opened),
+    () => readPlaces(row, opened, emptied),
     opened.changes,
     opened.opens.includes(row.variantId),
   );
@@ -348,8 +354,10 @@ function usePileChoice(
   row: StockCodeRow,
   opened: Opened,
   places: ReturnType<typeof usePlaces>,
+  setEmptied: (emptied: boolean) => void,
 ) {
-  const [choosing, setChoosing] = useState(false);
+  /** The action the lots were opened to choose for, "Choose the lot to move". */
+  const [choosing, setChoosing] = useState<MoveMode | null>(null);
   const first = useRef<HTMLButtonElement>(null);
 
   // Focus on the first lot's Actions once the lots are drawn.
@@ -359,13 +367,19 @@ function usePileChoice(
   }, [choosing, drawn]);
   /** The row's own button: closed, it no longer asks for a lot. */
   function toggle() {
-    if (places.open) setChoosing(false);
+    if (places.open) {
+      setChoosing(null);
+      setEmptied(false);
+    }
     opened.onOpen(row.variantId, !places.open);
     places.toggle();
   }
 
   async function act(mode: MoveMode) {
-    if (onePile(row, opened)) {
+    // Nothing on hand: Correct the count opens the emptied places and lots
+    // to choose one (ADR-093 v3).
+    const emptied = mode === 'adjust' && onHandOf(row, opened) === NONE;
+    if (!emptied && onePile(row, opened)) {
       try {
         const rows = places.rows ?? (await readPlaces(row, opened));
         const pile = rows.flatMap((each) => each.lots)[0];
@@ -378,10 +392,13 @@ function usePileChoice(
         // Try again.
       }
     }
-    setChoosing(true);
+    setChoosing(mode);
+    setEmptied(emptied);
     if (!places.open) {
       opened.onOpen(row.variantId, true);
       places.toggle();
+    } else if (emptied) {
+      places.retry();
     }
   }
 
@@ -451,8 +468,10 @@ function NothingToOpen({ row, ...opened }: { row: StockCodeRow } & Opened) {
 /** A code's row in the table, and the rows it opens to after it. */
 function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
-  const places = usePlaces(row, opened);
-  const choice = usePileChoice(row, opened, places);
+  // Opened to correct a count with nothing on hand: the emptied piles too.
+  const [emptied, setEmptied] = useState(false);
+  const places = usePlaces(row, opened, emptied);
+  const choice = usePileChoice(row, opened, places, setEmptied);
   const back = useReturn(row, opened);
   const controls = useId();
   const words = openWords(row, opened, intl);
@@ -685,69 +704,83 @@ function CodeActions({
   onPile: (mode: MoveMode) => void;
 }) {
   const intl = useIntl();
+  const words = useMenuWords();
   const { handlers } = opened;
-  const actions: Action[] = [
+  const nothing = onHandOf(row, opened) === NONE;
+  const reason = (doing: 'move' | 'ship' | 'send') =>
+    nothing
+      ? intl.formatMessage(
+          {
+            id: 'inventory.menu.nothingOnHand',
+            defaultMessage:
+              '{doing, select, move {Nothing on hand to move} ship {Nothing on hand to ship} other {Nothing on hand to send}}',
+          },
+          { doing },
+        )
+      : undefined;
+
+  // What changes stock, each on its one lot at its one place, or on the
+  // lot chosen next; greyed with its reason when nothing is on hand,
+  // Correct the count kept to correct an emptied place or lot, greyed for
+  // an item never stocked here (ADR-093 v3).
+  const changes: Action[] = handlers.canMove
+    ? [
+        {
+          label: words.move,
+          onSelect: () => onPile('transfer'),
+          unavailable: reason('move'),
+        },
+        {
+          label: words.ship,
+          onSelect: () => onPile('ship'),
+          unavailable: reason('ship'),
+        },
+        {
+          label: words.sample,
+          onSelect: () => onPile('sample'),
+          unavailable: reason('send'),
+        },
+        ...(handlers.canAdjust
+          ? [
+              {
+                label: words.correct,
+                onSelect: () => onPile('adjust'),
+                unavailable: row.stocked
+                  ? undefined
+                  : intl.formatMessage({
+                      id: 'inventory.menu.neverStocked',
+                      defaultMessage: 'Never stocked here: receive it first',
+                    }),
+              },
+            ]
+          : []),
+      ]
+    : [];
+  const receive: Action[] = handlers.canMove
+    ? [
+        {
+          label: words.receive,
+          onSelect: () => handlers.onReceive(row.variantId),
+        },
+      ]
+    : [];
+  const reads: Action[] = [
     {
-      label: intl.formatMessage({
-        id: 'layout.nav.movements',
-        defaultMessage: 'Movements',
-      }),
+      label: words.movements,
       onSelect: () =>
         handlers.onHistory({ ...row, lotId: null, lotCode: null, at: null }),
     },
+    // The item's, not a lot's: one point across every place (ADR-085).
+    ...(handlers.canReorder
+      ? [
+          {
+            label:
+              row.reorderPoint === null ? words.setPoint : words.changePoint,
+            onSelect: () => handlers.onReorder(row),
+          },
+        ]
+      : []),
   ];
-  // What changes stock acts on a pile, so only with something on hand
-  // where the row stands.
-  if (handlers.canMove && onHandOf(row, opened) !== NONE) {
-    actions.push(
-      {
-        label: intl.formatMessage({
-          id: 'inventory.actions.move',
-          defaultMessage: 'Move',
-        }),
-        onSelect: () => onPile('transfer'),
-      },
-      {
-        label: intl.formatMessage({
-          id: 'inventory.move.ship.title',
-          defaultMessage: 'Ship out',
-        }),
-        onSelect: () => onPile('ship'),
-      },
-      {
-        label: intl.formatMessage({
-          id: 'inventory.actions.sendSample',
-          defaultMessage: 'Send sample',
-        }),
-        onSelect: () => onPile('sample'),
-      },
-    );
-    if (handlers.canAdjust) {
-      actions.push({
-        label: intl.formatMessage({
-          id: 'inventory.move.adjust.title',
-          defaultMessage: 'Correct the count',
-        }),
-        onSelect: () => onPile('adjust'),
-      });
-    }
-  }
-  // The item's, not a lot's: one point across every place (ADR-085).
-  if (handlers.canReorder) {
-    actions.push({
-      label:
-        row.reorderPoint === null
-          ? intl.formatMessage({
-              id: 'products.stock.setPoint',
-              defaultMessage: 'Set a reorder point',
-            })
-          : intl.formatMessage({
-              id: 'products.stock.changePoint',
-              defaultMessage: 'Change reorder point',
-            }),
-      onSelect: () => handlers.onReorder(row),
-    });
-  }
 
   return (
     <ActionsMenu
@@ -755,16 +788,67 @@ function CodeActions({
         { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
         { item: nameOf(row) },
       )}
-      actions={actions}
+      groups={[changes, receive, reads]}
+      note={
+        handlers.canMove && !nothing && !onePile(row, opened)
+          ? choiceNote(row, opened, intl)
+          : undefined
+      }
     />
   );
 }
 
 /**
- * "Choose the lot", above the lots a pile's action from the code's row
- * opened to; "Choose the place" for a code not tracked by lot.
+ * Above an item's choices when it is more than one lot at one place: what
+ * comes next, "3 lots in 2 places: you choose the lot next" (ADR-093 v3).
  */
-function ChooseLine({ places }: { places: StockPlace[] }) {
+function choiceNote(
+  row: StockCodeRow,
+  { place }: Opened,
+  intl: ReturnType<typeof useIntl>,
+): string {
+  const lots = place ? (row.here?.lots ?? 0) : row.lots;
+  if (lots === 0) {
+    return intl.formatMessage(
+      {
+        id: 'inventory.menu.placesNext',
+        defaultMessage:
+          '{places, plural, one {In # place} other {In # places}}: you choose the place next',
+      },
+      { places: row.places },
+    );
+  }
+  return place
+    ? intl.formatMessage(
+        {
+          id: 'inventory.menu.lotsHereNext',
+          defaultMessage:
+            '{lots, plural, one {# lot} other {# lots}} here: you choose the lot next',
+        },
+        { lots },
+      )
+    : intl.formatMessage(
+        {
+          id: 'inventory.menu.lotsNext',
+          defaultMessage:
+            '{lots, plural, one {# lot} other {# lots}} in {places, plural, one {# place} other {# places}}: you choose the lot next',
+        },
+        { lots, places: row.places },
+      );
+}
+
+/**
+ * "Choose the lot to move", above the lots a pile's action from the item's
+ * row opened to; "Choose the place to move" for one not tracked by lot
+ * (ADR-093 v3).
+ */
+function ChooseLine({
+  places,
+  mode,
+}: {
+  places: StockPlace[];
+  mode: MoveMode;
+}) {
   const intl = useIntl();
   const tracked = places.some((each) =>
     each.lots.some((lot) => lot.lotId !== null),
@@ -773,14 +857,22 @@ function ChooseLine({ places }: { places: StockPlace[] }) {
   return (
     <Typography role="status" variant="body2" sx={{ fontWeight: 600 }}>
       {tracked
-        ? intl.formatMessage({
-            id: 'inventory.stock.chooseLot',
-            defaultMessage: 'Choose the lot.',
-          })
-        : intl.formatMessage({
-            id: 'inventory.stock.choosePlace',
-            defaultMessage: 'Choose the place.',
-          })}
+        ? intl.formatMessage(
+            {
+              id: 'inventory.stock.chooseLotTo',
+              defaultMessage:
+                '{mode, select, transfer {Choose the lot to move} ship {Choose the lot to ship} sample {Choose the lot to send} other {Choose the lot to correct}}',
+            },
+            { mode },
+          )
+        : intl.formatMessage(
+            {
+              id: 'inventory.stock.choosePlaceTo',
+              defaultMessage:
+                '{mode, select, transfer {Choose the place to move} ship {Choose the place to ship} sample {Choose the place to send} other {Choose the place to correct}}',
+            },
+            { mode },
+          )}
     </Typography>
   );
 }
@@ -808,8 +900,8 @@ function PlacesRows({
   places: StockPlace[] | null;
   failure: unknown;
   onRetry: () => void;
-  /** Opened by a pile's action from the code's row: "Choose the lot". */
-  choosing: boolean;
+  /** Opened by a pile's action from the item's row: "Choose the lot to …". */
+  choosing: MoveMode | null;
   /** The first lot's Actions, which focus moves to while choosing. */
   first: RefObject<HTMLButtonElement | null>;
 } & Opened) {
@@ -843,7 +935,7 @@ function PlacesRows({
   const line = choosing && (
     <TableRow sx={{ bgcolor: 'action.hover' }}>
       <TableCell colSpan={7} sx={{ pl: 6 }}>
-        <ChooseLine places={places} />
+        <ChooseLine places={places} mode={choosing} />
       </TableCell>
       <WideOnlyCells />
     </TableRow>
@@ -884,7 +976,7 @@ function PlacesRows({
           row={row}
           place={each}
           handlers={handlers}
-          lotsOpen={choosing}
+          lotsOpen={!!choosing}
           actionsRef={index === 0 ? first : undefined}
         />
       ))}
@@ -976,7 +1068,7 @@ function PlaceTableRow({
         <TableCell colSpan={2} />
         <TableCell padding="checkbox">
           {/* Not tracked by lot: the place's one pile is the row. Tracked:
-              the code's Movements at this place. */}
+              the code's Movements at this place, a plain link. */}
           {!tracked && place.lots[0] ? (
             <PileActions
               pile={place.lots[0]}
@@ -984,7 +1076,7 @@ function PlaceTableRow({
               buttonRef={actionsRef}
             />
           ) : (
-            <PlaceActions row={row} place={place} handlers={handlers} />
+            <PlaceMovements row={row} place={place} handlers={handlers} />
           )}
         </TableCell>
       </TableRow>
@@ -1018,8 +1110,11 @@ function NotUsableHere() {
   );
 }
 
-/** A place's Actions: the code's Movements at that place (ADR-093). */
-function PlaceActions({
+/**
+ * A place's own link, its Movements there: a plain link in words, not a
+ * menu of one (ADR-093 v3); the history dialog until Movements' branch.
+ */
+function PlaceMovements({
   row,
   place,
   handlers,
@@ -1032,30 +1127,33 @@ function PlaceActions({
   const where = nameAndCode(place.locationName ?? '', place.locationCode);
 
   return (
-    <ActionsMenu
-      name={intl.formatMessage(
+    <Link
+      component="button"
+      type="button"
+      variant="body2"
+      underline="always"
+      aria-label={intl.formatMessage(
         {
-          id: 'inventory.actions.itemAt',
-          defaultMessage: 'Actions for {item} at {place}',
+          id: 'inventory.stock.movementsAt',
+          defaultMessage: 'Movements of {item} at {place}',
         },
         { item: nameOf(row), place: where },
       )}
-      actions={[
-        {
-          label: intl.formatMessage({
-            id: 'layout.nav.movements',
-            defaultMessage: 'Movements',
-          }),
-          onSelect: () =>
-            handlers.onHistory({
-              ...row,
-              lotId: null,
-              lotCode: null,
-              at: { locationId: place.locationId, locationName: where },
-            }),
-        },
-      ]}
-    />
+      onClick={() =>
+        handlers.onHistory({
+          ...row,
+          lotId: null,
+          lotCode: null,
+          at: { locationId: place.locationId, locationName: where },
+        })
+      }
+      sx={{ whiteSpace: 'nowrap', px: 1 }}
+    >
+      {intl.formatMessage({
+        id: 'layout.nav.movements',
+        defaultMessage: 'Movements',
+      })}
+    </Link>
   );
 }
 
@@ -1097,6 +1195,7 @@ function LotTableRow({
         ) : (
           NO_VALUE
         )}
+        <EmptiedLine pile={lot} />
         {notAvailable && <NotUsableHere />}
       </TableCell>
       <TableCell />
@@ -1147,8 +1246,10 @@ export function PileActions({
  */
 function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
-  const places = usePlaces(row, opened);
-  const choice = usePileChoice(row, opened, places);
+  // Opened to correct a count with nothing on hand: the emptied piles too.
+  const [emptied, setEmptied] = useState(false);
+  const places = usePlaces(row, opened, emptied);
+  const choice = usePileChoice(row, opened, places, setEmptied);
   const back = useReturn(row, opened);
   const controls = useId();
   const words = openWords(row, opened, intl);
@@ -1218,7 +1319,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
               <Coming row={row} />
             </Figure>
             {choice.choosing && places.rows && (
-              <ChooseLine places={places.rows} />
+              <ChooseLine places={places.rows} mode={choice.choosing} />
             )}
             <OpenedCard
               row={row}
@@ -1332,6 +1433,7 @@ function OpenedCard({
                 {lot.lotId && lot.lotCode && (
                   <LotLink id={lot.lotId} code={lot.lotCode} />
                 )}
+                <EmptiedLine pile={lot} />
                 <ExpiryChip expiresAt={lot.lotExpiresAt} />
                 {!showPlaces && !each.isAvailable && <NotUsableHere />}
               </Stack>

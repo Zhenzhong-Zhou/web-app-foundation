@@ -20,6 +20,7 @@ import { itemName, nameAndCode, NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
+import { EmptiedLine } from './emptied-line';
 import { PileActions, type StockHandlers } from './stock-codes';
 
 /** The words of its headers and figures. */
@@ -71,7 +72,7 @@ export function StockLots({
                 </TableCell>
                 {/* Every header named (R6), this one to a screen reader:
                     each row's button says its word. */}
-                <TableCell padding="checkbox">
+                <TableCell padding="checkbox" sx={{ position: 'relative' }}>
                   <Box component="span" sx={HIDDEN}>
                     {intl.formatMessage(HEADS.actions)}
                   </Box>
@@ -98,6 +99,7 @@ export function StockLots({
                     ) : (
                       NO_VALUE
                     )}
+                    <EmptiedLine pile={row} />
                     {/* Without places, why it is not usable, never where
                         (A6). */}
                     {!seesPlaces && !row.isAvailable && <NotUsable />}
@@ -161,6 +163,7 @@ export function StockLots({
                   {row.lotId && row.lotCode && (
                     <LotLink id={row.lotId} code={row.lotCode} />
                   )}
+                  <EmptiedLine pile={row} />
                   <ExpiryChip expiresAt={row.lotExpiresAt} />
                   <Box sx={{ flex: 1 }} />
                   <PileActions pile={row} handlers={handlers} />

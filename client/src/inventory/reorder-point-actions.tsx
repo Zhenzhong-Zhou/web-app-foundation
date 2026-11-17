@@ -30,34 +30,36 @@ export function ReorderPointActions({
         { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
         { item: itemName(row.productName, row.variantName) },
       )}
-      actions={[
-        {
-          label: intl.formatMessage({
-            id: 'inventory.reorder.edit',
-            defaultMessage: 'Edit reorder point',
-          }),
-          onSelect: () => onEdit(row),
-        },
-        {
-          label: intl.formatMessage({
-            id: 'inventory.reorder.stockOf',
-            defaultMessage: 'Stock of the item',
-          }),
-          // The item's Where it stands, where its stock is told (ADR-093,
-          // R8).
-          onSelect: () =>
-            void navigate(`/items/${row.productId}#stock`, {
-              state: OFFER_BACK,
+      groups={[
+        [
+          {
+            label: intl.formatMessage({
+              id: 'inventory.reorder.edit',
+              defaultMessage: 'Edit reorder point',
             }),
-        },
-        {
-          label: intl.formatMessage({
-            id: 'inventory.reorder.remove',
-            defaultMessage: 'Remove reorder point',
-          }),
-          onSelect: () => onRemove(row),
-          danger: true,
-        },
+            onSelect: () => onEdit(row),
+          },
+          {
+            label: intl.formatMessage({
+              id: 'inventory.reorder.stockOf',
+              defaultMessage: 'Stock of the item',
+            }),
+            // The item's Where it stands, where its stock is told (ADR-093,
+            // R8).
+            onSelect: () =>
+              void navigate(`/items/${row.productId}#stock`, {
+                state: OFFER_BACK,
+              }),
+          },
+          {
+            label: intl.formatMessage({
+              id: 'inventory.reorder.remove',
+              defaultMessage: 'Remove reorder point',
+            }),
+            onSelect: () => onRemove(row),
+            danger: true,
+          },
+        ],
       ]}
     />
   );

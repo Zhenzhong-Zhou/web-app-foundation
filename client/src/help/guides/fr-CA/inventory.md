@@ -48,20 +48,20 @@ Les marchandises envoyées par un fournisseur pour un achat sont plutôt reçues
 
 Chaque ligne a ses **Actions**, selon ce qu’elle est :
 
-- La ligne d’un article : **Mouvements**, **Déplacer**, **Sortie de stock**, **Envoyer un échantillon**, **Corriger le compte** et **Modifier le point de commande**. Quand l’article est un seul lot à un seul emplacement, Déplacer et les autres agissent dessus directement; sinon la ligne s’ouvre sur ses lots et dit **Choisissez le lot**, chaque lot avec ses propres Actions.
-- La ligne d’un emplacement : ses **Mouvements** à cet endroit.
-- La ligne d’un lot : **Déplacer**, **Sortie de stock**, **Envoyer un échantillon**, **Corriger le compte**, **Modifier le lot**, **Tracer le lot** et **Mouvements**.
+- La ligne d’un article : **Déplacer…**, **Sortie de stock…**, **Envoyer un échantillon…** et **Corriger le compte…**; **Recevoir du stock…**, l’article déjà choisi; **Mouvements** et **Modifier le point de commande…**. Quand l’article est un seul lot à un seul emplacement, les quatre premières agissent dessus directement. Sinon, le menu dit qu’un lot est à choisir ensuite, et la ligne s’ouvre sur ses lots sous « Choisissez le lot à déplacer », chaque lot avec ses propres Actions. Sans rien en stock, Déplacer, Sortie de stock et Envoyer un échantillon sont grisés, la raison en dessous; Corriger le compte ouvre ses emplacements et ses lots vidés; un article jamais en stock à cet endroit dit de le recevoir d’abord.
+- La ligne d’un emplacement : ses **Mouvements** à cet endroit, un lien.
+- La ligne d’un lot : **Déplacer…**, **Sortie de stock…**, **Envoyer un échantillon…** et **Corriger le compte…**; **Modifier le lot…** et **Tracer le lot**; **Mouvements**. Un lot vidé dit quand il l’a été.
 
 Ce que fait chacune :
 
-- **Déplacer** : vers un autre emplacement, comme du quai vers une tablette.
-- **Sortie de stock** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
-- **Envoyer un échantillon** : un don, avec la personne à qui il a été remis, pour qu’un rappel puisse le retrouver.
-- **Corriger le compte** : combien la tablette contient de plus ou de moins que ce qui est enregistré, pourquoi, et ce qui s’est passé.
-- **Modifier le lot**, **Tracer le lot** et **Mouvements** : le lot, où il est allé, et ses mouvements.
-- **Modifier le point de commande** : le point de commande de l’article, plus bas.
+- **Déplacer…** : vers un autre emplacement, comme du quai vers une tablette.
+- **Sortie de stock…** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
+- **Envoyer un échantillon…** : un don, avec la personne à qui il a été remis, pour qu’un rappel puisse le retrouver.
+- **Corriger le compte…** : combien la tablette contient de plus ou de moins que ce qui est enregistré, pourquoi, et ce qui s’est passé.
+- **Modifier le lot…**, **Tracer le lot** et **Mouvements** : le lot, où il est allé, et ses mouvements.
+- **Modifier le point de commande…** : le point de commande de l’article, plus bas.
 
-> Toute personne qui peut voir le stock voit **Mouvements** et **Tracer le lot**. Seule une personne qui peut déplacer du stock voit **Recevoir du stock** et ce qui change le stock, et seule une personne qui peut corriger les comptes voit **Corriger le compte**.
+> Toute personne qui peut voir le stock voit **Mouvements** et **Tracer le lot**. Seule une personne qui peut déplacer du stock voit **Recevoir du stock** et ce qui change le stock, et seule une personne qui peut corriger les comptes voit **Corriger le compte…**.
 
 ## Ce que chaque total compte {#counts}
 
@@ -77,14 +77,14 @@ Un nombre sur un filtre ou une tuile compte une seule sorte de chose, la même p
 
 Un point de commande est le niveau sous lequel un article commence à manquer : en dessous de ce niveau, l’article est indiqué comme ayant un stock bas ici, sur l’accueil et dans les notifications, avec ce qu’il faut commander. Un article sans point de commande n’est jamais considéré comme ayant un stock bas.
 
-1. Dans **Réapprovisionner**, appuyez sur **Ajouter un point de commande**, ou choisissez **Modifier le point de commande** dans les **Actions** d’un article de **Stock**.
+1. Dans **Réapprovisionner**, appuyez sur **Ajouter un point de commande**, ou choisissez **Modifier le point de commande…** dans les **Actions** d’un article de **Stock**.
 2. Choisissez l’article, et s’il est **Acheté** ou **Fabriqué**. Fabriqué est choisi pour vous quand l’article a une recette active.
 3. Saisissez le **Point de commande**, dans l’unité de l’article, et choisissez combien commander.
 4. **Aujourd’hui** montre où en est l’article maintenant et après la commande suggérée. Appuyez sur **Ajouter un point de commande**, ou sur **Enregistrer** pour une modification.
 
 Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock de l’article** et **Retirer le point de commande**. Retirer un point de commande ne change ni le stock ni les commandes de l’article. Un article abandonné garde son point de commande, mais n’est jamais considéré comme ayant un stock bas.
 
-> Toute personne qui peut voir le stock voit la liste. Seule une personne qui peut définir les points de commande voit **Ajouter un point de commande**, **Modifier le point de commande** et les actions de chaque ligne : au départ, le propriétaire seul, jusqu’à ce qu’un rôle le permette.
+> Toute personne qui peut voir le stock voit la liste. Seule une personne qui peut définir les points de commande voit **Ajouter un point de commande**, **Modifier le point de commande…** et les actions de chaque ligne : au départ, le propriétaire seul, jusqu’à ce qu’un rôle le permette.
 
 ## Où en est un article {#position}
 

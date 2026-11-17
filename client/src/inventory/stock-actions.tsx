@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { itemName } from '../lib/format';
+import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import type { HistoryOf } from './movement-history-dialog';
 
@@ -47,98 +48,101 @@ export function StockActions({
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
-  const actions: Action[] = [];
+  const words = useMenuWords();
+  // An emptied lot, shown with Include empty or to correct it: nothing to
+  // move, ship or send, only its count to correct (ADR-093 v3).
+  const empty = row.quantity === NONE;
+  const nothing = empty
+    ? row.lotId
+      ? intl.formatMessage({
+          id: 'inventory.menu.nothingInLot',
+          defaultMessage: 'Nothing in this lot',
+        })
+      : intl.formatMessage({
+          id: 'inventory.menu.nothingHere',
+          defaultMessage: 'Nothing at this place',
+        })
+    : undefined;
 
-  if (canMove) {
-    actions.push(
-      {
-        label: intl.formatMessage({
-          id: 'inventory.actions.move',
-          defaultMessage: 'Move',
-        }),
-        onSelect: () => onSelect('transfer', row),
-      },
-      {
-        label: intl.formatMessage({
-          id: 'inventory.move.ship.title',
-          defaultMessage: 'Ship out',
-        }),
-        onSelect: () => onSelect('ship', row),
-      },
-      // A hand-out: a trade show, a visitor, a bottle opened for a test. A
-      // posted sample is a sale flagged as one, raised from Orders
-      // (ADR-042).
-      {
-        label: intl.formatMessage({
-          id: 'inventory.actions.sendSample',
-          defaultMessage: 'Send sample',
-        }),
-        onSelect: () => onSelect('sample', row),
-      },
-    );
-  }
-  // stock.adjust, not stock.move. Receiving, shipping, and transferring
-  // record what happened in the world; an adjustment overrides the record
+  // What changes stock: moving, shipping out and sampling, and, by
+  // stock.adjust, correcting the count. Receiving, shipping and moving
+  // record what happened in the world; a correction overrides the record
   // itself, and is held by fewer people. The guard refuses it server-side
   // either way: this is so the menu does not offer a control that always
   // fails. It is still a movement, so it needs stock.move as well.
-  if (canMove && canAdjust) {
-    actions.push({
-      label: intl.formatMessage({
-        id: 'inventory.move.adjust.title',
-        defaultMessage: 'Correct the count',
-      }),
-      onSelect: () => onSelect('adjust', row),
-    });
-  }
-  // Only for a lot-tracked row: there is nothing to edit otherwise, and the
-  // label would be a dead end on most of the warehouse.
-  if (canMove && row.lotId) {
-    actions.push({
-      label: intl.formatMessage({
-        id: 'inventory.actions.editLot',
-        defaultMessage: 'Edit lot details',
-      }),
-      onSelect: () => onEditLot(row),
-    });
-  }
-  // Where this lot came from and everyone who has it (ADR-044).
-  if (row.lotId) {
-    const lotId = row.lotId;
-    actions.push({
-      label: intl.formatMessage({
-        id: 'inventory.actions.traceLot',
-        defaultMessage: 'Trace lot',
-      }),
-      onSelect: () => void navigate(`/lots/${lotId}`),
-    });
-  }
+  const changes: Action[] = canMove
+    ? [
+        {
+          label: words.move,
+          onSelect: () => onSelect('transfer', row),
+          unavailable: nothing,
+        },
+        {
+          label: words.ship,
+          onSelect: () => onSelect('ship', row),
+          unavailable: nothing,
+        },
+        // A hand-out: a trade show, a visitor, a bottle opened for a test.
+        // A posted sample is a sale flagged as one, raised from Orders
+        // (ADR-042).
+        {
+          label: words.sample,
+          onSelect: () => onSelect('sample', row),
+          unavailable: nothing,
+        },
+        ...(canAdjust
+          ? [{ label: words.correct, onSelect: () => onSelect('adjust', row) }]
+          : []),
+      ]
+    : [];
+
+  // The lot itself: its details, for whoever may move stock, and where it
+  // came from and everyone who has it (ADR-044). None for a code not
+  // tracked by lot, where they would be a dead end.
+  const lotId = row.lotId;
+  const lot: Action[] = lotId
+    ? [
+        ...(canMove
+          ? [{ label: words.editLot, onSelect: () => onEditLot(row) }]
+          : []),
+        {
+          label: intl.formatMessage({
+            id: 'inventory.actions.traceLot',
+            defaultMessage: 'Trace lot',
+          }),
+          onSelect: () => void navigate(`/lots/${lotId}`),
+        },
+      ]
+    : [];
+
   // Movements, as a code's row says it (ADR-093): the lot's, or, for a
   // code not tracked by lot, its place's; the history dialog until
   // Movements' branch.
-  actions.push({
-    label: intl.formatMessage({
-      id: 'layout.nav.movements',
-      defaultMessage: 'Movements',
-    }),
-    onSelect: () =>
-      onHistory({
-        ...row,
-        at:
-          !row.lotId && row.locationName !== null
-            ? { locationId: row.locationId, locationName: row.locationName }
-            : null,
-      }),
-  });
+  const reads: Action[] = [
+    {
+      label: words.movements,
+      onSelect: () =>
+        onHistory({
+          ...row,
+          at:
+            !row.lotId && row.locationName !== null
+              ? { locationId: row.locationId, locationName: row.locationName }
+              : null,
+        }),
+    },
+  ];
 
   return (
     <ActionsMenu
       name={pileActionsName(row, intl)}
-      actions={actions}
+      groups={[changes, lot, reads]}
       buttonRef={buttonRef}
     />
   );
 }
+
+/** A quantity of nothing, as the API writes it. */
+const NONE = '0.0000';
 
 /**
  * The pile's Actions named by what tells it from its neighbours, as v3

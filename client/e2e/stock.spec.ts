@@ -12,7 +12,7 @@ import {
   uniqueEmail,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
-import { receive, stockScene } from './support/stock';
+import { receive, reorderAt, stockScene } from './support/stock';
 
 /**
  * Inventory's Stock tab (ADR-093), row by row: each row of the ADR's
@@ -347,7 +347,7 @@ async function offers(page: Page, name: string | RegExp): Promise<string[]> {
   return words;
 }
 
-test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in words; an item’s Move on its one lot straight, or its lots opened to choose one', async ({
+test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each in words; an item’s Move on its one lot straight, or its lots opened to choose one', async ({
   page,
   freshOrg,
 }) => {
@@ -355,36 +355,42 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
   await signInAs(page, freshOrg.api);
   await stockFrom(page);
 
-  // An item's: Movements, what changes stock, and its reorder point.
+  // An item's, in three groups (ADR-093 v3): what changes its stock,
+  // Receive stock, then Movements and its reorder point.
   const magnesium = page.getByRole('button', {
     name: 'Actions for E2E Magnesium',
   });
   await expect(magnesium).toHaveText('Actions');
   expect(await offers(page, 'Actions for E2E Magnesium')).toEqual([
+    'Move…',
+    'Ship out…',
+    'Send sample…',
+    'Correct the count…',
+    'Receive stock…',
     'Movements',
-    'Move',
-    'Ship out',
-    'Send sample',
-    'Correct the count',
-    'Set a reorder point',
+    'Set a reorder point…',
   ]);
   expect(await offers(page, 'Actions for E2E Vitamin C')).toContain(
-    'Change reorder point',
+    'Change reorder point…',
   );
 
   // One pile, 10 on A2 with no lot: Move opens on it straight.
   await magnesium.click();
-  await page.getByRole('menuitem', { name: 'Move', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Move…', exact: true }).click();
   const move = page.getByRole('dialog', { name: /Move to another location/ });
   await expect(move).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(move).toHaveCount(0);
 
-  // Four lots in two places: the row opens to them, says to choose one,
-  // focus on the first lot's Actions.
+  // Three lots in two places: the menu says a lot comes next; the row
+  // opens to them under "Choose the lot to move", focus on the first
+  // lot's Actions.
   await page.getByRole('button', { name: 'Actions for E2E Vitamin C' }).click();
-  await page.getByRole('menuitem', { name: 'Move', exact: true }).click();
-  await expect(page.getByText('Choose the lot.')).toBeVisible();
+  await expect(page.getByRole('menu')).toHaveAccessibleDescription(
+    '3 lots in 2 places: you choose the lot next',
+  );
+  await page.getByRole('menuitem', { name: 'Move…', exact: true }).click();
+  await expect(page.getByText('Choose the lot to move')).toBeVisible();
   await expect(
     page.getByRole('button', {
       name: `Actions for lot VC-SOON at ${scene.shelfA.name}`,
@@ -397,29 +403,76 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
     'VC-SOON',
   ]);
 
-  // A lot's: what moves it, its details and trace, and Movements.
+  // A lot's: what changes it, the lot itself, and its Movements.
   expect(
     await offers(page, `Actions for lot VC-LATE at ${scene.shelfA.name}`),
   ).toEqual([
-    'Move',
-    'Ship out',
-    'Send sample',
-    'Correct the count',
-    'Edit lot details',
+    'Move…',
+    'Ship out…',
+    'Send sample…',
+    'Correct the count…',
+    'Edit lot details…',
     'Trace lot',
     'Movements',
   ]);
 
-  // A place's: its Movements there.
-  const placeActions = `Actions for E2E Vitamin C at ${scene.shelfB.name}`;
-  expect(await offers(page, placeActions)).toEqual(['Movements']);
-  await page.getByRole('button', { name: placeActions }).click();
-  await page.getByRole('menuitem', { name: 'Movements' }).click();
+  // A place's: a plain Movements link, its Movements there.
+  await page
+    .getByRole('button', {
+      name: `Movements of E2E Vitamin C at ${scene.shelfB.name}`,
+    })
+    .click();
   await expect(
     page.getByRole('dialog', {
       name: new RegExp(`at ${scene.shelfB.name}$`),
     }),
   ).toBeVisible();
+});
+
+test('Stock, an item with nothing on hand, Actions: what needs stock greyed with why, Correct the count opening its emptied place; never stocked, greyed too', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  // The magnesium's 10 counted away: an emptied place.
+  const counted = await freshOrg.api.post('/v1/stock/movements', {
+    data: {
+      variantId: scene.magnesium.variantId,
+      fromLocationId: scene.shelfA.id,
+      quantity: '10',
+      reason: 'adjustment',
+      reasonDetail: 'damaged',
+      note: 'E2E broken in the move',
+    },
+  });
+  expect(counted.ok(), await counted.text()).toBeTruthy();
+  // An item never stocked, low under its point.
+  const never = await createProduct(freshOrg.api, { name: 'E2E Never' });
+  await reorderAt(freshOrg.api, never, '5');
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page, '/inventory?includeEmpty=1');
+
+  await page.getByRole('button', { name: 'Actions for E2E Magnesium' }).click();
+  const menu = page.getByRole('menu');
+  const moveChoice = menu.getByRole('menuitem', { name: /^Move…/ });
+  await expect(moveChoice).toHaveAttribute('aria-disabled', 'true');
+  await expect(moveChoice).toContainText('Nothing on hand to move');
+  await menu
+    .getByRole('menuitem', { name: 'Correct the count…', exact: true })
+    .click();
+  await expect(page.getByText('Choose the place to correct')).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: `Actions for E2E Magnesium at ${scene.shelfA.name}`,
+    }),
+  ).toBeFocused();
+
+  await page.getByRole('button', { name: 'Actions for E2E Never' }).click();
+  const correct = page
+    .getByRole('menu')
+    .getByRole('menuitem', { name: /^Correct the count…/ });
+  await expect(correct).toHaveAttribute('aria-disabled', 'true');
+  await expect(correct).toContainText('Never stocked here: receive it first');
 });
 
 test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing that changes stock', async ({
@@ -436,6 +489,7 @@ test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing tha
   await signInAs(page, viewer);
   await stockFrom(page);
 
+  // Nothing that changes stock, nor Receive stock: the role cannot.
   expect(await offers(page, 'Actions for E2E Magnesium')).toEqual([
     'Movements',
   ]);

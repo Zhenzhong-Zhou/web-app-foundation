@@ -570,10 +570,13 @@ for (const language of LANGUAGES) {
         await page.goto('/inventory');
         await expect(page.locator('html')).toHaveCSS('font-size', size.rem);
         await expect(named('E2E Vitamin C')).toBeVisible();
-        // The vitamin's "2 places", named for it in any of the languages.
+        // The vitamin's "2 places", named for it in any of the languages;
+        // not its Actions, a menu button.
         const opening = page
           .getByRole('main')
-          .locator('button[aria-expanded][aria-label*="E2E Vitamin C"]');
+          .locator(
+            'button[aria-expanded]:not([aria-haspopup])[aria-label*="E2E Vitamin C"]',
+          );
         await opening.click();
         await expect(opening).toHaveAttribute('aria-expanded', 'true');
         found.push(...(await cuts(page, { ...walk, screen: 'Stock' })));

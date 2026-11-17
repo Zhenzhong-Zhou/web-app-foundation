@@ -500,21 +500,26 @@ a second organization.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
-- **MC-310** *(ADR-093)* Each row's Actions, a button in words, by
+- **MC-310** *(ADR-093, v3)* Each row's Actions, a button in words, by
   permission: the word grey with no border, tinted in the accent only
   under the pointer or the keyboard's focus; VoiceOver names it "Actions
-  for" the item, or "Actions for lot …" at its place. As a Viewer: an item's Actions offer Movements; a place's,
-  Movements at that place, its History titled "… at" the place; a lot's,
-  Movements and Trace lot; nothing that changes stock. As an Admin, an
-  item's Actions also offer Move, Ship out, Send sample and Correct the
-  count, and a lot's add Edit lot details. As the demo Owner, an item's
-  Actions end with Change reorder point, or Set a reorder point on an item
-  with none, and no lot's offers it. On an item that is one lot at one
-  place, Move opens the move dialog for that lot straight; on
-  D3-1000-120, Move opens the row to its lots, "Choose the lot." above
-  them and focus on the first lot's Actions. An item not tracked by lot,
-  with its place chosen under Location, reads "—", not "None on hand",
-  and its Actions' Move opens straight.
+  for" the item, or "Actions for lot …" at its place. As the demo Owner,
+  an item's menu has three groups: Move…, Ship out…, Send sample…,
+  Correct the count…; Receive stock…, which opens with the item filled
+  in; Movements and Change reorder point… (Set a reorder point… with
+  none). D3-1000-120's menu begins "… lots in … places: you choose the lot
+  next"; its Move… opens the row to its lots under "Choose the lot to
+  move", focus on the first lot's Actions; an item that is one lot at one
+  place moves straight. A lot's menu: Move…, Ship out…, Send sample…,
+  Correct the count…; Edit lot details…, Trace lot; Movements. A place's
+  row has a Movements link, not a menu. With Include empty, an emptied
+  lot reads "Emptied" and its day, and its Move…, Ship out… and Send
+  sample… are greyed, "Nothing in this lot" beneath, still reached by the
+  arrow keys. An item with nothing on hand greys the same three, "Nothing
+  on hand to move" and the rest; Correct the count… opens its emptied
+  places and lots, "Choose the lot to correct"; an item with a point and
+  never stocked greys it, "Never stocked here: receive it first". As a
+  Viewer: Movements, a lot's Trace lot, and nothing that changes stock.
 - **MC-311** *(ADR-091, amended by ADR-093)* Inventory's Expired. As the
   demo Owner, Home's Expiring soon opens the Lot view at
   `/inventory?group=lot&expiring=1`, and its late button adds
@@ -6654,3 +6659,8 @@ first.
   board draws it, grey, no border, tinted under the pointer or focus,
   named for the item or the lot at its place, its column's header for a
   screen reader alone: MC-310 and MC-4209.
+- 2026-11-17: ADR-093 v3, its other changes: an item's and a lot's menus in
+  three groups, Receive stock… with the item filled, a line on the lot to
+  choose next, what needs stock greyed with why, an emptied lot's day, and
+  a place's Movements a plain link: MC-310 rewritten; Help's Inventory
+  guide says so in three languages.

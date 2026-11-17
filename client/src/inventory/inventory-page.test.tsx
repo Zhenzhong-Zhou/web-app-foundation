@@ -150,7 +150,7 @@ function renderAt(address: string, permissions: string[]) {
   );
 }
 
-const CHANGES = ['Move', 'Ship out', 'Send sample', 'Edit lot details'];
+const CHANGES = ['Move…', 'Ship out…', 'Send sample…', 'Edit lot details…'];
 
 describe('InventoryPage', () => {
   // A failed read of the places says so, with Try again, and keeps the
@@ -325,13 +325,117 @@ describe('InventoryPage', () => {
           .getAllByRole('menuitem')
           .map((item) => item.textContent),
       ).toEqual([
+        'Move…',
+        'Ship out…',
+        'Send sample…',
+        'Correct the count…',
+        'Receive stock…',
         'Movements',
-        'Move',
-        'Ship out',
-        'Send sample',
-        'Correct the count',
-        'Change reorder point',
+        'Change reorder point…',
       ]);
+      // In three groups, and a line on what comes next (ADR-093 v3).
+      expect(within(menu).getAllByRole('separator')).toHaveLength(3);
+      expect(menu).toHaveAccessibleDescription(
+        '2 lots in 2 places: you choose the lot next',
+      );
+    });
+
+    // Nothing on hand: greyed with their reason, Correct the count kept to
+    // correct an emptied lot, opened with the emptied ones (ADR-093 v3).
+    it('greys what needs stock when nothing is on hand, and corrects an emptied lot', async () => {
+      const asked: URLSearchParams[] = [];
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', ({ request }) => {
+          asked.push(new URL(request.url).searchParams);
+          return HttpResponse.json({
+            places: [
+              {
+                ...PLACES[1]!,
+                onHand: '0.0000',
+                lots: [
+                  {
+                    ...PLACES[1]!.lots[0]!,
+                    quantity: '0.0000',
+                    emptiedOn: '2026-11-14',
+                  },
+                ],
+              },
+            ],
+          });
+        }),
+      );
+      const empty = {
+        ...CODE,
+        onHand: '0.0000',
+        usable: '0.0000',
+        notUsable: '0.0000',
+        places: 0,
+        lots: 0,
+      };
+      const { user, menu } = await codeActions(
+        ['stock.move', 'stock.adjust'],
+        empty,
+      );
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', ({ request }) => {
+          asked.push(new URL(request.url).searchParams);
+          return HttpResponse.json({
+            places: [
+              {
+                ...PLACES[1]!,
+                onHand: '0.0000',
+                lots: [
+                  {
+                    ...PLACES[1]!.lots[0]!,
+                    quantity: '0.0000',
+                    emptiedOn: '2026-11-14',
+                  },
+                ],
+              },
+            ],
+          });
+        }),
+      );
+
+      const move = within(menu).getByRole('menuitem', { name: /^Move…/ });
+      expect(move).toHaveAttribute('aria-disabled', 'true');
+      expect(move).toHaveTextContent('Nothing on hand to move');
+      await user.click(
+        within(menu).getByRole('menuitem', { name: 'Correct the count…' }),
+      );
+
+      expect(
+        await screen.findByText('Choose the lot to correct'),
+      ).toBeVisible();
+      expect(asked.at(-1)?.get('includeEmpty')).toBe('true');
+      expect(screen.getByText('Emptied Nov 14, 2026')).toBeVisible();
+    });
+
+    it('greys Correct the count for an item never stocked here', async () => {
+      const { menu } = await codeActions(['stock.move', 'stock.adjust'], {
+        ...CODE,
+        onHand: '0.0000',
+        places: 0,
+        lots: 0,
+        stocked: false,
+      });
+
+      const correct = within(menu).getByRole('menuitem', {
+        name: /^Correct the count…/,
+      });
+      expect(correct).toHaveAttribute('aria-disabled', 'true');
+      expect(correct).toHaveTextContent('Never stocked here: receive it first');
+    });
+
+    it('receives stock with the item filled in', async () => {
+      const { user, menu } = await codeActions(['stock.move']);
+      await user.click(
+        within(menu).getByRole('menuitem', { name: 'Receive stock…' }),
+      );
+
+      expect(
+        await screen.findByRole('dialog', { name: 'Receive stock' }),
+      ).toBeVisible();
     });
 
     // The row's status and the counts come from the point: read again
@@ -381,7 +485,7 @@ describe('InventoryPage', () => {
       );
       await user.click(
         within(await screen.findByRole('menu')).getByRole('menuitem', {
-          name: 'Change reorder point',
+          name: 'Change reorder point…',
         }),
       );
       const dialog = await screen.findByRole('dialog', {
@@ -401,9 +505,9 @@ describe('InventoryPage', () => {
     // In several places: the row opens to its lots to choose one.
     it('opens to its lots to choose one, focus on the first lot’s Actions', async () => {
       const { user, menu } = await codeActions(['stock.move']);
-      await user.click(within(menu).getByRole('menuitem', { name: 'Move' }));
+      await user.click(within(menu).getByRole('menuitem', { name: 'Move…' }));
 
-      expect(await screen.findByText('Choose the lot.')).toBeVisible();
+      expect(await screen.findByText('Choose the lot to move')).toBeVisible();
       await vi.waitFor(() =>
         expect(
           screen.getByRole('button', {
@@ -433,15 +537,17 @@ describe('InventoryPage', () => {
           }),
         ),
       );
-      await user.click(within(menu).getByRole('menuitem', { name: 'Move' }));
+      await user.click(within(menu).getByRole('menuitem', { name: 'Move…' }));
 
       expect(
         await screen.findByRole('dialog', { name: /Move to another location/ }),
       ).toBeVisible();
-      expect(screen.queryByText('Choose the lot.')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Choose the lot to move'),
+      ).not.toBeInTheDocument();
     });
 
-    // A place's Actions: the code's Movements there alone.
+    // A place's Movements link: the code's Movements there alone.
     it('gives a place its Movements there', async () => {
       const user = userEvent.setup();
       answer();
@@ -458,14 +564,10 @@ describe('InventoryPage', () => {
           name: '2 places: show where Vitamin D (60ct) is',
         }),
       );
+      // A plain link, not a menu of one (ADR-093 v3).
       await user.click(
         await screen.findByRole('button', {
-          name: 'Actions for Vitamin D (60ct) at Shelf A',
-        }),
-      );
-      await user.click(
-        within(await screen.findByRole('menu')).getByRole('menuitem', {
-          name: 'Movements',
+          name: 'Movements of Vitamin D (60ct) at Shelf A',
         }),
       );
 
@@ -550,21 +652,89 @@ describe('InventoryPage', () => {
       expect(
         within(menu).getByRole('menuitem', { name: 'Movements' }),
       ).toBeInTheDocument();
-      for (const name of [...CHANGES, 'Correct the count']) {
+      for (const name of [...CHANGES, 'Correct the count…']) {
         expect(
           within(menu).queryByRole('menuitem', { name }),
         ).not.toBeInTheDocument();
       }
     });
 
+    // An emptied lot, shown with Include empty: nothing to move, ship or
+    // send, its count still to correct (ADR-093 v3).
+    it('greys what an emptied lot cannot do, saying it holds nothing', async () => {
+      const user = userEvent.setup();
+      answer();
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({
+            places: [
+              {
+                ...PLACES[1]!,
+                lots: [
+                  {
+                    ...PLACES[1]!.lots[0]!,
+                    quantity: '0.0000',
+                    emptiedOn: '2026-11-14',
+                  },
+                ],
+              },
+            ],
+          }),
+        ),
+      );
+      renderAt('/inventory?includeEmpty=1', [
+        'stock.view',
+        'locations.view',
+        'stock.move',
+        'stock.adjust',
+      ]);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', {
+          name: '1 lot: show the lots at Shelf A',
+        }),
+      );
+      expect(screen.getByText('Emptied Nov 14, 2026')).toBeVisible();
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      );
+      const menu = await screen.findByRole('menu');
+
+      for (const name of [/^Move…/, /^Ship out…/, /^Send sample…/]) {
+        const choice = within(menu).getByRole('menuitem', { name });
+        expect(choice).toHaveAttribute('aria-disabled', 'true');
+        expect(choice).toHaveTextContent('Nothing in this lot');
+      }
+      expect(
+        within(menu).getByRole('menuitem', { name: 'Correct the count…' }),
+      ).not.toHaveAttribute('aria-disabled');
+    });
+
     it('adds what changes stock for someone who may move it, and correcting with both permissions', async () => {
       const menu = await lotActions(['stock.move', 'stock.adjust']);
 
-      for (const name of [...CHANGES, 'Correct the count']) {
-        expect(
-          within(menu).getByRole('menuitem', { name }),
-        ).toBeInTheDocument();
-      }
+      // In three groups: what changes it, the lot itself, its Movements
+      // (ADR-093 v3).
+      expect(
+        within(menu)
+          .getAllByRole('menuitem')
+          .map((item) => item.textContent),
+      ).toEqual([
+        'Move…',
+        'Ship out…',
+        'Send sample…',
+        'Correct the count…',
+        'Edit lot details…',
+        'Trace lot',
+        'Movements',
+      ]);
+      expect(within(menu).getAllByRole('separator')).toHaveLength(2);
     });
   });
 
