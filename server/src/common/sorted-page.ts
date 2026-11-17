@@ -37,7 +37,7 @@ export function notInThisList(): BadRequestException {
  * A list sorted by a figure worked out rather than kept on the row pages by
  * its key's values instead: orderOf, afterKeys, cursorOf and readKeys, below.
  */
-export function sortedOrder(
+function sortedOrder(
   value: SQLWrapper,
   id: SQLWrapper,
   order: SortOrder,
@@ -51,7 +51,7 @@ export function sortedOrder(
  * The rows after the cursor row, in sortedOrder's order. Its value may be
  * null, in which case only later nulls follow it, by id.
  */
-export function afterCursor(
+function afterCursor(
   value: SQLWrapper,
   id: SQLWrapper,
   cursor: { value: string | null; id: string },
