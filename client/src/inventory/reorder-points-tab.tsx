@@ -32,7 +32,7 @@ import {
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import type { ReorderPointCounts, ReorderPointRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -80,6 +80,7 @@ import {
   fieldQuantity,
   plansRun,
 } from './reorder-points';
+import { keepTicks, ticksOf } from './reorder-ticks';
 
 /** A page of the list (ADR-051), as the server's own default. */
 const PAGE_SIZE = 50;
@@ -858,9 +859,11 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const phone = useCards();
   const [counts, setCounts] = useState<ReorderPointCounts | null>(null);
   // By item, kept while the filter or the search changes, so a buyer can
-  // find items one search at a time and order them together.
-  const [chosen, setChosen] = useState<Map<string, ReorderPointRow>>(
-    () => new Map(),
+  // find items one search at a time and order them together; and through
+  // Back from the purchase order they were sent to (reorder-ticks.ts).
+  const { key: entry } = useLocation();
+  const [chosen, setChosen] = useState<Map<string, ReorderPointRow>>(() =>
+    ticksOf(entry),
   );
   const [opening, setOpening] = useState<ReorderOpening | null>(null);
   const [removing, setRemoving] = useState<ReorderPointRow | null>(null);
@@ -933,7 +936,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const columns = choosing ? 7 : 6;
 
   /** New order, a line per item at its suggestion; nothing saved yet (ADR-085). */
-  const buy = (lines: ReorderPointRow[]) =>
+  const buy = (lines: ReorderPointRow[]) => {
+    keepTicks(entry, [...chosen.values()]);
     void navigate('/orders/new', {
       state: fillState({
         lines: lines.map((row) => ({
@@ -942,6 +946,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
         })),
       }),
     });
+  };
 
   const rowProps = (row: ReorderPointRow): RowProps => ({
     row,

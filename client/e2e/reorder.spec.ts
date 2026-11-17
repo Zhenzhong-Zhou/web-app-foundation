@@ -217,10 +217,7 @@ test('Reorder, the bar, Buy 2 on one purchase order: one purchase order, both li
     .toEqual(['15', '80']);
 });
 
-// Not built: Back from New order after Buy 2 finds the ticks gone, since
-// they are the tab's own state (ADR-093's Reorder table: "Reorder, ticks
-// kept"). For step 22's review.
-test.fixme('Reorder, the bar, Buy 2 on one purchase order: Back, Reorder, ticks kept', async ({
+test('Reorder, the bar, Buy 2 on one purchase order: Back, Reorder, ticks kept', async ({
   page,
   freshOrg,
 }) => {
@@ -273,9 +270,7 @@ test('A new purchase order from Reorder, raised as a draft: its page in the form
   await expect(bar(page)).toBeHidden();
 });
 
-// Not built: the message on New order's save, "Draft saved. Confirm it to
-// send." (ADR-093's Reorder table). For step 22's review.
-test.fixme('A new purchase order from Reorder, raised as a draft: “Draft saved. Confirm it to send.”', async ({
+test('A new purchase order from Reorder, raised as a draft: “Draft saved. Confirm it to send.”', async ({
   page,
   freshOrg,
 }) => {

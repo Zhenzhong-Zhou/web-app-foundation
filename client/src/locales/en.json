@@ -1270,6 +1270,7 @@
   "orders.documents.notYet": "Not yet invoiced, before tax: {amount}",
   "orders.documents.quantity": "Quantity",
   "orders.documents.shipment": "Shipment of {date}",
+  "orders.draftSaved": "Draft saved. Confirm it to send.",
   "orders.duplicate.action": "Duplicate",
   "orders.duplicate.advice": "Fix the draft, confirm it, then cancel this one — that way nothing is lost if something goes wrong.",
   "orders.duplicate.intro": "A new draft for {partner}, with the same {count, plural, one {item} other {# items}} and quantities. This order is not changed.",

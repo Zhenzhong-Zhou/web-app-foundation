@@ -30,6 +30,7 @@ import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { fieldQuantity } from '../inventory/reorder-points';
+import { forgetTicks } from '../inventory/reorder-ticks';
 import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
 import { BLANK_LINE, groupedNumberMessage, toApiDecimal } from '../lib/format';
@@ -201,10 +202,17 @@ export function CreateOrderPage() {
       // Nothing to reset — the page unmounts on success.
     },
     {
-      success: intl.formatMessage({
-        id: 'orders.raised',
-        defaultMessage: 'Order raised',
-      }),
+      // Filled from Reorder, what to do next with the draft (ADR-093's
+      // Reorder table).
+      success: fill
+        ? intl.formatMessage({
+            id: 'orders.draftSaved',
+            defaultMessage: 'Draft saved. Confirm it to send.',
+          })
+        : intl.formatMessage({
+            id: 'orders.raised',
+            defaultMessage: 'Order raised',
+          }),
     },
   );
 
@@ -333,6 +341,9 @@ export function CreateOrderPage() {
       // the order takes New order's place in the history, so Back returns
       // to the list, not to the same lines filled in again (ADR-085).
       release();
+      // Raised, the rows it was filled from are no longer ticked when Back
+      // returns to Reorder (ADR-093).
+      if (fill) forgetTicks();
       navigate(`/orders/${created.order.id}`, { replace: fill !== null });
     });
   }

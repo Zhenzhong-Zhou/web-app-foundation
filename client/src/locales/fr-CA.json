@@ -1270,6 +1270,7 @@
   "orders.documents.notYet": "Reste à facturer, avant taxes : {amount}",
   "orders.documents.quantity": "Quantité",
   "orders.documents.shipment": "Expédition du {date}",
+  "orders.draftSaved": "Brouillon enregistré. Confirmez-le pour l’envoyer.",
   "orders.duplicate.action": "Dupliquer",
   "orders.duplicate.advice": "Corrigez le brouillon, confirmez-le, puis annulez celle-ci — ainsi rien n’est perdu si quelque chose tourne mal.",
   "orders.duplicate.intro": "Un nouveau brouillon pour {partner}, avec {count, plural, one {le même article} other {les mêmes # articles}} et les mêmes quantités. Cette commande n’est pas modifiée.",

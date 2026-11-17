@@ -4220,7 +4220,10 @@ site, after a deploy that changes the setting, the route or the relay.
   says "1 chosen", then "2 chosen", as the bar appears and grows; Buy 96
   reads "Buy 96 of" the item's name. Tab to Clear and Buy 2 on one
   purchase order: each one's focus ring is drawn in the bar's own text
-  colour, plain on the dark bar, in both modes.
+  colour, plain on the dark bar, in both modes. Press Buy 2 on one
+  purchase order, then Back and Leave: both are still ticked. Raise it as
+  a draft instead: "Draft saved. Confirm it to send.", and Back finds none
+  ticked.
 - **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
   (Viewer): the same list, with no boxes, no Buy or Make, no header box
   and no bar, the line above it "Buy or make what is short." alone; the
@@ -6632,3 +6635,6 @@ first.
   title when a link brings a person there: MC-219.
 - 2026-11-17: ADR-093's review, 52: Back from a Home tile's list puts
   focus on that tile again: MC-4202.
+- 2026-11-17: ADR-093's review, 52: Reorder's ticks kept through Back from
+  the purchase order they fill, cleared once it is raised, which says
+  "Draft saved. Confirm it to send.": MC-4205.

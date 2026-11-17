@@ -1270,6 +1270,7 @@
   "orders.documents.notYet": "尚未开票（税前）：{amount}",
   "orders.documents.quantity": "数量",
   "orders.documents.shipment": "{date} 的发货记录",
+  "orders.draftSaved": "草稿已保存。确认后即可发出。",
   "orders.duplicate.action": "复制",
   "orders.duplicate.advice": "先修改草稿并确认，再取消此订单——这样出现问题时不会丢失任何内容。",
   "orders.duplicate.intro": "为 {partner} 新建一份草稿，包含 {count, plural, other {# 项物品}}（物品和数量均与原订单相同）。原订单不变。",
