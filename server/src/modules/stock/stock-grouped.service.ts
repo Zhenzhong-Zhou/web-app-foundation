@@ -181,10 +181,75 @@ function rowFilters(
 
   return {
     expiring:
-      days === undefined ? sql`false` : holding({ expiringWithin: days }),
-    expired: holding({ expired: 'true' }),
+      days === undefined
+        ? sql`false`
+        : holdingLots(
+            organizationId,
+            sql`lt.expires_at <= ${today}::date + ${days}::int`,
+            query.locationId,
+          ),
+    expired: holdingLots(
+      organizationId,
+      sql`lt.expires_at < ${today}::date`,
+      query.locationId,
+    ),
     needsCost: holding({ needsCost: 'true' }),
   };
+}
+
+/**
+ * The codes holding a lot on hand whose expiry is in `range`, read from
+ * the lots first (review 39): the organization's lots by
+ * lots_org_expires_at_idx, then their stock, at the place chosen if one
+ * is. A code's Expiring soon and Expired as a stock row's (stockRowsOf's
+ * quick filters), so a count is the codes its filter shows; walked from
+ * every stock row instead, each read 19,000 rows at the large volume to
+ * keep a few hundred.
+ */
+function holdingLots(
+  organizationId: string,
+  range: SQL,
+  locationId: string | undefined,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`${productVariants.id} in (
+    select sl.variant_id
+    from lots lt
+    join stock_levels sl
+      on sl.organization_id = ${org}
+      and sl.variant_id = lt.variant_id
+      and sl.lot_id = lt.id
+      and sl.quantity > 0
+      ${locationId ? sql`and sl.location_id = ${locationId}::uuid` : sql``}
+    where lt.organization_id = ${org}
+      and lt.expires_at is not null
+      and ${range}
+  )`;
+}
+
+/**
+ * Each quick filter's count, the other filters asked kept on and its own
+ * left off (ADR-093, R3; 30a): one select list, a "count(*) filter" for
+ * each, named as its filter. A row per code's counts and the Lot view's
+ * read it.
+ */
+function facetCounts<K extends string>(
+  facets: Record<K, { on: SQL; asked: boolean }>,
+): SQL {
+  const names = Object.keys(facets) as K[];
+  return sql.join(
+    names.map(
+      (counted) =>
+        sql`(count(*) filter (where ${and(
+          facets[counted].on,
+          ...names
+            .filter((other) => other !== counted && facets[other].asked)
+            .map((other) => facets[other].on),
+        )}))::int as ${sql.identifier(counted)}`,
+    ),
+    sql`, `,
+  );
 }
 
 /** The codes with a reorder point among those in `codes`, as `c`. */
@@ -634,14 +699,6 @@ export class StockGroupedService {
             on: sql`c.needs_cost`,
           },
         };
-      const names = Object.keys(facets) as (keyof StockCodeCounts)[];
-      const countOf = (counted: keyof StockCodeCounts) =>
-        sql`(count(*) filter (where ${and(
-          facets[counted].on,
-          ...names
-            .filter((other) => other !== counted && facets[other].asked)
-            .map((other) => facets[other].on),
-        )}))::int as ${sql.identifier(counted)}`;
 
       const {
         rows: [counts],
@@ -656,7 +713,7 @@ export class StockGroupedService {
           where ${codesWhere(query, organizationId)}
         ),
         f as materialized (${codeFigures(organizationId, today, pointed(organizationId))})
-        select ${sql.join(names.map(countOf), sql`, `)}
+        select ${facetCounts(facets)}
         from codes c
         left join f on f.variant_id = c.variant_id
       `);
@@ -852,14 +909,6 @@ export class StockGroupedService {
         asked,
       } = lotFilters(query, organizationId, today, days);
 
-      const countOf = (counted: LotFacet) =>
-        sql`(count(*) filter (where ${and(
-          sql`r.${sql.identifier(counted)}`,
-          ...LOT_FACETS.filter(
-            (other) => other !== counted && asked[other],
-          ).map((other) => sql`r.${sql.identifier(other)}`),
-        )}))::int as ${sql.identifier(counted)}`;
-
       const {
         rows: [counts],
       } = await tx.execute<Record<LotFacet, number>>(sql`
@@ -872,7 +921,14 @@ export class StockGroupedService {
           )}
           from ${from}
         )
-        select ${sql.join(LOT_FACETS.map(countOf), sql`, `)}
+        select ${facetCounts(
+          Object.fromEntries(
+            LOT_FACETS.map((facet) => [
+              facet,
+              { on: sql`r.${sql.identifier(facet)}`, asked: asked[facet] },
+            ]),
+          ) as Record<LotFacet, { on: SQL; asked: boolean }>,
+        )}
         from r
       `);
       return counts;

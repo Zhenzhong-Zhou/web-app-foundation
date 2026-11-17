@@ -183,7 +183,7 @@ describe('Inventory, grouped (e2e)', () => {
 
   it('counts each quick filter as the rows it shows, with the other filters on', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    await world(alpha);
+    const { back } = await world(alpha);
     const filters: Record<string, string> = {
       low: 'low=true',
       out: 'out=true',
@@ -204,9 +204,16 @@ describe('Inventory, grouped (e2e)', () => {
       needsCost: 3,
     });
 
-    // With nothing else, with Low stock on, and with a search: each count
-    // is the rows its filter shows beside the others.
-    for (const others of ['', 'low=true', 'search=FOCUS', 'type=good']) {
+    // With nothing else, with Low stock on, a search, a type and a place
+    // (Expiring soon and Expired read from the lots there, review 39): each
+    // count is the rows its filter shows beside the others.
+    for (const others of [
+      '',
+      'low=true',
+      'search=FOCUS',
+      'type=good',
+      `locationId=${back}`,
+    ]) {
       const counts = await countsOf(others);
       for (const [name, filter] of Object.entries(filters)) {
         const query = [...new Set([others, filter])].filter(Boolean).join('&');
