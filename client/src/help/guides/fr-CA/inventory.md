@@ -107,7 +107,7 @@ Les bons de commande et les ordres de fabrication en brouillon s’affichent **E
 
 Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s’affiche aussitôt sur la ligne. Quand un article passe sous son point de commande, la vérification horaire suivante en avertit les personnes concernées dans les notifications, une seule fois jusqu’à ce que son stock remonte : ceux qui peuvent créer des commandes pour un article acheté, ceux qui peuvent planifier la production pour un article fabriqué.
 
-> Seule une personne qui peut créer des commandes peut choisir des lignes, et seule une personne qui peut planifier la production voit **Planifier un ordre**.
+> Seule une personne qui peut créer des commandes peut choisir des lignes, et seule une personne qui peut planifier la production voit **Fabriquer**.
 
 ## Les mots que vous verrez {#words}
 

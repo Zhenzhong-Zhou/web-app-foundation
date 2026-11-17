@@ -6611,3 +6611,5 @@ first.
   reorder point: MC-318 added.
 - 2026-11-17: ADR-093's review, 63: the Lot view says each code's type
   as a word, one shape with Stock's and the lookup's: MC-313.
+- 2026-11-17: ADR-093's review, 64: Help's Inventory guide names Make, the
+  row's button, where it said Plan a run, in three languages: MC-4217.

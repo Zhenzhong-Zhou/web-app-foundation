@@ -107,7 +107,7 @@ Draft purchase orders and runs show as **In draft**. They are not counted as com
 
 Nothing is saved until you create it, and what you create shows on the row at once. When an item falls below its point, the next hourly check tells whoever can act on it in the bell, once until it recovers: those who may raise orders for a bought item, those who may plan runs for a made one.
 
-> Only someone who may raise orders can choose rows, and only someone who may plan runs sees **Plan a run**.
+> Only someone who may raise orders can choose rows, and only someone who may plan runs sees **Make**.
 
 ## Words you’ll meet {#words}
 
