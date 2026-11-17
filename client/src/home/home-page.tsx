@@ -31,7 +31,7 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import { WhomToAsk, WhomToAskRead } from '../account/whom-to-ask';
 import type { HomeLayoutDto, HomeResponse } from '../api/types.gen';
@@ -44,6 +44,7 @@ import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api, isRevisionRefusal } from '../lib/api';
 import { OFFER_BACK } from '../lib/offer-back';
+import { leftFrom, returnedTo } from '../lib/return-focus';
 import { differsFromBrowser, organizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -120,6 +121,10 @@ export function HomePage() {
 /** Home for a member of the session's organization. */
 function OrganizationHome() {
   const intl = useIntl();
+  // Back from a tile's list: focus on that tile again (ADR-093's Reorder
+  // table), read once as Home opens.
+  const { key } = useLocation();
+  const [returnTile] = useState(() => returnedTo(key));
   const { session } = useAuth();
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
@@ -572,7 +577,11 @@ function OrganizationHome() {
                     <Box sx={{ containerType: 'inline-size' }}>
                       <Box sx={evenRowsSx(tiles.length)}>
                         {tiles.map((card) => (
-                          <Tile key={card.kind} card={card} />
+                          <Tile
+                            key={card.kind}
+                            card={card}
+                            returned={returnTile === card.kind}
+                          />
                         ))}
                       </Box>
                     </Box>
@@ -817,8 +826,13 @@ function HiddenLate({
  * by what it counts. With nothing to do it stays in its place, quiet:
  * muted, its words in place of the count, still a link.
  */
-function Tile({ card }: { card: KnownCard }) {
+function Tile({ card, returned }: { card: KnownCard; returned: boolean }) {
   const intl = useIntl();
+  const { key } = useLocation();
+  const link = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (returned) link.current?.focus();
+  }, [returned]);
   // The organization's days (ADR-060), for "No lots expiring in".
   const { warning: expiringWithin } = useExpiryDays();
   const meta = CARDS[card.kind];
@@ -852,8 +866,10 @@ function Tile({ card }: { card: KnownCard }) {
   return (
     <ButtonBase
       component={RouterLink}
+      ref={link}
       to={unset?.list ?? meta.list}
       state={OFFER_BACK}
+      onClick={() => leftFrom(key, card.kind)}
       aria-label={label}
       sx={(theme) => ({
         display: 'flex',

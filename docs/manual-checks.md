@@ -4180,6 +4180,7 @@ site, after a deploy that changes the setting, the route or the relay.
   the status with where it stands, Suggested, the draft, and Buy or Make
   with Actions, the sort behind Filters and the three views under the
   search; nothing is cut off at either width.
+  From Home's Low stock tile and Back, focus is on the tile again.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
   Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
@@ -6629,3 +6630,5 @@ first.
   first new row: MC-312.
 - 2026-11-17: ADR-093's review, 52: the item's page puts focus on its
   title when a link brings a person there: MC-219.
+- 2026-11-17: ADR-093's review, 52: Back from a Home tile's list puts
+  focus on that tile again: MC-4202.

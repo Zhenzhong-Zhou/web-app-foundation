@@ -67,10 +67,7 @@ test('Home, Low stock: Reorder opens with Low stock chosen, the tile’s word; B
   await expect(tile).toBeVisible();
 });
 
-// Not built: Back to Home puts focus on its top, not on the tile it left
-// by (ADR-093's Reorder table: "Home, focus on the tile"). For step 22's
-// review.
-test.fixme('Home, Low stock, then Back: focus on the tile', async ({
+test('Home, Low stock, then Back: focus on the tile', async ({
   page,
   freshOrg,
 }) => {
