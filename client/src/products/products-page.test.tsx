@@ -450,7 +450,9 @@ describe('ProductsPage', () => {
 
     await user.click(
       within(
-        screen.getByRole('button', { name: 'Discontinued included' }),
+        screen.getByRole('button', {
+          name: 'Remove filter: Discontinued included',
+        }),
       ).getByTestId('CancelIcon'),
     );
     await expect
@@ -800,7 +802,9 @@ describe('ProductsPage', () => {
         'type=good&category=00000000-0000-4000-8000-000000000002&sort=name&order=asc',
       );
     expect(
-      screen.getByRole('button', { name: 'Vitamins › Vitamin C' }),
+      screen.getByRole('button', {
+        name: 'Remove filter: Vitamins › Vitamin C',
+      }),
     ).toBeVisible();
   });
 

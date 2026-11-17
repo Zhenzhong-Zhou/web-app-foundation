@@ -55,9 +55,13 @@ test('keeps focus near a removed chip, then on the heading', async ({
   await expect(chip('Late')).toHaveCount(0);
   await expect(chip('Still to ship')).toBeFocused();
 
-  await page.keyboard.press('Delete');
+  // Enter and Space remove one too, as its name says (#578).
+  await expect(chip('Still to ship')).toHaveAccessibleName(
+    'Remove filter: Still to ship',
+  );
+  await page.keyboard.press('Enter');
   await expect(chip('Sales only')).toBeFocused();
-  await page.keyboard.press('Delete');
+  await page.keyboard.press('Space');
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
 });
 

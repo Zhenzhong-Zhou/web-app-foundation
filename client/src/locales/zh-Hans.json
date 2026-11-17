@@ -394,6 +394,7 @@
   "documents.downloadPdf": "下载 PDF",
   "export.button": "导出",
   "export.failed": "导出失败，请重试。",
+  "filters.chip.remove": "移除筛选：{filter}",
   "filters.range.any": "不限日期",
   "filters.range.from": "自 {date} 起",
   "filters.range.lastMonth": "上月",

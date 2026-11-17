@@ -4,13 +4,17 @@ import { useIntl } from 'react-intl';
 
 import type { VariantOption } from '../api/types.gen';
 import type { ProductType } from '../lib/api-names';
-import { itemName } from '../lib/format';
+import { itemName, SEPARATOR } from '../lib/format';
 import { usePickerSearch } from '../lib/use-picker-search';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 
-/** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
+/**
+ * "Widget (Large) · WIDGET-1": the name first, then the code, as every row
+ * reads (#563; the design language's Rows). A typed code still finds it:
+ * the server matches, not this label (usePickerSearch).
+ */
 function labelFor(option: VariantOption): string {
-  return `${option.sku} — ${itemName(option.productName, option.variantName)}`;
+  return `${itemName(option.productName, option.variantName)}${SEPARATOR}${option.sku}`;
 }
 
 /** What an item is picked for, which decides the types listed first. */
@@ -163,7 +167,13 @@ export function VariantPicker({
           translate="no"
           sx={{ flexWrap: 'wrap', columnGap: 2 }}
         >
-          <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>{labelFor(option)}</Box>
+          <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
+            {itemName(option.productName, option.variantName)}
+            {SEPARATOR}
+            <Box component="span" sx={{ color: 'text.secondary' }}>
+              {option.sku}
+            </Box>
+          </Box>
           <Typography
             component="div"
             variant="body2"

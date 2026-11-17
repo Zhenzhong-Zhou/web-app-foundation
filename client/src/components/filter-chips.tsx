@@ -1,4 +1,6 @@
 import { Chip, Stack } from '@mui/material';
+import type { SyntheticEvent } from 'react';
+import { useIntl } from 'react-intl';
 
 import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 
@@ -19,10 +21,15 @@ export interface NarrowedChip {
  * to the chip now in its place, or to the page's heading once none is left
  * (useFocusAfterRemove), never to the page's body.
  *
+ * A chip is a remove button, named so ("Remove filter: Late"): Enter,
+ * Space, Delete and Backspace remove it, as a click on it or its × does
+ * (#578; WCAG 2.1.1 and 4.1.2).
+ *
  * Built once for every list, where Orders, Inventory and Licences each
  * drew their own (#505's 57).
  */
 export function FilterChips({ chips }: { chips: (NarrowedChip | false)[] }) {
+  const intl = useIntl();
   const { row, removed } = useFocusAfterRemove();
   const shown = chips.filter((chip): chip is NarrowedChip => chip !== false);
 
@@ -35,16 +42,27 @@ export function FilterChips({ chips }: { chips: (NarrowedChip | false)[] }) {
       useFlexGap
       sx={{ flexWrap: 'wrap', gap: 1 }}
     >
-      {shown.map((chip) => (
-        <Chip
-          key={chip.id}
-          label={chip.label}
-          onDelete={(event) => {
-            removed(event);
-            chip.onRemove();
-          }}
-        />
-      ))}
+      {shown.map((chip) => {
+        const remove = (event: SyntheticEvent) => {
+          removed(event);
+          chip.onRemove();
+        };
+        return (
+          <Chip
+            key={chip.id}
+            label={chip.label}
+            aria-label={intl.formatMessage(
+              {
+                id: 'filters.chip.remove',
+                defaultMessage: 'Remove filter: {filter}',
+              },
+              { filter: chip.label },
+            )}
+            onClick={remove}
+            onDelete={remove}
+          />
+        );
+      })}
     </Stack>
   );
 }

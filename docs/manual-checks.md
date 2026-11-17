@@ -302,8 +302,11 @@ a second organization.
   component lists Raw materials, then Packaging, first; Plan a run's
   Making, Products first. Buying, Receive, a reorder point's Item and
   Movements' Item put none first: Products, Raw materials, Packaging,
-  Supplies, Samples, Equipment, each under its name. At 390 px, on Raise
-  an order's line, an item's type sits under it. In French and Chinese
+  Supplies, Samples, Equipment, each under its name. Each option and
+  the field once one is chosen read the name first, then the code, grey
+  in the list: Focus 60ct · FOCUS-60CT; `FOCUS-60` typed still finds it
+  (#563). At 390 px, on Raise an order's line, an item's type sits under
+  it. In French and Chinese
   the headings are the tabs' names, with Autres articles and 其他物品.
 - **MC-216** The Items guide, as the demo Owner, on Items: Help opens
   Items' guide, its sections The types, Find items, What a row shows,
@@ -497,8 +500,10 @@ a second organization.
   address, and Back from a page opened from there keeps it. Type
   `?status=nonsense` after `/orders`: Open is pressed, as with none.
   From a late button's Orders, Tab to the Late chip and press Delete:
-  focus moves to Still to ship, the chip now beside it; remove the last
-  chip and focus is on the page's title, never lost to the page.
+  focus moves to Still to ship, the chip now beside it; press Enter on
+  it, then Space on Sales only, and each goes the same way, a screen
+  reader naming each "Remove filter: …" (#578); remove the last chip
+  and focus is on the page's title, never lost to the page.
 - **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
   member a role made with only Orders' view (Settings → Roles) and sign
   in as them: on Orders, where Raise an order would be, one grey line
@@ -3905,8 +3910,8 @@ refusals keep the base name.
   does the trace of lot FOC-2609-01. On SO-DEMO-1 the line, the shipments
   and the return name it so too; its packing slip, invoice and CSV
   exports print Focus 60ct as before.
-- **MC-3804** In 中文, Receive: the item picker lists FOCUS-60CT —
-  专注胶囊 60 粒. So do Set price on a price list and its Item column;
+- **MC-3804** In 中文, Receive: the item picker lists 专注胶囊 60 粒 ·
+  FOCUS-60CT. So do Set price on a price list and its Item column;
   Home's Recently opened, after opening the product, names it 专注胶囊 60
   粒 too.
 
@@ -6484,3 +6489,6 @@ first.
   made switch named on screen, with why Made was chosen and a made
   item's words for a fixed quantity (#542): MC-4207, MC-4212 and MC-4215
   reworded.
+- 2026-11-16: ADR-093's riders: the item pickers name first, the code
+  after it (#563), and a filter's chip removed by Enter and Space,
+  named "Remove filter: …" (#578): MC-215, MC-406 and MC-3804.

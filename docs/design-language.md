@@ -100,7 +100,7 @@ Each with what holds it in the code today, or the issue that will.
   list is next changed, Inventory's on ADR-093's Inventory branch.
 - A picker's option reads "Vitamin C 500 mg · VITC-100", the code grey
   after the name, a typed code still finding it and an exact one still
-  leading its group (#563; `VariantPicker` puts the code first today).
+  leading its group (`VariantPicker`, #563).
 - A code with a page of its own is a link wherever it appears, a lot's
   code included.
 - A row's actions have words, not icons alone.

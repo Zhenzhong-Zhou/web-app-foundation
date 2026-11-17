@@ -536,7 +536,7 @@ describe('InventoryPage', () => {
     // Named by its rows, in the reader's language, with no read of the
     // item's own (ADR-092's review, 58).
     const chip = await screen.findByRole('button', {
-      name: 'Item: Vitamin D',
+      name: 'Remove filter: Item: Vitamin D',
     });
     expect(read).toBe(0);
     expect(asked.codes[0].get('productId')).toBe(PRODUCT);
@@ -563,7 +563,7 @@ describe('InventoryPage', () => {
       await screen.findByText('Vitamin D has no stock yet.'),
     ).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Item: Vitamin D' }),
+      screen.getByRole('button', { name: 'Remove filter: Item: Vitamin D' }),
     ).toBeVisible();
   });
 

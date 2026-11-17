@@ -197,7 +197,9 @@ test('the top bar, Show all in Items: the list opens on All with the search, dis
   // What the top bar found is on the list, the discontinued one too.
   await expect(rowNames(page)).toHaveCount(3);
   await expect(row(page, 'E2E Quartz Old')).toContainText('Discontinued');
-  const chip = page.getByRole('button', { name: 'Discontinued included' });
+  const chip = page.getByRole('button', {
+    name: 'Remove filter: Discontinued included',
+  });
   await expect(chip).toBeVisible();
 
   // Back: the page before.
@@ -250,7 +252,9 @@ test('Items, a tab: the list reads that type; the search, category and sort stay
     // Searched, in Vitamins, Z to A: neither Beta nor the uncategorised one.
     await expect(searchBox(page)).toHaveValue('Alpha');
     await expect(
-      page.getByRole('button', { name: 'Vitamins', exact: true }),
+      page.getByRole('button', {
+        name: 'Remove filter: Vitamins',
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole('columnheader', { name: 'Name' }),
@@ -336,7 +340,9 @@ test('Items, a category: the list holds it and those under it; a chip shows it, 
     'Vitamins',
   );
 
-  const chip = page.getByRole('button', { name: 'Vitamins', exact: true });
+  const chip = page.getByRole('button', {
+    name: 'Remove filter: Vitamins',
+  });
   const asItWas = async () => {
     await expect(page).toHaveURL(new RegExp(`/items\\?category=${vitamins}$`));
     await expect(rowNames(page)).toHaveText(['E2E Chewable C', 'E2E Multi']);
@@ -491,7 +497,7 @@ test('Items, a row’s stock: Inventory, that item alone; Back, Items as it was'
     new RegExp(`/inventory\\?productId=${tonic.id}`),
   );
   await expect(
-    page.getByRole('button', { name: 'Item: E2E Shelf Tonic' }),
+    page.getByRole('button', { name: 'Remove filter: Item: E2E Shelf Tonic' }),
   ).toBeVisible();
   // Its one code, in two places (ADR-093), and nothing else's.
   await expect(page.getByRole('row', { name: /E2E Shelf Tonic/ })).toHaveCount(
@@ -1067,7 +1073,7 @@ test('on a phone, a card’s stock: Inventory, that item alone; Back, Items as i
     new RegExp(`/inventory\\?productId=${tonic.id}`),
   );
   await expect(
-    page.getByRole('button', { name: 'Item: E2E Card Tonic' }),
+    page.getByRole('button', { name: 'Remove filter: Item: E2E Card Tonic' }),
   ).toBeVisible();
 
   await page.getByRole('button', { name: 'Back' }).click();

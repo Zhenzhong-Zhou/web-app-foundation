@@ -394,6 +394,7 @@
   "documents.downloadPdf": "Download PDF",
   "export.button": "Export",
   "export.failed": "The export could not be made. Try again.",
+  "filters.chip.remove": "Remove filter: {filter}",
   "filters.range.any": "Any date",
   "filters.range.from": "{date} from",
   "filters.range.lastMonth": "Last month",
