@@ -4147,7 +4147,7 @@ site, after a deploy that changes the setting, the route or the relay.
   column. At 820 px the In draft column leaves, the draft under the
   suggestion; at 390 px each row is a card, its box, the name and code,
   the status with where it stands, Suggested, the draft, and Buy or Make
-  with the ⋯, the sort behind Filters and the three views under the
+  with Actions, the sort behind Filters and the three views under the
   search; nothing is cut off at either width.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
@@ -4233,11 +4233,12 @@ site, after a deploy that changes the setting, the route or the relay.
   never "请修改现有的库存下限" before it, with focus
   back in the item, where a screen reader reads the refusal with it; Edit
   it opens Edit with what is kept, 240, A fixed quantity of 48, focus in
-  the reorder point, as Edit from a row's ⋯ opens.
-- **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's ⋯
-  holds Edit reorder point, Stock of the item and Remove reorder point, in
-  red; VoiceOver reads the ⋯ as a menu button, collapsed, then expanded
-  once open. ZINC-60's row has the ⋯ and no chevron. Edit on ELDER-250 opens
+  the reorder point, as Edit from a row's Actions opens.
+- **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's
+  Actions, a button in words, holds Edit reorder point, Stock of the item
+  and Remove reorder point, in red; VoiceOver reads it as "Actions for
+  … reorder point", a menu button, collapsed, then expanded once open.
+  ZINC-60's row has Actions and no chevron. Edit on ELDER-250 opens
   with Bought, 96 and Up to a maximum of 192; make it 150 and Save: the
   row's line and suggestion change, and the dialog closes. Edit's foot has
   Remove reorder point at the left, in red, which asks first: "Remove
@@ -4251,11 +4252,11 @@ site, after a deploy that changes the setting, the route or the relay.
   quantity, Maximum from 150 to none and Fixed quantity from none to 48,
   and names nothing that did not move.
 - **MC-4210** *(ADR-085)* From a Stock row, and who sees what. On
-  Inventory's Stock tab, a row's ⋯ ends with Reorder point…: on a
+  Inventory's Stock tab, a row's Actions ends with Reorder point…: on a
   D3-1000-120 row it opens Edit with its point; on a GLOVES-100 row, Add
   with GLOVES-100 named and no picker. Daniel Okafor (Admin), Tom Becker
   (Warehouse) and Chloé Tremblay (Viewer) hold no `stock.reorder`: no
-  Reorder point… on Stock, and no Add reorder point and no ⋯ on Reorder,
+  Reorder point… on Stock, and no Add reorder point and no Actions on Reorder,
   while the chevron still opens a row. Make a role, Nothing
   ticked: under Stock and locations, tick Set, change or remove an item’s
   reorder point, and See what is on hand and where and See the product
@@ -4264,7 +4265,7 @@ site, after a deploy that changes the setting, the route or the relay.
   Reorder clerk and give it to Tom Becker: his Your access says he can
   set reorder points, in 中文 设置库存下限, in Français définir les points
   de commande, and Reorder now shows him Add reorder point and
-  each row's ⋯.
+  each row's Actions.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
   Reorder shows an icon, "No reorder points yet.", a sentence on
   what a point does, Add reorder point, and Learn more, which opens Help
@@ -4556,10 +4557,10 @@ first.
 
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
-  Home, Your access on Account, and Movements from a Stock row's ⋯ show no
+  Home, Your access on Account, and Movements from a Stock row's Actions show no
   grey placeholder before their content; with the network throttled to
   Slow 4G (DevTools → Network), each shows one while it reads. With
-  VoiceOver on, a Stock row's ⋯ and the ⋯ on PO-DEMO-12's line read as a
+  VoiceOver on, a Stock row's Actions and the ⋯ on PO-DEMO-12's line read as a
   menu button, collapsed, then expanded once open.
 
 - **MC-R77** *(Show all after a close match alone opening an empty list,
@@ -6555,3 +6556,6 @@ first.
 - 2026-11-17: ADR-093's review, 53: MC-4201's setup, MC-4207, MC-R97,
   MC-R92, MC-R75, MC-R69 and MC-R67 name the tab Reorder and its Buy
   button, not Reorder points and Raise a purchase order.
+- 2026-11-17: ADR-093's review, 69: Stock's and Reorder's rows say Actions
+  in words, one shared button and menu, the header named on screen: MC-4202,
+  MC-4208, MC-4209, MC-4210 and MC-R78 reworded.

@@ -1,11 +1,7 @@
-import MoreVert from '@mui/icons-material/MoreVert';
 import {
   Box,
   Button,
-  IconButton,
   Link,
-  Menu,
-  MenuItem,
   Stack,
   Table,
   TableBody,
@@ -15,7 +11,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { type MouseEvent, type ReactNode, useId, useState } from 'react';
+import { type MouseEvent, type ReactNode, useId } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
@@ -25,6 +21,7 @@ import type {
   StockCodeRow,
   StockPlace,
 } from '../api/types.gen';
+import { type Action, ActionsMenu } from '../components/actions-menu';
 import { ExpiryChip } from '../components/expiry-chip';
 import { LotLink } from '../components/lot-link';
 import { OpeningButton } from '../components/opening-button';
@@ -41,7 +38,6 @@ import {
   nameAndCode,
   NO_VALUE,
 } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { useOpenRows } from '../lib/use-open-rows';
@@ -198,12 +194,7 @@ export function StockCodes({
                   }
                   {...header('expires')}
                 />
-                {/* Every header named (R6), this one to a screen reader. */}
-                <TableCell padding="checkbox">
-                  <Box component="span" sx={HIDDEN}>
-                    {intl.formatMessage(HEADS.actions)}
-                  </Box>
-                </TableCell>
+                <TableCell>{intl.formatMessage(HEADS.actions)}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -539,71 +530,37 @@ function CodeActions({
   handlers: StockHandlers;
 }) {
   const intl = useIntl();
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const [pending, setPending] = useState<'history' | 'reorder' | null>(null);
-  const menuId = useId();
-
-  // The dialog opens once the menu has closed, as StockActions' does.
-  function run() {
-    if (pending === 'history') {
-      handlers.onHistory({ ...row, lotId: null, lotCode: null });
-    } else if (pending === 'reorder') {
-      handlers.onReorder(row);
-    }
-    setPending(null);
+  const actions: Action[] = [
+    {
+      label: intl.formatMessage({
+        id: 'layout.nav.movements',
+        defaultMessage: 'Movements',
+      }),
+      onSelect: () =>
+        handlers.onHistory({ ...row, lotId: null, lotCode: null }),
+    },
+  ];
+  if (handlers.canReorder) {
+    actions.push({
+      label: intl.formatMessage({
+        id: 'inventory.actions.reorderPoint',
+        defaultMessage: 'Reorder point…',
+      }),
+      onSelect: () => handlers.onReorder(row),
+    });
   }
 
   return (
-    <>
-      <IconButton
-        size="small"
-        aria-label={intl.formatMessage(
-          {
-            id: 'inventory.stock.actions',
-            defaultMessage: 'Actions for {sku}',
-          },
-          { sku: row.sku },
-        )}
-        aria-haspopup="menu"
-        aria-expanded={!!anchor}
-        aria-controls={anchor ? menuId : undefined}
-        onClick={(event) => setAnchor(event.currentTarget)}
-      >
-        <MoreVert fontSize="small" />
-      </IconButton>
-      <Menu
-        id={menuId}
-        anchorEl={anchor}
-        open={!!anchor}
-        onClose={() => setAnchor(null)}
-        slotProps={{ transition: { onExited: run } }}
-      >
-        <MenuItem
-          onClick={() => {
-            setPending('history');
-            setAnchor(null);
-          }}
-        >
-          {intl.formatMessage({
-            id: 'layout.nav.movements',
-            defaultMessage: 'Movements',
-          })}
-        </MenuItem>
-        {handlers.canReorder && (
-          <MenuItem
-            onClick={() => {
-              setPending('reorder');
-              setAnchor(null);
-            }}
-          >
-            {intl.formatMessage({
-              id: 'inventory.actions.reorderPoint',
-              defaultMessage: 'Reorder point…',
-            })}
-          </MenuItem>
-        )}
-      </Menu>
-    </>
+    <ActionsMenu
+      name={intl.formatMessage(
+        {
+          id: 'inventory.stock.actions',
+          defaultMessage: 'Actions for {sku}',
+        },
+        { sku: row.sku },
+      )}
+      actions={actions}
+    />
   );
 }
 

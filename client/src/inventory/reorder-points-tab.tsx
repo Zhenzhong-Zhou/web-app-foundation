@@ -1240,14 +1240,11 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                             defaultMessage: 'In draft',
                           })}
                         </TableCell>
-                        {/* Every header named (R6), this one to a screen reader. */}
-                        <TableCell padding="checkbox">
-                          <Box component="span" sx={HIDDEN}>
-                            {intl.formatMessage({
-                              id: 'common.actions',
-                              defaultMessage: 'Actions',
-                            })}
-                          </Box>
+                        <TableCell>
+                          {intl.formatMessage({
+                            id: 'common.actions',
+                            defaultMessage: 'Actions',
+                          })}
                         </TableCell>
                       </TableRow>
                     </TableHead>

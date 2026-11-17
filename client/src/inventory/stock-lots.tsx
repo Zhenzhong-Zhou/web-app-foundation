@@ -17,7 +17,6 @@ import { LotLink } from '../components/lot-link';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { TableOrCards } from '../components/table-or-cards';
 import { itemName, nameAndCode, NO_VALUE } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { PileActions, type StockHandlers } from './stock-codes';
@@ -69,11 +68,7 @@ export function StockLots({
                 <TableCell align="right">
                   {intl.formatMessage(HEADS.quantity)}
                 </TableCell>
-                <TableCell padding="checkbox">
-                  <Box component="span" sx={HIDDEN}>
-                    {intl.formatMessage(HEADS.actions)}
-                  </Box>
-                </TableCell>
+                <TableCell>{intl.formatMessage(HEADS.actions)}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

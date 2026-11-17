@@ -1079,6 +1079,11 @@ Use these rather than writing the thing again on a page:
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
+- **`ActionsMenu`** for a row's actions: a button reading Actions, named
+  for its row, "Actions for VITC-100", opening a menu of what the reader
+  may do there, each choice run once the menu has closed; nothing to
+  offer, no button (ADR-093; the design language's Rows). Stock's and
+  Reorder's rows first; the others move as their screens are next changed.
 - **`NameAndCode`** (`products/name-and-code.tsx`) for an item in a list's
   row or card: the cover or the type's icon, the name first in bold and the
   code grey under it, the name the row's one link (ADR-093; the design
