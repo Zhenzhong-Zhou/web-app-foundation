@@ -1,9 +1,11 @@
-import { useIntl } from 'react-intl';
+import type { Ref } from 'react';
+import { type IntlShape, useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import type { MoveMode } from './move-stock-dialog';
+import type { HistoryOf } from './movement-history-dialog';
 
 /**
  * One pile: a code at one place, in one lot when it tracks lots (ADR-093),
@@ -20,7 +22,8 @@ export type Pile = StockPile;
  *
  * For everyone who may see stock: Movements and Trace lot only read, and a
  * Viewer's first week asks them to look a lot up (ADR-079). What changes
- * stock is offered only to those who may change it.
+ * stock is offered only to those who may change it. The item's reorder
+ * point is its code's row's, not a lot's (ADR-093).
  */
 export function StockActions({
   row,
@@ -29,19 +32,17 @@ export function StockActions({
   onSelect,
   onHistory,
   onEditLot,
-  canReorder,
-  onReorder,
+  buttonRef,
 }: {
   row: Pile;
   /** stock.move: moving, shipping out, sampling and a lot's details. */
   canMove: boolean;
   canAdjust: boolean;
   onSelect: (mode: MoveMode, row: Pile) => void;
-  onHistory: (row: Pile) => void;
+  onHistory: (of: HistoryOf) => void;
   onEditLot: (row: Pile) => void;
-  /** stock.reorder: setting the item's reorder point (ADR-085). */
-  canReorder: boolean;
-  onReorder: (row: Pile) => void;
+  /** For a row that moves focus to it: "Choose the lot". */
+  buttonRef?: Ref<HTMLButtonElement>;
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -111,49 +112,62 @@ export function StockActions({
       onSelect: () => void navigate(`/lots/${lotId}`),
     });
   }
-  // Movements, as a code's row says it (ADR-093); the history dialog until
+  // Movements, as a code's row says it (ADR-093): the lot's, or, for a
+  // code not tracked by lot, its place's; the history dialog until
   // Movements' branch.
   actions.push({
     label: intl.formatMessage({
       id: 'layout.nav.movements',
       defaultMessage: 'Movements',
     }),
-    onSelect: () => onHistory(row),
-  });
-  // The item's, not the row's: one point across every location (ADR-085).
-  // Whether it has one yet, the dialog reads.
-  if (canReorder) {
-    actions.push({
-      label: intl.formatMessage({
-        id: 'inventory.actions.reorderPoint',
-        defaultMessage: 'Reorder point…',
+    onSelect: () =>
+      onHistory({
+        ...row,
+        at:
+          !row.lotId && row.locationName !== null
+            ? { locationId: row.locationId, locationName: row.locationName }
+            : null,
       }),
-      onSelect: () => onReorder(row),
-    });
-  }
+  });
 
   return (
     <ActionsMenu
-      name={
-        row.locationName !== null
-          ? intl.formatMessage(
-              {
-                id: 'inventory.actions.label',
-                defaultMessage: 'Actions for {sku} at {location}',
-              },
-              { sku: row.sku, location: row.locationName },
-            )
-          : // A reader without places: the lot names the pile (A6).
-            intl.formatMessage(
-              {
-                id: 'inventory.actions.labelLot',
-                defaultMessage:
-                  '{lot, select, none {Actions for {sku}} other {Actions for {sku}, lot {lot}}}',
-              },
-              { sku: row.sku, lot: row.lotCode ?? 'none' },
-            )
-      }
+      name={pileActionsName(row, intl)}
       actions={actions}
+      buttonRef={buttonRef}
     />
   );
+}
+
+/**
+ * The pile's Actions named by what tells it from its neighbours: "Actions
+ * for VITC-100, lot VC-0302, at Shelf A2"; a reader without places hears
+ * the lot alone (A6).
+ */
+function pileActionsName(row: Pile, intl: IntlShape): string {
+  if (row.locationName === null) {
+    return intl.formatMessage(
+      {
+        id: 'inventory.actions.labelLot',
+        defaultMessage:
+          '{lot, select, none {Actions for {sku}} other {Actions for {sku}, lot {lot}}}',
+      },
+      { sku: row.sku, lot: row.lotCode ?? 'none' },
+    );
+  }
+  return row.lotCode
+    ? intl.formatMessage(
+        {
+          id: 'inventory.actions.labelLotAt',
+          defaultMessage: 'Actions for {sku}, lot {lot}, at {location}',
+        },
+        { sku: row.sku, lot: row.lotCode, location: row.locationName },
+      )
+    : intl.formatMessage(
+        {
+          id: 'inventory.actions.label',
+          defaultMessage: 'Actions for {sku} at {location}',
+        },
+        { sku: row.sku, location: row.locationName },
+      );
 }

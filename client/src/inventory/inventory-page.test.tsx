@@ -8,7 +8,7 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -269,7 +269,7 @@ describe('InventoryPage', () => {
     });
 
     // A screen reader hears a menu button, not a plain one (#358).
-    it('says a row’s ⋯ opens a menu, its Movements for everyone and its reorder point by permission', async () => {
+    it('says a row’s Actions open a menu, its Movements for everyone and nothing that changes stock', async () => {
       const user = userEvent.setup();
       answer();
       renderAt('/inventory', ['stock.view']);
@@ -285,9 +285,164 @@ describe('InventoryPage', () => {
       expect(
         within(menu).getByRole('menuitem', { name: 'Movements' }),
       ).toBeVisible();
+      for (const name of [
+        'Move',
+        'Correct the count',
+        'Change reorder point',
+      ]) {
+        expect(
+          within(menu).queryByRole('menuitem', { name }),
+        ).not.toBeInTheDocument();
+      }
+    });
+  });
+
+  describe('an item’s own actions', () => {
+    /** The Actions of VITD-60's row, opened. */
+    async function codeActions(permissions: string[], row = CODE) {
+      const user = userEvent.setup();
+      answer([row]);
+      renderAt('/inventory', ['stock.view', 'locations.view', ...permissions]);
+      await user.click(
+        await screen.findByRole('button', { name: 'Actions for VITD-60' }),
+      );
+      return { user, menu: await screen.findByRole('menu') };
+    }
+
+    it('offers what changes stock and the reorder point, by permission', async () => {
+      const { menu } = await codeActions([
+        'stock.move',
+        'stock.adjust',
+        'stock.reorder',
+      ]);
+
       expect(
-        within(menu).queryByRole('menuitem', { name: 'Reorder point…' }),
-      ).not.toBeInTheDocument();
+        within(menu)
+          .getAllByRole('menuitem')
+          .map((item) => item.textContent),
+      ).toEqual([
+        'Movements',
+        'Move',
+        'Ship out',
+        'Send sample',
+        'Correct the count',
+        'Change reorder point',
+      ]);
+    });
+
+    // In several places: the row opens to its lots to choose one.
+    it('opens to its lots to choose one, focus on the first lot’s Actions', async () => {
+      const { user, menu } = await codeActions(['stock.move']);
+      await user.click(within(menu).getByRole('menuitem', { name: 'Move' }));
+
+      expect(await screen.findByText('Choose the lot.')).toBeVisible();
+      await vi.waitFor(() =>
+        expect(
+          screen.getByRole('button', {
+            name: 'Actions for VITD-60, lot NN-2401, at Quarantine',
+          }),
+        ).toHaveFocus(),
+      );
+      expect(screen.getByText('NN-2410-07')).toBeVisible();
+    });
+
+    // One lot at one place: Move acts on it straight.
+    it('moves its one lot at its one place straight', async () => {
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({ places: [PLACES[1]!] }),
+        ),
+      );
+      const { user, menu } = await codeActions(['stock.move'], {
+        ...CODE,
+        places: 1,
+        lots: 1,
+      });
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({
+            places: [{ ...PLACES[1]!, lots: [PLACES[1]!.lots[0]!] }],
+          }),
+        ),
+      );
+      await user.click(within(menu).getByRole('menuitem', { name: 'Move' }));
+
+      expect(
+        await screen.findByRole('dialog', { name: /Move to another location/ }),
+      ).toBeVisible();
+      expect(screen.queryByText('Choose the lot.')).not.toBeInTheDocument();
+    });
+
+    // A place's Actions: the code's Movements there alone.
+    it('gives a place its Movements there', async () => {
+      const user = userEvent.setup();
+      answer();
+      let asked: URLSearchParams | null = null;
+      server.use(
+        http.get('/api/v1/stock/movements', ({ request }) => {
+          asked = new URL(request.url).searchParams;
+          return HttpResponse.json({ entries: [], nextCursor: null });
+        }),
+      );
+      renderAt('/inventory', ['stock.view', 'locations.view']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'Actions for VITD-60 at Shelf A',
+        }),
+      );
+      await user.click(
+        within(await screen.findByRole('menu')).getByRole('menuitem', {
+          name: 'Movements',
+        }),
+      );
+
+      expect(
+        await screen.findByRole('dialog', { name: /at Shelf A/ }),
+      ).toBeVisible();
+      await vi.waitFor(() => expect(asked?.get('locationId')).toBe('loc-1'));
+    });
+
+    // Not tracked by lot, at the place chosen: its one pile, never "None
+    // on hand" beside its stock (review 49).
+    it('says nothing is on hand only when nothing is', async () => {
+      answer([
+        {
+          ...CODE,
+          lots: 0,
+          places: 1,
+          here: { lots: 0, onHand: '40.0000', expiresFirst: null },
+        },
+      ]);
+      server.use(
+        http.get('/api/v1/locations', () =>
+          HttpResponse.json([
+            {
+              id: PLACE,
+              type: 'shelf',
+              name: 'Shelf A',
+              code: null,
+              parentId: null,
+              isAvailable: true,
+              isActive: true,
+              address: null,
+            },
+          ]),
+        ),
+      );
+      renderAt(`/inventory?locationId=${PLACE}`, [
+        'stock.view',
+        'locations.view',
+      ]);
+
+      expect(
+        await screen.findByRole('button', { name: 'Actions for VITD-60' }),
+      ).toBeVisible();
+      expect(screen.queryByText('None on hand')).not.toBeInTheDocument();
     });
   });
 
@@ -308,9 +463,9 @@ describe('InventoryPage', () => {
         }),
       );
       await user.click(
-        screen.getAllByRole('button', {
-          name: 'Actions for VITD-60 at Shelf A',
-        })[0],
+        screen.getByRole('button', {
+          name: 'Actions for VITD-60, lot NN-2410-07, at Shelf A',
+        }),
       );
       return screen.findByRole('menu');
     }

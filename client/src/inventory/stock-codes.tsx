@@ -11,7 +11,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { type MouseEvent, type ReactNode, useId } from 'react';
+import {
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
@@ -225,19 +233,81 @@ interface Opened {
   changes: number;
 }
 
-/** A code's places and their lots, read as its row opens (R2). */
-function usePlaces(
+/** A code's places and their lots, at the place chosen if one is. */
+function readPlaces(
   row: StockCodeRow,
-  { place, includeEmpty, changes }: Opened,
+  { place, includeEmpty }: Opened,
+): Promise<StockPlace[]> {
+  const params = new URLSearchParams();
+  if (place) params.set('locationId', place.id);
+  if (includeEmpty) params.set('includeEmpty', 'true');
+  return api<StockCodePlaces>(
+    `/stock/by-code/${row.variantId}/places?${params.toString()}`,
+  ).then((answer) => answer.places);
+}
+
+/** A code's places and their lots, read as its row opens (R2). */
+function usePlaces(row: StockCodeRow, opened: Opened) {
+  return useOpenRows(() => readPlaces(row, opened), opened.changes);
+}
+
+/**
+ * Whether the code is one pile where the row stands, one lot at one place:
+ * then Move and the rest act on it straight, with no lot to choose.
+ */
+function onePile(row: StockCodeRow, { place }: Opened): boolean {
+  if (place) return (row.here?.lots ?? 0) <= 1;
+  return row.places === 1 && row.lots <= 1;
+}
+
+/** On hand where the row stands: at the place chosen, or every place's. */
+function onHandOf(row: StockCodeRow, { place }: Opened): string {
+  return place ? (row.here?.onHand ?? NONE) : row.onHand;
+}
+
+/**
+ * What the row does with a pile's action chosen from the code's own
+ * Actions: on its one pile straight; otherwise the row opens to its lots,
+ * "Choose the lot" said above them and focus on the first lot's Actions.
+ */
+function usePileChoice(
+  row: StockCodeRow,
+  opened: Opened,
+  places: ReturnType<typeof usePlaces>,
 ) {
-  return useOpenRows(() => {
-    const params = new URLSearchParams();
-    if (place) params.set('locationId', place.id);
-    if (includeEmpty) params.set('includeEmpty', 'true');
-    return api<StockCodePlaces>(
-      `/stock/by-code/${row.variantId}/places?${params.toString()}`,
-    ).then((answer) => answer.places);
-  }, changes);
+  const [choosing, setChoosing] = useState(false);
+  const first = useRef<HTMLButtonElement>(null);
+
+  // Focus on the first lot's Actions once the lots are drawn.
+  const drawn = places.open && places.rows !== null;
+  useEffect(() => {
+    if (choosing && drawn) first.current?.focus();
+  }, [choosing, drawn]);
+  /** The row's own button: closed, it no longer asks for a lot. */
+  function toggle() {
+    if (places.open) setChoosing(false);
+    places.toggle();
+  }
+
+  async function act(mode: MoveMode) {
+    if (onePile(row, opened)) {
+      try {
+        const rows = places.rows ?? (await readPlaces(row, opened));
+        const pile = rows.flatMap((each) => each.lots)[0];
+        if (pile) {
+          opened.handlers.onMove(mode, pile);
+          return;
+        }
+      } catch {
+        // Its places could not be read: the row opens, which says so with
+        // Try again.
+      }
+    }
+    setChoosing(true);
+    if (!places.open) places.toggle();
+  }
+
+  return { choosing, first, act, toggle };
 }
 
 /** The item's name as a row says it: "Focus, 60 capsules". */
@@ -263,15 +333,41 @@ function openWords(
         )
       : null;
   }
-  return lots > 0
+  if (lots > 0) {
+    return intl.formatMessage(
+      {
+        id: 'inventory.stock.lots',
+        defaultMessage: '{count, plural, one {# lot} other {# lots}}',
+      },
+      { count: lots },
+    );
+  }
+  // Not tracked by lot, in several places a reader without places may not
+  // name: how many, each opened by its quantity alone (A6).
+  return !place && row.places > 1
     ? intl.formatMessage(
         {
-          id: 'inventory.stock.lots',
-          defaultMessage: '{count, plural, one {# lot} other {# lots}}',
+          id: 'inventory.stock.places',
+          defaultMessage: '{count, plural, one {# place} other {# places}}',
         },
-        { count: lots },
+        { count: row.places },
       )
     : null;
+}
+
+/**
+ * Where nothing opens: "None on hand" when there is none, otherwise a dash,
+ * as for a code not tracked by lot at the one place chosen.
+ */
+function NothingToOpen({ row, ...opened }: { row: StockCodeRow } & Opened) {
+  const intl = useIntl();
+
+  if (onHandOf(row, opened) !== NONE) return NO_VALUE;
+  return (
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      {intl.formatMessage(HEADS.noneOnHand)}
+    </Typography>
+  );
 }
 
 /** A code's row in the table, and the rows it opens to after it. */
@@ -279,6 +375,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
   const navigate = useNavigate();
   const places = usePlaces(row, opened);
+  const choice = usePileChoice(row, opened, places);
   const controls = useId();
   const words = openWords(row, opened, intl);
   const name = nameOf(row);
@@ -313,15 +410,10 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
               open={places.open}
               busy={places.busy}
               controls={controls}
-              onClick={places.toggle}
+              onClick={choice.toggle}
             />
           ) : (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage({
-                id: 'inventory.stock.noneOnHand',
-                defaultMessage: 'None on hand',
-              })}
-            </Typography>
+            <NothingToOpen row={row} {...opened} />
           )}
         </TableCell>
         <TableCell align="right">
@@ -349,7 +441,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
           />
         </TableCell>
         <TableCell padding="checkbox">
-          <CodeActions row={row} handlers={opened.handlers} />
+          <CodeActions row={row} opened={opened} onPile={choice.act} />
         </TableCell>
       </TableRow>
 
@@ -360,6 +452,8 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
           places={places.rows}
           failure={places.failure}
           onRetry={places.retry}
+          choosing={choice.choosing}
+          first={choice.first}
           {...opened}
         />
       )}
@@ -524,12 +618,16 @@ function Status({ row }: { row: StockCodeRow }) {
  */
 function CodeActions({
   row,
-  handlers,
+  opened,
+  onPile,
 }: {
   row: StockCodeRow;
-  handlers: StockHandlers;
+  opened: Opened;
+  /** A pile's action chosen from the code's row (usePileChoice). */
+  onPile: (mode: MoveMode) => void;
 }) {
   const intl = useIntl();
+  const { handlers } = opened;
   const actions: Action[] = [
     {
       label: intl.formatMessage({
@@ -537,15 +635,58 @@ function CodeActions({
         defaultMessage: 'Movements',
       }),
       onSelect: () =>
-        handlers.onHistory({ ...row, lotId: null, lotCode: null }),
+        handlers.onHistory({ ...row, lotId: null, lotCode: null, at: null }),
     },
   ];
+  // What changes stock acts on a pile, so only with something on hand
+  // where the row stands.
+  if (handlers.canMove && onHandOf(row, opened) !== NONE) {
+    actions.push(
+      {
+        label: intl.formatMessage({
+          id: 'inventory.actions.move',
+          defaultMessage: 'Move',
+        }),
+        onSelect: () => onPile('transfer'),
+      },
+      {
+        label: intl.formatMessage({
+          id: 'inventory.move.ship.title',
+          defaultMessage: 'Ship out',
+        }),
+        onSelect: () => onPile('ship'),
+      },
+      {
+        label: intl.formatMessage({
+          id: 'inventory.actions.sendSample',
+          defaultMessage: 'Send sample',
+        }),
+        onSelect: () => onPile('sample'),
+      },
+    );
+    if (handlers.canAdjust) {
+      actions.push({
+        label: intl.formatMessage({
+          id: 'inventory.move.adjust.title',
+          defaultMessage: 'Correct the count',
+        }),
+        onSelect: () => onPile('adjust'),
+      });
+    }
+  }
+  // The item's, not a lot's: one point across every place (ADR-085).
   if (handlers.canReorder) {
     actions.push({
-      label: intl.formatMessage({
-        id: 'inventory.actions.reorderPoint',
-        defaultMessage: 'Reorder point…',
-      }),
+      label:
+        row.reorderPoint === null
+          ? intl.formatMessage({
+              id: 'products.stock.setPoint',
+              defaultMessage: 'Set a reorder point',
+            })
+          : intl.formatMessage({
+              id: 'products.stock.changePoint',
+              defaultMessage: 'Change reorder point',
+            }),
       onSelect: () => handlers.onReorder(row),
     });
   }
@@ -565,6 +706,31 @@ function CodeActions({
 }
 
 /**
+ * "Choose the lot", above the lots a pile's action from the code's row
+ * opened to; "Choose the place" for a code not tracked by lot.
+ */
+function ChooseLine({ places }: { places: StockPlace[] }) {
+  const intl = useIntl();
+  const tracked = places.some((each) =>
+    each.lots.some((lot) => lot.lotId !== null),
+  );
+
+  return (
+    <Typography role="status" variant="body2" sx={{ fontWeight: 600 }}>
+      {tracked
+        ? intl.formatMessage({
+            id: 'inventory.stock.chooseLot',
+            defaultMessage: 'Choose the lot.',
+          })
+        : intl.formatMessage({
+            id: 'inventory.stock.choosePlace',
+            defaultMessage: 'Choose the place.',
+          })}
+    </Typography>
+  );
+}
+
+/**
  * What a code's row opens to (R2): each place, with its lots behind its
  * own button, soonest first; for a reader without places, the lots
  * straight, never a place's name (A6). "Reading…" is on the button; a
@@ -576,6 +742,8 @@ function PlacesRows({
   places,
   failure,
   onRetry,
+  choosing,
+  first,
   seesPlaces,
   place,
   handlers,
@@ -585,6 +753,10 @@ function PlacesRows({
   places: StockPlace[] | null;
   failure: unknown;
   onRetry: () => void;
+  /** Opened by a pile's action from the code's row: "Choose the lot". */
+  choosing: boolean;
+  /** The first lot's Actions, which focus moves to while choosing. */
+  first: RefObject<HTMLButtonElement | null>;
 } & Opened) {
   const intl = useIntl();
 
@@ -612,6 +784,14 @@ function PlacesRows({
   }
   if (!places) return <TableRow id={id} />;
 
+  const line = choosing && (
+    <TableRow sx={{ bgcolor: 'action.hover' }}>
+      <TableCell colSpan={9} sx={{ pl: 6 }}>
+        <ChooseLine places={places} />
+      </TableCell>
+    </TableRow>
+  );
+
   // Without places, or at the one chosen: the lots alone, each at a place
   // not available saying so, never which place (A6).
   if (!seesPlaces || place) {
@@ -620,6 +800,7 @@ function PlacesRows({
     );
     return (
       <>
+        {line}
         {lots.map(({ lot, usable }, index) => (
           <LotTableRow
             key={lot.id}
@@ -629,6 +810,7 @@ function PlacesRows({
             handlers={handlers}
             depth={1}
             notAvailable={!usable}
+            actionsRef={index === 0 ? first : undefined}
           />
         ))}
       </>
@@ -637,6 +819,7 @@ function PlacesRows({
 
   return (
     <>
+      {line}
       {places.map((each, index) => (
         <PlaceTableRow
           key={each.locationId}
@@ -644,6 +827,8 @@ function PlacesRows({
           row={row}
           place={each}
           handlers={handlers}
+          lotsOpen={choosing}
+          actionsRef={index === 0 ? first : undefined}
         />
       ))}
     </>
@@ -656,16 +841,28 @@ function PlaceTableRow({
   row,
   place,
   handlers,
+  lotsOpen,
+  actionsRef,
 }: {
   id?: string;
   row: StockCodeRow;
   place: StockPlace;
   handlers: StockHandlers;
+  /** Its lots shown from the start: a lot is being chosen. */
+  lotsOpen: boolean;
+  /** Its first lot's Actions, or its own for a code not tracked by lot. */
+  actionsRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const intl = useIntl();
   const lotsId = useId();
   // Its lots came with it, so opening reads nothing.
-  const lots = useOpenRows(() => Promise.resolve(place.lots));
+  const [open, setOpen] = useState(lotsOpen);
+  // A lot asked for opens them, as React adjusts state to a prop.
+  const [asked, setAsked] = useState(lotsOpen);
+  if (lotsOpen !== asked) {
+    setAsked(lotsOpen);
+    if (lotsOpen) setOpen(true);
+  }
   const tracked = place.lots.some((lot) => lot.lotId !== null);
   const where = nameAndCode(place.locationName ?? '', place.locationCode);
   const words = intl.formatMessage(
@@ -705,10 +902,10 @@ function PlaceTableRow({
                   { words, place: where },
                 ),
               }}
-              open={lots.open}
-              busy={lots.busy}
+              open={open}
+              busy={false}
               controls={lotsId}
-              onClick={lots.toggle}
+              onClick={() => setOpen(!open)}
             />
           )}
         </TableCell>
@@ -717,14 +914,21 @@ function PlaceTableRow({
         </TableCell>
         <TableCell colSpan={5} />
         <TableCell padding="checkbox">
-          {/* Not tracked by lot: the place's one pile is the row. */}
-          {!tracked && place.lots[0] && (
-            <PileActions pile={place.lots[0]} handlers={handlers} />
+          {/* Not tracked by lot: the place's one pile is the row. Tracked:
+              the code's Movements at this place. */}
+          {!tracked && place.lots[0] ? (
+            <PileActions
+              pile={place.lots[0]}
+              handlers={handlers}
+              buttonRef={actionsRef}
+            />
+          ) : (
+            <PlaceActions row={row} place={place} handlers={handlers} />
           )}
         </TableCell>
       </TableRow>
       {tracked &&
-        lots.open &&
+        open &&
         place.lots.map((lot, index) => (
           <LotTableRow
             key={lot.id}
@@ -733,6 +937,7 @@ function PlaceTableRow({
             row={row}
             handlers={handlers}
             depth={2}
+            actionsRef={index === 0 ? actionsRef : undefined}
           />
         ))}
     </>
@@ -752,6 +957,47 @@ function NotUsableHere() {
   );
 }
 
+/** A place's Actions: the code's Movements at that place (ADR-093). */
+function PlaceActions({
+  row,
+  place,
+  handlers,
+}: {
+  row: StockCodeRow;
+  place: StockPlace;
+  handlers: StockHandlers;
+}) {
+  const intl = useIntl();
+  const where = nameAndCode(place.locationName ?? '', place.locationCode);
+
+  return (
+    <ActionsMenu
+      name={intl.formatMessage(
+        {
+          id: 'inventory.actions.label',
+          defaultMessage: 'Actions for {sku} at {location}',
+        },
+        { sku: row.sku, location: where },
+      )}
+      actions={[
+        {
+          label: intl.formatMessage({
+            id: 'layout.nav.movements',
+            defaultMessage: 'Movements',
+          }),
+          onSelect: () =>
+            handlers.onHistory({
+              ...row,
+              lotId: null,
+              lotCode: null,
+              at: { locationId: place.locationId, locationName: where },
+            }),
+        },
+      ]}
+    />
+  );
+}
+
 /** A lot's row under its place: its code a link, its quantity and expiry. */
 function LotTableRow({
   id,
@@ -760,6 +1006,7 @@ function LotTableRow({
   handlers,
   depth,
   notAvailable = false,
+  actionsRef,
 }: {
   id?: string;
   lot: Pile;
@@ -768,6 +1015,8 @@ function LotTableRow({
   depth: number;
   /** At a place not available, its name not shown (A6). */
   notAvailable?: boolean;
+  /** The first lot's Actions, which focus moves to while choosing. */
+  actionsRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const intl = useIntl();
 
@@ -798,7 +1047,7 @@ function LotTableRow({
         <ExpiryChip expiresAt={lot.lotExpiresAt} />
       </TableCell>
       <TableCell padding="checkbox">
-        <PileActions pile={lot} handlers={handlers} />
+        <PileActions pile={lot} handlers={handlers} buttonRef={actionsRef} />
       </TableCell>
     </TableRow>
   );
@@ -808,9 +1057,11 @@ function LotTableRow({
 export function PileActions({
   pile,
   handlers,
+  buttonRef,
 }: {
   pile: Pile;
   handlers: StockHandlers;
+  buttonRef?: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <StockActions
@@ -820,8 +1071,7 @@ export function PileActions({
       onSelect={handlers.onMove}
       onHistory={handlers.onHistory}
       onEditLot={handlers.onEditLot}
-      canReorder={handlers.canReorder}
-      onReorder={handlers.onReorder}
+      buttonRef={buttonRef}
     />
   );
 }
@@ -834,6 +1084,7 @@ export function PileActions({
 function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
   const places = usePlaces(row, opened);
+  const choice = usePileChoice(row, opened, places);
   const controls = useId();
   const words = openWords(row, opened, intl);
   const name = nameOf(row);
@@ -877,15 +1128,13 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
               open={places.open}
               busy={places.busy}
               controls={controls}
-              onClick={places.toggle}
+              onClick={choice.toggle}
             />
           ) : (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage(HEADS.noneOnHand)}
-            </Typography>
+            <NothingToOpen row={row} {...opened} />
           )}
           <Box sx={{ flex: 1 }} />
-          <CodeActions row={row} handlers={opened.handlers} />
+          <CodeActions row={row} opened={opened} onPile={choice.act} />
         </Stack>
         {places.open && (
           <Stack id={controls} spacing={1}>
@@ -895,11 +1144,15 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
             <Figure label={intl.formatMessage(HEADS.coming)}>
               <Coming row={row} />
             </Figure>
+            {choice.choosing && places.rows && (
+              <ChooseLine places={places.rows} />
+            )}
             <OpenedCard
               row={row}
               places={places.rows}
               failure={places.failure}
               onRetry={places.retry}
+              first={choice.first}
               {...opened}
             />
           </Stack>
@@ -931,6 +1184,7 @@ function OpenedCard({
   places,
   failure,
   onRetry,
+  first,
   seesPlaces,
   place,
   handlers,
@@ -939,6 +1193,8 @@ function OpenedCard({
   places: StockPlace[] | null;
   failure: unknown;
   onRetry: () => void;
+  /** The first lot's Actions, which focus moves to while choosing. */
+  first: RefObject<HTMLButtonElement | null>;
 } & Opened) {
   const intl = useIntl();
 
@@ -963,6 +1219,7 @@ function OpenedCard({
   if (!places) return null;
 
   const showPlaces = seesPlaces && !place;
+  const firstPile = places[0]?.lots[0]?.id;
   return (
     <Stack component="ul" spacing={1} sx={{ m: 0, p: 0 }}>
       {places.map((each) => (
@@ -1001,7 +1258,11 @@ function OpenedCard({
               <span>
                 {displayWithUnit(lot.quantity, row.unitOfMeasure, intl)}
               </span>
-              <PileActions pile={lot} handlers={handlers} />
+              <PileActions
+                pile={lot}
+                handlers={handlers}
+                buttonRef={lot.id === firstPile ? first : undefined}
+              />
             </Stack>
           ))}
         </Box>

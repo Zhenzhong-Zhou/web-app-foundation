@@ -331,6 +331,116 @@ test('Stock, a lot, its code: the lot’s trace; Back, Stock', async ({
 // left by (ADR-093's Stock table: "`?open=` gains its code"; "Stock as it
 // was, focus on that row"; a lot's trace, Back: "the rows open"). For
 // step 22's review.
+/** A row's Actions opened, and the words of what its menu offers. */
+async function offers(page: Page, name: string | RegExp): Promise<string[]> {
+  await page.getByRole('button', { name }).click();
+  const menu = page.getByRole('menu');
+  await expect(menu).toBeVisible();
+  const words = await menu.getByRole('menuitem').allTextContents();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  return words;
+}
+
+test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in words; an item’s Move on its one lot straight, or its lots opened to choose one', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page);
+
+  // An item's: Movements, what changes stock, and its reorder point.
+  const magnesium = page.getByRole('button', { name: 'Actions for E2E-MAG' });
+  await expect(magnesium).toHaveText('Actions');
+  expect(await offers(page, 'Actions for E2E-MAG')).toEqual([
+    'Movements',
+    'Move',
+    'Ship out',
+    'Send sample',
+    'Correct the count',
+    'Set a reorder point',
+  ]);
+  expect(await offers(page, 'Actions for E2E-VITC')).toContain(
+    'Change reorder point',
+  );
+
+  // One pile, 10 on A2 with no lot: Move opens on it straight.
+  await magnesium.click();
+  await page.getByRole('menuitem', { name: 'Move', exact: true }).click();
+  const move = page.getByRole('dialog', { name: /Move to another location/ });
+  await expect(move).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(move).toHaveCount(0);
+
+  // Four lots in two places: the row opens to them, says to choose one,
+  // focus on the first lot's Actions.
+  await page.getByRole('button', { name: 'Actions for E2E-VITC' }).click();
+  await page.getByRole('menuitem', { name: 'Move', exact: true }).click();
+  await expect(page.getByText('Choose the lot.')).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: `Actions for E2E-VITC, lot VC-SOON, at ${scene.shelfA.name}`,
+    }),
+  ).toBeFocused();
+  await expect(lotLinks(page)).toHaveText([
+    'VC-SOON',
+    'VC-LATE',
+    'VC-GONE',
+    'VC-SOON',
+  ]);
+
+  // A lot's: what moves it, its details and trace, and Movements.
+  expect(
+    await offers(
+      page,
+      `Actions for E2E-VITC, lot VC-LATE, at ${scene.shelfA.name}`,
+    ),
+  ).toEqual([
+    'Move',
+    'Ship out',
+    'Send sample',
+    'Correct the count',
+    'Edit lot details',
+    'Trace lot',
+    'Movements',
+  ]);
+
+  // A place's: its Movements there.
+  const placeActions = `Actions for E2E-VITC at ${scene.shelfB.name}`;
+  expect(await offers(page, placeActions)).toEqual(['Movements']);
+  await page.getByRole('button', { name: placeActions }).click();
+  await page.getByRole('menuitem', { name: 'Movements' }).click();
+  await expect(
+    page.getByRole('dialog', {
+      name: new RegExp(`at ${scene.shelfB.name}$`),
+    }),
+  ).toBeVisible();
+});
+
+test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing that changes stock', async ({
+  page,
+  freshOrg,
+}) => {
+  await stockScene(freshOrg.api);
+  await confirmEmailInDatabase(freshOrg.email);
+  const { token } = await inviteByLink(
+    freshOrg.api,
+    uniqueEmail('stock-actions-viewer'),
+  );
+  const viewer = await joinByLink(token, 'E2E Viewer');
+  await signInAs(page, viewer);
+  await stockFrom(page);
+
+  expect(await offers(page, 'Actions for E2E-MAG')).toEqual(['Movements']);
+  await placesOf(page, 'E2E Vitamin C').click();
+  await lotsAt(page, 'E2E Shelf A2').click();
+  expect(
+    await offers(page, 'Actions for E2E-VITC, lot VC-LATE, at E2E Shelf A2'),
+  ).toEqual(['Trace lot', 'Movements']);
+  await viewer.dispose();
+});
+
 test.fixme('Stock, a row, 2 places: `?open=` gains its code; Back from the item’s page, the row still open, focus on that row', async ({
   page,
   freshOrg,

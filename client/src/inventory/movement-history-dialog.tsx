@@ -48,7 +48,10 @@ const PAGE_SIZE = 25;
 export type HistoryOf = Pick<
   StockPile,
   'variantId' | 'sku' | 'productName' | 'variantName' | 'lotId' | 'lotCode'
->;
+> & {
+  /** A place's Movements: the code's at that place alone (ADR-093). */
+  at?: { locationId: string; locationName: string } | null;
+};
 
 /**
  * Scoped to the lot when the row has one, because the dialog's own title
@@ -63,6 +66,7 @@ function queryFor(row: HistoryOf): string {
   });
 
   if (row.lotId) params.set('lotId', row.lotId);
+  if (row.at) params.set('locationId', row.at.locationId);
 
   return params.toString();
 }
@@ -99,28 +103,40 @@ export function MovementHistoryDialog({
       {/* The item's name beside its SKU, in the reader's language (#256):
           every row below is the same item, so the title names it once. */}
       <DialogTitle>
-        {row?.lotCode
+        {row?.at
           ? intl.formatMessage(
               {
-                id: 'inventory.history.titleItemWithLot',
-                defaultMessage: 'History for {sku} {name} · lot {lot}',
+                id: 'inventory.history.titleItemAt',
+                defaultMessage: 'History for {sku} {name} at {place}',
               },
               {
                 sku: <Reference>{row.sku}</Reference>,
                 name: itemName(row.productName, row.variantName),
-                lot: <Reference>{row.lotCode}</Reference>,
+                place: row.at.locationName,
               },
             )
-          : intl.formatMessage(
-              {
-                id: 'inventory.history.titleItem',
-                defaultMessage: 'History for {sku} {name}',
-              },
-              {
-                sku: <Reference>{row?.sku}</Reference>,
-                name: row && itemName(row.productName, row.variantName),
-              },
-            )}
+          : row?.lotCode
+            ? intl.formatMessage(
+                {
+                  id: 'inventory.history.titleItemWithLot',
+                  defaultMessage: 'History for {sku} {name} · lot {lot}',
+                },
+                {
+                  sku: <Reference>{row.sku}</Reference>,
+                  name: itemName(row.productName, row.variantName),
+                  lot: <Reference>{row.lotCode}</Reference>,
+                },
+              )
+            : intl.formatMessage(
+                {
+                  id: 'inventory.history.titleItem',
+                  defaultMessage: 'History for {sku} {name}',
+                },
+                {
+                  sku: <Reference>{row?.sku}</Reference>,
+                  name: row && itemName(row.productName, row.variantName),
+                },
+              )}
       </DialogTitle>
 
       <DialogContent>

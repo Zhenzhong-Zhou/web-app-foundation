@@ -46,16 +46,22 @@ Goods a supplier sends against a purchase are received on the order instead, on 
 
 ## Move, ship or correct {#move}
 
-Each row’s actions offer:
+Each row has **Actions**, by what the row is:
+
+- An item’s row: **Movements**, **Move**, **Ship out**, **Send sample**, **Correct the count**, and **Change reorder point**. When the item is one lot at one place, Move and the rest act on it straight; otherwise the row opens to its lots and says **Choose the lot**, with each lot's own Actions.
+- A place’s row: its **Movements** there.
+- A lot’s row: **Move**, **Ship out**, **Send sample**, **Correct the count**, **Edit lot details**, **Trace lot** and **Movements**.
+
+What each does:
 
 - **Move**: to another location, such as from the dock to a shelf.
 - **Ship out**: stock that leaves with no order. A customer’s goods ship from their sale on Orders.
 - **Send sample**: a hand-out, with whom it was given to, so a recall can find it.
 - **Correct the count**: how many more or fewer the shelf has than recorded, why, and what happened.
-- **Edit lot details**, **Trace lot** and **Movements**: the row’s lot, where it went, and its movements.
-- **Reorder point…**: the item’s reorder point, below.
+- **Edit lot details**, **Trace lot** and **Movements**: the lot, where it went, and its movements.
+- **Change reorder point**: the item’s reorder point, below.
 
-> Only someone who may move stock sees **Receive stock** and each row’s actions, and only someone who may correct counts sees **Correct the count**.
+> Everyone who may see stock sees **Movements** and **Trace lot**. Only someone who may move stock sees **Receive stock** and what changes stock, and only someone who may correct counts sees **Correct the count**.
 
 ## What each count counts {#counts}
 
@@ -71,14 +77,14 @@ A number on a filter or a tile counts one kind of thing, and the kind is the sam
 
 A reorder point is the level below which an item is running short: below it, the item shows as low here, on Home and in the bell, with what to order. An item with no point is never low.
 
-1. On **Reorder**, press **Add reorder point**, or choose **Reorder point…** in a row’s actions on **Stock**.
+1. On **Reorder**, press **Add reorder point**, or choose **Change reorder point** in an item’s **Actions** on **Stock**.
 2. Choose the item, and whether it is **Bought** or **Made**. Made is chosen for you when the item has an active recipe.
 3. Type the **Reorder point**, in the item’s unit, and choose how much to order.
 4. **Today** shows where the item stands now and after the suggested order. Press **Add reorder point**, or **Save** when editing.
 
 Each row’s actions offer **Edit reorder point**, **Stock of the item** and **Remove reorder point**, which changes neither its stock nor its orders. A discontinued item keeps its point and is never low.
 
-> Everyone who may see stock sees the list. Only someone who may set reorder points sees **Add reorder point**, **Reorder point…** and each row’s actions: at first the Owner alone, until a role gives it.
+> Everyone who may see stock sees the list. Only someone who may set reorder points sees **Add reorder point**, **Change reorder point** and each row’s actions: at first the Owner alone, until a role gives it.
 
 ## Where an item stands {#position}
 
