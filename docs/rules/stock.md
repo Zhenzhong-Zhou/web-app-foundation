@@ -131,6 +131,13 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "stands an item’s codes the low first, each figure with the lines behind it" ·
   [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code"
+- **Buy or Make on Where it stands orders what Reorder suggests for the
+  code:** bought or made as its reorder point says, the quantity
+  Reorder's own row reads; none for a code with no point, and 0 when it
+  is not low or a draft covers it already.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [ADR-085](../adr/0085-low-stock.md#decision--a-reorder-point-per-item-bought-or-made-with-a-rule-for-how-much) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "stands an item’s codes the low first, each figure with the lines behind it"
 - **Where it stands is sent only to a reader with stock.view,** and the
   others are refused in their own words, naming whom to ask.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·

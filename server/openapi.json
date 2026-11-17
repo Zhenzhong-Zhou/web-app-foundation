@@ -18599,6 +18599,23 @@
               null
             ]
           },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "bought",
+              "made",
+              null
+            ]
+          },
+          "suggestion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "heldOrders": {
             "type": "number"
           },
@@ -18670,6 +18687,8 @@
           "expiresFirst",
           "reorderPoint",
           "status",
+          "source",
+          "suggestion",
           "heldOrders",
           "holds",
           "purchases",

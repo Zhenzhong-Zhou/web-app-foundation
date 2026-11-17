@@ -2268,6 +2268,8 @@ export type CodeStanding = {
   expiresFirst: string | null;
   reorderPoint: string | null;
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
+  source: 'bought' | 'made' | null;
+  suggestion: string | null;
   heldOrders: number;
   holds: Array<StockHold> | null;
   purchases: Array<ComingPurchase> | null;

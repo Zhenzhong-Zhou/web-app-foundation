@@ -76,6 +76,8 @@ interface ReorderRow {
   stillNeeded: string;
   position: string;
   status: string;
+  source: string;
+  suggestion: string;
 }
 
 interface Pile {
@@ -108,6 +110,8 @@ interface Standing {
   expiresFirst: string | null;
   reorderPoint: string | null;
   status: string | null;
+  source: string | null;
+  suggestion: string | null;
   heldOrders: number;
   holds:
     | {
@@ -572,6 +576,29 @@ describe('A code’s figures (e2e)', () => {
     const stands = codes[1];
     expect(stands.variantId).toBe(bottle);
 
+    // Buy's quantity is Reorder's suggestion: back to the point, 600 less
+    // Left's 210, and the empty code's 5.
+    const reorder = body<{ entries: ReorderRow[] }>(
+      await alpha.agent.get('/v1/stock/reorder-points').expect(200),
+    ).entries;
+    expect(
+      codes.map((code) => [code.sku, code.source, code.suggestion]),
+    ).toEqual([
+      ['BOTTLE-S', 'bought', '5.0000'],
+      ['BOTTLE', 'bought', '390.0000'],
+    ]);
+    for (const code of codes) {
+      expect(
+        reorder.find((row) => row.variantId === code.variantId)?.suggestion,
+      ).toBe(code.suggestion);
+    }
+    // An item with no point has neither.
+    const [making] = await standing(
+      alpha.agent,
+      await productOf(alpha, 'FOCUS'),
+    );
+    expect([making.source, making.suggestion]).toEqual([null, null]);
+
     // Held, oldest confirmed first: the first holds its 400, the last
     // holds the 60 left and is 40 short.
     expect(stands.heldOrders).toBe(2);
@@ -608,10 +635,6 @@ describe('A code’s figures (e2e)', () => {
     expect(stands.lots).toBeNull();
 
     // A run's output coming, on the item it makes.
-    const [making] = await standing(
-      alpha.agent,
-      await productOf(alpha, 'FOCUS'),
-    );
     expect(making.variantId).toBe(focus);
     expect(making.runs!.map((line) => line.quantity)).toEqual(['100.0000']);
 

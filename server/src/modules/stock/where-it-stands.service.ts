@@ -3,6 +3,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { todayOf } from '../../core/organizations/time-zone';
+import type { ReorderSource } from '../../database/schema';
 import { products, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -17,6 +18,7 @@ import type {
   UsableLot,
 } from './dto/where-it-stands-response.dto';
 import { namesIn } from './item-name';
+import { positionsOf } from './reorder-position';
 import type { ReorderStatus } from './reorder-status';
 import { placesOf } from './stock-grouped.service';
 
@@ -78,7 +80,8 @@ function byCode<T, R>(
  * Where it stands (ADR-093, R8): an item's codes, the low first, each
  * with its figures from the one read (code-figures.ts) and the lines
  * behind them (code-lines.ts): Held's sales, Coming's purchases and
- * runs, and By place and lot. Gated inside: the caller has `stock.view`,
+ * runs, and By place and lot; and Reorder's suggestion, Buy or Make's
+ * quantity. Gated inside: the caller has `stock.view`,
  * and each part beyond the figures is read only for a reader who may see
  * it (StandingSight), the number kept where the documents are not
  * ("Held 20 · for 2 orders").
@@ -156,6 +159,21 @@ export class WhereItStandsService {
         }
         return { codes: [] };
       }
+
+      // Buy or Make's quantity, for the codes with a point: Reorder's
+      // suggestion, by its one rule (reorder-position.ts; ADR-085).
+      const { rows: pointRows } = await tx.execute<{
+        variant_id: string;
+        source: ReorderSource;
+        suggestion: string;
+      }>(sql`
+        select
+          p.variant_id,
+          p.source,
+          ${quantity(sql`p.suggestion`)} as suggestion
+        from (${positionsOf(organizationId, today, variants)}) p
+      `);
+      const points = new Map(pointRows.map((row) => [row.variant_id, row]));
 
       // Read for the count whoever reads; its documents sent only with
       // orders.view.
@@ -304,6 +322,8 @@ export class WhereItStandsService {
           expiresFirst: row.expires_first,
           reorderPoint: row.reorder_point,
           status: row.status,
+          source: points.get(row.variant_id)?.source ?? null,
+          suggestion: points.get(row.variant_id)?.suggestion ?? null,
           heldOrders: holds.get(row.variant_id)?.length ?? 0,
           holds: sight.orders ? (holds.get(row.variant_id) ?? []) : null,
           purchases: sight.orders

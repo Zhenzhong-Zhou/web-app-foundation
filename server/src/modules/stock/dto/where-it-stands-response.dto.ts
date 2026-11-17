@@ -1,3 +1,4 @@
+import type { ReorderSource } from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 import type { StockPlace } from './stock-grouped-response.dto';
 
@@ -98,6 +99,14 @@ export class CodeStanding {
   reorderPoint!: string | null;
   /** Null without a reorder point (A4). */
   status!: ReorderStatus | null;
+  /** Bought or made, as its reorder point says; null without one. */
+  source!: ReorderSource | null;
+  /**
+   * Buy 30 or Make 1,000: the suggested order, as Reorder's row has it
+   * (reorder-position.ts); 0 when it is not low, or a draft covers it
+   * already; null without a reorder point.
+   */
+  suggestion!: string | null;
   /** How many confirmed sales still want it: "Held 20 · for 2 orders". */
   heldOrders!: number;
   /** Those sales, oldest confirmed first; null without `orders.view`. */
