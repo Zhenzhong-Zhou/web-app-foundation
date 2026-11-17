@@ -296,7 +296,13 @@ export function ProductDetailPage() {
         />
       )}
 
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+      {/* Add variant goes under the title where both do not fit (R14). */}
+      <Stack
+        direction="row"
+        spacing={2}
+        useFlexGap
+        sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+      >
         <Typography
           id={variantsTitleId}
           variant="h6"

@@ -33,15 +33,24 @@ export function ExpiryChip({
       component="span"
       sx={{
         display: 'inline-flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
-        gap: 1,
-        whiteSpace: 'nowrap',
+        columnGap: 1,
+        rowGap: 0.5,
+        // The date goes under the chip where both do not fit, and the
+        // chip's words wrap before they are cut (R14; WCAG 1.4.10).
+        '& .MuiChip-root': { maxWidth: '100%', height: 'auto' },
+        '& .MuiChip-label': { whiteSpace: 'normal' },
       }}
     >
       <StatusChip tone={status.tone} label={status.label} />
       <Box
         component="span"
-        sx={{ color: 'text.secondary', typography: 'body2' }}
+        sx={{
+          color: 'text.secondary',
+          typography: 'body2',
+          whiteSpace: 'nowrap',
+        }}
       >
         {date}
       </Box>

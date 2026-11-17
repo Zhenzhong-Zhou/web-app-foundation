@@ -125,6 +125,19 @@ const KNOWN: {
         '[Çóñfíŕm ñéŵ páššŵóŕď one two] *',
       ].includes(cut.text),
   },
+  {
+    // Inventory's search box: its label, raised above the field once it
+    // holds words, is wider than the field on a phone in French and en-XA.
+    // The same raised label as Change password's above; #566's labels
+    // above the field would clear it.
+    issue: '#566',
+    is: (cut, { screen }) =>
+      (screen === 'Stock' || screen === 'The Lot view') &&
+      [
+        'Rechercher des articles, des codes ou des lots',
+        '[Šéáŕçĥ íťémš, çóďéš óŕ ĺóťš one two three]',
+      ].includes(cut.text),
+  },
 ];
 
 /**
@@ -506,26 +519,17 @@ const INVENTORY_WIDTHS = [
 ] as const;
 
 /*
- * Not yet passing, so marked to fix (ADR-093's R14, for step 22's
- * review): its first run found, in 16 of the 24 walks,
- * - an expiry chip's words ended by an ellipsis on Stock and Where it
- *   stands ("Expires in 10 days", "Expiré depuis 4 jours"), in every
- *   language, at each width;
- * - the search box's raised label wider than its box in French and en-XA
- *   ("Rechercher des articles, des codes ou des lots"), #566's;
- * - at 820 px, Stock, the Lot view and Reorder scrolling sideways by 50
- *   to 550 px: a header named to a screen reader alone, placed absolutely,
- *   escapes its table's own scrolling box;
- * - at 320 and 390 px, a lot's day and an expiry chip past the screen's
- *   edge on Stock's and the Lot view's cards, and the item's page's "Add
- *   variant" past it at 320 px.
- * Each walk passes once these are fixed, or listed in KNOWN with an issue.
+ * Its first run found, in 16 of the 24 walks, an expiry chip's words cut
+ * and its day past a card's edge, a header placed outside its table at
+ * 820 px, rows spanning columns the head hid there, and "Add variant" past
+ * the edge at 320 px: each fixed in ADR-093's review (52, 54). The search
+ * box's raised label is #566's, in KNOWN.
  */
 
 for (const language of LANGUAGES) {
   for (const size of TEXT_SIZES) {
     for (const { width, height } of INVENTORY_WIDTHS) {
-      test.fixme(`cuts no text on Inventory's screens at ${width} × ${height}, ${size.name} text, in ${language.tag}`, async ({
+      test(`cuts no text on Inventory's screens at ${width} × ${height}, ${size.name} text, in ${language.tag}`, async ({
         browser,
         baseURL,
       }) => {

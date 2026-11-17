@@ -405,7 +405,10 @@ a second organization.
   820 px, Held and Coming leave the table, and a row opened to its places
   and lots keeps each cell under its header: a lot's expiry under Expires
   first, its Actions under Actions, nothing scrolling sideways; Reorder's
-  opened row too.
+  opened row too. At 320 px, in Français and at Larger text, an expiry
+  chip's words wrap rather than end in "…", its date under it; on a card,
+  a lot's quantity and Actions go under the lot; the item's page puts Add
+  variant under Variants; nothing scrolls sideways.
 - **MC-308** Inventory search finds a code by any part of its code, its
   item's name or a lot's code; a search with no match says no items match
   these filters, with Show all stock.
@@ -6578,3 +6581,6 @@ first.
   MC-4210 reworded; Help's Inventory guide says each row's Actions.
 - 2026-11-17: ADR-093's review, 54: at 600–899 px every row under a code,
   and Reorder's opened row, has a cell for each header shown: MC-301.
+- 2026-11-17: ADR-093's review, 52 and 1: the cut-text test on Inventory's
+  screens switched on and passing; an expiry chip wraps, a card's lot line
+  wraps, Add variant wraps: MC-301.

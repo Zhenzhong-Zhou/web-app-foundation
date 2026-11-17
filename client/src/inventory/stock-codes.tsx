@@ -1143,7 +1143,12 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
             }
           />
         </Figure>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+        >
           {words ? (
             <OpeningButton
               words={words}
@@ -1269,9 +1274,16 @@ function OpenedCard({
               key={lot.id}
               direction="row"
               spacing={1}
-              sx={{ alignItems: 'center', pl: showPlaces ? 2 : 0 }}
+              useFlexGap
+              sx={{
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                pl: showPlaces ? 2 : 0,
+              }}
             >
-              <Stack sx={{ flex: 1, minWidth: 0 }}>
+              {/* The lot keeps room to be read; its quantity and Actions go
+                  under it where all three do not fit (R14). */}
+              <Stack sx={{ flex: '1 1 10rem', minWidth: 0 }}>
                 {lot.lotId && lot.lotCode && (
                   <LotLink id={lot.lotId} code={lot.lotCode} />
                 )}

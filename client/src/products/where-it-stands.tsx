@@ -945,9 +945,16 @@ function ByPlace({
                 key={pile.id}
                 direction="row"
                 spacing={1}
-                sx={{ listStyle: 'none', alignItems: 'center' }}
+                useFlexGap
+                sx={{
+                  listStyle: 'none',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
               >
-                <Stack sx={{ flex: 1, minWidth: 0 }}>
+                {/* The lot keeps room to be read; its quantity and Move go
+                    under it where all three do not fit (R14). */}
+                <Stack sx={{ flex: '1 1 10rem', minWidth: 0 }}>
                   <span>{where(place)}</span>
                   {!place.isAvailable && notAvailable}
                   {pile.lotId && pile.lotCode && (
