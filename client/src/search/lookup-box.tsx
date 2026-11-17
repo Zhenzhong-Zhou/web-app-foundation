@@ -26,10 +26,7 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
-import {
-  productTypeIcon,
-  productTypeSingular,
-} from '../products/product-types';
+import { productTypeIcon, typeAfter } from '../products/product-types';
 import { rem } from '../theme/rem';
 import { KIND_LABELS, LIST_LABELS, listOf, pathOf } from './lookup-kinds';
 import { lookupLongEnough } from './lookup-minimum';
@@ -381,21 +378,9 @@ function LookupField({
                     >
                       {/* An item's code, and its type as a word beside its
                         icon, since Items holds every type (#548). */}
-                      {option.result.type
-                        ? intl.formatMessage(
-                            {
-                              id: 'inventory.stock.codeLine',
-                              defaultMessage: '{code} · {type}',
-                            },
-                            {
-                              code: option.result.detail,
-                              type: productTypeSingular(
-                                option.result.type,
-                                intl,
-                              ),
-                            },
-                          )
-                        : option.result.detail}
+                      {option.result.detail}
+                      {option.result.type &&
+                        typeAfter(option.result.type, intl)}
                     </Typography>
                   )}
                   {option.result.expiresAt && (

@@ -799,7 +799,6 @@
   "inventory.stock.allTypes": "全部类型",
   "inventory.stock.chooseLot": "请选择批次。",
   "inventory.stock.choosePlace": "请选择库位。",
-  "inventory.stock.codeLine": "{code} · {type}",
   "inventory.stock.coming": "在途",
   "inventory.stock.expiresFirst": "最早到期",
   "inventory.stock.expiresFirstHere": "此处最早到期",

@@ -433,7 +433,8 @@ a second organization.
   Haddad (Sales), with no `locations.view`, the button reads "… lots" and
   opens the lots alone, no place named.
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
-  soonest first, the expired on top; D3-B02's two rows read "1 of 2
+  soonest first, the expired on top, each code with its type as a word,
+  "D3-1000-120 · Product"; D3-B02's two rows read "1 of 2
   places" and "2 of 2 places". Its quick filters are Low stock, Expiring
   soon, Expired and Waiting for a cost, each count the rows it shows.
   `/inventory?group=lot&out=1` says items that are out have no lots, with
@@ -6608,3 +6609,5 @@ first.
 - 2026-11-17: ADR-093's review, 62: Stock's first use names whom to ask
   for a role that cannot receive, and its done state the items with no
   reorder point: MC-318 added.
+- 2026-11-17: ADR-093's review, 63: the Lot view says each code's type
+  as a word, one shape with Stock's and the lookup's: MC-313.

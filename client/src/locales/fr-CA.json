@@ -799,7 +799,6 @@
   "inventory.stock.allTypes": "Tous les types",
   "inventory.stock.chooseLot": "Choisissez le lot.",
   "inventory.stock.choosePlace": "Choisissez l’emplacement.",
-  "inventory.stock.codeLine": "{code} · {type}",
   "inventory.stock.coming": "À venir",
   "inventory.stock.expiresFirst": "Expire en premier",
   "inventory.stock.expiresFirstHere": "Expire en premier ici",

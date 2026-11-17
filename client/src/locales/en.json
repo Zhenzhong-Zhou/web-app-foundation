@@ -799,7 +799,6 @@
   "inventory.stock.allTypes": "All types",
   "inventory.stock.chooseLot": "Choose the lot.",
   "inventory.stock.choosePlace": "Choose the place.",
-  "inventory.stock.codeLine": "{code} · {type}",
   "inventory.stock.coming": "Coming",
   "inventory.stock.expiresFirst": "Expires first",
   "inventory.stock.expiresFirstHere": "Expires first here",

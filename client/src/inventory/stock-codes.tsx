@@ -50,7 +50,6 @@ import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { useOpenRows } from '../lib/use-open-rows';
 import { NameAndCode } from '../products/name-and-code';
-import { productTypeSingular } from '../products/product-types';
 import { displayWithUnit } from '../products/units';
 import { STATUS_TONES } from '../theme/status';
 import type { MoveMode } from './move-stock-dialog';
@@ -410,7 +409,8 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
         <TableCell>
           <NameAndCode
             name={name}
-            code={codeLine(row, intl)}
+            code={row.sku}
+            withType
             type={row.type}
             coverFileId={row.coverFileId}
             to={`/items/${row.productId}`}
@@ -472,20 +472,6 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
         />
       )}
     </>
-  );
-}
-
-/** "VITC-100 · Product": the code, and the type as a word (#548). */
-function codeLine(
-  row: { sku: string; type: StockCodeRow['type'] },
-  intl: ReturnType<typeof useIntl>,
-): string {
-  return intl.formatMessage(
-    {
-      id: 'inventory.stock.codeLine',
-      defaultMessage: '{code} · {type}',
-    },
-    { code: row.sku, type: productTypeSingular(row.type, intl) },
   );
 }
 
@@ -1124,7 +1110,8 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
       <Stack spacing={1}>
         <NameAndCode
           name={name}
-          code={codeLine(row, intl)}
+          code={row.sku}
+          withType
           type={row.type}
           coverFileId={row.coverFileId}
           to={`/items/${row.productId}`}

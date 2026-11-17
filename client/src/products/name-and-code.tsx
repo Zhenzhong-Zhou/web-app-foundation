@@ -5,8 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { ProductCover } from '../components/product-cover';
 import type { ProductType } from '../lib/api-names';
-import { SEPARATOR } from '../lib/format';
-import { productTypeIcon, productTypeSingular } from './product-types';
+import { productTypeIcon, typeAfter } from './product-types';
 
 /**
  * An item's name and code, the one cell every list of items draws them
@@ -73,12 +72,7 @@ export function NameAndCode({
         )}
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {code}
-          {withType && (
-            <>
-              {SEPARATOR}
-              {productTypeSingular(type, intl)}
-            </>
-          )}
+          {withType && typeAfter(type, intl)}
         </Typography>
       </Stack>
     </Stack>

@@ -671,6 +671,8 @@ describe('InventoryPage', () => {
         await screen.findByText('Not usable: a place not available'),
       ).toBeVisible();
       expect(screen.queryByText('Quarantine')).not.toBeInTheDocument();
+      // Its code with the type as a word, as Stock's rows (review 63).
+      expect(screen.getByText('VITD-60 · Product')).toBeVisible();
     });
 
     it('says items that are out have no lots, with Group by Item', async () => {

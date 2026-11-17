@@ -9,6 +9,7 @@ import type { ComponentType } from 'react';
 import { defineMessages, type IntlShape } from 'react-intl';
 
 import type { ProductType } from '../lib/api-names';
+import { SEPARATOR } from '../lib/format';
 import type { ItemTab } from './item-list';
 
 /**
@@ -76,6 +77,15 @@ export function productTypeSingular(type: string, intl: IntlShape): string {
   return type in SINGULARS
     ? intl.formatMessage(SINGULARS[type as keyof typeof SINGULARS])
     : type;
+}
+
+/**
+ * The type as a word after an item's code, " · Product": where items of
+ * every type sit together, an icon that tells a kind is never alone (#548;
+ * the design language's Rows). One shape for NameAndCode and the lookup.
+ */
+export function typeAfter(type: ProductType, intl: IntlShape): string {
+  return `${SEPARATOR}${productTypeSingular(type, intl)}`;
 }
 
 /** An Items tab's name: a type's, or All (ADR-092). */

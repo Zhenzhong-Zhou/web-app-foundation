@@ -79,6 +79,7 @@ export function StockLots({
                     <NameAndCode
                       name={itemName(row.productName, row.variantName)}
                       code={row.sku}
+                      withType
                       type={row.type}
                       coverFileId={row.coverFileId}
                       to={`/items/${row.productId}`}
@@ -135,6 +136,7 @@ export function StockLots({
                   <NameAndCode
                     name={itemName(row.productName, row.variantName)}
                     code={row.sku}
+                    withType
                     type={row.type}
                     coverFileId={row.coverFileId}
                     to={`/items/${row.productId}`}
