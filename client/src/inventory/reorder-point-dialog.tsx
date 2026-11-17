@@ -17,7 +17,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useEffect, useMemo, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type {
@@ -47,6 +47,7 @@ import {
   useDebouncedRead,
 } from '../lib/use-debounced-read';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { displayWithUnit, unitLabel } from '../products/units';
@@ -235,21 +236,14 @@ export function ReorderPointDialog({
   const { variants, answered } = useVariants(opening.kind === 'add');
   // Add's picker marks each item that has a point already (#538), so the
   // 409 below is the rare case, not the way to find out.
-  const [pointed, setPointed] = useState<ReadonlySet<string>>(() => new Set());
-  const adds = opening.kind === 'add';
-  useEffect(() => {
-    if (!adds) return;
-    let ignore = false;
-    void api<ReorderPointItems>('/stock/reorder-points/items')
-      .then((read) => {
-        if (!ignore) setPointed(new Set(read.variantIds));
-      })
-      // Silent: without the marks the picker still works, and Add says so.
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [adds]);
+  // Silent: without the marks the picker still works, and Add says so.
+  const marks = useResource<ReorderPointItems>(
+    opening.kind === 'add' ? '/stock/reorder-points/items' : null,
+  ).data;
+  const pointed = useMemo<ReadonlySet<string>>(
+    () => new Set(marks?.variantIds ?? []),
+    [marks],
+  );
 
   const editing = !!kept;
   // The read's skeleton only once it takes a while (conventions, Loading

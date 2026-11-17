@@ -10,7 +10,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useIntl } from 'react-intl';
 import {
   Link as RouterLink,
@@ -43,7 +43,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SelectField } from '../components/select-field';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { api, messageFor } from '../lib/api';
+import { messageFor, withQuery } from '../lib/api';
 import type { ProductType, StockCodeSort } from '../lib/api-names';
 import { nameAndCode } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -60,8 +60,9 @@ import {
   useListFilters,
 } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
-import { type ListSort, useListSort } from '../lib/use-list-sort';
+import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { useLocations } from '../lib/use-locations';
+import { useResource } from '../lib/use-resource';
 import { leavesOf } from '../locations/tree';
 import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
@@ -150,12 +151,12 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   // row opens straight to its lots.
   const seesPlaces = can('locations.view');
   // Asked again by Try again when the read fails (ADR-092's states).
-  const [placesAgain, setPlacesAgain] = useState(0);
   const {
     locations,
     answered,
     failure: placesFailure,
-  } = useLocations(seesPlaces, placesAgain);
+    retry: retryPlaces,
+  } = useLocations(seesPlaces);
   const placesFailed = answered && placesFailure !== null;
   const leaves = leavesOf(locations).filter((location) => location.isActive);
   // The place the address names: taken while the places are read, or
@@ -186,54 +187,32 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [changes, setChanges] = useState(0);
 
   // The filters as the server reads them; Out has no lots to list (31a).
-  const query = useMemo(() => {
-    const params = new URLSearchParams();
-    if (low) params.set('low', 'true');
-    if (out && !byLot) params.set('out', 'true');
-    if (expiring) params.set('expiringWithin', String(expiringWithin));
-    if (expired) params.set('expired', 'true');
-    if (needsCost) params.set('needsCost', 'true');
-    if (type) params.set('type', type);
-    if (categoryId) params.set('categoryId', categoryId);
-    if (locationId) params.set('locationId', locationId);
-    if (productId) params.set('productId', productId);
-    if (includeEmpty) params.set('includeEmpty', 'true');
-    if (search) params.set('search', search);
-    return params.toString();
-  }, [
-    low,
-    out,
-    byLot,
-    expiring,
-    expiringWithin,
-    expired,
-    needsCost,
-    type,
-    categoryId,
-    locationId,
-    productId,
-    includeEmpty,
-    search,
-  ]);
-  // The list's own query, sorted: every row the export writes, in order.
-  const exportQuery = useMemo(() => {
-    const params = new URLSearchParams(query);
-    if (sort) {
-      params.set('sort', sort.key);
-      params.set('order', sort.order);
-    }
-    return params.toString();
-  }, [query, sort]);
-  const sorted = `limit=${PAGE_SIZE}${exportQuery ? `&${exportQuery}` : ''}`;
+  // The list's filters as its address asks them, each left out unset.
+  const query: Record<string, string | undefined> = {
+    low: low ? 'true' : undefined,
+    out: out && !byLot ? 'true' : undefined,
+    expiringWithin: expiring ? String(expiringWithin) : undefined,
+    expired: expired ? 'true' : undefined,
+    needsCost: needsCost ? 'true' : undefined,
+    type: type || undefined,
+    categoryId: categoryId || undefined,
+    locationId: locationId || undefined,
+    productId: productId || undefined,
+    includeEmpty: includeEmpty ? 'true' : undefined,
+    search: search || undefined,
+  };
+  const limit = String(PAGE_SIZE);
   const noLots = byLot && out;
 
-  const codes = useKeysetList<StockCodeRow>(
-    byLot ? null : `/stock/by-code?${sorted}`,
+  // By the item's name unless a header sorts it; the Lot view has its own
+  // one order.
+  const codesPath = withSort(
+    withQuery('/stock/by-code', { limit, ...query }),
+    sort,
   );
+  const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath);
   const lots = useKeysetList<StockLotRow>(
-    byLot && !noLots
-      ? `/stock/by-lot?limit=${PAGE_SIZE}${query ? `&${query}` : ''}`
-      : null,
+    byLot && !noLots ? withQuery('/stock/by-lot', { limit, ...query }) : null,
   );
   const list = byLot ? lots : codes;
 
@@ -244,36 +223,45 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     index: number;
   } | null>(null);
   const newCode =
-    firstNew && firstNew.path === sorted
+    firstNew && firstNew.path === codesPath
       ? (codes.entries?.[firstNew.index]?.variantId ?? null)
       : null;
   const loadMore = () => {
     if (!byLot) {
-      setFirstNew({ path: sorted, index: codes.entries?.length ?? 0 });
+      setFirstNew({ path: codesPath, index: codes.entries?.length ?? 0 });
     }
     void list.loadMore();
   };
   const rows: unknown[] | null = byLot ? lots.entries : codes.entries;
   const { reload } = list;
 
-  const counts = useCounts(
-    noLots ? null : `/stock/${byLot ? 'by-lot' : 'by-code'}/counts?${query}`,
-    changes,
+  // Beside the quick filters, read with the list's other filters (R3);
+  // silent, so without them the buttons still work.
+  const countsRead = useResource<StockCodeCounts | StockLotCounts>(
+    noLots
+      ? null
+      : withQuery(`/stock/${byLot ? 'by-lot' : 'by-code'}/counts`, query),
   );
+  const counts = countsRead.data as
+    (Partial<StockCodeCounts> & StockLotCounts) | null;
 
   // The item a row's stock on Items opened, named on its chip (ADR-092):
   // by its rows; with none, by the item's own read.
   const firstName = productId
     ? ((codes.entries?.[0] ?? lots.entries?.[0])?.productName ?? null)
     : null;
-  const namedItem = useItemName(
-    productId !== '' && can('products.view') && rows?.length === 0
-      ? productId
-      : '',
-  );
+  const namedItem =
+    useResource<ProductDetail>(
+      productId !== '' && can('products.view') && rows?.length === 0
+        ? `/products/${productId}`
+        : null,
+    ).data?.displayName ?? null;
   const itemName = firstName ?? namedItem;
 
-  const tree = useCategories(can('products.view'));
+  // Silent: without them the Category filter offers none.
+  const tree = useResource<ProductCategoryList>(
+    can('products.view') ? '/products/categories' : null,
+  ).data;
   const categories = tree ? categoryPlaces(tree.categories) : [];
 
   // Dialogs.
@@ -297,6 +285,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const refresh = async () => {
     reload();
+    void countsRead.reload();
     setChanges((count) => count + 1);
   };
 
@@ -542,9 +531,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   );
 
   const filtersOn = [type, categoryId, locationId].filter(Boolean).length;
-  const exportPath = `/stock/${byLot ? 'by-lot' : 'by-code'}/export?${
-    byLot ? query : exportQuery
-  }`;
+  const exportPath = withSort(
+    withQuery(`/stock/${byLot ? 'by-lot' : 'by-code'}/export`, query),
+    byLot ? null : sort,
+  );
   const anyFilter =
     low ||
     out ||
@@ -638,10 +628,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       {/* A failed read of the places says so, with Try again; it is
           never "Add a location" (ADR-092's states). */}
       {placesFailed && (
-        <ListError
-          error={messageFor(placesFailure)}
-          onRetry={() => setPlacesAgain((again) => again + 1)}
-        />
+        <ListError error={messageFor(placesFailure)} onRetry={retryPlaces} />
       )}
 
       {answered && !placesFailed && seesPlaces && !leaves.length && (
@@ -942,86 +929,6 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       )}
     </Stack>
   );
-}
-
-/**
- * The counts beside the quick filters, read with the list's other
- * filters (R3) and again after a change; null while not read, or when the
- * read fails, so the filters stay without them.
- */
-function useCounts(
-  path: string | null,
-  changes: number,
-): (Partial<StockCodeCounts> & StockLotCounts) | null {
-  const [read, setRead] = useState<{
-    path: string;
-    counts: StockCodeCounts | StockLotCounts;
-  } | null>(null);
-
-  useEffect(() => {
-    if (path === null) return;
-    let ignore = false;
-    void api<StockCodeCounts | StockLotCounts>(path)
-      .then((counts) => {
-        if (!ignore) setRead({ path, counts });
-      })
-      // Silent: without a count the button still works.
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [path, changes]);
-
-  return read && read.path === path ? read.counts : null;
-}
-
-/**
- * The categories, for the Category filter, read once for a reader who may
- * see items; null until they come, or when they cannot be read.
- */
-function useCategories(active: boolean): ProductCategoryList | null {
-  const [tree, setTree] = useState<ProductCategoryList | null>(null);
-
-  useEffect(() => {
-    if (!active) return;
-    let ignore = false;
-    void api<ProductCategoryList>('/products/categories')
-      .then((answer) => {
-        if (!ignore) setTree(answer);
-      })
-      // Silent: without them the filter offers none.
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [active]);
-
-  return tree;
-}
-
-/** The item's name, by its own read, in the language it was asked in. */
-function useItemName(productId: string): string | null {
-  const intl = useIntl();
-  const key = `${intl.locale} ${productId}`;
-  const [named, setNamed] = useState<{ key: string; name: string } | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (!productId) return;
-    let ignore = false;
-    void api<ProductDetail>(`/products/${productId}`)
-      .then((product) => {
-        if (!ignore) setNamed({ key, name: product.displayName });
-      })
-      // Silent: the chip still says one item, and its × still works.
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [productId, key]);
-
-  return named?.key === key ? named.name : null;
 }
 
 /**

@@ -36,7 +36,7 @@ import { OpeningButton } from '../components/opening-button';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
 import { TableOrCards } from '../components/table-or-cards';
-import { api } from '../lib/api';
+import { api, withQuery } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
 import { isZero } from '../lib/decimal';
 import {
@@ -284,11 +284,11 @@ function readPlaces(
   /** The emptied piles too, to correct a count with nothing on hand. */
   emptied = false,
 ): Promise<StockPlace[]> {
-  const params = new URLSearchParams();
-  if (place) params.set('locationId', place.id);
-  if (includeEmpty || emptied) params.set('includeEmpty', 'true');
   return api<StockCodePlaces>(
-    `/stock/by-code/${row.variantId}/places?${params.toString()}`,
+    withQuery(`/stock/by-code/${row.variantId}/places`, {
+      locationId: place?.id,
+      includeEmpty: includeEmpty || emptied ? 'true' : undefined,
+    }),
   ).then((answer) => answer.places);
 }
 

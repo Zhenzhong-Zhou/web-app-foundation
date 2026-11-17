@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -40,16 +40,13 @@ describe('useLocations', () => {
         once: true,
       }),
     );
-    const { result, rerender } = renderHook(
-      ({ again }) => useLocations(true, again),
-      { initialProps: { again: 0 } },
-    );
+    const { result } = renderHook(() => useLocations(true));
 
     await waitFor(() => expect(result.current.answered).toBe(true));
     expect(result.current.failure).not.toBeNull();
     expect(result.current.locations).toEqual([]);
 
-    rerender({ again: 1 });
+    act(() => result.current.retry());
     await waitFor(() => expect(result.current.failure).toBeNull());
     expect(result.current.locations).toEqual(LOCATIONS);
   });

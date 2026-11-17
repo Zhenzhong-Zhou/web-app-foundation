@@ -1100,8 +1100,12 @@ Use these rather than writing the thing again on a page:
   below, two grey cards while the cards are read; `useCards` asks the same
   width for the rest of the page (ADR-090's width switch).
 - **`useLocations`** for the locations a filter or a form offers, read when
-  it opens and only for a reader with `locations.view`, as `usePartners`
-  reads the partners (#282).
+  it opens and only for a reader with `locations.view`, on `useResource`,
+  with `retry` for Try again.
+- **`useResource(path | null)`** for any read a page makes, a null path
+  asking nothing: a quiet read, such as the counts beside a filter or a
+  picker's marks, ignores its `error` rather than writing its own effect
+  (ADR-093's review, 28).
 - **`treeOf`** (`lib/tree.ts`) for a tree the server sends flat, the
   locations' and the categories': each row's children mapped once, a row
   whose parent is missing at the top, never dropped (#551's 64).

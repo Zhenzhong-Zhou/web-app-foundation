@@ -44,7 +44,6 @@ import { SortHeader } from '../components/sort-header';
 import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { api } from '../lib/api';
 import { displayQuantity, itemName, NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
@@ -53,6 +52,7 @@ import { useKeysetList } from '../lib/use-keyset-list';
 import { oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { useListSort, withSort } from '../lib/use-list-sort';
+import { useResource } from '../lib/use-resource';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
 import { NameAndCode } from '../products/name-and-code';
@@ -792,7 +792,6 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const { text, setText, search } = useListSearch();
   const { sort, set: setSort, clear: clearSort } = useListSort(SORTS);
   const phone = useCards();
-  const [counts, setCounts] = useState<ReorderPointCounts | null>(null);
   // By item, kept while the search changes and through Back from the
   // purchase order they were sent to (reorder-ticks.ts).
   const { key: entry } = useLocation();
@@ -804,8 +803,6 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const [planning, setPlanning] = useState<ReorderPointRow | null>(null);
   /** The item whose run was just planned from its row. */
   const [planned, setPlanned] = useState<string | null>(null);
-  /** Bumped by each save and removal, so the counts read again too. */
-  const [changes, setChanges] = useState(0);
 
   const choosing = can('orders.create');
   const setting = can('stock.reorder');
@@ -829,19 +826,10 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     reload,
   } = useKeysetList<ReorderPointRow>(listPath);
 
-  // Beside All, Low and Out, with the search: the rows pressing each shows.
-  useEffect(() => {
-    let ignore = false;
-    void api<ReorderPointCounts>(countsPath)
-      .then((read) => {
-        if (!ignore) setCounts(read);
-      })
-      // Silent: without a count the buttons still work.
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [countsPath, changes]);
+  // Beside All, Low and Out, with the search: the rows pressing each shows;
+  // silent, so without a count the buttons still work.
+  const countsRead = useResource<ReorderPointCounts>(countsPath);
+  const counts = countsRead.data;
 
   const choosable = useMemo(
     () => (rows ?? []).filter((row) => choiceOf(row) === 'open'),
@@ -1011,7 +999,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     setRemoving(null);
     setPlanning(null);
     reload();
-    setChanges((count) => count + 1);
+    void countsRead.reload();
     if (variantId)
       setChosen((was) => {
         const next = new Map(was);
