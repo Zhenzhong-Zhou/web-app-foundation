@@ -3433,10 +3433,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-091's does from 2 to 3: leave a third tab on Home
-  before the push. Back in it once the static site is out, the amber
-  banner asks it to reload (MC-3404); Reload, once: Home, with its cards
-  and no banner, and switching away and back asks nothing more.
+  API revision, as ADR-093's Inventory does from 4 to 5: leave a third tab
+  on Inventory before the push. Back in it once the static site is out,
+  the amber banner asks it to reload (MC-3404); Reload, once: Inventory,
+  a row per code, and no banner, and switching away and back asks nothing
+  more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -6507,3 +6508,6 @@ first.
 - 2026-11-16: ADR-093's riders: a quick filter at 14 px and, with a check
   box and a radio, 44 px tall on touch (#566, #170); an opened row and a
   pressed filter's count readable in dark mode (#561): MC-1542.
+- 2026-11-16: ADR-093's old stock reads removed, the list of piles and
+  the promised table's, the API revision raised to 5: MC-3424's raise
+  now 4 to 5, a tab left on Inventory.

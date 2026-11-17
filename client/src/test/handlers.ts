@@ -92,9 +92,6 @@ export const handlers = [
     HttpResponse.json({ variantIds: [] }),
   ),
   http.get(`${BASE}/locations`, () => HttpResponse.json(LOCATIONS)),
-  http.get(`${BASE}/stock`, () =>
-    HttpResponse.json({ entries: [], nextCursor: null }),
-  ),
   // Inventory's grouped read (ADR-093): nothing, and nothing counted.
   http.get(`${BASE}/stock/by-code`, () =>
     HttpResponse.json({ entries: [], nextCursor: null }),

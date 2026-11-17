@@ -1,33 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  inArray,
-  lt,
-  or,
-  type SQL,
-  sql,
-} from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, lt, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
-import {
-  afterCursor,
-  notInThisList,
-  sortedOrder,
-} from '../../common/sorted-page';
-import { todayOf } from '../../core/organizations/time-zone';
-import { assertOwnIds } from '../../database/own-ids';
+import {} from '../../common/sorted-page';
 import {
   locations,
   lots,
-  organizations,
   products,
   productVariants,
   stockLevels,
@@ -38,31 +20,42 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { itemMatches } from '../products/item-search';
-import { coverOf } from '../products/product-images';
 import { ListMovementsDto } from './dto/list-movements.dto';
-import { ListStockDto } from './dto/list-stock.dto';
 import { namesIn } from './item-name';
 import type { Tx } from './stock.service';
 
-/** A page of the stock list unless the caller asks for fewer (ADR-051). */
-const STOCK_PAGE_SIZE = 50;
+/**
+ * What stock rows are read by (stockRowsOf): Inventory's filters that a
+ * pile answers alone, from the address as `StockFiltersDto` takes them.
+ */
+export interface StockRowFilters {
+  locationId?: string;
+  productId?: string;
+  /** Emptied rows kept, which are hidden unless asked for. */
+  includeEmpty?: string;
+  search?: string;
+  /** A lot expiring within this many days, the expired among it. */
+  expiringWithin?: number;
+  expired?: string;
+  needsCost?: string;
+}
 
 /**
  * Expired (ADR-091): a lot whose expiry is before the organization's
- * today. The list's `expired` and Home's late count on Expiring soon, so
- * the late button's count and the rows it opens cannot drift.
+ * today. The Lot view's `expired` and Home's late count on Expiring soon,
+ * so the late button's count and the rows it opens cannot drift.
  */
 export function expiredLot(today: string): SQL {
   return lt(lots.expiresAt, today);
 }
 
 /**
- * The stock list's filters as conditions (ADR-051), shared by the list and
- * by its counts, so "Expiring soon 2" counts exactly the rows pressing it
- * shows.
+ * Stock rows' filters as conditions (ADR-051), shared by the Lot view, its
+ * counts and Home, so "Expiring soon 2" counts exactly the rows pressing
+ * it shows.
  */
 function filtersOf(
-  query: ListStockDto,
+  query: StockRowFilters,
   organizationId: string,
   today: string,
 ): SQL[] {
@@ -82,10 +75,6 @@ function filtersOf(
 
   if (query.locationId) {
     scope.push(eq(stockLevels.locationId, query.locationId));
-  }
-
-  if (query.variantId) {
-    scope.push(eq(stockLevels.variantId, query.variantId));
   }
 
   if (query.productId) {
@@ -184,14 +173,14 @@ function lotJoin(organizationId: string) {
 }
 
 /**
- * The rows the stock list would show under these filters, as the FROM and
- * WHERE of a count: the list's joins and filtersOf's conditions. counts()
- * counts through it, and Home embeds it in its one totals statement
- * (ADR-058), so a count beside a filter, on a card or on the list itself is
- * always of the same rows.
+ * The stock rows these filters match, as the FROM and WHERE of a query:
+ * the piles' joins and filtersOf's conditions. The Lot view and its counts
+ * read through it (stock-grouped.service.ts), and Home embeds it in its
+ * one totals statement (ADR-058), so a count beside a filter, on a card or
+ * on the list itself is always of the same rows.
  */
 export function stockRowsOf(
-  query: ListStockDto,
+  query: StockRowFilters,
   organizationId: string,
   today: string,
 ): SQL {
@@ -210,214 +199,23 @@ export function stockRowsOf(
 }
 
 /**
- * Reading stock: what is on the shelves now, and the ledger that put it
- * there.
+ * Reading the ledger that put stock where it is; what is on the shelves
+ * now is Inventory's grouped read (stock-grouped.service.ts, ADR-093).
  *
  * Its own service because StockService is the one write path into the
  * ledger (ADR-023), injected by every module that moves stock, while only
- * the stock controller calls these two reads.
+ * the stock controller calls this read.
  */
 @Injectable()
 export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /**
-   * Current stock, a page at a time, in the order people read a stock sheet:
-   * location name, then SKU, then lot code, with the row id last so the
-   * order is total (ADR-051).
-   *
-   * It read the whole organization on every call until ADR-051 measured it:
-   * 520 ms at the large scale, nearly all of it building and sending fifteen
-   * thousand rows. A page is fifty unless asked otherwise.
-   *
-   * The cursor is a stock row's id, as every keyset list's is, but the order
-   * is by names, so the cursor row's names are read back and compared as a
-   * row value. Sorting by names cannot come from one index, so each page
-   * still sorts the organization's matching rows: tens of milliseconds at the
-   * large scale. If the plan check ever flags it, the fix is ordering by an
-   * indexed key instead.
-   *
-   * Reads the cache and never aggregates the ledger (ADR-025). The join is
-   * three tables deep, which `TenantDb.selectJoined` does not express, so
-   * this drops to a raw handle and applies the scope by hand.
-   *
-   * Items named in the locale given, or by their base names for null, as
-   * the CSV export and Home's cards read them (ADR-056).
-   */
-  list(query: ListStockDto, locale: Locale | null) {
-    const limit = query.limit ?? STOCK_PAGE_SIZE;
-
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
-      const scope = filtersOf(query, organizationId, today);
-      // Every join names the organization, as stockRowsOf's do (#551).
-      const variantOf = and(
-        eq(productVariants.id, stockLevels.variantId),
-        eq(productVariants.organizationId, organizationId),
-      );
-      const locationOf = and(
-        eq(locations.id, stockLevels.locationId),
-        eq(locations.organizationId, organizationId),
-      );
-      const lotOf = lotJoin(organizationId);
-      const shown = namesIn(locale, organizationId);
-
-      const order = sql`(${locations.name}, ${productVariants.sku}, coalesce(${lots.code}, ''), ${stockLevels.id})`;
-      // By the lot's expiry when asked (ADR-057): soonest first by default,
-      // stock with no lot or no expiry last; paged by (expiry, id).
-      const byExpiry =
-        query.sort === 'expiry' ? (query.order ?? 'asc') : undefined;
-
-      if (query.before) {
-        const [cursor] = await tx
-          .select({
-            locationName: locations.name,
-            sku: productVariants.sku,
-            lotCode: sql<string>`coalesce(${lots.code}, '')`,
-            expiresAt: sql<string | null>`${lots.expiresAt}::text`,
-            id: stockLevels.id,
-          })
-          .from(stockLevels)
-          .innerJoin(productVariants, variantOf)
-          .innerJoin(locations, locationOf)
-          .leftJoin(lots, lotOf)
-          .where(
-            and(
-              eq(stockLevels.organizationId, organizationId),
-              eq(stockLevels.id, query.before),
-            ),
-          );
-
-        // Another tenant's row, or no row: either way not a place in this
-        // list.
-        if (!cursor) throw notInThisList();
-
-        scope.push(
-          byExpiry
-            ? afterCursor(
-                lots.expiresAt,
-                stockLevels.id,
-                { value: cursor.expiresAt, id: cursor.id },
-                byExpiry,
-              )
-            : sql`${order} > (${cursor.locationName}, ${cursor.sku}, ${cursor.lotCode}, ${cursor.id}::uuid)`,
-        );
-      }
-
-      const rows = await tx
-        .select({
-          id: stockLevels.id,
-          variantId: stockLevels.variantId,
-          sku: productVariants.sku,
-          productName: shown.productName,
-          variantName: shown.variantName,
-          // Its product's cover, beside the name (ADR-062).
-          coverFileId: coverOf(),
-          unitOfMeasure: productVariants.unitOfMeasure,
-          locationId: stockLevels.locationId,
-          locationName: locations.name,
-          locationCode: locations.code,
-          lotId: stockLevels.lotId,
-          lotCode: lots.code,
-          lotExpiresAt: lots.expiresAt,
-          // Whether the code was ours to invent, and so whether it can be
-          // corrected rather than reclassified (MovementLotDto).
-          lotIsAssigned: lots.isAssigned,
-          quantity: stockLevels.quantity,
-        })
-        .from(stockLevels)
-        .innerJoin(productVariants, variantOf)
-        // Inner: every variant belongs to a product, and the product name
-        // is what people recognise — most variants have no name of their own.
-        .innerJoin(
-          products,
-          and(
-            eq(products.id, productVariants.productId),
-            eq(products.organizationId, organizationId),
-          ),
-        )
-        .innerJoin(locations, locationOf)
-        // Left, because lot_id is null for every untracked variant and an
-        // inner join would silently drop most of the warehouse.
-        .leftJoin(lots, lotOf)
-        .where(and(...scope))
-        .orderBy(
-          ...(byExpiry
-            ? sortedOrder(lots.expiresAt, stockLevels.id, byExpiry)
-            : [
-                asc(locations.name),
-                asc(productVariants.sku),
-                sql`coalesce(${lots.code}, '')`,
-                asc(stockLevels.id),
-              ]),
-        )
-        // One past the page, so the page knows whether there is more.
-        .limit(limit + 1);
-
-      return pageOf(rows, limit);
-    });
-  }
-
-  /**
-   * How many rows each quick filter would show (ADR-055), beside its
-   * button: "Expiring soon 2", "Needs a cost 1". Each is counted with the
-   * list's own filters and the others' left off, so the number is the
-   * rows pressing that one shows. Expiring means within the
-   * organization's warning days (ADR-060) unless asked otherwise, the
-   * threshold the expiry chips turn amber at.
-   */
-  counts(query: ListStockDto = {}) {
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const { expiringWithin, ...rest } = query;
-      const unfiltered = { ...rest, needsCost: undefined, expired: undefined };
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
-
-      const count = async (filters: ListStockDto) => {
-        const result = await tx.execute(sql`
-          select count(*)::int as count
-          from ${stockRowsOf(filters, organizationId, today)}
-        `);
-        return (result.rows[0] as { count: number }).count;
-      };
-
-      // The organization's warning days unless asked otherwise (ADR-060).
-      const [organization] = expiringWithin
-        ? [{ days: expiringWithin }]
-        : await tx
-            .select({ days: organizations.expiryWarningDays })
-            .from(organizations)
-            .where(eq(organizations.id, organizationId));
-
-      return {
-        expiring: await count({
-          ...unfiltered,
-          expiringWithin: organization.days,
-        }),
-        needsCost: await count({ ...unfiltered, needsCost: 'true' }),
-      };
-    });
-  }
-
-  /**
    * The ledger, read. Newest first, keyset cursor on the UUIDv7 id — the same
    * shape as the audit log, for the same reason: the table is append-only, so
    * offset paging would shift every page down as rows arrive at the head.
    *
-   * Four left joins, so this drops to a raw handle like list() does. Two are
+   * Four left joins, so this drops to a raw handle. Two are
    * the same table aliased, because a transfer names both a source and a
    * destination. Left throughout: a movement with no source is inbound, a lot
    * is null for untracked variants, and an actor may be a tombstone (ADR-012)

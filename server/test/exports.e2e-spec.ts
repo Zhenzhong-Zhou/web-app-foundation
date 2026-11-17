@@ -514,7 +514,6 @@ describe('Exports (e2e)', () => {
   it.each([
     ['/v1/invoices/export', 'Number'],
     ['/v1/credit-notes/export', 'Number'],
-    ['/v1/stock/export', 'Code'],
     ['/v1/stock/by-code/export', 'Code'],
     ['/v1/stock/by-lot/export', 'Code'],
     ['/v1/stock/movements/export', 'When'],

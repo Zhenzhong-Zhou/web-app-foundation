@@ -2,18 +2,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import type { Movement, StockRow } from '../api/types.gen';
+import type { Movement, StockPile } from '../api/types.gen';
 import { movement } from '../test/factories';
 import { server } from '../test/setup';
 import { MovementHistoryDialog } from './movement-history-dialog';
 
-const ROW: StockRow = {
+const ROW: StockPile = {
   id: 'stock-1',
   variantId: 'variant-1',
   sku: 'VITD-60',
   productName: '维生素 D',
   variantName: '60 粒',
-  coverFileId: null,
   unitOfMeasure: 'each',
   locationId: 'loc-1',
   locationName: 'Shelf A',
@@ -29,7 +28,7 @@ const MOVEMENT = movement();
 
 /** An inventory row's history reads as Movements does (#256). */
 describe('MovementHistoryDialog', () => {
-  function open(row: StockRow, movement: Movement = MOVEMENT) {
+  function open(row: StockPile, movement: Movement = MOVEMENT) {
     server.use(
       http.get('/api/v1/stock/movements', () =>
         HttpResponse.json({ entries: [movement], nextCursor: null }),

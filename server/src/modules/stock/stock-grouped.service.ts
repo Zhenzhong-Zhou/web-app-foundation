@@ -336,8 +336,8 @@ type PileRow = {
  * Inventory's grouped read (ADR-093, R1 to R4 and R16): a row per code,
  * fifty at a time, with its figures from the one read (code-figures.ts);
  * the counts beside its quick filters; a code's places and their lots as
- * its row opens; and the Lot view, a row per lot at each place. Beside
- * `GET /v1/stock`, which goes once nothing reads it (R22).
+ * its row opens; and the Lot view, a row per lot at each place. It
+ * replaced the list of piles, `GET /v1/stock`, in the same branch (R22).
  *
  * A place's name goes only to a reader who may see places (ADR-080; A6).
  */

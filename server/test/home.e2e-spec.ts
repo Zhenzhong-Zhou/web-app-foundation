@@ -356,7 +356,7 @@ describe('Home (e2e)', () => {
     const [soon] = body<{
       entries: { lotId: string; lotCode: string }[];
     }>(
-      await alpha.agent.get('/v1/stock?expiringWithin=90').expect(200),
+      await alpha.agent.get('/v1/stock/by-lot?expiringWithin=90').expect(200),
     ).entries;
     expect(soon.lotCode).toBe('LOT-SOON');
 
@@ -647,13 +647,14 @@ describe('Home (e2e)', () => {
     // Each tile's address, as the list's page asks its endpoint: To ship's
     // /orders?direction=sale&outstanding=1, the page's status Open beside
     // it, Drafts' /orders?status=draft&order=asc, and Expiring soon's
-    // /inventory?expiring=1, by expiry (ADR-091).
+    // /inventory?group=lot&expiring=1, the Lot view: a lot at each place,
+    // soonest first (ADR-091, ADR-093).
     const opened: Record<string, string> = {
       toShip: '/v1/orders?status=open&direction=sale&outstanding=true',
       toReceive: '/v1/orders?status=open&direction=purchase&outstanding=true',
       drafts: '/v1/orders?status=draft&order=asc',
       lowStock: '/v1/stock/reorder-points?status=low',
-      expiring: '/v1/stock?expiringWithin=90&sort=expiry&order=asc',
+      expiring: '/v1/stock/by-lot?expiringWithin=90',
       costsWaiting: '/v1/costs/needs-cost',
       invoicesToIssue: '/v1/invoices?status=draft',
       returnsOpen: '/v1/return-authorizations?status=open',
@@ -684,16 +685,6 @@ describe('Home (e2e)', () => {
       expect({ kind, late: lateRows }).toEqual({ kind, late });
     }
 
-    // The Lot view, which Expiring soon opens once Stock is redrawn
-    // (ADR-093), lists the same rows: a lot at each place.
-    const expiring = cards.find(({ kind }) => kind === 'expiring')!;
-    expect((await rows('/v1/stock/by-lot?expiringWithin=90')).length).toBe(
-      expiring.count,
-    );
-    expect(
-      (await rows('/v1/stock/by-lot?expiringWithin=90&expired=true')).length,
-    ).toBe(expiring.late);
-
     // Every tile has something; the late are those named above.
     expect(
       Object.fromEntries(cards.map(({ kind, late }) => [kind, late])),
@@ -722,7 +713,9 @@ describe('Home (e2e)', () => {
 
     // Expired alone, without the tile's filter, is the same rows: never a
     // withdrawn licence, whatever its day.
-    expect(await lotCodes('/v1/stock?expired=true')).toEqual(['LOT-GONE']);
+    expect(await lotCodes('/v1/stock/by-lot?expired=true')).toEqual([
+      'LOT-GONE',
+    ]);
     expect(await numbers('/v1/product-licences?expired=true')).toEqual([
       'L-GONE',
     ]);

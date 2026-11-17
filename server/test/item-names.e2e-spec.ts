@@ -115,21 +115,6 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
-    operation: 'GET /v1/stock',
-    of: 'item',
-    ask: async (world, language) => {
-      const page = await read<{ entries: (Named & { variantId: string })[] }>(
-        world,
-        language,
-        '/v1/stock',
-      );
-      const row = page.entries.find(
-        (entry) => entry.variantId === world.variantId,
-      )!;
-      return itemName(row.productName, row.variantName);
-    },
-  },
-  {
     // Stock value's Waiting for a cost (#296): the receipt has no cost.
     operation: 'GET /v1/costs/needs-cost',
     of: 'item',
@@ -193,20 +178,6 @@ const NAMED_READS: NamedRead[] = [
           '/v1/stock/by-lot',
         )
       ).entries.find((entry) => entry.variantId === world.variantId)!;
-      return itemName(row.productName, row.variantName);
-    },
-  },
-  {
-    operation: 'GET /v1/stock/availability',
-    of: 'item',
-    ask: async (world, language) => {
-      const row = (
-        await read<(Omit<Named, 'id'> & { variantId: string })[]>(
-          world,
-          language,
-          '/v1/stock/availability',
-        )
-      ).find((each) => each.variantId === world.variantId)!;
       return itemName(row.productName, row.variantName);
     },
   },
@@ -595,9 +566,9 @@ describe('Names in the reader’s language (e2e)', () => {
         lot: { code: 'L-01', expiresAt: '2030-01-01' },
       })
       .expect(201);
-    const lotId = body<{ entries: { lotId: string | null }[] }>(
-      await agent.get('/v1/stock').expect(200),
-    ).entries[0].lotId!;
+    const lotId = body<{ entries: { lotId: string }[] }>(
+      await agent.get('/v1/stock/by-lot').expect(200),
+    ).entries[0].lotId;
 
     // A sale, shipped, and one back.
     const order = body<{ order: { id: string; lines: { id: string }[] } }>(
@@ -738,7 +709,8 @@ describe('Names in the reader’s language (e2e)', () => {
 
     for (const path of [
       `/v1/price-lists/${priceListId}/export`,
-      '/v1/stock/export',
+      '/v1/stock/by-code/export',
+      '/v1/stock/by-lot/export',
       '/v1/stock/movements/export',
       '/v1/stock/reorder-points/export',
     ]) {

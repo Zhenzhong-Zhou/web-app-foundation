@@ -27,20 +27,17 @@ import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
-import { ListStockDto } from './dto/list-stock.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
 import type {
   Lot,
   MovementPage,
   RecordedMovementEnvelope,
-  StockCounts,
-  StockPage,
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
 import { movementOf } from './movement-view';
 import { StockService } from './stock.service';
-import { MOVEMENT_COLUMNS, STOCK_COLUMNS } from './stock-exports';
+import { MOVEMENT_COLUMNS } from './stock-exports';
 import { StockReadsService } from './stock-reads.service';
 
 /**
@@ -64,42 +61,6 @@ export class StockController {
     private readonly lots: LotsService,
   ) {}
 
-  @Get()
-  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list(
-    @Query() query: ListStockDto,
-    @AcceptLanguage() acceptLanguage?: string,
-  ): Promise<StockPage> {
-    return this.reads.list(query, localeOf(acceptLanguage));
-  }
-
-  /** What is on hand, as the filters narrow it, as CSV (ADR-057): the list's own query, every page. */
-  @Get('export')
-  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'inventory' })
-  async exportInventory(
-    @Query() query: ListStockDto,
-    @Res({ passthrough: true }) res: Response,
-    @AcceptLanguage() acceptLanguage?: string,
-  ) {
-    // The base names, as every CSV keeps them (ADR-056).
-    const rows = await everyRow((before, limit) =>
-      this.reads.list({ ...query, before, limit }, null),
-    );
-    recordContext({
-      list: 'inventory',
-      filters: exportFilters(query),
-      rows: rows.length,
-    });
-    return csvFile(
-      res,
-      'inventory',
-      STOCK_COLUMNS,
-      rows,
-      localeOf(acceptLanguage),
-    );
-  }
-
   @Post('movements')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions(PERMISSIONS.STOCK_MOVE)
@@ -121,13 +82,6 @@ export class StockController {
      * answers a different question with a different retention.
      */
     return { movement: movementOf(await this.stock.record(dto, user.userId)) };
-  }
-
-  /** Counts beside the inventory's quick filters (ADR-055). */
-  @Get('counts')
-  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  counts(@Query() query: ListStockDto): Promise<StockCounts> {
-    return this.reads.counts(query);
   }
 
   @Get('movements')

@@ -56,18 +56,6 @@ type Figures = {
   status: string | null;
 };
 
-interface AvailabilityRow {
-  variantId: string;
-  onHand: string;
-  notUsable: string;
-  expired: string;
-  issued: string;
-  unavailable: string;
-  held: string;
-  free: string;
-  backordered: string;
-}
-
 interface ReorderRow {
   variantId: string;
   reorderPoint: string;
@@ -351,27 +339,9 @@ describe('A code’s figures (e2e)', () => {
       todayIn(zones[0].time_zone),
     );
 
-    // Inventory's figures until its by-code row (step 9): the
-    // availability read.
     const productId = body<{ entries: { id: string }[] }>(
       await alpha.agent.get('/v1/products?search=BOTTLE').expect(200),
     ).entries[0].id;
-    const [inventory] = body<AvailabilityRow[]>(
-      await alpha.agent
-        .get(`/v1/stock/availability?productId=${productId}`)
-        .expect(200),
-    );
-    expect(inventory).toMatchObject({
-      variantId: bottle,
-      onHand: figures.on_hand,
-      notUsable: figures.not_usable,
-      expired: figures.expired,
-      issued: figures.issued,
-      unavailable: figures.unavailable,
-      held: figures.held,
-      free: figures.free,
-      backordered: figures.short,
-    });
 
     // Inventory's row per code (step 9) reads the same figures.
     const [byCode] = body<{ entries: Record<string, unknown>[] }>(

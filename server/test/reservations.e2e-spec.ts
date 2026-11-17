@@ -31,7 +31,8 @@ interface Hold {
   short: string;
 }
 
-interface Availability {
+/** Inventory's row per code (ADR-093): Free, Held and Short among it. */
+interface CodeRow {
   sku: string;
   onHand: string;
   notUsable: string;
@@ -40,7 +41,7 @@ interface Availability {
   unavailable: string;
   held: string;
   free: string;
-  backordered: string;
+  short: string;
 }
 
 interface Refusal {
@@ -153,53 +154,21 @@ describe('Reservations (e2e)', () => {
         short: '20.0000',
       });
 
-      const [row] = body<Availability[]>(
-        await alpha.agent.get('/v1/stock/availability').expect(200),
-      );
+      const [row] = body<{ entries: CodeRow[] }>(
+        await alpha.agent.get('/v1/stock/by-code').expect(200),
+      ).entries;
       expect(row).toMatchObject({
         sku: 'FOCUS',
         onHand: '100.0000',
         held: '100.0000',
         free: '0.0000',
-        backordered: '20.0000',
+        short: '20.0000',
       });
-    });
-
-    // The Inventory page's "Promised to customers" table asks for only these:
-    // at ADR-051's large scale the full list was 5,000 rows a call.
-    it('lists only what something is promised from, when asked', async () => {
-      const alpha = await registerOrganization(app, 'alpha');
-      const s = await scenario(alpha);
-
-      const calm = await createVariant(alpha.agent, {
-        type: 'good',
-        name: 'Calm',
-        variant: { sku: 'CALM' },
-      });
-
-      await alpha.agent
-        .post('/v1/stock/movements')
-        .send({
-          variantId: calm,
-          toLocationId: s.shelf,
-          quantity: '10',
-          reason: 'receipt',
-        })
-        .expect(201);
-
-      const skus = async (query: string) => {
-        const res = await alpha.agent
-          .get(`/v1/stock/availability${query}`)
-          .expect(200);
-        return body<Availability[]>(res).map((row) => row.sku);
-      };
-
-      expect(await skus('')).toEqual(['CALM', 'FOCUS']);
-      expect(await skus('?promised=true')).toEqual(['FOCUS']);
     });
 
     // Inventory for one item, opened by a row's stock on Items, listed
-    // every item's promises below it (ADR-092's review, 6).
+    // every item's promises below it (ADR-092's review, 6); each code's
+    // row holds its own since (ADR-093, R5).
     it('lists one item alone when asked, refusing another organization’s', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
@@ -225,20 +194,21 @@ describe('Reservations (e2e)', () => {
         await alpha.agent.get('/v1/products?search=FOCUS').expect(200),
       ).entries;
 
-      const skus = async (query: string) => {
+      const rows = async (productId: string) => {
         const res = await alpha.agent
-          .get(`/v1/stock/availability${query}`)
+          .get(`/v1/stock/by-code?productId=${productId}`)
           .expect(200);
-        return body<Availability[]>(res).map((row) => row.sku);
+        return body<{ entries: CodeRow[] }>(res).entries.map(
+          ({ sku, held }) => ({ sku, held }),
+        );
       };
 
-      expect(await skus(`?productId=${calm.id}`)).toEqual(['CALM']);
-      expect(await skus(`?promised=true&productId=${calm.id}`)).toEqual([]);
-      expect(await skus(`?promised=true&productId=${focus.id}`)).toEqual([
-        'FOCUS',
+      expect(await rows(calm.id)).toEqual([{ sku: 'CALM', held: '0.0000' }]);
+      expect(await rows(focus.id)).toEqual([
+        { sku: 'FOCUS', held: '100.0000' },
       ]);
       await beta.agent
-        .get(`/v1/stock/availability?productId=${calm.id}`)
+        .get(`/v1/stock/by-code?productId=${calm.id}`)
         .expect(400);
     });
 
@@ -487,9 +457,9 @@ describe('Reservations (e2e)', () => {
    */
   describe('usable stock', () => {
     async function availabilityOf(org: Org, sku: string) {
-      const rows = body<Availability[]>(
-        await org.agent.get('/v1/stock/availability').expect(200),
-      );
+      const rows = body<{ entries: CodeRow[] }>(
+        await org.agent.get('/v1/stock/by-code').expect(200),
+      ).entries;
       return rows.find((row) => row.sku === sku);
     }
 
@@ -550,7 +520,7 @@ describe('Reservations (e2e)', () => {
         held: '400.0000',
         // 440 usable on the shelf, less the 400 held.
         free: '40.0000',
-        backordered: '0.0000',
+        short: '0.0000',
       });
     });
 
@@ -574,7 +544,7 @@ describe('Reservations (e2e)', () => {
         notUsable: '40.0000',
         held: '60.0000',
         free: '0.0000',
-        backordered: '40.0000',
+        short: '40.0000',
       });
     });
 

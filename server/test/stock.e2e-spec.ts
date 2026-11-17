@@ -31,21 +31,28 @@ interface LocationResponse {
   location: { id: string };
 }
 
-interface StockRow {
+/** A pile: a code at one place, in one lot when it tracks lots. */
+interface Pile {
   id: string;
   variantId: string;
   sku: string;
-  productName: string;
-  variantName: string | null;
-  locationId: string;
+  /** Read here by an Owner, who may see places. */
   locationName: string;
   lotId: string | null;
   lotCode: string | null;
   quantity: string;
 }
 
-interface StockPage {
-  entries: StockRow[];
+/** A row per code (ADR-093). */
+interface CodeRow {
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  places: number;
+}
+
+interface Page<Row> {
+  entries: Row[];
   nextCursor: string | null;
 }
 
@@ -112,10 +119,26 @@ describe('Stock (e2e)', () => {
     return body<LocationResponse>(res).location.id;
   }
 
-  /** The stock list's first page, which in these tests is all of it. */
-  async function stockRows(agent: Pick<Agent, 'get'>, query = '') {
-    const res = await agent.get(`/v1/stock${query}`).expect(200);
-    return body<StockPage>(res).entries;
+  /** A code's piles, every place's, as its row opens on Inventory. */
+  async function piles(agent: Pick<Agent, 'get'>, variantId: string) {
+    const res = await agent
+      .get(`/v1/stock/by-code/${variantId}/places`)
+      .expect(200);
+    return body<{ places: { lots: Pile[] }[] }>(res).places.flatMap(
+      (place) => place.lots,
+    );
+  }
+
+  /** Inventory's first page, a row per code, which here is all of it. */
+  async function codeRows(agent: Pick<Agent, 'get'>, query = '') {
+    const res = await agent.get(`/v1/stock/by-code${query}`).expect(200);
+    return body<Page<CodeRow>>(res).entries;
+  }
+
+  /** The Lot view's first page, a lot at each place: here, all of it. */
+  async function lotRows(agent: Pick<Agent, 'get'>, query = '') {
+    const res = await agent.get(`/v1/stock/by-lot${query}`).expect(200);
+    return body<Page<Pile>>(res).entries;
   }
 
   /** A variant and a leaf location in one organization — the usual starting point. */
@@ -175,7 +198,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(variant.id, locationId, '40'))
         .expect(201);
 
-      const rows = await stockRows(agent);
+      const rows = await piles(agent, variant.id);
 
       expect(rows).toHaveLength(1);
       expect(rows[0].quantity).toBe('40.0000');
@@ -195,7 +218,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(variant.id, locationId, '2.5'))
         .expect(201);
 
-      const rows = await stockRows(agent);
+      const rows = await piles(agent, variant.id);
 
       // One cache row, two ledger rows. A second cache row would mean the
       // NULLS NOT DISTINCT constraint is not doing its job (ADR-025).
@@ -320,7 +343,7 @@ describe('Stock (e2e)', () => {
         })
         .expect(201);
 
-      const rows = await stockRows(agent);
+      const rows = await piles(agent, variant.id);
       const byLocation = Object.fromEntries(
         rows.map((row) => [row.locationName, row.quantity]),
       );
@@ -506,7 +529,7 @@ describe('Stock (e2e)', () => {
     });
   });
 
-  describe('GET /v1/stock', () => {
+  describe('GET /v1/stock/by-code and by-lot', () => {
     it('does not show another organization stock', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await setup('beta');
@@ -516,7 +539,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(beta.variant.id, beta.locationId, '40'))
         .expect(201);
 
-      const rows = await stockRows(alpha.agent);
+      const rows = await codeRows(alpha.agent);
 
       expect(rows).toHaveLength(0);
     });
@@ -572,7 +595,7 @@ describe('Stock (e2e)', () => {
         .expect(201);
 
       const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
-      const rows = await stockRows(viewer);
+      const rows = await codeRows(viewer);
 
       expect(rows).toHaveLength(1);
     });
@@ -637,7 +660,8 @@ describe('Stock (e2e)', () => {
     });
 
     // ADR-051: the list read a whole organization per call, 520 ms at scale.
-    it('pages by location, SKU and lot, without repeating or skipping a row', async () => {
+    // The Lot view lists lots alone: stock with no lot is a code's row.
+    it('pages the Lot view by lot and place, without repeating or skipping a row', async () => {
       const org = await registerOrganization(app, 'alpha');
       const aisleB = await createLocation(org.agent, { name: 'Aisle B' });
       const aisleA = await createLocation(org.agent, { name: 'Aisle A' });
@@ -666,14 +690,14 @@ describe('Stock (e2e)', () => {
 
       do {
         const after: string = cursor ? `&before=${cursor}` : '';
-        const page = body<StockPage>(
-          await org.agent.get(`/v1/stock?limit=2${after}`).expect(200),
+        const page = body<Page<Pile>>(
+          await org.agent.get(`/v1/stock/by-lot?limit=2${after}`).expect(200),
         );
 
         expect(page.entries.length).toBeLessThanOrEqual(2);
         seen.push(
           ...page.entries.map(
-            (row) => `${row.locationName} ${row.sku} ${row.lotCode ?? '-'}`,
+            (row) => `${row.locationName} ${row.sku} ${row.lotCode}`,
           ),
         );
         cursor = page.nextCursor;
@@ -681,11 +705,9 @@ describe('Stock (e2e)', () => {
 
       expect(seen).toEqual([
         'Aisle A ALPHA L1',
-        'Aisle A ALPHA L2',
-        'Aisle A ZETA -',
         'Aisle B ALPHA L1',
+        'Aisle A ALPHA L2',
         'Aisle B ALPHA L2',
-        'Aisle B ZETA -',
       ]);
     });
 
@@ -698,10 +720,10 @@ describe('Stock (e2e)', () => {
         .send(receipt(beta.variant.id, beta.locationId, '40'))
         .expect(201);
 
-      const [theirs] = await stockRows(beta.agent);
+      const [theirs] = await piles(beta.agent, beta.variant.id);
 
       // A 400, not a 404: the answer must not confirm the row exists.
-      await alpha.agent.get(`/v1/stock?before=${theirs.id}`).expect(400);
+      await alpha.agent.get(`/v1/stock/by-lot?before=${theirs.id}`).expect(400);
     });
 
     it('searches the SKU, the product name and the lot code', async () => {
@@ -723,7 +745,7 @@ describe('Stock (e2e)', () => {
         .expect(201);
 
       const skus = async (search: string) => {
-        const rows = await stockRows(org.agent, `?search=${search}`);
+        const rows = await codeRows(org.agent, `?search=${search}`);
         return rows.map((row) => row.sku);
       };
 
@@ -771,12 +793,12 @@ describe('Stock (e2e)', () => {
         })
         .expect(201);
 
-      const rows = await stockRows(org.agent, '?expiringWithin=90');
+      const rows = await lotRows(org.agent, '?expiringWithin=90');
       expect(rows.map((row) => row.lotCode)).toEqual(['SOON']);
 
       const counts = async (filters: string) =>
         body<{ expiring: number; needsCost: number }>(
-          await org.agent.get(`/v1/stock/counts${filters}`).expect(200),
+          await org.agent.get(`/v1/stock/by-lot/counts${filters}`).expect(200),
         );
 
       // 90 days unless asked, the chips' amber threshold.
@@ -787,7 +809,7 @@ describe('Stock (e2e)', () => {
       // The list's other filters apply to the count too.
       expect(await counts('?search=FOCUS')).toMatchObject({ expiring: 0 });
 
-      await org.agent.get('/v1/stock?expiringWithin=0').expect(400);
+      await org.agent.get('/v1/stock/by-lot?expiringWithin=0').expect(400);
     });
 
     /**
@@ -809,7 +831,7 @@ describe('Stock (e2e)', () => {
           .expect(201);
       }
 
-      const waiting = await stockRows(org.agent, '?needsCost=true');
+      const waiting = await codeRows(org.agent, '?needsCost=true');
       expect(waiting.map((row) => row.sku).sort()).toEqual([
         'CALM-30',
         'FOCUS-60',
@@ -817,16 +839,16 @@ describe('Stock (e2e)', () => {
 
       const counts = async (filters: string) =>
         body<{ expiring: number; needsCost: number }>(
-          await org.agent.get(`/v1/stock/counts${filters}`).expect(200),
+          await org.agent.get(`/v1/stock/by-code/counts${filters}`).expect(200),
         );
 
       expect(await counts('')).toMatchObject({ needsCost: 2 });
       expect(await counts('?search=FOCUS')).toMatchObject({ needsCost: 1 });
       expect(
-        await stockRows(org.agent, '?needsCost=true&search=FOCUS'),
+        await codeRows(org.agent, '?needsCost=true&search=FOCUS'),
       ).toHaveLength(1);
 
-      await org.agent.get('/v1/stock?needsCost=maybe').expect(400);
+      await org.agent.get('/v1/stock/by-code?needsCost=maybe').expect(400);
     });
 
     /**
@@ -859,15 +881,17 @@ describe('Stock (e2e)', () => {
           .expect(201);
       }
 
+      // The lots on the Lot view, and the codes, SCOOP's with no lot.
       const waiting = async () =>
-        (await stockRows(org.agent, '?needsCost=true'))
-          .map((row) => `${row.sku} ${row.lotCode ?? '-'}`)
+        (await lotRows(org.agent, '?needsCost=true'))
+          .map((row) => `${row.sku} ${row.lotCode}`)
           .sort();
-      expect(await waiting()).toEqual([
-        'CALM-30 C-1',
-        'CALM-30 C-2',
-        'SCOOP -',
-      ]);
+      const codes = async () =>
+        (await codeRows(org.agent, '?needsCost=true'))
+          .map((row) => row.sku)
+          .sort();
+      expect(await waiting()).toEqual(['CALM-30 C-1', 'CALM-30 C-2']);
+      expect(await codes()).toEqual(['CALM-30', 'SCOOP']);
 
       const toCost = body<{
         entries: { id: string; lotCode: string | null }[];
@@ -879,10 +903,16 @@ describe('Stock (e2e)', () => {
         .send({ unitPrice: '2', currency: 'CAD' })
         .expect(200);
 
-      expect(await waiting()).toEqual(['CALM-30 C-2', 'SCOOP -']);
+      expect(await waiting()).toEqual(['CALM-30 C-2']);
+      expect(await codes()).toEqual(['CALM-30', 'SCOOP']);
       expect(
         body<{ needsCost: number }>(
-          await org.agent.get('/v1/stock/counts').expect(200),
+          await org.agent.get('/v1/stock/by-lot/counts').expect(200),
+        ),
+      ).toMatchObject({ needsCost: 1 });
+      expect(
+        body<{ needsCost: number }>(
+          await org.agent.get('/v1/stock/by-code/counts').expect(200),
         ),
       ).toMatchObject({ needsCost: 2 });
     });
@@ -916,7 +946,7 @@ describe('Stock (e2e)', () => {
 
       const skus = async (search: string) =>
         (
-          await stockRows(org.agent, `?search=${encodeURIComponent(search)}`)
+          await codeRows(org.agent, `?search=${encodeURIComponent(search)}`)
         ).map((row) => row.sku);
 
       expect(await skus('eleuthero')).toEqual(['ELEU-30']);
@@ -936,7 +966,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(ctx.variant.id, ctx.locationId, '40'))
         .expect(201);
 
-      const [row] = await stockRows(ctx.agent);
+      const [row] = await codeRows(ctx.agent);
 
       expect(row.productName).toBe('Product WIDGET');
       expect(row.variantName).toBeNull();
@@ -966,17 +996,17 @@ describe('Stock (e2e)', () => {
         await ctx.agent.post('/v1/stock/movements').send(movement).expect(201);
       }
 
-      const rows = await stockRows(ctx.agent, `?productId=${item.id}`);
-      expect(rows.map((row) => [row.sku, row.locationName]).sort()).toEqual([
-        ['OIL-180', 'Back room'],
-        ['OIL-90', 'Main'],
+      const rows = await codeRows(ctx.agent, `?productId=${item.id}`);
+      expect(rows.map((row) => [row.sku, row.places]).sort()).toEqual([
+        ['OIL-180', 1],
+        ['OIL-90', 1],
       ]);
 
       // Received with no cost, so each waits for one (ADR-048): the item's
-      // two rows, and not the widget's.
+      // two codes, and not the widget.
       const counts = async (filters: string) =>
         body<{ needsCost: number }>(
-          await ctx.agent.get(`/v1/stock/counts${filters}`).expect(200),
+          await ctx.agent.get(`/v1/stock/by-code/counts${filters}`).expect(200),
         );
       expect(await counts('')).toMatchObject({ needsCost: 3 });
       expect(await counts(`?productId=${item.id}`)).toMatchObject({
@@ -984,7 +1014,7 @@ describe('Stock (e2e)', () => {
       });
 
       const file = await ctx.agent
-        .get(`/v1/stock/export?productId=${item.id}`)
+        .get(`/v1/stock/by-code/export?productId=${item.id}`)
         .expect(200);
       expect(file.text).toContain('OIL-90');
       expect(file.text).not.toContain('WIDGET-1');
@@ -1006,9 +1036,12 @@ describe('Stock (e2e)', () => {
         .expect(201);
 
       for (const path of [
-        '/v1/stock',
-        '/v1/stock/counts',
-        '/v1/stock/export',
+        '/v1/stock/by-code',
+        '/v1/stock/by-code/counts',
+        '/v1/stock/by-code/export',
+        '/v1/stock/by-lot',
+        '/v1/stock/by-lot/counts',
+        '/v1/stock/by-lot/export',
       ]) {
         const refused = await alpha.agent
           .get(`${path}?productId=${betaItem.id}`)
@@ -1016,6 +1049,30 @@ describe('Stock (e2e)', () => {
         expect(body<{ message: string }>(refused).message).toBe(
           'That item is not in this organization. Remove it from the filter to see every item.',
         );
+      }
+    });
+
+    /**
+     * The list of piles and the promised table's read went once nothing
+     * called them, the API's revision raised from 4 with them (ADR-081;
+     * ADR-093, R22): a tab built before still sends 4, and is told to
+     * reload rather than shown a route that is not there.
+     */
+    it('tells a tab on the revision before, asking for a read that went, to reload', async () => {
+      const { agent } = await setup('alpha');
+
+      for (const path of [
+        '/v1/stock',
+        '/v1/stock/counts',
+        '/v1/stock/export',
+        '/v1/stock/availability?promised=true',
+      ]) {
+        await agent.get(path).expect(404);
+        const refused = await agent
+          .get(path)
+          .set('X-Api-Revision', '4')
+          .expect(409);
+        expect(body<{ code?: string }>(refused).code).toBe('client_outdated');
       }
     });
   });

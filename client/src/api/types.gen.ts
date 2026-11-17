@@ -1808,29 +1808,6 @@ export type CancelledRun = {
   strandedLines: Array<RunLine>;
 };
 
-export type StockRow = {
-  id: string;
-  variantId: string;
-  sku: string;
-  productName: string;
-  variantName: string | null;
-  coverFileId: string | null;
-  unitOfMeasure: string;
-  locationId: string;
-  locationName: string;
-  locationCode: string | null;
-  lotId: string | null;
-  lotCode: string | null;
-  lotExpiresAt: string | null;
-  lotIsAssigned: boolean | null;
-  quantity: string;
-};
-
-export type StockPage = {
-  entries: Array<StockRow>;
-  nextCursor: string | null;
-};
-
 export type MovementLotDto = {
   code: string;
   expiresAt?: string;
@@ -1860,11 +1837,6 @@ export type RecordMovementDto = {
 
 export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
-};
-
-export type StockCounts = {
-  expiring: number;
-  needsCost: number;
 };
 
 export type Movement = {
@@ -2088,22 +2060,6 @@ export type LotTrace = {
   madeFrom: Array<RelatedLot>;
   wentInto: Array<RelatedLot>;
   recipients: Array<LotRecipient>;
-};
-
-export type Availability = {
-  variantId: string;
-  sku: string;
-  productName: string;
-  variantName: string | null;
-  unitOfMeasure: string;
-  onHand: string;
-  notUsable: string;
-  expired: string;
-  issued: string;
-  unavailable: string;
-  held: string;
-  free: string;
-  backordered: string;
 };
 
 export type LineHold = {
@@ -6049,66 +6005,6 @@ export type ProductionOrdersControllerCancelV1Responses = {
 export type ProductionOrdersControllerCancelV1Response =
   ProductionOrdersControllerCancelV1Responses[keyof ProductionOrdersControllerCancelV1Responses];
 
-export type StockControllerListV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: {
-    locationId?: string;
-    variantId?: string;
-    productId?: string;
-    includeEmpty?: string;
-    search?: string;
-    expiringWithin?: number;
-    expired?: string;
-    needsCost?: string;
-    sort?: 'expiry';
-    order?: 'asc' | 'desc';
-    before?: string;
-    limit?: number;
-  };
-  url: '/v1/stock';
-};
-
-export type StockControllerListV1Responses = {
-  200: StockPage;
-};
-
-export type StockControllerListV1Response =
-  StockControllerListV1Responses[keyof StockControllerListV1Responses];
-
-export type StockControllerExportInventoryV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: {
-    locationId?: string;
-    variantId?: string;
-    productId?: string;
-    includeEmpty?: string;
-    search?: string;
-    expiringWithin?: number;
-    expired?: string;
-    needsCost?: string;
-    sort?: 'expiry';
-    order?: 'asc' | 'desc';
-    before?: string;
-    limit?: number;
-  };
-  url: '/v1/stock/export';
-};
-
-export type StockControllerExportInventoryV1Responses = {
-  200: string;
-};
-
-export type StockControllerExportInventoryV1Response =
-  StockControllerExportInventoryV1Responses[keyof StockControllerExportInventoryV1Responses];
-
 export type StockControllerListMovementsV1Data = {
   body?: never;
   headers?: {
@@ -6156,33 +6052,6 @@ export type StockControllerRecordV1Responses = {
 
 export type StockControllerRecordV1Response =
   StockControllerRecordV1Responses[keyof StockControllerRecordV1Responses];
-
-export type StockControllerCountsV1Data = {
-  body?: never;
-  path?: never;
-  query?: {
-    locationId?: string;
-    variantId?: string;
-    productId?: string;
-    includeEmpty?: string;
-    search?: string;
-    expiringWithin?: number;
-    expired?: string;
-    needsCost?: string;
-    sort?: 'expiry';
-    order?: 'asc' | 'desc';
-    before?: string;
-    limit?: number;
-  };
-  url: '/v1/stock/counts';
-};
-
-export type StockControllerCountsV1Responses = {
-  200: StockCounts;
-};
-
-export type StockControllerCountsV1Response =
-  StockControllerCountsV1Responses[keyof StockControllerCountsV1Responses];
 
 export type StockControllerExportMovementsV1Data = {
   body?: never;
@@ -6511,26 +6380,6 @@ export type LotTraceControllerExportRecipientsV1Responses = {
 
 export type LotTraceControllerExportRecipientsV1Response =
   LotTraceControllerExportRecipientsV1Responses[keyof LotTraceControllerExportRecipientsV1Responses];
-
-export type AvailabilityControllerListV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: {
-    promised?: string;
-    productId?: string;
-  };
-  url: '/v1/stock/availability';
-};
-
-export type AvailabilityControllerListV1Responses = {
-  200: Array<Availability>;
-};
-
-export type AvailabilityControllerListV1Response =
-  AvailabilityControllerListV1Responses[keyof AvailabilityControllerListV1Responses];
 
 export type AvailabilityControllerForOrderV1Data = {
   body?: never;

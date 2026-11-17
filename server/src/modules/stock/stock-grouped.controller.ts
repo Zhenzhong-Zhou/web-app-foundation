@@ -38,7 +38,7 @@ import { StockGroupedService } from './stock-grouped.service';
 /**
  * Inventory's grouped read (ADR-093): a row per code, its counts, a
  * code's places and their lots, and the Lot view, each with its export,
- * beside `GET /v1/stock` until nothing reads that (R22). Each needs
+ * which replaced the list of piles, `GET /v1/stock` (R22). Each needs
  * `stock.view`; a place's name goes only to a reader with
  * `locations.view`, left out of the same answer for the rest (ADR-080;
  * A6).

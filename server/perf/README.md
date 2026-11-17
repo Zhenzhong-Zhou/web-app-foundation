@@ -157,11 +157,12 @@ At 10 connections, each sending its next request as soon as the last one
 answers:
 
 - **Reads, p95 under 300 ms:**
-  - the order list (open, all, a deep page), an order, the Inventory page's
-    two calls (`/stock` and `/stock/availability?promised=true`), a deep
-    page of `/stock` and a search, the unfiltered availability list (no
-    screen reads it; kept to watch it), the movement list (first page, a
-    deep page, one product), the invoice list, and a lot trace;
+  - the order list (open, all, a deep page), an order, Inventory's reads
+    (ADR-093: a row per code, searched, Low stock, sorted by On hand and
+    by Expires first, its counts, and a code's places; the Lot view, a
+    deep page of it, Expiring soon and its counts) and an item's Where it
+    stands, the movement list (first page, a deep page, one product), the
+    invoice list, and a lot trace;
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item
     pickers by pinyin, both asked in Chinese; and Partners by part of a
@@ -172,9 +173,9 @@ answers:
     items beneath it, which reads its whole branch, and at the
     bottom-level one under it with the most items, both asked in Chinese;
   - Home (ADR-058), an owner's and a newcomer's, and Recently opened;
-  - dates and sorting (ADR-057): the first page of the invoices by total,
-    the orders by expected date and the stock by expiry, and the invoices
-    and movements of the last thirty days.
+  - dates and sorting (ADR-057): the first page of the invoices by total
+    and the orders by expected date, and the invoices and movements of the
+    last thirty days.
 - **One invoice's PDF, p95 under 1,200 ms** (ADR-071), each request the
   next of the first page of issued invoices. It stands for the six PDF
   routes, which share the renderer. Drawing is the server's own work, one

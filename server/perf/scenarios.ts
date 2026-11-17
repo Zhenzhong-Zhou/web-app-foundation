@@ -34,6 +34,7 @@ type Anchors = VolumeManifest['organizations'][number];
 
 interface Hot {
   variantId: string;
+  sku: string;
   locationId: string;
   lots: number;
 }
@@ -48,8 +49,8 @@ export interface Org {
   orderIds: string[];
   deepOrders: string;
   deepMovements: string;
-  /** About a thousand rows into the stock list. */
-  deepStock: string;
+  /** About a thousand rows into the Lot view. */
+  deepLots: string;
   /** The top-level category with the most items beneath it (ADR-092). */
   categoryTop: string;
   /** The bottom-level category under it with the most items. */
@@ -68,7 +69,8 @@ export interface Scenario {
   send: Send;
 }
 
-interface StockRow {
+/** A row of the Lot view: a lot at one place. */
+interface LotRow {
   variantId: string;
   sku: string;
   locationId: string;
@@ -105,7 +107,7 @@ export async function discover(
   newcomer: Session,
 ): Promise<Org> {
   const [{ rows, deep }, locations] = await Promise.all([
-    everyStockRow(session, '/stock'),
+    everyLotRow(session),
     session.json<{ id: string; isAvailable: boolean }[]>('GET', '/locations'),
   ]);
 
@@ -127,6 +129,7 @@ export async function discover(
     const key = `${row.variantId}:${row.locationId}`;
     const hot = byShelf.get(key) ?? {
       variantId: row.variantId,
+      sku: row.sku,
       locationId: row.locationId,
       lots: 0,
     };
@@ -207,7 +210,7 @@ export async function discover(
     orderIds: orders.ids,
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
-    deepStock: deep,
+    deepLots: deep,
     categoryTop: picked.top,
     categoryBottom: picked.bottom,
     issuedInvoiceIds: issued.entries.map((entry) => entry.id),
@@ -280,15 +283,8 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /orders/:id',
       (org, n) => `/orders/${org.orderIds[n % org.orderIds.length]}`,
     ),
-    // The Inventory page makes these two together.
-    read('GET /stock', () => '/stock'),
-    read(
-      'GET /stock/availability?promised',
-      () => '/stock/availability?promised=true',
-    ),
-    read('GET /stock, page 21', (org) => `/stock?before=${org.deepStock}`),
-    read('GET /stock?search', () => '/stock?search=G-001'),
-    // Inventory's grouped read (ADR-093), beside the old until step 17.
+    // Inventory's grouped read (ADR-093): a row per code, its counts and
+    // a code's places, and the Lot view.
     read('GET /stock/by-code', () => '/stock/by-code'),
     read('GET /stock/by-code/counts', () => '/stock/by-code/counts'),
     read('GET /stock/by-code?search', () => '/stock/by-code?search=G-001'),
@@ -304,6 +300,10 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     ),
     read('GET /stock/by-lot', () => '/stock/by-lot'),
     read(
+      'GET /stock/by-lot, page 21',
+      (org) => `/stock/by-lot?before=${org.deepLots}`,
+    ),
+    read(
       'GET /stock/by-lot?expiringWithin',
       () => '/stock/by-lot?expiringWithin=90',
     ),
@@ -314,8 +314,6 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /products/:id/stock',
       (org) => `/products/${org.lowProductId}/stock`,
     ),
-    // The whole list, which no screen asks for any more: kept to watch it.
-    read('GET /stock/availability', () => '/stock/availability'),
     read('GET /stock/movements', () => '/stock/movements'),
     read(
       'GET /stock/movements, page 21',
@@ -413,7 +411,6 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /orders?sort=expectedAt',
       () => '/orders?status=all&sort=expectedAt',
     ),
-    read('GET /stock?sort=expiry', () => '/stock?sort=expiry'),
     read('GET /invoices?from&to', () => `/invoices?${lastMonthDays()}`),
     read(
       'GET /stock/movements?from&until',
@@ -779,17 +776,17 @@ async function ensureSupply(
   demand: Map<Hot, number>,
   tag: string,
 ): Promise<void> {
-  const availability = await org.session.json<
-    { variantId: string; free: string; backordered: string }[]
-  >('GET', '/stock/availability');
-
   const receipts: { hot: Hot; quantity: number }[] = [];
 
   for (const [hot, need] of demand) {
-    const row = availability.find((entry) => entry.variantId === hot.variantId);
+    // Its code's row, which a search for its code lists among others.
+    const { entries } = await org.session.json<{
+      entries: { variantId: string; free: string; short: string }[];
+    }>('GET', `/stock/by-code?search=${encodeURIComponent(hot.sku)}`);
+    const row = entries.find((entry) => entry.variantId === hot.variantId);
     const needed = toUnits(String(need));
     const free = row ? toUnits(row.free) : 0n;
-    const backordered = row ? toUnits(row.backordered) : 0n;
+    const backordered = row ? toUnits(row.short) : 0n;
     const onShelf = await stockAt(org, hot);
 
     const short = [needed + backordered - free, needed - onShelf].reduce(
@@ -867,28 +864,31 @@ async function openOrder(
 
 /** On hand for one product on one shelf, every lot, in exact units. */
 async function stockAt(org: Org, hot: Hot): Promise<bigint> {
-  const { rows } = await everyStockRow(
-    org.session,
-    `/stock?variantId=${hot.variantId}&locationId=${hot.locationId}`,
+  const { places } = await org.session.json<{
+    places: { lots: { quantity: string }[] }[];
+  }>(
+    'GET',
+    `/stock/by-code/${hot.variantId}/places?locationId=${hot.locationId}`,
   );
-  return sumUnits(rows.map((row) => row.quantity));
+  return sumUnits(
+    places.flatMap((place) => place.lots.map((lot) => lot.quantity)),
+  );
 }
 
 /**
- * Every row of a stock-list query, page by page, and the cursor about a
- * thousand rows in for the deep-page read. Untimed: discovery and checks,
- * never a measurement.
+ * Every row of the Lot view, a lot at each place, page by page, and the
+ * cursor about a thousand rows in for the deep-page read. Untimed:
+ * discovery, never a measurement.
  */
-async function everyStockRow(session: Session, path: string) {
-  const rows: StockRow[] = [];
+async function everyLotRow(session: Session) {
+  const rows: LotRow[] = [];
   let cursor: string | null = null;
   let deep: string | null = null;
-  const join = path.includes('?') ? '&' : '?';
 
   do {
     const after: string = cursor ? `&before=${cursor}` : '';
-    const page: { entries: StockRow[]; nextCursor: string | null } =
-      await session.json('GET', `${path}${join}limit=100${after}`);
+    const page: { entries: LotRow[]; nextCursor: string | null } =
+      await session.json('GET', `/stock/by-lot?limit=100${after}`);
 
     rows.push(...page.entries);
     cursor = page.nextCursor;

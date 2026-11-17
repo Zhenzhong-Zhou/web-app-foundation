@@ -31,7 +31,6 @@ import {
 } from '../src/modules/recent/recent.service';
 import { ReturnAuthorizationsService } from '../src/modules/return-authorizations/return-authorizations.service';
 import { LookupService } from '../src/modules/search/lookup.service';
-import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
 import { StockGroupedService } from '../src/modules/stock/stock-grouped.service';
@@ -214,7 +213,6 @@ async function buildProbes(
   const stock = app.get(StockReadsService);
   const grouped = app.get(StockGroupedService);
   const standing = app.get(WhereItStandsService);
-  const availability = app.get(AvailabilityService);
   const invoices = app.get(InvoicesService);
   const traces = app.get(LotTraceService);
   const shipping = app.get(ShippingService);
@@ -241,11 +239,10 @@ async function buildProbes(
     20,
   );
 
-  const shelf = (await stock.list({ limit: 100 }, 'en')).entries.find(
-    (row) => row.lotId,
-  );
-  const deepStock = await cursorAfter(
-    (before) => stock.list({ before }, 'en'),
+  // A lot on a shelf: the Lot view lists lot-tracked stock alone.
+  const [shelf] = (await grouped.byLot({ limit: 1 }, 'en', true)).entries;
+  const deepLots = await cursorAfter(
+    (before) => grouped.byLot({ before }, 'en', true),
     20,
   );
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
@@ -259,7 +256,7 @@ async function buildProbes(
   if (!priceList) throw new Error('No price list: was this volume-seeded?');
 
   // An open sale to preview: what earliest expiry first reads before a ship.
-  const sale = await firstSale(orders, stock);
+  const sale = await firstSale(orders, grouped);
 
   // An order a return came back on, so its lot balances read both the
   // shipments and the returns: the volume seed receives each against an RMA.
@@ -300,23 +297,6 @@ async function buildProbes(
       // As the Owner reads it, every figure on it.
       run: () => orders.findById(firstOrders.entries[0].id, EVERYTHING, 'en'),
     },
-    { name: 'inventory', run: () => stock.list({}, 'en') },
-    {
-      name: 'inventory: page 21',
-      run: () => stock.list({ before: deepStock }, 'en'),
-    },
-    {
-      name: 'inventory: search',
-      run: () => stock.list({ search: 'G-001' }, 'en'),
-    },
-    {
-      name: 'inventory: one shelf',
-      run: () => stock.list({ locationId: shelf.locationId }, 'en'),
-    },
-    {
-      name: 'inventory: one product',
-      run: () => stock.list({ variantId: shelf.variantId }, 'en'),
-    },
     // Inventory's grouped read (ADR-093): a row per code by each sort and
     // filter that works out every code, its counts, a code's places, and
     // the Lot view.
@@ -328,6 +308,11 @@ async function buildProbes(
     {
       name: 'stock by code: one shelf',
       run: () => grouped.byCode({ locationId: shelf.locationId }, 'en'),
+    },
+    {
+      // Items' stock number opens Stock for its item alone (ADR-092).
+      name: 'stock by code: one item',
+      run: () => grouped.byCode({ productId: shelf.productId }, 'en'),
     },
     {
       name: 'stock by code: low stock',
@@ -347,6 +332,10 @@ async function buildProbes(
       run: () => grouped.places(shelf.variantId, {}, 'en', true),
     },
     { name: 'stock by lot', run: () => grouped.byLot({}, 'en', true) },
+    {
+      name: 'stock by lot: page 21',
+      run: () => grouped.byLot({ before: deepLots }, 'en', true),
+    },
     {
       name: 'stock by lot: expiring',
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
@@ -371,11 +360,6 @@ async function buildProbes(
           orders: false,
           runs: false,
         }),
-    },
-    { name: 'availability', run: () => availability.list('en') },
-    {
-      name: 'availability: promised',
-      run: () => availability.list('en', true),
     },
     { name: 'movements', run: () => stock.listMovements({}, 'en') },
     {
@@ -488,10 +472,6 @@ async function buildProbes(
     {
       name: 'orders: all, oldest first',
       run: () => orders.list({ status: 'all', order: 'asc' }),
-    },
-    {
-      name: 'inventory: by expiry',
-      run: () => stock.list({ sort: 'expiry' }, 'en'),
     },
     {
       name: 'invoices: a month',
@@ -659,7 +639,7 @@ async function cursorAfter(
  * confirmed orders are perf's own purchases, and a first page with no sale
  * on it left the preview probe out of the check without a word.
  */
-async function firstSale(orders: OrdersService, stock: StockReadsService) {
+async function firstSale(orders: OrdersService, grouped: StockGroupedService) {
   let before: string | undefined;
 
   for (let page = 0; page < 40; page++) {
@@ -679,12 +659,9 @@ async function firstSale(orders: OrdersService, stock: StockReadsService) {
 
       // The shelf holding most of it: the volume seed keeps each product on
       // one shelf, and ships from there.
-      const { entries: rows } = await stock.list(
-        { variantId: line.variantId, limit: 100 },
-        'en',
-      );
-      const shelf = rows.sort((a, b) =>
-        toUnits(b.quantity) > toUnits(a.quantity) ? 1 : -1,
+      const { places } = await grouped.places(line.variantId, {}, 'en', true);
+      const shelf = places.sort((a, b) =>
+        toUnits(b.onHand) > toUnits(a.onHand) ? 1 : -1,
       )[0];
       if (!shelf) continue;
 

@@ -1,33 +1,18 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
-import { AcceptLanguage } from '../../i18n/accept-language.decorator';
-import { localeOf } from '../../i18n/translate';
 import { AvailabilityService } from './availability.service';
-import type { Availability, LineHold } from './dto/availability-response.dto';
-import { ListAvailabilityDto } from './dto/list-availability.dto';
+import type { LineHold } from './dto/availability-response.dto';
 
 /**
- * What can be promised, and what each order holds (ADR-045). Reads only;
- * holds are computed from open sale lines and stock, never stored.
+ * What each order holds (ADR-045). Reads only; holds are computed from
+ * open sale lines and stock, never stored. A code's Free, Held and Short
+ * are Inventory's and Where it stands' (ADR-093), from code-figures.ts.
  */
 @Controller({ version: '1' })
 export class AvailabilityController {
   constructor(private readonly availability: AvailabilityService) {}
-
-  @Get('stock/availability')
-  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list(
-    @Query() query: ListAvailabilityDto,
-    @AcceptLanguage() acceptLanguage?: string,
-  ): Promise<Availability[]> {
-    return this.availability.list(
-      localeOf(acceptLanguage),
-      query.promised === 'true',
-      query.productId,
-    );
-  }
 
   @Get('orders/:id/holds')
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
