@@ -12,7 +12,8 @@ import {
   orderOf,
   readKeys,
 } from '../../common/sorted-page';
-import { todayOf } from '../../core/organizations/time-zone';
+import { dayIn, todayIn } from '../../common/today';
+import { timeZoneOf, todayOf } from '../../core/organizations/time-zone';
 import type { Transaction } from '../../database/database.module';
 import { assertOwnIds } from '../../database/own-ids';
 import {
@@ -312,7 +313,7 @@ type PileRow = {
   lot_expires_at: string | null;
   lot_is_assigned: boolean | null;
   quantity: string;
-  emptied_on: string | null;
+  emptied_at: Date | string | null;
   /** The places' read alone: on hand at the pile's place. */
   place_on_hand?: string;
 };
@@ -727,7 +728,8 @@ export class StockGroupedService {
         [query.productId],
         UNKNOWN_ITEM,
       );
-      const today = await todayOf(tx, organizationId);
+      const timeZone = await timeZoneOf(tx, organizationId);
+      const today = todayIn(timeZone);
       const org = sql`${organizationId}::uuid`;
       const parts: KeyPart[] = [
         {
@@ -812,7 +814,7 @@ export class StockGroupedService {
 
       return {
         entries: page.entries.map((row) => ({
-          ...pileOf(row, seesPlaces),
+          ...pileOf(row, seesPlaces, timeZone),
           productId: row.product_id,
           type: row.type,
           coverFileId: row.cover_file_id,
@@ -969,6 +971,7 @@ export async function placesOf(
   seesPlaces: boolean,
 ): Promise<Map<string, StockPlace[]>> {
   const org = sql`${organizationId}::uuid`;
+  const timeZone = await timeZoneOf(tx, organizationId);
   const { rows } = await tx.execute<PileRow>(sql`
     select
       ${pileColumns(organizationId, locale)},
@@ -1020,7 +1023,7 @@ export async function placesOf(
       };
       places.push(place);
     }
-    place.lots.push(pileOf(row, seesPlaces));
+    place.lots.push(pileOf(row, seesPlaces, timeZone));
   }
   return placed;
 }
@@ -1064,18 +1067,15 @@ function pileColumns(organizationId: string, locale: Locale | null): SQL {
     ${lots.expiresAt}::text as lot_expires_at,
     ${lots.isAssigned} as lot_is_assigned,
     ${quantity(sql`${stockLevels.quantity}`)} as quantity,
-    -- An emptied pile's day, the organization's: its last change left none.
-    case when ${stockLevels.quantity} = 0 then (
-      ${stockLevels.updatedAt} at time zone (
-        select ${organizations.timeZone} from ${organizations}
-        where ${organizations.id} = ${organizationId}::uuid
-      )
-    )::date::text end as emptied_on
+    -- An emptied pile's last change, the one that left none; its day is
+    -- the organization's, worked out by dayIn (ADR-072).
+    case when ${stockLevels.quantity} = 0
+      then ${stockLevels.updatedAt} end as emptied_at
   `;
 }
 
 /** A pile as the API sends it, its place's name for a reader who may see it. */
-function pileOf(row: PileRow, seesPlaces: boolean) {
+function pileOf(row: PileRow, seesPlaces: boolean, timeZone: string) {
   return {
     id: row.id,
     variantId: row.variant_id,
@@ -1091,6 +1091,6 @@ function pileOf(row: PileRow, seesPlaces: boolean) {
     lotExpiresAt: row.lot_expires_at,
     lotIsAssigned: row.lot_is_assigned,
     quantity: row.quantity,
-    emptiedOn: row.emptied_on,
+    emptiedOn: row.emptied_at ? dayIn(timeZone, row.emptied_at) : null,
   };
 }
