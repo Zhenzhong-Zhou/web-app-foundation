@@ -453,8 +453,11 @@ a second organization.
   the headers read Lots here, On hand here, Free, every place, Held, every
   place and Expires first here. Search D3-B02 at Richmond's Shelf 1-B:
   D3-1000-120 is listed; search D3-A11 there: nothing.
-- **MC-315** *(ADR-093)* Sort by On hand and Expires first from their
-  headers, each turned round by a second press, Free's header words
+- **MC-315** *(ADR-093)* Each header that sorts shows a faint up-and-down
+  arrow at rest, Item's solid and VoiceOver saying it sorted ascending
+  when nothing else is chosen. Sort by On hand and Expires first from
+  their headers, the arrow solid for the way it runs, each turned round
+  by a second press, Free's header words
   alone (35a); a code with nothing to expire last either way; each kept
   in the address and after a reload.
   At 390 px, Stock is cards, each with On hand and Free, Filters holding
@@ -4178,7 +4181,7 @@ site, after a deploy that changes the setting, the route or the relay.
   All 11 · Low stock 8 · Out 2, and "Buy or make what is short. Tick
   several to buy them on one purchase order." sits above the list, with
   Learn more. The list opens with the most to order first, Suggested
-  order marked so; Status puts the low first instead,
+  order's arrow solid, Status's faint up-and-down arrow at rest; Status puts the low first instead,
   `?sort=low&order=asc`: MAGCAP-240 and VITC-100 at the top, every low
   row before every other, and the rest by code. Each row names its item first, in
   bold, a link to its page, with its cover or its type's icon, and under
@@ -6709,3 +6712,6 @@ first.
 - 2026-11-17: ADR-093's review, Bob's third message (2): receiving an item
   still to come asks which delivery it is, from an item's Receive stock…
   and from the page's; an order opens its line's own Receive: MC-310.
+- 2026-11-17: ADR-093's review, Bob's third message (4): every header
+  that sorts on Stock and Reorder shows a faint up-and-down arrow at rest,
+  the sorted one solid, the default marked: MC-315 and MC-4202.

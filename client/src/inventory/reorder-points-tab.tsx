@@ -1170,6 +1170,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                           active={sort?.key === 'low'}
                           order="asc"
                           onSort={() => setSort('low', 'asc')}
+                          atRest
                         />
                         <TableCell>
                           {intl.formatMessage({
@@ -1184,6 +1185,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                             defaultMessage: 'Suggested order',
                           })}
                           {...suggestedHeader}
+                          atRest
                         />
                         <TableCell sx={WIDE_ONLY}>
                           {intl.formatMessage({

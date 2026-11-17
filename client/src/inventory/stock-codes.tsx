@@ -188,6 +188,7 @@ export function StockCodes({
                 <SortHeader
                   label={intl.formatMessage(HEADS.item)}
                   {...header('name')}
+                  atRest
                 />
                 <TableCell>
                   {place
@@ -202,6 +203,7 @@ export function StockCodes({
                       : intl.formatMessage(HEADS.onHand)
                   }
                   {...header('onHand')}
+                  atRest
                 />
                 <TableCell align="right">
                   {place
@@ -224,6 +226,7 @@ export function StockCodes({
                       : intl.formatMessage(HEADS.expiresFirst)
                   }
                   {...header('expires')}
+                  atRest
                 />
                 {/* Every header named (R6), this one to a screen reader:
                     each row's button says its word. */}

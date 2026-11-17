@@ -1062,6 +1062,15 @@ describe('InventoryPage', () => {
     renderAt('/inventory', ['stock.view']);
     await screen.findByText('VITD-60 · Product');
     expect(asked.codes[0].has('sort')).toBe(false);
+    // The list's own order marked on its header; the others a faint
+    // up-and-down arrow at rest (Bob's third message, 4).
+    expect(screen.getByRole('columnheader', { name: 'Item' })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
+    const onHand = screen.getByRole('columnheader', { name: 'On hand' });
+    expect(onHand).not.toHaveAttribute('aria-sort');
+    expect(within(onHand).getByTestId('UnfoldMoreIcon')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'On hand' }));
     await expect.poll(() => asked.codes.at(-1)?.get('sort')).toBe('onHand');
@@ -1069,6 +1078,16 @@ describe('InventoryPage', () => {
     expect(
       screen.getByRole('columnheader', { name: 'On hand' }),
     ).toHaveAttribute('aria-sort', 'ascending');
+    expect(
+      within(screen.getByRole('columnheader', { name: 'On hand' })).getByTestId(
+        'ArrowDownwardIcon',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('columnheader', { name: 'Item' })).getByTestId(
+        'UnfoldMoreIcon',
+      ),
+    ).toBeInTheDocument();
     // Free is no sort (35a): its header is words alone.
     expect(
       screen.queryByRole('button', { name: 'Free' }),

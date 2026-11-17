@@ -297,6 +297,14 @@ describe('Reorder', () => {
       name: /Suggested order/,
     });
     expect(header).toHaveAttribute('aria-sort', 'descending');
+    // Sorted, its arrow solid; Status's faint at rest (Bob's third
+    // message, 4).
+    expect(within(header).getByTestId('ArrowDownwardIcon')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('columnheader', { name: /Status/ })).getByTestId(
+        'UnfoldMoreIcon',
+      ),
+    ).toBeInTheDocument();
     expect(asked[0].searchParams.get('sort')).toBe('suggested');
     expect(asked[0].searchParams.get('order')).toBe('desc');
 

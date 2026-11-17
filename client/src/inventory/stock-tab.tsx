@@ -102,6 +102,9 @@ const SORTS = [
 /** Expiring soon's and Expired's order: the soonest first. */
 const SOONEST: ListSort<StockCodeSort> = { key: 'expires', order: 'asc' };
 
+/** The list's own order, by the item's name, marked on its header. */
+const BY_NAME: ListSort<StockCodeSort> = { key: 'name', order: 'asc' };
+
 /**
  * Stock's state in the address (ADR-093, R3; ADR-091): each filter, the
  * group and the sort, so a reload and Back keep them. `expiring=1` is
@@ -183,7 +186,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     header,
     set: setSort,
     clear: clearSort,
-  } = useListSort(SORTS, expiring || expired ? SOONEST : null);
+  } = useListSort(SORTS, expiring || expired ? SOONEST : BY_NAME);
 
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
@@ -206,11 +209,12 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const limit = String(PAGE_SIZE);
   const noLots = byLot && out;
 
-  // By the item's name unless a header sorts it; the Lot view has its own
-  // one order.
+  // By the item's name unless a header sorts it, the server's own order,
+  // so it is not sent; the Lot view has its own one order.
+  const served = sort === BY_NAME ? null : sort;
   const codesPath = withSort(
     withQuery('/stock/by-code', { limit, ...query }),
-    sort,
+    served,
   );
   const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath);
   const lots = useKeysetList<StockLotRow>(
@@ -537,7 +541,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const filtersOn = [type, categoryId, locationId].filter(Boolean).length;
   const exportPath = withSort(
     withQuery(`/stock/${byLot ? 'by-lot' : 'by-code'}/export`, query),
-    byLot ? null : sort,
+    byLot ? null : served,
   );
   const anyFilter =
     low ||
