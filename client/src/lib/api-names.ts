@@ -21,6 +21,7 @@ import type {
   ReturnAuthorizationSummary,
   RunDetail,
   StockGroupedControllerByCodeV1Data,
+  StockGroupedControllerByLotV1Data,
   StoredFile,
 } from '../api/types.gen';
 
@@ -119,6 +120,11 @@ export type DiscontinuedShown = NonNullable<ItemListQuery['discontinued']> | '';
 /** What Inventory's row per code sorts by (ADR-057, amended by ADR-093). */
 export type StockCodeSort = NonNullable<
   NonNullable<StockGroupedControllerByCodeV1Data['query']>['sort']
+>;
+
+/** What the Lot view sorts by (ADR-093; Bob's third message, 7). */
+export type StockLotSort = NonNullable<
+  NonNullable<StockGroupedControllerByLotV1Data['query']>['sort']
 >;
 
 /** Which side of a sale a list prices (ADR-049). */

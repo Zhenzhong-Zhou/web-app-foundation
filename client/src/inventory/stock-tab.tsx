@@ -44,7 +44,11 @@ import { PageHeader } from '../components/page-header';
 import { SelectField } from '../components/select-field';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { messageFor, withQuery } from '../lib/api';
-import type { ProductType, StockCodeSort } from '../lib/api-names';
+import type {
+  ProductType,
+  StockCodeSort,
+  StockLotSort,
+} from '../lib/api-names';
 import { nameAndCode } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
@@ -105,6 +109,19 @@ const SOONEST: ListSort<StockCodeSort> = { key: 'expires', order: 'asc' };
 
 /** The list's own order, by the item's name, marked on its header. */
 const BY_NAME: ListSort<StockCodeSort> = { key: 'name', order: 'asc' };
+
+/**
+ * What the Lot view's headers sort by (Bob's third message, 7): Expires,
+ * its own order, soonest first and the expired on top; the item, the
+ * place or the quantity, either way.
+ */
+const LOT_SORTS = [
+  'expires',
+  'item',
+  'location',
+  'quantity',
+] as const satisfies readonly StockLotSort[];
+const BY_EXPIRES: ListSort<StockLotSort> = { key: 'expires', order: 'asc' };
 
 /**
  * Stock's state in the address (ADR-093, R3; ADR-091): each filter, the
@@ -188,6 +205,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     set: setSort,
     clear: clearSort,
   } = useListSort(SORTS, expiring || expired ? SOONEST : BY_NAME);
+  // The Lot view's, from the same address: a key it does not know is the
+  // other view's, and leaves it in its own order.
+  const lotSort = useListSort(LOT_SORTS, BY_EXPIRES);
+  const lotsInOwnOrder = lotSort.sort === BY_EXPIRES;
 
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
@@ -218,9 +239,11 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     served,
   );
   const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath);
-  const lots = useKeysetList<StockLotRow>(
-    byLot && !noLots ? withQuery('/stock/by-lot', { limit, ...query }) : null,
+  const lotsPath = withSort(
+    withQuery('/stock/by-lot', { limit, ...query }),
+    lotsInOwnOrder ? null : lotSort.sort,
   );
+  const lots = useKeysetList<StockLotRow>(byLot && !noLots ? lotsPath : null);
   const list = byLot ? lots : codes;
 
   // Show 50 more: focus on the first new code once it is there, as Items
@@ -542,7 +565,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const filtersOn = [type, categoryId, locationId].filter(Boolean).length;
   const exportPath = withSort(
     withQuery(`/stock/${byLot ? 'by-lot' : 'by-code'}/export`, query),
-    byLot ? null : served,
+    byLot ? (lotsInOwnOrder ? null : lotSort.sort) : served,
   );
   const anyFilter =
     low ||
@@ -756,7 +779,8 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         </Typography>
       )}
 
-      {byLot && !noLots && (
+      {/* Said only while it is the order (Bob's third message, 7). */}
+      {byLot && !noLots && lotsInOwnOrder && (
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'inventory.lots.order',
@@ -797,6 +821,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   loading={lots.loading}
                   seesPlaces={seesPlaces}
                   handlers={handlers}
+                  header={lotSort.header}
                 />
               ) : (
                 <StockCodes

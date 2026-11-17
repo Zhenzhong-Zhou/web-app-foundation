@@ -343,6 +343,13 @@ async function buildProbes(
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
     },
     { name: 'stock by lot: counts', run: () => grouped.lotCounts({}) },
+    // The Lot view by its other sorts, each way (Bob's third message, 7).
+    ...(['item', 'location', 'quantity', 'expires'] as const).flatMap((sort) =>
+      (['asc', 'desc'] as const).map((order) => ({
+        name: `stock by lot: by ${sort}, ${order}`,
+        run: () => grouped.byLot({ sort, order }, 'zh-Hans', true),
+      })),
+    ),
     // The deliveries Stock asks about before receiving an item (ADR-093,
     // v3): its confirmed purchases still to come, from Coming's rule.
     {

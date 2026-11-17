@@ -30,7 +30,7 @@ Below 600 px each code is a card with **On hand** and **Free**, and **Filters** 
 
 ## Group by lot {#lots}
 
-Choosing **Lot** under **Group by** turns the list into one row for each lot at each place: the lot that expires first on top, the expired above it, a lot’s places together, and each saying “1 of 2 places” so its rows read as one lot. Its filters are **Low stock**, **Expiring soon**, **Expired** and **Waiting for a cost**; there is no **Out**, since an item that is out has no lots, and choosing it says “Items that are out have no lots.” with **Group by Item** to go back.
+Choosing **Lot** under **Group by** turns the list into one row for each lot at each place: the lot that expires first on top, the expired above it, a lot’s places together, and each saying “1 of 2 places” so its rows read as one lot. Press **Item**, **Location** or **Quantity** at the head of a column to sort by it instead, again to reverse it; **Expires** puts it back. Its filters are **Low stock**, **Expiring soon**, **Expired** and **Waiting for a cost**; there is no **Out**, since an item that is out has no lots, and choosing it says “Items that are out have no lots.” with **Group by Item** to go back.
 
 Home’s **Expiring soon** opens this view, soonest first, the expired on top, and counts these rows.
 

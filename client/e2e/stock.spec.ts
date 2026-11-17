@@ -609,7 +609,10 @@ test('Stock, Group by › Lot: one row per lot at each place, soonest first, the
   await expect(page.getByText('1 of 2 places')).toBeVisible();
   await expect(page.getByText('2 of 2 places')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Item', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Group by' })
+    .getByRole('button', { name: 'Item' })
+    .click();
   await expect(page).not.toHaveURL(/group=lot/);
   await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
 });

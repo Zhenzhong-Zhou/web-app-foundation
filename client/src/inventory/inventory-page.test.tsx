@@ -826,6 +826,110 @@ describe('InventoryPage', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  // Bob's third message (7): the Lot view's headers sort it, Expires its
+  // own order, marked, and its line said only while it is the order.
+  it('sorts the Lot view from its headers, each way, Expires marked as its own order', async () => {
+    const user = userEvent.setup();
+    answer();
+    const asked = { lots: [] as URLSearchParams[] };
+    server.use(
+      http.get('/api/v1/stock/by-lot', ({ request }) => {
+        asked.lots.push(new URL(request.url).searchParams);
+        return HttpResponse.json({
+          entries: [
+            {
+              ...pile('1', 'NN-2410-07', '2027-10-01', 'Shelf A'),
+              productId: PRODUCT,
+              type: 'good',
+              coverFileId: null,
+              isAvailable: true,
+              places: 1,
+            },
+          ],
+          nextCursor: null,
+        });
+      }),
+    );
+    renderAt('/inventory?group=lot', ['stock.view', 'locations.view']);
+    await screen.findByRole('link', { name: 'NN-2410-07' });
+
+    const expires = await screen.findByRole('columnheader', {
+      name: /^Expires/,
+    });
+    expect(expires).toHaveAttribute('aria-sort', 'ascending');
+    expect(
+      screen.getByText('Soonest first, the expired on top.'),
+    ).toBeVisible();
+    expect(asked.lots[0]?.has('sort')).toBe(false);
+
+    for (const [header, key] of [
+      ['Item', 'item'],
+      ['Location', 'location'],
+      ['Quantity', 'quantity'],
+    ] as const) {
+      // Its header's own button: Group by has an Item too.
+      const column = () =>
+        screen.getByRole('columnheader', { name: new RegExp(`^${header}`) });
+      await user.click(within(column()).getByRole('button'));
+      await expect.poll(() => asked.lots.at(-1)?.get('sort')).toBe(key);
+      expect(asked.lots.at(-1)?.get('order')).toBe('asc');
+      expect(column()).toHaveAttribute('aria-sort', 'ascending');
+      await user.click(within(column()).getByRole('button'));
+      await expect.poll(() => asked.lots.at(-1)?.get('order')).toBe('desc');
+    }
+    expect(
+      screen.queryByText('Soonest first, the expired on top.'),
+    ).not.toBeInTheDocument();
+  });
+
+  // Each Lot view row has the lot's Actions, as a lot's row under its
+  // place does (Bob's third message, 7).
+  it('gives each Lot view row the lot’s own Actions', async () => {
+    const user = userEvent.setup();
+    answer();
+    server.use(
+      http.get('/api/v1/stock/by-lot', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              ...pile('1', 'NN-2410-07', '2027-10-01', 'Shelf A'),
+              productId: PRODUCT,
+              type: 'good',
+              coverFileId: null,
+              isAvailable: true,
+              places: 1,
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+    renderAt('/inventory?group=lot', [
+      'stock.view',
+      'locations.view',
+      'stock.move',
+      'stock.adjust',
+    ]);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Actions for lot NN-2410-07 at Shelf A',
+      }),
+    );
+    const menu = await screen.findByRole('menu');
+    for (const name of [
+      'Move…',
+      'Ship out…',
+      'Send sample…',
+      'Correct the count…',
+      'Edit lot details…',
+      'Trace lot',
+      'Movements',
+    ]) {
+      expect(within(menu).getByRole('menuitem', { name })).toBeInTheDocument();
+    }
+  });
+
   // Bob's third message (6): the quick filters on a row of their own,
   // above the search, Type, Category, Location and Group by.
   it('puts the quick filters on a row of their own above the search', async () => {

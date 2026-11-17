@@ -11,6 +11,7 @@ import {
   notInThisList,
   orderOf,
   readKeys,
+  type SortOrder,
 } from '../../common/sorted-page';
 import { dayIn, todayIn } from '../../common/today';
 import { timeZoneOf, todayOf } from '../../core/organizations/time-zone';
@@ -45,6 +46,7 @@ import type {
   ListStockByCodeDto,
   ListStockByLotDto,
   StockFiltersDto,
+  StockLotSort,
   StockPlacesDto,
 } from './dto/list-stock-grouped.dto';
 import type {
@@ -783,9 +785,12 @@ export class StockGroupedService {
    * the rows Home's Expiring soon counts (stockRowsOf), so the tile's
    * count is its list's rows. Soonest first, the expired on top, a lot
    * with no expiry last; then by the lot's code and the place, so a lot's
-   * places sit together, each row saying how many there are. The same
-   * filters as a row per code; paged by a pile's id, its place in the
-   * order read back, since nothing in it is worked out.
+   * places sit together, each row saying how many there are. Its headers
+   * sort it by the item, the place or the quantity instead, either way,
+   * the same lot's code and place breaking ties (Bob's third message, 7).
+   * The same filters as a row per code; paged by a pile's id, its place
+   * in the order read back under the sort asked, since nothing in it is
+   * worked out.
    */
   byLot(
     query: ListStockByLotDto,
@@ -805,25 +810,17 @@ export class StockGroupedService {
       const timeZone = await timeZoneOf(tx, organizationId);
       const today = todayIn(timeZone);
       const org = sql`${organizationId}::uuid`;
-      const parts: KeyPart[] = [
-        {
-          value: sql`(${lots.expiresAt} is null)::int`,
-          type: 'int',
-          order: 'asc',
-        },
-        {
-          value: sql`coalesce(${lots.expiresAt} - date '1970-01-01', 0)`,
-          type: 'int',
-          order: 'asc',
-        },
-        { value: sql`${lots.code}`, type: 'text', order: 'asc' },
-        { value: sql`${lots.id}`, type: 'uuid', order: 'asc' },
-        { value: sql`${locations.name}`, type: 'text', order: 'asc' },
-        { value: sql`${stockLevels.id}`, type: 'uuid', order: 'asc' },
-      ];
+      const parts = lotKeys(
+        query.sort ?? 'expires',
+        query.order ?? 'asc',
+        locale,
+        organizationId,
+      );
 
       let after: SQL | undefined;
       if (query.before) {
+        // The cursor pile's keys under the sort asked, read through the
+        // same joins as the list's rows, a lot's alone.
         const {
           rows: [cursor],
         } = await tx.execute<{ keys: string[] }>(sql`
@@ -831,14 +828,8 @@ export class StockGroupedService {
             parts.map((part) => sql`(${part.value})::text`),
             sql`, `,
           )}] as keys
-          from ${stockLevels}
-          join ${lots}
-            on ${lots.id} = ${stockLevels.lotId}
-            and ${lots.organizationId} = ${org}
-          join ${locations}
-            on ${locations.id} = ${stockLevels.locationId}
-            and ${locations.organizationId} = ${org}
-          where ${stockLevels.organizationId} = ${org}
+          from ${stockRowsOf({ includeEmpty: 'true' }, organizationId, today)}
+            and ${stockLevels.lotId} is not null
             and ${stockLevels.id} = ${query.before}::uuid
         `);
         // Another organization's pile, one with no lot, or none: no place
@@ -960,6 +951,74 @@ export class StockGroupedService {
       `);
       return counts;
     });
+  }
+}
+
+/**
+ * The Lot view's order as key parts (Bob's third message, 7): the sort
+ * asked first, each way, then the lot's code and id, the place and the
+ * pile, so a lot's places sit together and every pile has one place. A
+ * lot with no expiry is last either way; the item by its name in the
+ * reader's language, as a row per code sorts it, then its code.
+ */
+function lotKeys(
+  sort: StockLotSort,
+  way: SortOrder,
+  locale: Locale | null,
+  organizationId: string,
+): KeyPart[] {
+  const name: KeyPart = {
+    value: sql`(${
+      locale
+        ? productNameOrder(locale, organizationId)
+        : sql`coalesce(${products.namePinyin}, search_text(${products.name}))`
+    }) collate numeric_order`,
+    type: 'text',
+    order: 'asc',
+  };
+  const code: KeyPart = {
+    value: sql`${productVariants.sku} collate numeric_order`,
+    type: 'text',
+    order: 'asc',
+  };
+  const tail: KeyPart[] = [
+    { value: sql`${lots.code}`, type: 'text', order: 'asc' },
+    { value: sql`${lots.id}`, type: 'uuid', order: 'asc' },
+    { value: sql`${locations.name}`, type: 'text', order: 'asc' },
+    { value: sql`${stockLevels.id}`, type: 'uuid', order: 'asc' },
+  ];
+  const expires: KeyPart[] = [
+    { value: sql`(${lots.expiresAt} is null)::int`, type: 'int', order: 'asc' },
+    {
+      value: sql`coalesce(${lots.expiresAt} - date '1970-01-01', 0)`,
+      type: 'int',
+      order: way,
+    },
+  ];
+
+  switch (sort) {
+    case 'item':
+      return [{ ...name, order: way }, { ...code, order: way }, ...tail];
+    case 'location':
+      return [
+        {
+          value: sql`${locations.name} collate numeric_order`,
+          type: 'text',
+          order: way,
+        },
+        name,
+        code,
+        ...tail,
+      ];
+    case 'quantity':
+      return [
+        { value: sql`${stockLevels.quantity}`, type: 'numeric', order: way },
+        name,
+        code,
+        ...tail,
+      ];
+    default:
+      return [...expires, ...tail];
   }
 }
 

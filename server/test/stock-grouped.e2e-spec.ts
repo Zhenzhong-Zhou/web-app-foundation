@@ -288,6 +288,66 @@ describe('Inventory, grouped (e2e)', () => {
     await alpha.agent.get('/v1/stock/by-code?sort=free').expect(400);
   });
 
+  // Bob's third message (7): the Lot view's headers sort it, each way,
+  // keyset paged without skipping or repeating.
+  it('sorts the Lot view by Expires, the item, the place or the quantity, either way, and pages without skipping or repeating', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await world(alpha);
+    type LotRow = Pile & {
+      productName: string;
+      lotExpiresAt: string | null;
+    };
+    const read = async (query: string) =>
+      body<{ entries: LotRow[]; nextCursor: string | null }>(
+        await alpha.agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      );
+    /** What each sort orders by, as the row shows it. */
+    const keyOf: Record<string, (row: LotRow) => string> = {
+      item: (row) => row.productName,
+      location: (row) => row.locationName ?? '',
+      quantity: (row) => row.quantity.padStart(20, '0'),
+      expires: (row) => row.lotExpiresAt ?? '9999-12-31',
+    };
+
+    for (const sort of ['expires', 'item', 'location', 'quantity']) {
+      for (const order of ['asc', 'desc']) {
+        const query = `sort=${sort}&order=${order}`;
+        const whole = (await read(`${query}&limit=100`)).entries;
+        const keys = whole.map(keyOf[sort]);
+        const expected = [...keys].sort();
+        if (order === 'desc') {
+          expected.reverse();
+          // No expiry last either way.
+          if (sort === 'expires') {
+            const none = expected.filter((key) => key === '9999-12-31');
+            expected.splice(0, none.length);
+            expected.push(...none);
+          }
+        }
+        expect({ query, keys }).toEqual({ query, keys: expected });
+
+        // A page of one at a time, each cursor the last pile's.
+        const paged: string[] = [];
+        let before: string | null = null;
+        do {
+          const page = await read(
+            [query, 'limit=1', before && `before=${before}`]
+              .filter(Boolean)
+              .join('&'),
+          );
+          paged.push(...page.entries.map((row) => row.id));
+          before = page.nextCursor;
+        } while (before);
+        expect({ query, paged }).toEqual({
+          query,
+          paged: whole.map((row) => row.id),
+        });
+      }
+    }
+
+    await alpha.agent.get('/v1/stock/by-lot?sort=free').expect(400);
+  });
+
   it('reads each figure sort’s pages in the order of the figures they show, either way', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { shelf } = await world(alpha);

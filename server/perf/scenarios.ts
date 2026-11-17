@@ -308,6 +308,24 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       () => '/stock/by-lot?expiringWithin=90',
     ),
     read('GET /stock/by-lot/counts', () => '/stock/by-lot/counts'),
+    // The Lot view's other sorts (Bob's third message, 7), each the way a
+    // header's second press asks it, at most 300 ms at large or dropped.
+    read(
+      'GET /stock/by-lot?sort=item',
+      () => '/stock/by-lot?sort=item&order=desc',
+    ),
+    read(
+      'GET /stock/by-lot?sort=location',
+      () => '/stock/by-lot?sort=location&order=desc',
+    ),
+    read(
+      'GET /stock/by-lot?sort=quantity',
+      () => '/stock/by-lot?sort=quantity&order=desc',
+    ),
+    read(
+      'GET /stock/by-lot?sort=expires&order=desc',
+      () => '/stock/by-lot?sort=expires&order=desc',
+    ),
     // Where it stands (ADR-093, R8): an item's codes from the one read,
     // their sales, purchases, runs, places and lots, as an Owner reads it.
     read(

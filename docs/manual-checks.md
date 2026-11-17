@@ -443,7 +443,11 @@ a second organization.
   Lot view, in French « 50 sur … codes affichés », in 中文 已显示 50 个，共
   … 个编码.
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
-  soonest first, the expired on top, each code with its type as a word,
+  soonest first, the expired on top, Expires' arrow solid and "Soonest
+  first, the expired on top." above the list; Item, Location and
+  Quantity sort it each way instead, the line gone, each kept in the
+  address, a second press reversing it; each row's Actions is the lot's
+  own menu; each code with its type as a word,
   "D3-1000-120 · Product"; D3-B02's two rows read "1 of 2
   places" and "2 of 2 places". Its quick filters are Low stock, Expiring
   soon, Expired and Waiting for a cost, each count the rows it shows.
@@ -6727,3 +6731,6 @@ first.
 - 2026-11-17: ADR-093's review, Bob's third message (6): Stock's quick
   filters on a row of their own above the search and the rest; at a
   phone's width in the Filters sheet: MC-1528 and MC-315.
+- 2026-11-17: ADR-093's review, Bob's third message (7): the Lot view's
+  headers sort it by Expires, Item, Location and Quantity, each way, its
+  order line only while Expires sorts it: MC-313.

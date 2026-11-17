@@ -110,10 +110,14 @@ file is kept is in the [README](README.md).
   MC-1528 · MC-311
 - **The Lot view is a row per lot at each place, soonest first, the
   expired on top,** a lot's places together, each saying how many there
-  are: the rows Home's Expiring soon counts.
+  are: the rows Home's Expiring soon counts. Its headers sort it by the
+  item, the place or the quantity instead, or Expires the other way,
+  each paged without skipping or repeating, a lot with no expiry last
+  either way.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [ADR-091, amended](../adr/0091-home-redesigned.md#amendment-november-2026--the-tiles-lists-after-inventorys-redesign-adr-093) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per lot at each place, soonest first, the expired on top, a lot’s places together" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "sorts the Lot view by Expires, the item, the place or the quantity, either way, and pages without skipping or repeating" ·
   [test](../../server/test/home.e2e-spec.ts) "opens, from each tile, as many rows as it counts, the late among them" ·
   [Help](../../client/src/help/guides/en/inventory.md#group-by-lot-lots) ·
   MC-313 · MC-311

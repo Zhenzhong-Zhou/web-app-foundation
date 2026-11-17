@@ -97,6 +97,19 @@ export class StockFiltersDto {
 export const STOCK_CODE_SORTS = ['name', 'onHand', 'expires'] as const;
 export type StockCodeSort = (typeof STOCK_CODE_SORTS)[number];
 
+/**
+ * What the Lot view sorts by (ADR-093; Bob's third message, 7): Expires
+ * first, its own order, the soonest first and the expired on top; the
+ * item, the place or the quantity, either way.
+ */
+export const STOCK_LOT_SORTS = [
+  'expires',
+  'item',
+  'location',
+  'quantity',
+] as const;
+export type StockLotSort = (typeof STOCK_LOT_SORTS)[number];
+
 /** How many rows a page of Stock holds. */
 class StockPageDto extends StockFiltersDto {
   /** Fifty unless asked; capped, as every list's. */
@@ -132,7 +145,7 @@ export class ListStockByCodeDto extends StockPageDto {
 
 /**
  * The Lot view (ADR-093, R4): a row per lot at each place, soonest first,
- * the expired on top, its one order.
+ * the expired on top, unless its headers sort it otherwise.
  */
 export class ListStockByLotDto extends StockPageDto {
   /**
@@ -142,6 +155,16 @@ export class ListStockByLotDto extends StockPageDto {
   @IsOptional()
   @IsUUID()
   before?: string;
+
+  /** By what expires first unless asked; by the item, the place or the quantity. */
+  @IsOptional()
+  @IsIn(STOCK_LOT_SORTS)
+  sort?: StockLotSort;
+
+  /** Ascending unless asked; a lot with no expiry last either way. */
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order?: SortOrder;
 }
 
 /** A code's places and their lots, as its row opens (ADR-093, R2). */

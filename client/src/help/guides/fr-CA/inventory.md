@@ -30,7 +30,7 @@ Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, et **Filt
 
 ## Regrouper par lot {#lots}
 
-Choisir **Lot** sous **Regrouper par** change la liste en une ligne par lot à chaque emplacement : le lot qui expire en premier en haut, les périmés au-dessus, les emplacements d’un lot ensemble, chacun disant « 1 sur 2 emplacements » pour que ses lignes se lisent comme un seul lot. Ses filtres sont **Stock bas**, **Expire bientôt**, **Périmés** et **En attente d’un coût**; il n’y a pas de filtre **Épuisé**, puisqu’un article épuisé n’a pas de lots, et le choisir dit « Les articles épuisés n’ont pas de lots. » avec **Regrouper par article** pour revenir.
+Choisir **Lot** sous **Regrouper par** change la liste en une ligne par lot à chaque emplacement : le lot qui expire en premier en haut, les périmés au-dessus, les emplacements d’un lot ensemble, chacun disant « 1 sur 2 emplacements » pour que ses lignes se lisent comme un seul lot. Appuyez sur **Article**, **Emplacement** ou **Quantité** en tête d’une colonne pour trier selon elle, de nouveau pour inverser; **Date de péremption** remet l’ordre habituel. Ses filtres sont **Stock bas**, **Expire bientôt**, **Périmés** et **En attente d’un coût**; il n’y a pas de filtre **Épuisé**, puisqu’un article épuisé n’a pas de lots, et le choisir dit « Les articles épuisés n’ont pas de lots. » avec **Regrouper par article** pour revenir.
 
 La tuile **Expire bientôt** de l’accueil ouvre cette vue, les plus proches d’abord, les périmés en tête, et compte ces lignes.
 

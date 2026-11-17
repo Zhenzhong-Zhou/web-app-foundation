@@ -6266,6 +6266,8 @@ export type StockGroupedControllerByLotV1Data = {
     includeEmpty?: string;
     search?: string;
     before?: string;
+    sort?: 'expires' | 'item' | 'location' | 'quantity';
+    order?: 'asc' | 'desc';
     limit?: number;
   };
   url: '/v1/stock/by-lot';
@@ -6325,6 +6327,8 @@ export type StockGroupedControllerExportByLotV1Data = {
     includeEmpty?: string;
     search?: string;
     before?: string;
+    sort?: 'expires' | 'item' | 'location' | 'quantity';
+    order?: 'asc' | 'desc';
     limit?: number;
   };
   url: '/v1/stock/by-lot/export';
