@@ -4108,7 +4108,7 @@ site, after a deploy that changes the setting, the route or the relay.
   its reorder point. On a fresh demo, the server's first start tells the
   eight low items in one notice: "8 items are low on stock", the tile's Low stock (库存不足, Stock bas),
   then "MAGCAP-240, VITC-100 and 6 more. Order or plan them from
-  Reorder points.". As the demo Owner, on Reorder points, give a bought
+  Reorder points.". As the demo Owner, on Reorder, give a bought
   item with stock a point above what it has, and restart the server (it
   checks at start, then hourly): the bell gets one notice, "… is low
   on stock" with the item's code, then its name and "Raise a
@@ -4198,7 +4198,7 @@ site, after a deploy that changes the setting, the route or the relay.
   buttons 采购 96 and 生产 24; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
 - **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
-  Reorder points, Add reorder point sits beside Export. It opens a dialog
+  Reorder, Add reorder point sits beside Export. It opens a dialog
   with the item picker, focus in it; its list marks each item that has a
   point already, "Has a reorder point" under D3-1000-120 among them. Choose
   GLOVES-100 and Bought is chosen; choose FOCUS-60CT and Made is, since it
@@ -4396,9 +4396,10 @@ first.
   times: every stop is in Help, none on the page under it, and Raise an
   order is reached again only once Help is closed.
 - **MC-R97** *(a list keeping the filter pressed when a link to it is
-  followed while it is open, #302)* On Inventory → Reorder points press
+  followed while it is open, #302)* On Inventory → Reorder press
   Out, then follow a low-stock notice from the bell, or type
-  `?tab=reorder-points&status=low` in its place: Low is pressed and the
+  `?tab=reorder&status=low` in its place (the old `?tab=reorder-points`
+  too): Low is pressed and the
   list shows the low items, not Out's.
 - **MC-R96** *(the order's Total cut under its actions on a computer, #221)*
   Open SO-DEMO-1 at 1440 px, in English, Français and 中文, at Standard and
@@ -4446,7 +4447,7 @@ first.
   Partner, an item and a quantity, and press Raise as draft: nothing is
   saved, "Choose Selling or Buying." shows under Direction, and focus is
   on Selling. Choose Selling and raise it: the order opens as a sale.
-  Reorder points' Raise a purchase order opens it with Buying chosen.
+  Reorder's Buy 2 on one purchase order opens it with Buying chosen.
   
 - **MC-R91** *(A voided shipment's items faded below contrast, #214)* As
   the demo Owner on SO-DEMO-1's Shipments tab, in light and then dark
@@ -4579,12 +4580,12 @@ first.
 
 - **MC-R75** *(New order from Reorder points left unfilled after a failed
   catalogue read, yet its note counting the lines, #357)* On a fresh demo,
-  as the Owner, Reorder points on Low: choose D3-1000-120 and ELDER-250.
-  Raise the revision as section 34 says, then press Raise a purchase
-  order: A new version is being installed, in the form's place. Put the
+  as the Owner, Reorder on Low: tick D3-1000-120 and ELDER-250.
+  Raise the revision as section 34 says, then press Buy 2 on one
+  purchase order: A new version is being installed, in the form's place. Put the
   revision back and restart the server: within a minute New order reads
   again by itself and has two lines, D3-1000-120 at 96 and ELDER-250 at
-  134, under the note "Filled from Reorder points: 2 lines at their
+  134, under the note "Filled from Reorder: 2 lines at their
   suggested quantities. …". With `*products/variants*` blocked
   (DevTools → Network request blocking), raise it again: Could not load
   partners and items., one empty line, and no note.
@@ -4646,11 +4647,11 @@ first.
   step of Getting started; Look up in a newcomer's first week (a Viewer
   just invited, as MC-3207 sets up); the top bar's Show all in Orders; a licence's notice in the
   bell; Licences from Items, now under the header every list has;
-  Stock of the item from a Reorder points row; a page linked from a Help
+  Stock of the item from a Reorder row; a page linked from a Help
   guide, and Your account at Help's foot. Any of these pages opened from the menu, from the trail above a
   record, or by its address in a new tab, shows no Back. Opened by a
   link, a list keeps its Back through a search typed, a tab or a filter
-  chosen: Reorder points from the Low stock tile, after a letter in its
+  chosen: Reorder from the Low stock tile, after a letter in its
   search and a move to Stock; Orders from the To ship tile, after a
   search; the audit log from a record's History, Open in audit log, after
   an action chosen; Members from Getting started, after Invite is closed.
@@ -4663,7 +4664,7 @@ first.
   the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
   choose Show all in Inventory: the search box reads 2609 and the list narrows
   to BF-2609 and FOC-2609-01, with no reload. Type `D3` in the search
-  instead and open Reorder points: the same search is in its box and its
+  instead and open Reorder: the same search is in its box and its
   list is narrowed by it. Change it there to `ELDER` and go back to Stock:
   Stock is searched for ELDER. Reload: the tab and the search stay.
 
@@ -6551,3 +6552,6 @@ first.
 - 2026-11-17: ADR-093's review, 50 and 51: Where it stands' reorder point
   dialog closes once saved (MC-219); Stock's failed read of the places says
   so, with Try again (MC-301).
+- 2026-11-17: ADR-093's review, 53: MC-4201's setup, MC-4207, MC-R97,
+  MC-R92, MC-R75, MC-R69 and MC-R67 name the tab Reorder and its Buy
+  button, not Reorder points and Raise a purchase order.
