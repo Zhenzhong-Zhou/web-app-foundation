@@ -122,7 +122,7 @@ describe('a row’s stock and status (ADR-093, #590)', () => {
     expect(three).toHaveTextContent('204 each48 not usable');
     expect(
       screen.getByRole('link', {
-        name: 'Low stock · 1 of 3 codes: where MAGCAP-60 stands',
+        name: 'Low · 1 of 3 codes: where MAGCAP-60 stands',
       }),
     ).toHaveAttribute('href', '/items/MAGCAP-60#stock');
   });

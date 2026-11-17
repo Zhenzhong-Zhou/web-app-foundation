@@ -71,7 +71,7 @@ Un nombre sur un filtre ou une tuile compte une seule sorte de chose, la même p
 - **Stock**, par lot, compte des lots à chaque emplacement : un lot à deux emplacements fait deux lignes et compte deux fois.
 - **Réapprovisionner**, et **Stock bas** sur l’accueil, comptent des codes : un article dont trois codes sont sous leur point en compte trois.
 - **Expire bientôt** sur l’accueil compte des lots à chaque emplacement, les lignes de la vue par lot.
-- **Articles** compte des articles : son **Stock bas** compte un article une seule fois, quel que soit le nombre de ses codes bas, et son badge dit « Stock bas · 1 sur 3 codes ». Voir [Articles](/items#rows).
+- **Articles** compte des articles : son **Stock bas** compte un article une seule fois, quel que soit le nombre de ses codes bas, et son badge dit « Bas · 1 sur 3 codes ». Voir [Articles](/items#rows).
 
 ## Points de commande {#reorder-points}
 

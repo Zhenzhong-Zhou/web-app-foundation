@@ -158,11 +158,11 @@ function NotUsable({ item }: { item: ProductSummary }) {
 }
 
 /**
- * Low stock or Out in Home's words, tones and icons (ADR-085, ADR-092),
+ * Low or Out in Reorder's words, tones and icons (ADR-085, ADR-092),
  * beside the number, a link to the item's Where it stands, the figures it
  * judges (#570; the design language's Numbers); an item with several
- * codes says how many share its worst code's status, "Low stock · 1 of 3
- * codes" (ADR-093, 21a). A discontinued item's row says Discontinued.
+ * codes says how many share its worst code's status, "Low · 1 of 3 codes"
+ * (ADR-093, 21a). A discontinued item's row says Discontinued.
  */
 function RowStatus({
   item,
@@ -187,16 +187,15 @@ function RowStatus({
   }
   if (item.stockStatus !== 'out' && item.stockStatus !== 'low') return null;
 
-  const word =
-    item.stockStatus === 'out'
-      ? intl.formatMessage({
-          id: 'inventory.reorder.filter.out',
-          defaultMessage: 'Out',
-        })
-      : intl.formatMessage({
-          id: 'inventory.reorder.filter.low',
-          defaultMessage: 'Low stock',
-        });
+  // The status's own word, as Reorder's chip says it, not the filter's.
+  const word = intl.formatMessage(
+    {
+      id: 'inventory.reorder.status',
+      defaultMessage:
+        '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
+    },
+    { status: item.stockStatus },
+  );
   const label =
     item.variantCount > 1 && item.stockStatusCodes
       ? intl.formatMessage(

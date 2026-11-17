@@ -205,8 +205,8 @@ a second organization.
   Chinese too; the category's path (Vitamins and minerals ›
   …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned
   and underlined as a link,
-  VITC-100 reading Out and another product Low stock in Home's words and
-  colours; and Last changed. On All, each row's type is a word at the
+  VITC-100 reading Out and another product Low in Reorder's words and
+  colours, MAGCAP "Low · 1 of 3 codes"; and Last changed. On All, each row's type is a word at the
   end of its grey line, "VITC-100 · Product", beside its icon (#548). The name alone opens the item; a click elsewhere on the row opens nothing, the row tinted under an arrow pointer;
   clicking its stock opens Inventory for that item alone, every variant
   in every location (on a touch screen its link is a fingertip tall, so
@@ -472,7 +472,7 @@ a second organization.
   counts lots at each place, Reorder and Home's Low stock count codes,
   Home's Expiring soon counts lots at each place, and Items counts items;
   the demo's MAGCAP, with three codes, shows it: Items' Low stock counts
-  it once, "Low stock · 1 of 3 codes" in the row. On an item's page, Help
+  it once, "Low · 1 of 3 codes" in the row. On an item's page, Help
   has Where it stands after What a row shows, and on Trace a lot's page it
   says the recall list's Export is in your language, with money showing
   its currency. In Français the title is Inventaire and the guide reads
@@ -6690,3 +6690,7 @@ first.
 - 2026-11-17: ADR-093's review, A5 from the chat: Reorder opens sorted by
   the suggested order, most first, and Status puts the low first; Help
   says so in three languages: MC-4202.
+- 2026-11-17: ADR-093's review, from the chat: Items' badge says the
+  status's own word, "Low · 1 of 3 codes" (Bas, 不足), as Reorder's chip
+  does, not the filter's Low stock; Help in three languages: MC-208 and
+  MC-316.

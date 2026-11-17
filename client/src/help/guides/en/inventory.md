@@ -71,7 +71,7 @@ A number on a filter or a tile counts one kind of thing, and the kind is the sam
 - **Stock**, by lot, counts lots at each place: a lot in two places is two rows and counts twice.
 - **Reorder**, and Home’s **Low stock**, count codes, so an item with three codes under their points counts three.
 - Home’s **Expiring soon** counts lots at each place, the rows of the Lot view.
-- **Items** counts items: its **Low stock** counts an item once, however many of its codes are low, and its badge says “Low stock · 1 of 3 codes”. See [Items](/items#rows).
+- **Items** counts items: its **Low stock** counts an item once, however many of its codes are low, and its badge says “Low · 1 of 3 codes”. See [Items](/items#rows).
 
 ## Reorder points {#reorder-points}
 

@@ -34,7 +34,7 @@ Sur un téléphone, chaque article est une carte, et **Filtres** ouvre la catég
 - La photo de couverture, ou une icône du type, puis le nom avec son code dessous. Un article à plusieurs variantes en indique le nombre et les codes.
 - Sa catégorie, comme chemin depuis le haut, par exemple Flacons › Bouchons.
 - Ce qui est en stock dans tous les emplacements, additionné dans l’unité de l’article, avec « Inutilisable : 72 » à côté quand une partie est périmée, remise à un ordre de fabrication ou à un emplacement non disponible. Quand ses variantes sont comptées en unités différentes, la ligne indique plutôt le nombre de variantes.
-- **Stock bas** ou **Épuisé** à côté du stock, d’après les points de commande de l’article : le statut de son pire code et, pour un article à plusieurs codes, combien le partagent, comme « Stock bas · 1 sur 3 codes ». Ce sont les mêmes mots et les mêmes couleurs que sur l’accueil et dans Inventaire. Appuyez dessus pour ouvrir la page de l’article à **État du stock**.
+- **Bas** ou **Épuisé** à côté du stock, d’après les points de commande de l’article : le statut de son pire code et, pour un article à plusieurs codes, combien le partagent, comme « Bas · 1 sur 3 codes ». Ce sont les mêmes mots et les mêmes couleurs que dans Réapprovisionner. Appuyez dessus pour ouvrir la page de l’article à **État du stock**.
 
 Appuyez sur la ligne pour ouvrir l’article. Appuyez sur son stock pour ouvrir Inventaire pour cet article seul; le **×** de la pastille y montre de nouveau tout le stock, et Retour ramène aux Articles tels qu’ils étaient.
 

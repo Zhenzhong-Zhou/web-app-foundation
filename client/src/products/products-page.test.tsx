@@ -522,7 +522,7 @@ describe('ProductsPage', () => {
     expect(
       within(fish).getByRole('link', { name: '1,240 each, stock of Fish oil' }),
     ).toHaveAttribute('href', '/inventory?productId=fish');
-    expect(within(fish).getByText('Low stock')).toBeVisible();
+    expect(within(fish).getByText('Low')).toBeVisible();
 
     const focus = screen.getByRole('link', { name: 'Focus' }).closest('tr')!;
     expect(within(focus).getByText('3 variants · FOC-30, …')).toBeVisible();

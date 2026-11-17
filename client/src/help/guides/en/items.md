@@ -34,7 +34,7 @@ On a phone, each item is a card, and **Filters** opens the category, the sort an
 - The cover photo, or an icon for its type, then the name with its code under it. An item with several variants shows how many, and their codes.
 - Its category, as a path from the top, such as Bottles › Caps.
 - The stock on hand in every location, added up in the item’s unit, with “72 not usable” beside it where part of it is expired, issued to a run or at a place not available. Where its variants are counted in different units, the row says how many variants instead.
-- **Low stock** or **Out** beside the stock, from the item’s reorder points: its worst code’s status, and for an item with several codes how many share it, as “Low stock · 1 of 3 codes”. The same words and colours are on Home and Inventory. Press it to open the item’s page at **Where it stands**.
+- **Low** or **Out** beside the stock, from the item’s reorder points: its worst code’s status, and for an item with several codes how many share it, as “Low · 1 of 3 codes”. The same words and colours are on Reorder. Press it to open the item’s page at **Where it stands**.
 
 Press the row to open the item. Press its stock to open Inventory for that item alone; **×** on the chip there shows all stock again, and Back returns to Items as it was.
 

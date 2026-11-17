@@ -306,7 +306,7 @@ test('Items, a row’s Low: Where it stands, Low first', async ({
   await page.goto('/items');
 
   await page
-    .getByRole('link', { name: 'Low stock: where E2E Vitamin C stands' })
+    .getByRole('link', { name: 'Low: where E2E Vitamin C stands' })
     .click();
   await expect(page).toHaveURL(new RegExp(`/items/${scene.vitamin.id}#stock$`));
   await expect(standing(page).getByText('Low', { exact: true })).toBeVisible();
