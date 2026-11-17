@@ -654,7 +654,9 @@ a second organization.
   is on Inventory in the Equipment cage but not in Stock value's list, its
   total or its export. Receive it again by hand on Inventory, with no
   price: Waiting for a cost, on Stock value, on Home and in Inventory,
-  keeps its count.
+  keeps its count. Its row names the item first, a link to its page,
+  with its icon and its code grey under it, and in 中文 by its Chinese
+  name where it has one; a lot's code opens its trace (#296).
 - **MC-803** Correct a needs-cost receipt. The correction splits between
   stock still held and stock already gone, and the item leaves the
   needs-cost list.
@@ -6497,3 +6499,6 @@ first.
 - 2026-11-16: ADR-093's riders: an item's type by its icon in the
   lookup (#546), and as a word beside it there and on Items' All
   (#548): MC-208, MC-1801 and MC-2201.
+- 2026-11-16: ADR-093's riders: Stock value's Waiting for a cost names
+  each item in the reader's language, its lot a link (#296's costs
+  part): MC-802.

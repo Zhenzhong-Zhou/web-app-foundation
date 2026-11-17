@@ -2688,6 +2688,11 @@ export type NeedsCostEntry = {
   reason: string | null;
   sku: string;
   variantId: string;
+  productId: string;
+  productName: string;
+  variantName: string | null;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
   quantity: string;
@@ -7081,6 +7086,9 @@ export type CostsControllerRunCostV1Response =
 
 export type CostsControllerNeedsCostV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     before?: string;

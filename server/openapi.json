@@ -7117,6 +7117,14 @@
               "maximum": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -20201,6 +20209,35 @@
           "variantId": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotId": {
             "type": [
               "string",
@@ -20251,6 +20288,11 @@
           "reason",
           "sku",
           "variantId",
+          "productId",
+          "productName",
+          "variantName",
+          "type",
+          "coverFileId",
           "lotId",
           "lotCode",
           "quantity",

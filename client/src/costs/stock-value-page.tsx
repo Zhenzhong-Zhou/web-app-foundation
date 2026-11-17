@@ -26,6 +26,7 @@ import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
+import { LotLink } from '../components/lot-link';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
@@ -36,6 +37,7 @@ import {
   formatDate,
   formatMoney,
   formatUnitCost,
+  itemName,
   NO_VALUE,
 } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -44,6 +46,7 @@ import { useArrival } from '../lib/use-arrival';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useResource } from '../lib/use-resource';
+import { NameAndCode } from '../products/name-and-code';
 import { SetCostDialog } from './set-cost-dialog';
 
 /**
@@ -290,9 +293,27 @@ export function StockValuePage() {
                     {waiting.entries?.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell>
-                          <Reference>{entry.sku}</Reference>
+                          {/* The name first, its code grey, as every list
+                              of items reads (#296; the design language's
+                              Rows). */}
+                          <NameAndCode
+                            name={itemName(
+                              entry.productName,
+                              entry.variantName,
+                            )}
+                            code={entry.sku}
+                            type={entry.type}
+                            coverFileId={entry.coverFileId}
+                            to={`/items/${entry.productId}`}
+                          />
                         </TableCell>
-                        <TableCell>{entry.lotCode ?? NO_VALUE}</TableCell>
+                        <TableCell>
+                          {entry.lotId && entry.lotCode ? (
+                            <LotLink id={entry.lotId} code={entry.lotCode} />
+                          ) : (
+                            NO_VALUE
+                          )}
+                        </TableCell>
                         <TableCell align="right">
                           {displayQuantity(entry.quantity)}
                         </TableCell>

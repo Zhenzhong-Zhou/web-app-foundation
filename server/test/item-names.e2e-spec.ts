@@ -130,6 +130,21 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    // Stock value's Waiting for a cost (#296): the receipt has no cost.
+    operation: 'GET /v1/costs/needs-cost',
+    of: 'item',
+    ask: async (world, language) => {
+      const entry = (
+        await read<{ entries: (Omit<Named, 'id'> & { variantId: string })[] }>(
+          world,
+          language,
+          '/v1/costs/needs-cost',
+        )
+      ).entries.find((each) => each.variantId === world.variantId)!;
+      return itemName(entry.productName, entry.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/by-code',
     of: 'item',
     ask: async (world, language) => {

@@ -2,9 +2,17 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
-import type { ValuationKind } from '../../database/schema';
+import type { Locale } from '../../common/locales';
+import {
+  products,
+  type ProductType,
+  productVariants,
+  type ValuationKind,
+} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { coverOf } from '../products/product-images';
+import { namesIn } from '../stock/item-name';
 import { baseCurrency } from '../stock/rates';
 import {
   correctCost,
@@ -92,6 +100,11 @@ interface NeedsCostRow {
   kind: ValuationKind;
   sku: string;
   variant_id: string;
+  product_id: string;
+  product_name: string;
+  variant_name: string | null;
+  type: ProductType;
+  cover_file_id: string | null;
   lot_id: string | null;
   lot_code: string | null;
   quantity: string;
@@ -430,18 +443,34 @@ export class CostsService {
    * The to-do list: every row still waiting for a cost, newest first, keyset
    * on the UUIDv7 id as the ledger reads are (ADR-018).
    */
-  needsCost(query: ListNeedsCostDto): Promise<NeedsCostPage> {
+  needsCost(
+    query: ListNeedsCostDto,
+    locale: Locale | null,
+  ): Promise<NeedsCostPage> {
     const limit = query.limit ?? 50;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      // Each item named in the reader's language, with its page, type and
+      // cover, as every list of items draws it (#296).
+      const shown = namesIn(locale, organizationId);
       const rows = await tx.execute(sql`
         with open as (${openNeedsCost(organizationId)})
-        select v.id, v.kind, pv.sku, v.variant_id, v.lot_id,
-               l.code as lot_code, v.quantity, v.unit_price, v.currency,
-               v.created_at, m.reason, m.reference_type, m.reference_id
+        select v.id, v.kind, ${productVariants.sku} as sku, v.variant_id,
+               ${products.id} as product_id,
+               ${shown.productName} as product_name,
+               ${shown.variantName} as variant_name,
+               ${products.type} as type, ${coverOf()} as cover_file_id,
+               v.lot_id, l.code as lot_code, v.quantity, v.unit_price,
+               v.currency, v.created_at, m.reason, m.reference_type,
+               m.reference_id
         from open o
         join stock_valuations v on v.id = o.id
-        join product_variants pv on pv.id = v.variant_id
+        join ${productVariants}
+          on ${productVariants.id} = v.variant_id
+          and ${productVariants.organizationId} = ${organizationId}
+        join ${products}
+          on ${products.id} = ${productVariants.productId}
+          and ${products.organizationId} = ${organizationId}
         left join lots l on l.id = v.lot_id
         left join stock_movements m on m.id = v.movement_id
         where ${query.before ? sql`v.id < ${query.before}::uuid` : sql`true`}
@@ -455,6 +484,11 @@ export class CostsService {
         reason: row.reason,
         sku: row.sku,
         variantId: row.variant_id,
+        productId: row.product_id,
+        productName: row.product_name,
+        variantName: row.variant_name,
+        type: row.type,
+        coverFileId: row.cover_file_id,
         lotId: row.lot_id,
         lotCode: row.lot_code,
         quantity: row.quantity,

@@ -1,4 +1,4 @@
-import type { ValuationKind } from '../../../database/schema';
+import type { ProductType, ValuationKind } from '../../../database/schema';
 
 /**
  * What stock, lots and batches cost (ADR-048), as the API returns it
@@ -116,6 +116,14 @@ export class NeedsCostEntry {
   reason!: string | null;
   sku!: string;
   variantId!: string;
+  /** The item's page, which its name opens (#296). */
+  productId!: string;
+  /** The item's names in the reader's language (ADR-056, #296). */
+  productName!: string;
+  variantName!: string | null;
+  /** The item's type and cover, for its icon or picture (#546). */
+  type!: ProductType;
+  coverFileId!: string | null;
   lotId!: string | null;
   lotCode!: string | null;
   quantity!: string;
