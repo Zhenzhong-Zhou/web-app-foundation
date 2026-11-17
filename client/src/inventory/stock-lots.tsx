@@ -90,6 +90,9 @@ export function StockLots({
                     ) : (
                       NO_VALUE
                     )}
+                    {/* Without places, why it is not usable, never where
+                        (A6). */}
+                    {!seesPlaces && !row.isAvailable && <NotUsable />}
                   </TableCell>
                   <TableCell>
                     <ExpiryChip expiresAt={row.lotExpiresAt} />
@@ -153,7 +156,11 @@ export function StockLots({
                   <Box sx={{ flex: 1 }} />
                   <PileActions pile={row} handlers={handlers} />
                 </Stack>
-                {seesPlaces && <Where row={row} index={index} />}
+                {seesPlaces ? (
+                  <Where row={row} index={index} />
+                ) : (
+                  !row.isAvailable && <NotUsable />
+                )}
               </Stack>
             </Box>
           ))}
@@ -193,14 +200,20 @@ function Where({ row, index }: { row: StockLotRow; index: number }) {
           )}
         </Typography>
       )}
-      {!row.isAvailable && (
-        <Typography variant="body2" sx={{ color: 'error.main' }}>
-          {intl.formatMessage({
-            id: 'inventory.stock.notAvailable',
-            defaultMessage: 'Not usable: a place not available',
-          })}
-        </Typography>
-      )}
+      {!row.isAvailable && <NotUsable />}
     </Stack>
+  );
+}
+
+/** "Not usable: a place not available", in the critical tone (ADR-093). */
+function NotUsable() {
+  const intl = useIntl();
+  return (
+    <Typography variant="body2" sx={{ color: 'error.main' }}>
+      {intl.formatMessage({
+        id: 'inventory.stock.notAvailable',
+        defaultMessage: 'Not usable: a place not available',
+      })}
+    </Typography>
   );
 }

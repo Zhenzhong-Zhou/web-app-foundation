@@ -431,7 +431,9 @@ a second organization.
   places" and "2 of 2 places". Its quick filters are Low stock, Expiring
   soon, Expired and Waiting for a cost, each count the rows it shows.
   `/inventory?group=lot&out=1` says items that are out have no lots, with
-  Group by Item, which lists the out.
+  Group by Item, which lists the out. As Fatima Haddad (Sales), with no
+  `locations.view`, VC-0301's row reads "Not usable: a place not
+  available" under its lot, no place named.
 - **MC-314** *(ADR-093)* Choose Main's Shelf under Location: a chip names
   it, the line above the list says Free and Held count every place, and
   the headers read Lots here, On hand here, Free, every place, Held, every
@@ -6595,3 +6597,5 @@ first.
   reads the row and the counts again: MC-4210.
 - 2026-11-17: ADR-093's review, 60: after Make at 600–899 px, focus on
   the run's link under Suggested: MC-4216.
+- 2026-11-17: ADR-093's review, 61: the Lot view says a lot is not usable
+  to a reader without places: MC-313.

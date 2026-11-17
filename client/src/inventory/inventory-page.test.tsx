@@ -643,6 +643,36 @@ describe('InventoryPage', () => {
       ).not.toBeInTheDocument();
     });
 
+    // A lot at a place not available says so to a reader who may not see
+    // places too, never where (A6; review 61).
+    it('says a lot is not usable to a reader without places', async () => {
+      answer();
+      server.use(
+        http.get('/api/v1/stock/by-lot', () =>
+          HttpResponse.json({
+            entries: [
+              {
+                ...pile('3', 'NN-2401', '2026-01-01', 'Quarantine'),
+                locationName: null,
+                productId: PRODUCT,
+                type: 'good',
+                coverFileId: null,
+                isAvailable: false,
+                places: 1,
+              },
+            ],
+            nextCursor: null,
+          }),
+        ),
+      );
+      renderAt('/inventory?group=lot', ['stock.view']);
+
+      expect(
+        await screen.findByText('Not usable: a place not available'),
+      ).toBeVisible();
+      expect(screen.queryByText('Quarantine')).not.toBeInTheDocument();
+    });
+
     it('says items that are out have no lots, with Group by Item', async () => {
       const user = userEvent.setup();
       const asked = answer();
