@@ -498,6 +498,8 @@ describe('Inventory, grouped (e2e)', () => {
       before = page.nextCursor;
     } while (before);
     expect(paged).toEqual(rows.map((row) => row.id));
+    // A cursor that is no pile's id is refused, not a fault (review 55).
+    await alpha.agent.get('/v1/stock/by-lot?before=nope').expect(400);
 
     // The filters as a row per code's: Expiring soon the expired among it,
     // Low stock by the code's status.

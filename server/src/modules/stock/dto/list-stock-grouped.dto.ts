@@ -97,14 +97,8 @@ export class StockFiltersDto {
 export const STOCK_CODE_SORTS = ['name', 'onHand', 'expires'] as const;
 export type StockCodeSort = (typeof STOCK_CODE_SORTS)[number];
 
-/** The page of a list paged by its key's values (sorted-page.ts). */
-class ValuesPageDto extends StockFiltersDto {
-  /** The answer's `nextCursor`, for the page after it; never read by the client. */
-  @IsOptional()
-  @IsString()
-  @MaxLength(4096)
-  before?: string;
-
+/** How many rows a page of Stock holds. */
+class StockPageDto extends StockFiltersDto {
   /** Fifty unless asked; capped, as every list's. */
   @IsOptional()
   @Type(() => Number)
@@ -115,7 +109,16 @@ class ValuesPageDto extends StockFiltersDto {
 }
 
 /** A row per code, fifty at a time (ADR-093, R1 and R16). */
-export class ListStockByCodeDto extends ValuesPageDto {
+export class ListStockByCodeDto extends StockPageDto {
+  /**
+   * The answer's `nextCursor`, the last row's key values (sorted-page.ts),
+   * for the page after it; never read by the client.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  before?: string;
+
   /** By the item's name unless asked; by On hand or Expires first. */
   @IsOptional()
   @IsIn(STOCK_CODE_SORTS)
@@ -131,7 +134,15 @@ export class ListStockByCodeDto extends ValuesPageDto {
  * The Lot view (ADR-093, R4): a row per lot at each place, soonest first,
  * the expired on top, its one order.
  */
-export class ListStockByLotDto extends ValuesPageDto {}
+export class ListStockByLotDto extends StockPageDto {
+  /**
+   * The answer's `nextCursor`, the last pile's id, for the page after it:
+   * anything else is refused, never read as a pile (review 55).
+   */
+  @IsOptional()
+  @IsUUID()
+  before?: string;
+}
 
 /** A code's places and their lots, as its row opens (ADR-093, R2). */
 export class StockPlacesDto {

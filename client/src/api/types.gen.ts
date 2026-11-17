@@ -6114,9 +6114,9 @@ export type StockGroupedControllerByCodeV1Data = {
   };
   path?: never;
   query?: {
+    before?: string;
     sort?: 'name' | 'onHand' | 'expires';
     order?: 'asc' | 'desc';
-    before?: string;
     limit?: number;
     low?: string;
     out?: string;
@@ -6175,9 +6175,9 @@ export type StockGroupedControllerExportByCodeV1Data = {
   };
   path?: never;
   query?: {
+    before?: string;
     sort?: 'name' | 'onHand' | 'expires';
     order?: 'asc' | 'desc';
-    before?: string;
     limit?: number;
     low?: string;
     out?: string;
