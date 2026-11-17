@@ -2298,6 +2298,14 @@ export type LookupResult = {
   expiresAt: string | null;
   productId: string | null;
   coverFileId: string | null;
+  type:
+    | 'good'
+    | 'material'
+    | 'packaging'
+    | 'sample'
+    | 'supply'
+    | 'equipment'
+    | null;
   close: boolean;
 };
 

@@ -18881,6 +18881,21 @@
               "null"
             ]
           },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment",
+              null
+            ]
+          },
           "close": {
             "type": "boolean"
           }
@@ -18893,6 +18908,7 @@
           "expiresAt",
           "productId",
           "coverFileId",
+          "type",
           "close"
         ]
       },

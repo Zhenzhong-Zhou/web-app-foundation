@@ -28,7 +28,8 @@ describe('NameAndCode', () => {
     expect(container.querySelector('[aria-hidden] svg')).not.toBeNull();
   });
 
-  it('says the type after the name to a screen reader where rows of every type sit together', () => {
+  // #548: an icon that tells a kind is never alone.
+  it('shows the type as a word beside its code where rows of every type sit together', () => {
     render(
       <MemoryRouter>
         <NameAndCode
@@ -41,8 +42,9 @@ describe('NameAndCode', () => {
     );
 
     expect(
-      screen.getByRole('link', { name: 'Vitamin C 500 mg, Raw materials' }),
+      screen.getByRole('link', { name: 'Vitamin C 500 mg' }),
     ).toBeVisible();
+    expect(screen.getByText('VITC-100 · Raw material')).toBeVisible();
   });
 
   // A card is one link whole, and a link holds no other.

@@ -206,8 +206,8 @@ a second organization.
   …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned
   and underlined as a link,
   VITC-100 reading Out and another product Low stock in Home's words and
-  colours; and Last changed. On All, a screen reader says each row's
-  type after its name. Clicking anywhere on a row opens the item;
+  colours; and Last changed. On All, each row's type is a word at the
+  end of its grey line, "VITC-100 · Product", beside its icon (#548). Clicking anywhere on a row opens the item;
   clicking its stock opens Inventory for that item alone, every variant
   in every location (on a touch screen its link is a fingertip tall, so
   a near miss does not open the item), with a chip "Item: …" whose × shows all stock again,
@@ -1880,8 +1880,8 @@ await fetch(`${api}/v1/files/product-image`, {
   Remove one by its menu: focus is on Undo, and the message stays while
   focus or the pointer is on it, well past five seconds, and still once
   the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Items list and Inventory show each cover; an
-  item without one shows its type's icon on Items, and the plain tile in
-  Inventory. At eight, Add images is
+  item without one shows its type's icon on Items, in Inventory and in
+  the lookup (#546). At eight, Add images is
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
 
@@ -1956,8 +1956,10 @@ await fetch(`${api}/v1/files/product-image`, {
 ## 22. Covers in the lookup (ADR-066)
 
 - **MC-2201** Press / and type part of a product's name: its items show
-  the product's cover beside the title; a product with no photo shows the
-  plain tile, and the rows line up. Lots, orders and partners look as
+  the product's cover beside the title; an item with no photo shows its
+  type's icon, as Items does, and under the title its code and its type
+  as a word, "BLEND-FOCUS · Raw material" (#546, #548); the rows line
+  up. Lots, orders and partners look as
   before. On a phone the cover fits the row.
 
 ## 23. Leaving and deleting (ADR-069)
@@ -6492,3 +6494,6 @@ first.
 - 2026-11-16: ADR-093's riders: the item pickers name first, the code
   after it (#563), and a filter's chip removed by Enter and Space,
   named "Remove filter: …" (#578): MC-215, MC-406 and MC-3804.
+- 2026-11-16: ADR-093's riders: an item's type by its icon in the
+  lookup (#546), and as a word beside it there and on Items' All
+  (#548): MC-208, MC-1801 and MC-2201.

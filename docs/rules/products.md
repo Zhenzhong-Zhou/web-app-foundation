@@ -724,13 +724,13 @@ How this file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused) ·
   MC-1801
 - **The cover shows beside the item's name on Items and in Inventory,
-  and beside an item in the top bar's lookup. With no image, Items shows
-  the icon of the item's type; Inventory and the lookup show the same
-  plain tile for every type.**
+  and beside an item in the top bar's lookup. With no image, each shows
+  the icon of the item's type (#546).**
   [ADR-062](../adr/0062-product-images.md#decision--where-they-show) ·
   [ADR-066](../adr/0066-covers-in-the-lookup.md#decision--an-items-result-shows-its-products-cover) ·
   [test](../../server/test/product-images.e2e-spec.ts) "adds images in order, the first the cover in the list" ·
   [test](../../server/test/lookup.e2e-spec.ts) "shows an item's cover, and none for other kinds" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "names an item's type, and none for other kinds" ·
   [test](../../client/e2e/product-images.spec.ts) "adds an image that becomes the cover in the list" ·
   partly tested ·
   MC-1801 · MC-2201

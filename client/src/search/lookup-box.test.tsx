@@ -23,6 +23,7 @@ const ANSWER: LookupResponse = {
           expiresAt: null,
           productId: null,
           coverFileId: null,
+          type: null,
           close: false,
         },
       ],
@@ -38,6 +39,7 @@ const ANSWER: LookupResponse = {
           expiresAt: null,
           productId: 'product-1',
           coverFileId: 'file-1',
+          type: 'good',
           close: true,
         },
       ],
@@ -104,6 +106,48 @@ describe('LookupBox', () => {
     expect(screen.getByText('close match')).toBeTruthy();
     // One question for the whole word, never for one character.
     expect(asked).toEqual(['bf']);
+  });
+
+  // #546 and #548: an item with no cover shows its type's icon, as Items
+  // does, and its type as a word beside its code; a lot neither.
+  it('shows an item’s type by its icon and its word', async () => {
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            ANSWER.groups[0],
+            {
+              kind: 'item',
+              results: [
+                {
+                  id: 'variant-2',
+                  title: 'Focus blend',
+                  detail: 'FOCUS-BLEND',
+                  status: null,
+                  expiresAt: null,
+                  productId: 'product-2',
+                  coverFileId: null,
+                  type: 'material',
+                  close: false,
+                },
+              ],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'focus');
+
+    const blend = await screen.findByRole('option', { name: /Focus blend/ });
+    expect(
+      blend.querySelector('[data-testid="GrainOutlinedIcon"]'),
+    ).not.toBeNull();
+    expect(blend).toHaveTextContent('FOCUS-BLEND · Raw material');
+    const lot = screen.getByRole('option', { name: /BF-2609/ });
+    expect(lot).toHaveTextContent(/^BF-2609FOCUS-60$/);
   });
 
   it('asks for one Chinese character alone', async () => {

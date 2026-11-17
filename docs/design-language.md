@@ -108,8 +108,8 @@ Each with what holds it in the code today, or the issue that will.
   row's second line beside its icon, and on the record the line under
   its title (#548, which gives each type its singular).
 - An icon that tells a kind is never alone, and a kind takes no status's
-  colour, since a kind is not a state (on All, Items' type is an icon
-  today, said only to a screen reader).
+  colour, since a kind is not a state: on Items' All, Stock and the
+  lookup, "VITC-100 · Product" (`NameAndCode`'s `withType`).
 
 ### Numbers
 

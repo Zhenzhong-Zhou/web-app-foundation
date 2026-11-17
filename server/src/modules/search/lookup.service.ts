@@ -32,6 +32,7 @@ import {
   partners,
   productionOrders,
   products,
+  type ProductType,
   productVariants,
   returnAuthorizations,
 } from '../../database/schema';
@@ -73,6 +74,8 @@ export interface LookupResult {
   productId: string | null;
   /** An item's product's cover (ADR-066); null for every other kind. */
   coverFileId: string | null;
+  /** An item's type, for its icon (#546); null for every other kind. */
+  type: ProductType | null;
   /** Found by similarity, after the exact matches (a typo). */
   close: boolean;
 }
@@ -142,6 +145,7 @@ const NONE = {
   expiresAt: sql<string | null>`null::text`,
   productId: sql<string | null>`null::uuid`,
   coverFileId: sql<string | null>`null::uuid`,
+  type: sql<ProductType | null>`null::text`,
 };
 
 /**
@@ -277,6 +281,7 @@ export class LookupService {
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(orders)
             .innerJoin(
@@ -332,6 +337,7 @@ export class LookupService {
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(invoices)
             .innerJoin(
@@ -373,6 +379,7 @@ export class LookupService {
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(creditNotes)
             .innerJoin(
@@ -413,6 +420,7 @@ export class LookupService {
               expiresAt: sql<string | null>`${lots.expiresAt}::text`,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(lots)
             .innerJoin(
@@ -459,6 +467,8 @@ export class LookupService {
               productId: products.id,
               // Its product's cover, as Products shows it (ADR-066).
               coverFileId: coverOf(),
+              // Its type, for its icon where it has no cover (#546).
+              type: sql<ProductType>`${products.type}`,
             })
             .from(productVariants)
             .innerJoin(
@@ -503,6 +513,7 @@ export class LookupService {
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(partners)
             .where(
@@ -536,6 +547,7 @@ export class LookupService {
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(productionOrders)
             .innerJoin(
@@ -576,6 +588,7 @@ export class LookupService {
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
+              type: NONE.type,
             })
             .from(returnAuthorizations)
             .innerJoin(

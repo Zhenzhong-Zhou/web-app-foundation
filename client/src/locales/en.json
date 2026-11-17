@@ -1792,7 +1792,6 @@
   "products.row.statusCodes": "{status} · {count} of {total, plural, one {# code} other {# codes}}",
   "products.row.statusOf": "{status}: where {name} stands",
   "products.row.stockOf": "{quantity}, stock of {name}",
-  "products.row.type": ", {type}",
   "products.row.variantsStock": "{count, plural, one {# variant} other {# variants}}",
   "products.search": "Search by name or code",
   "products.showing": "Showing {shown} of {total}",

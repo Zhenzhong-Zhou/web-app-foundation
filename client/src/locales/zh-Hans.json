@@ -1792,7 +1792,6 @@
   "products.row.statusCodes": "{status} · {total} 个编码中 {count} 个",
   "products.row.statusOf": "{status}：{name} 的库存情况",
   "products.row.stockOf": "{quantity}，{name} 的库存",
-  "products.row.type": "，{type}",
   "products.row.variantsStock": "{count, plural, other {# 个规格}}",
   "products.search": "按名称或编码搜索",
   "products.showing": "已显示 {shown} 个，共 {total} 个",

@@ -27,6 +27,7 @@ interface LookupResponse {
       title: string;
       detail: string | null;
       coverFileId: string | null;
+      type: string | null;
       close: boolean;
     }[];
   }[];
@@ -128,6 +129,29 @@ describe('Lookup (e2e)', () => {
     expect(titles(await lookup(alpha, '明德'), 'partner')).toEqual([
       '明德药房',
     ]);
+  });
+
+  // #546: an item's result carries its type, for its icon where it has
+  // no cover, as Items draws it; other kinds none.
+  it("names an item's type, and none for other kinds", async () => {
+    const alpha = await stocked('alpha');
+    await createVariant(alpha.agent, {
+      type: 'material',
+      name: 'Focus blend',
+      variant: { sku: 'FOCUS-BLEND' },
+    });
+
+    const items = (await lookup(alpha, 'focus')).find(
+      (group) => group.kind === 'item',
+    )?.results;
+    expect(
+      Object.fromEntries(items?.map((item) => [item.detail, item.type]) ?? []),
+    ).toEqual({ 'FOCUS-60': 'good', 'FOCUS-BLEND': 'material' });
+
+    const lots = (await lookup(alpha, 'BF-2609')).find(
+      (group) => group.kind === 'lot',
+    );
+    expect(lots?.results.every((result) => result.type === null)).toBe(true);
   });
 
   // ADR-066: an item's result carries its product's cover; others none.
