@@ -516,7 +516,7 @@ describe('Reorder points (e2e)', () => {
   }
 
   describe('the list', () => {
-    it('puts the low first, the furthest below its point as a share of it first, then the rest by SKU', async () => {
+    it('puts the low first, the furthest below its point as a share of it first, then the rest by code', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await sixItems(alpha);
 

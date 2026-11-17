@@ -210,7 +210,7 @@ file is kept is in the [README](README.md).
   reader's language.
   [ADR-085](../adr/0085-low-stock.md#decision--a-reorder-point-per-item-bought-or-made-with-a-rule-for-how-much) ·
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--reorder-buying-and-making-what-is-short) ·
-  [test](../../server/test/reorder-points.e2e-spec.ts) "puts the low first, the furthest below its point as a share of it first, then the rest by SKU" ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "puts the low first, the furthest below its point as a share of it first, then the rest by code" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "sorts by the suggested order, most first unless asked, the list’s own order breaking ties, page after page" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "writes the list as CSV, filtered as asked, with headers in the reader’s language, and records it" ·
   [Help](../../client/src/help/guides/en/inventory.md#order-or-make-what-is-low-order) ·
