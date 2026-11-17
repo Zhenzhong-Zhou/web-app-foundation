@@ -63,6 +63,10 @@ interface Screen {
 interface Seed {
   orderId: string;
   productId: string;
+  /** An item with nothing on hand, coming or needed, and no point. */
+  bareProductId: string;
+  /** Where the product's lot is. */
+  locationId: string;
   /** A role made from the Warehouse template, held by nobody. */
   roleId: string;
   viewerId: string;
@@ -258,6 +262,32 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   {
+    // A row opened to its place, the place to its lot: the opening
+    // button open, in the accent, and the rows it opened (ADR-093, R2).
+    name: 'inventory, a row opened to its places and lots',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page.getByRole('button', { name: /^1 place: show where / }).click();
+      await page
+        .getByRole('button', { name: /^1 lot: show the lots at / })
+        .click();
+    },
+    ready: (page) => page.getByRole('link', { name: 'A11Y-LOT-1' }),
+  },
+  {
+    // One place chosen: each header "here", the line saying Free and Held
+    // count every place (ADR-093, 20a).
+    name: 'inventory, one place chosen',
+    path: (seed) => `/inventory?locationId=${seed.locationId}`,
+    ready: (page) => page.getByRole('columnheader', { name: 'On hand here' }),
+  },
+  {
+    // Out in the Lot view: its empty state, with Group by Item (31a).
+    name: 'inventory, by lot with Out on',
+    path: () => '/inventory?group=lot&out=1',
+    ready: (page) => page.getByText('Items that are out have no lots.'),
+  },
+  {
     // A low row opened and chosen: its four boxes and the floating bar
     // (ADR-085).
     name: 'reorder points, a row opened and chosen',
@@ -442,7 +472,11 @@ const SCREENS: Screen[] = [
     name: 'items, a row ticked and the bar over it',
     path: () => '/items',
     open: async (page) => {
-      await page.getByRole('checkbox', { name: /^Select (?!every)/ }).check();
+      // The first of its two items, the bare one among them.
+      await page
+        .getByRole('checkbox', { name: /^Select (?!every)/ })
+        .first()
+        .check();
     },
     ready: (page) => page.getByRole('region', { name: 'Selected items' }),
   },
@@ -450,7 +484,11 @@ const SCREENS: Screen[] = [
     name: 'items, Set category',
     path: () => '/items',
     open: async (page) => {
-      await page.getByRole('checkbox', { name: /^Select (?!every)/ }).check();
+      // The first of its two items, the bare one among them.
+      await page
+        .getByRole('checkbox', { name: /^Select (?!every)/ })
+        .first()
+        .check();
       await page.getByRole('button', { name: 'Set category' }).click();
     },
     ready: (page) =>
@@ -476,6 +514,12 @@ const SCREENS: Screen[] = [
     name: 'an item',
     path: (seed) => `/items/${seed.productId}`,
     ready: heading,
+  },
+  {
+    // None on hand and no reorder point: the next step (ADR-093's states).
+    name: 'an item with none on hand, Where it stands',
+    path: (seed) => `/items/${seed.bareProductId}`,
+    ready: (page) => page.getByRole('button', { name: 'Set a reorder point' }),
   },
   {
     name: 'an item, Edit',
@@ -670,9 +714,13 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
     }),
   );
 
+  const bare = await createProduct(api, { name: 'E2E Bare Widget' });
+
   return {
     orderId: order.id,
     productId: product.id,
+    bareProductId: bare.id,
+    locationId: location.id,
     roleId: role.id,
     viewerId: await roleIdNamed(api, 'Viewer'),
   };
