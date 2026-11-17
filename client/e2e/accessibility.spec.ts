@@ -203,6 +203,15 @@ const SCREENS: Screen[] = [
     ready: (page) => joined(page).and(keyboardOn(page)),
   },
   {
+    // The bar's bell at a phone's width, its word above an unread count:
+    // its name holds the words it shows, in order (WCAG 2.5.3).
+    name: 'home at 390 px, the bell with an unread notice',
+    path: () => '/',
+    open: (page) => page.setViewportSize({ width: 390, height: 844 }),
+    ready: (page) =>
+      page.getByRole('button', { name: /^Notifications, \d+ unread$/ }),
+  },
+  {
     // Getting started dismissed, so Home has its main action and More.
     name: 'Home’s More menu, the keyboard on an entry',
     path: () => '/',

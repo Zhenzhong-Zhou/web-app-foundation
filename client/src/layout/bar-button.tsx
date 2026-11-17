@@ -6,6 +6,14 @@ import { RADIUS } from '../theme/tokens';
 import { BAR, wordsFit } from './bar';
 
 /**
+ * Between the word and a badge's count, so the words read from the
+ * button are "Notifications 1", which its name holds, not
+ * "Notifications1", which it does not (axe's label-content-name-mismatch,
+ * WCAG 2.5.3). A flex box draws no space of its own.
+ */
+const WORD_GAP = ' ';
+
+/**
  * A target in the top bar (ADR-091): below `lg` its icon with a short word
  * under it, the app's own name for it, as a phone's tab bar has; from `lg`
  * the icon alone, as before. The word comes first in the markup, drawn
@@ -66,6 +74,7 @@ export function BarButton({
       >
         {word}
       </Box>
+      {WORD_GAP}
       {icon}
     </IconButton>
   );
