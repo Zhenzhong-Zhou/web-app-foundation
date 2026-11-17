@@ -36,6 +36,8 @@ const CLOSED = {
 export function useOpenRows<T>(
   read: () => Promise<T>,
   again?: unknown,
+  /** Open, and reading, from the start: a row the address names open. */
+  startOpen = false,
 ): {
   open: boolean;
   rows: T | null;
@@ -44,7 +46,11 @@ export function useOpenRows<T>(
   toggle: () => void;
   retry: () => void;
 } {
-  const [state, setState] = useState<Opened<T>>({ ...CLOSED, ask: 0 });
+  const [state, setState] = useState<Opened<T>>(
+    startOpen
+      ? { ...CLOSED, open: true, reading: true, ask: 1 }
+      : { ...CLOSED, ask: 0 },
+  );
   const [seen, setSeen] = useState(again);
   if (seen !== again) {
     setSeen(again);

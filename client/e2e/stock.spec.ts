@@ -321,16 +321,18 @@ test('Stock, a lot, its code: the lot’s trace; Back, Stock', async ({
     'VC-LATE',
   );
 
+  // Stock as it was, the row open, as the address keeps it.
   await page.goBack();
-  await expect(page).toHaveURL(/\/inventory\?search=E2E-VITC$/);
+  await expect(page).toHaveURL(
+    new RegExp(`/inventory\\?search=E2E-VITC&open=${scene.vitamin.variantId}$`),
+  );
   await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
+  await expect(placesOf(page, 'E2E Vitamin C')).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
 });
 
-// Not built: a row's opening is not kept in the address, so Back from a
-// page it led to finds it closed, and focus is not put back on the row it
-// left by (ADR-093's Stock table: "`?open=` gains its code"; "Stock as it
-// was, focus on that row"; a lot's trace, Back: "the rows open"). For
-// step 22's review.
 /** A row's Actions opened, and the words of what its menu offers. */
 async function offers(page: Page, name: string | RegExp): Promise<string[]> {
   await page.getByRole('button', { name }).click();
@@ -441,7 +443,7 @@ test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing tha
   await viewer.dispose();
 });
 
-test.fixme('Stock, a row, 2 places: `?open=` gains its code; Back from the item’s page, the row still open, focus on that row', async ({
+test('Stock, a row, 2 places: `?open=` gains its code; Back from the item’s page, the row still open, focus on that row', async ({
   page,
   freshOrg,
 }) => {
@@ -586,9 +588,7 @@ test('Stock, Show 50 more: the next codes below; failing, the rows kept with Try
   );
 });
 
-// Not built: Stock's Show 50 more leaves focus on its button, which goes
-// (ADR-093's Stock table; Items' own does it). For step 22's review.
-test.fixme('Stock, Show 50 more: focus on the first new row', async ({
+test('Stock, Show 50 more: focus on the first new row', async ({
   page,
   freshOrg,
 }) => {

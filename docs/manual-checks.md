@@ -431,7 +431,10 @@ a second organization.
   undated D3-C07 last, each lot's code a link to its trace. VITC-100's
   Quarantine reads "Not usable: a place not available" in red. As Fatima
   Haddad (Sales), with no `locations.view`, the button reads "… lots" and
-  opens the lots alone, no place named.
+  opens the lots alone, no place named. Opened, the address gains
+  `open=` with its code; follow the item's name and come Back: the row is
+  still open and focus is on its name. Show 50 more puts focus on the
+  first new row.
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, each code with its type as a word,
   "D3-1000-120 · Product"; D3-B02's two rows read "1 of 2
@@ -6620,3 +6623,6 @@ first.
   Reorder and its Buy and Make, in three languages; the French notes of a
   run or an order filled from it, and the audit log's list, say Reorder:
   MC-4201 and MC-4214 reworded.
+- 2026-11-17: ADR-093's review, 52: a Stock row's opening kept in the
+  address, Back returning focus to it, and Show 50 more's focus on the
+  first new row: MC-312.

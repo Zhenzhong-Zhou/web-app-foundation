@@ -153,6 +153,10 @@ export function StockCodes({
   header,
   handlers,
   changes,
+  opens,
+  onOpen,
+  focusRow,
+  onLeave,
 }: {
   rows: StockCodeRow[] | null;
   loading: boolean;
@@ -163,9 +167,19 @@ export function StockCodes({
   handlers: StockHandlers;
   /** Bumped when stock changed, so an opened row reads its places again. */
   changes: number;
-}) {
+} & Returning) {
   const intl = useIntl();
-  const opened = { seesPlaces, place, includeEmpty, handlers, changes };
+  const opened = {
+    seesPlaces,
+    place,
+    includeEmpty,
+    handlers,
+    changes,
+    opens,
+    onOpen,
+    focusRow,
+    onLeave,
+  };
 
   return (
     <TableOrCards
@@ -238,7 +252,22 @@ export function StockCodes({
   );
 }
 
-interface Opened {
+/**
+ * The rows the address names open, `?open=`, and the row Back returns
+ * focus to (ADR-093's Stock table: Back, Stock as it was, focus on that
+ * row).
+ */
+interface Returning {
+  /** The codes whose rows are open. */
+  opens: string[];
+  onOpen: (variantId: string, open: boolean) => void;
+  /** The code whose name takes focus once its row is drawn. */
+  focusRow: string | null;
+  /** Left for the item's page from this code's row. */
+  onLeave: (variantId: string) => void;
+}
+
+interface Opened extends Returning {
   seesPlaces: boolean;
   place: Location | null;
   includeEmpty: boolean;
@@ -261,7 +290,33 @@ function readPlaces(
 
 /** A code's places and their lots, read as its row opens (R2). */
 function usePlaces(row: StockCodeRow, opened: Opened) {
-  return useOpenRows(() => readPlaces(row, opened), opened.changes);
+  return useOpenRows(
+    () => readPlaces(row, opened),
+    opened.changes,
+    opened.opens.includes(row.variantId),
+  );
+}
+
+/**
+ * The row's name, focused when Back returns to the row it was left from;
+ * and what keeps that row as left from: a click on a link to its item.
+ * The table row's own click keeps it as it opens the item.
+ */
+function useReturn(row: StockCodeRow, { focusRow, onLeave }: Opened) {
+  const name = useRef<HTMLAnchorElement>(null);
+  const returned = focusRow === row.variantId;
+  useEffect(() => {
+    if (returned) name.current?.focus();
+  }, [returned]);
+
+  const leaving = (event: MouseEvent) => {
+    const link = (event.target as HTMLElement).closest('a');
+    if (link?.getAttribute('href')?.startsWith('/items/')) {
+      onLeave(row.variantId);
+    }
+  };
+
+  return { name, leaving };
 }
 
 /**
@@ -299,6 +354,7 @@ function usePileChoice(
   /** The row's own button: closed, it no longer asks for a lot. */
   function toggle() {
     if (places.open) setChoosing(false);
+    opened.onOpen(row.variantId, !places.open);
     places.toggle();
   }
 
@@ -317,7 +373,10 @@ function usePileChoice(
       }
     }
     setChoosing(true);
-    if (!places.open) places.toggle();
+    if (!places.open) {
+      opened.onOpen(row.variantId, true);
+      places.toggle();
+    }
   }
 
   return { choosing, first, act, toggle };
@@ -389,6 +448,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const navigate = useNavigate();
   const places = usePlaces(row, opened);
   const choice = usePileChoice(row, opened, places);
+  const back = useReturn(row, opened);
   const controls = useId();
   const words = openWords(row, opened, intl);
   const name = nameOf(row);
@@ -400,12 +460,18 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
     if ((event.target as HTMLElement).closest('a, button, [role="menu"]')) {
       return;
     }
+    opened.onLeave(row.variantId);
     void navigate(`/items/${row.productId}`, { state: OFFER_BACK });
   };
 
   return (
     <>
-      <TableRow hover onClick={openItem} sx={{ cursor: 'pointer' }}>
+      <TableRow
+        hover
+        onClickCapture={back.leaving}
+        onClick={openItem}
+        sx={{ cursor: 'pointer' }}
+      >
         <TableCell>
           <NameAndCode
             name={name}
@@ -414,6 +480,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
             type={row.type}
             coverFileId={row.coverFileId}
             to={`/items/${row.productId}`}
+            linkRef={back.name}
           />
         </TableCell>
         <TableCell>
@@ -1094,6 +1161,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
   const places = usePlaces(row, opened);
   const choice = usePileChoice(row, opened, places);
+  const back = useReturn(row, opened);
   const controls = useId();
   const words = openWords(row, opened, intl);
   const name = nameOf(row);
@@ -1101,6 +1169,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
   return (
     <Box
       component="li"
+      onClickCapture={back.leaving}
       sx={{
         listStyle: 'none',
         p: 2,
@@ -1115,6 +1184,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
           type={row.type}
           coverFileId={row.coverFileId}
           to={`/items/${row.productId}`}
+          linkRef={back.name}
         />
         <Status row={row} />
         <Figure label={intl.formatMessage(HEADS.onHand)}>

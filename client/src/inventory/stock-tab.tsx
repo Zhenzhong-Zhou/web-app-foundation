@@ -48,10 +48,17 @@ import type { ProductType, StockCodeSort } from '../lib/api-names';
 import { nameAndCode } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
+import { leftFrom, returnedTo } from '../lib/return-focus';
 import { useCards } from '../lib/use-cards';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
-import { flag, id, oneOf, useListFilters } from '../lib/use-list-filters';
+import {
+  flag,
+  id,
+  oneOf,
+  useAddressWrite,
+  useListFilters,
+} from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort } from '../lib/use-list-sort';
 import { useLocations } from '../lib/use-locations';
@@ -229,6 +236,23 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       : null,
   );
   const list = byLot ? lots : codes;
+
+  // Show 50 more: focus on the first new code once it is there, as Items
+  // does (ADR-093's Stock table); a new list forgets it.
+  const [firstNew, setFirstNew] = useState<{
+    path: string | null;
+    index: number;
+  } | null>(null);
+  const newCode =
+    firstNew && firstNew.path === sorted
+      ? (codes.entries?.[firstNew.index]?.variantId ?? null)
+      : null;
+  const loadMore = () => {
+    if (!byLot) {
+      setFirstNew({ path: sorted, index: codes.entries?.length ?? 0 });
+    }
+    void list.loadMore();
+  };
   const rows: unknown[] | null = byLot ? lots.entries : codes.entries;
   const { reload } = list;
 
@@ -256,6 +280,11 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [receiving, setReceiving] = useState(false);
   const [params, setParams] = useSearchParams();
   const routed = useLocation();
+  // The rows open, in the address so Back finds them open (ADR-093's
+  // Stock table), and the row Back returns focus to, once.
+  const writeAddress = useAddressWrite();
+  const opens = (params.get('open') ?? '').split(',').filter(Boolean);
+  const [focusRow] = useState(() => returnedTo(routed.key));
   const asked = can('stock.move') && params.has('receive');
   const [moving, setMoving] = useState<{ mode: MoveMode; row: Pile } | null>(
     null,
@@ -758,6 +787,15 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   header={header}
                   handlers={handlers}
                   changes={changes}
+                  opens={opens}
+                  onOpen={(variantId, open) => {
+                    // Codes in the address, not a list a person reads.
+                    const next = opens.filter((each) => each !== variantId);
+                    if (open) next.push(variantId);
+                    writeAddress({ open: next.length ? String(next) : null });
+                  }}
+                  focusRow={newCode ?? focusRow}
+                  onLeave={(variantId) => leftFrom(routed.key, variantId)}
                 />
               )
             ) : (
@@ -834,7 +872,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           loading={list.loadingMore}
           failed={!!list.error}
           pageSize={PAGE_SIZE}
-          onLoadMore={list.loadMore}
+          onLoadMore={loadMore}
         />
       )}
 
