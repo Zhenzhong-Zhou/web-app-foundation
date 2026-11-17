@@ -488,6 +488,34 @@ describe('Reorder', () => {
     expect(asked.at(-1)?.searchParams.has('status')).toBe(false);
   });
 
+  // Review 71: Show 50 more, as every list says it; a next page that
+  // fails keeps the rows shown, with a line saying so and Try again.
+  it('shows fifty more, and keeps the rows when the next page fails', async () => {
+    const user = userEvent.setup();
+    open(['stock.view']);
+    server.use(
+      http.get('/api/v1/stock/reorder-points', ({ request }) =>
+        new URL(request.url).searchParams.get('before')
+          ? HttpResponse.json(
+              { message: 'Something went wrong' },
+              { status: 500 },
+            )
+          : HttpResponse.json({ entries: ROWS, nextCursor: 'next' }),
+      ),
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Show 50 more' }),
+    );
+    expect(
+      await screen.findByText('The next 50 could not be loaded.'),
+    ).toBeVisible();
+    expect(
+      screen.getAllByRole('link', { name: ROWS[0]!.productName }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible();
+  });
+
   // Points de commande are masculine: Tous, not Invoices' Toutes.
   it('says All in French as its own word', async () => {
     localStorage.setItem('language', 'fr-CA');

@@ -1224,11 +1224,17 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
 
       {!none && !!rows?.length && <Legend />}
 
-      <LoadMoreButton
-        hasMore={hasMore}
-        loading={loadingMore}
-        onLoadMore={loadMore}
-      />
+      {/* "Show 50 more", and a next page that failed said beneath the
+          rows kept, as every list says it (the design language). */}
+      {!failed && rows && (
+        <LoadMoreButton
+          hasMore={hasMore}
+          loading={loadingMore}
+          failed={!!error}
+          pageSize={PAGE_SIZE}
+          onLoadMore={loadMore}
+        />
+      )}
 
       {/* How many are chosen, said as it changes (WCAG 4.1.3): here, there
           while choosing is, since the bar comes and goes with what is. */}
