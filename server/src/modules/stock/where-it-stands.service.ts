@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { type SQL, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { todayOf } from '../../core/organizations/time-zone';
@@ -7,7 +7,13 @@ import type { ReorderSource } from '../../database/schema';
 import { products, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { codeFigures } from './code-figures';
+import {
+  codeFigures,
+  figureColumns,
+  type FigureRow,
+  figuresOf,
+  quantity,
+} from './code-figures';
 import { comingLinesOf, holdLinesOf, usableLotsOf } from './code-lines';
 import type {
   CodeStanding,
@@ -19,13 +25,7 @@ import type {
 } from './dto/where-it-stands-response.dto';
 import { namesIn } from './item-name';
 import { positionsOf } from './reorder-position';
-import type { ReorderStatus } from './reorder-status';
 import { placesOf } from './stock-grouped.service';
-
-/** Quantities as the API sends them: four places, as the columns hold them. */
-function quantity(column: SQL): SQL {
-  return sql`(${column})::numeric(18, 4)::text`;
-}
 
 /** What the reader may see beyond the figures (ADR-080; ADR-093). */
 export interface StandingSight {
@@ -37,29 +37,13 @@ export interface StandingSight {
   runs: boolean;
 }
 
-/** A code's row as the statement reads it. */
-type CodeRow = {
+/** A code's row as the statement reads it: its own columns and figures. */
+type CodeRow = FigureRow & {
   variant_id: string;
   sku: string;
   variant_name: string | null;
   unit_of_measure: string;
   is_active: boolean;
-  on_hand: string;
-  usable: string;
-  not_usable: string;
-  expired: string;
-  issued: string;
-  unavailable: string;
-  held: string;
-  free: string;
-  still_needed: string;
-  short: string;
-  coming: string;
-  coming_on: string | null;
-  position: string;
-  expires_first: string | null;
-  reorder_point: string | null;
-  status: ReorderStatus | null;
 };
 
 /** Each of a list's rows under its code, in the statement's order. */
@@ -115,22 +99,7 @@ export class WhereItStandsService {
           ${shown.variantName} as variant_name,
           ${productVariants.unitOfMeasure} as unit_of_measure,
           ${productVariants.isActive} and ${products.isActive} as is_active,
-          ${quantity(sql`f.on_hand`)} as on_hand,
-          ${quantity(sql`f.usable`)} as usable,
-          ${quantity(sql`f.not_usable`)} as not_usable,
-          ${quantity(sql`f.expired`)} as expired,
-          ${quantity(sql`f.issued`)} as issued,
-          ${quantity(sql`f.unavailable`)} as unavailable,
-          ${quantity(sql`f.held`)} as held,
-          ${quantity(sql`f.free`)} as free,
-          ${quantity(sql`f.still_needed`)} as still_needed,
-          ${quantity(sql`f.short`)} as short,
-          ${quantity(sql`f.coming`)} as coming,
-          f.coming_on::text as coming_on,
-          ${quantity(sql`f.position`)} as position,
-          f.expires_first::text as expires_first,
-          ${quantity(sql`f.reorder_point`)} as reorder_point,
-          f.status
+          ${figureColumns()}
         from ${productVariants}
         join ${products}
           on ${products.id} = ${productVariants.productId}
@@ -306,22 +275,8 @@ export class WhereItStandsService {
           variantName: row.variant_name,
           unitOfMeasure: row.unit_of_measure,
           isActive: row.is_active,
-          onHand: row.on_hand,
-          usable: row.usable,
-          notUsable: row.not_usable,
-          expired: row.expired,
-          issued: row.issued,
-          unavailable: row.unavailable,
-          held: row.held,
-          free: row.free,
+          ...figuresOf(row),
           stillNeeded: row.still_needed,
-          short: row.short,
-          coming: row.coming,
-          comingOn: row.coming_on,
-          position: row.position,
-          expiresFirst: row.expires_first,
-          reorderPoint: row.reorder_point,
-          status: row.status,
           source: points.get(row.variant_id)?.source ?? null,
           suggestion: points.get(row.variant_id)?.suggestion ?? null,
           heldOrders: holds.get(row.variant_id)?.length ?? 0,

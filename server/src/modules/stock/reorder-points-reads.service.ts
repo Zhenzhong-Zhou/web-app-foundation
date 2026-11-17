@@ -19,6 +19,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
+import { quantity } from './code-figures';
 import { comingLinesOf } from './code-lines';
 import type { ListReorderPointsDto } from './dto/list-reorder-points.dto';
 import type {
@@ -175,11 +176,6 @@ function countsOver(from: SQL, search: SQL[]): SQL {
     from ${from}
     ${whereOf(search)}
   `;
-}
-
-/** Quantities as the API sends them: four places, as the columns hold them. */
-function quantity(column: SQL): SQL {
-  return sql`(${column})::numeric(18, 4)::text`;
 }
 
 /**
@@ -561,10 +557,6 @@ export class ReorderPointsReadsService {
       const afterStatus = statusOf({
         position: after,
         reorderPoint: sql`p.reorder_point`,
-        rule: sql`p.rule`,
-        fixedQuantity: sql`p.fixed_quantity`,
-        maximumQuantity: sql`p.maximum_quantity`,
-        inDraft: sql`p.in_draft`,
         active: sql`p.status <> 'discontinued'`,
       });
 

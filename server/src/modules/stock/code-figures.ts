@@ -1,7 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
 import { openSaleLines } from './availability';
-import { statusOf } from './reorder-status';
+import { type ReorderStatus, statusOf } from './reorder-status';
 import { onHandByItem, onHandByUse } from './usable-stock';
 
 /**
@@ -160,10 +160,6 @@ export function codeFigures(
       case when f.has_point then ${statusOf({
         position: sql`f.position`,
         reorderPoint: sql`f.reorder_point`,
-        rule: sql`null`,
-        fixedQuantity: sql`null`,
-        maximumQuantity: sql`null`,
-        inDraft: sql`0`,
         active: sql`f.active`,
       })} end as status
     from worked f
@@ -269,4 +265,76 @@ function expiresFirstOf(
       and loc.is_available
     group by ep.variant_id
   `;
+}
+
+/** A quantity as the API sends it: four places, a string (ADR-025). */
+export function quantity(column: SQL): SQL {
+  return sql`(${column})::numeric(18, 4)::text`;
+}
+
+/**
+ * A code's figures as the API sends them, selected from `codeFigures`
+ * joined as `f`: the one projection Stock's rows and Where it stands read
+ * (review 32), their own columns beside it.
+ */
+export function figureColumns(): SQL {
+  return sql`
+    ${quantity(sql`f.on_hand`)} as on_hand,
+    ${quantity(sql`f.usable`)} as usable,
+    ${quantity(sql`f.not_usable`)} as not_usable,
+    ${quantity(sql`f.expired`)} as expired,
+    ${quantity(sql`f.issued`)} as issued,
+    ${quantity(sql`f.unavailable`)} as unavailable,
+    ${quantity(sql`f.held`)} as held,
+    ${quantity(sql`f.free`)} as free,
+    ${quantity(sql`f.still_needed`)} as still_needed,
+    ${quantity(sql`f.short`)} as short,
+    ${quantity(sql`f.coming`)} as coming,
+    f.coming_on::text as coming_on,
+    ${quantity(sql`f.position`)} as position,
+    f.expires_first::text as expires_first,
+    ${quantity(sql`f.reorder_point`)} as reorder_point,
+    f.status
+  `;
+}
+
+/** What figureColumns selects, as a statement reads it. */
+export type FigureRow = {
+  on_hand: string;
+  usable: string;
+  not_usable: string;
+  expired: string;
+  issued: string;
+  unavailable: string;
+  held: string;
+  free: string;
+  still_needed: string;
+  short: string;
+  coming: string;
+  coming_on: string | null;
+  position: string;
+  expires_first: string | null;
+  reorder_point: string | null;
+  status: ReorderStatus | null;
+};
+
+/** A code's figures as a response holds them, still needed aside. */
+export function figuresOf(row: FigureRow) {
+  return {
+    onHand: row.on_hand,
+    usable: row.usable,
+    notUsable: row.not_usable,
+    expired: row.expired,
+    issued: row.issued,
+    unavailable: row.unavailable,
+    held: row.held,
+    free: row.free,
+    short: row.short,
+    coming: row.coming,
+    comingOn: row.coming_on,
+    position: row.position,
+    expiresFirst: row.expires_first,
+    reorderPoint: row.reorder_point,
+    status: row.status,
+  };
 }

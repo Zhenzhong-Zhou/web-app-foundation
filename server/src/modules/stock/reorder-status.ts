@@ -48,7 +48,9 @@ export interface PositionFigures {
  * one rule for a code's status, which a code's figures (code-figures.ts)
  * and Reorder's position (reorder-position.ts) both read.
  */
-export function statusOf(f: PositionFigures): SQL {
+export function statusOf(
+  f: Pick<PositionFigures, 'position' | 'reorderPoint' | 'active'>,
+): SQL {
   return sql`case
     when not ${f.active} then 'discontinued'
     when ${f.position} <= 0 then 'out'

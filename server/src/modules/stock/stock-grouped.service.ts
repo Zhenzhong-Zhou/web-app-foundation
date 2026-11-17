@@ -29,7 +29,15 @@ import { t } from '../../i18n/translate';
 import { categoryPaths } from '../products/category-tree';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
-import { codeFigures, type SortedFigure, sortedFigure } from './code-figures';
+import {
+  codeFigures,
+  figureColumns,
+  type FigureRow,
+  figuresOf,
+  quantity,
+  type SortedFigure,
+  sortedFigure,
+} from './code-figures';
 import type {
   ListStockByCodeDto,
   ListStockByLotDto,
@@ -46,7 +54,6 @@ import type {
   StockPlace,
 } from './dto/stock-grouped-response.dto';
 import { namesIn, productNameOrder } from './item-name';
-import type { ReorderStatus } from './reorder-status';
 import {
   quickFiltersOf,
   stockRowsOf,
@@ -55,11 +62,6 @@ import {
 
 /** A page of Inventory, fifty codes or lots unless asked (ADR-093, R16). */
 const PAGE_SIZE = 50;
-
-/** Quantities as the API sends them: four places, as the columns hold them. */
-function quantity(column: SQL): SQL {
-  return sql`(${column})::numeric(18, 4)::text`;
-}
 
 /**
  * The codes a row per code lists before its quick filters (A2): every
@@ -276,7 +278,7 @@ function hereOf(
 }
 
 /** A code's row as the rows statement reads it. */
-type CodeRow = {
+type CodeRow = FigureRow & {
   variant_id: string;
   product_id: string;
   type: ProductType;
@@ -287,21 +289,6 @@ type CodeRow = {
   unit_of_measure: string;
   places: number;
   lots: number;
-  on_hand: string;
-  usable: string;
-  not_usable: string;
-  expired: string;
-  issued: string;
-  unavailable: string;
-  held: string;
-  free: string;
-  short: string;
-  coming: string;
-  coming_on: string | null;
-  position: string;
-  expires_first: string | null;
-  reorder_point: string | null;
-  status: ReorderStatus | null;
   needs_cost: boolean;
   stocked: boolean;
   here_on_hand: string | null;
@@ -558,21 +545,7 @@ export class StockGroupedService {
         ${productVariants.unitOfMeasure} as unit_of_measure,
         coalesce(pl.places, 0) as places,
         coalesce(pl.lots, 0) as lots,
-        ${quantity(sql`f.on_hand`)} as on_hand,
-        ${quantity(sql`f.usable`)} as usable,
-        ${quantity(sql`f.not_usable`)} as not_usable,
-        ${quantity(sql`f.expired`)} as expired,
-        ${quantity(sql`f.issued`)} as issued,
-        ${quantity(sql`f.unavailable`)} as unavailable,
-        ${quantity(sql`f.held`)} as held,
-        ${quantity(sql`f.free`)} as free,
-        ${quantity(sql`f.short`)} as short,
-        ${quantity(sql`f.coming`)} as coming,
-        f.coming_on::text as coming_on,
-        ${quantity(sql`f.position`)} as position,
-        f.expires_first::text as expires_first,
-        ${quantity(sql`f.reorder_point`)} as reorder_point,
-        f.status,
+        ${figureColumns()},
         ${needsCost} as needs_cost,
         -- Ever stocked where the row stands, an emptied pile counted: an
         -- item never stocked here has nothing to correct (ADR-093 v3).
@@ -612,21 +585,7 @@ export class StockGroupedService {
         unitOfMeasure: row.unit_of_measure,
         places: row.places,
         lots: row.lots,
-        onHand: row.on_hand,
-        usable: row.usable,
-        notUsable: row.not_usable,
-        expired: row.expired,
-        issued: row.issued,
-        unavailable: row.unavailable,
-        held: row.held,
-        free: row.free,
-        short: row.short,
-        coming: row.coming,
-        comingOn: row.coming_on,
-        position: row.position,
-        expiresFirst: row.expires_first,
-        reorderPoint: row.reorder_point,
-        status: row.status,
+        ...figuresOf(row),
         needsCost: row.needs_cost,
         stocked: row.stocked,
         here: locationId
