@@ -12,7 +12,9 @@ paths:
 
 It loads when Claude reads, writes or edits a file its `paths` match.
 
-What to keep true when changing stock's code.
+What to keep true when changing stock's code. What stock allows,
+refuses and works out is [`docs/rules/stock.md`](../../docs/rules/stock.md),
+updated with the rule it states (ADR-087).
 
 - **Quantity is a ledger.** Every change is a movement, written through
   `StockService.recordWithin` (or `record`, which opens the transaction)
@@ -23,8 +25,7 @@ What to keep true when changing stock's code.
   check (ADR-025).
 - **Quantities are `numeric(18, 4)` and strings end to end,** worked out
   in Postgres, never through `Number()`; the client formats with
-  `displayQuantity` or `formatQuantity` and adds nothing up (ADR-025;
-  [engineering.md, Server](../../docs/engineering.md#server)).
+  `displayQuantity` or `formatQuantity` and adds nothing up (ADR-025).
 - **Rules across tables live in the service,** asserted in e2e, never in
   a trigger: a lot exactly when the variant tracks lots, and a movement's
   locations leaves (ADR-023, ADR-024, ADR-025).
@@ -58,5 +59,4 @@ What to keep true when changing stock's code.
 - **A movement keeps its SKU as text;** an adjustment needs a note, and
   every movement its actor (ADR-023).
 - **Lot allocation is worked out in SQL,** earliest expiry first by
-  default (ADR-039). A lot's expiry shows as `ExpiryChip`
-  ([conventions.md, Shared pieces for screens](../../docs/conventions.md#shared-pieces-for-screens-adr-055)).
+  default (ADR-039).
