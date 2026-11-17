@@ -817,6 +817,7 @@
   "inventory.stock.noneOnHand": "None on hand",
   "inventory.stock.notAvailable": "Not usable: a place not available",
   "inventory.stock.notUsable": "{quantity} not usable",
+  "inventory.stock.nothingLow": "Nothing is low. An item with no reorder point is never low: set one on Reorder.",
   "inventory.stock.onHandHere": "On hand here",
   "inventory.stock.oneIntro": "Showing what is on {place}. Free and Held count every place, since a sale is not held on a shelf.",
   "inventory.stock.places": "{count, plural, one {# place} other {# places}}",

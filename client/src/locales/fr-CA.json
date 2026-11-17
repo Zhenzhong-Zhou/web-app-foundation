@@ -817,6 +817,7 @@
   "inventory.stock.noneOnHand": "Aucun en stock",
   "inventory.stock.notAvailable": "Inutilisable : emplacement non disponible",
   "inventory.stock.notUsable": "Inutilisable : {quantity}",
+  "inventory.stock.nothingLow": "Aucun article n’est sous son point de commande. Un article sans point de commande ne l’est jamais : fixez-en un dans Réapprovisionner.",
   "inventory.stock.onHandHere": "En stock ici",
   "inventory.stock.oneIntro": "Ce qui se trouve à {place}. Libre et Réservé comptent tous les emplacements, puisqu’une vente n’est pas réservée sur une tablette.",
   "inventory.stock.places": "{count, plural, one {# emplacement} other {# emplacements}}",

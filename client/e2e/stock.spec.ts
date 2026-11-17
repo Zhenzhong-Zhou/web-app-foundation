@@ -649,7 +649,7 @@ test('first use: “No stock yet.” with Receive stock', async ({
   ).toBeVisible();
 });
 
-test('first use, for a Viewer: no Receive stock to press', async ({
+test('first use, for a Viewer: no Receive stock to press, its line saying whom to ask', async ({
   page,
   freshOrg,
 }) => {
@@ -670,6 +670,14 @@ test('first use, for a Viewer: no Receive stock to press', async ({
   await expect(page.getByRole('button', { name: 'Receive stock' })).toHaveCount(
     0,
   );
+  // Where it would be, who can and whom to ask (ADR-093's states).
+  await expect(
+    page
+      .getByRole('main')
+      .getByText(
+        /^Your role does not include receiving stock\. To do more, ask .+\.$/,
+      ),
+  ).toBeVisible();
   await viewer.dispose();
 });
 
@@ -688,7 +696,7 @@ test('no results: the filters on named by their chips, one button clearing them'
   await expect(itemLinks(page)).toHaveCount(2);
 });
 
-test('done: Low stock at 0 says “Nothing is low.”', async ({
+test('done: Low stock at 0 says “Nothing is low.”, naming the items with no reorder point', async ({
   page,
   freshOrg,
 }) => {
@@ -698,7 +706,11 @@ test('done: Low stock at 0 says “Nothing is low.”', async ({
   await signInAs(page, freshOrg.api);
   await page.goto('/inventory?low=1');
 
-  await expect(page.getByText('Nothing is low.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Nothing is low. An item with no reorder point is never low: set one on Reorder.',
+    ),
+  ).toBeVisible();
   await expect(quick(page, 'Low stock')).toContainText('0');
 });
 

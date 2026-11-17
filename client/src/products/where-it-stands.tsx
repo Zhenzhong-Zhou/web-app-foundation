@@ -55,6 +55,7 @@ import { CreateRunDialog } from '../production/create-run-dialog';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import { TYPE } from '../theme/tokens';
+import { NO_RECEIVE } from './receive-line';
 import { displayWithUnit } from './units';
 
 /** A quantity of nothing, which the API always writes with four places. */
@@ -97,18 +98,6 @@ const NO_POINT = defineMessages({
   none: {
     id: 'products.stock.pointNone',
     defaultMessage: 'Your role does not include setting reorder points.',
-  },
-});
-
-const NO_RECEIVE = defineMessages({
-  ask: {
-    id: 'products.stock.receiveAsk',
-    defaultMessage:
-      'Your role does not include receiving stock. To do more, ask {names}.',
-  },
-  none: {
-    id: 'products.stock.receiveNone',
-    defaultMessage: 'Your role does not include receiving stock.',
   },
 });
 

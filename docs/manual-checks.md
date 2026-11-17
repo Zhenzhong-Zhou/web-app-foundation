@@ -409,6 +409,12 @@ a second organization.
   chip's words wrap rather than end in "…", its date under it; on a card,
   a lot's quantity and Actions go under the lot; the item's page puts Add
   variant under Variants; nothing scrolls sideways.
+- **MC-318** *(ADR-093)* Stock's first use and done. Register a new
+  organization and add a location: Stock says "No stock yet. Receive what
+  you have, …" with Receive stock. Invite a Viewer to it: in Receive
+  stock's place, "Your role does not include receiving stock. To do more,
+  ask …", naming the Owner. Receive one item and press Low stock: "Nothing
+  is low. An item with no reorder point is never low: set one on Reorder."
 - **MC-308** Inventory search finds a code by any part of its code, its
   item's name or a lot's code; a search with no match says no items match
   these filters, with Show all stock.
@@ -6599,3 +6605,6 @@ first.
   the run's link under Suggested: MC-4216.
 - 2026-11-17: ADR-093's review, 61: the Lot view says a lot is not usable
   to a reader without places: MC-313.
+- 2026-11-17: ADR-093's review, 62: Stock's first use names whom to ask
+  for a role that cannot receive, and its done state the items with no
+  reorder point: MC-318 added.

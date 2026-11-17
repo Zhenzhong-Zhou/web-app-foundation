@@ -817,6 +817,7 @@
   "inventory.stock.noneOnHand": "现在没有库存",
   "inventory.stock.notAvailable": "现有不可用：不可发货的库位",
   "inventory.stock.notUsable": "现有不可用 {quantity}",
+  "inventory.stock.nothingLow": "没有库存不足的物品。没有设置库存下限的物品不会显示为不足：请在补货中设置。",
   "inventory.stock.onHandHere": "此处现有",
   "inventory.stock.oneIntro": "显示{place}上的库存。可用和已预留按所有库位计算，因为销售订单预留的是物品，不是货架。",
   "inventory.stock.places": "{count} 个库位",

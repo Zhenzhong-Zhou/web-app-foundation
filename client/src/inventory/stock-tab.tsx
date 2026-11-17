@@ -18,6 +18,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import { WhomToAskRead } from '../account/whom-to-ask';
 import type {
   Location,
   ProductCategoryList,
@@ -57,6 +58,7 @@ import { useLocations } from '../lib/use-locations';
 import { leavesOf } from '../locations/tree';
 import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
+import { NO_RECEIVE } from '../products/receive-line';
 import { rem } from '../theme/rem';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
@@ -780,6 +782,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                         defaultMessage: 'Receive stock',
                       })}
                     </Button>
+                  ) : !can('stock.move') ? (
+                    // Where Receive stock would be, who can and whom to ask
+                    // (ADR-093's states; ADR-079).
+                    <WhomToAskRead {...NO_RECEIVE} />
                   ) : undefined
                 }
               >
@@ -800,9 +806,12 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                           'No stock yet. Receive what you have, and it shows here, one row per item.',
                       })
                     : low && !byLot && counts?.low === 0
-                      ? intl.formatMessage({
-                          id: 'inventory.reorder.nothingLow',
-                          defaultMessage: 'Nothing is low.',
+                      ? // Done, naming the items with no reorder point,
+                        // which are never low (ADR-093's states).
+                        intl.formatMessage({
+                          id: 'inventory.stock.nothingLow',
+                          defaultMessage:
+                            'Nothing is low. An item with no reorder point is never low: set one on Reorder.',
                         })
                       : byLot
                         ? intl.formatMessage({
