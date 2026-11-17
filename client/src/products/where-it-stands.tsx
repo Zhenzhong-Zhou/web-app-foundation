@@ -37,6 +37,7 @@ import {
 } from '../inventory/reorder-point-dialog';
 import { fieldQuantity } from '../inventory/reorder-points';
 import { LeftLine, ReorderStatusChip } from '../inventory/reorder-status';
+import { isZero } from '../lib/decimal';
 import {
   displayQuantity,
   formatDay,
@@ -56,9 +57,6 @@ import { rem } from '../theme/rem';
 import { TYPE } from '../theme/tokens';
 import { NO_RECEIVE } from './receive-line';
 import { displayWithUnit } from './units';
-
-/** A quantity of nothing, which the API always writes with four places. */
-const NONE = '0.0000';
 
 /** The part of Where it stands a link opens: Stock's rows and Items'. */
 const PARTS = ['#stock', '#held'] as const;
@@ -151,14 +149,14 @@ function Standing({ product }: { product: ProductDetail }) {
   const codes = (data?.codes ?? []).filter(
     (code) =>
       code.isActive ||
-      code.onHand !== NONE ||
-      code.coming !== NONE ||
-      code.stillNeeded !== NONE,
+      !isZero(code.onHand) ||
+      !isZero(code.coming) ||
+      !isZero(code.stillNeeded),
   );
   // Stock's "20 short" opens Held: the code short, else the one holding.
   const heldAt =
-    codes.find((code) => code.short !== NONE) ??
-    codes.find((code) => code.held !== NONE) ??
+    codes.find((code) => !isZero(code.short)) ??
+    codes.find((code) => !isZero(code.held)) ??
     codes[0];
 
   // Arrived at a part: focus on it once it is drawn, once per arrival.
@@ -290,9 +288,9 @@ function CodeBlock({
   const qty = (value: string) =>
     displayWithUnit(value, code.unitOfMeasure, intl);
   const empty =
-    code.onHand === NONE &&
-    code.coming === NONE &&
-    code.stillNeeded === NONE &&
+    isZero(code.onHand) &&
+    isZero(code.coming) &&
+    isZero(code.stillNeeded) &&
     code.reorderPoint === null;
 
   return (
@@ -469,7 +467,7 @@ function Actions({
   const quantity = code.suggestion && displayQuantity(code.suggestion);
 
   let main: ReactNode = null;
-  if (low && code.suggestion === NONE) {
+  if (low && code.suggestion !== null && isZero(code.suggestion)) {
     main = (
       <Line>
         {intl.formatMessage(
@@ -589,8 +587,8 @@ function Empty({ code, handlers }: { code: CodeStanding; handlers: Handlers }) {
 /** "12 not usable: expired, at a place not available", or all usable. */
 function NotUsableLine({ code }: { code: CodeStanding }) {
   const intl = useIntl();
-  if (code.onHand === NONE) return null;
-  if (code.notUsable === NONE) {
+  if (isZero(code.onHand)) return null;
+  if (isZero(code.notUsable)) {
     return (
       <Line>
         {intl.formatMessage({
@@ -601,17 +599,17 @@ function NotUsableLine({ code }: { code: CodeStanding }) {
     );
   }
   const reasons = [
-    code.expired !== NONE &&
+    !isZero(code.expired) &&
       intl.formatMessage({
         id: 'products.stock.reason.expired',
         defaultMessage: 'expired',
       }),
-    code.issued !== NONE &&
+    !isZero(code.issued) &&
       intl.formatMessage({
         id: 'products.stock.reason.issued',
         defaultMessage: 'issued to a run',
       }),
-    code.unavailable !== NONE &&
+    !isZero(code.unavailable) &&
       intl.formatMessage({
         id: 'products.stock.reason.unavailable',
         defaultMessage: 'at a place not available',
@@ -637,7 +635,7 @@ function NotUsableLine({ code }: { code: CodeStanding }) {
 /** What can still be promised, or what the orders want beyond it. */
 function FreeLine({ code }: { code: CodeStanding }) {
   const intl = useIntl();
-  if (code.short !== NONE) {
+  if (!isZero(code.short)) {
     return (
       <Line tone="error">
         {intl.formatMessage(
@@ -685,7 +683,7 @@ function HeldLines({ code }: { code: CodeStanding }) {
       {code.holds?.map((hold) => (
         <Line
           key={hold.orderId}
-          tone={hold.short !== NONE ? 'error' : undefined}
+          tone={!isZero(hold.short) ? 'error' : undefined}
         >
           <Link
             component={RouterLink}
@@ -697,7 +695,7 @@ function HeldLines({ code }: { code: CodeStanding }) {
           {[
             '',
             hold.partnerName,
-            hold.short !== NONE
+            !isZero(hold.short)
               ? intl.formatMessage(
                   {
                     id: 'products.stock.heldOf',
@@ -715,7 +713,7 @@ function HeldLines({ code }: { code: CodeStanding }) {
                   },
                   { held: displayQuantity(hold.held) },
                 ),
-            hold.short !== NONE &&
+            !isZero(hold.short) &&
               intl.formatMessage(
                 {
                   id: 'inventory.stock.short',
@@ -743,7 +741,7 @@ function ComingLines({ code }: { code: CodeStanding }) {
   const qty = (value: string) =>
     displayWithUnit(value, code.unitOfMeasure, intl);
 
-  if (code.coming === NONE) {
+  if (isZero(code.coming)) {
     return (
       <Line>
         {intl.formatMessage({
@@ -947,7 +945,7 @@ function ByPlace({
  */
 function UsableLots({ code }: { code: CodeStanding }) {
   const intl = useIntl();
-  if (code.lots!.length === 0 && code.notUsable === NONE) return null;
+  if (code.lots!.length === 0 && isZero(code.notUsable)) return null;
 
   return (
     <Stack spacing={1}>
@@ -991,7 +989,7 @@ function UsableLots({ code }: { code: CodeStanding }) {
           </Stack>
         ))}
       </Stack>
-      {code.notUsable !== NONE && (
+      {!isZero(code.notUsable) && (
         <Line tone="error">
           {intl.formatMessage(
             {

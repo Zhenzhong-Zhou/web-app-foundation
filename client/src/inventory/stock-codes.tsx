@@ -38,6 +38,7 @@ import { SortHeader } from '../components/sort-header';
 import { TableOrCards } from '../components/table-or-cards';
 import { api } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
+import { isZero } from '../lib/decimal';
 import {
   displayQuantity,
   formatDay,
@@ -116,9 +117,6 @@ const HEADS = defineMessages({
     defaultMessage: 'None on hand',
   },
 });
-
-/** A quantity of nothing, which the API always writes with four places. */
-const NONE = '0.0000';
 
 /**
  * Held's and Coming's places in a row under a code: two empty cells, gone
@@ -335,7 +333,7 @@ function onePile(row: StockCodeRow, { place }: Opened): boolean {
 
 /** On hand where the row stands: at the place chosen, or every place's. */
 function onHandOf(row: StockCodeRow, { place }: Opened): string {
-  return place ? (row.here?.onHand ?? NONE) : row.onHand;
+  return place ? (row.here?.onHand ?? '0') : row.onHand;
 }
 
 /**
@@ -371,7 +369,7 @@ function usePileChoice(
   async function act(mode: MoveMode) {
     // Nothing on hand: Correct the count opens the emptied places and lots
     // to choose one (ADR-093 v3).
-    const emptied = mode === 'adjust' && onHandOf(row, opened) === NONE;
+    const emptied = mode === 'adjust' && isZero(onHandOf(row, opened));
     if (!emptied && onePile(row, opened)) {
       try {
         const rows = places.rows ?? (await readPlaces(row, opened));
@@ -445,7 +443,7 @@ function openWords(
 function NothingToOpen({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
 
-  if (onHandOf(row, opened) !== NONE) return NO_VALUE;
+  if (!isZero(onHandOf(row, opened))) return NO_VALUE;
   return (
     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {intl.formatMessage(HEADS.noneOnHand)}
@@ -502,7 +500,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
           <Free row={row} />
         </TableCell>
         <TableCell align="right" sx={WIDE_ONLY}>
-          {row.held === NONE
+          {isZero(row.held)
             ? NO_VALUE
             : displayWithUnit(row.held, row.unitOfMeasure, intl)}
         </TableCell>
@@ -570,12 +568,12 @@ function openName(
 /** On hand, and its not-usable part under it (R1). */
 function OnHand({ row, here }: { row: StockCodeRow; here: boolean }) {
   const intl = useIntl();
-  const onHand = here ? (row.here?.onHand ?? NONE) : row.onHand;
+  const onHand = here ? (row.here?.onHand ?? '0') : row.onHand;
 
   return (
     <Stack sx={{ alignItems: 'flex-end' }}>
       <span>{displayWithUnit(onHand, row.unitOfMeasure, intl)}</span>
-      {!here && row.notUsable !== NONE && (
+      {!here && !isZero(row.notUsable) && (
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
             {
@@ -597,7 +595,7 @@ function Free({ row }: { row: StockCodeRow }) {
   return (
     <Stack sx={{ alignItems: 'flex-end' }}>
       <span>{displayWithUnit(row.free, row.unitOfMeasure, intl)}</span>
-      {row.short !== NONE && (
+      {!isZero(row.short) && (
         <Link
           component={RouterLink}
           to={whereItStands(row.productId, 'held')}
@@ -619,7 +617,7 @@ function Free({ row }: { row: StockCodeRow }) {
 function Coming({ row }: { row: StockCodeRow }) {
   const intl = useIntl();
 
-  if (row.coming === NONE) return NO_VALUE;
+  if (isZero(row.coming)) return NO_VALUE;
   return (
     <Stack sx={{ alignItems: 'flex-end' }}>
       <span>{displayWithUnit(row.coming, row.unitOfMeasure, intl)}</span>
@@ -669,7 +667,7 @@ function CodeActions({
   const intl = useIntl();
   const words = useMenuWords();
   const { handlers } = opened;
-  const nothing = onHandOf(row, opened) === NONE;
+  const nothing = isZero(onHandOf(row, opened));
   const reason = (doing: 'move' | 'ship' | 'send') =>
     nothing
       ? intl.formatMessage(

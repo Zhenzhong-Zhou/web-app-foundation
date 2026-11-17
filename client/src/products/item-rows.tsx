@@ -29,6 +29,7 @@ import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import type { ItemSort } from '../lib/api-names';
+import { isZero } from '../lib/decimal';
 import { displayQuantity, formatDate, SEPARATOR } from '../lib/format';
 import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -124,9 +125,6 @@ function useOnHand() {
         );
 }
 
-/** A quantity of nothing, as the API writes it. */
-const NONE = '0.0000';
-
 /** The link's target on touch: a fingertip's height (ADR-092, #170). */
 const TOUCH_TARGET = {
   [TOUCH]: { display: 'inline-flex', alignItems: 'center', minHeight: rem(44) },
@@ -138,7 +136,7 @@ const TOUCH_TARGET = {
  */
 function NotUsable({ item }: { item: ProductSummary }) {
   const intl = useIntl();
-  if (!item.notUsable || item.notUsable === NONE) return null;
+  if (!item.notUsable || isZero(item.notUsable)) return null;
   return (
     <Box
       component="span"

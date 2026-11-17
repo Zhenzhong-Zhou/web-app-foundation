@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromScaled, sumDecimals, toScaled } from './decimal';
+import { fromScaled, isZero, sumDecimals, toScaled } from './decimal';
 
 describe('sumDecimals', () => {
   it('adds exactly where a double would not', () => {
@@ -27,5 +27,18 @@ describe('fromScaled', () => {
   it('pads small values to four places', () => {
     expect(fromScaled(5n)).toBe('0.0005');
     expect(fromScaled(0n)).toBe('0.0000');
+  });
+});
+
+describe('isZero', () => {
+  // However the API writes nothing, never by its text (review 26).
+  it('says nothing is zero, however many places it is written with', () => {
+    expect(isZero('0.0000')).toBe(true);
+    expect(isZero('0')).toBe(true);
+    expect(isZero('0.00')).toBe(true);
+    expect(isZero('0.0001')).toBe(false);
+    expect(isZero('12.0000')).toBe(false);
+    // A negative position is not nothing.
+    expect(isZero('-20.0000')).toBe(false);
   });
 });

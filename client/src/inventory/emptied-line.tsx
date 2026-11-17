@@ -2,6 +2,7 @@ import { Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import type { StockPile } from '../api/types.gen';
+import { isZero } from '../lib/decimal';
 import { formatDay } from '../lib/format';
 
 /**
@@ -10,7 +11,7 @@ import { formatDay } from '../lib/format';
  */
 export function EmptiedLine({ pile }: { pile: StockPile }) {
   const intl = useIntl();
-  if (!pile.emptiedOn || pile.quantity !== '0.0000') return null;
+  if (!pile.emptiedOn || !isZero(pile.quantity)) return null;
 
   return (
     <Typography variant="body2" sx={{ color: 'text.secondary' }}>

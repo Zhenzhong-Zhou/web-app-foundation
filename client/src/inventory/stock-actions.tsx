@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
+import { isZero } from '../lib/decimal';
 import { itemName } from '../lib/format';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
@@ -51,7 +52,7 @@ export function StockActions({
   const words = useMenuWords();
   // An emptied lot, shown with Include empty or to correct it: nothing to
   // move, ship or send, only its count to correct (ADR-093 v3).
-  const empty = row.quantity === NONE;
+  const empty = isZero(row.quantity);
   const nothing = empty
     ? row.lotId
       ? intl.formatMessage({
@@ -140,9 +141,6 @@ export function StockActions({
     />
   );
 }
-
-/** A quantity of nothing, as the API writes it. */
-const NONE = '0.0000';
 
 /**
  * The pile's Actions named by what tells it from its neighbours, as v3
