@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import type { ReorderPointRow } from '../api/types.gen';
 import { ActionsMenu } from '../components/actions-menu';
+import { itemName } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 
 /**
@@ -26,11 +27,8 @@ export function ReorderPointActions({
   return (
     <ActionsMenu
       name={intl.formatMessage(
-        {
-          id: 'inventory.reorder.actions',
-          defaultMessage: 'Actions for {sku}’s reorder point',
-        },
-        { sku: row.sku },
+        { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
+        { item: itemName(row.productName, row.variantName) },
       )}
       actions={[
         {

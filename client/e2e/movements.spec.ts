@@ -1,7 +1,12 @@
 import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
-import { createLocation, createProduct, signInAs } from './support/api';
+import {
+  createLocation,
+  createProduct,
+  type SeededProduct,
+  signInAs,
+} from './support/api';
 
 /**
  * Two screens that read the same ledger.
@@ -95,14 +100,14 @@ async function seedLedger(
  */
 async function rowAction(
   page: Page,
-  sku: string,
+  product: SeededProduct,
   location: string,
   action: string,
 ) {
-  const row = page.getByRole('row', { name: new RegExp(sku) });
+  const row = page.getByRole('row', { name: new RegExp(product.sku) });
   await row.getByRole('button', { name: /show where/ }).click();
   await page
-    .getByRole('button', { name: `Actions for ${sku} at ${location}` })
+    .getByRole('button', { name: `Actions for ${product.name} at ${location}` })
     .click();
   // Exactly: Move is inside Movements.
   await page.getByRole('menuitem', { name: action, exact: true }).click();
@@ -117,7 +122,7 @@ test('ships stock out and reduces the count', async ({ page, api }) => {
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, location.name, 'Ship out');
+  const dialog = await rowAction(page, product, location.name, 'Ship out');
   await dialog.getByLabel('Quantity').fill('4');
   await dialog.getByRole('button', { name: 'Ship' }).click();
 
@@ -132,7 +137,7 @@ test('refuses to ship more than the shelf holds', async ({ page, api }) => {
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, location.name, 'Ship out');
+  const dialog = await rowAction(page, product, location.name, 'Ship out');
   await dialog.getByLabel('Quantity').fill('6');
   await dialog.getByRole('button', { name: 'Ship' }).click();
 
@@ -165,7 +170,7 @@ test('moves stock between locations without changing the total', async ({
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, from.name, 'Move');
+  const dialog = await rowAction(page, product, from.name, 'Move');
   await dialog.getByLabel('To').click();
   await page.getByRole('option', { name: to.name }).click();
   await dialog.getByLabel('Quantity').fill('15');
@@ -192,7 +197,7 @@ test('corrects a count and requires an explanation', async ({ page, api }) => {
 
   const dialog = await rowAction(
     page,
-    product.sku,
+    product,
     location.name,
     'Correct the count',
   );

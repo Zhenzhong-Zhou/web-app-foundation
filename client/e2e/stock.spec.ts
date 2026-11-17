@@ -356,9 +356,11 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
   await stockFrom(page);
 
   // An item's: Movements, what changes stock, and its reorder point.
-  const magnesium = page.getByRole('button', { name: 'Actions for E2E-MAG' });
+  const magnesium = page.getByRole('button', {
+    name: 'Actions for E2E Magnesium',
+  });
   await expect(magnesium).toHaveText('Actions');
-  expect(await offers(page, 'Actions for E2E-MAG')).toEqual([
+  expect(await offers(page, 'Actions for E2E Magnesium')).toEqual([
     'Movements',
     'Move',
     'Ship out',
@@ -366,7 +368,7 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
     'Correct the count',
     'Set a reorder point',
   ]);
-  expect(await offers(page, 'Actions for E2E-VITC')).toContain(
+  expect(await offers(page, 'Actions for E2E Vitamin C')).toContain(
     'Change reorder point',
   );
 
@@ -380,12 +382,12 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
 
   // Four lots in two places: the row opens to them, says to choose one,
   // focus on the first lot's Actions.
-  await page.getByRole('button', { name: 'Actions for E2E-VITC' }).click();
+  await page.getByRole('button', { name: 'Actions for E2E Vitamin C' }).click();
   await page.getByRole('menuitem', { name: 'Move', exact: true }).click();
   await expect(page.getByText('Choose the lot.')).toBeVisible();
   await expect(
     page.getByRole('button', {
-      name: `Actions for E2E-VITC, lot VC-SOON, at ${scene.shelfA.name}`,
+      name: `Actions for lot VC-SOON at ${scene.shelfA.name}`,
     }),
   ).toBeFocused();
   await expect(lotLinks(page)).toHaveText([
@@ -397,10 +399,7 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
 
   // A lot's: what moves it, its details and trace, and Movements.
   expect(
-    await offers(
-      page,
-      `Actions for E2E-VITC, lot VC-LATE, at ${scene.shelfA.name}`,
-    ),
+    await offers(page, `Actions for lot VC-LATE at ${scene.shelfA.name}`),
   ).toEqual([
     'Move',
     'Ship out',
@@ -412,7 +411,7 @@ test('Stock, any row, Actions: an item’s, a place’s and a lot’s, each in w
   ]);
 
   // A place's: its Movements there.
-  const placeActions = `Actions for E2E-VITC at ${scene.shelfB.name}`;
+  const placeActions = `Actions for E2E Vitamin C at ${scene.shelfB.name}`;
   expect(await offers(page, placeActions)).toEqual(['Movements']);
   await page.getByRole('button', { name: placeActions }).click();
   await page.getByRole('menuitem', { name: 'Movements' }).click();
@@ -437,12 +436,14 @@ test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing tha
   await signInAs(page, viewer);
   await stockFrom(page);
 
-  expect(await offers(page, 'Actions for E2E-MAG')).toEqual(['Movements']);
+  expect(await offers(page, 'Actions for E2E Magnesium')).toEqual([
+    'Movements',
+  ]);
   await placesOf(page, 'E2E Vitamin C').click();
   await lotsAt(page, 'E2E Shelf A2').click();
-  expect(
-    await offers(page, 'Actions for E2E-VITC, lot VC-LATE, at E2E Shelf A2'),
-  ).toEqual(['Trace lot', 'Movements']);
+  expect(await offers(page, 'Actions for lot VC-LATE at E2E Shelf A2')).toEqual(
+    ['Trace lot', 'Movements'],
+  );
   await viewer.dispose();
 });
 

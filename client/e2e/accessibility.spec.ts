@@ -310,7 +310,7 @@ const SCREENS: Screen[] = [
     path: () => '/inventory?tab=reorder',
     open: async (page) => {
       await page
-        .getByRole('button', { name: /^Actions for .* reorder point$/ })
+        .getByRole('button', { name: /^Actions for / })
         .first()
         .click();
       await page.getByRole('menuitem', { name: 'Edit reorder point' }).click();

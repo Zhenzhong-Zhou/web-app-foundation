@@ -46,6 +46,7 @@ import {
   nameAndCode,
   NO_VALUE,
 } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { useOpenRows } from '../lib/use-open-rows';
@@ -229,7 +230,13 @@ export function StockCodes({
                   }
                   {...header('expires')}
                 />
-                <TableCell>{intl.formatMessage(HEADS.actions)}</TableCell>
+                {/* Every header named (R6), this one to a screen reader:
+                    each row's button says its word. */}
+                <TableCell padding="checkbox">
+                  <Box component="span" sx={HIDDEN}>
+                    {intl.formatMessage(HEADS.actions)}
+                  </Box>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -745,11 +752,8 @@ function CodeActions({
   return (
     <ActionsMenu
       name={intl.formatMessage(
-        {
-          id: 'inventory.stock.actions',
-          defaultMessage: 'Actions for {sku}',
-        },
-        { sku: row.sku },
+        { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
+        { item: nameOf(row) },
       )}
       actions={actions}
     />
@@ -1031,10 +1035,10 @@ function PlaceActions({
     <ActionsMenu
       name={intl.formatMessage(
         {
-          id: 'inventory.actions.label',
-          defaultMessage: 'Actions for {sku} at {location}',
+          id: 'inventory.actions.itemAt',
+          defaultMessage: 'Actions for {item} at {place}',
         },
-        { sku: row.sku, location: where },
+        { item: nameOf(row), place: where },
       )}
       actions={[
         {

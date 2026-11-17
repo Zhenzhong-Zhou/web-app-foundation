@@ -277,7 +277,7 @@ describe('InventoryPage', () => {
       renderAt('/inventory', ['stock.view']);
 
       const actions = await screen.findByRole('button', {
-        name: 'Actions for VITD-60',
+        name: 'Actions for Vitamin D (60ct)',
       });
       expect(actions).toHaveAttribute('aria-haspopup', 'menu');
       expect(actions).toHaveAttribute('aria-expanded', 'false');
@@ -306,7 +306,9 @@ describe('InventoryPage', () => {
       answer([row]);
       renderAt('/inventory', ['stock.view', 'locations.view', ...permissions]);
       await user.click(
-        await screen.findByRole('button', { name: 'Actions for VITD-60' }),
+        await screen.findByRole('button', {
+          name: 'Actions for Vitamin D (60ct)',
+        }),
       );
       return { user, menu: await screen.findByRole('menu') };
     }
@@ -373,7 +375,9 @@ describe('InventoryPage', () => {
       const user = userEvent.setup();
       renderAt('/inventory', ['stock.view', 'stock.reorder']);
       await user.click(
-        await screen.findByRole('button', { name: 'Actions for VITD-60' }),
+        await screen.findByRole('button', {
+          name: 'Actions for Vitamin D (60ct)',
+        }),
       );
       await user.click(
         within(await screen.findByRole('menu')).getByRole('menuitem', {
@@ -403,7 +407,7 @@ describe('InventoryPage', () => {
       await vi.waitFor(() =>
         expect(
           screen.getByRole('button', {
-            name: 'Actions for VITD-60, lot NN-2401, at Quarantine',
+            name: 'Actions for lot NN-2401 at Quarantine',
           }),
         ).toHaveFocus(),
       );
@@ -456,7 +460,7 @@ describe('InventoryPage', () => {
       );
       await user.click(
         await screen.findByRole('button', {
-          name: 'Actions for VITD-60 at Shelf A',
+          name: 'Actions for Vitamin D (60ct) at Shelf A',
         }),
       );
       await user.click(
@@ -504,7 +508,9 @@ describe('InventoryPage', () => {
       ]);
 
       expect(
-        await screen.findByRole('button', { name: 'Actions for VITD-60' }),
+        await screen.findByRole('button', {
+          name: 'Actions for Vitamin D (60ct)',
+        }),
       ).toBeVisible();
       expect(screen.queryByText('None on hand')).not.toBeInTheDocument();
     });
@@ -528,7 +534,7 @@ describe('InventoryPage', () => {
       );
       await user.click(
         screen.getByRole('button', {
-          name: 'Actions for VITD-60, lot NN-2410-07, at Shelf A',
+          name: 'Actions for lot NN-2410-07 at Shelf A',
         }),
       );
       return screen.findByRole('menu');

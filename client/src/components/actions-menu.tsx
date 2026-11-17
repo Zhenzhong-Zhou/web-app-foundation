@@ -1,4 +1,3 @@
-import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import { Button, Menu, MenuItem } from '@mui/material';
 import { type Ref, useId, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -14,7 +13,8 @@ export interface Action {
 
 /**
  * A row's Actions, in words (the design language's Rows; ADR-093, R6): a
- * button reading "Actions", named for its row ("Actions for VITC-100"),
+ * button reading "Actions", named for its row ("Actions for Vitamin C",
+ * "Actions for lot VC-0302 at Shelf A2"),
  * that opens a menu of what the reader may do there. Nothing to offer, no
  * button.
  *
@@ -43,17 +43,28 @@ export function ActionsMenu({
 
   return (
     <>
+      {/* The word in grey, no border; the tint and the accent only under
+          the pointer or the keyboard's focus, centred on the word, as v2's
+          board draws it (ADR-093). */}
       <Button
         ref={buttonRef}
         size="small"
         variant="text"
-        endIcon={<ArrowDropDown />}
         aria-label={name}
         aria-haspopup="menu"
         aria-expanded={!!anchor}
         aria-controls={anchor ? menuId : undefined}
         onClick={(event) => setAnchor(event.currentTarget)}
-        sx={{ whiteSpace: 'nowrap' }}
+        sx={{
+          whiteSpace: 'nowrap',
+          minWidth: 0,
+          px: 1,
+          color: 'text.secondary',
+          '&:hover, &.Mui-focusVisible, &[aria-expanded="true"]': {
+            color: 'primary.main',
+            bgcolor: 'action.hover',
+          },
+        }}
       >
         {intl.formatMessage({
           id: 'common.actions',

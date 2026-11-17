@@ -417,7 +417,7 @@ describe('Reorder', () => {
       await screen.findByRole('button', { name: 'Add reorder point' }),
     ).toBeInTheDocument();
     const actions = await screen.findByRole('button', {
-      name: 'Actions for D3-1000’s reorder point',
+      name: 'Actions for Vitamin D3',
     });
     // Says it opens a menu, and whether it is open.
     expect(actions).toHaveAttribute('aria-haspopup', 'menu');

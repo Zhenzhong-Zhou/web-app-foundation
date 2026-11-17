@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
+import { itemName } from '../lib/format';
 import type { MoveMode } from './move-stock-dialog';
 import type { HistoryOf } from './movement-history-dialog';
 
@@ -140,34 +141,40 @@ export function StockActions({
 }
 
 /**
- * The pile's Actions named by what tells it from its neighbours: "Actions
- * for VITC-100, lot VC-0302, at Shelf A2"; a reader without places hears
- * the lot alone (A6).
+ * The pile's Actions named by what tells it from its neighbours, as v3
+ * names them (ADR-093): "Actions for lot VC-0302 at Shelf A2"; a code not
+ * tracked by lot, "Actions for Focus, 60 capsules at Shelf A2"; a reader
+ * without places hears the lot or the item alone (A6).
  */
 function pileActionsName(row: Pile, intl: IntlShape): string {
-  if (row.locationName === null) {
-    return intl.formatMessage(
-      {
-        id: 'inventory.actions.labelLot',
-        defaultMessage:
-          '{lot, select, none {Actions for {sku}} other {Actions for {sku}, lot {lot}}}',
-      },
-      { sku: row.sku, lot: row.lotCode ?? 'none' },
-    );
+  const item = itemName(row.productName, row.variantName);
+  if (row.lotCode) {
+    return row.locationName === null
+      ? intl.formatMessage(
+          {
+            id: 'inventory.actions.lot',
+            defaultMessage: 'Actions for lot {lot}',
+          },
+          { lot: row.lotCode },
+        )
+      : intl.formatMessage(
+          {
+            id: 'inventory.actions.lotAt',
+            defaultMessage: 'Actions for lot {lot} at {place}',
+          },
+          { lot: row.lotCode, place: row.locationName },
+        );
   }
-  return row.lotCode
+  return row.locationName === null
     ? intl.formatMessage(
-        {
-          id: 'inventory.actions.labelLotAt',
-          defaultMessage: 'Actions for {sku}, lot {lot}, at {location}',
-        },
-        { sku: row.sku, lot: row.lotCode, location: row.locationName },
+        { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
+        { item },
       )
     : intl.formatMessage(
         {
-          id: 'inventory.actions.label',
-          defaultMessage: 'Actions for {sku} at {location}',
+          id: 'inventory.actions.itemAt',
+          defaultMessage: 'Actions for {item} at {place}',
         },
-        { sku: row.sku, location: row.locationName },
+        { item, place: row.locationName },
       );
 }

@@ -259,9 +259,7 @@ test('Reorder, a row’s menu, Stock of the item: Where it stands', async ({
   await signInAs(page, freshOrg.api);
   await page.goto('/inventory?tab=reorder');
 
-  await page
-    .getByRole('button', { name: 'Actions for E2E-VITC’s reorder point' })
-    .click();
+  await page.getByRole('button', { name: 'Actions for E2E Vitamin C' }).click();
   await page.getByRole('menuitem', { name: 'Stock of the item' }).click();
   await expect(page).toHaveURL(new RegExp(`/items/${scene.vitamin.id}#stock$`));
   await expect(standing(page)).toBeVisible();

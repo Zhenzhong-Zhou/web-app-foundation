@@ -501,7 +501,9 @@ a second organization.
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
 - **MC-310** *(ADR-093)* Each row's Actions, a button in words, by
-  permission. As a Viewer: an item's Actions offer Movements; a place's,
+  permission: the word grey with no border, tinted in the accent only
+  under the pointer or the keyboard's focus; VoiceOver names it "Actions
+  for" the item, or "Actions for lot …" at its place. As a Viewer: an item's Actions offer Movements; a place's,
   Movements at that place, its History titled "… at" the place; a lot's,
   Movements and Trace lot; nothing that changes stock. As an Admin, an
   item's Actions also offer Move, Ship out, Send sample and Correct the
@@ -4275,8 +4277,8 @@ site, after a deploy that changes the setting, the route or the relay.
   the reorder point, as Edit from a row's Actions opens.
 - **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's
   Actions, a button in words, holds Edit reorder point, Stock of the item
-  and Remove reorder point, in red; VoiceOver reads it as "Actions for
-  … reorder point", a menu button, collapsed, then expanded once open.
+  and Remove reorder point, in red; VoiceOver reads it as "Actions for"
+  the item, a menu button, collapsed, then expanded once open.
   ZINC-60's row has Actions and no chevron. Edit on ELDER-250 opens
   with Bought, 96 and Up to a maximum of 192; make it 150 and Save: the
   row's line and suggestion change, and the dialog closes. Edit's foot has
@@ -6648,3 +6650,7 @@ first.
   their cards and the Lot view, the name is the one way into an item; a
   click elsewhere on a row or card opens nothing: MC-208, MC-309 and
   MC-4202 reworded; the design language's Rows says so.
+- 2026-11-17: ADR-093 v3, its second change: the Actions button as v2's
+  board draws it, grey, no border, tinted under the pointer or focus,
+  named for the item or the lot at its place, its column's header for a
+  screen reader alone: MC-310 and MC-4209.
