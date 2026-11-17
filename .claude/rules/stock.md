@@ -40,11 +40,11 @@ What to keep true when changing stock's code.
   what expires first and the status; every screen reads it, never a
   sum of its own (ADR-093, R1, R20). Its parts are unioned and grouped
   by item, never joined, stock summed per place before the place is
-  joined (34a); held is `least(usable, still needed)`, an order's lines
+  joined; held is `least(usable, still needed)`, an order's lines
   and the guard read `holdsSql`.
 - **Inventory's grouped read is `stock-grouped.service.ts`:** a row per
   code from `codeFigures`, a figure sort `sortedFigure` unioned with
-  the codes, never joined (29a); the Lot view from `stockRowsOf`'s rows,
+  the codes, never joined; the Lot view from `stockRowsOf`'s rows,
   as Home counts them; a place's name only with `locations.view`
   (ADR-093).
 - **The lines behind a code's figures are `code-lines.ts`:** Coming's
