@@ -37,12 +37,13 @@ La tuile **Expire bientôt** de l’accueil ouvre cette vue, les plus proches d�
 ## Recevoir du stock {#receive}
 
 1. Appuyez sur **Recevoir du stock**.
-2. Choisissez l’article, et l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
-3. Saisissez la quantité, dans l’unité de l’article.
-4. Pour un article suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Chaque nouvelle réception du même lot augmente sa quantité.
-5. Appuyez sur **Recevoir**.
+2. Choisissez l’article. S’il est encore à venir sur un achat, Inventaire demande d’abord **De quelle livraison s’agit-il?**, avec chaque commande, ce qui reste à venir et quand : choisissez sa commande et appuyez sur **Continuer**; la fenêtre **Recevoir** de cette commande s’ouvre, avec ce qui reste à venir déjà saisi. Choisissez **Hors commande** pour du stock arrivé sans commande, et continuez ici.
+3. Choisissez l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
+4. Saisissez la quantité, dans l’unité de l’article.
+5. Pour un article suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Chaque nouvelle réception du même lot augmente sa quantité.
+6. Appuyez sur **Recevoir**.
 
-Les marchandises envoyées par un fournisseur pour un achat sont plutôt reçues sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’un coût n’est pas défini dans [Valeur du stock](/costs); il figure alors sous **En attente d’un coût**.
+Les marchandises envoyées par un fournisseur pour un achat sont reçues sur sa commande, pour que la commande se ferme et que le stock ne soit compté qu’une fois : ici en la choisissant, ou dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’un coût n’est pas défini dans [Valeur du stock](/costs); il figure alors sous **En attente d’un coût**.
 
 ## Déplacer, sortir du stock ou corriger {#move}
 

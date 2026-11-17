@@ -12,7 +12,7 @@ import {
   uniqueEmail,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
-import { receive, reorderAt, stockScene } from './support/stock';
+import { orderOf, receive, reorderAt, stockScene } from './support/stock';
 
 /**
  * Inventory's Stock tab (ADR-093), row by row: each row of the ADR's
@@ -473,6 +473,61 @@ test('Stock, an item with nothing on hand, Actions: what needs stock greyed with
     .getByRole('menuitem', { name: /^Correct the count…/ });
   await expect(correct).toHaveAttribute('aria-disabled', 'true');
   await expect(correct).toContainText('Never stocked here: receive it first');
+});
+
+// ADR-093, v3: ordered stock is received on its order, never beside it,
+// which would leave the order open and count the stock twice.
+test('Stock, an item still to come: Receive stock… asks which delivery; received on its order, Coming falls and the line is fulfilled', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  const purchase = await orderOf(
+    freshOrg.api,
+    scene.partner,
+    'purchase',
+    scene.magnesium,
+    '40',
+  );
+  const coming = async () => {
+    const answer = await freshOrg.api.get('/v1/stock/by-code?search=E2E-MAG');
+    const { entries } = (await answer.json()) as {
+      entries: { sku: string; coming: string }[];
+    };
+    return entries.find((row) => row.sku === 'E2E-MAG')?.coming;
+  };
+  expect(await coming()).toBe('40.0000');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/inventory');
+
+  await page.getByRole('button', { name: 'Actions for E2E Magnesium' }).click();
+  await page.getByRole('menuitem', { name: 'Receive stock…' }).click();
+  const free = page.getByRole('dialog', { name: 'Receive stock' });
+  await expect(
+    free.getByRole('radio', { name: new RegExp(purchase.number) }),
+  ).toBeChecked();
+  await free.getByRole('button', { name: 'Continue' }).click();
+
+  const onOrder = page.getByRole('dialog', {
+    name: `Receive E2E-MAG on ${purchase.number}`,
+  });
+  await expect(onOrder).toContainText(
+    'From E2E Corner Pharmacy: 40 each still to come',
+  );
+  await expect(onOrder.getByRole('textbox', { name: 'Quantity' })).toHaveValue(
+    '40.0000',
+  );
+  await onOrder.getByRole('combobox', { name: 'Into' }).click();
+  await page.getByRole('option', { name: /E2E Shelf A2/ }).click();
+  await onOrder.getByRole('button', { name: 'Receive' }).click();
+  await expect(onOrder).toBeHidden();
+
+  await expect.poll(coming).toBe('0.0000');
+  const order = await freshOrg.api.get(`/v1/orders/${purchase.id}`);
+  const { lines } = (await order.json()) as {
+    lines: { quantityFulfilled: string }[];
+  };
+  expect(lines[0]!.quantityFulfilled).toBe('40.0000');
 });
 
 test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing that changes stock', async ({

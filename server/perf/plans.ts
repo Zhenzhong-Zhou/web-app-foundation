@@ -18,6 +18,7 @@ import { runInTenantContext } from '../src/database/tenant-context';
 import { CostsService } from '../src/modules/costs/costs.service';
 import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
+import { OrderReceiptsService } from '../src/modules/orders/order-receipts.service';
 import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
 import { ReturnsService } from '../src/modules/orders/returns.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
@@ -210,6 +211,7 @@ async function buildProbes(
   org: VolumeManifest['organizations'][number],
 ): Promise<Probe[]> {
   const orders = app.get(OrdersService);
+  const receipts = app.get(OrderReceiptsService);
   const stock = app.get(StockReadsService);
   const grouped = app.get(StockGroupedService);
   const standing = app.get(WhereItStandsService);
@@ -341,6 +343,12 @@ async function buildProbes(
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
     },
     { name: 'stock by lot: counts', run: () => grouped.lotCounts({}) },
+    // The deliveries Stock asks about before receiving an item (ADR-093,
+    // v3): its confirmed purchases still to come, from Coming's rule.
+    {
+      name: 'deliveries of an item',
+      run: () => receipts.deliveries(shelf.variantId),
+    },
     // Where it stands (ADR-093, R8), as an Owner reads it, every part;
     // and as a reader without places, its usable lots instead.
     {

@@ -7738,6 +7738,40 @@
         ]
       }
     },
+    "/v1/orders/deliveries": {
+      "get": {
+        "operationId": "OrdersController_deliveries_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Delivery"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
     "/v1/orders/{id}": {
       "get": {
         "operationId": "OrdersController_find_v1",
@@ -20593,6 +20627,79 @@
         "required": [
           "entries",
           "nextCursor"
+        ]
+      },
+      "DeliveryLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "quantityOrdered": {
+            "type": "string"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          },
+          "quantityOutstanding": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "tracksLots",
+          "unitOfMeasure",
+          "quantityOrdered",
+          "quantityFulfilled",
+          "quantityOutstanding"
+        ]
+      },
+      "Delivery": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "line": {
+            "$ref": "#/components/schemas/DeliveryLine"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "expectedAt",
+          "late",
+          "line"
         ]
       },
       "ChosenSite": {

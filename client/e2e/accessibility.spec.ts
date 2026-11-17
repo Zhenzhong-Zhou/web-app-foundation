@@ -284,6 +284,21 @@ const SCREENS: Screen[] = [
     ready: (page) => page.getByRole('link', { name: 'A11Y-LOT-1' }),
   },
   {
+    // An item still to come on the seed's purchase: Receive stock… asks
+    // which delivery it is, its one order chosen (ADR-093, v3).
+    name: 'inventory, Receive stock… asking which delivery it is',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Actions for E2E Widget / })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Receive stock…' }).click();
+    },
+    ready: (page) =>
+      page.getByRole('radiogroup', { name: 'Which delivery is this?' }),
+  },
+  {
     // One place chosen: each header "here", the line saying Free and Held
     // count every place (ADR-093, 20a).
     name: 'inventory, one place chosen',

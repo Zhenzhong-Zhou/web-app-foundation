@@ -10,7 +10,7 @@ import {
 import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Location } from '../api/types.gen';
+import type { Delivery, Location } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
@@ -19,7 +19,10 @@ import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { unitLabel } from '../products/units';
+import { DeliveryQuestion } from './delivery-question';
+import { NOT_ON_AN_ORDER } from './delivery-words';
 import { LotFields } from './lot-fields';
+import { useDeliveries } from './use-deliveries';
 
 const EMPTY = {
   variantId: '',
@@ -46,6 +49,7 @@ export function ReceiveStockDialog({
   defaultVariantId = '',
   onClose,
   onReceived,
+  onDelivery,
 }: {
   open: boolean;
   locations: Location[];
@@ -54,6 +58,14 @@ export function ReceiveStockDialog({
   defaultVariantId?: string;
   onClose: () => void;
   onReceived: () => Promise<void>;
+  /**
+   * An order chosen for an item still to come (ADR-093, v3): the screen
+   * closes this dialog and opens that order line's own. Given, the dialog
+   * asks "Which delivery is this?" before its fields once such an item is
+   * chosen; the screen gives it only to a reader who may see orders and
+   * receive on them.
+   */
+  onDelivery?: (delivery: Delivery) => void;
 }) {
   const intl = useIntl();
   const [form, setForm] = useState({
@@ -77,6 +89,30 @@ export function ReceiveStockDialog({
     lotCode: useRef<HTMLInputElement>(null),
   };
   const { variants, answered, failed: variantsError } = useVariants(open);
+  // The item's deliveries, once one is chosen (ADR-093, v3).
+  const { deliveries, answered: deliveriesAnswered } = useDeliveries(
+    open && onDelivery ? form.variantId || null : null,
+  );
+  // The answer given for an item: a delivery's line, or Not on an order.
+  const [answer, setAnswer] = useState<{
+    variantId: string;
+    value: string;
+  } | null>(null);
+  // The item Not on an order was confirmed for, whose fields then show.
+  const [offOrder, setOffOrder] = useState<string | null>(null);
+  const [answerError, setAnswerError] = useState<string | null>(null);
+  const asking =
+    !!onDelivery && !!form.variantId && offOrder !== form.variantId;
+  // Not yet known whether the item has a delivery: the fields wait.
+  const waiting = asking && !deliveriesAnswered;
+  const question = asking && deliveriesAnswered && deliveries.length > 0;
+  // From an item's own Receive stock…, its one order chosen already.
+  const chosenAnswer =
+    answer?.variantId === form.variantId
+      ? answer.value
+      : form.variantId === defaultVariantId && deliveries.length === 1
+        ? deliveries[0]!.line.id
+        : '';
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -95,6 +131,9 @@ export function ReceiveStockDialog({
 
   function close() {
     setForm({ ...EMPTY, locationId: defaultLocationId });
+    setAnswer(null);
+    setOffOrder(null);
+    setAnswerError(null);
     setErrors({});
     reset();
     onClose();
@@ -121,6 +160,33 @@ export function ReceiveStockDialog({
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    // The question first: an order goes to its own Receive dialog, Not on
+    // an order shows this dialog's fields.
+    if (waiting) return;
+    if (question) {
+      if (!chosenAnswer) {
+        setAnswerError(
+          intl.formatMessage({
+            id: 'inventory.receive.whichMissing',
+            defaultMessage: 'Choose the delivery, or Not on an order.',
+          }),
+        );
+        return;
+      }
+      if (chosenAnswer === NOT_ON_AN_ORDER) {
+        setOffOrder(form.variantId);
+        return;
+      }
+      const chosen = deliveries.find(
+        (delivery) => delivery.line.id === chosenAnswer,
+      );
+      if (chosen && onDelivery) {
+        close();
+        onDelivery(chosen);
+      }
+      return;
+    }
 
     // The language's decimal comma becomes the point the API takes; a
     // thousands separator is refused here rather than guessed at (ADR-054).
@@ -251,96 +317,115 @@ export function ReceiveStockDialog({
               value={form.variantId}
               onChange={(variantId) => {
                 clearError('variantId');
+                setAnswerError(null);
                 setForm((current) => ({ ...current, variantId }));
               }}
               error={!!errors.variantId}
               helperText={errors.variantId}
             />
 
-            <TextField
-              id="receive-location"
-              label={intl.formatMessage({
-                id: 'inventory.into',
-                defaultMessage: 'Into',
-              })}
-              select
-              required
-              fullWidth
-              value={form.locationId}
-              onChange={(event) => {
-                clearError('locationId');
-                update('locationId')(event);
-              }}
-              inputRef={controls.locationId}
-              error={!!errors.locationId}
-              helperText={errors.locationId}
-            >
-              {locations.map((location) => (
-                <MenuItem key={location.id} value={location.id}>
-                  {nameAndCode(location.name, location.code)}
-                </MenuItem>
-              ))}
-            </TextField>
+            {question && (
+              <DeliveryQuestion
+                deliveries={deliveries}
+                value={chosenAnswer}
+                onChange={(value) => {
+                  setAnswerError(null);
+                  setAnswer({ variantId: form.variantId, value });
+                }}
+                error={answerError ?? undefined}
+              />
+            )}
 
-            <TextField
-              id="receive-quantity"
-              label={intl.formatMessage({
-                id: 'inventory.quantity',
-                defaultMessage: 'Quantity',
-              })}
-              required
-              fullWidth
-              inputRef={controls.quantity}
-              value={form.quantity}
-              onChange={(event) => {
-                clearError('quantity');
-                update('quantity')(event);
-              }}
-              /**
-               * inputMode rather than type="number". A number input coerces,
-               * strips leading zeros, and hands back a value the browser has
-               * already interpreted — and the server wants the digits as typed.
-               * inputMode gets the numeric keypad on a phone without any of it.
-               */
-              slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-              error={!!errors.quantity}
-              helperText={
-                errors.quantity ??
-                (variant
-                  ? intl.formatMessage(
-                      {
-                        id: 'inventory.quantity.inUnit',
-                        defaultMessage: 'In {unit}. Up to 4 decimal places.',
-                      },
-                      { unit: unitLabel(variant.unitOfMeasure, intl) },
-                    )
-                  : intl.formatMessage({
-                      id: 'inventory.quantity.help',
-                      defaultMessage: 'Up to 4 decimal places.',
-                    }))
-              }
-            />
+            {/* The fields once the question is answered, or with none to ask. */}
+            {!waiting && !question && (
+              <>
+                <TextField
+                  id="receive-location"
+                  label={intl.formatMessage({
+                    id: 'inventory.into',
+                    defaultMessage: 'Into',
+                  })}
+                  select
+                  required
+                  fullWidth
+                  value={form.locationId}
+                  onChange={(event) => {
+                    clearError('locationId');
+                    update('locationId')(event);
+                  }}
+                  inputRef={controls.locationId}
+                  error={!!errors.locationId}
+                  helperText={errors.locationId}
+                >
+                  {locations.map((location) => (
+                    <MenuItem key={location.id} value={location.id}>
+                      {nameAndCode(location.name, location.code)}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
-            {/* Shown only for a lot-tracked variant, because the server refuses
+                <TextField
+                  id="receive-quantity"
+                  label={intl.formatMessage({
+                    id: 'inventory.quantity',
+                    defaultMessage: 'Quantity',
+                  })}
+                  required
+                  fullWidth
+                  inputRef={controls.quantity}
+                  value={form.quantity}
+                  onChange={(event) => {
+                    clearError('quantity');
+                    update('quantity')(event);
+                  }}
+                  /**
+                   * inputMode rather than type="number". A number input coerces,
+                   * strips leading zeros, and hands back a value the browser has
+                   * already interpreted — and the server wants the digits as typed.
+                   * inputMode gets the numeric keypad on a phone without any of it.
+                   */
+                  slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+                  error={!!errors.quantity}
+                  helperText={
+                    errors.quantity ??
+                    (variant
+                      ? intl.formatMessage(
+                          {
+                            id: 'inventory.quantity.inUnit',
+                            defaultMessage:
+                              'In {unit}. Up to 4 decimal places.',
+                          },
+                          { unit: unitLabel(variant.unitOfMeasure, intl) },
+                        )
+                      : intl.formatMessage({
+                          id: 'inventory.quantity.help',
+                          defaultMessage: 'Up to 4 decimal places.',
+                        }))
+                  }
+                />
+
+                {/* Shown only for a lot-tracked variant, because the server refuses
                 a lot on one that is not — and refuses a movement without one on
                 one that is (ADR-023). The form follows the same rule rather
                 than letting someone fill in a field that will be rejected. */}
-            {variant?.tracksLots && (
-              <LotFields
-                idPrefix="receive"
-                variantId={variant.id}
-                value={{ code: form.lotCode, expiresAt: form.expiresAt }}
-                onChange={(lot) => {
-                  if (lot.code !== form.lotCode) clearError('lotCode');
-                  setForm((current) => ({
-                    ...current,
-                    lotCode: lot.code,
-                    expiresAt: lot.expiresAt,
-                  }));
-                }}
-                codeRef={controls.lotCode}
-                codeError={errors.lotCode}
-              />
+                {variant?.tracksLots && (
+                  <LotFields
+                    idPrefix="receive"
+                    variantId={variant.id}
+                    value={{ code: form.lotCode, expiresAt: form.expiresAt }}
+                    onChange={(lot) => {
+                      if (lot.code !== form.lotCode) clearError('lotCode');
+                      setForm((current) => ({
+                        ...current,
+                        lotCode: lot.code,
+                        expiresAt: lot.expiresAt,
+                      }));
+                    }}
+                    codeRef={controls.lotCode}
+                    codeError={errors.lotCode}
+                  />
+                )}
+              </>
             )}
           </Stack>
         </DialogContent>
@@ -348,10 +433,17 @@ export function ReceiveStockDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label={intl.formatMessage({
-            id: 'inventory.receive.action',
-            defaultMessage: 'Receive',
-          })}
+          label={
+            question
+              ? intl.formatMessage({
+                  id: 'inventory.receive.continue',
+                  defaultMessage: 'Continue',
+                })
+              : intl.formatMessage({
+                  id: 'inventory.receive.action',
+                  defaultMessage: 'Receive',
+                })
+          }
           pendingLabel={intl.formatMessage({
             id: 'inventory.receive.pending',
             defaultMessage: 'Receiving…',

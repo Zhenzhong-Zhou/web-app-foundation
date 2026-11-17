@@ -117,8 +117,9 @@ export function openSaleLines(
  * What is coming, line by line (ADR-093): each confirmed purchase's line
  * still to receive, and each released run's output still to make. The
  * one rule a code's Coming figure sums, its lines list and the codes a
- * list holds read. Rows `variant_id, kind ('purchase' or 'run'), id,
- * number, partner_id, quantity, expected_at`; a run has no day.
+ * list holds read, and the deliveries a receipt may be. Rows
+ * `variant_id, kind ('purchase' or 'run'), id, line_id, number,
+ * partner_id, quantity, expected_at`; a run has no line and no day.
  */
 export function comingOf(
   organizationId: string,
@@ -132,6 +133,7 @@ export function comingOf(
       ol.variant_id,
       'purchase' as kind,
       o.id,
+      ol.id as line_id,
       o.number,
       o.partner_id,
       ol.quantity_ordered - ol.quantity_fulfilled as quantity,
@@ -153,6 +155,7 @@ export function comingOf(
       po.output_variant_id,
       'run',
       po.id,
+      null::uuid,
       po.reference,
       po.partner_id,
       po.quantity_planned - po.quantity_produced,

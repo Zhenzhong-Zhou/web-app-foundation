@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StockCodeRow, StockPlace } from '../api/types.gen';
+import type { Delivery, StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -20,6 +20,27 @@ import { LotSearchPage } from './lot-trace-page';
 
 const PRODUCT = '00000000-0000-4000-8000-000000000001';
 const PLACE = '00000000-0000-4000-8000-000000000009';
+
+/** A purchase's line still to come for the item (ADR-093, v3). */
+function delivery(variantId: string, sku: string): Delivery {
+  return {
+    orderId: 'order-12',
+    number: 'PO-000012',
+    partnerName: 'Harbour Supply',
+    expectedAt: '2026-11-20',
+    late: false,
+    line: {
+      id: 'line-12',
+      variantId,
+      sku,
+      tracksLots: false,
+      unitOfMeasure: 'each',
+      quantityOrdered: '48.0000',
+      quantityFulfilled: '0.0000',
+      quantityOutstanding: '48.0000',
+    },
+  };
+}
 
 /** A code with stock in two places, part of it not usable, and short. */
 const CODE: StockCodeRow = {
@@ -436,6 +457,39 @@ describe('InventoryPage', () => {
       expect(
         await screen.findByRole('dialog', { name: 'Receive stock' }),
       ).toBeVisible();
+    });
+
+    // ADR-093, v3: ordered stock is received on its order, never beside it.
+    it('asks which delivery it is, its one order chosen, and receives on that order’s line over Stock', async () => {
+      server.use(
+        http.get('/api/v1/orders/deliveries', () =>
+          HttpResponse.json([delivery('variant-1', 'VITD-60')]),
+        ),
+      );
+      const { user, menu } = await codeActions([
+        'stock.move',
+        'orders.view',
+        'orders.receive',
+      ]);
+      await user.click(
+        within(menu).getByRole('menuitem', { name: 'Receive stock…' }),
+      );
+
+      const free = await screen.findByRole('dialog', { name: 'Receive stock' });
+      expect(
+        await within(free).findByRole('radio', { name: /PO-000012/ }),
+      ).toBeChecked();
+      await user.click(within(free).getByRole('button', { name: 'Continue' }));
+
+      const onOrder = await screen.findByRole('dialog', {
+        name: 'Receive VITD-60 on PO-000012',
+      });
+      expect(onOrder).toHaveTextContent(
+        'From Harbour Supply: 48 each still to come',
+      );
+      expect(
+        within(onOrder).getByRole('textbox', { name: 'Quantity' }),
+      ).toHaveValue('48.0000');
     });
 
     // The row's status and the counts come from the point: read again
@@ -866,6 +920,47 @@ describe('InventoryPage', () => {
       await user.click(screen.getByRole('button', { name: 'Group by Item' }));
       await expect.poll(() => asked.codes.at(-1)?.get('out')).toBe('true');
     });
+  });
+
+  // ADR-093, v3: the page's own Receive stock asks too, once an item
+  // still to come is chosen.
+  it('asks which delivery it is from the page’s Receive stock, once such an item is chosen', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v1/orders/deliveries', ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.get('variantId') === 'variant-plain'
+            ? [delivery('variant-plain', 'PLAIN-1')]
+            : [],
+        ),
+      ),
+    );
+    answer();
+    renderAt('/inventory', [
+      'stock.view',
+      'stock.move',
+      'locations.view',
+      'orders.view',
+      'orders.receive',
+    ]);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Receive stock' }),
+    );
+    const free = await screen.findByRole('dialog', { name: 'Receive stock' });
+    await user.click(within(free).getByRole('combobox', { name: 'Item' }));
+    await user.click(await screen.findByRole('option', { name: /PLAIN-1/ }));
+
+    const question = await within(free).findByRole('radiogroup', {
+      name: 'Which delivery is this?',
+    });
+    // Nothing chosen for the reader from the page.
+    expect(
+      within(question).getByRole('radio', { name: /PO-000012/ }),
+    ).not.toBeChecked();
+    expect(
+      within(question).getByRole('radio', { name: 'Not on an order' }),
+    ).toBeInTheDocument();
   });
 
   // Home's Receive stock opens the dialog, not only the list (#502).

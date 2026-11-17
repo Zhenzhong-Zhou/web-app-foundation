@@ -10,10 +10,11 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Location, OrderLine } from '../api/types.gen';
+import type { Delivery, Location, OrderLine } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
+import { stillToCome } from '../inventory/delivery-words';
 import { LotFields } from '../inventory/lot-fields';
 import { api } from '../lib/api';
 import {
@@ -24,6 +25,19 @@ import {
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { withUnit } from '../products/units';
+
+/** What receiving on a line reads of it: an order's line, or a delivery's. */
+type ReceivableLine = Pick<
+  OrderLine,
+  | 'id'
+  | 'variantId'
+  | 'sku'
+  | 'tracksLots'
+  | 'unitOfMeasure'
+  | 'quantityOrdered'
+  | 'quantityFulfilled'
+  | 'quantityOutstanding'
+>;
 
 /**
  * Receiving against one line: a movement and a fulfilment in one transaction
@@ -39,13 +53,20 @@ import { withUnit } from '../products/units';
 export function ReceiveLineDialog({
   orderId,
   line,
+  delivery,
   locations,
   canSeeLots,
   onClose,
   onReceived,
 }: {
   orderId: string;
-  line: OrderLine | null;
+  line: ReceivableLine | null;
+  /**
+   * Opened over Stock for a delivery chosen there (ADR-093, v3): titled
+   * for its order, a line naming the supplier and what is still to come
+   * and when, the quantity filled with what is still to come.
+   */
+  delivery?: Delivery;
   locations: Location[];
   /** stock.view, from the page: the item's lots already known. */
   canSeeLots: boolean;
@@ -57,7 +78,7 @@ export function ReceiveLineDialog({
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [form, setForm] = useState({
     locationId: '',
-    quantity: '',
+    quantity: delivery ? formatQuantity(delivery.line.quantityOutstanding) : '',
     lotCode: '',
     lotExpiresAt: '',
     note: '',
@@ -128,16 +149,41 @@ export function ReceiveLineDialog({
     >
       <form onSubmit={handleSubmit}>
         <DialogTitle>
-          {intl.formatMessage(
-            { id: 'orders.receive.title', defaultMessage: 'Receive {sku}' },
-            { sku: <Reference>{line?.sku}</Reference> },
-          )}
+          {delivery
+            ? intl.formatMessage(
+                {
+                  id: 'orders.receive.titleOn',
+                  defaultMessage: 'Receive {sku} on {number}',
+                },
+                {
+                  sku: <Reference>{line?.sku}</Reference>,
+                  number: <Reference>{delivery.number}</Reference>,
+                },
+              )
+            : intl.formatMessage(
+                { id: 'orders.receive.title', defaultMessage: 'Receive {sku}' },
+                { sku: <Reference>{line?.sku}</Reference> },
+              )}
         </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
+            {delivery && (
+              <Typography>
+                {intl.formatMessage(
+                  {
+                    id: 'orders.receive.from',
+                    defaultMessage: 'From {partner}: {coming}.',
+                  },
+                  {
+                    partner: delivery.partnerName,
+                    coming: stillToCome(delivery, intl),
+                  },
+                )}
+              </Typography>
+            )}
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {line &&
                 intl.formatMessage(

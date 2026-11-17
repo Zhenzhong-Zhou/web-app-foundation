@@ -2913,6 +2913,26 @@ export type OrderPage = {
   nextCursor: string | null;
 };
 
+export type DeliveryLine = {
+  id: string;
+  variantId: string;
+  sku: string;
+  tracksLots: boolean;
+  unitOfMeasure: string;
+  quantityOrdered: string;
+  quantityFulfilled: string;
+  quantityOutstanding: string;
+};
+
+export type Delivery = {
+  orderId: string;
+  number: string;
+  partnerName: string;
+  expectedAt: string | null;
+  late: boolean;
+  line: DeliveryLine;
+};
+
 export type ChosenSite = {
   id: string;
   name: string;
@@ -7377,6 +7397,22 @@ export type OrdersControllerExportOrdersV1Data = {
 export type OrdersControllerExportOrdersV1Responses = {
   200: unknown;
 };
+
+export type OrdersControllerDeliveriesV1Data = {
+  body?: never;
+  path?: never;
+  query: {
+    variantId: string;
+  };
+  url: '/v1/orders/deliveries';
+};
+
+export type OrdersControllerDeliveriesV1Responses = {
+  200: Array<Delivery>;
+};
+
+export type OrdersControllerDeliveriesV1Response =
+  OrdersControllerDeliveriesV1Responses[keyof OrdersControllerDeliveriesV1Responses];
 
 export type OrdersControllerFindV1Data = {
   body?: never;

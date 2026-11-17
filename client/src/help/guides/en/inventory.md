@@ -37,12 +37,13 @@ Home’s **Expiring soon** opens this view, soonest first, the expired on top, a
 ## Receive stock {#receive}
 
 1. Press **Receive stock**.
-2. Choose the item, and the location it goes **Into**. Only locations that hold stock directly are listed.
-3. Type the quantity, in the item’s unit.
-4. For an item tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
-5. Press **Receive**.
+2. Choose the item. When it is still to come on a purchase, Inventory first asks **Which delivery is this?**, listing each order with what is still to come and when: choose its order, and press **Continue**; that order’s own **Receive** opens with what is still to come filled in. Choose **Not on an order** for stock that came without one, and carry on here.
+3. Choose the location it goes **Into**. Only locations that hold stock directly are listed.
+4. Type the quantity, in the item’s unit.
+5. For an item tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
+6. Press **Receive**.
 
-Goods a supplier sends against a purchase are received on the order instead, on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.
+Goods a supplier sends against a purchase are received on its order, so the order closes and the stock is counted once: here by choosing it, or on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.
 
 ## Move, ship or correct {#move}
 

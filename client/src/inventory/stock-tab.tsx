@@ -20,6 +20,7 @@ import {
 
 import { WhomToAskRead } from '../account/whom-to-ask';
 import type {
+  Delivery,
   ProductCategoryList,
   ProductDetail,
   StockCodeCounts,
@@ -63,6 +64,7 @@ import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { useLocations } from '../lib/use-locations';
 import { useResource } from '../lib/use-resource';
 import { leavesOf } from '../locations/tree';
+import { ReceiveLineDialog } from '../orders/receive-line-dialog';
 import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 import { NO_RECEIVE } from '../products/receive-line';
@@ -268,6 +270,8 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [receiving, setReceiving] = useState(false);
   /** The item an item's Receive stock… opened the dialog for, filled in. */
   const [receivingItem, setReceivingItem] = useState<string | null>(null);
+  /** The delivery chosen for it, received on its order's line (ADR-093, v3). */
+  const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [params, setParams] = useSearchParams();
   const routed = useLocation();
   // The rows open, in the address so Back finds them open (ADR-093's
@@ -891,7 +895,26 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           }
         }}
         onReceived={refresh}
+        // Asked of whoever may see orders and receive on them.
+        onDelivery={
+          can('orders.view') && can('orders.receive') ? setDelivery : undefined
+        }
       />
+
+      {/* An order chosen for the delivery: that line's own Receive dialog,
+          as the order's page opens it, over Stock (ADR-093, v3). */}
+      {delivery && (
+        <ReceiveLineDialog
+          key={delivery.line.id}
+          orderId={delivery.orderId}
+          line={delivery.line}
+          delivery={delivery}
+          locations={leaves}
+          canSeeLots
+          onClose={() => setDelivery(null)}
+          onReceived={refresh}
+        />
+      )}
 
       {moving && (
         <MoveStockDialog

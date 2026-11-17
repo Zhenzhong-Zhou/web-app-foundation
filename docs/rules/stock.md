@@ -137,6 +137,19 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
   MC-317
+- **Receiving an item still to come on a confirmed purchase asks which
+  delivery it is first,** each order with what is still to come and when,
+  and Not on an order; an order is received on its own line, so the order
+  closes and Coming falls, never off it beside the order. The deliveries
+  are Coming's purchases line by line (`GET /v1/orders/deliveries`, for
+  whoever may see orders and receive on them); a reader without both
+  receives as before.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--how-it-behaves) ·
+  [test](../../server/test/deliveries.e2e-spec.ts) "lists each confirmed purchase still to come, the day expected first, and receiving on it lowers Coming" ·
+  [test](../../server/test/deliveries.e2e-spec.ts) "lists none of another organization’s, and asks orders.view and orders.receive" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "asks which delivery it is from the page’s Receive stock, once such an item is chosen" ·
+  [Help](../../client/src/help/guides/en/inventory.md#receive-stock-receive) ·
+  MC-310
 
 ## A lot's trace
 

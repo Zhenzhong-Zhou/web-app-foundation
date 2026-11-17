@@ -522,6 +522,15 @@ a second organization.
   places and lots, "Choose the lot to correct"; an item with a point and
   never stocked greys it, "Never stocked here: receive it first". As a
   Viewer: Movements, a lot's Trace lot, and nothing that changes stock.
+  Receiving what is ordered: ELDER-250's Receive stock…, with PO-DEMO-12
+  still to come, first asks "Which delivery is this?", PO-DEMO-12 from its
+  supplier with what is still to come and when, chosen already, and Not
+  on an order; Continue opens "Receive ELDER-250 on PO-DEMO-12", "From …:
+  … still to come", the quantity filled with it; Receive, and the row's
+  Coming falls by it and PO-DEMO-12's line shows it received. The page's
+  Receive stock asks the same once ELDER-250 is chosen, nothing chosen
+  for you; Not on an order carries on in the dialog and receives as
+  before. An item with nothing ordered asks nothing.
 - **MC-311** *(ADR-091, amended by ADR-093)* Inventory's Expired. As the
   demo Owner, Home's Expiring soon opens the Lot view at
   `/inventory?group=lot&expiring=1`, and its late button adds
@@ -6697,3 +6706,6 @@ first.
   MC-316.
 - 2026-11-17: ADR-093's review, Bob's second message (1): the Actions
   button keeps its small down arrow after the word: MC-310.
+- 2026-11-17: ADR-093's review, Bob's third message (2): receiving an item
+  still to come asks which delivery it is, from an item's Receive stock…
+  and from the page's; an order opens its line's own Receive: MC-310.
