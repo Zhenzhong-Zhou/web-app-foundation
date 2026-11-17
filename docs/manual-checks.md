@@ -77,8 +77,8 @@ replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
 2025** retired. Exchange rates, price lists and issuing invoices are the
 Owner's, as the roles allow.
 
-Last, nine reorder points, set by the Owner, which Reorder points counts
-**All 9 · Low stock 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
+Last, eleven reorder points, set by the Owner, which Reorder points counts
+**All 11 · Low stock 8 · Out 2** (ADR-085): **VITC-100** out, lot **VC-0402**
 past its date too and left on the shelf; **MAGCAP-SAMPLE**, sample bags
 made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
 **ELDER-250**, 58 of 96 up to 192, with **PO-DEMO-12** five days late and
@@ -86,9 +86,12 @@ made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
 **PO-DEMO-13**; **D3-1000-120**, bought 48 at a time, suggesting 2 × 48;
 **SLEEP-60CT**, made, 970 of 1,200; **CARTON-24** under its point on the
 shelf, kept above it by what is on its way; **BOTTLE-90** enough, half of
-it issued to CALM-RUN-01 and left out; and **ZINC-60** discontinued.
-Each of the nine is named in English, French and Chinese, so the list
-reads whole in every language.
+it issued to CALM-RUN-01 and left out; **ZINC-60** discontinued; and two
+of **MAGCAP**'s three sizes, **MAGCAP-120** low, 60 of 100, bought 24 at a
+time, and **MAGCAP-240** out, its 48 moved by 王建国 into Richmond's
+**Quarantine**, cartons crushed in delivery, so one item has a code low
+and one out (ADR-093, R23). Each of the eleven is named in English,
+French and Chinese, so the list reads whole in every language.
 
 Then the items sorted for Items (ADR-092), by Daniel, after everything
 above: **14 categories**, two levels deep (Vitamins and minerals, Mind and
@@ -98,8 +101,9 @@ organization writes its documents in, since a category has one name. Of
 the 25 items, 21 sit in one; **BLEND-FOCUS**, **BOTTLE-60**,
 **MAGCAP-SAMPLE** and **CALM-SAMPLE** sit in none. **CALM-SAMPLE** is the
 Samples tab's one item and holds no stock, and every type has an item.
-Among the products, **VITC-100** is Out and the rest of the nine reorder
-points leave several Low. Equipment is **EQ-CAPFILL-01**, received at
+Among the products, **VITC-100** and **Magnesium bisglycinate capsules**
+are Out, the second "Out · 1 of 3 codes", and the rest of the eleven
+reorder points leave several Low. Equipment is **EQ-CAPFILL-01**, received at
 18,500.00 CAD and left out of stock value (MC-802).
 
 For Inventory's screens (ADR-093), nothing is set up by hand; the seed reads
@@ -120,7 +124,9 @@ holds 60 of its 70, Free 10, not short. Coming reads **ELDER-250**'s 48
 VITC-90, and the rest of its ledger VITC-100, since 王建国 corrected the
 code once its first lots arrived. **D3-1000-120**'s **D3-C07**, 20 on Main's
 **Shelf**, has no expiry, so it lists after **D3-A11** (100) and **D3-B02**
-there.
+there. **MAGCAP**'s page lists **MAGCAP-240** first, out with 48 not usable
+at a place not available, then **MAGCAP-120**, low; the seed reads both
+back.
 
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
@@ -4012,8 +4018,8 @@ site, after a deploy that changes the setting, the route or the relay.
 
 - **MC-4201** *(ADR-085)* The bell, once each time an item falls below
   its reorder point. On a fresh demo, the server's first start tells the
-  six low items in one notice: "6 items are low on stock", the tile's Low stock (库存不足, Stock bas),
-  then "VITC-100, MAGCAP-SAMPLE and 4 more. Order or plan them from
+  eight low items in one notice: "8 items are low on stock", the tile's Low stock (库存不足, Stock bas),
+  then "MAGCAP-240, VITC-100 and 6 more. Order or plan them from
   Reorder points.". As the demo Owner, on Reorder points, give a bought
   item with stock a point above what it has, and restart the server (it
   checks at start, then hourly): the bell gets one notice, "… is low
@@ -4029,9 +4035,9 @@ site, after a deploy that changes the setting, the route or the relay.
   in 中文, a notice reads naturally, the item under its Chinese name
   where it has one.
 - **MC-4202** *(ADR-085)* The list. As the demo Owner, Inventory → Reorder
-  points: the address gains `?tab=reorder-points`, the switch reads All 9
-  · Low stock 6 · Out 1, and "Position = usable + coming − still needed" sits
-  above the list. VITC-100 comes first, every low row before every other,
+  points: the address gains `?tab=reorder-points`, the switch reads All 11
+  · Low stock 8 · Out 2, and "Position = usable + coming − still needed" sits
+  above the list. MAGCAP-240 and VITC-100 come first, every low row before every other,
   and the rest by code. Each row has its code in bold, its name beside it
   and a small line under it: "Bought · 48 at a time" for D3-1000-120,
   "Made · just enough" for SLEEP-60CT, "Bought · up to 192" for
@@ -4043,9 +4049,9 @@ site, after a deploy that changes the setting, the route or the relay.
   grey, "Discontinued · never low, its point kept", with no chevron.
   The digits line up down each column.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
-  shows the six, VITC-100 among them; Out, VITC-100 alone; All, the nine.
+  shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
   Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
-  With Low stock on and the search cleared, Export saves a CSV of the six, and the audit
+  With Low stock on and the search cleared, Export saves a CSV of the eight, and the audit
   log's line for it reads its filter as Status Low, in 中文 不足. Open
   `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
   Low stock. In French the three read Tous, Stock bas and Épuisé; in 中文
@@ -4150,23 +4156,23 @@ site, after a deploy that changes the setting, the route or the relay.
   600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
-  the Owner: the tile after To receive reads 6, Low stock and "1 out",
+  the Owner: the tile after To receive reads 8, Low stock and "2 out",
   its icon red. The tile opens Reorder points on Low stock, its own name,
-  six rows, VITC-100
-  first, with Back to Home; What is late's "1 item out of stock" opens it
-  on Out, that one row. Receive 100 of VITC-100 and Refresh: Low stock
-  reads 5, with no pill, and its button is gone from what is late. In
-  中文: 库存不足, "1 项缺货" and "1 个缺货物品"; in French: Stock bas,
-  "1 épuisé" and "1 article épuisé". In a new organization, with no
+  eight rows, MAGCAP-240 and VITC-100
+  first, with Back to Home; What is late's "2 items out of stock" opens it
+  on Out, those two rows. Receive 100 of VITC-100 and Refresh: Low stock
+  reads 7, with "1 out", and What is late says "1 item out of stock". In
+  中文: 库存不足, "2 项缺货" and "2 个缺货物品"; in French: Stock bas,
+  "2 épuisés" and "2 articles épuisés". In a new organization, with no
   reorder point, the tile is quiet, Low stock and "No reorder points set
   yet" (尚未设置库存下限), not Nothing low, and opens Reorder points with
   no filter, where one is set.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
-  the items. On a fresh demo, as the Owner, the bell's "6 items fell
+  the items. On a fresh demo, as the Owner, the bell's "8 items fell
   below their reorder point" opens Inventory's Reorder points on Low stock,
   with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
-  raises orders but plans no runs: her notice names only the four bought
-  items, "VITC-100, ELDER-250 and 2 more. Order them from Reorder
+  raises orders but plans no runs: her notice names only the six bought
+  items, "MAGCAP-240, VITC-100 and 4 more. Order them from Reorder
   points.". As the Owner, give two bought items with stock points above
   what they have, and restart the server: one notice, both codes, then
   "Order them from Reorder points.", though the Owner may plan runs too.

@@ -2,6 +2,7 @@ import type { INestApplicationContext } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { StockGroupedService } from '../modules/stock/stock-grouped.service';
+import { WhereItStandsService } from '../modules/stock/where-it-stands.service';
 import type { Database } from './database.module';
 import { productVariants, reorderPoints, stockMovements } from './schema';
 import { daysFromNow } from './seed-demo-variety';
@@ -29,6 +30,8 @@ import { daysFromNow } from './seed-demo-variety';
  *   under VITC-90 (seed-demo-team-work.ts).
  * - **A lot with no expiry after dated lots of its code:** D3-C07, on
  *   Main's Shelf after D3-A11 and D3-B02, as its row opens (R2).
+ * - **An item with a code low and one out:** MAGCAP, its 120 low and its
+ *   240 out, its lot quarantined, as Where it stands lists them (R23).
  */
 export async function readBackStock(
   app: INestApplicationContext,
@@ -113,6 +116,24 @@ export async function readBackStock(
     vitaminDLots.at(-1)?.[1] === null &&
     vitaminDLots.slice(0, -1).every(([, expiresAt]) => expiresAt !== null);
 
+  // An item whose codes stand apart: Items shows its worst, and how many.
+  const [magnesium] = await db
+    .select({ productId: productVariants.productId })
+    .from(productVariants)
+    .where(
+      and(
+        eq(productVariants.organizationId, organizationId),
+        eq(productVariants.sku, 'MAGCAP-120'),
+      ),
+    );
+  const magnesiumStands = (
+    await app.get(WhereItStandsService).read(magnesium.productId, 'en', {
+      places: true,
+      orders: true,
+      runs: true,
+    })
+  ).codes.map((code) => `${code.sku} ${code.status ?? 'none'}`);
+
   const missing: string[] = [];
   if (twoPlaces.length === 0) missing.push('a lot in two places');
   if (quarantined.length === 0) {
@@ -133,6 +154,14 @@ export async function readBackStock(
       `a lot with no expiry after D3-1000-120's dated lots on Shelf, read ${vitaminDLots.map(([code]) => code).join(', ')}`,
     );
   }
+  if (
+    !magnesiumStands.includes('MAGCAP-240 out') ||
+    !magnesiumStands.includes('MAGCAP-120 low')
+  ) {
+    missing.push(
+      `an item with a code low and one out, MAGCAP read ${magnesiumStands.join(', ')}`,
+    );
+  }
   if (missing.length > 0) {
     throw new Error(
       `The demo's Inventory is missing: ${missing.join('; ')}. See seed-demo-stock.ts for where each is made`,
@@ -143,6 +172,6 @@ export async function readBackStock(
     `Inventory read back: ${twoPlaces.length} lots in two places (${twoPlaces.slice(0, 3).join(', ')}), ` +
     `${quarantined.length} expired in a place not usable, ${short.length} short and ${holdingNotShort.length} holding without being short, ` +
     `${comingOn.length} coming with a day and ${comingWithNoDay.length} without, ${made} made items with a reorder point, VITC-100 written as VITC-90 once, ` +
-    `D3-C07 with no expiry after D3-1000-120's dated lots`
+    `D3-C07 with no expiry after D3-1000-120's dated lots, MAGCAP-240 out and MAGCAP-120 low (${magnesiumStands.join(', ')})`
   );
 }
