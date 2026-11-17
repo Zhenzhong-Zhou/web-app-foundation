@@ -19,6 +19,7 @@ import { InventoryPage } from './inventory-page';
 import { LotSearchPage } from './lot-trace-page';
 
 const PRODUCT = '00000000-0000-4000-8000-000000000001';
+const PLACE = '00000000-0000-4000-8000-000000000009';
 
 /** A code with stock in two places, part of it not usable, and short. */
 const CODE: StockCodeRow = {
@@ -150,6 +151,42 @@ function renderAt(address: string, permissions: string[]) {
 const CHANGES = ['Move', 'Ship out', 'Send sample', 'Edit lot details'];
 
 describe('InventoryPage', () => {
+  // A failed read of the places says so, with Try again, and keeps the
+  // place the address names; it is never "Add a location" (review 51).
+  it('shows a failed read of the places, never "Add a location"', async () => {
+    const asked = answer();
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/locations', () => {
+        reads += 1;
+        return reads === 1
+          ? apiError(500, 'Internal server error')
+          : HttpResponse.json([]);
+      }),
+    );
+    renderAt(`/inventory?locationId=${PLACE}`, [
+      'stock.view',
+      'stock.move',
+      'locations.view',
+    ]);
+
+    expect(await screen.findByText('Internal server error')).toBeVisible();
+    expect(
+      screen.queryByText(/Add a location before receiving stock/),
+    ).toBeNull();
+    // The place in the address is kept while the places cannot be read.
+    expect(asked.codes.at(-1)?.get('locationId')).toBe(PLACE);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    // Read again, and answered with none: now it says to add one.
+    expect(
+      await screen.findByText(/Add a location before receiving stock/),
+    ).toBeVisible();
+    expect(screen.queryByText('Internal server error')).toBeNull();
+    expect(reads).toBe(2);
+  });
+
   describe('a row per code', () => {
     it('draws its figures and the lines behind them, each a link to its item', async () => {
       answer();

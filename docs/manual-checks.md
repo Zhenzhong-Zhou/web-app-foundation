@@ -399,7 +399,9 @@ a second organization.
   only the rows on screen (ADR-051). The Location filter reads Everywhere
   in its box until a place is chosen, never a blank box (#274), and lists
   the places stock sits in under their warehouse; Partout in Français,
-  全部库位 in 中文.
+  全部库位 in 中文. With the places' read failing (DevTools → Network,
+  block `locations`), Stock says it could not read them, with Try again,
+  never "Add a location", and keeps `?locationId=` in the address.
 - **MC-308** Inventory search finds a code by any part of its code, its
   item's name or a lot's code; a search with no match says no items match
   these filters, with Show all stock.
@@ -6546,3 +6548,6 @@ first.
   Reorder: MC-316 added, MC-216 and MC-4217 reworded, MC-R71 rewritten
   for Stock, the language walkthrough's list; MC-317 added for Stock's
   Export, which had none.
+- 2026-11-17: ADR-093's review, 50 and 51: Where it stands' reorder point
+  dialog closes once saved (MC-219); Stock's failed read of the places says
+  so, with Try again (MC-301).

@@ -42,7 +42,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SelectField } from '../components/select-field';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { api } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import type { ProductType, StockCodeSort } from '../lib/api-names';
 import { nameAndCode } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -140,13 +140,23 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   // Sales sees stock but not places (ADR-080): no Location filter, and a
   // row opens straight to its lots.
   const seesPlaces = can('locations.view');
-  const { locations, answered } = useLocations(seesPlaces);
+  // Asked again by Try again when the read fails (ADR-092's states).
+  const [placesAgain, setPlacesAgain] = useState(0);
+  const {
+    locations,
+    answered,
+    failure: placesFailure,
+  } = useLocations(seesPlaces, placesAgain);
+  const placesFailed = answered && placesFailure !== null;
   const leaves = leavesOf(locations).filter((location) => location.isActive);
-  // The place the address names: taken while the places are read, then
-  // only if stock can sit there; any other is ignored, as Everywhere.
+  // The place the address names: taken while the places are read, or
+  // could not be, then only if stock can sit there; any other is
+  // ignored, as Everywhere.
   const locationId =
     seesPlaces &&
-    (!answered || leaves.some((location) => location.id === filters.locationId))
+    (!answered ||
+      placesFailed ||
+      leaves.some((location) => location.id === filters.locationId))
       ? filters.locationId
       : '';
   const place = leaves.find((location) => location.id === locationId) ?? null;
@@ -588,7 +598,16 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
 
       {tabs}
 
-      {answered && seesPlaces && !leaves.length && (
+      {/* A failed read of the places says so, with Try again; it is
+          never "Add a location" (ADR-092's states). */}
+      {placesFailed && (
+        <ListError
+          error={messageFor(placesFailure)}
+          onRetry={() => setPlacesAgain((again) => again + 1)}
+        />
+      )}
+
+      {answered && !placesFailed && seesPlaces && !leaves.length && (
         <Alert severity="info">
           {intl.formatMessage({
             id: 'inventory.needsLocation',
