@@ -513,6 +513,8 @@ async function buildProbes(
       name: 'reorder points: by suggested order',
       run: () => reorder.list({ sort: 'suggested' }, 'en'),
     },
+    // Add's picker marks the items with a point (#538).
+    { name: 'reorder points: items', run: () => reorder.items() },
     { name: 'valuation', run: () => costs.stockValuation() },
     // The catalogue's reads that join products (#226), each with the
     // organization on its join: without it, Postgres reads every tenant's

@@ -26,6 +26,7 @@ import type {
   ReorderPointCounts,
   ReorderPointDetail,
   ReorderPointDraft,
+  ReorderPointItems,
   ReorderPointPage,
   ReorderPointPreview,
   ReorderPointRow,
@@ -397,6 +398,21 @@ export class ReorderPointsReadsService {
   }
 
   /**
+   * Every item with a point (ADR-085), by its id, so Add's picker marks
+   * them before one is picked, rather than refusing after (#538). One
+   * read of the points' own unique index.
+   */
+  items(): Promise<ReorderPointItems> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const rows = await tx
+        .select({ variantId: reorderPoints.variantId })
+        .from(reorderPoints)
+        .where(eq(reorderPoints.organizationId, organizationId));
+      return { variantIds: rows.map((row) => row.variantId) };
+    });
+  }
+
+  /**
    * An opened row's lines (ADR-085): usable stock by location, with what
    * was left out as expired or issued to a run; each purchase and run
    * still coming, a purchase late once its day has passed; each sale still
@@ -558,6 +574,7 @@ export class ReorderPointsReadsService {
         suggestion: string;
         suggested_multiples: string | null;
         drafted: boolean;
+        in_draft: string;
         after: string;
         after_status: ReorderStatus;
       }>(sql`
@@ -567,6 +584,7 @@ export class ReorderPointsReadsService {
           ${quantity(sql`p.suggestion`)} as suggestion,
           p.suggested_multiples::text as suggested_multiples,
           p.drafted,
+          ${quantity(sql`p.in_draft`)} as in_draft,
           ${quantity(after)} as after,
           ${afterStatus} as after_status
         from (${positionsOf(organizationId, today, variantId, typed)}) p
@@ -585,6 +603,7 @@ export class ReorderPointsReadsService {
         suggestion: row.suggestion,
         suggestedMultiples: row.suggested_multiples,
         drafted: row.drafted,
+        inDraft: row.in_draft,
         after: row.after,
         afterStatus: row.after_status,
       };

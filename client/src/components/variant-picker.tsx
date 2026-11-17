@@ -77,6 +77,7 @@ export function VariantPicker({
   error = false,
   autoFocus = false,
   task,
+  marked,
 }: {
   id: string;
   label: string;
@@ -97,6 +98,12 @@ export function VariantPicker({
   autoFocus?: boolean;
   /** What the item is for; none groups every type, none first. */
   task?: PickerTask;
+  /**
+   * Items to mark in the list, and the words that mark them, so a person
+   * sees which before picking (#538): Add reorder point's "Has a reorder
+   * point".
+   */
+  marked?: { ids: ReadonlySet<string>; words: string };
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
@@ -165,6 +172,16 @@ export function VariantPicker({
           >
             {productTypeLabel(option.type, intl)}
           </Typography>
+          {marked?.ids.has(option.id) && (
+            <Typography
+              component="div"
+              variant="body2"
+              translate="yes"
+              sx={{ color: 'text.secondary', flexBasis: '100%' }}
+            >
+              {marked.words}
+            </Typography>
+          )}
         </Box>
       )}
       isOptionEqualToValue={(option, current) => option.id === current.id}

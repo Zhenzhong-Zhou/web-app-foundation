@@ -2158,6 +2158,10 @@ export type ReorderPointCounts = {
   out: number;
 };
 
+export type ReorderPointItems = {
+  variantIds: Array<string>;
+};
+
 export type ReorderPointValues = {
   source: 'bought' | 'made';
   reorderPoint: string;
@@ -2203,6 +2207,7 @@ export type ReorderPointPreview = {
   suggestion: string;
   suggestedMultiples: string | null;
   drafted: boolean;
+  inDraft: string;
   after: string;
   afterStatus: 'out' | 'low' | 'discontinued' | 'enough';
 };
@@ -6598,6 +6603,20 @@ export type ReorderPointsControllerExportReorderPointsV1Responses = {
 
 export type ReorderPointsControllerExportReorderPointsV1Response =
   ReorderPointsControllerExportReorderPointsV1Responses[keyof ReorderPointsControllerExportReorderPointsV1Responses];
+
+export type ReorderPointsControllerItemsV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/stock/reorder-points/items';
+};
+
+export type ReorderPointsControllerItemsV1Responses = {
+  200: ReorderPointItems;
+};
+
+export type ReorderPointsControllerItemsV1Response =
+  ReorderPointsControllerItemsV1Responses[keyof ReorderPointsControllerItemsV1Responses];
 
 export type ReorderPointsControllerRemoveV1Data = {
   body?: never;

@@ -4158,15 +4158,24 @@ site, after a deploy that changes the setting, the route or the relay.
   and each item shows its Chinese name.
 - **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
   Reorder points, Add reorder point sits beside Export. It opens a dialog
-  with the item picker, focus in it: choose GLOVES-100 and Bought is
-  chosen; choose FOCUS-60CT and Made is, since it has an active recipe.
+  with the item picker, focus in it; its list marks each item that has a
+  point already, "Has a reorder point" under D3-1000-120 among them. Choose
+  GLOVES-100 and Bought is chosen; choose FOCUS-60CT and Made is, since it
+  has an active recipe, the switch named "Bought or made" above it, the
+  chosen one in the accent, and "Made, since it has a recipe." under it,
+  gone once Bought or Made is pressed. For a made item, A fixed
+  quantity's line talks of runs, "In whole runs, as it is made: a batch, a
+  minimum", never a supplier.
   The point's unit sits inside its field at the right. How much to order has three cards,
   Just enough, A fixed quantity and Up to a maximum, each with its line;
   the chosen one drawn as Invite's roles are, a thicker accent border and
   a light tint, in both modes; choosing the fixed or the maximum card
   shows its field inside it. Once
-  the typing pauses, Today shows two bars, Position now and Position
-  after the suggested order, with their numbers, and one sentence, such as "Below 500 now, so
+  the typing pauses, Today shows Position now, and a second bar only when
+  something would change it: Position after the suggested order, "with …
+  in draft" where a draft adds to it, or Position with … in draft where
+  only a draft does; each number on one line with its unit, and one
+  sentence, such as "Below 500 now, so
   it would suggest 600, 3 of 200.". Typing on changes it once more, never
   one answer per key. Add: the item shows in the list at once, and All
   counts one more.
@@ -4223,7 +4232,8 @@ site, after a deploy that changes the setting, the route or the relay.
   it a point of 10, and press Low stock: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
-  the button reads 添加库存下限, the switch 采购 and 自制, the cards
+  the button reads 添加库存下限, the switch 采购 and 自制 under its name
+  采购或自制, FOCUS-60CT's 已选自制，因为它有配方。, the cards
   补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
   and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订货
   600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
@@ -4267,8 +4277,8 @@ site, after a deploy that changes the setting, the route or the relay.
   draft: the order opens as a draft, and Back returns to Reorder,
   not to New order filled in again; there, both rows' In draft reads Drafted in
   the order's number with its quantity, and neither has a box to choose. Edit D3-1000-120:
-  Today says what is in draft covers it, and Position after the
-  suggested order reads 276, above its point of 240, the draft counted.
+  Today says what is in draft covers it, and its second bar, "Position
+  with 96 in draft", reads 276, above its point of 240.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
 - **MC-4216** *(ADR-085; ADR-093)* Make, filled in from the list. On a
@@ -6468,3 +6478,9 @@ first.
   order and cards on a phone; Stock of the item opening Where it stands:
   MC-4202 and MC-4205 rewritten, MC-4203, MC-4206, MC-4209 to MC-4211 and
   MC-4213 to MC-4217 reworded, the setup's and MC-406's words.
+- 2026-11-16: ADR-093's Reorder, Add reorder point's dialog: the items
+  with a point marked in the picker (#538), the second bar only when
+  something would change it, its drafts named (#540), and the Bought or
+  made switch named on screen, with why Made was chosen and a made
+  item's words for a fixed quantity (#542): MC-4207, MC-4212 and MC-4215
+  reworded.

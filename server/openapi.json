@@ -6298,6 +6298,27 @@
         ]
       }
     },
+    "/v1/stock/reorder-points/items": {
+      "get": {
+        "operationId": "ReorderPointsController_items_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointItems"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
     "/v1/stock/reorder-points/{variantId}": {
       "get": {
         "operationId": "ReorderPointsController_detail_v1",
@@ -18211,6 +18232,20 @@
           "out"
         ]
       },
+      "ReorderPointItems": {
+        "type": "object",
+        "properties": {
+          "variantIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "variantIds"
+        ]
+      },
       "ReorderPointValues": {
         "type": "object",
         "properties": {
@@ -18403,6 +18438,9 @@
           "drafted": {
             "type": "boolean"
           },
+          "inDraft": {
+            "type": "string"
+          },
           "after": {
             "type": "string"
           },
@@ -18422,6 +18460,7 @@
           "suggestion",
           "suggestedMultiples",
           "drafted",
+          "inDraft",
           "after",
           "afterStatus"
         ]

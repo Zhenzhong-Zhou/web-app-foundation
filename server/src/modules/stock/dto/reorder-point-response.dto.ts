@@ -146,12 +146,25 @@ export class ReorderPointPreview {
   /** Low, with its drafts leaving nothing to suggest. */
   drafted!: boolean;
   /**
+   * Draft purchases and runs of the item, which `after` counts, so the
+   * dialog names them beside it (#540).
+   */
+  inDraft!: string;
+  /**
    * The position once what is in draft and the suggestion arrive: the
    * position, what is in draft, and the suggestion, which leaves it out.
    */
   after!: string;
   /** Where the item would stand then. */
   afterStatus!: ReorderStatus;
+}
+
+/**
+ * GET /stock/reorder-points/items: every item with a point, so Add's
+ * picker marks them before one is picked (#538).
+ */
+export class ReorderPointItems {
+  variantIds!: string[];
 }
 
 /**

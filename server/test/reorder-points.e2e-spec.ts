@@ -756,10 +756,17 @@ describe('Reorder points (e2e)', () => {
     it('lists only its own organization’s points', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
-      await point(alpha.agent, await item(alpha.agent, 'OURS'), '5');
+      const ours = await item(alpha.agent, 'OURS');
+      await point(alpha.agent, ours, '5');
       await point(beta.agent, await item(beta.agent, 'THEIRS'), '5');
 
       expect(skus(await listed(alpha))).toEqual(['OURS']);
+      // The items Add's picker marks (#538): its own alone.
+      expect(
+        body(
+          await alpha.agent.get('/v1/stock/reorder-points/items').expect(200),
+        ),
+      ).toEqual({ variantIds: [ours] });
       expect(
         body(
           await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
@@ -777,6 +784,7 @@ describe('Reorder points (e2e)', () => {
         '/v1/stock/reorder-points',
         '/v1/stock/reorder-points/counts',
         '/v1/stock/reorder-points/export',
+        '/v1/stock/reorder-points/items',
         `/v1/stock/reorder-points/${d3}`,
       ]) {
         await viewer.get(path).expect(200);
@@ -795,6 +803,7 @@ describe('Reorder points (e2e)', () => {
         'Sales',
       );
       await sales.get('/v1/stock/reorder-points').expect(403);
+      await sales.get('/v1/stock/reorder-points/items').expect(403);
       await sales.get(`/v1/stock/reorder-points/${d3}`).expect(403);
     });
   });
@@ -1059,6 +1068,7 @@ describe('Reorder points (e2e)', () => {
         suggestion: '2000.0000',
         suggestedMultiples: '2',
         drafted: false,
+        inDraft: '0.0000',
         after: '2800.0000',
         afterStatus: 'enough',
       });
@@ -1113,6 +1123,8 @@ describe('Reorder points (e2e)', () => {
         position: '800.0000',
         status: 'low',
         suggestion: '200.0000',
+        // Named beside where it would stand, which counts it (#540).
+        inDraft: '500.0000',
         after: '1500.0000',
         afterStatus: 'enough',
       });

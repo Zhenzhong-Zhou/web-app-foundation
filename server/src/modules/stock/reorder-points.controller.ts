@@ -29,6 +29,7 @@ import { ListReorderPointsDto } from './dto/list-reorder-points.dto';
 import type {
   ReorderPointCounts,
   ReorderPointDetail,
+  ReorderPointItems,
   ReorderPointPage,
   ReorderPointPreview,
 } from './dto/reorder-point-response.dto';
@@ -101,6 +102,13 @@ export class ReorderPointsController {
       rows,
       localeOf(acceptLanguage),
     );
+  }
+
+  /** Every item with a point, for Add's picker to mark (#538). */
+  @Get('items')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  items(): Promise<ReorderPointItems> {
+    return this.reads.items();
   }
 
   /**
