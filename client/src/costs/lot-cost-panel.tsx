@@ -185,7 +185,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
           />
           <LabelledValue
             label={intl.formatMessage({
-              id: 'inventory.promised.onHand',
+              id: 'common.onHand',
               defaultMessage: 'On hand',
             })}
             value={displayQuantity(cost.quantity)}

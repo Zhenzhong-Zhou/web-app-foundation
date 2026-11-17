@@ -100,7 +100,7 @@ const NO_POINT = defineMessages({
 
 const WORDS = defineMessages({
   title: { id: 'products.stock.title', defaultMessage: 'Where it stands' },
-  onHand: { id: 'inventory.promised.onHand', defaultMessage: 'On hand' },
+  onHand: { id: 'common.onHand', defaultMessage: 'On hand' },
   free: { id: 'inventory.stock.free', defaultMessage: 'Free' },
   held: { id: 'inventory.stock.held', defaultMessage: 'Held' },
   coming: { id: 'inventory.stock.coming', defaultMessage: 'Coming' },

@@ -204,7 +204,7 @@ export function StockValuePage() {
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
               <Typography variant="subtitle1" component="h2">
                 {intl.formatMessage({
-                  id: 'inventory.promised.onHand',
+                  id: 'common.onHand',
                   defaultMessage: 'On hand',
                 })}
               </Typography>

@@ -90,7 +90,7 @@ const HEADS = defineMessages({
     id: 'inventory.stock.onHandHere',
     defaultMessage: 'On hand here',
   },
-  onHand: { id: 'inventory.promised.onHand', defaultMessage: 'On hand' },
+  onHand: { id: 'common.onHand', defaultMessage: 'On hand' },
   freeEverywhere: {
     id: 'inventory.stock.freeEverywhere',
     defaultMessage: 'Free, every place',
