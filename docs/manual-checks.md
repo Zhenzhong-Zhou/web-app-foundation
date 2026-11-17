@@ -452,6 +452,14 @@ a second organization.
   its currency. In Français the title is Inventaire and the guide reads
   Lire le stock, Trouver du stock and Regrouper par lot; in 中文,
   读懂库存, 查找库存 and 按批次分组.
+- **MC-317** *(ADR-093, R15)* Stock's Export. As the demo Owner, with Low
+  stock pressed and a search typed, Export saves a CSV of the rows the
+  list shows, in its order, headers in the screen's words (On hand, Not
+  usable, Free, Held, Short, Expires first, Status) and a status as Low,
+  Out or Enough and a unit as "each", never a stored code; the audit log's
+  line for it reads the filters. Group by Lot, Export saves one row per
+  lot at each place, the same rows the list shows. In 中文 the headers and
+  the words read in Chinese.
 - **MC-302** Move stock: a transfer between bins, an adjustment in, an
   adjustment out (a note is required), and a sample to a customer. Each one
   appears under Movements with who, when and why.
@@ -6535,4 +6543,5 @@ first.
   Edit item, Low stock and "72 not usable"; Trace a lot's guide says the
   recall list's Export and the lot's link; Home's and Orders' guides say
   Reorder: MC-316 added, MC-216 and MC-4217 reworded, MC-R71 rewritten
-  for Stock, the language walkthrough's list.
+  for Stock, the language walkthrough's list; MC-317 added for Stock's
+  Export, which had none.

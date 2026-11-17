@@ -1032,7 +1032,9 @@ Use these rather than writing the thing again on a page:
   status adds its row to that table.
 - **`ExpiryChip`** for any lot's expiry: days left within 90 days (amber, red
   within 30 or past) with the date beside it; the date alone further off. The
-  thresholds are `EXPIRY_DAYS` in `lib/expiry.ts`.
+  thresholds are `EXPIRY_DAYS` in `lib/expiry.ts`. **`useExpiryStatus`**
+  (`lib/use-expiry-status.ts`) is the same words and tone for a lot's own
+  page: "Expired 4 days ago" beside its title (#479).
 - **`displayQuantity`** for a quantity people read: no padding zeros, grouped.
   **`formatQuantity`** for a quantity in a field, which must stay what
   `toApiDecimal` accepts.

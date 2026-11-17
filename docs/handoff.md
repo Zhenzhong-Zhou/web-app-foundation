@@ -24,7 +24,14 @@ On 15 November 2026:
   branch, its brief in the ignored `tmp/adr-093-inventory/`; then
   `adr-093-movements`, its brief in `tmp/adr-093-movements/`, started
   after Inventory merges and before that merge's clean-up. With
-  Inventory: [#590], Items' stock badges.
+  Inventory: [#590], Items' stock badges. On 16 November Inventory's
+  steps 1 to 19 are built: the server's one rule for usable stock and one
+  read for a code's figures, the grouped reads, Stock with its Lot view,
+  the item's Where it stands, Reorder, the old stock routes removed with
+  the API revision at 5, the browser tests, Help in three languages and
+  `docs/rules/stock.md`. Still to do: the figures after, dependencies
+  again, the reviews with the seven `test.fixme` behaviours and the
+  cut-text walk, the pull request, then the chat's as-built.
 - **[#531], an item's own name in the organization's language,**
   [ADR-054's amendment](adr/0054-languages.md) of 14 November, with its
   as-built: planned and built on 14 November on `fix-531-base-name`, 36

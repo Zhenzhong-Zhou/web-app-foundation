@@ -1,8 +1,9 @@
 # Stock
 
 What the app allows, refuses and works out for stock, as the code does
-it today: begun with usable stock, what confirmed sales hold and what may
-be taken, and grown as ADR-093's Inventory branch adds its rules. Each
+it today: usable stock, a code's figures, Inventory's list and Lot view,
+a lot's trace, Where it stands, Reorder, what confirmed sales hold and
+what may be taken, as ADR-093's Inventory branch completed it. Each
 rule links the ADR that decided it, the test that proves it, the Help
 section where a person meets it, and the manual check that walks it by
 hand. Why a rule is so is in its ADR; how to do a task is in the
@@ -20,14 +21,17 @@ file is kept is in the [README](README.md).
   [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
   [test](../../server/test/reservations.e2e-spec.ts) "leaves an expired lot, an issued quantity and a place not available out of Free, each said beside On hand" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "lists usable stock by location marked available, with what was left out" ·
-  MC-607
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-607 · MC-309
 - **On hand is every unit at every place, usable or not;** what is not
   usable is said beside it, by why: expired, issued to a run, or at a
   place not available, such as quarantine. Usable and not usable add up
   to on hand.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
   [ADR-042](../adr/0042-samples-and-stock-that-is-not-for-sending.md#decision--unavailable-locations-hold-stock-that-is-not-for-sending) ·
-  [test](../../server/test/reservations.e2e-spec.ts) "leaves an expired lot, an issued quantity and a place not available out of Free, each said beside On hand"
+  [test](../../server/test/reservations.e2e-spec.ts) "leaves an expired lot, an issued quantity and a place not available out of Free, each said beside On hand" ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-309 · MC-312
 
 ## A code's figures
 
@@ -37,26 +41,34 @@ file is kept is in the [README](README.md).
   expires first; and the status.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code" ·
-  partly tested
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-309 · MC-219
 - **The figures add up, for every code:** on hand is the ledger's,
   usable and not usable; held is the least of usable and what confirmed
   sales still want, the sum of every line's hold; free is usable less
   held, never below 0; short is what confirmed sales still want beyond
   what they hold.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "walks every code of an organization: on hand is the ledger’s, held the holds’ total, and every sum holds"
+  [test](../../server/test/code-figures.e2e-spec.ts) "walks every code of an organization: on hand is the ledger’s, held the holds’ total, and every sum holds" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
+  MC-219
 - **Coming is what confirmed purchases still have to receive and what
   released runs still have to make,** its day the soonest a purchase is
   expected; a run has no day. **Left is usable, plus coming, less what
   confirmed sales still want,** Reorder's position.
   [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding"
+  [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding" ·
+  [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
+  MC-219 · MC-4204
 - **What expires first is the usable stock's soonest expiry:** a lot
   already expired, or at a place not available, is not it, and a code
   with no lots has none.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--a-row-per-code-opening-to-its-places-and-lots) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding"
+  [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding" ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-309 · MC-315
 
 ## Inventory's list
 
@@ -67,11 +79,15 @@ file is kept is in the [README](README.md).
   item's.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per code with its figures, and Include empty the rest" ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s" ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-301
 - **A lot's code searched with a place chosen finds that lot at that
   place alone,** never a code whose matching lot is held elsewhere.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a lot by its code at the place chosen alone, never one held elsewhere"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a lot by its code at the place chosen alone, never one held elsewhere" ·
+  [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
+  MC-314
 - **Sorted by On hand or Expires first, each page follows the figure
   its rows show, either way,** a code with nothing to expire last both
   ways; at one place chosen, On hand and Expires first are what is
@@ -80,35 +96,47 @@ file is kept is in the [README](README.md).
   route refuses it.
   [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "reads each figure sort’s pages in the order of the figures they show, either way" ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "sorts by name, On hand and Expires first, and pages without skipping or repeating"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "sorts by name, On hand and Expires first, and pages without skipping or repeating" ·
+  [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
+  MC-315
 - **Each quick filter's count is the rows it shows,** with the other
   filters on and its own off: Low stock holds the out, and Expiring soon
   the expired, as Home's tiles do.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on" ·
+  [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
+  MC-1528 · MC-311
 - **The Lot view is a row per lot at each place, soonest first, the
   expired on top,** a lot's places together, each saying how many there
   are: the rows Home's Expiring soon counts.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [ADR-091, amended](../adr/0091-home-redesigned.md#amendment-november-2026--the-tiles-lists-after-inventorys-redesign-adr-093) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a row per lot at each place, soonest first, the expired on top, a lot’s places together" ·
-  [test](../../server/test/home.e2e-spec.ts) "opens, from each tile, as many rows as it counts, the late among them"
+  [test](../../server/test/home.e2e-spec.ts) "opens, from each tile, as many rows as it counts, the late among them" ·
+  [Help](../../client/src/help/guides/en/inventory.md#group-by-lot-lots) ·
+  MC-313 · MC-311
 - **The Lot view's counts are its rows, lots at each place, never
   codes:** Low stock, Expiring soon, Expired and Waiting for a cost, each
   with the other filters on and its own off; no Out, since a code that
   is out keeps no lot. Its export is the same rows.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each of the Lot view’s quick filters as the lots it shows, with the other filters on, and exports those rows"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each of the Lot view’s quick filters as the lots it shows, with the other filters on, and exports those rows" ·
+  [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
+  MC-313
 - **A place's name goes only to a reader who may see places;** the rest
   read the lots and their figures without it.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places" ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-312
 - **An export is the rows its list shows, with its filters, in the
   screen's words and the reader's language:** a status as Low, Out or
   Enough, a unit as "each", never a stored code; quantities and days
   stay data.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--how-it-behaves) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language" ·
+  [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
+  MC-317
 
 ## A lot's trace
 
@@ -118,7 +146,9 @@ file is kept is in the [README](README.md).
   language, for a reader with stock.view.
   [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-recall-lists-export-and-a-lots-expired-days-adr-093) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·
-  [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words"
+  [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
+  MC-906
 
 ## Where it stands
 
@@ -130,18 +160,24 @@ file is kept is in the [README](README.md).
   up to the figures.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "stands an item’s codes the low first, each figure with the lines behind it" ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code"
+  [test](../../server/test/code-figures.e2e-spec.ts) "gives Inventory’s and Reorder’s routes the same figures for one code" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
+  MC-219
 - **Buy or Make on Where it stands orders what Reorder suggests for the
   code:** bought or made as its reorder point says, the quantity
   Reorder's own row reads; none for a code with no point, and 0 when it
   is not low or a draft covers it already.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [ADR-085](../adr/0085-low-stock.md#decision--a-reorder-point-per-item-bought-or-made-with-a-rule-for-how-much) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "stands an item’s codes the low first, each figure with the lines behind it"
+  [test](../../server/test/code-figures.e2e-spec.ts) "stands an item’s codes the low first, each figure with the lines behind it" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
+  MC-219
 - **Where it stands is sent only to a reader with stock.view,** and the
   others are refused in their own words, naming whom to ask.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "sends Where it stands only to a reader with stock.view, refused in their words"
+  [test](../../server/test/code-figures.e2e-spec.ts) "sends Where it stands only to a reader with stock.view, refused in their words" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
+  MC-220
 - **Each part beyond the figures goes only to a reader who may see it,
   the number kept:** places by name with locations.view, else the usable
   lots alone, adding up to usable, the not usable one line; Held's sales
@@ -152,12 +188,16 @@ file is kept is in the [README](README.md).
   [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the sales and purchases without orders.view, the number of orders kept" ·
   [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the runs without production.view" ·
   [test](../../client/src/products/where-it-stands.test.tsx) "names whom to ask for Buy, and lists the usable lots without places" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
   MC-219 · MC-220
 - **Items counts items, Reorder and Home count codes:** Items' Low stock
   is the items among Reorder's low and out codes, and Home's Low stock is
   Reorder's count.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each"
+  [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each" ·
+  [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
+  [Help](../../client/src/help/guides/en/items.md#what-a-row-shows-rows) ·
+  MC-218 · MC-316
 
 ## Reorder
 
@@ -173,12 +213,14 @@ file is kept is in the [README](README.md).
   [test](../../server/test/reorder-points.e2e-spec.ts) "puts the low first, the furthest below its point as a share of it first, then the rest by SKU" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "sorts by the suggested order, most first unless asked, the list’s own order breaking ties, page after page" ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "writes the list as CSV, filtered as asked, with headers in the reader’s language, and records it" ·
-  MC-4203
+  [Help](../../client/src/help/guides/en/inventory.md#order-or-make-what-is-low-order) ·
+  MC-4202 · MC-4203
 - **An opened row names its places only to a reader who may see
   places;** the rest read its usable as one total, with what was left
   out as expired or issued in all.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/reorder-points.e2e-spec.ts) "names no place to a reader without locations.view: the row’s usable stands alone" ·
+  [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
   MC-4204
 
 ## What confirmed sales hold
@@ -192,19 +234,24 @@ file is kept is in the [README](README.md).
   [ADR-045, amended](../adr/0045-reservations.md#amendment-november-2026--free-from-usable-stock-adr-093) ·
   [test](../../server/test/reservations.e2e-spec.ts) "holds for the earliest confirmed first, and backorders the rest" ·
   [test](../../server/test/reservations.e2e-spec.ts) "holds for the earliest confirmed first from usable stock, and the last goes short" ·
+  [Help](../../client/src/help/guides/en/inventory.md#words-youll-meet-words) ·
   MC-607
 - **Free is usable less held, never below 0.**
   [ADR-045, amended](../adr/0045-reservations.md#amendment-november-2026--free-from-usable-stock-adr-093) ·
   [test](../../server/test/reservations.e2e-spec.ts) "leaves an expired lot, an issued quantity and a place not available out of Free, each said beside On hand" ·
+  [Help](../../client/src/help/guides/en/inventory.md#words-youll-meet-words) ·
   MC-607
 - **Stock at a place not available holds nothing.** Moving held stock
   into quarantine leaves the orders after it short.
   [ADR-042](../adr/0042-samples-and-stock-that-is-not-for-sending.md#decision--unavailable-locations-hold-stock-that-is-not-for-sending) ·
-  [test](../../server/test/reservations.e2e-spec.ts) "does not count stock at an unavailable location"
+  [test](../../server/test/reservations.e2e-spec.ts) "does not count stock at an unavailable location" ·
+  [Help](../../client/src/help/guides/en/inventory.md#words-youll-meet-words) ·
+  MC-312
 - **Confirming a sale never refuses for lack of stock:** the line holds
   what there is, and the rest is backordered.
   [ADR-045](../adr/0045-reservations.md#decision--confirm-anyway-when-short) ·
   [test](../../server/test/reservations.e2e-spec.ts) "confirms an order there is no stock for" ·
+  [Help](../../client/src/help/guides/en/inventory.md#words-youll-meet-words) ·
   MC-607
 - **A hold ends when its line ships, is closed short, or its order is
   cancelled,** and the orders after it hold what it leaves.
@@ -237,6 +284,7 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
   [test](../../server/test/reservations.e2e-spec.ts) "refuses a shipment that would take expired stock another order needs, saying how many, with the item" ·
   [test](../../server/test/reservations.e2e-spec.ts) "refuses a shipment that would take stock issued to a run another order needs" ·
+  [Help](../../client/src/help/guides/en/inventory.md#if-something-is-refused-refused) ·
   MC-609
 - **With nothing held for anyone else, holds refuse nothing:** a place
   short of stock is the stock check's refusal, naming the place, and
@@ -248,9 +296,12 @@ file is kept is in the [README](README.md).
 - **Transfers and corrections are never refused for holds:** they
   record what happened on the shelf.
   [ADR-045](../adr/0045-reservations.md#decision--enforced-where-stock-leaves-or-is-committed) ·
-  [test](../../server/test/reservations.e2e-spec.ts) "still allows transfers and corrections of held stock"
+  [test](../../server/test/reservations.e2e-spec.ts) "still allows transfers and corrections of held stock" ·
+  [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
+  MC-302
 - **A refusal for holds is in the reader's language,** and says whose
   hold it is: other orders' for a shipment, confirmed orders' for
   anything else.
   [ADR-054](../adr/0054-languages.md) ·
-  [test](../../server/test/reservations.e2e-spec.ts) "says who holds the stock in the reader’s language"
+  [test](../../server/test/reservations.e2e-spec.ts) "says who holds the stock in the reader’s language" ·
+  MC-609
