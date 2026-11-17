@@ -653,6 +653,17 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       {/* The one filter row (ADR-055): the search reaches the item, its
           code and a lot's code. On a phone, Type, Category, Location and
           the sort go in the Filters button's sheet (#481). */}
+      {/* The quick filters on a row of their own, above the search and the
+          rest, as v2's board draws them; on a phone, in the Filters sheet
+          (Bob's third message, 6). */}
+      {!phone && (
+        <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
+          {quick.map((filter) => (
+            <QuickFilterPill key={filter.id} filter={filter} />
+          ))}
+        </Stack>
+      )}
+
       <FilterRow
         search={{
           label: intl.formatMessage({
@@ -662,20 +673,36 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           value: text,
           onChange: setText,
         }}
-        quick={phone ? [] : quick}
       >
         {phone ? (
           <FiltersButton
-            on={filtersOn}
+            on={filtersOn + quick.filter((filter) => filter.pressed).length}
             shown={null}
             onClear={() =>
-              clearSort({ type: null, categoryId: null, locationId: null })
+              clearSort({
+                type: null,
+                categoryId: null,
+                locationId: null,
+                low: null,
+                out: null,
+                expiring: null,
+                expired: null,
+                needsCost: null,
+                includeEmpty: null,
+              })
             }
           >
             {typeFilter}
             {categoryFilter}
             {locationFilter}
             {sortField}
+            {quick.map((filter) => (
+              <QuickFilterPill
+                key={filter.id}
+                filter={filter}
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            ))}
           </FiltersButton>
         ) : (
           <>
@@ -686,14 +713,6 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         )}
         {groupBy}
       </FilterRow>
-
-      {phone && (
-        <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
-          {quick.map((filter) => (
-            <QuickFilterPill key={filter.id} filter={filter} />
-          ))}
-        </Stack>
-      )}
 
       {/* What a link narrowed that no button shows, removable: a row's
           stock on Items, the item alone. */}

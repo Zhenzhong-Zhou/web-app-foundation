@@ -464,7 +464,7 @@ a second organization.
   alone (35a); a code with nothing to expire last either way; each kept
   in the address and after a reload.
   At 390 px, Stock is cards, each with On hand and Free, Filters holding
-  Type, Category, Location and the sort; from 600 to 899 px Held and
+  Type, Category, Location, the sort and the quick filters; from 600 to 899 px Held and
   Coming leave the table.
 - **MC-316** *(ADR-093, R19)* Help's Inventory, Items and Trace a lot
   guides. As the demo Owner, on Inventory, Help opens its guide with Read
@@ -1454,9 +1454,11 @@ Paper is checked first because it must not change at all.
   message, and Raise an order stays where it always is, in the page header;
   with Fulfilled pressed and none fulfilled, only "No orders match that
   filter."
-- **MC-1528** Inventory's filters are one row: Search, Type, Category,
-  Location and Group by, then Low stock, Out, Expiring soon, Expired,
-  Waiting for a cost and Show emptied, each with its count. Pressing
+- **MC-1528** Inventory's quick filters are a row of their own, Low
+  stock, Out, Expiring soon, Expired, Waiting for a cost and Show emptied,
+  each with its count, above the row of Search, Type, Category, Location
+  and Group by; at 390 px they are in the Filters sheet, its button
+  counting those on. Pressing
   Expiring soon keeps the codes with a lot within 90 days, ELD-24A's
   among them, the expired VC-0301's too. Each count is the number of rows
   it shows with the others on; with a search that matches none of them,
@@ -6722,3 +6724,6 @@ first.
   the Lot view and Reorder say "Showing 50 of … codes" (lots) beside Show
   50 more, the total from the counts, following every filter: MC-312 and
   MC-4202.
+- 2026-11-17: ADR-093's review, Bob's third message (6): Stock's quick
+  filters on a row of their own above the search and the rest; at a
+  phone's width in the Filters sheet: MC-1528 and MC-315.

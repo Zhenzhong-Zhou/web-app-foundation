@@ -8,7 +8,7 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Delivery, StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -824,6 +824,66 @@ describe('InventoryPage', () => {
     );
     expect(await screen.findByText(/No stock yet/)).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  // Bob's third message (6): the quick filters on a row of their own,
+  // above the search, Type, Category, Location and Group by.
+  it('puts the quick filters on a row of their own above the search', async () => {
+    answer();
+    renderAt('/inventory', ['stock.view']);
+
+    const low = await screen.findByRole('button', { name: /^Low stock/ });
+    const search = screen.getByRole('searchbox', {
+      name: 'Search items, codes or lots',
+    });
+    expect(
+      low.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(low.parentElement).not.toContainElement(search);
+  });
+
+  describe('on a phone', () => {
+    beforeEach(() => {
+      vi.stubGlobal('matchMedia', (query: string) => {
+        const min = /min-width:\s*([\d.]+)px/.exec(query);
+        const max = /max-width:\s*([\d.]+)px/.exec(query);
+        return {
+          matches:
+            (!min || 390 >= Number(min[1])) && (!max || 390 <= Number(max[1])),
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        };
+      });
+      return () => vi.unstubAllGlobals();
+    });
+
+    // At a phone's width the quick filters stay in the Filters sheet, the
+    // button counting those on.
+    it('keeps the quick filters in the Filters sheet, counted on its button', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory?low=1', ['stock.view']);
+
+      const filters = await screen.findByRole('button', {
+        name: /^Filters/,
+      });
+      expect(filters).toHaveTextContent('1');
+      expect(
+        screen.queryByRole('button', { name: /^Low stock/ }),
+      ).not.toBeInTheDocument();
+
+      await user.click(filters);
+      const sheet = await screen.findByRole('dialog', {
+        name: 'Filters and sort',
+      });
+      expect(
+        within(sheet).getByRole('button', {
+          name: /^Low stock/,
+          pressed: true,
+        }),
+      ).toBeVisible();
+    });
   });
 
   // Bob's third message (5): as Items says it, the rows read of every row
