@@ -366,7 +366,8 @@ a second organization.
   PO-DEMO-12, its day and "late"; Left with "70 usable + 48 coming − 60
   for orders"; By place and lot, each lot's code a link to its trace,
   with Move. Change reorder point opens the point's dialog filled in,
-  and Escape returns focus to it; Buy 134 opens New order, a purchase,
+  and Escape returns focus to it; Save closes it, and Low with its "left
+  · reorder at" line shows the point saved; Buy 134 opens New order, a purchase,
   with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
   has Make 230 instead, which opens Plan a run filled in. OMEGA3-90 says
   it is in a draft already. MAGCAP's page lists MAGCAP-240 first, out,

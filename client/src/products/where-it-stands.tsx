@@ -240,7 +240,10 @@ function Standing({ product }: { product: ProductDetail }) {
         <ReorderPointDialog
           opening={opening}
           onClose={() => setOpening(null)}
-          onSaved={() => void reload()}
+          onSaved={() => {
+            setOpening(null);
+            void reload();
+          }}
         />
       )}
 

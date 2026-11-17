@@ -1,9 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { CodeStanding, ProductDetail } from '../api/types.gen';
+import type {
+  CodeStanding,
+  ProductDetail,
+  ReorderPointDetail,
+} from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { WhereItStands } from './where-it-stands';
@@ -214,6 +219,76 @@ describe('Where it stands (ADR-093, R8)', () => {
         'Your role does not include receiving stock. To do more, ask Demo Owner.',
       ),
     ).toBeVisible();
+  });
+
+  // The dialog closes once its point is saved, and the section reads
+  // again, so the status and its line show the point just set (#50 of
+  // the review).
+  it('closes the reorder point dialog after Save, and reads again', async () => {
+    const point: ReorderPointDetail = {
+      point: {
+        source: 'bought',
+        reorderPoint: '96.0000',
+        rule: 'fixed',
+        fixedQuantity: '30.0000',
+        maximumQuantity: null,
+      },
+      usable: [],
+      expired: '0.0000',
+      issued: '0.0000',
+      coming: [],
+      stillNeeded: [],
+    };
+    let reads = 0;
+    let saved = false;
+    server.use(
+      http.get('/api/v1/products/:id/stock', () => {
+        reads += 1;
+        return HttpResponse.json({ codes: [standing()] });
+      }),
+      http.get('/api/v1/stock/reorder-points/:variantId/preview', () =>
+        HttpResponse.json({
+          position: '-20.0000',
+          status: 'out',
+          suggestion: '30.0000',
+          suggestedMultiples: '1',
+          drafted: false,
+          inDraft: '0.0000',
+          after: '10.0000',
+          afterStatus: 'low',
+        }),
+      ),
+      http.get('/api/v1/stock/reorder-points/:variantId', () =>
+        HttpResponse.json(point),
+      ),
+      http.put('/api/v1/stock/reorder-points/:variantId', () => {
+        saved = true;
+        return HttpResponse.json(point.point);
+      }),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/items/product-1']}>
+        <Routes>
+          <Route
+            path="/items/:id"
+            element={<WhereItStands product={PRODUCT} />}
+          />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'stock.reorder'] },
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Change reorder point' }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Edit reorder point',
+    });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(saved).toBe(true);
+    await waitFor(() => expect(reads).toBe(2));
   });
 
   it('is not drawn, nor read, without stock.view', () => {
