@@ -207,7 +207,7 @@ a second organization.
   and underlined as a link,
   VITC-100 reading Out and another product Low stock in Home's words and
   colours; and Last changed. On All, each row's type is a word at the
-  end of its grey line, "VITC-100 · Product", beside its icon (#548). Clicking anywhere on a row opens the item;
+  end of its grey line, "VITC-100 · Product", beside its icon (#548). The name alone opens the item; a click elsewhere on the row opens nothing, the row tinted under an arrow pointer;
   clicking its stock opens Inventory for that item alone, every variant
   in every location (on a touch screen its link is a fingertip tall, so
   a near miss does not open the item), with a chip "Item: …" whose × shows all stock again,
@@ -215,7 +215,8 @@ a second organization.
   "… has no stock yet." by the item's name. At 390 px each row is a card: the
   name, its code and category on one line, then the stock and its status;
   the stock and its status open Inventory for the item alone, as the
-  wider row's number does, and the rest of the card opens the item.
+  wider row's number does, and the name, a fingertip tall, opens the
+  item; nothing else on the card does.
 - **MC-209** Items sorts by Name (A to Z first), Category, In stock
   (fewest first) and the date: a header again reverses it, and focus
   stays on the header pressed from the keyboard. The date column's menu
@@ -423,8 +424,9 @@ a second organization.
   hand with "11 not usable" under it, Free 0 each with "162 short" in red
   under it, Held, and Low with "… left · reorder at …" under its chip.
   "162 short" opens FOCUS-60CT's page at Held, focus on it, and the line
-  at Where it stands (MC-219); the item's name opens it too, and so does
-  a click anywhere else on the row. There is no
+  at Where it stands (MC-219); the item's name opens it too, and nothing
+  else on the row does: the row tints under the pointer, an arrow. There
+  is no
   "Promised to customers" table below the list.
 - **MC-312** *(ADR-093)* D3-1000-120's "2 places" button opens its places
   under the row, the button pressed in the accent and read as "Hide where
@@ -4172,7 +4174,8 @@ site, after a deploy that changes the setting, the route or the relay.
   OMEGA3-90's In draft reads "Drafted in PO-DEMO-13" with its quantity,
   the order a link. ZINC-60 is grey, "Discontinued · never low, its point
   kept", with no chevron. A click on a row's status or empty space opens
-  its item's page; its links and buttons do their own. Press Suggested
+  nothing; its name opens its item's page, and its links and buttons do
+  their own. Press Suggested
   order: the most to order first, `?sort=suggested&order=desc`; again,
   the least first; Back undoes each. The digits line up down each
   column. At 820 px the In draft column leaves, the draft under the
@@ -6641,3 +6644,7 @@ first.
   "Draft saved. Confirm it to send.": MC-4205.
 - 2026-11-17: ADR-093's review, the chat's: Reorder's ticks cleared by a
   new filter, kept through the search: MC-4205.
+- 2026-11-17: ADR-093 v3, its first change: on Stock, Reorder and Items,
+  their cards and the Lot view, the name is the one way into an item; a
+  click elsewhere on a row or card opens nothing: MC-208, MC-309 and
+  MC-4202 reworded; the design language's Rows says so.

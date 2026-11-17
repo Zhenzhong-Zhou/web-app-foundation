@@ -445,7 +445,7 @@ test('Items, Show 50 more: the next fifty below; focus on the first new row', as
   );
 });
 
-test('Items, a row, anywhere: the item’s page; Back, Items as it was', async ({
+test('Items, a row, its name: the item’s page; Back, Items as it was; elsewhere on the row, nothing', async ({
   page,
   freshOrg,
 }) => {
@@ -460,9 +460,14 @@ test('Items, a row, anywhere: the item’s page; Back, Items as it was', async (
   await page.goto('/items?search=Row&sort=name&order=desc');
   await expect(rowNames(page)).toHaveText(['E2E Row Tonic', 'E2E Row Elixir']);
 
-  // Its category's cell, not its name: the whole row is the link.
+  // Its category's cell opens nothing: the name is the one way in
+  // (ADR-093 v3).
   await row(page, 'E2E Row Tonic')
     .getByRole('cell', { name: 'Vitamins', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/items\?search=Row/);
+  await row(page, 'E2E Row Tonic')
+    .getByRole('link', { name: 'E2E Row Tonic', exact: true })
     .click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'E2E Row Tonic' }),

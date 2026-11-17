@@ -85,10 +85,11 @@ Each with what holds it in the code today, or the issue that will.
 
 ### Rows
 
-- A list's row with controls of its own has one link, its name; a click
-  or tap elsewhere in the row opens it too, without being a second link,
-  so a screen reader hears the name, not the whole row (Items' rows,
-  `item-rows.tsx`; #473 for every list).
+- A list's row with controls of its own has one link, its name: the one
+  way in. A click or tap elsewhere in the row, or on its card, opens
+  nothing; the row tints under the pointer, which stays an arrow, so a
+  screen reader and a pointer meet the same one link (ADR-093 v3; Stock,
+  Reorder and Items, their cards and the Lot view).
 - A row with nothing in it but what it opens, as Home's Recently opened
   and Getting started's steps are, is one link, its whole row.
 - A row's own controls, a check box, a figure with its status and its
@@ -141,8 +142,8 @@ Each with what holds it in the code today, or the issue that will.
 ### Lists on a phone
 
 - Below 600 px a list's rows become cards: the name, its status, and the
-  one or two numbers that matter, the card opening as its row does
-  (#159). Each list names its card's fields, built list by list as each
+  one or two numbers that matter, the card opened by its name, as its
+  row is (#159). Each list names its card's fields, built list by list as each
   is next changed.
 - Above it, a table scrolls inside its own container, as ADR-055 set,
   and shows where it is cut (`scrollShades`, `client/src/theme/cut-edge.ts`).

@@ -21,7 +21,7 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type {
   Location,
@@ -300,7 +300,6 @@ function usePlaces(row: StockCodeRow, opened: Opened) {
 /**
  * The row's name, focused when Back returns to the row it was left from;
  * and what keeps that row as left from: a click on a link to its item.
- * The table row's own click keeps it as it opens the item.
  */
 function useReturn(row: StockCodeRow, { focusRow, onLeave }: Opened) {
   const name = useRef<HTMLAnchorElement>(null);
@@ -445,7 +444,6 @@ function NothingToOpen({ row, ...opened }: { row: StockCodeRow } & Opened) {
 /** A code's row in the table, and the rows it opens to after it. */
 function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const intl = useIntl();
-  const navigate = useNavigate();
   const places = usePlaces(row, opened);
   const choice = usePileChoice(row, opened, places);
   const back = useReturn(row, opened);
@@ -453,25 +451,11 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const words = openWords(row, opened, intl);
   const name = nameOf(row);
 
-  // A click elsewhere on the row opens the item's page; the name is the
-  // row's one link, and its buttons do their own (the design language's
-  // Rows).
-  const openItem = (event: MouseEvent) => {
-    if ((event.target as HTMLElement).closest('a, button, [role="menu"]')) {
-      return;
-    }
-    opened.onLeave(row.variantId);
-    void navigate(`/items/${row.productId}`, { state: OFFER_BACK });
-  };
-
   return (
     <>
-      <TableRow
-        hover
-        onClickCapture={back.leaving}
-        onClick={openItem}
-        sx={{ cursor: 'pointer' }}
-      >
+      {/* The name is the row's one way in (ADR-093 v3): the row tints under
+          the pointer, which stays an arrow. */}
+      <TableRow hover onClickCapture={back.leaving}>
         <TableCell>
           <NameAndCode
             name={name}

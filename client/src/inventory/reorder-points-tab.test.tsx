@@ -230,16 +230,23 @@ describe('Reorder', () => {
     ).toBeInTheDocument();
   });
 
-  it('opens the item’s page from elsewhere on a row, not from its buttons', async () => {
+  // The name is the row's one way in (ADR-093 v3): a click elsewhere on
+  // the row, or on its buttons, opens nothing.
+  it('opens the item’s page from its name alone, not from elsewhere on a row', async () => {
     open(['stock.view']);
 
     await userEvent.click(
       await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
     );
+    await userEvent.click(
+      within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getByText('Low'),
+    );
     expect(screen.queryByText(/^Item page/)).not.toBeInTheDocument();
 
     await userEvent.click(
-      within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getByText('Low'),
+      within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getAllByRole(
+        'link',
+      )[0]!,
     );
     expect(
       await screen.findByText('Item page: /items/product-SLEEP-60CT'),

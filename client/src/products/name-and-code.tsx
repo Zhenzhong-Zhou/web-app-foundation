@@ -5,6 +5,8 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { ProductCover } from '../components/product-cover';
 import type { ProductType } from '../lib/api-names';
+import { TOUCH } from '../theme/media';
+import { rem } from '../theme/rem';
 import { productTypeIcon, typeAfter } from './product-types';
 
 /**
@@ -63,7 +65,16 @@ export function NameAndCode({
             ref={linkRef}
             underline="hover"
             color="inherit"
-            sx={{ fontWeight: 600 }}
+            // The row's one way in, a fingertip tall on a touch screen
+            // (Text and targets).
+            sx={{
+              fontWeight: 600,
+              [TOUCH]: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: rem(44),
+              },
+            }}
           >
             {name}
           </Link>

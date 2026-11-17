@@ -20,9 +20,9 @@ import {
   TableRow,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { type MouseEvent, type Ref, useState } from 'react';
+import { type Ref, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { ProductSummary } from '../api/types.gen';
 import { PlaceholderRows } from '../components/placeholder-rows';
@@ -290,20 +290,10 @@ export function ItemTable({
   withType?: boolean;
 }) {
   const intl = useIntl();
-  const navigate = useNavigate();
   const codes = useCodes();
   const category = useCategory();
   const onHand = useOnHand();
   const dateKey: DateKey = sort.key === 'added' ? 'added' : 'changed';
-
-  // A click anywhere on a row opens the item, but not one on a link, a
-  // button or a check box inside it, nor beside the box, which do their own.
-  const open = (item: ProductSummary) => (event: MouseEvent) => {
-    if ((event.target as Element).closest('a, button, input, [data-tick]')) {
-      return;
-    }
-    void navigate(`/items/${item.id}`);
-  };
 
   const tickedHere = items?.filter((item) => ticks?.ticked.has(item.id));
   const allTicked = !!items?.length && tickedHere?.length === items.length;
@@ -368,11 +358,9 @@ export function ItemTable({
               key={item.id}
               hover
               selected={ticks?.ticked.has(item.id)}
-              onClick={open(item)}
-              sx={{
-                cursor: 'pointer',
-                [TOUCH]: { height: rem(44) },
-              }}
+              // The name is the row's one way in (ADR-093 v3): the row tints
+              // under the pointer, which stays an arrow.
+              sx={{ [TOUCH]: { height: rem(44) } }}
             >
               {ticks && (
                 <TableCell padding="checkbox" data-tick>
@@ -559,12 +547,9 @@ export function ItemCards({
               <Tick item={item} ticks={ticks} />
             </Box>
           )}
-          <Link
-            component={RouterLink}
-            to={`/items/${item.id}`}
-            ref={firstNew?.index === index ? firstNew.ref : undefined}
-            underline="none"
-            color="inherit"
+          {/* The name the card's one way in (ADR-093 v3; the design
+              language's Rows): nothing else on it opens the item. */}
+          <Box
             sx={{
               display: 'flex',
               flex: 1,
@@ -574,6 +559,13 @@ export function ItemCards({
               p: 2,
               pl: ticks ? 1 : 2,
               minHeight: rem(44),
+              // The name, the card's link, a fingertip tall, as the whole
+              // card was (Text and targets).
+              '& a': {
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: rem(44),
+              },
             }}
           >
             <NameAndCode
@@ -587,9 +579,11 @@ export function ItemCards({
               }
               type={item.type}
               coverFileId={item.coverFileId}
+              to={`/items/${item.id}`}
+              linkRef={firstNew?.index === index ? firstNew.ref : undefined}
               withType={withType}
             />
-          </Link>
+          </Box>
           {/* The stock, its not-usable part and its status, each a
               target of its own: the number opens Inventory for the item,
               as the wider row's does, the status Where it stands. */}

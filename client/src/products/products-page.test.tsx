@@ -533,7 +533,9 @@ describe('ProductsPage', () => {
     expect(within(focus).getByText('Out')).toBeVisible();
   });
 
-  it('opens the item from anywhere on its row', async () => {
+  // The name is the row's one way in (ADR-093 v3): elsewhere on the row
+  // opens nothing.
+  it('opens the item from its name alone, not from elsewhere on its row', async () => {
     const user = userEvent.setup();
     readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
     renderWithAuth(
@@ -547,7 +549,9 @@ describe('ProductsPage', () => {
     );
 
     await user.click(await screen.findByText('CALM 90CT'));
+    expect(screen.queryByText('The item’s page')).not.toBeInTheDocument();
 
+    await user.click(screen.getAllByRole('link', { name: 'Calm 90ct' })[0]!);
     expect(await screen.findByText('The item’s page')).toBeVisible();
   });
 

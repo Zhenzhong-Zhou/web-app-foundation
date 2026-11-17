@@ -350,7 +350,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/reservations.e2e-spec.ts) "lists one item alone when asked, refusing another organization’s" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "lists one item alone when the address names it, named on a chip that removes it" ·
   [test](../../client/e2e/items.spec.ts) "Items, a row’s stock: Inventory, that item alone; Back, Items as it was" ·
-  [test](../../client/e2e/items.spec.ts) "Items, a row, anywhere: the item’s page; Back, Items as it was" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a row, its name: the item’s page; Back, Items as it was; elsewhere on the row, nothing" ·
   MC-208
 - **Items' list is always in one of five states, and says which.** Empty,
   it says there are no items yet and what to add first, with Add item, or

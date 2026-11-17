@@ -228,7 +228,7 @@ test('Stock, a place, 2 lots: its lots open, soonest first, the expired on top; 
   await expect(lotLinks(page)).toHaveText(['VC-SOON', 'VC-LATE']);
 });
 
-test('Stock, a row, its name or elsewhere on the row: the item’s page; Back, Stock as it was', async ({
+test('Stock, a row, its name: the item’s page; Back, Stock as it was; elsewhere on the row, nothing', async ({
   page,
   freshOrg,
 }) => {
@@ -250,9 +250,12 @@ test('Stock, a row, its name or elsewhere on the row: the item’s page; Back, S
     page.getByRole('searchbox', { name: 'Search items, codes or lots' }),
   ).toHaveValue('E2E');
 
-  // Elsewhere: its Coming cell, which holds no link.
-  await codeRow(page, 'E2E Magnesium').getByRole('cell').nth(5).click();
-  await expect(page).toHaveURL(new RegExp(`/items/${scene.magnesium.id}$`));
+  // Elsewhere: its Coming cell, which holds no link, opens nothing, and
+  // the pointer over it is an arrow (ADR-093 v3).
+  const coming = codeRow(page, 'E2E Magnesium').getByRole('cell').nth(5);
+  await expect(coming).not.toHaveCSS('cursor', 'pointer');
+  await coming.click();
+  await expect(page).toHaveURL(/\/inventory\?search=E2E$/);
 });
 
 test('Stock, a row, 20 left · reorder at 100: Where it stands; Back, Stock as it was', async ({

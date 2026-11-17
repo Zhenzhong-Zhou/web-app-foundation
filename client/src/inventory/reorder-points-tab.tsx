@@ -23,7 +23,6 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  type MouseEvent,
   type ReactElement,
   type ReactNode,
   useEffect,
@@ -461,32 +460,17 @@ function PointRow({
   actions,
 }: RowProps & { columns: number }) {
   const intl = useIntl();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const grey = row.status === 'discontinued';
   const detailId = `reorder-detail-${row.id}`;
 
-  // A click elsewhere on the row opens the item's page; the name is the
-  // row's one link, and its buttons do their own (the design language's
-  // Rows).
-  const openItem = (event: MouseEvent) => {
-    if (
-      (event.target as HTMLElement).closest(
-        'a, button, input, label, [role="menu"]',
-      )
-    ) {
-      return;
-    }
-    void navigate(`/items/${row.productId}`, { state: OFFER_BACK });
-  };
-
   return (
     <>
+      {/* The name is the row's one way in (ADR-093 v3): the row tints under
+          the pointer, which stays an arrow. */}
       <TableRow
         hover
-        onClick={openItem}
         sx={{
-          cursor: 'pointer',
           '& > td': {
             verticalAlign: 'top',
             ...(open && { borderBottom: 0 }),
