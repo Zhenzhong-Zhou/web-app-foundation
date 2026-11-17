@@ -233,23 +233,30 @@ function holdingLots(
 /**
  * Each quick filter's count, the other filters asked kept on and its own
  * left off (ADR-093, R3; 30a): one select list, a "count(*) filter" for
- * each, named as its filter. A row per code's counts and the Lot view's
- * read it.
+ * each, named as its filter; and `total`, the rows the list shows, every
+ * filter asked on, beside Show 50 more. A row per code's counts and the
+ * Lot view's read it.
  */
 function facetCounts<K extends string>(
   facets: Record<K, { on: SQL; asked: boolean }>,
 ): SQL {
   const names = Object.keys(facets) as K[];
+  const asked = names
+    .filter((name) => facets[name].asked)
+    .map((name) => facets[name].on);
   return sql.join(
-    names.map(
-      (counted) =>
-        sql`(count(*) filter (where ${and(
-          facets[counted].on,
-          ...names
-            .filter((other) => other !== counted && facets[other].asked)
-            .map((other) => facets[other].on),
-        )}))::int as ${sql.identifier(counted)}`,
-    ),
+    [
+      ...names.map(
+        (counted) =>
+          sql`(count(*) filter (where ${and(
+            facets[counted].on,
+            ...names
+              .filter((other) => other !== counted && facets[other].asked)
+              .map((other) => facets[other].on),
+          )}))::int as ${sql.identifier(counted)}`,
+      ),
+      sql`(count(*) filter (where ${and(sql`true`, ...asked)}))::int as total`,
+    ],
     sql`, `,
   );
 }
@@ -690,23 +697,25 @@ export class StockGroupedService {
         query.expiringWithin ?? (await warningDays(tx, organizationId));
       const rows = rowFilters(query, organizationId, today, days);
 
-      const facets: Record<keyof StockCodeCounts, { asked: boolean; on: SQL }> =
-        {
-          low: {
-            asked: query.low === 'true',
-            on: sql`f.status in ('low', 'out')`,
-          },
-          out: { asked: query.out === 'true', on: sql`f.status = 'out'` },
-          expiring: {
-            asked: query.expiringWithin !== undefined,
-            on: sql`c.expiring`,
-          },
-          expired: { asked: query.expired === 'true', on: sql`c.expired` },
-          needsCost: {
-            asked: query.needsCost === 'true',
-            on: sql`c.needs_cost`,
-          },
-        };
+      const facets: Record<
+        Exclude<keyof StockCodeCounts, 'total'>,
+        { asked: boolean; on: SQL }
+      > = {
+        low: {
+          asked: query.low === 'true',
+          on: sql`f.status in ('low', 'out')`,
+        },
+        out: { asked: query.out === 'true', on: sql`f.status = 'out'` },
+        expiring: {
+          asked: query.expiringWithin !== undefined,
+          on: sql`c.expiring`,
+        },
+        expired: { asked: query.expired === 'true', on: sql`c.expired` },
+        needsCost: {
+          asked: query.needsCost === 'true',
+          on: sql`c.needs_cost`,
+        },
+      };
 
       const {
         rows: [counts],
@@ -929,7 +938,7 @@ export class StockGroupedService {
 
       const {
         rows: [counts],
-      } = await tx.execute<Record<LotFacet, number>>(sql`
+      } = await tx.execute<Record<keyof StockLotCounts, number>>(sql`
         with r as materialized (
           select ${sql.join(
             LOT_FACETS.map(

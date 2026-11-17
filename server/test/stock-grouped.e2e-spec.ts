@@ -202,6 +202,7 @@ describe('Inventory, grouped (e2e)', () => {
       expiring: 1,
       expired: 1,
       needsCost: 3,
+      total: 4,
     });
 
     // With nothing else, with Low stock on, a search, a type and a place
@@ -227,6 +228,11 @@ describe('Inventory, grouped (e2e)', () => {
           count: counts[name],
         });
       }
+      // And the total, "Showing 50 of …", the rows the list shows.
+      expect({
+        others,
+        total: (await codes(alpha, others ? `?${others}` : '')).length,
+      }).toEqual({ others, total: counts.total });
     }
     expect(await countsOf('low=true')).toMatchObject({ needsCost: 1, out: 1 });
     expect(skus(await codes(alpha, '?low=true&needsCost=true'))).toEqual([
@@ -600,6 +606,7 @@ describe('Inventory, grouped (e2e)', () => {
       expiring: 3,
       expired: 1,
       needsCost: 4,
+      total: 4,
     });
 
     for (const others of [
@@ -617,6 +624,11 @@ describe('Inventory, grouped (e2e)', () => {
           count: counts[name],
         });
       }
+      // And the total, "Showing 50 of … lots", the rows the list shows.
+      expect({ others, total: (await lotsOf(others)).length }).toEqual({
+        others,
+        total: counts.total,
+      });
     }
 
     // The export is the rows, filters and all.

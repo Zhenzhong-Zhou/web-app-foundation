@@ -16627,6 +16627,9 @@
           },
           "needsCost": {
             "type": "number"
+          },
+          "total": {
+            "type": "number"
           }
         },
         "required": [
@@ -16634,7 +16637,8 @@
           "out",
           "expiring",
           "expired",
-          "needsCost"
+          "needsCost",
+          "total"
         ]
       },
       "StockPile": {
@@ -16939,13 +16943,17 @@
           },
           "needsCost": {
             "type": "number"
+          },
+          "total": {
+            "type": "number"
           }
         },
         "required": [
           "low",
           "expiring",
           "expired",
-          "needsCost"
+          "needsCost",
+          "total"
         ]
       },
       "LotMatch": {

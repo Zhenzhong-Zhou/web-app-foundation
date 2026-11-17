@@ -90,6 +90,11 @@ export class StockCodeCounts {
   expiring!: number;
   expired!: number;
   needsCost!: number;
+  /**
+   * The rows the list shows, every filter asked on: "Showing 50 of 128
+   * codes" beside Show 50 more.
+   */
+  total!: number;
 }
 
 /**
@@ -102,6 +107,8 @@ export class StockLotCounts {
   expiring!: number;
   expired!: number;
   needsCost!: number;
+  /** The lots the list shows, every filter asked on: "Showing 50 of 312 lots". */
+  total!: number;
 }
 
 /**

@@ -814,6 +814,7 @@
   "inventory.reorder.unnumbered": "{kind, select, run {Draft run} other {Draft purchase order}}",
   "inventory.search": "Search",
   "inventory.showEmptied": "Show emptied",
+  "inventory.showing": "{of, select, lot {Showing {shown} of {total, plural, one {# lot} other {# lots}}} other {Showing {shown} of {total, plural, one {# code} other {# codes}}}}",
   "inventory.stock.allCategories": "All categories",
   "inventory.stock.allTypes": "All types",
   "inventory.stock.chooseLotTo": "{mode, select, transfer {Choose the lot to move} ship {Choose the lot to ship} sample {Choose the lot to send} other {Choose the lot to correct}}",

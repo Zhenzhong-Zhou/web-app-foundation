@@ -1921,6 +1921,7 @@ export type StockCodeCounts = {
   expiring: number;
   expired: number;
   needsCost: number;
+  total: number;
 };
 
 export type StockPile = {
@@ -1987,6 +1988,7 @@ export type StockLotCounts = {
   expiring: number;
   expired: number;
   needsCost: number;
+  total: number;
 };
 
 export type LotMatch = {

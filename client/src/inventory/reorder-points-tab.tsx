@@ -75,6 +75,7 @@ import {
 } from './reorder-points';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { keepTicks, ticksOf } from './reorder-ticks';
+import { ShowingLine } from './showing-line';
 
 /** A page of the list (ADR-051), as the server's own default. */
 const PAGE_SIZE = 50;
@@ -1255,6 +1256,15 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           failed={!!error}
           pageSize={PAGE_SIZE}
           onLoadMore={loadMore}
+          before={
+            counts && (
+              <ShowingLine
+                shown={rows.length}
+                total={counts[filter || 'all']}
+                of="code"
+              />
+            )
+          }
         />
       )}
 

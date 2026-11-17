@@ -814,6 +814,7 @@
   "inventory.reorder.unnumbered": "{kind, select, run {生产订单草稿} other {采购订单草稿}}",
   "inventory.search": "搜索",
   "inventory.showEmptied": "显示已清空的库位",
+  "inventory.showing": "{of, select, lot {已显示 {shown} 个，共 {total} 个批次} other {已显示 {shown} 个，共 {total} 个编码}}",
   "inventory.stock.allCategories": "全部分类",
   "inventory.stock.allTypes": "全部类型",
   "inventory.stock.chooseLotTo": "{mode, select, transfer {请选择要移库的批次} ship {请选择要出库的批次} sample {请选择要寄送的批次} other {请选择要更正的批次}}",

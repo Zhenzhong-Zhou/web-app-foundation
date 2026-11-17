@@ -814,6 +814,7 @@
   "inventory.reorder.unnumbered": "{kind, select, run {Ordre de fabrication en brouillon} other {Bon de commande en brouillon}}",
   "inventory.search": "Rechercher",
   "inventory.showEmptied": "Afficher les emplacements vidés",
+  "inventory.showing": "{of, select, lot {{shown} sur {total, plural, one {# lot} other {# lots}} affichés} other {{shown} sur {total, plural, one {# code} other {# codes}} affichés}}",
   "inventory.stock.allCategories": "Toutes les catégories",
   "inventory.stock.allTypes": "Tous les types",
   "inventory.stock.chooseLotTo": "{mode, select, transfer {Choisissez le lot à déplacer} ship {Choisissez le lot à sortir} sample {Choisissez le lot à envoyer} other {Choisissez le lot à corriger}}",

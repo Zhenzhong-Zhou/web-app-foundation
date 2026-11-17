@@ -103,13 +103,20 @@ export const handlers = [
       expiring: 0,
       expired: 0,
       needsCost: 0,
+      total: 0,
     }),
   ),
   http.get(`${BASE}/stock/by-lot`, () =>
     HttpResponse.json({ entries: [], nextCursor: null }),
   ),
   http.get(`${BASE}/stock/by-lot/counts`, () =>
-    HttpResponse.json({ low: 0, expiring: 0, expired: 0, needsCost: 0 }),
+    HttpResponse.json({
+      low: 0,
+      expiring: 0,
+      expired: 0,
+      needsCost: 0,
+      total: 0,
+    }),
   ),
   // Stock's Category filter reads them (ADR-093).
   http.get(`${BASE}/products/categories`, () =>

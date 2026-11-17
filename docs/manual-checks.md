@@ -438,7 +438,10 @@ a second organization.
   opens the lots alone, no place named. Opened, the address gains
   `open=` with its code; follow the item's name and come Back: the row is
   still open and focus is on its name. Show 50 more puts focus on the
-  first new row.
+  first new row; on the volume database it reads "Showing 50 of …
+  codes" beside it, the total changing with each filter, "… lots" on the
+  Lot view, in French « 50 sur … codes affichés », in 中文 已显示 50 个，共
+  … 个编码.
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, each code with its type as a word,
   "D3-1000-120 · Product"; D3-B02's two rows read "1 of 2
@@ -4207,8 +4210,8 @@ site, after a deploy that changes the setting, the route or the relay.
   with Actions, the sort behind Filters and the three views under the
   search; nothing is cut off at either width.
   From Home's Low stock tile and Back, focus is on the tile again.
-  On the volume database, past fifty points, Show 50 more adds the next
-  fifty; with the network turned off in the browser's tools, it keeps the
+  On the volume database, past fifty points, "Showing 50 of … codes"
+  sits beside Show 50 more, which adds the next fifty; with the network turned off in the browser's tools, it keeps the
   rows shown and says the next 50 could not be loaded, with Try again.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
@@ -6715,3 +6718,7 @@ first.
 - 2026-11-17: ADR-093's review, Bob's third message (4): every header
   that sorts on Stock and Reorder shows a faint up-and-down arrow at rest,
   the sorted one solid, the default marked: MC-315 and MC-4202.
+- 2026-11-17: ADR-093's review, Bob's third message (5): Stock by item,
+  the Lot view and Reorder say "Showing 50 of … codes" (lots) beside Show
+  50 more, the total from the counts, following every filter: MC-312 and
+  MC-4202.

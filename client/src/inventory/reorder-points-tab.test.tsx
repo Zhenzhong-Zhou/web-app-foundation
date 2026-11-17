@@ -518,6 +518,10 @@ describe('Reorder', () => {
       ),
     );
 
+    // How many of the view's it shows (Bob's third message, 5).
+    expect(
+      await screen.findByText(`Showing ${ROWS.length} of 4 codes`),
+    ).toBeVisible();
     await user.click(
       await screen.findByRole('button', { name: 'Show 50 more' }),
     );

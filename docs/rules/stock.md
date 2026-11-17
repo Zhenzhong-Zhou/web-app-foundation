@@ -101,7 +101,9 @@ file is kept is in the [README](README.md).
   MC-315
 - **Each quick filter's count is the rows it shows,** with the other
   filters on and its own off: Low stock holds the out, and Expiring soon
-  the expired, as Home's tiles do.
+  the expired, as Home's tiles do. Beside Show 50 more, "Showing 50 of
+  128 codes" (lots on the Lot view) counts the rows the list shows, every
+  filter on, from the same statement.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on" ·
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·

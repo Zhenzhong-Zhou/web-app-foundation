@@ -117,7 +117,14 @@ const PLACES: StockPlace[] = [
   },
 ];
 
-const COUNTS = { low: 1, out: 0, expiring: 0, expired: 0, needsCost: 0 };
+const COUNTS = {
+  low: 1,
+  out: 0,
+  expiring: 0,
+  expired: 0,
+  needsCost: 0,
+  total: 1,
+};
 
 /**
  * The grouped read answering with these rows, its counts and the code's
@@ -156,6 +163,7 @@ function answer(entries: StockCodeRow[] = [CODE]) {
         expiring: 1,
         expired: 1,
         needsCost: 0,
+        total: 3,
       });
     }),
   );
@@ -816,6 +824,57 @@ describe('InventoryPage', () => {
     );
     expect(await screen.findByText(/No stock yet/)).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  // Bob's third message (5): as Items says it, the rows read of every row
+  // the filters match, from the counts read with those filters.
+  it('says how many codes it shows of those its filters match, beside Show 50 more', async () => {
+    const counted: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/stock/by-code', () =>
+        HttpResponse.json({ entries: [CODE], nextCursor: 'next' }),
+      ),
+      http.get('/api/v1/stock/by-code/counts', ({ request }) => {
+        counted.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ ...COUNTS, total: 128 });
+      }),
+    );
+    renderAt('/inventory?low=1', ['stock.view']);
+
+    expect(await screen.findByText('Showing 1 of 128 codes')).toBeVisible();
+    expect(counted.at(-1)?.get('low')).toBe('true');
+  });
+
+  it('says how many lots the Lot view shows of those its filters match', async () => {
+    server.use(
+      http.get('/api/v1/stock/by-lot', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              ...pile('3', 'NN-2401', '2027-01-01', 'Shelf A'),
+              productId: PRODUCT,
+              type: 'good',
+              coverFileId: null,
+              isAvailable: true,
+              places: 1,
+            },
+          ],
+          nextCursor: 'next',
+        }),
+      ),
+      http.get('/api/v1/stock/by-lot/counts', () =>
+        HttpResponse.json({
+          low: 0,
+          expiring: 0,
+          expired: 0,
+          needsCost: 0,
+          total: 312,
+        }),
+      ),
+    );
+    renderAt('/inventory?group=lot', ['stock.view']);
+
+    expect(await screen.findByText('Showing 1 of 312 lots')).toBeVisible();
   });
 
   it('keeps the rows when the next 50 cannot be read, with Try again (#544)', async () => {

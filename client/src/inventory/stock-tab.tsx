@@ -77,6 +77,7 @@ import {
 } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
+import { ShowingLine } from './showing-line';
 import type { Pile } from './stock-actions';
 import { StockCodes, type StockHandlers } from './stock-codes';
 import { StockLots } from './stock-lots';
@@ -874,6 +875,15 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           failed={!!list.error}
           pageSize={PAGE_SIZE}
           onLoadMore={loadMore}
+          before={
+            counts && (
+              <ShowingLine
+                shown={rows.length}
+                total={counts.total}
+                of={byLot ? 'lot' : 'code'}
+              />
+            )
+          }
         />
       )}
 
