@@ -496,6 +496,12 @@ async function buildProbes(
     // Add's picker marks the items with a point (#538).
     { name: 'reorder points: items', run: () => reorder.items() },
     { name: 'valuation', run: () => costs.stockValuation() },
+    // Stock value's Waiting for a cost, each row with its item's names and
+    // cover since 3fb4b3e5 (review 74), in Chinese as a reader there sees it.
+    {
+      name: 'waiting for a cost',
+      run: () => costs.needsCost({}, 'zh-Hans'),
+    },
     // The catalogue's reads that join products (#226), each with the
     // organization on its join: without it, Postgres reads every tenant's
     // products to join one tenant's variants.
