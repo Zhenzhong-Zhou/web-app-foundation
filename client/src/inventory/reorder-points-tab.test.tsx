@@ -47,6 +47,7 @@ const ROWS = [
   point({ sku: 'D3-1000' }),
   point({
     sku: 'OMEGA3-90',
+    productName: 'Omega 3',
     rule: 'just_enough',
     fixedQuantity: null,
     suggestion: '0.0000',
@@ -64,6 +65,7 @@ const ROWS = [
   }),
   point({
     sku: 'SLEEP-60CT',
+    productName: 'Sleep',
     source: 'made',
     rule: 'just_enough',
     fixedQuantity: null,
@@ -72,6 +74,7 @@ const ROWS = [
   }),
   point({
     sku: 'BOTTLE-90',
+    productName: 'Amber bottle',
     status: 'enough',
     position: '400.0000',
     suggestion: '0.0000',
@@ -100,7 +103,18 @@ const DETAIL: ReorderPointDetail = {
   stillNeeded: [],
 };
 
-/** Where Raise a purchase order goes: what it fills New order with. */
+/** Where a row's name and its line go: the item's page, at its part. */
+function ItemPage() {
+  const { pathname, hash } = useLocation();
+  return (
+    <p>
+      Item page: {pathname}
+      {hash}
+    </p>
+  );
+}
+
+/** Where Buy goes: what it fills New order with. */
 function NewOrder() {
   const { state } = useLocation();
   return <p>New order: {JSON.stringify(orderFillOf(state))}</p>;
@@ -119,7 +133,7 @@ function WithHelp({ children }: { children: ReactNode }) {
 
 function open(
   permissions: string[],
-  address = '/inventory?tab=reorder-points',
+  address = '/inventory?tab=reorder',
   { rows = ROWS, counts = { all: 4, low: 3, out: 0 }, help = false } = {},
 ) {
   const asked: URL[] = [];
@@ -151,6 +165,7 @@ function open(
           }
         />
         <Route path="/orders/new" element={<NewOrder />} />
+        <Route path="/items/:id" element={<ItemPage />} />
       </Routes>
     </MemoryRouter>,
     { permissions },
@@ -158,40 +173,162 @@ function open(
   return asked;
 }
 
-describe('Reorder points', () => {
-  it('gives a box only to a bought low item with something to order, a drafted one disabled', async () => {
+describe('Reorder', () => {
+  it('gives a box only to a bought low item with something to order, a drafted one disabled with its reason beside it', async () => {
+    open(['stock.view', 'orders.create', 'orders.view']);
+
+    expect(
+      await screen.findByRole('checkbox', { name: 'Choose Vitamin D3' }),
+    ).toBeEnabled();
+    const drafted = screen.getByRole('row', { name: /OMEGA3-90/ });
+    expect(
+      within(drafted).getByRole('checkbox', { name: 'Choose Omega 3' }),
+    ).toBeDisabled();
+    // Its reason on screen, not only in a hover a phone never has (#459).
+    expect(within(drafted).getByText('In a draft already')).toBeVisible();
+    // Made, or with enough: nothing to buy.
+    expect(
+      screen.queryByRole('checkbox', { name: /Sleep|Amber bottle/ }),
+    ).not.toBeInTheDocument();
+    // The draft and its quantity in their own cell, the order a link.
+    expect(drafted).toHaveTextContent('Drafted in PO-DEMO-13 · 120');
+    expect(
+      within(drafted).getAllByRole('link', { name: 'PO-DEMO-13' })[0],
+    ).toHaveAttribute('href', '/orders/po-13');
+    // A fixed rule's suggestion with its unit, in its multiples.
+    const fixed = screen.getByRole('row', { name: /D3-1000/ });
+    expect(within(fixed).getByText('96 each')).toBeInTheDocument();
+    expect(within(fixed).getByText('2 × 48')).toBeInTheDocument();
+  });
+
+  it('names each row first, its code grey with how it is got in words, and links where it stands', async () => {
+    open(['stock.view']);
+
+    const row = await screen.findByRole('row', { name: /D3-1000/ });
+    expect(
+      within(row).getByRole('link', { name: 'Vitamin D3' }),
+    ).toHaveAttribute('href', '/items/product-D3-1000');
+    expect(
+      within(row).getByText('Bought · in multiples of 48'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getByText(
+        'Made · makes what is short',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('row', { name: /OMEGA3-90/ })).getByText(
+        'Bought · orders what is short',
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      within(row).getByRole('link', { name: '20 left · reorder at 96' }),
+    );
+    expect(
+      await screen.findByText('Item page: /items/product-D3-1000#stock'),
+    ).toBeInTheDocument();
+  });
+
+  it('opens the item’s page from elsewhere on a row, not from its buttons', async () => {
+    open(['stock.view']);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+    );
+    expect(screen.queryByText(/^Item page/)).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getByText('Low'),
+    );
+    expect(
+      await screen.findByText('Item page: /items/product-SLEEP-60CT'),
+    ).toBeInTheDocument();
+  });
+
+  it('says the line above the table, and names the bar’s colours and its mark', async () => {
     open(['stock.view', 'orders.create']);
 
     expect(
-      await screen.findByRole('checkbox', { name: 'Choose D3-1000' }),
-    ).toBeEnabled();
+      await screen.findByText(
+        /^Buy or make what is short\. Tick several to buy them on one purchase order\./,
+      ),
+    ).toBeInTheDocument();
+    await screen.findByText('the reorder point, always in the middle');
+    for (const words of [
+      'Low',
+      'Enough',
+      'Out',
+      'the reorder point, always in the middle',
+    ]) {
+      expect(screen.getAllByText(words).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('buys one row from its own button, New order filled in with it', async () => {
+    open(['stock.view', 'orders.create']);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Buy 96 of Vitamin D3' }),
+    );
+
     expect(
-      screen.getByRole('checkbox', {
-        name: 'OMEGA3-90 is in a draft already, which covers what it needs.',
+      await screen.findByText(
+        `New order: ${JSON.stringify({
+          lines: [{ variantId: 'variant-D3-1000', quantity: '96.0000' }],
+        })}`,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('sorts by the suggested order, most first on the first press, in the address', async () => {
+    const asked = open(['stock.view']);
+
+    const header = await screen.findByRole('button', {
+      name: 'Suggested order',
+    });
+    await userEvent.click(header);
+    await expect
+      .poll(() => asked.at(-1)?.searchParams.get('sort'))
+      .toBe('suggested');
+    expect(asked.at(-1)?.searchParams.get('order')).toBe('desc');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Suggested order' }),
+    );
+    await expect
+      .poll(() => asked.at(-1)?.searchParams.get('order'))
+      .toBe('asc');
+  });
+
+  // Reorder was Reorder points (ADR-093): a kept address still opens it.
+  it('opens from the old address, on its filter', async () => {
+    const asked = open(
+      ['stock.view'],
+      '/inventory?tab=reorder-points&status=low',
+    );
+
+    expect(
+      await screen.findByRole('tab', { name: 'Reorder', selected: true }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', {
+        name: /^Low stock\s*3$/,
+        pressed: true,
       }),
-    ).toBeDisabled();
-    // Made, or with enough: nothing to raise a purchase order for.
-    expect(
-      screen.queryByRole('checkbox', { name: /SLEEP-60CT|BOTTLE-90/ }),
-    ).not.toBeInTheDocument();
-    // The drafted row says what is in draft, linked, and suggests nothing.
-    const drafted = screen.getByRole('row', { name: /OMEGA3-90/ });
-    expect(within(drafted).getByText('Drafted')).toBeInTheDocument();
-    expect(within(drafted).getByText('PO-DEMO-13')).toBeInTheDocument();
-    // A fixed rule's suggestion in its multiples.
-    const fixed = screen.getByRole('row', { name: /D3-1000/ });
-    expect(within(fixed).getByText('2 × 48')).toBeInTheDocument();
+    ).toBeInTheDocument();
+    expect(asked[0].searchParams.get('status')).toBe('low');
   });
 
   it('shows what is chosen in the bar until it is cleared, and the header’s box chooses every row it can', async () => {
     open(['stock.view', 'orders.create']);
 
     await userEvent.click(
-      await screen.findByRole('checkbox', { name: 'Choose D3-1000' }),
+      await screen.findByRole('checkbox', { name: 'Choose Vitamin D3' }),
     );
     const bar = screen.getByRole('region', { name: 'Chosen to order' });
     expect(within(bar).getByText('1 chosen')).toBeInTheDocument();
-    expect(within(bar).getByText('D3-1000 · 96')).toBeInTheDocument();
+    expect(within(bar).getByText('Vitamin D3 · 96')).toBeInTheDocument();
     // Said to a screen reader too, from a status there before the bar.
     expect(screen.getByRole('status')).toHaveTextContent('1 chosen');
     // Its focus ring in the bar's own text colour, not the faint accent.
@@ -211,7 +348,7 @@ describe('Reorder points', () => {
       screen.getByRole('checkbox', { name: 'Choose every item to order' }),
     );
     expect(
-      screen.getByRole('checkbox', { name: 'Choose D3-1000' }),
+      screen.getByRole('checkbox', { name: 'Choose Vitamin D3' }),
     ).toBeChecked();
     expect(
       within(screen.getByRole('region', { name: 'Chosen to order' })).getByText(
@@ -228,7 +365,10 @@ describe('Reorder points', () => {
       await screen.findByRole('button', { name: 'Where OMEGA3-90 stands' }),
     );
 
-    expect(await screen.findByText('In draft')).toBeInTheDocument();
+    // The column's header, and the opened row's own part.
+    await waitFor(() =>
+      expect(screen.getAllByText('In draft')).toHaveLength(2),
+    );
     expect(screen.getAllByText('PO-DEMO-13').length).toBeGreaterThan(1);
   });
 
@@ -320,16 +460,15 @@ describe('Reorder points', () => {
     ).toHaveLength(2);
     // Nothing to filter, work out or export yet.
     expect(screen.queryByRole('button', { name: /^All/ })).toBeNull();
-    expect(screen.queryByText(/^Position = usable/)).toBeNull();
+    expect(screen.queryByText(/^Buy or make what is short/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Export' })).toBeNull();
   });
 
   it('says nothing is low, with how many have a point, and shows all', async () => {
-    const asked = open(
-      ['stock.view'],
-      '/inventory?tab=reorder-points&status=low',
-      { rows: [], counts: { all: 9, low: 0, out: 0 } },
-    );
+    const asked = open(['stock.view'], '/inventory?tab=reorder&status=low', {
+      rows: [],
+      counts: { all: 9, low: 0, out: 0 },
+    });
 
     expect(
       await screen.findByText('Nothing is low. 9 items have a reorder point.'),
@@ -357,10 +496,7 @@ describe('Reorder points', () => {
   });
 
   it('opens on Low from the address, with the counts beside each view', async () => {
-    const asked = open(
-      ['stock.view'],
-      '/inventory?tab=reorder-points&status=low',
-    );
+    const asked = open(['stock.view'], '/inventory?tab=reorder&status=low');
 
     expect(
       await screen.findByRole('button', {
@@ -378,12 +514,12 @@ describe('Reorder points', () => {
     open(['stock.view', 'orders.create']);
 
     await userEvent.click(
-      await screen.findByRole('checkbox', { name: 'Choose D3-1000' }),
+      await screen.findByRole('checkbox', { name: 'Choose Vitamin D3' }),
     );
     await userEvent.click(
       within(screen.getByRole('region', { name: 'Chosen to order' })).getByRole(
         'button',
-        { name: 'Raise a purchase order' },
+        { name: 'Buy 1 on a purchase order' },
       ),
     );
 
@@ -396,7 +532,7 @@ describe('Reorder points', () => {
     ).toBeInTheDocument();
   });
 
-  it('offers Plan a run on a made low row to whoever may plan one, filled in, and reads the list again once planned', async () => {
+  it('offers Make on a made low row to whoever may plan a run, filled in, and reads the list again once planned', async () => {
     const asked = open(['stock.view', 'production.create']);
     server.use(
       http.get('/api/v1/products/variants', () =>
@@ -422,17 +558,15 @@ describe('Reorder points', () => {
 
     // Bought, or drafted: none.
     await screen.findByRole('row', { name: /SLEEP-60CT/ });
-    expect(
-      screen.getAllByRole('button', { name: /^Plan a run of/ }),
-    ).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Make / })).toHaveLength(1);
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'Plan a run of SLEEP-60CT' }),
+      screen.getByRole('button', { name: 'Make 230 of Sleep' }),
     );
     const dialog = await screen.findByRole('dialog', { name: 'Plan a run' });
     expect(
       within(dialog).getByText(
-        'Filled from Reorder points: 230 brings it back to its reorder point, 96.',
+        'Filled from Reorder: 230 brings it back to its reorder point, 96.',
       ),
     ).toBeInTheDocument();
     expect(within(dialog).getByLabelText(/Quantity to make/)).toHaveValue(
@@ -489,9 +623,7 @@ describe('Reorder points', () => {
   it('opens Help at where an item stands, from the line that says it', async () => {
     open(['stock.view'], undefined, { help: true });
 
-    const line = await screen.findByText(
-      /^Position = usable \+ coming − still needed/,
-    );
+    const line = await screen.findByText(/^Buy or make what is short\./);
     await userEvent.click(
       within(line).getByRole('button', { name: 'Learn more' }),
     );
@@ -533,12 +665,12 @@ describe('Reorder points', () => {
     ).toBeInTheDocument();
   });
 
-  it('offers no Plan a run to whoever may not plan one', async () => {
+  it('offers no Make to whoever may not plan a run', async () => {
     open(['stock.view', 'orders.create']);
 
     await screen.findByRole('row', { name: /SLEEP-60CT/ });
     expect(
-      screen.queryByRole('button', { name: /^Plan a run of/ }),
+      screen.queryByRole('button', { name: /^Make / }),
     ).not.toBeInTheDocument();
   });
 });

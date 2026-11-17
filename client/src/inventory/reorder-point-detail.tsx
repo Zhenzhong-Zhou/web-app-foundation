@@ -21,7 +21,7 @@ import { atOrBelowZero } from './reorder-points';
  * A document's number, linked to its page for someone who may read it, as
  * text for anyone else. A draft with no number yet says what it is.
  */
-function DocumentLink({
+export function DocumentLink({
   kind,
   id,
   number,
@@ -204,7 +204,9 @@ export function ReorderPointDetail({ row }: { row: ReorderPointRow }) {
             </Typography>
           </Line>
         ))}
-        {!data.usable.length && (
+        {/* Without places the server names none (A6): the total alone,
+            "Nothing usable." only when there is nothing. */}
+        {!data.usable.length && atOrBelowZero(row.usable) && (
           <Nothing>
             {intl.formatMessage({
               id: 'inventory.reorder.noneUsable',

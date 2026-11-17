@@ -9,8 +9,9 @@ import {
   Button,
   Checkbox,
   IconButton,
+  Link,
+  MenuItem,
   Paper,
-  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -18,10 +19,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Tooltip,
+  TextField,
   Typography,
 } from '@mui/material';
 import {
+  type MouseEvent,
   type ReactElement,
   type ReactNode,
   useEffect,
@@ -30,37 +32,44 @@ import {
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { ReorderPointCounts, ReorderPointRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
-import { FilterRow } from '../components/filter-row';
+import { FilterRow, QuickFilterPill } from '../components/filter-row';
+import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { PlaceholderRows } from '../components/placeholder-rows';
+import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
 import { api } from '../lib/api';
 import type { ReorderStatus } from '../lib/api-names';
 import { displayQuantity, itemName, NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useCards } from '../lib/use-cards';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
+import { useListSort, withSort } from '../lib/use-list-sort';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
+import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import { PositionBar } from './position-bar';
 import { RemoveReorderPointDialog } from './remove-reorder-point-dialog';
 import { ReorderPointActions } from './reorder-point-actions';
-import { DraftLines, ReorderPointDetail } from './reorder-point-detail';
+import { DocumentLink, ReorderPointDetail } from './reorder-point-detail';
 import {
   type ReorderOpening,
   ReorderPointDialog,
@@ -82,6 +91,9 @@ type Filter = (typeof FILTERS)[number];
 /** The view in the address (ADR-091), All left out: `?status=low`. */
 const ADDRESS_FILTERS = { status: oneOf<Filter>(FILTERS, '') };
 
+/** What the list sorts by besides its own order (ADR-093; #473's 16). */
+const SORTS = ['suggested'] as const;
+
 /** Each status's icon beside its word, so it is never told by colour alone. */
 const STATUS_ICONS: Partial<Record<ReorderStatus, ReactElement>> = {
   out: <ErrorOutlined />,
@@ -98,7 +110,21 @@ function pathOf(base: string, query: Record<string, string>): string {
   return text ? `${base}?${text}` : base;
 }
 
-/** What a row's item is: bought or made, and how much its rule orders. */
+/** The item's page at Where it stands (ADR-093, R8). */
+function whereItStands(productId: string): string {
+  return `/items/${productId}#stock`;
+}
+
+/** A row's item named as every list names it, in the reader's language. */
+function nameOf(row: ReorderPointRow): string {
+  return itemName(row.productName, row.variantName);
+}
+
+/**
+ * What a row's item is: bought or made, and how much its rule orders, in
+ * words (ADR-093; #459): "Bought · orders what is short", "Made · in
+ * multiples of 1,000", never a pack the app does not know.
+ */
 function useKindLine(): (row: ReorderPointRow) => string {
   const intl = useIntl();
 
@@ -110,9 +136,9 @@ function useKindLine(): (row: ReorderPointRow) => string {
         })
       : intl.formatMessage(
           {
-            id: 'inventory.reorder.kind',
+            id: 'inventory.reorder.kindLine',
             defaultMessage:
-              '{source, select, made {Made} other {Bought}} · {rule, select, fixed {{quantity} at a time} maximum {up to {quantity}} other {just enough}}',
+              '{source, select, made {Made} other {Bought}} · {rule, select, fixed {in multiples of {quantity}} maximum {up to {quantity}} other {{source, select, made {makes what is short} other {orders what is short}}}}',
           },
           {
             source: row.source,
@@ -124,48 +150,85 @@ function useKindLine(): (row: ReorderPointRow) => string {
         );
 }
 
-/**
- * The suggested order, or Drafted with what is in draft, linked. With
- * `focused`, its first link takes focus once drafted, or Drafted itself
- * for a reader who cannot open the run: a run just planned from the row,
- * whose Plan a run is gone, so focus does not fall to the page's start
- * (WCAG 2.4.3).
- */
-function Suggestion({
-  row,
-  focused = false,
-}: {
-  row: ReorderPointRow;
-  focused?: boolean;
-}) {
-  const intl = useIntl();
-  const draftsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!focused || !row.drafted) return;
-    const drafts = draftsRef.current;
-    (drafts?.querySelector('a') ?? drafts)?.focus();
-  }, [focused, row.drafted]);
+/** The grey line under a row's name: its code, then bought or made. */
+function CodeLine({ row }: { row: ReorderPointRow }) {
+  const kindLine = useKindLine();
 
-  if (row.drafted) {
-    return (
-      <Stack
-        ref={draftsRef}
-        tabIndex={focused ? -1 : undefined}
-        spacing={0.25}
-        sx={{ alignItems: 'flex-end' }}
+  return (
+    <>
+      <Box component="span" sx={{ display: 'block' }}>
+        {row.sku}
+      </Box>
+      <Box component="span" sx={{ display: 'block' }}>
+        {kindLine(row)}
+      </Box>
+    </>
+  );
+}
+
+/** The status in Home's words, with its icon, never by colour alone. */
+function Status({ row }: { row: ReorderPointRow }) {
+  const intl = useIntl();
+
+  return (
+    <StatusChip
+      tone={STATUS_TONES.reorder[row.status]}
+      icon={STATUS_ICONS[row.status]}
+      label={intl.formatMessage(
+        {
+          id: 'inventory.reorder.status',
+          defaultMessage:
+            '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
+        },
+        { status: row.status },
+      )}
+    />
+  );
+}
+
+/**
+ * Where it stands (ADR-093, R7): "10 left · reorder at 36", a link to the
+ * item's Where it stands, and under it ADR-085's bar, unchanged; the
+ * chip beside it and these words carry the status, so the bar's colour is
+ * never alone.
+ */
+function Stands({ row }: { row: ReorderPointRow }) {
+  const intl = useIntl();
+
+  return (
+    <Stack spacing={0.75} sx={{ alignItems: 'flex-start' }}>
+      <Link
+        component={RouterLink}
+        to={whereItStands(row.productId)}
+        state={OFFER_BACK}
+        variant="body2"
+        sx={{ whiteSpace: 'nowrap' }}
       >
-        <Typography variant="body2" component="span">
-          {intl.formatMessage({
-            id: 'inventory.reorder.drafted',
-            defaultMessage: 'Drafted',
-          })}
-        </Typography>
-        <Box sx={{ minWidth: rem(160) }}>
-          <DraftLines drafts={row.drafts} />
-        </Box>
-      </Stack>
-    );
-  }
+        {intl.formatMessage(
+          {
+            id: 'inventory.stock.left',
+            defaultMessage: '{left} left · reorder at {point}',
+          },
+          {
+            left: displayQuantity(row.position),
+            point: displayQuantity(row.reorderPoint),
+          },
+        )}
+      </Link>
+      {row.status !== 'discontinued' && (
+        <PositionBar
+          position={row.position}
+          point={row.reorderPoint}
+          status={row.status}
+        />
+      )}
+    </Stack>
+  );
+}
+
+/** The suggested order with its unit, and a fixed rule's "5 × 12" under it. */
+function Suggestion({ row }: { row: ReorderPointRow }) {
+  const intl = useIntl();
 
   if (row.status === 'discontinued' || atOrBelowZero(row.suggestion)) {
     return NO_VALUE;
@@ -173,7 +236,7 @@ function Suggestion({
 
   return (
     <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
-      <span>{displayQuantity(row.suggestion)}</span>
+      <span>{displayWithUnit(row.suggestion, row.unitOfMeasure, intl)}</span>
       {row.rule === 'fixed' && row.suggestedMultiples && row.fixedQuantity && (
         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
@@ -192,143 +255,272 @@ function Suggestion({
   );
 }
 
-/** A row of the list, and under it, once opened, where it stands. */
+/**
+ * What is in draft for the row, in its own cell (#459): "Drafted in
+ * PO-000014 · 60", the document a link. With `focused`, its first link
+ * takes focus once drafted, or the cell itself for a reader who cannot
+ * open the run: a run just planned from the row, whose Make is gone, so
+ * focus does not fall to the page's start (WCAG 2.4.3).
+ */
+function Drafts({
+  row,
+  focused = false,
+}: {
+  row: ReorderPointRow;
+  focused?: boolean;
+}) {
+  const intl = useIntl();
+  const draftsRef = useRef<HTMLDivElement>(null);
+  const drafted = row.drafts.length > 0;
+  useEffect(() => {
+    if (!focused || !drafted) return;
+    const drafts = draftsRef.current;
+    (drafts?.querySelector('a') ?? drafts)?.focus();
+  }, [focused, drafted]);
+
+  if (!drafted) return NO_VALUE;
+
+  return (
+    <Stack ref={draftsRef} tabIndex={focused ? -1 : undefined} spacing={0.25}>
+      {row.drafts.map((draft) => (
+        <Typography
+          key={`${draft.kind}-${draft.id}`}
+          variant="body2"
+          component="span"
+        >
+          {intl.formatMessage(
+            {
+              id: 'inventory.reorder.draftedIn',
+              defaultMessage: 'Drafted in {document} · {quantity}',
+            },
+            {
+              document: (
+                <DocumentLink
+                  kind={draft.kind}
+                  id={draft.id}
+                  number={draft.number}
+                />
+              ),
+              quantity: displayQuantity(draft.quantity),
+            },
+          )}
+        </Typography>
+      ))}
+    </Stack>
+  );
+}
+
+/**
+ * A row's box to tick it for one purchase order (ADR-085), for whoever may
+ * buy: a bought low item with something to order. One whose draft covers
+ * it is greyed, its reason beside it, not in a hover a phone never has
+ * (#459).
+ */
+function ChooseBox({
+  row,
+  chosen,
+  onChoose,
+}: {
+  row: ReorderPointRow;
+  chosen: boolean;
+  onChoose: (row: ReorderPointRow, on: boolean) => void;
+}) {
+  const intl = useIntl();
+  const choice = choiceOf(row);
+  const label = intl.formatMessage(
+    { id: 'inventory.reorder.choose', defaultMessage: 'Choose {name}' },
+    { name: nameOf(row) },
+  );
+
+  if (choice === 'open') {
+    return (
+      <Checkbox
+        checked={chosen}
+        onChange={(event) => onChoose(row, event.target.checked)}
+        slotProps={{ input: { 'aria-label': label } }}
+      />
+    );
+  }
+  if (choice === 'drafted') {
+    return (
+      <Stack sx={{ alignItems: 'flex-start' }}>
+        <Checkbox disabled slotProps={{ input: { 'aria-label': label } }} />
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', maxWidth: rem(100) }}
+        >
+          {intl.formatMessage({
+            id: 'inventory.reorder.inADraft',
+            defaultMessage: 'In a draft already',
+          })}
+        </Typography>
+      </Stack>
+    );
+  }
+  return null;
+}
+
+/**
+ * A row's main action, saying what it makes and how many (ADR-093, 19a):
+ * Buy 30 on a bought row, for whoever may buy, opening New order filled
+ * in; Make 1,000 on a made one, for whoever may plan a run, opening Plan
+ * a run filled in. Nothing is saved until it is confirmed there.
+ */
+function MainAction({
+  row,
+  onBuy,
+  onPlan,
+}: {
+  row: ReorderPointRow;
+  onBuy: ((row: ReorderPointRow) => void) | null;
+  onPlan: ((row: ReorderPointRow) => void) | null;
+}) {
+  const intl = useIntl();
+  const quantity = displayQuantity(row.suggestion);
+  const values = { quantity, name: nameOf(row) };
+
+  if (onBuy && choiceOf(row) === 'open') {
+    return (
+      <Button
+        variant="outlined"
+        size="small"
+        sx={{ whiteSpace: 'nowrap' }}
+        aria-label={intl.formatMessage(
+          {
+            id: 'inventory.reorder.buyOf',
+            defaultMessage: 'Buy {quantity} of {name}',
+          },
+          values,
+        )}
+        onClick={() => onBuy(row)}
+      >
+        {intl.formatMessage(
+          { id: 'inventory.reorder.buy', defaultMessage: 'Buy {quantity}' },
+          values,
+        )}
+      </Button>
+    );
+  }
+  if (onPlan && plansRun(row)) {
+    return (
+      <Button
+        variant="outlined"
+        size="small"
+        sx={{ whiteSpace: 'nowrap' }}
+        aria-label={intl.formatMessage(
+          {
+            id: 'inventory.reorder.makeOf',
+            defaultMessage: 'Make {quantity} of {name}',
+          },
+          values,
+        )}
+        onClick={openDialog(() => onPlan(row))}
+      >
+        {intl.formatMessage(
+          { id: 'inventory.reorder.make', defaultMessage: 'Make {quantity}' },
+          values,
+        )}
+      </Button>
+    );
+  }
+  return null;
+}
+
+/** What a row and its card are handed: its tick, its actions, and its menu. */
+interface RowProps {
+  row: ReorderPointRow;
+  /** Whether this reader may tick rows to buy (orders.create). */
+  choosing: boolean;
+  chosen: boolean;
+  onChoose: (row: ReorderPointRow, on: boolean) => void;
+  /** Buy one row, for whoever may (orders.create). */
+  onBuy: ((row: ReorderPointRow) => void) | null;
+  /** Make a made low item, for whoever may (production.create). */
+  onPlan: ((row: ReorderPointRow) => void) | null;
+  /** Its run was just planned here: its draft's link takes focus. */
+  planned: boolean;
+  /** The row's menu, for whoever may set a point (stock.reorder). */
+  actions: ReactNode;
+}
+
+/** The draft's cell leaves the table between 600 and 899 px (R14). */
+const WIDE_ONLY = { display: { xs: 'none', md: 'table-cell' } } as const;
+const NARROW_ONLY = { display: { md: 'none' } } as const;
+
+/** A row of the table, and under it, once opened, where it stands. */
 function PointRow({
   row,
   columns,
   choosing,
   chosen,
   onChoose,
+  onBuy,
   onPlan,
   planned,
   actions,
-}: {
-  row: ReorderPointRow;
-  columns: number;
-  /** Whether this reader may choose rows to order (orders.create). */
-  choosing: boolean;
-  chosen: boolean;
-  onChoose: (row: ReorderPointRow, on: boolean) => void;
-  /** Plan a run of a made low item, for whoever may (production.create). */
-  onPlan: ((row: ReorderPointRow) => void) | null;
-  /** Its run was just planned here: its draft's link takes focus. */
-  planned: boolean;
-  /** The row's menu, for whoever may set a point (stock.reorder). */
-  actions: ReactNode;
-}) {
+}: RowProps & { columns: number }) {
   const intl = useIntl();
-  const kindLine = useKindLine();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const choice = choiceOf(row);
   const grey = row.status === 'discontinued';
   const detailId = `reorder-detail-${row.id}`;
 
-  const drafted = intl.formatMessage(
-    {
-      id: 'inventory.reorder.chooseDrafted',
-      defaultMessage:
-        '{sku} is in a draft already, which covers what it needs.',
-    },
-    { sku: row.sku },
-  );
-  const box =
-    choice === 'open' ? (
-      <Checkbox
-        checked={chosen}
-        onChange={(event) => onChoose(row, event.target.checked)}
-        slotProps={{
-          input: {
-            'aria-label': intl.formatMessage(
-              {
-                id: 'inventory.reorder.choose',
-                defaultMessage: 'Choose {sku}',
-              },
-              { sku: row.sku },
-            ),
-          },
-        }}
-      />
-    ) : choice === 'drafted' ? (
-      // A disabled box takes no pointer, so its reason is on what holds it.
-      <Tooltip title={drafted}>
-        <span>
-          <Checkbox disabled slotProps={{ input: { 'aria-label': drafted } }} />
-        </span>
-      </Tooltip>
-    ) : null;
+  // A click elsewhere on the row opens the item's page; the name is the
+  // row's one link, and its buttons do their own (the design language's
+  // Rows).
+  const openItem = (event: MouseEvent) => {
+    if (
+      (event.target as HTMLElement).closest(
+        'a, button, input, label, [role="menu"]',
+      )
+    ) {
+      return;
+    }
+    void navigate(`/items/${row.productId}`, { state: OFFER_BACK });
+  };
 
   return (
     <>
       <TableRow
         hover
+        onClick={openItem}
         sx={{
+          cursor: 'pointer',
           '& > td': {
+            verticalAlign: 'top',
             ...(open && { borderBottom: 0 }),
             ...(grey && { color: 'text.secondary' }),
           },
         }}
       >
-        {choosing && <TableCell padding="checkbox">{box}</TableCell>}
+        {choosing && (
+          <TableCell padding="checkbox">
+            <ChooseBox row={row} chosen={chosen} onChoose={onChoose} />
+          </TableCell>
+        )}
         <TableCell>
-          <Stack spacing={0.25}>
-            <span>
-              {intl.formatMessage(
-                {
-                  id: 'inventory.reorder.item',
-                  defaultMessage: '{sku} {name}',
-                },
-                {
-                  sku: (
-                    <Box component="span" sx={{ fontWeight: 600 }}>
-                      {row.sku}
-                    </Box>
-                  ),
-                  name: itemName(row.productName, row.variantName),
-                },
-              )}
-            </span>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {kindLine(row)}
-            </Typography>
-          </Stack>
-        </TableCell>
-        <TableCell>
-          <StatusChip
-            tone={STATUS_TONES.reorder[row.status]}
-            icon={STATUS_ICONS[row.status]}
-            label={intl.formatMessage(
-              {
-                id: 'inventory.reorder.status',
-                defaultMessage:
-                  '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
-              },
-              { status: row.status },
-            )}
+          <NameAndCode
+            name={nameOf(row)}
+            code={<CodeLine row={row} />}
+            type={row.type}
+            coverFileId={row.coverFileId}
+            to={`/items/${row.productId}`}
           />
         </TableCell>
-        <TableCell
-          align="right"
-          sx={{
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-            ...(!grey &&
-              atOrBelowZero(row.position) && { color: 'error.main' }),
-          }}
-        >
-          {displayWithUnit(row.position, row.unitOfMeasure, intl)}
+        <TableCell>
+          <Status row={row} />
         </TableCell>
         <TableCell>
-          {!grey && (
-            <PositionBar
-              position={row.position}
-              point={row.reorderPoint}
-              status={row.status}
-            />
-          )}
+          <Stands row={row} />
         </TableCell>
-        <TableCell align="right">{displayQuantity(row.reorderPoint)}</TableCell>
-        <TableCell align="right">
-          <Suggestion row={row} focused={planned} />
+        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+          <Suggestion row={row} />
+          <Box sx={{ ...NARROW_ONLY, mt: 0.5, textAlign: 'left' }}>
+            {!!row.drafts.length && <Drafts row={row} />}
+          </Box>
+        </TableCell>
+        <TableCell sx={WIDE_ONLY}>
+          <Drafts row={row} focused={planned} />
         </TableCell>
         <TableCell padding="checkbox">
           {/* Apart, so each is a target of its own (WCAG 2.5.8). */}
@@ -337,26 +529,7 @@ function PointRow({
             spacing={1}
             sx={{ justifyContent: 'flex-end', alignItems: 'center' }}
           >
-            {onPlan && plansRun(row) && (
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{ whiteSpace: 'nowrap' }}
-                aria-label={intl.formatMessage(
-                  {
-                    id: 'inventory.reorder.planRun',
-                    defaultMessage: 'Plan a run of {sku}',
-                  },
-                  { sku: row.sku },
-                )}
-                onClick={openDialog(() => onPlan(row))}
-              >
-                {intl.formatMessage({
-                  id: 'production.plan',
-                  defaultMessage: 'Plan a run',
-                })}
-              </Button>
-            )}
+            <MainAction row={row} onBuy={onBuy} onPlan={onPlan} />
             {!grey && (
               <IconButton
                 size="small"
@@ -390,9 +563,172 @@ function PointRow({
 }
 
 /**
- * The chosen rows, floating at the foot of the list while any is chosen
- * (ADR-085): how many, each with its suggestion, Clear, and Raise a
- * purchase order, which opens New order filled in with them.
+ * A row as a card below 600 px (the design language's Lists on a phone;
+ * R14): its tick, the name and its code, the status with where it stands,
+ * the suggestion, what is in draft, and Buy or Make with the menu.
+ */
+function PointCard({
+  row,
+  choosing,
+  chosen,
+  onChoose,
+  onBuy,
+  onPlan,
+  planned,
+  actions,
+}: RowProps) {
+  const intl = useIntl();
+  const suggested = !(
+    row.status === 'discontinued' || atOrBelowZero(row.suggestion)
+  );
+
+  return (
+    <Box
+      component="li"
+      sx={{
+        listStyle: 'none',
+        p: 2,
+        '& + &': { borderTop: 1, borderColor: 'divider' },
+      }}
+    >
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
+          {choosing && (
+            <ChooseBox row={row} chosen={chosen} onChoose={onChoose} />
+          )}
+          <NameAndCode
+            name={nameOf(row)}
+            code={<CodeLine row={row} />}
+            type={row.type}
+            coverFileId={row.coverFileId}
+            to={`/items/${row.productId}`}
+          />
+        </Stack>
+        <Stack
+          direction="row"
+          useFlexGap
+          sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 1 }}
+        >
+          <Status row={row} />
+          <Stands row={row} />
+        </Stack>
+        {suggested && (
+          <Typography variant="body2">
+            {intl.formatMessage(
+              {
+                id: 'inventory.reorder.suggestedLine',
+                defaultMessage:
+                  '{source, select, made {Suggested run} other {Suggested order}}: {quantity}',
+              },
+              {
+                source: row.source,
+                quantity: displayWithUnit(
+                  row.suggestion,
+                  row.unitOfMeasure,
+                  intl,
+                ),
+              },
+            )}
+          </Typography>
+        )}
+        {!!row.drafts.length && <Drafts row={row} focused={planned} />}
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <MainAction row={row} onBuy={onBuy} onPlan={onPlan} />
+          <Box sx={{ flex: 1 }} />
+          {actions}
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+
+/**
+ * The bar's legend (ADR-093, R7; #459): each colour named, and the mark,
+ * the reorder point, always in the middle.
+ */
+function Legend() {
+  const intl = useIntl();
+  const swatch = (
+    tone: 'warning.main' | 'success.main' | null,
+  ): ReactElement => (
+    <Box
+      aria-hidden
+      component="span"
+      sx={{
+        display: 'inline-block',
+        width: rem(16),
+        height: 8,
+        borderRadius: 999,
+        ...(tone
+          ? { bgcolor: tone }
+          : {
+              bgcolor: 'action.hover',
+              outline: 1,
+              outlineColor: 'error.main',
+            }),
+      }}
+    />
+  );
+  const status = (value: 'low' | 'enough' | 'out') =>
+    intl.formatMessage(
+      {
+        id: 'inventory.reorder.status',
+        defaultMessage:
+          '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
+      },
+      { status: value },
+    );
+  const items: [ReactElement, string][] = [
+    [swatch('warning.main'), status('low')],
+    [swatch('success.main'), status('enough')],
+    [swatch(null), status('out')],
+    [
+      <Box
+        key="mark"
+        aria-hidden
+        component="span"
+        sx={{
+          display: 'inline-block',
+          width: 2,
+          height: 14,
+          bgcolor: 'text.primary',
+        }}
+      />,
+      intl.formatMessage({
+        id: 'inventory.reorder.legendPoint',
+        defaultMessage: 'the reorder point, always in the middle',
+      }),
+    ],
+  ];
+
+  return (
+    <Stack
+      direction="row"
+      useFlexGap
+      sx={{ flexWrap: 'wrap', columnGap: 2, rowGap: 0.5 }}
+    >
+      {items.map(([mark, words]) => (
+        <Stack
+          key={words}
+          direction="row"
+          spacing={0.75}
+          sx={{ alignItems: 'center' }}
+        >
+          {mark}
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {words}
+          </Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
+}
+
+/**
+ * The ticked rows, floating at the foot of the list while any is ticked
+ * (ADR-085): how many, each with its suggestion, Clear, and Buy 2 on one
+ * purchase order, the row's verb (ADR-093), which opens New order filled
+ * in with them.
  */
 function ChosenBar({
   chosen,
@@ -458,10 +794,13 @@ function ChosenBar({
             <Typography key={row.id} component="li" variant="body2">
               {intl.formatMessage(
                 {
-                  id: 'inventory.reorder.chosenItem',
-                  defaultMessage: '{sku} · {quantity}',
+                  id: 'inventory.reorder.chosenLine',
+                  defaultMessage: '{name} · {quantity}',
                 },
-                { sku: row.sku, quantity: displayQuantity(row.suggestion) },
+                {
+                  name: nameOf(row),
+                  quantity: displayQuantity(row.suggestion),
+                },
               )}
             </Typography>
           ))}
@@ -473,10 +812,14 @@ function ChosenBar({
           })}
         </Button>
         <Button onClick={onRaise}>
-          {intl.formatMessage({
-            id: 'inventory.reorder.raise',
-            defaultMessage: 'Raise a purchase order',
-          })}
+          {intl.formatMessage(
+            {
+              id: 'inventory.reorder.buyChosen',
+              defaultMessage:
+                '{count, plural, one {Buy # on a purchase order} other {Buy # on one purchase order}}',
+            },
+            { count: chosen.length },
+          )}
         </Button>
       </Stack>
     </Paper>
@@ -484,18 +827,20 @@ function ChosenBar({
 }
 
 /**
- * Inventory's Reorder points (ADR-085): every item with a point and where
- * it stands, low first, as the server orders it. All, Low and Out with
- * their counts from the server; the search, as every list's (ADR-056);
- * each row opened to where its position comes from; bought low rows
- * chosen for a purchase order by someone who may raise one. The figures
- * are the server's, never added up here (ADR-025).
+ * Inventory's Reorder (ADR-085, ADR-093): every item with a point and
+ * where it stands, low first, as the server orders it, or by the
+ * suggested order, most first. All, Low and Out with their counts from
+ * the server; the search, as every list's (ADR-056); each row's Buy or
+ * Make, saying how many, opening its form filled in; bought low rows
+ * ticked for one purchase order by someone who may buy; each row opened
+ * to where its position comes from. The figures are the server's, never
+ * added up here (ADR-025). A table from 600 px, cards below it (R14).
  *
  * Whoever may set a point (stock.reorder) adds one at the title's right,
  * and edits or removes it from its row's menu; the list and its counts
  * read again after each.
  *
- * Home's card and the bell open it on Low: `?tab=reorder-points&status=low`.
+ * Home's card and the bell open it on Low: `?tab=reorder&status=low`.
  */
 export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const intl = useIntl();
@@ -505,6 +850,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const filter = filters.status;
   const setFilter = (status: Filter) => setFilters({ status });
   const { text, setText, search } = useListSearch();
+  const { sort, set: setSort, clear: clearSort } = useListSort(SORTS);
+  const phone = useCards();
   const [counts, setCounts] = useState<ReorderPointCounts | null>(null);
   // By item, kept while the filter or the search changes, so a buyer can
   // find items one search at a time and order them together.
@@ -523,10 +870,10 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const setting = can('stock.reorder');
   const planner = can('production.create');
   const query = { status: filter, search };
-  const listPath = pathOf('/stock/reorder-points', {
-    ...query,
-    limit: String(PAGE_SIZE),
-  });
+  const listPath = withSort(
+    pathOf('/stock/reorder-points', { ...query, limit: String(PAGE_SIZE) }),
+    sort,
+  );
   const countsPath = pathOf('/stock/reorder-points/counts', { search });
 
   const {
@@ -540,7 +887,6 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     loadMore,
     reload,
   } = useKeysetList<ReorderPointRow>(listPath);
-  const showSkeleton = useDelayedFlag(loading);
 
   // Beside All, Low and Out, with the search: the rows pressing each shows.
   useEffect(() => {
@@ -580,7 +926,137 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
       return next;
     });
 
-  const columns = choosing ? 8 : 7;
+  const columns = choosing ? 7 : 6;
+
+  /** New order, a line per item at its suggestion; nothing saved yet (ADR-085). */
+  const buy = (lines: ReorderPointRow[]) =>
+    void navigate('/orders/new', {
+      state: fillState({
+        lines: lines.map((row) => ({
+          variantId: row.variantId,
+          quantity: row.suggestion,
+        })),
+      }),
+    });
+
+  const rowProps = (row: ReorderPointRow): RowProps => ({
+    row,
+    choosing,
+    chosen: chosen.has(row.variantId),
+    onChoose: choose,
+    onBuy: choosing ? (one) => buy([one]) : null,
+    onPlan: planner ? setPlanning : null,
+    planned: planned === row.variantId,
+    actions: setting && (
+      <ReorderPointActions
+        row={row}
+        onEdit={(edited) =>
+          setOpening({
+            kind: 'edit',
+            item: edited,
+            point: {
+              source: edited.source,
+              reorderPoint: edited.reorderPoint,
+              rule: edited.rule,
+              fixedQuantity: edited.fixedQuantity,
+              maximumQuantity: edited.maximumQuantity,
+            },
+          })
+        }
+        onRemove={setRemoving}
+      />
+    ),
+  });
+
+  // Most first on its first press, then least first: what a buyer reads
+  // first is what to order most of (ADR-093).
+  const suggestedHeader = {
+    active: sort?.key === 'suggested',
+    order: sort?.order ?? 'desc',
+    onSort: () =>
+      setSort(
+        'suggested',
+        sort?.key === 'suggested' && sort.order === 'desc' ? 'asc' : 'desc',
+      ),
+  } as const;
+
+  // No point at all, counted with no search: the views, the position's
+  // line and Export have nothing to show, and the empty state says what a
+  // point does, with its own Learn more.
+  const none = counts?.all === 0 && !search;
+
+  // All, Low stock and Out, each with its count; none while no point is
+  // set, which the empty state says.
+  const quick = none
+    ? []
+    : [
+        {
+          id: 'all',
+          // Its own, not Invoices': Toutes is for factures.
+          label: intl.formatMessage({
+            id: 'inventory.reorder.filter.all',
+            defaultMessage: 'All',
+          }),
+          count: counts?.all,
+          pressed: filter === '',
+          onToggle: () => setFilter(''),
+        },
+        {
+          id: 'low',
+          label: intl.formatMessage({
+            id: 'inventory.reorder.filter.low',
+            defaultMessage: 'Low stock',
+          }),
+          count: counts?.low,
+          pressed: filter === 'low',
+          onToggle: () => setFilter('low'),
+        },
+        {
+          id: 'out',
+          label: intl.formatMessage({
+            id: 'inventory.reorder.filter.out',
+            defaultMessage: 'Out',
+          }),
+          count: counts?.out,
+          pressed: filter === 'out',
+          onToggle: () => setFilter('out'),
+        },
+      ];
+
+  // The sort a phone has no header for, in the Filters sheet (#481).
+  const sortField = (
+    <TextField
+      select
+      size="small"
+      id="reorder-sort"
+      label={intl.formatMessage({
+        id: 'products.sort',
+        defaultMessage: 'Sort',
+      })}
+      value={sort ? `${sort.key}:${sort.order}` : 'own'}
+      onChange={(event) => {
+        if (event.target.value === 'own') clearSort();
+        else
+          setSort(
+            'suggested',
+            event.target.value.endsWith('asc') ? 'asc' : 'desc',
+          );
+      }}
+    >
+      {(['own', 'suggested:desc', 'suggested:asc'] as const).map((value) => (
+        <MenuItem key={value} value={value}>
+          {intl.formatMessage(
+            {
+              id: 'inventory.reorder.sortBy',
+              defaultMessage:
+                '{value, select, desc {Suggested order, most first} asc {Suggested order, least first} other {Low first}}',
+            },
+            { value: value === 'own' ? 'own' : value.split(':')[1] },
+          )}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
 
   /**
    * After a point is added, changed or removed: the list from its first
@@ -614,11 +1090,6 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
-  // No point at all, counted with no search: the views, the position's
-  // line and Export have nothing to show, and the empty state says what a
-  // point does, with its own Learn more.
-  const none = counts?.all === 0 && !search;
-
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -632,7 +1103,10 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             {/* Every row the filter and search match, not the page (ADR-057). */}
             {!none && (
               <ExportButton
-                path={pathOf('/stock/reorder-points/export', query)}
+                path={withSort(
+                  pathOf('/stock/reorder-points/export', query),
+                  sort,
+                )}
               />
             )}
             {add}
@@ -643,6 +1117,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
       {tabs}
 
       <Stack spacing={1}>
+        {/* On a phone, the sort goes in the Filters button's sheet (#481),
+            the quick filters under the row. */}
         <FilterRow
           search={{
             label: intl.formatMessage({
@@ -652,53 +1128,42 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             value: text,
             onChange: setText,
           }}
-          quick={
-            none
-              ? []
-              : [
-                  {
-                    id: 'all',
-                    // Its own, not Invoices': Toutes is for factures.
-                    label: intl.formatMessage({
-                      id: 'inventory.reorder.filter.all',
-                      defaultMessage: 'All',
-                    }),
-                    count: counts?.all,
-                    pressed: filter === '',
-                    onToggle: () => setFilter(''),
-                  },
-                  {
-                    id: 'low',
-                    label: intl.formatMessage({
-                      id: 'inventory.reorder.filter.low',
-                      defaultMessage: 'Low stock',
-                    }),
-                    count: counts?.low,
-                    pressed: filter === 'low',
-                    onToggle: () => setFilter('low'),
-                  },
-                  {
-                    id: 'out',
-                    label: intl.formatMessage({
-                      id: 'inventory.reorder.filter.out',
-                      defaultMessage: 'Out',
-                    }),
-                    count: counts?.out,
-                    pressed: filter === 'out',
-                    onToggle: () => setFilter('out'),
-                  },
-                ]
-          }
-        />
+          quick={phone ? [] : quick}
+        >
+          {phone && !none && (
+            <FiltersButton
+              on={0}
+              shown={null}
+              onClear={() => clearSort({ status: null })}
+            >
+              {sortField}
+            </FiltersButton>
+          )}
+        </FilterRow>
+        {phone && (
+          <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
+            {quick.map((one) => (
+              <QuickFilterPill key={one.id} filter={one} />
+            ))}
+          </Stack>
+        )}
         {!none && (
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             <LearnMore
               target={{ guide: 'inventory', section: 'position' }}
               variant="inline"
-              after={intl.formatMessage({
-                id: 'inventory.reorder.positionLine',
-                defaultMessage: 'Position = usable + coming − still needed',
-              })}
+              after={
+                choosing
+                  ? intl.formatMessage({
+                      id: 'inventory.reorder.lineTick',
+                      defaultMessage:
+                        'Buy or make what is short. Tick several to buy them on one purchase order.',
+                    })
+                  : intl.formatMessage({
+                      id: 'inventory.reorder.line',
+                      defaultMessage: 'Buy or make what is short.',
+                    })
+              }
             />
           </Typography>
         )}
@@ -708,117 +1173,106 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
 
       {!failed && (
         <Paper variant="outlined">
-          {loading ? (
-            <Stack sx={{ p: 2 }} spacing={1}>
-              {showSkeleton ? (
-                <>
-                  <Skeleton height={48} />
-                  <Skeleton height={48} />
-                </>
-              ) : null}
-            </Stack>
-          ) : rows?.length ? (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {choosing && (
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          disabled={!choosable.length}
-                          checked={
-                            !!choosable.length &&
-                            chosenHere.length === choosable.length
-                          }
-                          indeterminate={
-                            chosenHere.length > 0 &&
-                            chosenHere.length < choosable.length
-                          }
-                          onChange={(event) => chooseAll(event.target.checked)}
-                          slotProps={{
-                            input: {
-                              'aria-label': intl.formatMessage({
-                                id: 'inventory.reorder.chooseAll',
-                                defaultMessage: 'Choose every item to order',
-                              }),
-                            },
-                          }}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'inventory.item',
-                        defaultMessage: 'Item',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'common.status',
-                        defaultMessage: 'Status',
-                      })}
-                    </TableCell>
-                    <TableCell align="right">
-                      {intl.formatMessage({
-                        id: 'inventory.reorder.position',
-                        defaultMessage: 'Position',
-                      })}
-                    </TableCell>
-                    {/* The bar's column: the number beside it is its name. */}
-                    <TableCell />
-                    <TableCell align="right">
-                      {intl.formatMessage({
-                        id: 'inventory.reorder.point',
-                        defaultMessage: 'Reorder point',
-                      })}
-                    </TableCell>
-                    <TableCell align="right">
-                      {intl.formatMessage({
-                        id: 'inventory.reorder.suggested',
-                        defaultMessage: 'Suggested order',
-                      })}
-                    </TableCell>
-                    {/* The row's buttons; a column of them has no name worth reading out. */}
-                    <TableCell padding="checkbox" />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => (
-                    <PointRow
-                      key={row.id}
-                      row={row}
-                      columns={columns}
-                      choosing={choosing}
-                      chosen={chosen.has(row.variantId)}
-                      onChoose={choose}
-                      onPlan={planner ? setPlanning : null}
-                      planned={planned === row.variantId}
-                      actions={
-                        setting && (
-                          <ReorderPointActions
-                            row={row}
-                            onEdit={(edited) =>
-                              setOpening({
-                                kind: 'edit',
-                                item: edited,
-                                point: {
-                                  source: edited.source,
-                                  reorderPoint: edited.reorderPoint,
-                                  rule: edited.rule,
-                                  fixedQuantity: edited.fixedQuantity,
-                                  maximumQuantity: edited.maximumQuantity,
+          {loading || rows?.length ? (
+            <TableOrCards
+              loading={loading}
+              table={
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        {choosing && (
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              disabled={!choosable.length}
+                              checked={
+                                !!choosable.length &&
+                                chosenHere.length === choosable.length
+                              }
+                              indeterminate={
+                                chosenHere.length > 0 &&
+                                chosenHere.length < choosable.length
+                              }
+                              onChange={(event) =>
+                                chooseAll(event.target.checked)
+                              }
+                              slotProps={{
+                                input: {
+                                  'aria-label': intl.formatMessage({
+                                    id: 'inventory.reorder.chooseAll',
+                                    defaultMessage:
+                                      'Choose every item to order',
+                                  }),
                                 },
-                              })
-                            }
-                            onRemove={setRemoving}
+                              }}
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          {intl.formatMessage({
+                            id: 'inventory.item',
+                            defaultMessage: 'Item',
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          {intl.formatMessage({
+                            id: 'common.status',
+                            defaultMessage: 'Status',
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          {intl.formatMessage({
+                            id: 'products.stock.title',
+                            defaultMessage: 'Where it stands',
+                          })}
+                        </TableCell>
+                        <SortHeader
+                          align="right"
+                          label={intl.formatMessage({
+                            id: 'inventory.reorder.suggested',
+                            defaultMessage: 'Suggested order',
+                          })}
+                          {...suggestedHeader}
+                        />
+                        <TableCell sx={WIDE_ONLY}>
+                          {intl.formatMessage({
+                            id: 'inventory.reorder.inDraft',
+                            defaultMessage: 'In draft',
+                          })}
+                        </TableCell>
+                        {/* Every header named (R6), this one to a screen reader. */}
+                        <TableCell padding="checkbox">
+                          <Box component="span" sx={HIDDEN}>
+                            {intl.formatMessage({
+                              id: 'common.actions',
+                              defaultMessage: 'Actions',
+                            })}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {loading && <PlaceholderRows columns={columns} />}
+                      {!loading &&
+                        rows?.map((row) => (
+                          <PointRow
+                            key={row.id}
+                            columns={columns}
+                            {...rowProps(row)}
                           />
-                        )
-                      }
-                    />
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              }
+              cards={
+                <Stack component="ul" sx={{ m: 0, p: 0 }}>
+                  {rows?.map((row) => (
+                    <PointCard key={row.id} {...rowProps(row)} />
                   ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                </Stack>
+              }
+            />
           ) : (
             <Nothing
               searched={!!search}
@@ -830,6 +1284,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           )}
         </Paper>
       )}
+
+      {!none && !!rows?.length && <Legend />}
 
       <LoadMoreButton
         hasMore={hasMore}
@@ -857,16 +1313,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           onClear={() => setChosen(new Map())}
           // New order, a line per chosen item at its suggestion; nothing is
           // saved until it is raised there, as a draft (ADR-085).
-          onRaise={() =>
-            void navigate('/orders/new', {
-              state: fillState({
-                lines: [...chosen.values()].map((row) => ({
-                  variantId: row.variantId,
-                  quantity: row.suggestion,
-                })),
-              }),
-            })
-          }
+          onRaise={() => buy([...chosen.values()])}
         />
       )}
 
@@ -881,7 +1328,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
               {
                 id: 'inventory.reorder.runFilled',
                 defaultMessage:
-                  'Filled from Reorder points: {quantity} brings it {rule, select, maximum {up to its maximum, {target}} other {back to its reorder point, {target}}}.',
+                  'Filled from Reorder: {quantity} brings it {rule, select, maximum {up to its maximum, {target}} other {back to its reorder point, {target}}}.',
               },
               {
                 quantity: displayQuantity(planning.suggestion),

@@ -587,7 +587,7 @@ describe('InventoryPage', () => {
       await expect.poll(() => asked.lots.at(-1)?.get('search')).toBe('NN-2410');
     });
 
-    it('is one search on Stock and Reorder points, either way', async () => {
+    it('is one search on Stock and Reorder, either way', async () => {
       const user = userEvent.setup();
       const asked = answer();
       const points: (string | null)[] = [];
@@ -608,7 +608,7 @@ describe('InventoryPage', () => {
         'vitd',
       );
       await expect.poll(() => asked.codes.at(-1)?.get('search')).toBe('vitd');
-      await user.click(screen.getByRole('tab', { name: 'Reorder points' }));
+      await user.click(screen.getByRole('tab', { name: 'Reorder' }));
 
       const box = screen.getByRole('searchbox', { name: 'Search' });
       expect(box).toHaveValue('vitd');

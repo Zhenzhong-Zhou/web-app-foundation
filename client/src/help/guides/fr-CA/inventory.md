@@ -1,6 +1,6 @@
 # Inventaire
 
-L’inventaire montre ce que vous avez et où : chaque article, à chaque emplacement, par lot. D’ici, vous recevez le stock arrivé sans commande, vous le déplacez et vous corrigez un compte de stock. Son second onglet, **Points de commande**, indique quels articles commencent à manquer.
+L’inventaire montre ce que vous avez et où : chaque article, à chaque emplacement, par lot. D’ici, vous recevez le stock arrivé sans commande, vous le déplacez et vous corrigez un compte de stock. Son second onglet, **Réapprovisionner**, indique quels articles commencent à manquer, et les achète ou les fabrique.
 
 ## Recevoir du stock {#receive}
 
@@ -32,7 +32,7 @@ Dès qu’une vente confirmée réserve du stock ou en attend, ce tableau montre
 
 Un point de commande est le niveau sous lequel un article commence à manquer : en dessous de ce niveau, l’article est indiqué comme ayant un stock bas ici, sur l’accueil et dans les notifications, avec ce qu’il faut commander. Un article sans point de commande n’est jamais considéré comme ayant un stock bas.
 
-1. Dans **Points de commande**, appuyez sur **Ajouter un point de commande**, ou choisissez **Point de commande…** dans les actions d’une ligne de **Stock**.
+1. Dans **Réapprovisionner**, appuyez sur **Ajouter un point de commande**, ou choisissez **Point de commande…** dans les actions d’une ligne de **Stock**.
 2. Choisissez l’article, et s’il est **Acheté** ou **Fabriqué**. Fabriqué est choisi pour vous quand l’article a une recette active.
 3. Saisissez le **Point de commande**, dans l’unité de l’article, et choisissez combien commander.
 4. **Aujourd’hui** montre où en est l’article maintenant et après la commande suggérée. Appuyez sur **Ajouter un point de commande**, ou sur **Enregistrer** pour une modification.
@@ -43,7 +43,7 @@ Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock
 
 ## Où en est un article {#position}
 
-La **Position** d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les bons de commande confirmés qui restent à recevoir et la production des ordres lancés qui reste à venir; moins les commandes clients confirmées qui restent à expédier. Ainsi, un bon de commande déjà créé ne déclenche pas une nouvelle commande.
+La position d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les bons de commande confirmés qui restent à recevoir et la production des ordres lancés qui reste à venir; moins les commandes clients confirmées qui restent à expédier. Ainsi, un bon de commande déjà créé ne déclenche pas une nouvelle commande.
 
 Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les articles les plus loin sous leur point apparaissent en premier, et **Stock bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui compose sa position et quelles commandes sont en retard.
 
@@ -53,12 +53,12 @@ Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suff
 - **Quantité fixe** : par multiples entiers, comme un fournisseur vend par caisses. S’il manque 1 500 unités et que les commandes se font par 1 000, cette règle suggère 2 × 1 000.
 - **Jusqu’à un maximum** : remplit jusqu’à un niveau au-dessus du point.
 
-Les bons de commande et les ordres de fabrication en brouillon s’affichent **En brouillon**. Ils ne comptent pas comme à venir, puisqu’un brouillon peut ne jamais partir, mais leurs quantités sont déduites de la **Commande suggérée**. Si les brouillons couvrent le manque d’un article dont le stock est bas, celui-ci indique **Brouillon fait**, pour éviter une deuxième commande.
+Les bons de commande et les ordres de fabrication en brouillon s’affichent **En brouillon**. Ils ne comptent pas comme à venir, puisqu’un brouillon peut ne jamais partir, mais leurs quantités sont déduites de la **Commande suggérée**. Si les brouillons couvrent le manque d’un article dont le stock est bas, sa case indique **Déjà dans un brouillon**, pour éviter une deuxième commande.
 
 ## Commander ou fabriquer les articles dont le stock est bas {#order}
 
-- **Acheté** : choisissez les lignes, puis appuyez sur **Créer un bon de commande** dans la barre qui apparaît. Un nouveau bon de commande s’ouvre avec une ligne par article, pour la quantité suggérée. Choisissez le fournisseur sous **Partenaire**, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
-- **Fabriqué** : **Planifier un ordre** sur sa ligne ouvre un ordre de fabrication avec sa recette active, la commande suggérée et ce qu’il utilise.
+- **Acheté** : appuyez sur **Acheter** et sa quantité sur la ligne, ou cochez-en plusieurs et appuyez sur **Acheter les 2 sur un seul bon de commande** dans la barre qui apparaît. Un nouveau bon de commande s’ouvre avec une ligne par article, pour la quantité suggérée. Choisissez le fournisseur sous **Partenaire**, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
+- **Fabriqué** : **Fabriquer** et sa quantité sur sa ligne ouvre un ordre de fabrication avec sa recette active, la commande suggérée et ce qu’il utilise.
 
 Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s’affiche aussitôt sur la ligne. Quand un article passe sous son point de commande, la vérification horaire suivante en avertit les personnes concernées dans les notifications, une seule fois jusqu’à ce que son stock remonte : ceux qui peuvent créer des commandes pour un article acheté, ceux qui peuvent planifier la production pour un article fabriqué.
 

@@ -261,7 +261,7 @@ const SCREENS: Screen[] = [
     // A low row opened and chosen: its four boxes and the floating bar
     // (ADR-085).
     name: 'reorder points, a row opened and chosen',
-    path: () => '/inventory?tab=reorder-points',
+    path: () => '/inventory?tab=reorder',
     open: async (page) => {
       await page.getByRole('button', { name: /^Where .* stands$/ }).click();
       await page
@@ -277,7 +277,7 @@ const SCREENS: Screen[] = [
   {
     // Edit from a row's menu: the rule's cards and Today (ADR-085).
     name: 'reorder points, the Edit dialog',
-    path: () => '/inventory?tab=reorder-points',
+    path: () => '/inventory?tab=reorder',
     open: async (page) => {
       await page
         .getByRole('button', { name: /^Actions for .* reorder point$/ })

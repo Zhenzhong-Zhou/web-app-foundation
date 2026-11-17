@@ -1,6 +1,6 @@
 # Inventory
 
-Inventory shows what you have and where: each item, at each location, by lot. From here you receive stock that came without an order, move it, and correct a count. Its second tab, **Reorder points**, says which items run short.
+Inventory shows what you have and where: each item, at each location, by lot. From here you receive stock that came without an order, move it, and correct a count. Its second tab, **Reorder**, says which items run short, and buys or makes them.
 
 ## Receive stock {#receive}
 
@@ -32,7 +32,7 @@ Once a confirmed sale holds stock or waits for it, this table shows each item’
 
 A reorder point is the level below which an item is running short: below it, the item shows as low here, on Home and in the bell, with what to order. An item with no point is never low.
 
-1. On **Reorder points**, press **Add reorder point**, or choose **Reorder point…** in a row’s actions on **Stock**.
+1. On **Reorder**, press **Add reorder point**, or choose **Reorder point…** in a row’s actions on **Stock**.
 2. Choose the item, and whether it is **Bought** or **Made**. Made is chosen for you when the item has an active recipe.
 3. Type the **Reorder point**, in the item’s unit, and choose how much to order.
 4. **Today** shows where the item stands now and after the suggested order. Press **Add reorder point**, or **Save** when editing.
@@ -43,7 +43,7 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 ## Where an item stands {#position}
 
-An item’s **Position** = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another.
+An item’s position = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another.
 
 An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The furthest below their point come first, and **Low stock** shows the out ones too. Open a row to see what makes up its position, late orders marked.
 
@@ -53,12 +53,12 @@ An item is **Low** below its point, **Out** at zero or less, and **Enough** othe
 - **A fixed quantity**: in whole multiples, as a supplier sells in cases. Short by 1,500, with 1,000 at a time, it suggests 2 × 1,000.
 - **Up to a maximum**: fills it to a level above the point.
 
-Draft purchase orders and runs show as **In draft**. They are not counted as coming, since a draft may never be sent, but they are taken off the **Suggested order**. A low item its drafts cover reads **Drafted**, so nobody orders it twice.
+Draft purchase orders and runs show as **In draft**. They are not counted as coming, since a draft may never be sent, but they are taken off the **Suggested order**. A low item its drafts cover reads **In a draft already** beside its box, so nobody orders it twice.
 
 ## Order or make what is low {#order}
 
-- **Bought**: choose the rows, then press **Raise a purchase order** in the bar that appears. A new purchase opens with a line for each at its suggested order. Choose the supplier under **Partner**, check the quantities and prices, and press **Raise as draft**.
-- **Made**: **Plan a run** on its row opens a run with its active recipe, the suggested order and what it uses.
+- **Bought**: press **Buy** and its quantity on the row, or tick several rows and press **Buy 2 on one purchase order** in the bar that appears. A new purchase opens with a line for each at its suggested order. Choose the supplier under **Partner**, check the quantities and prices, and press **Raise as draft**.
+- **Made**: **Make** and its quantity on its row opens a run with its active recipe, the suggested order and what it uses.
 
 Nothing is saved until you create it, and what you create shows on the row at once. When an item falls below its point, the next hourly check tells whoever can act on it in the bell, once until it recovers: those who may raise orders for a bought item, those who may plan runs for a made one.
 

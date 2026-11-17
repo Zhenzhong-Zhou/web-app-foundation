@@ -372,7 +372,7 @@ export function CreateOrderPage() {
               {
                 id: 'orders.create.filled',
                 defaultMessage:
-                  'Filled from Reorder points: {count, plural, one {# line at its suggested quantity} other {# lines at their suggested quantities}}. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
+                  'Filled from Reorder: {count, plural, one {# line at its suggested quantity} other {# lines at their suggested quantities}}. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
               },
               { count: filledCount },
             )}

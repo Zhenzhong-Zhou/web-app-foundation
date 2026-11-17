@@ -11,11 +11,13 @@ const TABS = ['items', 'shipments', 'returns'] as const;
 function Probe({
   tabs = TABS,
   fallback,
+  renamed,
 }: {
   tabs?: readonly (typeof TABS)[number][];
   fallback?: (typeof TABS)[number];
+  renamed?: Record<string, (typeof TABS)[number]>;
 }) {
-  const [tab, choose] = useTab(tabs, { fallback });
+  const [tab, choose] = useTab(tabs, { fallback, renamed });
   const location = useLocation();
   const navigation = useNavigationType();
 
@@ -108,6 +110,20 @@ describe('useTab', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'items' }));
     expect(screen.getByText('search none')).toBeInTheDocument();
+  });
+
+  // Inventory's Reorder was Reorder points (ADR-093).
+  it('opens a renamed tab by its old name, the address corrected to the new, its other parameters kept', async () => {
+    render(
+      <MemoryRouter initialEntries={['/orders/1?tab=parcels&status=low']}>
+        <Probe renamed={{ parcels: 'shipments' }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('tab shipments')).toBeInTheDocument();
+    expect(
+      await screen.findByText('search ?tab=shipments&status=low'),
+    ).toBeInTheDocument();
   });
 
   it('keeps the address’s other parameters', async () => {

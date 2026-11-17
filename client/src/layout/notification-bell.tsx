@@ -37,9 +37,9 @@ const POLL_MS = 60_000;
  * closest thing rather than the subject.
  */
 function linkFor(entry: Notification): string | null {
-  // Low stock names the list, not a row: Reorder points on Low (ADR-085).
+  // Low stock names the list, not a row: Reorder on Low (ADR-085, ADR-093).
   if (entry.resourceType === 'reorder_points') {
-    return '/inventory?tab=reorder-points&status=low';
+    return '/inventory?tab=reorder&status=low';
   }
   if (!entry.resourceId) return null;
 

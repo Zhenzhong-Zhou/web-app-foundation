@@ -6,26 +6,28 @@ import { ReorderPointsTab } from './reorder-points-tab';
 import { StockTab } from './stock-tab';
 
 /** Inventory's two views (ADR-085): what is where, and what runs short. */
-const INVENTORY_TABS = ['stock', 'reorder-points'] as const;
+const INVENTORY_TABS = ['stock', 'reorder'] as const;
 type InventoryTab = (typeof INVENTORY_TABS)[number];
+
+/** Reorder was Reorder points (ADR-093): an address kept from then opens it. */
+const RENAMED = { 'reorder-points': 'reorder' } as const;
 
 const TAB_LABEL = defineMessages<InventoryTab>({
   stock: { id: 'inventory.tab.stock', defaultMessage: 'Stock' },
-  'reorder-points': {
-    id: 'inventory.tab.reorderPoints',
-    defaultMessage: 'Reorder points',
-  },
+  reorder: { id: 'inventory.tab.reorder', defaultMessage: 'Reorder' },
 });
 
 /**
- * Inventory: Stock, and Reorder points beside it (ADR-085), the open one
+ * Inventory: Stock, and Reorder beside it (ADR-085, ADR-093), the open one
  * in the address as `?tab=` (useTab). Each tab draws the page's header
  * with its own actions, then the tabs, then its list; only the open one
  * is drawn, so the tabs name no panel.
  */
 export function InventoryPage() {
   const intl = useIntl();
-  const [tab, setTab] = useTab<InventoryTab>(INVENTORY_TABS);
+  const [tab, setTab] = useTab<InventoryTab>(INVENTORY_TABS, {
+    renamed: RENAMED,
+  });
 
   const tabs = (
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

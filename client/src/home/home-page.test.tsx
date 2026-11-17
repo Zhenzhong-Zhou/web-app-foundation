@@ -187,7 +187,7 @@ describe('HomePage', () => {
     });
     for (const [name, href] of [
       ['Orders · Draft, 3', '/orders?status=draft&order=asc'],
-      ['Low stock, 3', '/inventory?tab=reorder-points&status=low'],
+      ['Low stock, 3', '/inventory?tab=reorder&status=low'],
       ['Invoices · To issue, 4', '/invoices?status=draft'],
       ['Open returns, 1', '/return-authorizations?status=open'],
       ['Production · In progress, 2', '/production?status=released'],
@@ -213,10 +213,10 @@ describe('HomePage', () => {
 
     expect(
       await screen.findByRole('link', { name: 'Low stock, 3, 1 out' }),
-    ).toHaveAttribute('href', '/inventory?tab=reorder-points&status=low');
+    ).toHaveAttribute('href', '/inventory?tab=reorder&status=low');
     expect(
       screen.getByRole('link', { name: '1 item out of stock' }),
-    ).toHaveAttribute('href', '/inventory?tab=reorder-points&status=out');
+    ).toHaveAttribute('href', '/inventory?tab=reorder&status=out');
   });
 
   /**
@@ -417,10 +417,7 @@ describe('HomePage', () => {
     const low = await screen.findByRole('link', {
       name: 'Low stock, Nothing low',
     });
-    expect(low).toHaveAttribute(
-      'href',
-      '/inventory?tab=reorder-points&status=low',
-    );
+    expect(low).toHaveAttribute('href', '/inventory?tab=reorder&status=low');
     expect(within(low).getByText('Nothing low')).toBeVisible();
     expect(within(low).queryByText('0')).toBeNull();
   });
@@ -437,7 +434,7 @@ describe('HomePage', () => {
     const low = await screen.findByRole('link', {
       name: 'Low stock, No reorder points set yet',
     });
-    expect(low).toHaveAttribute('href', '/inventory?tab=reorder-points');
+    expect(low).toHaveAttribute('href', '/inventory?tab=reorder');
     expect(within(low).queryByText('Nothing low')).toBeNull();
   });
 

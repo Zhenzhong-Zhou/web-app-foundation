@@ -77,7 +77,7 @@ replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
 2025** retired. Exchange rates, price lists and issuing invoices are the
 Owner's, as the roles allow.
 
-Last, eleven reorder points, set by the Owner, which Reorder points counts
+Last, eleven reorder points, set by the Owner, which Reorder counts
 **All 11 · Low stock 8 · Out 2** (ADR-085): **VITC-100** out, lot **VC-0402**
 past its date too and left on the shelf; **MAGCAP-SAMPLE**, sample bags
 made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
@@ -493,7 +493,7 @@ a second organization.
   the plain list, Open pressed, the address `/orders`. Do the same on
   Invoices (To issue, a day, Total), Credit notes (a day, Amount), Returns (Closed, a day), Production (a
   status, a day), Inventory (Expiring soon, Waiting for a cost, Show emptied, a
-  Location, Expires) and Reorder points (Low stock): each choice is in the
+  Location, Expires) and Reorder (Low stock): each choice is in the
   address, and Back from a page opened from there keeps it. Type
   `?status=nonsense` after `/orders`: Open is pressed, as with none.
   From a late button's Orders, Tab to the Late chip and press Delete:
@@ -4081,20 +4081,33 @@ site, after a deploy that changes the setting, the route or the relay.
   needs it back below, and restart: told again. With the Owner's account
   in 中文, a notice reads naturally, the item under its Chinese name
   where it has one.
-- **MC-4202** *(ADR-085)* The list. As the demo Owner, Inventory → Reorder
-  points: the address gains `?tab=reorder-points`, the switch reads All 11
-  · Low stock 8 · Out 2, and "Position = usable + coming − still needed" sits
-  above the list. MAGCAP-240 and VITC-100 come first, every low row before every other,
-  and the rest by code. Each row has its code in bold, its name beside it
-  and a small line under it: "Bought · 48 at a time" for D3-1000-120,
-  "Made · just enough" for SLEEP-60CT, "Bought · up to 192" for
-  ELDER-250. Out is red, Low amber, Enough green, each with an icon.
-  VITC-100's position is bold and red, its bar empty and outlined red;
-  a low bar is filled amber short of its mark in the middle, an enough
-  one green. D3-1000-120 suggests 96 with "2 × 48" under it; OMEGA3-90
-  says Drafted, with PO-DEMO-13 and its quantity, linked. ZINC-60 is
-  grey, "Discontinued · never low, its point kept", with no chevron.
-  The digits line up down each column.
+- **MC-4202** *(ADR-085; ADR-093, R7)* The list. As the demo Owner,
+  Inventory → Reorder: the address gains `?tab=reorder`, the switch reads
+  All 11 · Low stock 8 · Out 2, and "Buy or make what is short. Tick
+  several to buy them on one purchase order." sits above the list, with
+  Learn more. MAGCAP-240 and VITC-100 come first, every low row before
+  every other, and the rest by code. Each row names its item first, in
+  bold, a link to its page, with its cover or its type's icon, and under
+  it in grey its code and how it is got: "Bought · in multiples of 48"
+  for D3-1000-120, "Made · makes what is short" for SLEEP-60CT, "Bought ·
+  up to 192" for ELDER-250, never a case or a pack. Out is red, Low
+  amber, Enough green, each with an icon. Where it stands reads "… left ·
+  reorder at …", a link to the item's page at Where it stands, with the
+  bar under it: VITC-100's empty and outlined red, a low one filled amber
+  short of its mark in the middle, an enough one green; under the list a
+  legend names Low, Enough, Out and the mark, the reorder point, always in
+  the middle. D3-1000-120 suggests 96 each with "2 × 48" under it;
+  OMEGA3-90's In draft reads "Drafted in PO-DEMO-13" with its quantity,
+  the order a link. ZINC-60 is grey, "Discontinued · never low, its point
+  kept", with no chevron. A click on a row's status or empty space opens
+  its item's page; its links and buttons do their own. Press Suggested
+  order: the most to order first, `?sort=suggested&order=desc`; again,
+  the least first; Back undoes each. The digits line up down each
+  column. At 820 px the In draft column leaves, the draft under the
+  suggestion; at 390 px each row is a card, its box, the name and code,
+  the status with where it stands, Suggested, the draft, and Buy or Make
+  with the ⋯, the sort behind Filters and the three views under the
+  search; nothing is cut off at either width.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
   Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
@@ -4103,8 +4116,11 @@ site, after a deploy that changes the setting, the route or the relay.
   Low, Bought, A fixed quantity and each, in 中文 不足, 采购, 固定订货量
   and 个, never `low` or `fixed`, and the audit
   log's line for it reads its filter as Status Low, in 中文 不足. Open
-  `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
-  Low stock. In French the three read Tous, Stock bas and Épuisé; in 中文
+  `/inventory?tab=reorder&status=low` in a new tab: it opens on Low
+  stock; `/inventory?tab=reorder-points&status=low`, an address from
+  before, opens the same, corrected to `tab=reorder`. Sorted by Suggested
+  order, Export writes the rows in that order. In French the three read
+  Tous, Stock bas and Épuisé; in 中文
   全部, 库存不足 and 缺货.
 - **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
   boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
@@ -4117,23 +4133,28 @@ site, after a deploy that changes the setting, the route or the relay.
   with the network throttled to Slow 4G, one shows while it reads. As
   Fatima Haddad (Sales), with no `locations.view`, ELDER-250's Usable
   names no place: its total alone, with what was left out.
-- **MC-4205** *(ADR-085)* Choosing. As the Owner, only bought low rows
-  with something to suggest have a box: VITC-100, ELDER-250 and
-  D3-1000-120 among them, none on MAGCAP-SAMPLE or SLEEP-60CT, which are
-  made, or on the rows with enough. OMEGA3-90's box is greyed, and
-  hovering it says it is in a draft already. Choose two: a dark bar
-  floats at the foot of the list, "2 chosen", each code with its
-  suggestion; Clear empties it. The header's box chooses every row with
-  a box, and unticked, none. Choose one, search for another item and
-  choose it too: the bar holds both. With VoiceOver on, ticking a box
-  says "1 chosen", then "2 chosen", as the bar appears and grows. Tab to
-  Clear and Raise a purchase order: each one's focus ring is drawn in
-  the bar's own text colour, plain on the dark bar, in both modes.
+- **MC-4205** *(ADR-085; ADR-093)* Buying and choosing. As the Owner,
+  only bought low rows with something to suggest have a box and Buy with
+  their suggestion: VITC-100, ELDER-250 and D3-1000-120's Buy 96 among
+  them; MAGCAP-SAMPLE and SLEEP-60CT, which are made, have Make with
+  theirs instead, and the rows with enough have neither. OMEGA3-90's box
+  is greyed, with "In a draft already" beside it, on a phone too, where
+  nothing hovers. Choose two: a dark bar floats at the foot of the list,
+  "2 chosen", each item's name with its suggestion, and Buy 2 on one
+  purchase order; Clear empties it. The header's box chooses every row
+  with a box, and unticked, none. Choose one, search for another item
+  and choose it too: the bar holds both. With VoiceOver on, ticking a box
+  says "1 chosen", then "2 chosen", as the bar appears and grows; Buy 96
+  reads "Buy 96 of" the item's name. Tab to Clear and Buy 2 on one
+  purchase order: each one's focus ring is drawn in the bar's own text
+  colour, plain on the dark bar, in both modes.
 - **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
-  (Viewer): the same list, with no boxes, no header box and no bar; the
-  chevron still opens a row. In 中文: the tab reads 库存下限, the
-  statuses 缺货, 不足 and 充足, the line 预计可用 = 现有可用 + 在途 −
-  待发; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
+  (Viewer): the same list, with no boxes, no Buy or Make, no header box
+  and no bar, the line above it "Buy or make what is short." alone; the
+  chevron still opens a row. In 中文: the tab reads 补货, the
+  statuses 缺货, 不足 and 充足, the line 缺什么就采购或生产。, a row's
+  "剩 … · 下限 …", the legend's 库存下限，永远在中间, and an Owner's
+  buttons 采购 96 and 生产 24; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
 - **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
   Reorder points, Add reorder point sits beside Export. It opens a dialog
@@ -4174,7 +4195,7 @@ site, after a deploy that changes the setting, the route or the relay.
   the bell. Its stock and its orders do not change." Keep it changes
   nothing; Remove reorder point takes the row off the list and the counts
   down by one. The menu's Remove asks the same. Stock of the item opens
-  Stock, searched for the code. Edit ELDER-250 again, choose A fixed
+  the item's page at Where it stands, with Back to Reorder. Edit ELDER-250 again, choose A fixed
   quantity of 48 and Save: the audit log's newest line, Reorder point
   changed, reads How much to order from Up to a maximum to A fixed
   quantity, Maximum from 150 to none and Fixed quantity from none to 48,
@@ -4184,20 +4205,20 @@ site, after a deploy that changes the setting, the route or the relay.
   D3-1000-120 row it opens Edit with its point; on a GLOVES-100 row, Add
   with GLOVES-100 named and no picker. Daniel Okafor (Admin), Tom Becker
   (Warehouse) and Chloé Tremblay (Viewer) hold no `stock.reorder`: no
-  Reorder point… on Stock, and no Add reorder point and no ⋯ on Reorder
-  points, while the chevron still opens a row. Make a role, Nothing
+  Reorder point… on Stock, and no Add reorder point and no ⋯ on Reorder,
+  while the chevron still opens a row. Make a role, Nothing
   ticked: under Stock and locations, tick Set, change or remove an item’s
   reorder point, and See what is on hand and where and See the product
   catalogue tick with it, the line above the areas saying so; the summary
   beside the boxes says the role can set reorder points. Save it as
   Reorder clerk and give it to Tom Becker: his Your access says he can
   set reorder points, in 中文 设置库存下限, in Français définir les points
-  de commande, and Reorder points now shows him Add reorder point and
+  de commande, and Reorder now shows him Add reorder point and
   each row's ⋯.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
-  Reorder points shows an icon, "No reorder points yet.", a sentence on
+  Reorder shows an icon, "No reorder points yet.", a sentence on
   what a point does, Add reorder point, and Learn more, which opens Help
-  at Reorder points; no All, Low stock and Out, no position line and no
+  at Reorder points; no All, Low stock and Out, no line above the list and no
   Export, so Learn more is the only one. Receive 50 of an item, give
   it a point of 10, and press Low stock: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
@@ -4209,7 +4230,8 @@ site, after a deploy that changes the setting, the route or the relay.
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
   the Owner: the tile after To receive reads 8, Low stock and "2 out",
-  its icon red. The tile opens Reorder points on Low stock, its own name,
+  its icon red. The tile opens Reorder on Low stock, its own name, at
+  `/inventory?tab=reorder&status=low`,
   eight rows, MAGCAP-240 and VITC-100
   first, with Back to Home; What is late's "2 items out of stock" opens it
   on Out, those two rows. Receive 100 of VITC-100 and Refresh: Low stock
@@ -4217,11 +4239,11 @@ site, after a deploy that changes the setting, the route or the relay.
   中文: 库存不足, "2 项缺货" and "2 个缺货物品"; in French: Stock bas,
   "2 épuisés" and "2 articles épuisés". In a new organization, with no
   reorder point, the tile is quiet, Low stock and "No reorder points set
-  yet" (尚未设置库存下限), not Nothing low, and opens Reorder points with
+  yet" (尚未设置库存下限), not Nothing low, and opens Reorder with
   no filter, where one is set.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
   the items. On a fresh demo, as the Owner, the bell's "8 items fell
-  below their reorder point" opens Inventory's Reorder points on Low stock,
+  below their reorder point" opens Inventory's Reorder on Low stock,
   with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
   raises orders but plans no runs: her notice names only the six bought
   items, "MAGCAP-240, VITC-100 and 4 more. Order them from Reorder
@@ -4230,40 +4252,43 @@ site, after a deploy that changes the setting, the route or the relay.
   "Order them from Reorder points.", though the Owner may plan runs too.
   Two made items: "Plan them from Reorder points."; one of each: "Order
   or plan them from Reorder points.".
-- **MC-4215** *(ADR-085)* Raise a purchase order, filled in from the list.
-  On a fresh demo, as the Owner, Reorder points on Low stock: choose
-  D3-1000-120 and ELDER-250, and press Raise a purchase order in the
+- **MC-4215** *(ADR-085; ADR-093)* Buy, filled in from the list. On a
+  fresh demo, as the Owner, Reorder on Low stock: D3-1000-120's Buy 96
+  opens New order with Buying chosen and one line, D3-1000-120 at 96,
+  nothing saved; Back returns to Reorder as it was. Choose
+  D3-1000-120 and ELDER-250, and press Buy 2 on one purchase order in the
   dark bar. New order opens with Buying chosen, Partner empty, with a
-  note: "Filled from Reorder points: 2 lines at their suggested
+  note: "Filled from Reorder: 2 lines at their suggested
   quantities. Choose the supplier under Partner, check the quantities
   and prices, then raise it as a draft.", in 中文 请在合作伙伴中选择供应商,
   and two lines, D3-1000-120 at 96 and ELDER-250
-  at 134. Nothing is saved yet: Cancel goes back to Reorder points, on
+  at 134. Nothing is saved yet: Cancel goes back to Reorder, on
   Low stock, as it was. Raise it again, choose Prairie and Raise as
-  draft: the order opens as a draft, and Back returns to Reorder points,
-  not to New order filled in again; there, both rows read Drafted with
-  the order's number, and neither has a box to choose. Edit D3-1000-120:
+  draft: the order opens as a draft, and Back returns to Reorder,
+  not to New order filled in again; there, both rows' In draft reads Drafted in
+  the order's number with its quantity, and neither has a box to choose. Edit D3-1000-120:
   Today says what is in draft covers it, and Position after the
   suggested order reads 276, above its point of 240, the draft counted.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
-- **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
-  demo, as the Owner, Reorder points on Low stock: MAGCAP-SAMPLE's row has Plan
-  a run, and no bought row has one. It opens Plan a run with Making
+- **MC-4216** *(ADR-085; ADR-093)* Make, filled in from the list. On a
+  fresh demo, as the Owner, Reorder on Low stock: MAGCAP-SAMPLE's row has
+  Make 24, and no bought row has one. It opens Plan a run with Making
   MAGCAP-SAMPLE, the recipe "v1 (current) — makes 12", Quantity to make
-  24, Made at empty, and a note: "Filled from Reorder points: 24 brings
+  24, Made at empty, and a note: "Filled from Reorder: 24 brings
   it back to its reorder point, 36.". Under the quantity, Uses reads
   "2 each · MAGCAP-60 …"; type 120 and, once typing pauses, it reads 10.
   Cancel saves nothing. Plan it again at 24, Made at Office, Plan run:
-  "Run planned", and the row reads Drafted with the run, without
+  "Run planned", and the row's In draft reads Drafted in the run, without
   reloading the page, and focus is on the run's link, not the page's
   start. Production's own Plan a run shows Uses too, once an
   item with a recipe and a quantity are in. Fatima Haddad (Sales) and
-  Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
+  Chloé Tremblay (Viewer), who plan no runs, see no Make. In 中文:
   计划生产, the note 已按库存下限填写, and 用料.
 - **MC-4217** *(ADR-085)* Help's Inventory and Home guides. As the demo
-  Owner, Inventory → Reorder points: "Position = usable + coming − still
-  needed" ends with Learn more, which opens Help at Where an item stands.
+  Owner, Inventory → Reorder: the line above the list, "Buy or make what
+  is short. …", ends with Learn more, which opens Help at Where an item
+  stands.
   The Inventory guide has Reorder points, Where an item stands, How much
   to order and Order or make what is low after Promised to customers,
   and two more refusals; every button it names reads the same on the
@@ -6435,3 +6460,11 @@ first.
 - 2026-11-16: ADR-093's Reorder, its read: the export's status, Bought or
   made, How much to order and unit in words (#473's 29), and an opened
   row's places only with `locations.view`: MC-4203 and MC-4204 extended.
+- 2026-11-16: ADR-093's Reorder: the tab renamed, its old address still
+  read; each row's name first with its code and how it is got in words,
+  "… left · reorder at …" opening Where it stands, the bar's legend, the
+  draft in its own cell, a greyed box's reason beside it, Buy and Make
+  with how many, Buy 2 on one purchase order, the sort by the suggested
+  order and cards on a phone; Stock of the item opening Where it stands:
+  MC-4202 and MC-4205 rewritten, MC-4203, MC-4206, MC-4209 to MC-4211 and
+  MC-4213 to MC-4217 reworded, the setup's and MC-406's words.

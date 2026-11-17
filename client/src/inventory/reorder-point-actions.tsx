@@ -5,14 +5,14 @@ import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import type { ReorderPointRow } from '../api/types.gen';
-import { withQuery } from '../lib/api';
 import { OFFER_BACK } from '../lib/offer-back';
 
 type Choice = 'edit' | 'stock' | 'remove';
 
 /**
  * A reorder point's row menu (ADR-085): Edit reorder point, Stock of the
- * item, and Remove reorder point in red. For whoever may set a point
+ * item, opening its Where it stands (ADR-093), and Remove reorder point
+ * in red. For whoever may set a point
  * (stock.reorder); a Viewer's list has none, as the design gives it.
  *
  * The dialog opens once the menu has finished closing, as StockActions
@@ -35,11 +35,9 @@ export function ReorderPointActions({
   function run() {
     if (pending === 'edit') onEdit(row);
     else if (pending === 'remove') onRemove(row);
-    // Stock, searched for the item: Inventory's Stock tab reads it.
+    // The item's Where it stands, where its stock is told (ADR-093, R8).
     else if (pending === 'stock')
-      void navigate(withQuery('/inventory', { search: row.sku }), {
-        state: OFFER_BACK,
-      });
+      void navigate(`/items/${row.productId}#stock`, { state: OFFER_BACK });
     setPending(null);
   }
 

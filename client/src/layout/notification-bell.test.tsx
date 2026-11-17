@@ -192,7 +192,7 @@ describe('NotificationBell', () => {
     );
 
     expect(
-      await screen.findByText('At /inventory?tab=reorder-points&status=low'),
+      await screen.findByText('At /inventory?tab=reorder&status=low'),
     ).toBeVisible();
   });
 

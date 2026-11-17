@@ -255,7 +255,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
 
     expect(
       await screen.findByText(
-        'Filled from Reorder points: 2 lines at their suggested quantities. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
+        'Filled from Reorder: 2 lines at their suggested quantities. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
       ),
     ).toBeInTheDocument();
     await expect
@@ -317,7 +317,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
 
     expect(
       await screen.findByText(
-        'Filled from Reorder points: 2 lines at their suggested quantities. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
+        'Filled from Reorder: 2 lines at their suggested quantities. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
       ),
     ).toBeInTheDocument();
     await expect
@@ -339,7 +339,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
     );
     const user = userEvent.setup();
 
-    await screen.findByText(/Filled from Reorder points/);
+    await screen.findByText(/Filled from Reorder/);
     await user.click(screen.getByRole('combobox', { name: 'Partner' }));
     await user.click(await screen.findByRole('option', { name: /Acme/ }));
     await user.click(screen.getByRole('button', { name: 'Raise as draft' }));
@@ -348,9 +348,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
     await router.navigate(-1);
 
     expect(await screen.findByText('Reorder points')).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Filled from Reorder points/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Filled from Reorder/)).not.toBeInTheDocument();
   });
 
   it('goes back to Reorder points on Cancel, not to Orders', async () => {
@@ -362,7 +360,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
       '/inventory?tab=reorder-points',
     );
 
-    await screen.findByText(/Filled from Reorder points/);
+    await screen.findByText(/Filled from Reorder/);
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(await screen.findByText('Reorder points')).toBeInTheDocument();
@@ -375,8 +373,6 @@ describe('CreateOrderPage filled from Reorder points', () => {
     expect(
       await screen.findByRole('textbox', { name: 'Quantity' }),
     ).toHaveValue('');
-    expect(
-      screen.queryByText(/Filled from Reorder points/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Filled from Reorder/)).not.toBeInTheDocument();
   });
 });
