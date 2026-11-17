@@ -872,12 +872,16 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         onSaved={refresh}
       />
 
-      {/* A point moves no stock, so nothing here reads again after it. */}
+      {/* A point moves no stock, but the row's status, its "left · reorder
+          at" line and the Low stock count come from it: read again. */}
       {reordering && (
         <ReorderPointDialog
           opening={{ kind: 'find', item: reordering }}
           onClose={() => setReordering(null)}
-          onSaved={() => setReordering(null)}
+          onSaved={() => {
+            setReordering(null);
+            void refresh();
+          }}
         />
       )}
     </Stack>

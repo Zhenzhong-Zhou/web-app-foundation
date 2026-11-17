@@ -330,6 +330,68 @@ describe('InventoryPage', () => {
       ]);
     });
 
+    // The row's status and the counts come from the point: read again
+    // once it is saved (review 59).
+    it('reads the row and the counts again once a reorder point is saved', async () => {
+      const point = {
+        point: {
+          source: 'bought',
+          reorderPoint: '36.0000',
+          rule: 'fixed',
+          fixedQuantity: '12.0000',
+          maximumQuantity: null,
+        },
+        usable: [],
+        expired: '0.0000',
+        issued: '0.0000',
+        coming: [],
+        stillNeeded: [],
+      };
+      const asked = answer();
+      server.use(
+        http.get('/api/v1/stock/reorder-points/:variantId/preview', () =>
+          HttpResponse.json({
+            position: '10.0000',
+            status: 'low',
+            suggestion: '36.0000',
+            suggestedMultiples: '3',
+            drafted: false,
+            inDraft: '0.0000',
+            after: '46.0000',
+            afterStatus: 'enough',
+          }),
+        ),
+        http.get('/api/v1/stock/reorder-points/:variantId', () =>
+          HttpResponse.json(point),
+        ),
+        http.put('/api/v1/stock/reorder-points/:variantId', () =>
+          HttpResponse.json(point.point),
+        ),
+      );
+      const user = userEvent.setup();
+      renderAt('/inventory', ['stock.view', 'stock.reorder']);
+      await user.click(
+        await screen.findByRole('button', { name: 'Actions for VITD-60' }),
+      );
+      await user.click(
+        within(await screen.findByRole('menu')).getByRole('menuitem', {
+          name: 'Change reorder point',
+        }),
+      );
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Edit reorder point',
+      });
+      const codes = asked.codes.length;
+      const counts = asked.counts.length;
+      await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      await vi.waitFor(() => expect(asked.codes.length).toBeGreaterThan(codes));
+      await vi.waitFor(() =>
+        expect(asked.counts.length).toBeGreaterThan(counts),
+      );
+    });
+
     // In several places: the row opens to its lots to choose one.
     it('opens to its lots to choose one, focus on the first lot’s Actions', async () => {
       const { user, menu } = await codeActions(['stock.move']);

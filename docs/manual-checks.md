@@ -4271,7 +4271,8 @@ site, after a deploy that changes the setting, the route or the relay.
   and names nothing that did not move.
 - **MC-4210** *(ADR-085)* From a Stock row, and who sees what. On
   Inventory's Stock tab, an item's Actions end with Change reorder point: on a
-  D3-1000-120 row it opens Edit with its point; on a GLOVES-100 row, Add
+  D3-1000-120 row it opens Edit with its point, and once saved above its
+  stock the row reads Low with its new line, the Low stock count with it; on a GLOVES-100 row, Add
   with GLOVES-100 named and no picker, from Set a reorder point. Daniel Okafor (Admin), Tom Becker
   (Warehouse) and Chloé Tremblay (Viewer) hold no `stock.reorder`: no
   Change reorder point on Stock, and no Add reorder point and no Actions on Reorder,
@@ -6590,3 +6591,5 @@ first.
 - 2026-11-17: ADR-093's review, 56: Stock's Export at one place writes
   that place's On hand and Expires first, its headers as the screen's:
   MC-317.
+- 2026-11-17: ADR-093's review, 59: a point saved from Stock's Actions
+  reads the row and the counts again: MC-4210.
