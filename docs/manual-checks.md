@@ -359,7 +359,8 @@ a second organization.
   touch the number, the status and, on an item's page, a variant's code
   are each at least 44 px tall.
 - **MC-219** *(ADR-093, R8)* Where it stands, as the demo Owner, first
-  under the item's title. ELDER-250's page: Low, "58 left · reorder at
+  under the item's title; arrived at from a link, focus is on the title
+  (Back or a reload leaves it to the browser). ELDER-250's page: Low, "58 left · reorder at
   96"; On hand with what is not usable and why, or "all usable"; Free
   with "what you can still promise"; Held 60 "for 2 confirmed orders",
   SO-DEMO-9 and SO-DEMO-10 listed oldest first, each a link; Coming with
@@ -6626,3 +6627,5 @@ first.
 - 2026-11-17: ADR-093's review, 52: a Stock row's opening kept in the
   address, Back returning focus to it, and Show 50 more's focus on the
   first new row: MC-312.
+- 2026-11-17: ADR-093's review, 52: the item's page puts focus on its
+  title when a link brings a person there: MC-219.

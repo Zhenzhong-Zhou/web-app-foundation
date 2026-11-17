@@ -60,10 +60,7 @@ test('the item’s page, arrives from a link: Where it stands first under the ti
   ).toBeVisible();
 });
 
-// Not built: a link's arrival puts focus on the page's title (#565, for
-// every page); Where it stands' #stock and #held focus their part. For
-// step 22's review.
-test.fixme('the item’s page, arrives from a link: focus on the title', async ({
+test('the item’s page, arrives from a link: focus on the title', async ({
   page,
   freshOrg,
 }) => {

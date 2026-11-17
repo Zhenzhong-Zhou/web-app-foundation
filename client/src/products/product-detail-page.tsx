@@ -12,9 +12,9 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigationType, useParams } from 'react-router-dom';
 
 import type {
   OrganizationEnvelope,
@@ -63,6 +63,16 @@ export function ProductDetailPage() {
   } = useResource<ProductDetail>(`/products/${id!}`);
   // Remembered as recently opened, once loaded (ADR-058).
   useRecordOpened('product', id, product !== null && product !== undefined);
+  // Arrived by a link, focus on the title, where the page begins (ADR-093's
+  // item's page table); a link to one of its parts, #held, focuses that
+  // part instead, and Back or a reload leaves focus to the browser.
+  const heading = useRef<HTMLHeadingElement>(null);
+  const arrival = useNavigationType();
+  const { hash, key } = useLocation();
+  const loaded = !!product;
+  useEffect(() => {
+    if (loaded && arrival === 'PUSH' && !hash) heading.current?.focus();
+  }, [loaded, arrival, hash, key]);
   // Its category's path under its name, and Edit's list (ADR-092).
   const { data: tree } = useResource<ProductCategoryList>(
     '/products/categories',
@@ -199,6 +209,7 @@ export function ProductDetailPage() {
         ]}
         // The reader's language; the forms edit `name`, the base (ADR-056).
         title={product.displayName}
+        headingRef={heading}
         actions={
           <>
             <HistoryButton resourceId={product.id} />
