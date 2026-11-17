@@ -379,9 +379,9 @@ test('Items, a header: sorts by it, again reverses; focus stays on the header; t
     'E2E Charlie',
   ]);
 
-  // In stock, fewest first, then again the other way, from the keyboard.
-  const stock = page.getByRole('button', { name: 'In stock' });
-  const stockHeader = page.getByRole('columnheader', { name: 'In stock' });
+  // On hand, least first, then again the other way, from the keyboard.
+  const stock = page.getByRole('button', { name: 'On hand' });
+  const stockHeader = page.getByRole('columnheader', { name: 'On hand' });
   await stock.focus();
   await page.keyboard.press('Enter');
   await expect(stockHeader).toHaveAttribute('aria-sort', 'ascending');
@@ -1041,13 +1041,13 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await expect(type).toHaveText('Products (2)');
   await expect(page.getByRole('tab')).toHaveCount(0);
 
-  // The sheet from the bottom: Sort, fewest first.
+  // The sheet from the bottom: Sort, least first.
   await page.getByRole('button', { name: 'Filters' }).click();
   const sheet = page.getByRole('presentation').filter({
     has: page.getByRole('heading', { name: 'Filters and sort' }),
   });
   await sheet.getByRole('combobox', { name: 'Sort' }).click();
-  await page.getByRole('option', { name: 'In stock, fewest first' }).click();
+  await page.getByRole('option', { name: 'On hand, least first' }).click();
   await sheet.getByRole('button', { name: 'Show 2' }).click();
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/sort=stock&order=asc/);

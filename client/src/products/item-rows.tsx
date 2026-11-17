@@ -338,8 +338,8 @@ export function ItemTable({
             <SortHeader
               align="right"
               label={intl.formatMessage({
-                id: 'products.inStock',
-                defaultMessage: 'In stock',
+                id: 'common.onHand',
+                defaultMessage: 'On hand',
               })}
               {...header('stock')}
             />

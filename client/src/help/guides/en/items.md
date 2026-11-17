@@ -23,7 +23,7 @@ Items opens on Products, or on the first type that has items. **All** shows ever
 - The **Category** list offers the categories that have items on this tab, with their counts, and **Uncategorised** for the items in none. Choosing one shows its items and those of every category under it, and a chip names it; **×** on the chip shows every category again.
 - **Low stock** shows the items with a code below its reorder point, or out, with their count; it sits beside **Discontinued** and is kept in the address. It counts items, not codes: an item with three codes under their points counts once.
 - **Discontinued** shows the discontinued items alone, with their count. Otherwise they are hidden. **Show all in Items** in the top bar opens All with the search and the discontinued items included, and a chip saying so.
-- Press **Name**, **Category**, **In stock** or the date at the head of a column to sort by it; press it again to reverse. The date column shows the date the list is sorted by, and its menu switches between **Last changed** and **Date added**.
+- Press **Name**, **Category**, **On hand** or the date at the head of a column to sort by it; press it again to reverse. The date column shows the date the list is sorted by, and its menu switches between **Last changed** and **Date added**.
 - The list reads fifty items at a time. **Show 50 more** adds the next fifty.
 - **Export** writes what the list shows, not only the rows loaded, as a CSV file.
 

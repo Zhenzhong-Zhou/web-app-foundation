@@ -217,13 +217,13 @@ a second organization.
   the stock and its status open Inventory for the item alone, as the
   wider row's number does, and the name, a fingertip tall, opens the
   item; nothing else on the card does.
-- **MC-209** Items sorts by Name (A to Z first), Category, In stock
-  (fewest first) and the date: a header again reverses it, and focus
+- **MC-209** Items sorts by Name (A to Z first), Category, On hand
+  (least first) and the date: a header again reverses it, and focus
   stays on the header pressed from the keyboard. The date column's menu
   switches it to Date added, newest first, and the column shows the date
   sorted by. The sort stays in the address. At 390 px Filters opens a
   sheet from the bottom, which a screen reader names Filters and sort,
-  with the category, Sort (In stock, fewest first;
+  with the category, Sort (On hand, least first;
   Last changed, newest first; Date added, newest first) and Discontinued
   with its count; Clear resets them and Show closes it.
 - **MC-210** Items' category filter reads All categories, then the tree
@@ -6679,3 +6679,9 @@ first.
   count reads as items, not units: MC-4205, MC-4215 and MC-R92.
 - 2026-11-17: ADR-093's review, 71: Reorder's Show 50 more, and a next
   page that fails said beneath the rows kept: MC-4202.
+- 2026-11-17: ADR-093's review, 3: On hand, Free, Held, Left and Short in
+  the glossary's words in three languages, Help included: Items' column
+  and its sort say On hand (现有, En stock); None on hand is 现有为零 and
+  Rien en stock; an order line's short is 缺 and « manquants »; Left's sum
+  says 待发, not 订单待发; Stock value and a lot’s trace say 现有库存:
+  MC-209.

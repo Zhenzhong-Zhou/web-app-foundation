@@ -100,14 +100,14 @@ const BY_NAME: ListSort<ItemSort> = { key: 'name', order: 'asc' };
 
 /**
  * The phone's Sort list (ADR-092): each column's own way first, the stock
- * fewest first, a date newest first.
+ * least first, a date newest first.
  */
 const PHONE_SORTS = defineMessages({
   'name:asc': { id: 'products.sort.name', defaultMessage: 'Name' },
   'category:asc': { id: 'products.category', defaultMessage: 'Category' },
   'stock:asc': {
     id: 'products.sort.stock',
-    defaultMessage: 'In stock, fewest first',
+    defaultMessage: 'On hand, least first',
   },
   'changed:desc': {
     id: 'products.sort.changed',
