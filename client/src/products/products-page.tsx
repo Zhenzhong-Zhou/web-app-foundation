@@ -39,7 +39,7 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useCards } from '../lib/use-cards';
 import { useKeysetList } from '../lib/use-keyset-list';
-import { id, oneOf, useListFilters } from '../lib/use-list-filters';
+import { flag, id, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import {
   type ListSort,
@@ -81,8 +81,9 @@ const TYPE_TABS = ITEM_TABS.filter(
 /**
  * Items' filters in the address (ADR-091, ADR-092), beside its tab, search
  * and sort: a category's id, which holds those under it, or
- * `uncategorised`; and the discontinued items, hidden unless `only`, the
- * Discontinued chip, or `include`, which the top bar's Show all opens.
+ * `uncategorised`; the discontinued items, hidden unless `only`, the
+ * Discontinued chip, or `include`, which the top bar's Show all opens; and
+ * `low`, the Low stock chip, the items low or out (ADR-093, 21a).
  */
 const ADDRESS_FILTERS = {
   category: {
@@ -91,6 +92,7 @@ const ADDRESS_FILTERS = {
     write: id.write,
   },
   discontinued: oneOf<DiscontinuedShown>(['', 'only', 'include'], ''),
+  low: flag,
 };
 
 /** Name, A to Z, unless a header is chosen (ADR-092). */
@@ -158,7 +160,7 @@ export function ProductsPage() {
   const [tab, setTab] = useTab<ItemTab>(ITEM_TABS, { fallback: opening });
 
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  const { category, discontinued } = filters;
+  const { category, discontinued, low } = filters;
   const { text, setText, search } = useListSearch();
   const {
     sort: chosen,
@@ -172,6 +174,7 @@ export function ProductsPage() {
   if (tab !== 'all') query.set('type', tab);
   if (category) query.set('category', category);
   if (discontinued) query.set('discontinued', discontinued);
+  if (low) query.set('low', 'true');
   const filtered = query.toString();
   const path = withSort(
     withSearch(filtered ? `/products?${filtered}` : '/products', search),
@@ -263,7 +266,7 @@ export function ProductsPage() {
           setTicked(new Set(on ? items?.map((item) => item.id) : [])),
       }
     : undefined;
-  const filtersOn = (category ? 1 : 0) + (discontinued ? 1 : 0);
+  const filtersOn = (category ? 1 : 0) + (discontinued ? 1 : 0) + (low ? 1 : 0);
 
   const categoryFilter = (fullWidth: boolean) => (
     <CategoryFilter
@@ -289,6 +292,20 @@ export function ProductsPage() {
     pressed: discontinued === 'only',
     onToggle: () =>
       setFilters({ discontinued: discontinued === 'only' ? '' : 'only' }),
+  };
+
+  // Beside it, the items low or out, as Home's tile and Reorder count
+  // codes (ADR-093, 21a); its count with the other filters on.
+  const lowLabel = intl.formatMessage({
+    id: 'inventory.reorder.filter.low',
+    defaultMessage: 'Low stock',
+  });
+  const lowFilter: QuickFilter = {
+    id: 'low',
+    label: lowLabel,
+    count: counts?.low,
+    pressed: low,
+    onToggle: () => setFilters({ low: !low }),
   };
 
   return (
@@ -355,7 +372,7 @@ export function ProductsPage() {
           value: text,
           onChange: setText,
         }}
-        quick={phone ? [] : [discontinuedFilter]}
+        quick={phone ? [] : [lowFilter, discontinuedFilter]}
       >
         {/* On a phone the category, the sort and Discontinued go in the
             Filters button's sheet (ADR-093, #481); Clear clears the
@@ -364,7 +381,9 @@ export function ProductsPage() {
           <FiltersButton
             on={filtersOn}
             shown={total}
-            onClear={() => clearSort({ category: null, discontinued: null })}
+            onClear={() =>
+              clearSort({ category: null, discontinued: null, low: null })
+            }
           >
             {categoryFilter(true)}
             <TextField
@@ -397,6 +416,10 @@ export function ProductsPage() {
                 </MenuItem>
               ))}
             </TextField>
+            <QuickFilterPill
+              filter={lowFilter}
+              sx={{ alignSelf: 'flex-start' }}
+            />
             <QuickFilterPill
               filter={discontinuedFilter}
               sx={{ alignSelf: 'flex-start' }}
@@ -440,6 +463,12 @@ export function ProductsPage() {
               id: 'discontinued-only',
               label: discontinuedLabel,
               onRemove: () => setFilters({ discontinued: '' }),
+            },
+          phone &&
+            low && {
+              id: 'low',
+              label: lowLabel,
+              onRemove: () => setFilters({ low: false }),
             },
         ]}
       />
@@ -503,7 +532,9 @@ export function ProductsPage() {
               search={search}
               filtered={filtersOn > 0}
               uncategorised={category === UNCATEGORISED}
-              onShowAll={() => setFilters({ category: '', discontinued: '' })}
+              onShowAll={() =>
+                setFilters({ category: '', discontinued: '', low: false })
+              }
               tab={tab}
               counts={counts}
               onTab={setTab}

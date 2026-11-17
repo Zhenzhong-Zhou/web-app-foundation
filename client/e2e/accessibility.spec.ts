@@ -480,9 +480,8 @@ const SCREENS: Screen[] = [
   {
     name: 'an item, Edit',
     path: (seed) => `/items/${seed.productId}`,
-    // The item's Edit, in its header, before each variant's.
-    open: (page) =>
-      page.getByRole('button', { name: 'Edit', exact: true }).first().click(),
+    // The item's Edit item, in its header, named apart from a variant's.
+    open: (page) => page.getByRole('button', { name: 'Edit item' }).click(),
     ready: (page) => page.getByRole('dialog', { name: 'Edit the item' }),
   },
   { name: 'partners', path: () => '/partners', ready: heading },

@@ -121,11 +121,10 @@ Each with what holds it in the code today, or the issue that will.
 - Numbers are right-aligned in tabular figures, and nothing covers them:
   a pinned column never sits over a cell.
 - The figure beside a status is the figure it judges, or links to where
-  it is worked out. Items' Low and Out are to open "Where it stands", the
-  figure they judge; today only the stock on hand beside them links, to
-  Inventory for that item alone (`item-rows.tsx`), as ADR-090's as-built
-  for flows and states says. ADR-093's Inventory branch builds it, the
-  badge and the quantity beside it read from one count (#590).
+  it is worked out. Items' Low and Out open the item's "Where it stands",
+  the figures they judge, and the stock on hand beside them, read from
+  the same count with what of it is not usable, opens Inventory for that
+  item alone (`item-rows.tsx`; ADR-093, #570, #590).
 
 ### Sorting and filters
 

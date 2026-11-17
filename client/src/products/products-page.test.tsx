@@ -458,6 +458,30 @@ describe('ProductsPage', () => {
       .toBe('search=calm&sort=name&order=asc');
   });
 
+  // Items' Low stock (ADR-093, 21a): the items low or out, its count with
+  // the other filters on, kept in the address beside Discontinued.
+  it('narrows to the items low or out by Low stock, its count beside it, in the address', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf(() =>
+      pageOf([product('Calm 90ct')], { ...countsOf({ good: 1 }), low: 4 }),
+    );
+
+    renderAt('/items?search=calm');
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    await user.click(screen.getByRole('button', { name: /^Low stock/ }));
+
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('type=good&low=true&search=calm&sort=name&order=asc');
+    expect(
+      screen.getByRole('button', { name: /^Low stock/ }),
+    ).toHaveTextContent('Low stock4');
+    expect(screen.getByRole('button', { name: /^Low stock/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
   it('shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out', async () => {
     readsOf(() =>
       pageOf(

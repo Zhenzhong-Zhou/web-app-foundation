@@ -43,6 +43,7 @@ import { productTypeSingular } from './product-types';
 import type { Variant } from './products-page';
 import { TranslationsDialog } from './translations-dialog';
 import { VariantRow } from './variant-row';
+import { WhereItStands } from './where-it-stands';
 
 /** The product's detail and translations, generated (ADR-068). */
 export type { ProductDetail, ProductTranslation } from '../api/types.gen';
@@ -202,13 +203,15 @@ export function ProductDetailPage() {
           <>
             <HistoryButton resourceId={product.id} />
             {canEdit && (
+              // Named for what it edits, beside a variant's own Edit and
+              // Edit names (#594).
               <Button
                 variant="outlined"
                 onClick={openDialog(() => setEditingItem(true))}
               >
                 {intl.formatMessage({
-                  id: 'common.edit',
-                  defaultMessage: 'Edit',
+                  id: 'products.editItem',
+                  defaultMessage: 'Edit item',
                 })}
               </Button>
             )}
@@ -241,6 +244,10 @@ export function ProductDetailPage() {
           .filter(Boolean)
           .join(SEPARATOR)}
       />
+
+      {/* First under the title, since someone who knows the trade looks
+          there first (ADR-093, R8). */}
+      <WhereItStands product={product} />
 
       {product.description && (
         <Typography variant="body1">{product.description}</Typography>

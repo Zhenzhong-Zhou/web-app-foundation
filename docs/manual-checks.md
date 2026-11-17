@@ -279,7 +279,9 @@ a second organization.
 - **MC-214** An item's page, as the demo Owner: under its name, its type
   in the singular and its category's path ("Packaging · Bottles › Caps",
   "Raw material · Herbs", in Français « Matière première · … »; #548), or
-  Uncategorised. Edit opens with its base name, description, category
+  Uncategorised. Edit item (Modifier l’article, 编辑物品; #594), named
+  apart from a variant's Edit, which a screen reader hears as "Edit
+  variant MAGCAP-60", opens with its base name, description, category
   and type; each type is named in the singular with Add item's line
   under it, and the type says
   the item then shows under its new type, its stock, lots and History as
@@ -340,6 +342,50 @@ a second organization.
   VITD-30-CA and VITD-30-EXP, each with a recipe under the one licence
   80076543, both using BOTTLE-30, the first LABEL-VITD-CA and the second
   LABEL-VITD-EXP.
+- **MC-218** *(ADR-093, #590, #570)* Items' stock, as the demo Owner.
+  VITC-100's row reads 72 each with "72 not usable" under it and Out;
+  Magnesium bisglycinate capsules reads its on hand, "48 not usable" and
+  "Out · 1 of 3 codes" (« Épuisé · 1 sur 3 codes », 缺货 · 3 个编码中
+  1 个). The number still opens Inventory for the item alone; the status
+  opens the item's page at Where it stands, focus on its heading, with
+  Back to Items as it was. A Low stock chip sits before Discontinued with
+  its count, the items low or out, ?low=1 in the address, kept by a
+  reload and Back; its count is the number of items among Reorder's Low
+  stock rows, MAGCAP counted once for its two codes. At 390 px the chip
+  is in Filters, each card's status opens Where it stands, and with
+  touch the number, the status and, on an item's page, a variant's code
+  are each at least 44 px tall.
+- **MC-219** *(ADR-093, R8)* Where it stands, as the demo Owner, first
+  under the item's title. ELDER-250's page: Low, "58 left · reorder at
+  96"; On hand with what is not usable and why, or "all usable"; Free
+  with "what you can still promise"; Held 60 "for 2 confirmed orders",
+  SO-DEMO-9 and SO-DEMO-10 listed oldest first, each a link; Coming with
+  PO-DEMO-12, its day and "late"; Left with "70 usable + 48 coming − 60
+  for orders"; By place and lot, each lot's code a link to its trace,
+  with Move. Change reorder point opens the point's dialog filled in,
+  and Escape returns focus to it; Buy 134 opens New order, a purchase,
+  with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
+  has Make 230 instead, which opens Plan a run filled in. OMEGA3-90 says
+  it is in a draft already. MAGCAP's page lists MAGCAP-240 first, out,
+  "48 not usable: at a place not available", its lot in Quarantine
+  marked "Not usable: a place not available", then MAGCAP-120, low, Buy
+  48. From Stock, FOCUS-60CT's "162 short" opens its page with focus on
+  Held, "162 short: orders want …" under Free, its last order the one
+  short; "… left · reorder at …" opens it at Where it stands. An item
+  with nothing on hand and no point, such as CALM-SAMPLE, says "None on
+  hand, nothing coming." with Set a reorder point and Receive stock. In
+  French the section is État du stock, in 中文 库存情况, and 现有不可用
+  names its reasons 已过期, 已领用 and 不可发货.
+- **MC-220** *(ADR-093, ADR-080)* Where it stands by permission. As
+  Fatima Haddad (Sales), with no `locations.view`: ELDER-250's page
+  lists "Usable lots", each with how many places hold it, and any not
+  usable as one line, no place named, with no Move and no Change
+  reorder point; Held's orders are listed, and Buy 134 is there.
+  SLEEP-60CT's page lists no run under Coming, and in Make's place a
+  line says her role does not include planning runs, and whom to ask. As
+  Tom Becker (Warehouse): By place and lot with Move, and in Buy's place
+  the line for buying. A role made with `products.view` alone sees no
+  Where it stands section, and nothing says it is missing.
 
 ## 3. Stock
 
@@ -356,8 +402,9 @@ a second organization.
 - **MC-309** *(ADR-093)* As the demo Owner, Stock's FOCUS-60CT row reads On
   hand with "11 not usable" under it, Free 0 each with "162 short" in red
   under it, Held, and Low with "… left · reorder at …" under its chip.
-  "162 short" and the line open FOCUS-60CT's page; the item's name opens
-  it too, and so does a click anywhere else on the row. There is no
+  "162 short" opens FOCUS-60CT's page at Held, focus on it, and the line
+  at Where it stands (MC-219); the item's name opens it too, and so does
+  a click anywhere else on the row. There is no
   "Promised to customers" table below the list.
 - **MC-312** *(ADR-093)* D3-1000-120's "2 places" button opens its places
   under the row, the button pressed in the accent and read as "Hide where
@@ -6375,3 +6422,8 @@ first.
   the figure sorts and cards; Promised to customers no longer drawn:
   MC-301, MC-308 to MC-311 and MC-1528 to MC-1530 rewritten, MC-312 to
   MC-315 added, MC-208's promised line taken out.
+- 2026-11-16: ADR-093's item's page, Where it stands, and Items' stock
+  from the one count: MC-218 to MC-220 added; MC-214 names Edit item
+  (#594); MC-309's "162 short" opens Held; the demo's two MAGCAP points
+  move Reorder's counts to All 11 · Low stock 8 · Out 2 in the setup,
+  MC-4201 to MC-4203, MC-4213 and MC-4214.

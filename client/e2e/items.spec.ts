@@ -798,8 +798,8 @@ test('the item’s page, Edit then Save: saved; a new type moves it to that tab'
     page.getByRole('heading', { level: 1, name: 'E2E Retype' }),
   ).toBeVisible();
 
-  // The item's Edit, in its header, before each variant's.
-  await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+  // The item's Edit item, in its header, named apart from a variant's.
+  await page.getByRole('button', { name: 'Edit item' }).click();
   const dialog = page.getByRole('dialog', { name: 'Edit the item' });
   await dialog.getByRole('combobox', { name: 'Type' }).click();
   // One item's type, in the singular; its tab, in the plural (#548).
@@ -1019,7 +1019,8 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await expect(page.getByRole('table')).toHaveCount(0);
   await expect(cards.first()).toContainText('E2E Alpha');
   await expect(cards.nth(1)).toContainText('Low stock');
-  // Each card's two links, the item's and its stock's, a fingertip tall.
+  // Each card's links, the item's, its stock's and its status's, a
+  // fingertip tall.
   for (const link of await page.getByRole('list').getByRole('link').all()) {
     expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }

@@ -62,7 +62,8 @@ test('renames a SKU inline', async ({ page, api }) => {
   const row = page.getByRole('row', { name: new RegExp(product.sku) });
 
   // The cell is a button showing the SKU; clicking it swaps in the input.
-  await row.getByRole('button', { name: product.sku }).click();
+  // Exactly, since the row's Edit is named for its variant too (#594).
+  await row.getByRole('button', { name: product.sku, exact: true }).click();
   await row.getByRole('textbox').fill(corrected);
 
   // Committed on blur — there is no save control. That is worth knowing: the

@@ -150,7 +150,9 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "leaves out places without locations.view: the usable lots alone, adding up to usable" ·
   [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the sales and purchases without orders.view, the number of orders kept" ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the runs without production.view"
+  [test](../../server/test/code-figures.e2e-spec.ts) "leaves out the runs without production.view" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "names whom to ask for Buy, and lists the usable lots without places" ·
+  MC-219 · MC-220
 - **Items counts items, Reorder and Home count codes:** Items' Low stock
   is the items among Reorder's low and out codes, and Home's Low stock is
   Reorder's count.

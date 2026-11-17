@@ -299,14 +299,17 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/items-list.e2e-spec.ts) "says low or out from its reorder points, out before low" ·
   [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
   [test](../../client/src/products/products-page.test.tsx) "shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out" ·
-  MC-208
+  [test](../../client/src/products/item-rows.test.tsx) "says what is not usable beside the number, and how many codes share the status, opening Where it stands" ·
+  MC-208 · MC-218
 - **Low stock narrows the list to the items with a code low or out,
   counted beside the filter with the others on and its own off; the
   export follows it.** It counts items, where Reorder and Home count
   codes.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
   [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each"
+  [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each" ·
+  [test](../../client/src/products/products-page.test.tsx) "narrows to the items low or out by Low stock, its count beside it, in the address" ·
+  MC-218
 - **Another organization's items, categories and stock are never listed
   nor counted.**
   [ADR-003](../adr/0003-multi-tenancy.md#decision) ·

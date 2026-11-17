@@ -29,7 +29,7 @@ import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import type { ItemSort } from '../lib/api-names';
-import { formatDate, SEPARATOR } from '../lib/format';
+import { displayQuantity, formatDate, SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { TOUCH } from '../theme/media';
@@ -123,11 +123,56 @@ function useOnHand() {
         );
 }
 
+/** A quantity of nothing, as the API writes it. */
+const NONE = '0.0000';
+
+/** The link's target on touch: a fingertip's height (ADR-092, #170). */
+const TOUCH_TARGET = {
+  [TOUCH]: { display: 'inline-flex', alignItems: 'center', minHeight: rem(44) },
+};
+
+/**
+ * What of the stock on hand is not usable, beside it (ADR-093, #590), so
+ * Out beside 72 reads as true: "72 not usable".
+ */
+function NotUsable({ item }: { item: ProductSummary }) {
+  const intl = useIntl();
+  if (!item.notUsable || item.notUsable === NONE) return null;
+  return (
+    <Box
+      component="span"
+      sx={{
+        color: 'text.secondary',
+        typography: 'body2',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {intl.formatMessage(
+        {
+          id: 'inventory.stock.notUsable',
+          defaultMessage: '{quantity} not usable',
+        },
+        { quantity: displayQuantity(item.notUsable) },
+      )}
+    </Box>
+  );
+}
+
 /**
  * Low stock or Out in Home's words, tones and icons (ADR-085, ADR-092),
- * beside the number; a discontinued item's row says Discontinued.
+ * beside the number, a link to the item's Where it stands, the figures it
+ * judges (#570; the design language's Numbers); an item with several
+ * codes says how many share its worst code's status, "Low stock · 1 of 3
+ * codes" (ADR-093, 21a). A discontinued item's row says Discontinued.
  */
-function RowStatus({ item }: { item: ProductSummary }) {
+function RowStatus({
+  item,
+  tall,
+}: {
+  item: ProductSummary;
+  /** On a card, a fingertip's height with a mouse too, as its number. */
+  tall?: boolean;
+}) {
   const intl = useIntl();
 
   if (!item.isActive) {
@@ -141,31 +186,67 @@ function RowStatus({ item }: { item: ProductSummary }) {
       />
     );
   }
-  if (item.stockStatus === 'out') {
-    return (
-      <StatusChip
-        tone={STATUS_TONES.reorder.out}
-        icon={<ErrorOutlined />}
-        label={intl.formatMessage({
+  if (item.stockStatus !== 'out' && item.stockStatus !== 'low') return null;
+
+  const word =
+    item.stockStatus === 'out'
+      ? intl.formatMessage({
           id: 'inventory.reorder.filter.out',
           defaultMessage: 'Out',
-        })}
-      />
-    );
-  }
-  if (item.stockStatus === 'low') {
-    return (
-      <StatusChip
-        tone={STATUS_TONES.reorder.low}
-        icon={<WarningAmberOutlined />}
-        label={intl.formatMessage({
+        })
+      : intl.formatMessage({
           id: 'inventory.reorder.filter.low',
           defaultMessage: 'Low stock',
-        })}
+        });
+  const label =
+    item.variantCount > 1 && item.stockStatusCodes
+      ? intl.formatMessage(
+          {
+            id: 'products.row.statusCodes',
+            defaultMessage:
+              '{status} · {count} of {total, plural, one {# code} other {# codes}}',
+          },
+          {
+            status: word,
+            count: item.stockStatusCodes,
+            total: item.variantCount,
+          },
+        )
+      : word;
+
+  return (
+    <Link
+      component={RouterLink}
+      to={`/items/${item.id}#stock`}
+      state={OFFER_BACK}
+      underline="none"
+      aria-label={intl.formatMessage(
+        {
+          id: 'products.row.statusOf',
+          defaultMessage: '{status}: where {name} stands',
+        },
+        { status: label, name: item.displayName },
+      )}
+      sx={{
+        ...(tall
+          ? { display: 'inline-flex', alignItems: 'center', minHeight: rem(44) }
+          : TOUCH_TARGET),
+        cursor: 'pointer',
+      }}
+    >
+      <StatusChip
+        tone={STATUS_TONES.reorder[item.stockStatus]}
+        icon={
+          item.stockStatus === 'out' ? (
+            <ErrorOutlined />
+          ) : (
+            <WarningAmberOutlined />
+          )
+        }
+        label={label}
       />
-    );
-  }
-  return null;
+    </Link>
+  );
 }
 
 /** Inventory for the item alone, with Back to Items as it was (ADR-092). */
@@ -176,8 +257,9 @@ function stockPath(item: ProductSummary): string {
 /**
  * Items' rows from 600 px (ADR-092): the cover or the type's icon; the
  * name in bold, its code in grey; the category; the stock, right
- * aligned, its status under it, a link to Inventory for the item; one
- * date, which the sort decides. The whole row opens the item, its name
+ * aligned, a link to Inventory for the item, what of it is not usable
+ * and its status under it, the status a link to Where it stands (ADR-093);
+ * one date, which the sort decides. The whole row opens the item, its name
  * the link a keyboard reaches; at least 44 px tall on touch.
  *
  * The head stays while the rows are read, a sort's included, so the
@@ -331,17 +413,11 @@ export function ItemTable({
                     )}
                     // A fingertip's height on touch, so a near miss does not
                     // open the item instead (ADR-092).
-                    sx={{
-                      whiteSpace: 'nowrap',
-                      [TOUCH]: {
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        minHeight: rem(44),
-                      },
-                    }}
+                    sx={{ whiteSpace: 'nowrap', ...TOUCH_TARGET }}
                   >
                     {onHand(item)}
                   </Link>
+                  <NotUsable item={item} />
                   <RowStatus item={item} />
                 </Stack>
               </TableCell>
@@ -432,10 +508,10 @@ function DateHeader({
 /**
  * Items' rows below 600 px, as cards (ADR-090, ADR-092): the name in
  * bold; its code and category on one line; then the stock and its
- * status. The card is two links side by side, since a link holds no
- * other: the item's, from the cover to the category, and the stock's,
- * which opens Inventory for the item alone, as the wider row's number
- * does.
+ * status. The item's link, from the cover to the category, and beside
+ * it the stock's, since a link holds no other: the number opening
+ * Inventory for the item alone and the status Where it stands, as the
+ * wider row's do.
  *
  * With `ticks`, a check box sits before each card's links, beside them
  * rather than in one, since a link holds no control.
@@ -514,41 +590,46 @@ export function ItemCards({
               withType={withType}
             />
           </Link>
-          <Link
-            component={RouterLink}
-            to={stockPath(item)}
-            state={OFFER_BACK}
-            underline="none"
-            aria-label={intl.formatMessage(
-              {
-                id: 'products.row.stockOf',
-                defaultMessage: '{quantity}, stock of {name}',
-              },
-              { quantity: onHand(item), name: item.displayName },
-            )}
+          {/* The stock, its not-usable part and its status, each a
+              target of its own: the number opens Inventory for the item,
+              as the wider row's does, the status Where it stands. */}
+          <Stack
+            spacing={0.5}
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
               alignItems: 'flex-end',
               justifyContent: 'center',
-              gap: 0.5,
               alignSelf: 'stretch',
-              py: 2,
+              py: 1,
               pr: 2,
               pl: 1,
-              minHeight: rem(44),
             }}
           >
             {/* The number underlined, a link by more than its colour
-                (WCAG 1.4.1); the status under it, as the wider row's. */}
-            <Box
-              component="span"
-              sx={{ whiteSpace: 'nowrap', textDecoration: 'underline' }}
+                (WCAG 1.4.1). */}
+            <Link
+              component={RouterLink}
+              to={stockPath(item)}
+              state={OFFER_BACK}
+              underline="always"
+              aria-label={intl.formatMessage(
+                {
+                  id: 'products.row.stockOf',
+                  defaultMessage: '{quantity}, stock of {name}',
+                },
+                { quantity: onHand(item), name: item.displayName },
+              )}
+              sx={{
+                whiteSpace: 'nowrap',
+                minHeight: rem(44),
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
             >
               {onHand(item)}
-            </Box>
-            <RowStatus item={item} />
-          </Link>
+            </Link>
+            <NotUsable item={item} />
+            <RowStatus item={item} tall />
+          </Stack>
         </Box>
       ))}
     </Stack>
