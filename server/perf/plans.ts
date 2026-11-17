@@ -507,6 +507,12 @@ async function buildProbes(
       name: 'reorder points: low',
       run: () => reorder.list({ status: 'low' }, 'en'),
     },
+    // Reorder by the suggested order (ADR-093; #473's 16): the same
+    // positions, ordered by what each suggests.
+    {
+      name: 'reorder points: by suggested order',
+      run: () => reorder.list({ sort: 'suggested' }, 'en'),
+    },
     { name: 'valuation', run: () => costs.stockValuation() },
     // The catalogue's reads that join products (#226), each with the
     // organization on its join: without it, Postgres reads every tenant's

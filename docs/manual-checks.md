@@ -4098,7 +4098,10 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
   Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
-  With Low stock on and the search cleared, Export saves a CSV of the eight, and the audit
+  With Low stock on and the search cleared, Export saves a CSV of the eight, its
+  Status, Bought or made, How much to order and Unit in words, such as
+  Low, Bought, A fixed quantity and each, in 中文 不足, 采购, 固定订货量
+  and 个, never `low` or `fixed`, and the audit
   log's line for it reads its filter as Status Low, in 中文 不足. Open
   `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
   Low stock. In French the three read Tous, Stock bas and Épuisé; in 中文
@@ -4111,7 +4114,9 @@ site, after a deploy that changes the setting, the route or the relay.
   how much was left out as expired; BOTTLE-90's, how much was left out as
   issued to a run. The chevron again closes it. On a fast connection no
   grey placeholder flashes before the boxes, nor before Edit's fields;
-  with the network throttled to Slow 4G, one shows while it reads.
+  with the network throttled to Slow 4G, one shows while it reads. As
+  Fatima Haddad (Sales), with no `locations.view`, ELDER-250's Usable
+  names no place: its total alone, with what was left out.
 - **MC-4205** *(ADR-085)* Choosing. As the Owner, only bought low rows
   with something to suggest have a box: VITC-100, ELDER-250 and
   D3-1000-120 among them, none on MAGCAP-SAMPLE or SLEEP-60CT, which are
@@ -6427,3 +6432,6 @@ first.
   (#594); MC-309's "162 short" opens Held; the demo's two MAGCAP points
   move Reorder's counts to All 11 · Low stock 8 · Out 2 in the setup,
   MC-4201 to MC-4203, MC-4213 and MC-4214.
+- 2026-11-16: ADR-093's Reorder, its read: the export's status, Bought or
+  made, How much to order and unit in words (#473's 29), and an opened
+  row's places only with `locations.view`: MC-4203 and MC-4204 extended.

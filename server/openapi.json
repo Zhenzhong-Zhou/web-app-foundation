@@ -6044,6 +6044,29 @@
             }
           },
           {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suggested"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
@@ -6114,6 +6137,29 @@
             }
           },
           {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suggested"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
@@ -6172,6 +6218,29 @@
               "enum": [
                 "low",
                 "out"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suggested"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
               ]
             }
           },
@@ -17967,6 +18036,26 @@
           "variantId": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "sku": {
             "type": "string"
           },
@@ -18058,6 +18147,9 @@
         "required": [
           "id",
           "variantId",
+          "productId",
+          "type",
+          "coverFileId",
           "sku",
           "productName",
           "variantName",

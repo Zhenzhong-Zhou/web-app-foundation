@@ -1,4 +1,8 @@
-import type { ReorderRule, ReorderSource } from '../../../database/schema';
+import type {
+  ProductType,
+  ReorderRule,
+  ReorderSource,
+} from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 
 /**
@@ -27,6 +31,12 @@ export class ReorderPointRow {
   /** The point itself; also the list's cursor (ADR-051). */
   id!: string;
   variantId!: string;
+  /** The item, for its page and its Where it stands (ADR-093). */
+  productId!: string;
+  /** The item's type, for its icon and its word (#546). */
+  type!: ProductType;
+  /** The product's cover (ADR-062), or null. */
+  coverFileId!: string | null;
   sku!: string;
   /** In the reader's language (ADR-056). */
   productName!: string;
@@ -151,7 +161,12 @@ export class ReorderPointPreview {
 export class ReorderPointDetail {
   /** The point itself, so Edit opens with what is kept. */
   point!: ReorderPointValues;
-  /** By location, each marked available that holds the item. */
+  /**
+   * By location, each marked available that holds the item, for a reader
+   * who may see places; none for the rest, the row's usable standing
+   * alone, since a place's name is never sent past locations.view
+   * (ADR-080; ADR-093's A6).
+   */
   usable!: UsableStock[];
   /** Left out in all, as expired. */
   expired!: string;

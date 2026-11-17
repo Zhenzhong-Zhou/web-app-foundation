@@ -9,6 +9,7 @@ import { notInThisList } from '../../common/sorted-page';
 import { todayOf } from '../../core/organizations/time-zone';
 import {
   products,
+  type ProductType,
   productVariants,
   reorderPoints,
   type ReorderRule,
@@ -17,6 +18,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemMatches } from '../products/item-search';
+import { coverOf } from '../products/product-images';
 import { comingLinesOf } from './code-lines';
 import type { ListReorderPointsDto } from './dto/list-reorder-points.dto';
 import type {
@@ -49,6 +51,9 @@ const PAGE_SIZE = 50;
 type PositionRow = {
   id: string;
   variant_id: string;
+  product_id: string;
+  type: ProductType;
+  cover_file_id: string | null;
   sku: string;
   product_name: string;
   variant_name: string | null;
@@ -177,6 +182,24 @@ function quantity(column: SQL): SQL {
 }
 
 /**
+ * The list's order as one key, a position `p` and its item's SKU `sku`
+ * read (ADR-085): the low first, the furthest below their point as a
+ * share of it first, then by SKU; by the suggested order first when
+ * asked, most first unless asked otherwise (ADR-093; #473's 16), the
+ * list's own order breaking its ties. Every part ascending, so a row's
+ * key and its cursor's compare as one row: the suggestion is negated to
+ * run most first.
+ */
+function orderKey(query: ListReorderPointsDto, p: string, sku: SQL): SQL {
+  const own = sql`${sql.raw(p)}.low_first, ${sql.raw(p)}.share, ${sku}, ${sql.raw(p)}.id`;
+  if (query.sort !== 'suggested') return own;
+  const suggestion = sql`${sql.raw(p)}.suggestion`;
+  return query.order === 'asc'
+    ? sql`${suggestion}, ${own}`
+    : sql`-${suggestion}, ${own}`;
+}
+
+/**
  * Reading reorder points (ADR-085): the list of every item with a point
  * and where it stands, its counts, and an opened row's lines. Each reads
  * positionsOf, so the list, its counts and Home's tile agree; nothing
@@ -188,7 +211,8 @@ export class ReorderPointsReadsService {
 
   /**
    * A page of the list, in ADR-085's order: the low first, the furthest
-   * below their point as a share of it first; then the rest, by SKU.
+   * below their point as a share of it first; then the rest, by SKU. Or
+   * by the suggested order first, when asked (orderKey).
    *
    * The order is worked out, not indexed, so each page works out every
    * point's position and reads its slice; the cursor is a point's id, its
@@ -259,8 +283,8 @@ export class ReorderPointsReadsService {
 
         if (!cursor) throw notInThisList();
 
-        conditions.push(sql`(p.low_first, p.share, ${productVariants.sku}, p.id) > (
-          select c.low_first, c.share, cv.sku, c.id
+        conditions.push(sql`(${orderKey(query, 'p', sql`${productVariants.sku}`)}) > (
+          select ${orderKey(query, 'c', sql`cv.sku`)}
           from p c
           join product_variants cv
             on cv.id = c.variant_id
@@ -274,6 +298,9 @@ export class ReorderPointsReadsService {
         select
           p.id,
           p.variant_id,
+          ${products.id} as product_id,
+          ${products.type} as type,
+          ${coverOf()} as cover_file_id,
           ${productVariants.sku} as sku,
           ${shown.productName} as product_name,
           ${shown.variantName} as variant_name,
@@ -294,7 +321,7 @@ export class ReorderPointsReadsService {
           p.drafted
         from ${namedPositions(organizationId)}
         ${whereOf(conditions)}
-        order by p.low_first, p.share, ${productVariants.sku}, p.id
+        order by ${orderKey(query, 'p', sql`${productVariants.sku}`)}
         limit ${limit + 1}
       `);
 
@@ -311,6 +338,9 @@ export class ReorderPointsReadsService {
         entries: page.entries.map((row) => ({
           id: row.id,
           variantId: row.variant_id,
+          productId: row.product_id,
+          type: row.type,
+          coverFileId: row.cover_file_id,
           sku: row.sku,
           productName: row.product_name,
           variantName: row.variant_name,
@@ -374,8 +404,12 @@ export class ReorderPointsReadsService {
    * the lines make the row's figures, and the point itself, for Edit. An
    * item with no point is not found, as another organization's is, which
    * is how the dialog knows to add one.
+   *
+   * Usable by location only for a reader who may see places (ADR-080;
+   * ADR-093's A6): for the rest, none, the row's own usable standing
+   * alone, and what was left out still in all.
    */
-  detail(variantId: string): Promise<ReorderPointDetail> {
+  detail(variantId: string, seesPlaces: boolean): Promise<ReorderPointDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [point] = await tx
         .select({
@@ -460,11 +494,13 @@ export class ReorderPointsReadsService {
           fixedQuantity: point.fixedQuantity,
           maximumQuantity: point.maximumQuantity,
         },
-        usable: usable.rows.map((row): UsableStock => ({
-          locationId: row.location_id,
-          locationName: row.location_name,
-          usable: row.usable,
-        })),
+        usable: seesPlaces
+          ? usable.rows.map((row): UsableStock => ({
+              locationId: row.location_id,
+              locationName: row.location_name,
+              usable: row.usable,
+            }))
+          : [],
         expired: anywhere?.expired_in_all ?? '0.0000',
         issued: anywhere?.issued_in_all ?? '0.0000',
         coming: coming.rows.map((row): ComingSupply => ({

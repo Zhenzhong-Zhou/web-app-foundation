@@ -18,7 +18,10 @@ import { csvFile, exportFilters, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
+import { CurrentUser } from '../../core/auth/current-user.decorator';
+import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
+import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
@@ -43,8 +46,9 @@ import { REORDER_POINT_COLUMNS } from './stock-exports';
  * Audited by the item, so a removed point keeps its SKU in the log.
  *
  * The reads need only stock.view: the list of every item with a point
- * and where it stands, its counts, its CSV and an opened row's lines;
- * the dialog's preview needs stock.reorder, as its writes do.
+ * and where it stands, its counts, its CSV and an opened row's lines,
+ * whose places go only to a reader with locations.view (ADR-080; ADR-093's
+ * A6); the dialog's preview needs stock.reorder, as its writes do.
  * Declared before the item's own route, which would take "counts" for
  * an id.
  */
@@ -53,6 +57,7 @@ export class ReorderPointsController {
   constructor(
     private readonly reorderPoints: ReorderPointsService,
     private readonly reads: ReorderPointsReadsService,
+    private readonly permissions: PermissionsService,
   ) {}
 
   @Get()
@@ -98,13 +103,18 @@ export class ReorderPointsController {
     );
   }
 
-  /** An opened row's lines: where its usable, coming and still needed are. */
+  /**
+   * An opened row's lines: where its usable, coming and still needed are;
+   * its places by name only for a reader who may see places.
+   */
   @Get(':variantId')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  detail(
+  async detail(
     @Param('variantId', ParseUUIDPipe) variantId: string,
+    @CurrentUser() user: RequestContext,
   ): Promise<ReorderPointDetail> {
-    return this.reads.detail(variantId);
+    const held = await this.permissions.heldBy(user.membershipId);
+    return this.reads.detail(variantId, held.has(PERMISSIONS.LOCATIONS_VIEW));
   }
 
   /**

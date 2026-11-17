@@ -159,6 +159,28 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each"
 
+## Reorder
+
+- **Reorder lists every code with a reorder point, the low first,** the
+  furthest below its point as a share of it first, then the rest by
+  code; sorted by the suggested order when asked, most first unless
+  asked otherwise, the list's own order breaking its ties, page after
+  page. Its export is the same rows, in that order, its status, Bought
+  or made, How much to order and unit in the screen's words in the
+  reader's language.
+  [ADR-085](../adr/0085-low-stock.md#decision--a-reorder-point-per-item-bought-or-made-with-a-rule-for-how-much) ·
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--reorder-buying-and-making-what-is-short) ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "puts the low first, the furthest below its point as a share of it first, then the rest by SKU" ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "sorts by the suggested order, most first unless asked, the list’s own order breaking ties, page after page" ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "writes the list as CSV, filtered as asked, with headers in the reader’s language, and records it" ·
+  MC-4203
+- **An opened row names its places only to a reader who may see
+  places;** the rest read its usable as one total, with what was left
+  out as expired or issued in all.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "names no place to a reader without locations.view: the row’s usable stands alone" ·
+  MC-4204
+
 ## What confirmed sales hold
 
 - **A confirmed sale holds usable stock, the earliest confirmed first;

@@ -2,6 +2,8 @@ import { csvMoment } from '../../common/csv';
 import { type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { UNIT_WORDS } from '../../common/units';
+import type { ReorderRule, ReorderSource } from '../../database/schema';
+import type { Translatable } from '../../i18n/translate';
 import { t, translate } from '../../i18n/translate';
 import type { LotRecipient } from './dto/lot-trace-response.dto';
 import type { ReorderPointRow } from './dto/reorder-point-response.dto';
@@ -160,22 +162,40 @@ export const MOVEMENT_COLUMNS: ExportColumn<MovementRow>[] = [
   },
 ];
 
+/** Bought or made, as Reorder's rows and its dialog say it. */
+const SOURCE_WORDS: Record<ReorderSource, Translatable> = {
+  bought: t({ id: 'stock.source.bought', defaultMessage: 'Bought' }),
+  made: t({ id: 'stock.source.made', defaultMessage: 'Made' }),
+};
+
+/** How much to order, each rule by its name in the dialog. */
+const RULE_WORDS: Record<ReorderRule, Translatable> = {
+  just_enough: t({
+    id: 'stock.rule.justEnough',
+    defaultMessage: 'Just enough',
+  }),
+  fixed: t({ id: 'stock.rule.fixed', defaultMessage: 'A fixed quantity' }),
+  maximum: t({ id: 'stock.rule.maximum', defaultMessage: 'Up to a maximum' }),
+};
+
 /**
- * The reorder points export (ADR-085, ADR-057): each item with a point as
- * the list shows it, its status, source and rule as stored.
+ * Reorder's export (ADR-085, ADR-057): each item with a point as the list
+ * shows it, its status, bought or made, its rule and its unit in the
+ * screen's words in the reader's language (ADR-093; #473's 29).
  */
 export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
   { header: HEADERS.item, value: (row) => row.productName },
   { header: VARIANT, value: (row) => row.variantName },
-  { header: HEADERS.status, value: (row) => row.status },
-  {
-    header: t({
+  inWords(HEADERS.status, REORDER_STATUS_WORDS, (row) => row.status),
+  inWords(
+    t({
       id: 'exports.column.boughtOrMade',
       defaultMessage: 'Bought or made',
     }),
-    value: (row) => row.source,
-  },
+    SOURCE_WORDS,
+    (row) => row.source,
+  ),
   {
     header: t({ id: 'exports.column.usable', defaultMessage: 'Usable' }),
     value: (row) => row.usable,
@@ -190,13 +210,14 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
   },
   { header: POSITION, value: (row) => row.position },
   { header: REORDER_POINT, value: (row) => row.reorderPoint },
-  {
-    header: t({
+  inWords(
+    t({
       id: 'exports.column.rule',
       defaultMessage: 'How much to order',
     }),
-    value: (row) => row.rule,
-  },
+    RULE_WORDS,
+    (row) => row.rule,
+  ),
   {
     header: t({
       id: 'exports.column.fixedQuantity',
@@ -219,7 +240,7 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
     }),
     value: (row) => row.suggestion,
   },
-  { header: HEADERS.unit, value: (row) => row.unitOfMeasure },
+  unitInWords(),
 ];
 
 /**

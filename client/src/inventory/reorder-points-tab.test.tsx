@@ -17,6 +17,9 @@ function point(over: Partial<ReorderPointRow>): ReorderPointRow {
   return {
     id: `point-${over.sku}`,
     variantId: `variant-${over.sku}`,
+    productId: `product-${over.sku}`,
+    type: 'good',
+    coverFileId: null,
     sku: 'D3-1000',
     productName: 'Vitamin D3',
     variantName: null,

@@ -2123,6 +2123,9 @@ export type ReorderPointDraft = {
 export type ReorderPointRow = {
   id: string;
   variantId: string;
+  productId: string;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  coverFileId: string | null;
   sku: string;
   productName: string;
   variantName: string | null;
@@ -6535,6 +6538,8 @@ export type ReorderPointsControllerListV1Data = {
   path?: never;
   query?: {
     status?: 'low' | 'out';
+    sort?: 'suggested';
+    order?: 'asc' | 'desc';
     search?: string;
     before?: string;
     limit?: number;
@@ -6554,6 +6559,8 @@ export type ReorderPointsControllerCountsV1Data = {
   path?: never;
   query?: {
     status?: 'low' | 'out';
+    sort?: 'suggested';
+    order?: 'asc' | 'desc';
     search?: string;
     before?: string;
     limit?: number;
@@ -6576,6 +6583,8 @@ export type ReorderPointsControllerExportReorderPointsV1Data = {
   path?: never;
   query?: {
     status?: 'low' | 'out';
+    sort?: 'suggested';
+    order?: 'asc' | 'desc';
     search?: string;
     before?: string;
     limit?: number;

@@ -401,6 +401,11 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /stock/reorder-points?status=low',
       () => '/stock/reorder-points?status=low',
     ),
+    // Reorder by the suggested order, most first (ADR-093; #473's 16).
+    read(
+      'GET /stock/reorder-points?sort=suggested',
+      () => '/stock/reorder-points?sort=suggested',
+    ),
     // Dates and sorting (ADR-057): a sorted list's first page and a month's
     // range, each served by its index.
     read('GET /invoices?sort=total', () => '/invoices?sort=total&order=desc'),
