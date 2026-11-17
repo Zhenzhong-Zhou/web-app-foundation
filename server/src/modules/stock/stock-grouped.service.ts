@@ -171,8 +171,10 @@ function rowFilters(
   organizationId: string,
   today: string,
   days: number | undefined,
+  /** A page's codes alone, the rows statement's (review 40). */
+  variants?: SQL,
 ) {
-  const at = { locationId: query.locationId };
+  const at = { locationId: query.locationId, variants };
   const holding = (filters: Parameters<typeof stockRowsOf>[0]) =>
     sql`${productVariants.id} in (
       select ${stockLevels.variantId}
@@ -576,7 +578,13 @@ export class StockGroupedService {
       sql`, `,
     )})`;
     const shown = namesIn(locale, organizationId);
-    const { needsCost } = rowFilters({}, organizationId, today, undefined);
+    const { needsCost } = rowFilters(
+      {},
+      organizationId,
+      today,
+      undefined,
+      variants,
+    );
 
     const { rows } = await tx.execute<CodeRow>(sql`
       with f as materialized (${codeFigures(organizationId, today, variants)}),

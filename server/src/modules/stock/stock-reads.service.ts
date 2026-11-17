@@ -37,6 +37,12 @@ export interface StockRowFilters {
   expiringWithin?: number;
   expired?: string;
   needsCost?: string;
+  /**
+   * Those items alone, a parenthesised list of ids: a page's codes, so a
+   * row's Waiting for a cost reads their valuations, not the whole
+   * organization's (review 40). Never from the address.
+   */
+  variants?: SQL;
 }
 
 /**
@@ -80,6 +86,10 @@ function filtersOf(
     scope.push(eq(productVariants.productId, query.productId));
   }
 
+  if (query.variants) {
+    scope.push(sql`${stockLevels.variantId} in ${query.variants}`);
+  }
+
   /**
    * Zero rows are kept, not deleted — a shelf that emptied yesterday is a
    * fact worth having, and `LocationsService` depends on the row surviving
@@ -99,7 +109,12 @@ function filtersOf(
     );
   }
 
-  const quick = quickFiltersOf(organizationId, today, query.expiringWithin);
+  const quick = quickFiltersOf(
+    organizationId,
+    today,
+    query.expiringWithin,
+    query.variants,
+  );
   if (quick.expiring) scope.push(quick.expiring);
   if (query.expired === 'true') scope.push(quick.expired);
   if (query.needsCost === 'true') scope.push(quick.needsCost);
@@ -119,6 +134,8 @@ export function quickFiltersOf(
   organizationId: string,
   today: string,
   days: number | undefined,
+  /** Waiting for a cost among those items alone (review 40). */
+  variants?: SQL,
 ): { expiring: SQL | undefined; expired: SQL; needsCost: SQL } {
   return {
     expiring: days
@@ -142,7 +159,7 @@ export function quickFiltersOf(
       ${stockLevels.variantId},
       coalesce(${stockLevels.lotId}, '00000000-0000-0000-0000-000000000000'::uuid)
     ) in (
-      with open as materialized (${openNeedsCost(organizationId)})
+      with open as materialized (${openNeedsCost(organizationId, variants)})
       select o.variant_id,
              coalesce(o.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)
       from open o
