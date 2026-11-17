@@ -142,8 +142,11 @@ function Standing({ product }: { product: ProductDetail }) {
   const [opening, setOpening] = useState<ReorderOpening | null>(null);
   const [planning, setPlanning] = useState<CodeStanding | null>(null);
   const [moving, setMoving] = useState<StockPile | null>(null);
-  const { locations } = useLocations(
-    can('stock.move') && can('locations.view'),
+  // The places read once Move first opens, then kept, never on a visit
+  // that moves nothing (review 47); the dialog waits for their answer.
+  const [movedOnce, setMovedOnce] = useState(false);
+  const { locations, answered: placesAnswered } = useLocations(
+    movedOnce && can('stock.move') && can('locations.view'),
   );
 
   const codes = (data?.codes ?? []).filter(
@@ -195,7 +198,10 @@ function Standing({ product }: { product: ProductDetail }) {
         }),
       }),
     onMake: setPlanning,
-    onMove: setMoving,
+    onMove: (pile) => {
+      setMovedOnce(true);
+      setMoving(pile);
+    },
   };
 
   return (
@@ -251,7 +257,7 @@ function Standing({ product }: { product: ProductDetail }) {
         />
       )}
 
-      {moving && (
+      {moving && placesAnswered && (
         <MoveStockDialog
           mode="transfer"
           row={moving}

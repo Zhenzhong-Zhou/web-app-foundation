@@ -291,6 +291,77 @@ describe('Where it stands (ADR-093, R8)', () => {
     await waitFor(() => expect(reads).toBe(2));
   });
 
+  // Review 47: the places are Move's alone, read once it opens, not on
+  // every visit.
+  it('reads the places only when Move first opens', async () => {
+    let placesRead = 0;
+    const leaf = (id: string, name: string) => ({
+      id,
+      type: 'shelf',
+      name,
+      code: null,
+      parentId: null,
+      isAvailable: true,
+      isActive: true,
+      address: null,
+    });
+    server.use(
+      http.get('/api/v1/locations', () => {
+        placesRead += 1;
+        return HttpResponse.json([
+          leaf('loc-1', 'Shelf A'),
+          leaf('loc-2', 'Shelf B'),
+        ]);
+      }),
+    );
+    renderStanding(
+      [
+        standing({
+          places: [
+            {
+              locationId: 'loc-1',
+              locationName: 'Shelf A',
+              locationCode: null,
+              isAvailable: true,
+              onHand: '70.0000',
+              lots: [
+                {
+                  id: 'pile-1',
+                  variantId: 'variant-1',
+                  sku: 'ELDER-250',
+                  productName: 'Elderberry syrup',
+                  variantName: '250 ml',
+                  unitOfMeasure: 'each',
+                  locationId: 'loc-1',
+                  locationName: 'Shelf A',
+                  locationCode: null,
+                  lotId: 'lot-1',
+                  lotCode: 'EB-01',
+                  lotExpiresAt: null,
+                  lotIsAssigned: true,
+                  quantity: '70.0000',
+                  emptiedOn: null,
+                },
+              ],
+            },
+          ],
+        }),
+      ],
+      ['products.view', 'stock.view', 'stock.move', 'locations.view'],
+    );
+
+    const move = await screen.findByRole('button', { name: 'Move EB-01' });
+    expect(placesRead).toBe(0);
+
+    await userEvent.click(move);
+    const dialog = await screen.findByRole('dialog');
+    expect(placesRead).toBe(1);
+    await userEvent.click(within(dialog).getByRole('combobox', { name: /To/ }));
+    expect(
+      await screen.findByRole('option', { name: 'Shelf B' }),
+    ).toBeInTheDocument();
+  });
+
   it('is not drawn, nor read, without stock.view', () => {
     let read = false;
     server.use(

@@ -367,7 +367,8 @@ a second organization.
   SO-DEMO-9 and SO-DEMO-10 listed oldest first, each a link; Coming with
   PO-DEMO-12, its day and "late"; Left with "70 usable + 48 coming − 60
   for orders"; By place and lot, each lot's code a link to its trace,
-  with Move. Change reorder point opens the point's dialog filled in,
+  with Move, whose dialog lists every other place under To (the places
+  are read as Move first opens, not on arrival). Change reorder point opens the point's dialog filled in,
   and Escape returns focus to it; Save closes it, and Low with its "left
   · reorder at" line shows the point saved; Buy 134 opens New order, a purchase,
   with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
@@ -6664,3 +6665,5 @@ first.
   choose next, what needs stock greyed with why, an emptied lot's day, and
   a place's Movements a plain link: MC-310 rewritten; Help's Inventory
   guide says so in three languages.
+- 2026-11-17: ADR-093's review, 47: MC-219, Where it stands reads the
+  places as Move first opens, and Move's dialog lists them.
