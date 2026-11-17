@@ -319,10 +319,10 @@ and the places #337 names, each when its trigger comes.
   - a caption is only for footnotes, and nothing else a person reads is
     under 14 px, stricter than Material's 12 px labels, for older eyes
     and for Chinese.
-- Three places are under it today, each brought to 14 px in the theme
-  by #566: a floated label at 12 px, the line under a reorder point's
-  item at 12.5 (`caption`), and a quick filter at 13 (MUI's small
-  `ToggleButton`, `QuickFilterPill`); a status chip is 14 already
+- One place is under it today: a floated label at 12 px, which waits
+  for #566's decision on labels above the field. The line under a
+  reorder point's item is on `body2`, and a quick filter is 14 px in the
+  theme (`MuiToggleButton`, `QuickFilterPill`), as a status chip is
   (`MuiChip`).
 - The scale steps by 1.25: a section heading at 20 px and a page's title
   at 25 px, so a heading is told apart by size, not weight alone. Line
@@ -398,9 +398,9 @@ refused.
 | A link (`MuiLink`) | ✓ | ✓ | ✓ | — | — | — | — | — | — | — |
 | A field | ✓ | ✓ | ✓ | — | — | ✓ | — | ✓ | — | #566: its floated label at 14 px |
 | A select, or a picker | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | #566: its floated label at 14 px |
-| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | #170: 44 px on touch |
+| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — |
 | A switch (`MuiSwitch`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | #170: 44 px on touch |
-| A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #566 and #170: a quick filter at 14 px and 44 px on touch |
+| A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 | A tab | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 | A row | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #170: touch density, each control in it 44 px |
 | A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |

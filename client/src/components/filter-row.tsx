@@ -96,7 +96,12 @@ export function QuickFilterPill({
     >
       {filter.label}
       {filter.count !== undefined && (
-        <Box component="span" sx={{ color: 'text.secondary' }}>
+        // Muted at rest; pressed, the main text, since MUI's pressed tint
+        // under the pointer takes muted text under 4.5 : 1 (#561).
+        <Box
+          component="span"
+          sx={{ color: filter.pressed ? 'text.primary' : 'text.secondary' }}
+        >
           {filter.count}
         </Box>
       )}

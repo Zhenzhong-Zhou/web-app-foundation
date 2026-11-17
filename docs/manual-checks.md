@@ -1429,10 +1429,12 @@ Paper is checked first because it must not change at all.
   still visible. A line's ⋮ menu opens fully on screen.
 - **MC-1542** On a touch screen (or with touch emulation), buttons, filters,
   icon buttons (Home's Refresh among them), a chip that does something
-  and its × (Orders' Late, from Home's late button) and table actions are
-  at least 44px tall; with a mouse, 36px. No text a person reads to decide
-  by is under 14 px (DevTools): the top bar's words, a field's hint, a
-  status chip, the avatar's initials at every text size; Settings'
+  and its × (Orders' Late, from Home's late button), a quick filter
+  (Inventory's Expiring soon), a check box and a radio (Reorder's ticks)
+  and table actions are at least 44px tall; with a mouse, 36px (#170).
+  No text a person reads to decide by is under 14 px (DevTools): the top
+  bar's words, a field's hint, a status chip, a quick filter and its
+  count (#566), the avatar's initials at every text size; Settings'
   section headings are 20 px, Branding's Logo 16, the account menu's
   Colour mode, Language and Text size 16, a quiet tile's words 16.
 - **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
@@ -6502,3 +6504,6 @@ first.
 - 2026-11-16: ADR-093's riders: Stock value's Waiting for a cost names
   each item in the reader's language, its lot a link (#296's costs
   part): MC-802.
+- 2026-11-16: ADR-093's riders: a quick filter at 14 px and, with a check
+  box and a radio, 44 px tall on touch (#566, #170); an opened row and a
+  pressed filter's count readable in dark mode (#561): MC-1542.

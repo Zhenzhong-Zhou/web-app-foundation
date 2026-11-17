@@ -309,12 +309,26 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
     MuiLink: { defaultProps: { underline: 'hover' } },
     /**
      * The quick filters' unpressed text in the muted tone rather than MUI's
-     * 54% black, which on the tinted page is 4.4:1, under AA's 4.5.
+     * 54% black, which on the tinted page is 4.4:1, under AA's 4.5. A
+     * filter is read to decide by, so 14 px, not MUI's small 13 (#566),
+     * and a fingertip tall on touch (#170).
      */
     MuiToggleButton: {
       styleOverrides: {
-        root: ({ theme }) => ({ color: paletteOf(theme).text.secondary }),
+        root: ({ theme }) => ({
+          color: paletteOf(theme).text.secondary,
+          fontSize: rem(TYPE.small),
+          [TOUCH]: { minHeight: 44 },
+        }),
       },
+    },
+    // A fingertip each way on touch, as an icon button is (#170): MUI's
+    // 42 px falls just short.
+    MuiCheckbox: {
+      styleOverrides: { root: { [TOUCH]: { minWidth: 44, minHeight: 44 } } },
+    },
+    MuiRadio: {
+      styleOverrides: { root: { [TOUCH]: { minWidth: 44, minHeight: 44 } } },
     },
     /**
      * An empty date field shows no format until it is typed in (#512). The

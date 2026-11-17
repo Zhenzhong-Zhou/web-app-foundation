@@ -1,7 +1,6 @@
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { Button } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import { useIntl } from 'react-intl';
 
 /**
@@ -51,13 +50,9 @@ export function OpeningButton({
       onClick={onClick}
       sx={{
         whiteSpace: 'nowrap',
-        ...(open && {
-          bgcolor: (theme) =>
-            alpha(
-              theme.palette.primary.main,
-              theme.palette.action.selectedOpacity,
-            ),
-        }),
+        // Open, the chosen card's light tint, not MUI's selected one, which
+        // in dark mode takes the accent's words under 4.5 : 1 (#561).
+        ...(open && { bgcolor: 'surface.chosen' }),
       }}
     >
       {busy

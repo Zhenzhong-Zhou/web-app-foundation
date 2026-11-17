@@ -161,3 +161,20 @@ test('says items that are out have no lots, with Group by Item', async ({
     'true',
   );
 });
+
+// A quick filter is read to decide by, so 14 px, not MUI's small 13
+// (#566), and a fingertip tall on touch (#170), on every list's FilterRow.
+test.describe('on a touch tablet', () => {
+  test.use({ viewport: { width: 820, height: 1180 }, hasTouch: true });
+
+  test('a quick filter is 14 px and 44 px tall', async ({ page }) => {
+    await page.goto('/inventory');
+    const filter = page.getByRole('button', { name: /^Expiring soon/ });
+    await expect(filter).toBeVisible();
+
+    expect((await filter.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    expect(await filter.evaluate((el) => getComputedStyle(el).fontSize)).toBe(
+      '14px',
+    );
+  });
+});

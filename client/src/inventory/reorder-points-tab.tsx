@@ -238,7 +238,7 @@ function Suggestion({ row }: { row: ReorderPointRow }) {
     <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
       <span>{displayWithUnit(row.suggestion, row.unitOfMeasure, intl)}</span>
       {row.rule === 'fixed' && row.suggestedMultiples && row.fixedQuantity && (
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
             {
               id: 'inventory.reorder.multiples',
@@ -346,7 +346,7 @@ function ChooseBox({
       <Stack sx={{ alignItems: 'flex-start' }}>
         <Checkbox disabled slotProps={{ input: { 'aria-label': label } }} />
         <Typography
-          variant="caption"
+          variant="body2"
           sx={{ color: 'text.secondary', maxWidth: rem(100) }}
         >
           {intl.formatMessage({
@@ -715,7 +715,7 @@ function Legend() {
           sx={{ alignItems: 'center' }}
         >
           {mark}
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {words}
           </Typography>
         </Stack>
