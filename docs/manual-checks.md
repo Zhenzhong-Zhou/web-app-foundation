@@ -4216,7 +4216,8 @@ site, after a deploy that changes the setting, the route or the relay.
   "2 chosen", each item's name with its suggestion, and Buy 2 on one
   purchase order; Clear empties it. The header's box chooses every row
   with a box, and unticked, none. Choose one, search for another item
-  and choose it too: the bar holds both. With VoiceOver on, ticking a box
+  and choose it too: the bar holds both; press All instead: none stays
+  ticked, as a new filter clears them. With VoiceOver on, ticking a box
   says "1 chosen", then "2 chosen", as the bar appears and grows; Buy 96
   reads "Buy 96 of" the item's name. Tab to Clear and Buy 2 on one
   purchase order: each one's focus ring is drawn in the bar's own text
@@ -6638,3 +6639,5 @@ first.
 - 2026-11-17: ADR-093's review, 52: Reorder's ticks kept through Back from
   the purchase order they fill, cleared once it is raised, which says
   "Draft saved. Confirm it to send.": MC-4205.
+- 2026-11-17: ADR-093's review, the chat's: Reorder's ticks cleared by a
+  new filter, kept through the search: MC-4205.

@@ -853,14 +853,18 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const navigate = useNavigate();
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
   const filter = filters.status;
-  const setFilter = (status: Filter) => setFilters({ status });
+  // A new filter clears the ticks, as ADR-093's Reorder table says; the
+  // search keeps them, so a buyer can gather items one search at a time.
+  const setFilter = (status: Filter) => {
+    setChosen(new Map());
+    setFilters({ status });
+  };
   const { text, setText, search } = useListSearch();
   const { sort, set: setSort, clear: clearSort } = useListSort(SORTS);
   const phone = useCards();
   const [counts, setCounts] = useState<ReorderPointCounts | null>(null);
-  // By item, kept while the filter or the search changes, so a buyer can
-  // find items one search at a time and order them together; and through
-  // Back from the purchase order they were sent to (reorder-ticks.ts).
+  // By item, kept while the search changes and through Back from the
+  // purchase order they were sent to (reorder-ticks.ts).
   const { key: entry } = useLocation();
   const [chosen, setChosen] = useState<Map<string, ReorderPointRow>>(() =>
     ticksOf(entry),

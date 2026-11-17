@@ -189,6 +189,32 @@ test('Reorder, ticks two rows: the bar names them and their quantities, with Buy
   ).not.toBeChecked();
 });
 
+test('Reorder, ticks two rows, then a new filter: the ticks gone; the search keeps them', async ({
+  page,
+  freshOrg,
+}) => {
+  await reorderScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await reorderFrom(page);
+
+  await page.getByRole('checkbox', { name: 'Choose E2E Vitamin C' }).check();
+  await page.getByRole('checkbox', { name: 'Choose E2E Zinc' }).check();
+  await expect(bar(page)).toContainText('E2E Zinc · 15');
+
+  // The search narrows the list, the ticks kept for one order.
+  await page.getByRole('searchbox').fill('Zinc');
+  await expect(row(page, 'E2E Vitamin C')).toHaveCount(0);
+  await expect(bar(page)).toContainText('E2E Vitamin C · 80');
+  await page.getByRole('searchbox').fill('');
+
+  // A new filter: none ticked, as ADR-093's Reorder table says.
+  await page.getByRole('button', { name: /^All/ }).click();
+  await expect(bar(page)).toBeHidden();
+  await expect(
+    page.getByRole('checkbox', { name: 'Choose E2E Zinc' }),
+  ).not.toBeChecked();
+});
+
 test('Reorder, the bar, Buy 2 on one purchase order: one purchase order, both lines filled in', async ({
   page,
   freshOrg,
