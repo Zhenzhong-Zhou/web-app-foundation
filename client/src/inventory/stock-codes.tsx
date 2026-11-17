@@ -35,7 +35,6 @@ import { LotLink } from '../components/lot-link';
 import { OpeningButton } from '../components/opening-button';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
-import { StatusChip } from '../components/status-chip';
 import { TableOrCards } from '../components/table-or-cards';
 import { api } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
@@ -47,17 +46,19 @@ import {
   NO_VALUE,
 } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
+import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { useOpenRows } from '../lib/use-open-rows';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
-import { STATUS_TONES } from '../theme/status';
+import { WIDE_ONLY } from '../theme/media';
 import { EmptiedLine } from './emptied-line';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import type { HistoryOf } from './movement-history-dialog';
 import type { ReorderItem } from './reorder-point-dialog';
+import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { type Pile, StockActions } from './stock-actions';
 
 /** What a row's menus do, as the Stock tab answers them. */
@@ -119,9 +120,6 @@ const HEADS = defineMessages({
 /** A quantity of nothing, which the API always writes with four places. */
 const NONE = '0.0000';
 
-/** Held and Coming leave the table between 600 and 899 px (R14). */
-const WIDE_ONLY = { display: { xs: 'none', md: 'table-cell' } } as const;
-
 /**
  * Held's and Coming's places in a row under a code: two empty cells, gone
  * between 600 and 899 px with their headers, so no row spans a column the
@@ -134,11 +132,6 @@ function WideOnlyCells() {
       <TableCell sx={WIDE_ONLY} />
     </>
   );
-}
-
-/** The item's page, at Where it stands or one of its parts (ADR-093, R8). */
-function whereItStands(productId: string, part = 'stock'): string {
-  return `/items/${productId}#${part}`;
 }
 
 /**
@@ -405,11 +398,6 @@ function usePileChoice(
   return { choosing, first, act, toggle };
 }
 
-/** The item's name as a row says it: "Focus, 60 capsules". */
-function nameOf(row: { productName: string; variantName: string | null }) {
-  return itemName(row.productName, row.variantName);
-}
-
 /** What the row's button opens: "2 places", or "2 lots" without places. */
 function openWords(
   row: StockCodeRow,
@@ -475,7 +463,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const back = useReturn(row, opened);
   const controls = useId();
   const words = openWords(row, opened, intl);
-  const name = nameOf(row);
+  const name = itemName(row.productName, row.variantName);
 
   return (
     <>
@@ -650,40 +638,15 @@ function Coming({ row }: { row: StockCodeRow }) {
  * Numbers). None without a reorder point.
  */
 function Status({ row }: { row: StockCodeRow }) {
-  const intl = useIntl();
-
   if (!row.status || row.reorderPoint === null) return NO_VALUE;
   return (
     <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
-      <StatusChip
-        tone={STATUS_TONES.reorder[row.status]}
-        label={intl.formatMessage(
-          {
-            id: 'inventory.reorder.status',
-            defaultMessage:
-              '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
-          },
-          { status: row.status },
-        )}
+      <ReorderStatusChip status={row.status} />
+      <LeftLine
+        position={row.position}
+        reorderPoint={row.reorderPoint}
+        productId={row.productId}
       />
-      <Link
-        component={RouterLink}
-        to={whereItStands(row.productId)}
-        state={OFFER_BACK}
-        variant="body2"
-        sx={{ whiteSpace: 'nowrap' }}
-      >
-        {intl.formatMessage(
-          {
-            id: 'inventory.stock.left',
-            defaultMessage: '{left} left · reorder at {point}',
-          },
-          {
-            left: displayQuantity(row.position),
-            point: displayQuantity(row.reorderPoint),
-          },
-        )}
-      </Link>
     </Stack>
   );
 }
@@ -786,7 +749,7 @@ function CodeActions({
     <ActionsMenu
       name={intl.formatMessage(
         { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
-        { item: nameOf(row) },
+        { item: itemName(row.productName, row.variantName) },
       )}
       groups={[changes, receive, reads]}
       note={
@@ -1137,7 +1100,7 @@ function PlaceMovements({
           id: 'inventory.stock.movementsAt',
           defaultMessage: 'Movements of {item} at {place}',
         },
-        { item: nameOf(row), place: where },
+        { item: itemName(row.productName, row.variantName), place: where },
       )}
       onClick={() =>
         handlers.onHistory({
@@ -1253,7 +1216,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
   const back = useReturn(row, opened);
   const controls = useId();
   const words = openWords(row, opened, intl);
-  const name = nameOf(row);
+  const name = itemName(row.productName, row.variantName);
 
   return (
     <Box

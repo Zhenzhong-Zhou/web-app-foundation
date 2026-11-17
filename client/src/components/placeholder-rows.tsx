@@ -1,6 +1,7 @@
 import { Skeleton, TableCell, TableRow } from '@mui/material';
 
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { WIDE_ONLY } from '../theme/media';
 
 /**
  * A list's rows while they are read, in its table's body: grey bars once
@@ -44,6 +45,3 @@ export function PlaceholderRows({
     </>
   );
 }
-
-/** A cell shown from 900 px (`md`), as a table's wide-only columns are. */
-const WIDE_ONLY = { display: { xs: 'none', md: 'table-cell' } } as const;

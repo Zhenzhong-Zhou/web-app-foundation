@@ -30,6 +30,7 @@ import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import type { ItemSort } from '../lib/api-names';
 import { displayQuantity, formatDate, SEPARATOR } from '../lib/format';
+import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { TOUCH } from '../theme/media';
@@ -217,7 +218,7 @@ function RowStatus({
   return (
     <Link
       component={RouterLink}
-      to={`/items/${item.id}#stock`}
+      to={whereItStands(item.id)}
       state={OFFER_BACK}
       underline="none"
       aria-label={intl.formatMessage(

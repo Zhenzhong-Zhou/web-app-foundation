@@ -29,7 +29,6 @@ import { ExpiryChip } from '../components/expiry-chip';
 import { ListError } from '../components/list-error';
 import { LotLink } from '../components/lot-link';
 import { Reference } from '../components/reference';
-import { StatusChip } from '../components/status-chip';
 import { TableOrCards } from '../components/table-or-cards';
 import { MoveStockDialog } from '../inventory/move-stock-dialog';
 import {
@@ -37,6 +36,7 @@ import {
   ReorderPointDialog,
 } from '../inventory/reorder-point-dialog';
 import { fieldQuantity } from '../inventory/reorder-points';
+import { LeftLine, ReorderStatusChip } from '../inventory/reorder-status';
 import {
   displayQuantity,
   formatDay,
@@ -53,7 +53,6 @@ import { leavesOf } from '../locations/tree';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
 import { rem } from '../theme/rem';
-import { STATUS_TONES } from '../theme/status';
 import { TYPE } from '../theme/tokens';
 import { NO_RECEIVE } from './receive-line';
 import { displayWithUnit } from './units';
@@ -443,33 +442,11 @@ function Line({ children, tone }: { children: ReactNode; tone?: 'error' }) {
 
 /** The status in Home's words, and "10 left · reorder at 36". */
 function StatusLine({ code }: { code: CodeStanding }) {
-  const intl = useIntl();
   if (!code.status || code.reorderPoint === null) return <Box />;
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-      <StatusChip
-        tone={STATUS_TONES.reorder[code.status]}
-        label={intl.formatMessage(
-          {
-            id: 'inventory.reorder.status',
-            defaultMessage:
-              '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
-          },
-          { status: code.status },
-        )}
-      />
-      <Typography>
-        {intl.formatMessage(
-          {
-            id: 'inventory.stock.left',
-            defaultMessage: '{left} left · reorder at {point}',
-          },
-          {
-            left: displayQuantity(code.position),
-            point: displayQuantity(code.reorderPoint),
-          },
-        )}
-      </Typography>
+      <ReorderStatusChip status={code.status} />
+      <LeftLine position={code.position} reorderPoint={code.reorderPoint} />
     </Stack>
   );
 }

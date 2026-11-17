@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { ReorderPointRow } from '../api/types.gen';
 import { ActionsMenu } from '../components/actions-menu';
 import { itemName } from '../lib/format';
+import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 
 /**
@@ -47,7 +48,7 @@ export function ReorderPointActions({
             // The item's Where it stands, where its stock is told (ADR-093,
             // R8).
             onSelect: () =>
-              void navigate(`/items/${row.productId}#stock`, {
+              void navigate(whereItStands(row.productId), {
                 state: OFFER_BACK,
               }),
           },

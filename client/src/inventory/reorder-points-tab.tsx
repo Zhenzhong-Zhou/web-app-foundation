@@ -1,15 +1,12 @@
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
-import ErrorOutlined from '@mui/icons-material/ErrorOutlined';
 import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp';
-import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import {
   Box,
   Button,
   Checkbox,
   IconButton,
-  Link,
   MenuItem,
   Paper,
   Stack,
@@ -31,7 +28,7 @@ import {
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import type { ReorderPointCounts, ReorderPointRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -44,15 +41,12 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
-import { StatusChip } from '../components/status-chip';
 import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
 import { api } from '../lib/api';
-import type { ReorderStatus } from '../lib/api-names';
 import { displayQuantity, itemName, NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
-import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useCards } from '../lib/use-cards';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -63,8 +57,8 @@ import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
+import { NARROW_ONLY, WIDE_ONLY } from '../theme/media';
 import { rem } from '../theme/rem';
-import { STATUS_TONES } from '../theme/status';
 import { PositionBar } from './position-bar';
 import { RemoveReorderPointDialog } from './remove-reorder-point-dialog';
 import { ReorderPointActions } from './reorder-point-actions';
@@ -79,6 +73,7 @@ import {
   fieldQuantity,
   plansRun,
 } from './reorder-points';
+import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { keepTicks, ticksOf } from './reorder-ticks';
 
 /** A page of the list (ADR-051), as the server's own default. */
@@ -94,13 +89,6 @@ const ADDRESS_FILTERS = { status: oneOf<Filter>(FILTERS, '') };
 /** What the list sorts by besides its own order (ADR-093; #473's 16). */
 const SORTS = ['suggested'] as const;
 
-/** Each status's icon beside its word, so it is never told by colour alone. */
-const STATUS_ICONS: Partial<Record<ReorderStatus, ReactElement>> = {
-  out: <ErrorOutlined />,
-  low: <WarningAmberOutlined />,
-  enough: <CheckCircleOutlined />,
-};
-
 /** A path on the list's routes, its filter and search added. */
 function pathOf(base: string, query: Record<string, string>): string {
   const params = new URLSearchParams(
@@ -108,16 +96,6 @@ function pathOf(base: string, query: Record<string, string>): string {
   );
   const text = params.toString();
   return text ? `${base}?${text}` : base;
-}
-
-/** The item's page at Where it stands (ADR-093, R8). */
-function whereItStands(productId: string): string {
-  return `/items/${productId}#stock`;
-}
-
-/** A row's item named as every list names it, in the reader's language. */
-function nameOf(row: ReorderPointRow): string {
-  return itemName(row.productName, row.variantName);
 }
 
 /**
@@ -168,22 +146,7 @@ function CodeLine({ row }: { row: ReorderPointRow }) {
 
 /** The status in Home's words, with its icon, never by colour alone. */
 function Status({ row }: { row: ReorderPointRow }) {
-  const intl = useIntl();
-
-  return (
-    <StatusChip
-      tone={STATUS_TONES.reorder[row.status]}
-      icon={STATUS_ICONS[row.status]}
-      label={intl.formatMessage(
-        {
-          id: 'inventory.reorder.status',
-          defaultMessage:
-            '{status, select, out {Out} low {Low} enough {Enough} other {Discontinued}}',
-        },
-        { status: row.status },
-      )}
-    />
-  );
+  return <ReorderStatusChip status={row.status} withIcon />;
 }
 
 /**
@@ -193,28 +156,13 @@ function Status({ row }: { row: ReorderPointRow }) {
  * never alone.
  */
 function Stands({ row }: { row: ReorderPointRow }) {
-  const intl = useIntl();
-
   return (
     <Stack spacing={0.75} sx={{ alignItems: 'flex-start' }}>
-      <Link
-        component={RouterLink}
-        to={whereItStands(row.productId)}
-        state={OFFER_BACK}
-        variant="body2"
-        sx={{ whiteSpace: 'nowrap' }}
-      >
-        {intl.formatMessage(
-          {
-            id: 'inventory.stock.left',
-            defaultMessage: '{left} left · reorder at {point}',
-          },
-          {
-            left: displayQuantity(row.position),
-            point: displayQuantity(row.reorderPoint),
-          },
-        )}
-      </Link>
+      <LeftLine
+        position={row.position}
+        reorderPoint={row.reorderPoint}
+        productId={row.productId}
+      />
       {row.status !== 'discontinued' && (
         <PositionBar
           position={row.position}
@@ -329,7 +277,7 @@ function ChooseBox({
   const choice = choiceOf(row);
   const label = intl.formatMessage(
     { id: 'inventory.reorder.choose', defaultMessage: 'Choose {name}' },
-    { name: nameOf(row) },
+    { name: itemName(row.productName, row.variantName) },
   );
 
   if (choice === 'open') {
@@ -377,7 +325,7 @@ function MainAction({
 }) {
   const intl = useIntl();
   const quantity = displayQuantity(row.suggestion);
-  const values = { quantity, name: nameOf(row) };
+  const values = { quantity, name: itemName(row.productName, row.variantName) };
 
   if (onBuy && choiceOf(row) === 'open') {
     return (
@@ -444,8 +392,6 @@ interface RowProps {
 }
 
 /** The draft's cell leaves the table between 600 and 899 px (R14). */
-const WIDE_ONLY = { display: { xs: 'none', md: 'table-cell' } } as const;
-const NARROW_ONLY = { display: { md: 'none' } } as const;
 
 /** A row of the table, and under it, once opened, where it stands. */
 function PointRow({
@@ -485,7 +431,7 @@ function PointRow({
         )}
         <TableCell>
           <NameAndCode
-            name={nameOf(row)}
+            name={itemName(row.productName, row.variantName)}
             code={<CodeLine row={row} />}
             type={row.type}
             coverFileId={row.coverFileId}
@@ -586,7 +532,7 @@ function PointCard({
             <ChooseBox row={row} chosen={chosen} onChoose={onChoose} />
           )}
           <NameAndCode
-            name={nameOf(row)}
+            name={itemName(row.productName, row.variantName)}
             code={<CodeLine row={row} />}
             type={row.type}
             coverFileId={row.coverFileId}
@@ -787,7 +733,7 @@ function ChosenBar({
                   defaultMessage: '{name} · {quantity}',
                 },
                 {
-                  name: nameOf(row),
+                  name: itemName(row.productName, row.variantName),
                   quantity: displayQuantity(row.suggestion),
                 },
               )}
