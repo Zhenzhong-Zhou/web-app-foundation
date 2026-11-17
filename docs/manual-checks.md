@@ -4396,6 +4396,8 @@ site, after a deploy that changes the setting, the route or the relay.
   to order and Order or make what is low after What each count counts
   (MC-316), and its refusals; every button it names reads the same on the
   screen, Add reorder point ending Add's steps, with Save when editing.
+  Its Reorder part says that on a phone, where each item is a card, the
+  line saying how many are left opens the item's stock.
   Home's guide has Low stock under Where each tile leads, opening Reorder,
   and Out among its words. In 中文: 了解更多 follows 待发 with no space and opens
   物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
@@ -6667,3 +6669,5 @@ first.
   guide says so in three languages.
 - 2026-11-17: ADR-093's review, 47: MC-219, Where it stands reads the
   places as Move first opens, and Move's dialog lists them.
+- 2026-11-17: ADR-093's review, 12: Help's Reorder part says how a phone
+  card shows what makes up Left, in three languages: MC-4217.
