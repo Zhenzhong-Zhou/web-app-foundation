@@ -526,7 +526,7 @@ describe('Reorder', () => {
     await userEvent.click(
       within(screen.getByRole('region', { name: 'Chosen to order' })).getByRole(
         'button',
-        { name: 'Buy 1 on a purchase order' },
+        { name: 'Buy 1 item on a purchase order' },
       ),
     );
 

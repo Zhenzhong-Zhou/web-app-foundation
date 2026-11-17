@@ -721,7 +721,7 @@
   "inventory.reorder.box.stillNeeded": "− 待发",
   "inventory.reorder.box.usable": "现有可用",
   "inventory.reorder.buy": "采购 {quantity}",
-  "inventory.reorder.buyChosen": "{count, plural, other {用一张采购订单采购 # 个}}",
+  "inventory.reorder.buyChosen": "{count, plural, other {用一张采购订单采购 # 种物品}}",
   "inventory.reorder.buyOf": "采购 {quantity}：{name}",
   "inventory.reorder.choose": "选择 {name}",
   "inventory.reorder.chooseAll": "选择所有可订货的物品",

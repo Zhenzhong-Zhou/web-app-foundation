@@ -721,7 +721,7 @@
   "inventory.reorder.box.stillNeeded": "− Still needed",
   "inventory.reorder.box.usable": "Usable",
   "inventory.reorder.buy": "Buy {quantity}",
-  "inventory.reorder.buyChosen": "{count, plural, one {Buy # on a purchase order} other {Buy # on one purchase order}}",
+  "inventory.reorder.buyChosen": "{count, plural, one {Buy # item on a purchase order} other {Buy # items on one purchase order}}",
   "inventory.reorder.buyOf": "Buy {quantity} of {name}",
   "inventory.reorder.choose": "Choose {name}",
   "inventory.reorder.chooseAll": "Choose every item to order",

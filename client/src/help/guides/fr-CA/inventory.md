@@ -102,7 +102,7 @@ Les bons de commande et les ordres de fabrication en brouillon s’affichent **E
 
 ## Commander ou fabriquer les articles dont le stock est bas {#order}
 
-- **Acheté** : appuyez sur **Acheter** et sa quantité sur la ligne, ou cochez-en plusieurs et appuyez sur **Acheter les 2 sur un seul bon de commande** dans la barre qui apparaît. Un nouveau bon de commande s’ouvre avec une ligne par article, pour la quantité suggérée. Choisissez le fournisseur sous **Partenaire**, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
+- **Acheté** : appuyez sur **Acheter** et sa quantité sur la ligne, ou cochez-en plusieurs et appuyez sur **Acheter les 2 articles sur un seul bon de commande** dans la barre qui apparaît. Un nouveau bon de commande s’ouvre avec une ligne par article, pour la quantité suggérée. Choisissez le fournisseur sous **Partenaire**, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
 - **Fabriqué** : **Fabriquer** et sa quantité sur sa ligne ouvre un ordre de fabrication avec sa recette active, la commande suggérée et ce qu’il utilise.
 
 Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s’affiche aussitôt sur la ligne. Quand un article passe sous son point de commande, la vérification horaire suivante en avertit les personnes concernées dans les notifications, une seule fois jusqu’à ce que son stock remonte : ceux qui peuvent créer des commandes pour un article acheté, ceux qui peuvent planifier la production pour un article fabriqué.

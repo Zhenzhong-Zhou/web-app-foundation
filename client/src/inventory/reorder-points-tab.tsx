@@ -661,8 +661,8 @@ function Legend() {
 
 /**
  * The ticked rows, floating at the foot of the list while any is ticked
- * (ADR-085): how many, each with its suggestion, Clear, and Buy 2 on one
- * purchase order, the row's verb (ADR-093), which opens New order filled
+ * (ADR-085): how many, each with its suggestion, Clear, and Buy 2 items on
+ * one purchase order, the row's verb (ADR-093), which opens New order filled
  * in with them.
  */
 function ChosenBar({
@@ -751,7 +751,7 @@ function ChosenBar({
             {
               id: 'inventory.reorder.buyChosen',
               defaultMessage:
-                '{count, plural, one {Buy # on a purchase order} other {Buy # on one purchase order}}',
+                '{count, plural, one {Buy # item on a purchase order} other {Buy # items on one purchase order}}',
             },
             { count: chosen.length },
           )}

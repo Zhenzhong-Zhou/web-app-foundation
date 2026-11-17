@@ -158,7 +158,7 @@ for (const width of [1366, 820]) {
   });
 }
 
-test('Reorder, ticks two rows: the bar names them and their quantities, with Buy 2 on one purchase order; Clear, the ticks gone', async ({
+test('Reorder, ticks two rows: the bar names them and their quantities, with Buy 2 items on one purchase order; Clear, the ticks gone', async ({
   page,
   freshOrg,
 }) => {
@@ -172,7 +172,9 @@ test('Reorder, ticks two rows: the bar names them and their quantities, with Buy
   await expect(bar(page)).toContainText('E2E Vitamin C · 80');
   await expect(bar(page)).toContainText('E2E Zinc · 15');
   await expect(
-    bar(page).getByRole('button', { name: 'Buy 2 on one purchase order' }),
+    bar(page).getByRole('button', {
+      name: 'Buy 2 items on one purchase order',
+    }),
   ).toBeVisible();
 
   // The copper's box greyed, its reason beside it, its draft in its cell.
@@ -215,7 +217,7 @@ test('Reorder, ticks two rows, then a new filter: the ticks gone; the search kee
   ).not.toBeChecked();
 });
 
-test('Reorder, the bar, Buy 2 on one purchase order: one purchase order, both lines filled in', async ({
+test('Reorder, the bar, Buy 2 items on one purchase order: one purchase order, both lines filled in', async ({
   page,
   freshOrg,
 }) => {
@@ -226,7 +228,7 @@ test('Reorder, the bar, Buy 2 on one purchase order: one purchase order, both li
   await page.getByRole('checkbox', { name: 'Choose E2E Vitamin C' }).check();
   await page.getByRole('checkbox', { name: 'Choose E2E Zinc' }).check();
   await bar(page)
-    .getByRole('button', { name: 'Buy 2 on one purchase order' })
+    .getByRole('button', { name: 'Buy 2 items on one purchase order' })
     .click();
 
   await expect(page).toHaveURL(/\/orders\/new$/);
@@ -243,7 +245,7 @@ test('Reorder, the bar, Buy 2 on one purchase order: one purchase order, both li
     .toEqual(['15', '80']);
 });
 
-test('Reorder, the bar, Buy 2 on one purchase order: Back, Reorder, ticks kept', async ({
+test('Reorder, the bar, Buy 2 items on one purchase order: Back, Reorder, ticks kept', async ({
   page,
   freshOrg,
 }) => {
@@ -254,7 +256,7 @@ test('Reorder, the bar, Buy 2 on one purchase order: Back, Reorder, ticks kept',
   await page.getByRole('checkbox', { name: 'Choose E2E Vitamin C' }).check();
   await page.getByRole('checkbox', { name: 'Choose E2E Zinc' }).check();
   await bar(page)
-    .getByRole('button', { name: 'Buy 2 on one purchase order' })
+    .getByRole('button', { name: 'Buy 2 items on one purchase order' })
     .click();
   await expect(quantities(page)).toHaveCount(2);
 

@@ -4224,15 +4224,15 @@ site, after a deploy that changes the setting, the route or the relay.
   theirs instead, and the rows with enough have neither. OMEGA3-90's box
   is greyed, with "In a draft already" beside it, on a phone too, where
   nothing hovers. Choose two: a dark bar floats at the foot of the list,
-  "2 chosen", each item's name with its suggestion, and Buy 2 on one
+  "2 chosen", each item's name with its suggestion, and Buy 2 items on one
   purchase order; Clear empties it. The header's box chooses every row
   with a box, and unticked, none. Choose one, search for another item
   and choose it too: the bar holds both; press All instead: none stays
   ticked, as a new filter clears them. With VoiceOver on, ticking a box
   says "1 chosen", then "2 chosen", as the bar appears and grows; Buy 96
-  reads "Buy 96 of" the item's name. Tab to Clear and Buy 2 on one
+  reads "Buy 96 of" the item's name. Tab to Clear and Buy 2 items on one
   purchase order: each one's focus ring is drawn in the bar's own text
-  colour, plain on the dark bar, in both modes. Press Buy 2 on one
+  colour, plain on the dark bar, in both modes. Press Buy 2 items on one
   purchase order, then Back and Leave: both are still ticked. Raise it as
   a draft instead: "Draft saved. Confirm it to send.", and Back finds none
   ticked.
@@ -4359,7 +4359,7 @@ site, after a deploy that changes the setting, the route or the relay.
   fresh demo, as the Owner, Reorder on Low stock: D3-1000-120's Buy 96
   opens New order with Buying chosen and one line, D3-1000-120 at 96,
   nothing saved; Back returns to Reorder as it was. Choose
-  D3-1000-120 and ELDER-250, and press Buy 2 on one purchase order in the
+  D3-1000-120 and ELDER-250, and press Buy 2 items on one purchase order in the
   dark bar. New order opens with Buying chosen, Partner empty, with a
   note: "Filled from Reorder: 2 lines at their suggested
   quantities. Choose the supplier under Partner, check the quantities
@@ -4501,7 +4501,7 @@ first.
   Partner, an item and a quantity, and press Raise as draft: nothing is
   saved, "Choose Selling or Buying." shows under Direction, and focus is
   on Selling. Choose Selling and raise it: the order opens as a sale.
-  Reorder's Buy 2 on one purchase order opens it with Buying chosen.
+  Reorder's Buy 2 items on one purchase order opens it with Buying chosen.
   
 - **MC-R91** *(A voided shipment's items faded below contrast, #214)* As
   the demo Owner on SO-DEMO-1's Shipments tab, in light and then dark
@@ -4635,7 +4635,7 @@ first.
 - **MC-R75** *(New order from Reorder points left unfilled after a failed
   catalogue read, yet its note counting the lines, #357)* On a fresh demo,
   as the Owner, Reorder on Low: tick D3-1000-120 and ELDER-250.
-  Raise the revision as section 34 says, then press Buy 2 on one
+  Raise the revision as section 34 says, then press Buy 2 items on one
   purchase order: A new version is being installed, in the form's place. Put the
   revision back and restart the server: within a minute New order reads
   again by itself and has two lines, D3-1000-120 at 96 and ELDER-250 at
@@ -6570,7 +6570,7 @@ first.
   read; each row's name first with its code and how it is got in words,
   "… left · reorder at …" opening Where it stands, the bar's legend, the
   draft in its own cell, a greyed box's reason beside it, Buy and Make
-  with how many, Buy 2 on one purchase order, the sort by the suggested
+  with how many, Buy 2 items on one purchase order, the sort by the suggested
   order and cards on a phone; Stock of the item opening Where it stands:
   MC-4202 and MC-4205 rewritten, MC-4203, MC-4206, MC-4209 to MC-4211 and
   MC-4213 to MC-4217 reworded, the setup's and MC-406's words.
@@ -6671,3 +6671,6 @@ first.
   places as Move first opens, and Move's dialog lists them.
 - 2026-11-17: ADR-093's review, 12: Help's Reorder part says how a phone
   card shows what makes up Left, in three languages: MC-4217.
+- 2026-11-17: ADR-093's review, 16: Reorder's bar says "Buy 2 items on one
+  purchase order" (fr "Acheter les 2 articles…", zh "采购 2 种物品"), so the
+  count reads as items, not units: MC-4205, MC-4215 and MC-R92.
