@@ -14,9 +14,11 @@ test('opens Orders narrowed by direction and status, as chips', async ({
   await page.goto('/orders?direction=purchase&status=confirmed');
 
   await expect(
-    page.getByRole('button', { name: 'Purchases only' }),
+    page.getByRole('button', { name: 'Remove filter: Purchases only' }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Confirmed' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Remove filter: Confirmed' }),
+  ).toBeVisible();
 });
 
 // Credit notes keeps its days in the address as Invoices does, so Back
@@ -47,8 +49,9 @@ test('keeps focus near a removed chip, then on the heading', async ({
 }) => {
   await signInAs(page, freshOrg.api);
   await page.goto('/orders?direction=sale&outstanding=1&late=1');
+  // A chip by its name, which says what pressing it does (#578).
   const chip = (name: string) =>
-    page.locator('.MuiChip-deletable').filter({ hasText: name });
+    page.getByRole('button', { name: `Remove filter: ${name}`, exact: true });
 
   await chip('Late').focus();
   await page.keyboard.press('Delete');
@@ -103,7 +106,9 @@ test('lands as a link says while its list is open', async ({
   await expect(
     page.getByRole('button', { name: 'Open', exact: true, pressed: true }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Sales only' })).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'Remove filter: Sales only' }),
+  ).toBeHidden();
 });
 
 test('keeps the filter and the sort for Back, the focus on the header', async ({
