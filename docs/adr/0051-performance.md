@@ -150,10 +150,16 @@ so the timing is the evidence for the name lookup.
   36 ms query at large. Trigger: p95 over budget at small scale, or the
   plan check flags it. Then order by an indexed key and lead with the
   location filter.
+  *Closed on 17 November 2026 (ADR-093, #635):* `GET /stock` is gone.
+  Its successor, `GET /v1/stock/by-code`, works out only the page's
+  codes when sorted by name: 162 and 184 ms at large.
 - **Availability** still grows 7.9×: a 66 ms query at large, now bounded by
   stock on hand and open demand rather than history. Trigger: p95 over
   budget at small scale. First step then: in the promised list, sum supply
   only for products with open demand.
+  *Closed on 17 November 2026 (ADR-093, #635):* the route and its
+  promised list are gone; each code's Free and Held are read by
+  `codeFigures`, in the by-code reads below.
 - **Movements for one shelf** went from 2 ms to 21 ms. No screen in the
   budgets reads it yet. Trigger: it joins the budgets, or passes 100 ms.
   Then indexes on the source and destination location with the id.
@@ -194,6 +200,8 @@ so the timing is the evidence for the name lookup.
   #361). Trigger: p95 over budget at small scale. Then the open lines
   read once, with three filtered sums, and drafts read only for the
   items asked (#276's comment of 1 November, carried to #352).
+  *17 November 2026 (ADR-093):* through `codeFigures`, 27 ms at small
+  and 173 and 176 at large. Not fired.
 - **Home after ADR-085:** closed by ADR-091's redesign (#477, 6 November
   2026): GitHub's median 177 ms at small, a newcomer's 165 ms, and Home's
   known miss gone.
@@ -206,6 +214,11 @@ so the timing is the evidence for the name lookup.
   (137 for a newcomer), and 215 and 210 at large on the Mac. Not fired.
   *11 November 2026:* 147 and 135 ms at small on GitHub's runners, and
   196 and 191 at large on the Mac. Not fired.
+  *16 and 17 November 2026 (ADR-093):* 142 ms at small on GitHub's
+  runners (the weekly run 199); at large on the Mac, on the volume
+  seeded again, 270 and 280, a newcomer 276 and 277, then 278 to 308 in
+  three runs with the load average at 7 to 11, its plan 79 ms as
+  before. Not fired: the trigger is a weekly run.
 - **Home's Expiring-soon count has two plans of nearly equal cost at
   large** (ADR-071's as-built, 10 November 2026): 0.03 ms or about 24
   ms, and a fresh `ANALYZE` picks one, so the same rows can take either.
@@ -234,6 +247,19 @@ so the timing is the evidence for the name lookup.
   while PDFs draw (`render.md`'s "Before real customers' data"). Then
   drawing off the event loop, in a worker thread, and the reads timed
   beside it.
+  *16 November 2026:* 966 ms, the median at small on GitHub's runners
+  (rounds of 973, 966 and 801, the weekly run 199 on `main` at
+  c0fa8432), inside 1,200 ms: the first weekly run judging the budget.
+- **Inventory's by-code counts** (ADR-093): the five quick filters and
+  the total in one statement, 282 and 294 ms at large on the Mac, its
+  plan 110 ms; 47 at small. Trigger: past 300 ms at large in two runs,
+  or past 240 at small on GitHub's runners. Then the figures kept ready
+  rather than worked out at each read, an ADR of its own. Stock's Low
+  stock list (242 to 251 ms at large) and the Lot view's counts (248)
+  share the trigger and the remedy.
+- **JIT off for the app's connections** (ADR-093's as-built, below).
+  Trigger: a report or an export that runs for seconds, which can then
+  turn it on for its own transaction alone.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the
@@ -879,3 +905,67 @@ with this as-built, pull request #558.
 - **Movements for one shelf joins the budgets** in its Movements branch,
   so its trigger fires: the indexes on the source and the destination
   location, each with the organization and the id, come with it.
+
+### As built (#635, 17 November 2026)
+
+- **JIT off for the app's connections (36a).** At large, Postgres
+  compiled Inventory's counts to machine code before running them, once
+  their estimated cost passed `jit_above_cost`: 90 to 145 ms each time,
+  against 84 to 95 ms of work. The pool opens each connection with
+  `options: '-c jit=off'` (`database.module.ts`), so production, the
+  tests, the timed runs and the plan check, which uses the same pool,
+  read alike; `database-connection.e2e-spec.ts` holds three connections
+  to it. The database's own setting stays on, for `psql`. With it, at
+  large: the by-code counts 410 to 216 ms, the Lot view's 309 to 185,
+  Items by stock 287 to 183.
+  - A `DATABASE_URL` that carries its own `options` replaces the
+    setting, since pg lets the address win; and a pooler such as
+    PgBouncer refuses `options` when a connection starts. With either,
+    the setting goes on the database's role instead.
+- **At large the bar is the budget, 300 ms (41a);** the 240 ms headroom
+  stays for the small volume, which GitHub's runners judge. Home was
+  accepted under it at large (37a).
+- **A changed shape:** ADR-093's seeds put one receipt in six in two
+  bins, give about one lot in five an expiry within the year after the
+  seed, and one in a hundred an expiry already past (32a).
+  `foundation_perf_small` was seeded again on 16 November and
+  `foundation_perf_large` on the night of 16 November, so each after
+  column reads the new shape and each before column the old.
+- **p95 at ten connections on the Mac, in ms:** small before on 16
+  November and after on 17 November; large before on 11 November and
+  after in two runs on 17 November, with what the review's fixes
+  changed beside them.
+
+| Read | Small before | Small after | Large before | Large after |
+| --- | --- | --- | --- | --- |
+| `GET /stock`, now `by-code` | 19 | 41 | 71 | 184, 162 |
+| `GET /stock`, now `by-lot` | 19 | 25 | 71 | 89, 89; 84 with a place's path |
+| `GET /stock?sort=expiry`, now `by-code?sort=expires` | 19 | 44 | 70 | 210, 212 |
+| `by-code?sort=onHand` | — | 43 | — | 184, 183 |
+| `by-code/counts` | — | 47 | — | 367, 356; 294, 282 after review 39 |
+| `by-code?low` | — | 43 | — | 251, 244; 251, 242 after review 39 |
+| `by-lot/counts` | — | 31 | — | 204, 199; 248 with its total |
+| `by-lot?expiringWithin` | — | 24 | — | 82, 86 |
+| The Lot view by item, place, quantity, Expires the other way | — | — | — | 137, 133, 143, 90 |
+| `GET /products/:id/stock` | — | 35 | — | 44, 44; 47 with a place's path |
+| `GET /products?low` | — | 39 | — | 143, 147 |
+| `GET /products` | 26 | 50 | 40 | 159, 169 |
+| `GET /stock/reorder-points?status=low` | 30 | 27 | 125 | 176, 173 |
+| `GET /home` | 53 | 49 | 196 | 270, 280 |
+| `GET /home`, a newcomer | 41 | 52 | 191 | 276, 277 |
+| `GET /stock/availability` | 24 | removed | 208 | removed |
+| A lot's trace | 15 | 16 | 16 | 16, 17 |
+
+- **Items' list grew at large,** 40 to about 160 ms, since its first page
+  works out the Low set for its count (#625); inside the budget.
+- **On GitHub's runners,** the weekly run 199 on `main` at c0fa8432, 16
+  November, the median of three rounds, held all 41 budgets. The reads
+  Inventory changes, before it: `GET /stock` 67 ms, availability 105,
+  Reorder's low 101, Items by stock 118, Home 142. The branch's own
+  budgets run on GitHub, at small, is the maintainer's before the merge.
+- **The plan check** holds every new query, Waiting for a cost among
+  them (review 74); none scans a large table at either size. Once, after
+  a timed run, small needed `vacuum analyze lots` first.
+- **The Watch,** above: `GET /stock`'s sort by names and Availability
+  closed, the routes gone; Inventory's by-code counts and JIT added;
+  Home's and the PDF's lines dated.

@@ -104,7 +104,21 @@ Each with what holds it in the code today, or the issue that will.
   leading its group (`VariantPicker`, #563).
 - A code with a page of its own is a link wherever it appears, a lot's
   code included.
-- A row's actions have words, not icons alone.
+- A row's actions have words, not icons alone: one quiet button,
+  "Actions" in grey with a small down arrow and no border, its tint and
+  accent on hover and focus, named for what it acts on ("Actions for
+  Vitamin C 500 mg", "Actions for lot VC-0302 at Shelf A2"), its
+  column's header for a screen reader alone (`ActionsMenu`, ADR-093).
+- Its menu groups its choices with dividers, "…" after one that asks
+  more, and a line first where one says what comes next ("3 lots in 2
+  places: you choose the lot next"). A choice that cannot be done here
+  is greyed with its reason beneath ("Nothing on hand to move"),
+  `aria-disabled` and still reached by the keyboard; one the role cannot
+  use is not shown; a menu of one is a plain link.
+- A place reads as its path, the warehouse first: "Main warehouse › Zone
+  A › Shelf A2". Where it does not fit it is cut from the left, "…"
+  first and the place's own name whole, the whole path on hover and on
+  focus; it starts where the row's name starts (`PlacePath`, ADR-093).
 - A kind is a word: an item's type in a mixed list is a word on the
   row's second line beside its icon, and on the record the line under
   its title (#548, which gives each type its singular).
@@ -131,8 +145,12 @@ Each with what holds it in the code today, or the issue that will.
 
 - A list sorts on the few columns a person decides by; its default is
   the one most asked for, named in that list's own ADR (ADR-092).
-- What sorts looks sortable; the sort is kept in the address with the
-  filters.
+- What sorts looks sortable before it is pressed: a faint up-and-down
+  arrow on each header that sorts, the sorted one's solid for its way,
+  the default marked while nothing else is chosen, `aria-sort` on the
+  header (`SortHeader`'s `atRest`; Stock, the Lot view and Reorder, each
+  other list as it is next changed). The sort is kept in the address
+  with the filters.
 - A date column shows the date the list is sorted by; where a list keeps
   two dates, the column's header switches between them.
 - After sorting from the keyboard, focus stays on the column's header.
@@ -268,17 +286,24 @@ Each with what holds it in the code today, or the issue that will.
   visited.
 - Back returns a list as it was: its loaded rows, its scroll, and focus
   on the row the person opened (#473, #509); today its filters and sort
-  come back from the address, the rest does not.
-- Back to Home focuses the tile the person left from (#473, #509).
+  come back from the address, and Stock's opened rows (`?open=`) with
+  focus on the row left by (`return-focus.ts`, ADR-093); the rest does
+  not.
+- Back to Home focuses the tile the person left from (`return-focus.ts`,
+  ADR-093).
 - A page reached by a link puts focus on its title, so a screen reader
   hears where it is, as GOV.UK and React Router advise for an app that
   changes pages without reloading (#565).
-- Today only a page whose action took away the focused button does, by
+- Today the item's page does when a link brings a person there
+  (ADR-093), and a page whose action took away the focused button, by
   `PageHeader`'s `headingRef`, such as after Remove a member, Delete a
   role or a category, and Issue an invoice.
 - Nothing pinned covers the focused control (WCAG 2.4.11): the top bar,
   a sticky header, a dialog's buttons and a message leave room by one
   scroll margin from the top bar's height (#507's 41).
+- A control that takes focus inside a table's scrolling box is brought
+  wholly into view, never left half past the box's edge (`wholeOnFocus`;
+  Inventory's tables, ADR-093, the others as each is next changed).
 
 ### One Settings page
 
@@ -409,8 +434,10 @@ refused.
 | A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 | A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
 | The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
-| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: each list but Items and Stock passes its failed page |
+| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: each list but Items, Stock and Reorder passes its failed page |
 | The opening row, a row's places or a place's lots (`aria-expanded`) | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | — |
+| A row's Actions (`ActionsMenu`), selected while open, a choice greyed with its reason | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| A header that sorts (`SortHeader`), selected while it sorts | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | Items, Orders, Invoices and Credit notes: `atRest` as each is next changed |
 | A drag handle (Customise Home's) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 
 - **✓ marks a state the piece has,** and — one it has not; in To

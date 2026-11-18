@@ -887,3 +887,36 @@ reaches `main` unread.
 - **Rows and Numbers' lines that waited for it:** Inventory's Code
   column moves on ADR-093's Inventory branch, and Items' Low and Out open
   Where it stands, their badge and quantity read from one count (#590).
+
+As built on Inventory's branch (#635, 17 November 2026), with the
+design language's lines in the same commit:
+
+- **Only the name opens a record** (ADR-093's 46a): a click elsewhere on
+  a row or a card opens nothing, the row tinting under the pointer, which
+  stays an arrow; the Rows rule says so, on Stock, Reorder and Items.
+  This replaces the as-built above, "Items' rows already … open the item
+  on a click elsewhere in the row".
+- **A row's Actions (47a):** one quiet button, "Actions" in grey with a
+  small down arrow and no border, the tint and the accent only on hover
+  and focus; named for what it acts on, its column's header for a screen
+  reader alone (`ActionsMenu`).
+- **What cannot be done is said (48a, 50a):** a menu's choices in groups,
+  a line first where one says what comes next; a choice that cannot be
+  done here greyed with its reason beneath, `aria-disabled` and still
+  reached by the keyboard; one the role cannot use hidden; a menu of one
+  a plain link.
+- **A place's path (57a):** the warehouse first, cut from the left with
+  "…" only where it does not fit, the place's own name whole, the whole
+  path on hover and focus (`PlacePath`).
+- **A header that sorts says so at rest,** in Sorting and filters
+  (ADR-057's as-built).
+- **A focused control is brought wholly into view** in a table's
+  scrolling box (`wholeOnFocus`): a browser leaves one half past the
+  edge half cut. The four tables Inventory's branch made; the others as
+  each is next changed.
+- **The way back, where ADR-093's tables ask it:** Stock keeps an opened
+  row in `?open=` and puts focus on the row left by; Home focuses the
+  tile left from, every tile; the item's page focuses its title when a
+  link brings a person there (#565 for every page).
+- **Each piece's states** gains the Actions button and the header that
+  sorts.

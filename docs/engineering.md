@@ -374,8 +374,8 @@ Model column, which the chat sets when it plans, from this table:
 | Model | The step's work |
 | --- | --- |
 | `opus` | New server or client logic; design; the reviews and their fixes; a test written with them; any new or changed browser test |
-| `sonnet` | Dependencies; seeds; Help guides; docs; a unit or server test copied from one beside it |
-| `haiku` | Only a step that runs commands and reports, never one that writes code |
+| `sonnet` | Dependencies; seeds; Help guides; docs; a unit or server test copied from one beside it; a timed run, or any step that starts a server or waits on a long command |
+| `haiku` | Only a step that runs short commands and reports, never one that writes code or waits on a server or a long command (ADR-093's as-built: Haiku stopped twice on a timed step's wait) |
 
 - **A step above its model stops,** with `BLOCKED: model` and before it
   commits anything, and the loop runs it again on Opus

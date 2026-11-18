@@ -659,3 +659,271 @@ are named in the pull request as taken in part.
   seeds → Movements → Inventory's link and the item's movements → the
   browser tests → Help and the checks → the figures after → the
   dependencies again → the reviews → the pull request.
+
+## Amendment (November 2026) — as built (#635)
+
+Inventory's branch, `adr-093-inventory`, built from 15 to 17 November
+2026 from its brief in `tmp/adr-093-inventory/`: 119 commits with this
+as-built, and two merges of `main`, pull request #635. Movements' branch
+adds its own. Where building settled or changed what is above:
+
+### The requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R1 | Met: one rule for usable stock (44acb455) and one read for a code's figures, `codeFigures` (3c2fad85). Held per code is the least of usable and what confirmed sales still need, equal to the holds' sum on every code of the demo, the small volume and the large (a51bd3b5). A test walks every code against the ledger, and one reads a code alike through by-code, Where it stands and Reorder. Expires first counts usable lots alone |
+| R2 | Met (f7417a52, d38e2230, 448c7ac9): a code's places come with their lots in one read, so "2 lots" opens with nothing to read; `?open=` keeps an opened row, and Back puts focus on it |
+| R3 | Changed: the five filters with their counts, in the address, each count its rows; the Lot view's four counted by `GET /v1/stock/by-lot/counts` (30a, 31a), and Out there says items that are out have no lots, with Group by Item; the quick filters on a row of their own above the search, in the Filters sheet on a phone (35929c71); "Showing 50 of 128 codes" beside Show 50 more (0d9ea6cd). Back follows #341's rule for every list: a filter replaces the address, so Back leaves Stock and Forward brings it back as it was |
+| R4 | Met: a row per lot at each place (25a), a split lot's rows each saying "1 of 2 places"; Home's Expiring soon and the lookup's Show all for a lot open it (d38e2230); its headers sort it (3cc559fe, 54a) |
+| R5 | Met: the table no longer drawn (d38e2230), its route and `GET /v1/stock` removed (e29d8a2e) |
+| R6 | Met, money in part: the name first, its code grey with its type's word, Code for SKU, a lot's code a link (`LotLink`), every header named, numbers in the page's format (b62ec32b, 3fb4b3e5, 20e78c6c, e8ff30bd, 607ecb90); actions in words, one Actions button on every row (47a). A price in another currency shows its code; the lot's Cost panel does not name the organization's own currency once, as ADR-055's "Money (CAD)" would |
+| R7 | Changed in its words (521547f9, 47126196, 1761ce49, c549d0fc, 4b4e9fc6, d57014dd): "Bought · orders what is short" and "in multiples of 12", the brief's, for the decision's "just enough" and "a fixed quantity of 12"; "Buy 2 items on one purchase order" (c6451400), since "Buy 2" read as two units of one thing; the list opens sorted by the suggested order (A5); a new filter clears the ticks, a search keeps them; the draft's link in its own cell stands for the board's Open draft |
+| R8 | Changed (17c5035f, 3e810b2a, 4d22afe3, 1c9efb01, 2e0fd268): drawn as v2's board, the five figures as tiles and each lot's Actions; the route declares `stock.view` and gates each part inside (1fedd23f), one server test per permission; a main action the role cannot use reads the app's whom-to-ask line, since the client cannot name the roles that hold a permission; Coming's runs have no day, as a run has no date; a discontinued code with nothing on hand, coming or wanted is not drawn |
+| R9 to R13 | Movements' branch. R9's document already shows in the history dialog's Why, linked, until that branch replaces it (64cc349a) |
+| R14 | Met for Stock, the Lot view, Reorder and Where it stands: the cut-text test on at 320, 390 and 820 px, at both text sizes and in four languages (553e22d7, 6660d86f, 2e88705e); Movements' part in its branch |
+| R15 | Met: the exports in the screen's words through `inWords` (27e97a2b, b195e3b7, 521547f9), at one place that place's figures (06db6e99); the recall list's export (8b3c7b57) |
+| R16 | Changed: no sort has an index, since each sorts a worked-out figure or a name in the reader's language, so each is timed instead, and no migration came; Free is no sort (35a); JIT is off (36a); at large the bar is 300 ms (41a). The figures before and after are in ADR-051's as-built |
+| R17 | Met for Inventory: every row of Stock's, the item's page's and Reorder's tables a browser test, none left `test.fixme` (4bde0265, 448c7ac9, 2e0fd268, 754bb474, 4b4e9fc6); the canvas's v3 boards for 46a to 52a; the two rows Movements builds, in its branch |
+| R18 | Met for Inventory (9b434e1c, c960b966, db0845eb, d4ae53ca): the code changed once is VITC-90 corrected to VITC-100; the order shipped from two lots and movements per shelf, in Movements' branch |
+| R19 | Met (6d687f31, 0586d1e7, 452d3a14): the guides and the glossary's words in three languages, `docs/rules/stock.md` and the manual checks; MC-316 and MC-317 left to walk by hand before the merge |
+| R20 | Met for Inventory: the pieces first (steps 5 and 6), the consistency test, the promised table deleted, no new copy of 20 lines or more; the screens still to move are #631; the history dialog and the one movement row, in Movements' branch |
+| R21 | Movements' branch |
+| R22 | Met: the new routes added first; the old four removed and `API_REVISION` raised from 4 to 5, a tab on revision 4 answered 409 `client_outdated` (e29d8a2e) |
+| R23 | Met, its count settled by 24a: Items counts items, one test holding it to the distinct items among Reorder's low and out codes, and Home's to Reorder's (17c5035f); "72 not usable" beside the quantity and the badge "Low · 1 of 3 codes" (97f32e50); the filter 143 and 147 ms at large |
+
+### Decided while building
+
+The chat's answers, each by its number:
+
+- **The sorts by a figure (29a, 35a):** each reads only its figure for
+  every code, from `codeFigures`' own parts, then the page's 50 in full
+  (`sortedFigure`, c960b966). On hand and Expires first stay; Free still
+  took 315 to 335 ms at large, past the 240 ms headroom, so `sort=free`
+  is a 400 (313dd1c2).
+- **A code's figures in a shape a wrong guess cannot slow (34a):** each
+  part read once and grouped, stock summed per place before its place is
+  joined, the parts unioned and never joined (a51bd3b5), with no planner
+  setting.
+- **JIT off for the app's connections (36a),** Home accepted under its
+  300 ms at large (37a), and 300 ms the bar at large (41a): ADR-051's
+  as-built.
+- **The volume seed (32a):** one receipt in six put away in two bins;
+  about one lot in five expiring within the year after the seed and one
+  in a hundred expired already, each chosen by position, so the rest of
+  the year is unchanged.
+- **What each count counts (24a, 25a, 30a, 31a):** Items counts items,
+  Reorder and Home count codes, and the Lot view a lot at each place;
+  Help's "What each count counts" says so in three languages.
+- **Only the name opens a record (46a):** a click elsewhere on a row or
+  a card opens nothing, on Stock, Reorder and Items, their cards and the
+  Lot view (7a1c89ae), replacing the decision's "a click elsewhere on the
+  row opens the item's page"; the design language's Rows say so.
+- **A row's Actions (47a to 50a):** one quiet "Actions" button with its
+  small arrow on every row, named for its item or lot, its column's
+  header for a screen reader alone. An item's menu in three groups
+  (Move…, Ship out…, Send sample…, Correct the count…; Receive stock…;
+  Movements, Change reorder point…), a line first where there are
+  several lots, "3 lots in 2 places: you choose the lot next", each of
+  the first four then opening the row to its lots under "Choose the lot
+  to move", focus on the first lot's Actions ("Choose the place" for an
+  item not tracked by lot). A lot's menu: Move…, Ship out…, Send
+  sample…, Correct the count…; Edit lot details…, Trace lot; Movements.
+  A place's row: a plain Movements link. What cannot be done is greyed
+  with its reason beneath, `aria-disabled` and still reached by the
+  keyboard ("Nothing on hand to move", "Nothing in this lot", "Never
+  stocked here: receive it first"); Correct the count stays on at zero,
+  opening the emptied places and lots; an action the role cannot use
+  stays hidden (741ce6c1, a32719b5, 6f2e03fb, 826b61c4).
+- **Receiving what is ordered (51a):** Receive stock, from an item's
+  Actions or from the page once such an item is chosen, asks "Which
+  delivery is this?", each open order with what is still to come and
+  when, and Not on an order; an order opens its line's own Receive
+  dialog over Stock, so ordered stock is never received off its order
+  and counted twice (f36cb6f6). Only a reader with `orders.view` and
+  `orders.receive` is asked, as `GET /v1/orders/deliveries` asks both;
+  another receives as before.
+- **After a receipt (55a's first half):** "Received 3,000 each of
+  BOTTLE-A60 on PO-000009" with Open the order, or "… with no order";
+  the history dialog's Why names and links each movement's order or run,
+  for a reader who may see it (64cc349a).
+- **The Lot view's sorts and the board's look (54a):** the Lot view
+  sorts by Expires, its default, and by Item, Location and Quantity, each
+  way (3cc559fe); every header that sorts shows it at rest (5509613b);
+  the item's page as v2's board draws it (1c9efb01). ADR-057's and
+  ADR-090's as-builts.
+- **A place written as its path (57a):** "Main warehouse › Zone A ›
+  Shelf A2", read for the page's rows alone, never in the counts or a
+  sort; cut only where it does not fit, from the left with "…", the
+  place's own name whole (c39d1318, a1d98f83).
+- **The every-browser run by hand (59a),** since a push to a branch
+  starts none.
+- **Filed, not built:** a lot's code made at receipt and the rest of
+  receiving (52a, #629); a sort by Coming's date (53a, #630); a
+  Receiving label beside an order's Status (56a, #605); one 1,600 px
+  page frame with table headers that stay (60a to 65b, #632), its own
+  pull request before Movements'.
+
+### Built differently from the text above
+
+- **Routes besides the decision's:** `GET /v1/stock/by-lot/counts`
+  (30a); `GET /v1/stock/lots/:id/recipients/export`, the recall list;
+  `GET /v1/stock/reorder-points/items` (#538); and
+  `GET /v1/orders/deliveries` (51a); `GET /v1/stock/movements` gains
+  `document` (55a). Each was additive, with `npm run api`.
+- **The revision's raise passed the breaking check by itself:** the
+  check accepts a path removed under a raised revision, so
+  `server/openapi-breaking-accepted.txt` is unchanged.
+- **Where it stands is not a `GATED_INSIDE` route:** the whole section
+  needs `stock.view`, so the route declares it, and leaves out places,
+  orders and runs inside (1fedd23f).
+- **A refused shipment's link:** the refusal carries `stock_not_usable`
+  with the item, and its words name Where it stands, but no dialog draws
+  the link (Deferred, added).
+- **Expires first counts usable lots alone,** as the board's row reads.
+  Expiring soon, Expired and Waiting for a cost on a code count stock on
+  hand alone, with Include empty or without.
+- **The opened Reorder row keeps its chevron,** not the opening row:
+  #631's.
+- **A filter's chip is removed by a click anywhere on it** (#578), as its
+  name, "Remove filter: Late", says.
+- **`LotLink` offers Back** on the lot's trace, which the links before it
+  did not.
+- **The recall list has a Date,** the day the lot first left for each
+  recipient (`leftOn`), for ADR-044's "with its day"; an order shipped
+  twice shows its first.
+- **Reorder's ticks:** cleared by a new filter and kept by a search, so
+  items found one search at a time still go on one order (d57014dd).
+- **#352, #472 and #544 were each taken in part,** where "Fired, and
+  taken here" took them whole: #352's typed columns, #472's five
+  findings with the rest of its comments in #610, and #544's failed
+  page on Items, Stock and Reorder alone. The pull request names each
+  Part of (review 67).
+- **Chores rode in feature commits** (review 73): the three browser
+  tests' own place names in d38e2230, and the volume seed's expiry
+  dates in c960b966; and 4bccdabb, meant to change nothing a person
+  sees, made Items' grey cards on a phone wait 250 ms.
+
+### Considered and not done, added
+
+- **Receiving off the order and Coming lowered later:** the early design
+  would have counted ordered stock twice, on the shelf and as Coming;
+  51a replaced it.
+- **One shared row-click helper** (review 27): 46a took the click away
+  instead.
+- **The counts' queries shaped to stay under Postgres's JIT line
+  (36b):** fragile, since an estimate grows with the data.
+
+### Measured
+
+- **The figures,** before and after at small and large, are in
+  ADR-051's as-built.
+- **Time against the brief,** minutes and thousands of tokens from each
+  summary's heading:
+
+| Step | Model | Minutes (guess) | Tokens |
+| --- | --- | --- | --- |
+| 2 | sonnet | 5 (10) | 95 |
+| 3 | opus | 14 (15) | 333 |
+| 4 | haiku, then sonnet | 11, then 4 (20) | 83, 90 |
+| 5 | opus | 27 (30) | 234 |
+| 6 | opus | 36 (35) | 399 |
+| 7 | opus | 21 (30) | 213 |
+| 8 | opus | 20, stopped, then 23 (45) | 230 |
+| 9 | opus | 21 (60) | 306 |
+| 10 | opus | 22 (45) | 310 |
+| 11 | opus | 22 (25) | 257 |
+| 12 | sonnet | 20 (20) | 254 |
+| 13 | opus | 69, 65 and 31 (135) | 613, 336, 158 |
+| 14 | opus | 36 (50) | 400 |
+| 15 | opus | 40 (45) | 426 |
+| 16 | opus | 37 (35) | 303 |
+| 17 | opus | 16 (20) | 255 |
+| 18 | opus | 33 (75) | 336 |
+| 19 | sonnet | 14 (35) | 278 |
+| 20 | sonnet | 23, then 26 (20) | 179, 154 |
+| 21 | sonnet | 15 (10) | 139 |
+| 22, the findings | opus | 22 (90) | not shown |
+| 22, the fixes | opus | about 650 (180) | not shown |
+
+- **Steps 2 to 21 took 629 minutes of 760,** about 83 %. The reviews
+  took about 670 of 270, two and a half times: the fixes took in v3's
+  boards and five messages of changes from the maintainer (receiving,
+  the sort headers, the Lot view's sorts, the item's page, a place's
+  path), each its own commit.
+- **Opus runs used 158 to 613 thousand tokens,** where Items' used 100
+  to 376; Sonnet's 90 to 278.
+- **Haiku stopped twice on step 4's wait** for the volume seed, a stop
+  the loop does not run again on Opus; Sonnet then ran it in 4 minutes.
+  `docs/engineering.md`'s "Which model runs a step" now gives a step
+  that waits on a server or a long command to Sonnet.
+
+### The reviews
+
+- **The panel** walked `stock`, `buy` and `trace`, seven walkers at five
+  widths: every task finished, nothing blocked, six major findings.
+  With `/simplify`, `/code-review`, `/production-readiness` on
+  performance and permissions, and `/doctor prompt-audit`: 86 findings.
+- **Fixed,** each its own commit naming its number: 1, 3, 12, 16, 24 to
+  26, 28 to 30, 32 to 35, 38 to 40, 44, 47 to 57, 59 to 66, 69 to 72,
+  74, 78 and 83 to 85; 27 by 46a.
+- **Filed:** 2, 5 to 11, 13 to 15, 17 to 23, 37, 42, 43 and 76 as #606
+  to #627, 23 being the walkers' smaller findings in one (#623); 36 and
+  77 in the `when-touched` issue, #631; 4 as a comment on #534, whose
+  question it is. **Deferred:** 58, below.
+- **For this as-built:** 67 and 73, above; 68, the decisions written
+  here and in ADR-051's and ADR-057's as-builts; 75, the handoff; 79 and
+  81, ADR-051's as-built and its Watch. 80 went with 44.
+- **Accepted,** each with its reason: 31, `byWarehouse` walks the
+  location tree by hand beside `treeOf`, which the readers did not agree
+  does the same job; 41, a caller that needs only a status works out
+  every figure, about a fifth of the counts, since eased by leaving out
+  Expires first for them (db4328fc); 45, a code's full figures read
+  `stock_levels` three to five times; 46, Where it stands works out its
+  figures twice, 44 ms at large; 86, `brief-step.md`'s 10 to 15 lines
+  for the chat, chosen in ADR-089.
+- **By hand after the push:** 82, the code scanning alerts on the pull
+  request's head, at step 24.
+- **Found while fixing:** the code-figures permission test matched
+  "590" in the refusal's random ids and time, about one run in a
+  hundred, and now reads the refusal's words (58a, 6672519b); help.spec
+  met Stock's sort label half past the table's edge beside Help, which a
+  browser leaves half cut on focus, fixed for the four tables this
+  branch made (646ad661).
+
+### Deferred, added
+
+- **The refusal's link to Where it stands** in the ship, hand-out,
+  release and close dialogs; the server already sends `stock_not_usable`
+  with the item (review 58). Trigger: someone refused who cannot tell
+  where the expired or issued stock is.
+- **Free as a sort,** its figure kept in a column, an ADR of its own
+  (35a). Trigger: someone asking to sort by Free, or another sort by a
+  figure past 300 ms at large.
+- **A run's day in Coming.** Trigger: runs gain a planned day.
+- **A sort by Coming's date** (#630) and **what receiving leaves**
+  (#629), each with its trigger in its issue.
+
+### For Movements' branch
+
+Read at its brief's first step, so nothing is lost with this branch's
+folder:
+
+- 55a's later half: Movements filtered to an order ("Order: PO-…"), and
+  the order's page listing its receipts with All movements of PO-…; the
+  For column (R9) as v2 drew it.
+- #605, a Receiving label beside an order's Status, rides with it, and
+  so does #628, counting found stock into a place or lot the item never
+  had, its board drawn at the brief's first step (70a); the
+  `when-touched` stock issues from these reviews (#609, #611 to #614,
+  #616 to #620, #624, #627, #629 and #631) are triaged for which ride
+  too.
+- Its brief goes to version 6 at its first step, after this branch and
+  #632 merge (71a).
+- Each place row's Movements link, built on Stock: Movements honours the
+  filters it brings.
+- A place written as its path on Movements too, by `PlacePath` (57a).
+- Its figures through `codeFigures`, under JIT off, timed at large
+  against 300 ms (41a).
+- Its brief's demo line for a changed code goes: VITC-100 is one.
+- #632 merges first, so Movements' boards are drawn at 1920 px in the
+  1,600 px frame.
