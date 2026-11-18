@@ -618,6 +618,79 @@ describe('Inventory, grouped (e2e)', () => {
     expect(theirLots.map((lot) => lot.locationPath)).toEqual([[], []]);
   });
 
+  // The history dialog's Why names the document each movement was for
+  // (55a): an order by its number, for a reader who may see orders.
+  it('names the order each movement was received or shipped on, for a reader who may see orders', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const focus = await item(agent, 'FOCUS');
+    const bought = await order(
+      agent,
+      'purchase',
+      await partner(agent, 'Harbour Supply'),
+      focus,
+      '20',
+    );
+    await agent
+      .post(`/v1/orders/${bought.id}/lines/${bought.lineId}/receipts`)
+      .send({ toLocationId: shelf, quantity: '20' })
+      .expect(201);
+    await receive(agent, focus, shelf, '3');
+    const sold = await order(
+      agent,
+      'sale',
+      await partner(agent, 'Lam Herbal'),
+      focus,
+      '4',
+    );
+    await agent
+      .post(`/v1/orders/${sold.id}/shipments`)
+      .send({
+        fromLocationId: shelf,
+        lines: [{ lineId: sold.lineId, quantity: '4' }],
+      })
+      .expect(201);
+
+    type Moved = {
+      reason: string;
+      quantity: string;
+      document: { kind: string; id: string; number: string | null } | null;
+    };
+    const read = async (as: typeof agent) =>
+      body<{ entries: Moved[] }>(
+        await as.get(`/v1/stock/movements?variantId=${focus}`).expect(200),
+      ).entries.map((row) => [row.reason, row.quantity, row.document]);
+
+    expect(await read(agent)).toEqual([
+      [
+        'shipment',
+        '4.0000',
+        { kind: 'order', id: sold.id, number: sold.number },
+      ],
+      ['receipt', '3.0000', null],
+      [
+        'receipt',
+        '20.0000',
+        { kind: 'order', id: bought.id, number: bought.number },
+      ],
+    ]);
+
+    // A reader who may not see orders: the movements, never the order.
+    await customRole(app, alpha.organizationId, 'Counter', ['stock.view']);
+    const counter = await addMember(
+      app,
+      alpha,
+      'counter@example.com',
+      'Counter',
+    );
+    expect((await read(counter)).map((row) => row[2])).toEqual([
+      null,
+      null,
+      null,
+    ]);
+  });
+
   it('lists a row per lot at each place, soonest first, the expired on top, a lot’s places together', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await world(alpha);

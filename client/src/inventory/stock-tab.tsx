@@ -15,6 +15,7 @@ import { useIntl } from 'react-intl';
 import {
   Link as RouterLink,
   useLocation,
+  useNavigate,
   useSearchParams,
 } from 'react-router-dom';
 
@@ -151,6 +152,7 @@ const ADDRESS_FILTERS = {
  */
 export function StockTab({ tabs }: { tabs: ReactNode }) {
   const intl = useIntl();
+  const navigate = useNavigate();
   const can = useCan();
   const phone = useCards();
   // The organization's own days (ADR-060): what Expiring soon means here.
@@ -965,12 +967,16 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         <ReceiveLineDialog
           key={delivery.line.id}
           orderId={delivery.orderId}
+          orderNumber={delivery.number}
           line={delivery.line}
           delivery={delivery}
           locations={leaves}
           canSeeLots
           onClose={() => setDelivery(null)}
           onReceived={refresh}
+          onOpenOrder={() =>
+            navigate(`/orders/${delivery.orderId}`, { state: OFFER_BACK })
+          }
         />
       )}
 

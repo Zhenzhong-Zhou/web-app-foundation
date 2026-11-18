@@ -1,6 +1,15 @@
 import { createContext } from 'react';
 
-export type ShowToast = (message: string) => void;
+/**
+ * A button after the message, "Open the order" (55a), its click the
+ * caller's: the toast sits outside the router, the caller inside it.
+ */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
+export type ShowToast = (message: string, action?: ToastAction) => void;
 
 /**
  * A no-op by default, so a component rendered outside the provider — a

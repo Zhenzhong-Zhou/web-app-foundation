@@ -16312,6 +16312,32 @@
           "movement"
         ]
       },
+      "MovementDocument": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "order",
+              "run"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "number"
+        ]
+      },
       "Movement": {
         "type": "object",
         "properties": {
@@ -16381,6 +16407,16 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementDocument"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -16397,7 +16433,8 @@
           "lotCode",
           "actorName",
           "actorEmail",
-          "createdAt"
+          "createdAt",
+          "document"
         ]
       },
       "MovementPage": {

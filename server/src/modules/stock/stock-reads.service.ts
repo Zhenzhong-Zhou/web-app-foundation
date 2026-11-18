@@ -20,6 +20,7 @@ import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { itemMatches } from '../products/item-search';
 import { ListMovementsDto } from './dto/list-movements.dto';
+import type { MovementDocument } from './dto/stock-response.dto';
 import { namesIn } from './item-name';
 import type { Tx } from './stock.service';
 
@@ -246,7 +247,12 @@ export class StockReadsService {
    * newest were kept, a scan of every variant for one shelf at ADR-051's
    * large scale.
    */
-  listMovements(query: ListMovementsDto, locale: Locale | null) {
+  listMovements(
+    query: ListMovementsDto,
+    locale: Locale | null,
+    /** Who may see each document (55a); none for the export. */
+    sight: { orders: boolean; runs: boolean } = { orders: false, runs: false },
+  ) {
     const limit = query.limit ?? 50;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -309,16 +315,101 @@ export class StockReadsService {
         page.entries.map((row) => row.variantId),
         locale,
       );
+      const documents = await documentsOf(
+        tx,
+        organizationId,
+        page.entries.map((row) => row.id),
+        sight,
+      );
 
       return {
         ...page,
         entries: page.entries.map(({ variantId, ...movement }) => ({
           ...movement,
           ...names.get(variantId)!,
+          document: documents.get(movement.id) ?? null,
         })),
       };
     });
   }
+}
+
+/**
+ * The document each movement was for, by the movement's id (55a), for the
+ * page's alone: a purchase order received on, a sale shipped on (by its
+ * shipment) or returned on (by its return), or a run. An order only for
+ * a reader with orders.view, a run with production.view. Every join names
+ * the organization (ADR-003).
+ */
+async function documentsOf(
+  tx: Tx,
+  organizationId: string,
+  movementIds: string[],
+  sight: { orders: boolean; runs: boolean },
+): Promise<Map<string, MovementDocument>> {
+  if (movementIds.length === 0 || (!sight.orders && !sight.runs)) {
+    return new Map();
+  }
+  const org = sql`${organizationId}::uuid`;
+  const { rows } = await tx.execute<{
+    id: string;
+    order_id: string | null;
+    order_number: string | null;
+    run_id: string | null;
+    run_reference: string | null;
+  }>(sql`
+    select m.id,
+      coalesce(po.id, so.id, ro.id) as order_id,
+      coalesce(po.number, so.number, ro.number) as order_number,
+      run.id as run_id,
+      run.reference as run_reference
+    from stock_movements m
+    left join orders po
+      on m.reference_type = 'purchase_order'
+      and po.id = m.reference_id
+      and po.organization_id = ${org}
+    left join shipments sh
+      on m.reference_type = 'shipment'
+      and sh.id = m.reference_id
+      and sh.organization_id = ${org}
+    left join orders so
+      on so.id = sh.order_id
+      and so.organization_id = ${org}
+    left join order_returns rt
+      on m.reference_type = 'order_return'
+      and rt.id = m.reference_id
+      and rt.organization_id = ${org}
+    left join orders ro
+      on ro.id = rt.order_id
+      and ro.organization_id = ${org}
+    left join production_orders run
+      on m.reference_type = 'production_order'
+      and run.id = m.reference_id
+      and run.organization_id = ${org}
+    where m.organization_id = ${org}
+      and m.id in (${sql.join(
+        movementIds.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})
+  `);
+
+  const documents = new Map<string, MovementDocument>();
+  for (const row of rows) {
+    if (sight.orders && row.order_id) {
+      documents.set(row.id, {
+        kind: 'order',
+        id: row.order_id,
+        number: row.order_number,
+      });
+    } else if (sight.runs && row.run_id) {
+      documents.set(row.id, {
+        kind: 'run',
+        id: row.run_id,
+        number: row.run_reference,
+      });
+    }
+  }
+  return documents;
 }
 
 /**

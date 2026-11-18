@@ -21,6 +21,7 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
+import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
@@ -59,6 +60,7 @@ export class StockController {
     private readonly stock: StockService,
     private readonly reads: StockReadsService,
     private readonly lots: LotsService,
+    private readonly permissions: PermissionsService,
   ) {}
 
   @Post('movements')
@@ -86,11 +88,17 @@ export class StockController {
 
   @Get('movements')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  listMovements(
+  async listMovements(
     @Query() query: ListMovementsDto,
+    @CurrentUser() user: RequestContext,
     @AcceptLanguage() acceptLanguage?: string,
   ): Promise<MovementPage> {
-    return this.reads.listMovements(query, localeOf(acceptLanguage));
+    // Each movement's document only for a reader who may see it (55a).
+    const held = await this.permissions.heldBy(user.membershipId);
+    return this.reads.listMovements(query, localeOf(acceptLanguage), {
+      orders: held.has(PERMISSIONS.ORDERS_VIEW),
+      runs: held.has(PERMISSIONS.PRODUCTION_VIEW),
+    });
   }
 
   /** Every movement the filters match, as CSV (ADR-057): the list's own query, every page. */

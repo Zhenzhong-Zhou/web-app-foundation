@@ -521,6 +521,10 @@ test('Stock, an item still to come: Receive stock… asks which delivery; receiv
   await page.getByRole('option', { name: /E2E Shelf A2/ }).click();
   await onOrder.getByRole('button', { name: 'Receive' }).click();
   await expect(onOrder).toBeHidden();
+  // What happened, with Open the order (55a).
+  await expect(page.getByRole('status')).toHaveText(
+    new RegExp(`^Received 40 each of E2E-MAG on ${purchase.number}`),
+  );
 
   await expect.poll(coming).toBe('0.0000');
   const order = await freshOrg.api.get(`/v1/orders/${purchase.id}`);
@@ -528,6 +532,9 @@ test('Stock, an item still to come: Receive stock… asks which delivery; receiv
     lines: { quantityFulfilled: string }[];
   };
   expect(lines[0]!.quantityFulfilled).toBe('40.0000');
+
+  await page.getByRole('button', { name: 'Open the order' }).click();
+  await expect(page).toHaveURL(new RegExp(`/orders/${purchase.id}$`));
 });
 
 test('Stock, any row, Actions for a Viewer: Movements and Trace lot, nothing that changes stock', async ({

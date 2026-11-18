@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { Movement, StockPile } from '../api/types.gen';
@@ -35,7 +36,11 @@ describe('MovementHistoryDialog', () => {
         HttpResponse.json({ entries: [movement], nextCursor: null }),
       ),
     );
-    render(<MovementHistoryDialog row={row} onClose={() => undefined} />);
+    render(
+      <MemoryRouter>
+        <MovementHistoryDialog row={row} onClose={() => undefined} />
+      </MemoryRouter>,
+    );
   }
 
   it('names the item beside its SKU in the title', async () => {
@@ -58,6 +63,35 @@ describe('MovementHistoryDialog', () => {
     ).toBeVisible();
   });
 
+  // 55a: Why names the document each movement was for, linked.
+  it('names the order a movement was for, linked, after its reason', async () => {
+    open(
+      ROW,
+      movement({
+        document: { kind: 'order', id: 'order-11', number: 'SO-000011' },
+      }),
+    );
+
+    const order = await screen.findByRole('link', { name: 'SO-000011' });
+    expect(order).toHaveAttribute('href', '/orders/order-11');
+    expect(order.closest('td')).toHaveTextContent('shipment · SO-000011');
+  });
+
+  it('names a run by its reference, or as a run', async () => {
+    open(
+      ROW,
+      movement({
+        reason: 'production',
+        document: { kind: 'run', id: 'run-4', number: null },
+      }),
+    );
+
+    expect(await screen.findByRole('link', { name: 'A run' })).toHaveAttribute(
+      'href',
+      '/production/run-4',
+    );
+  });
+
   it('reads the change without padding zeros, and who by name with their email', async () => {
     open(ROW);
 
@@ -76,7 +110,11 @@ describe('MovementHistoryDialog', () => {
         return HttpResponse.json({ entries: [MOVEMENT], nextCursor: null });
       }),
     );
-    render(<MovementHistoryDialog row={ROW} onClose={() => undefined} />);
+    render(
+      <MemoryRouter>
+        <MovementHistoryDialog row={ROW} onClose={() => undefined} />
+      </MemoryRouter>,
+    );
 
     expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
     await waitFor(() =>

@@ -518,7 +518,10 @@ a second organization.
 - **MC-303** A lot-tracked move asks for the lot; an untracked one does not.
 - **MC-304** An adjustment out cannot take more than is on the shelf.
 - **MC-305** A movement's history dialog reads in the direction it happened
-  (in, out, between).
+  (in, out, between). Its Why names the document each movement was for,
+  linked: ELDER-250's receipt "receipt · PO-DEMO-…", a shipment "shipment ·
+  SO-DEMO-…", a run by its reference; a receipt with no order names none.
+  A role made with `stock.view` alone sees the movements, no order named.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
@@ -550,10 +553,14 @@ a second organization.
   supplier with what is still to come and when, chosen already, and Not
   on an order; Continue opens "Receive ELDER-250 on PO-DEMO-12", "From …:
   … still to come", the quantity filled with it; Receive, and the row's
-  Coming falls by it and PO-DEMO-12's line shows it received. The page's
+  Coming falls by it and PO-DEMO-12's line shows it received; the
+  confirmation says "Received … each of ELDER-250 on PO-DEMO-12" with
+  Open the order, which opens it, Back returning to Stock. The page's
   Receive stock asks the same once ELDER-250 is chosen, nothing chosen
   for you; Not on an order carries on in the dialog and receives as
-  before. An item with nothing ordered asks nothing.
+  before, the confirmation ending "with no order". An item with nothing
+  ordered asks nothing. In Français « … de ELDER-250 reçus sur … » and
+  Ouvrir la commande; in 中文 已按 … 收货 and 打开订单.
 - **MC-311** *(ADR-091, amended by ADR-093)* Inventory's Expired. As the
   demo Owner, Home's Expiring soon opens the Lot view at
   `/inventory?group=lot&expiring=1`, and its late button adds
@@ -6763,3 +6770,8 @@ first.
 - 2026-11-17: ADR-093's review, from the chat: Show emptied names stock,
   not places, in French « Afficher le stock vidé » and in 中文
   显示已清空的库存, Help's Inventory guide with them: MC-1528.
+- 2026-11-17: ADR-093's review, 55a from the chat: a receipt's
+  confirmation says what was received and on which order, with Open the
+  order over Stock, or "with no order"; the history dialog's Why names
+  each movement's order or run, linked, for a reader who may see it:
+  MC-305 and MC-310.

@@ -429,6 +429,7 @@ export {
   type MemberRole,
   type MissingName,
   type Movement,
+  type MovementDocument,
   type MovementLotDto,
   type MovementPage,
   type MoveRoleDto,

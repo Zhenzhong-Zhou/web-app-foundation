@@ -68,6 +68,7 @@ export function movement(over: Partial<Movement> = {}): Movement {
     actorName: '王建国',
     actorEmail: 'wang@example.com',
     createdAt: '2026-10-30T17:00:00.000Z',
+    document: null,
     ...over,
   };
 }

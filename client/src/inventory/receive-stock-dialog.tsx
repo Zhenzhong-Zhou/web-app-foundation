@@ -13,12 +13,13 @@ import { useIntl } from 'react-intl';
 import type { Delivery, Location } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { useToast } from '../components/use-toast';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
 import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
-import { unitLabel } from '../products/units';
+import { displayWithUnit, unitLabel } from '../products/units';
 import { DeliveryQuestion } from './delivery-question';
 import { NOT_ON_AN_ORDER } from './delivery-words';
 import { LotFields } from './lot-fields';
@@ -114,18 +115,15 @@ export function ReceiveStockDialog({
         ? deliveries[0]!.line.id
         : '';
 
-  const { submitting, error, reset, submit } = useSubmit(
-    async () => {
-      close();
-      await onReceived();
-    },
-    {
-      success: intl.formatMessage({
-        id: 'inventory.received',
-        defaultMessage: 'Stock received',
-      }),
-    },
-  );
+  // The confirmation says what happened (the design language's After
+  // saving; 55a): a receipt here is on no order.
+  const toast = useToast();
+  const said = useRef('');
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    toast(said.current);
+    close();
+    await onReceived();
+  });
 
   const variant = variants.find((item) => item.id === form.variantId);
 
@@ -236,6 +234,16 @@ export function ReceiveStockDialog({
     }
     // Never null here: its message would have been found first.
     if (quantity === null) return;
+    said.current = intl.formatMessage(
+      {
+        id: 'inventory.receivedOffOrder',
+        defaultMessage: 'Received {quantity} of {code} with no order',
+      },
+      {
+        quantity: displayWithUnit(quantity, variant?.unitOfMeasure ?? '', intl),
+        code: variant?.sku ?? '',
+      },
+    );
 
     void submit(() =>
       api('/stock/movements', {

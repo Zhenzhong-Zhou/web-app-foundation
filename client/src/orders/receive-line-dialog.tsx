@@ -7,13 +7,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Delivery, Location, OrderLine } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
+import { useToast } from '../components/use-toast';
 import { stillToCome } from '../inventory/delivery-words';
 import { LotFields } from '../inventory/lot-fields';
 import { api } from '../lib/api';
@@ -24,7 +25,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
-import { withUnit } from '../products/units';
+import { displayWithUnit, withUnit } from '../products/units';
 
 /** What receiving on a line reads of it: an order's line, or a delivery's. */
 type ReceivableLine = Pick<
@@ -52,14 +53,18 @@ type ReceivableLine = Pick<
  */
 export function ReceiveLineDialog({
   orderId,
+  orderNumber,
   line,
   delivery,
   locations,
   canSeeLots,
   onClose,
   onReceived,
+  onOpenOrder,
 }: {
   orderId: string;
+  /** Its number, for the confirmation: "… on PO-000009" (55a). */
+  orderNumber: string;
   line: ReceivableLine | null;
   /**
    * Opened over Stock for a delivery chosen there (ADR-093, v3): titled
@@ -72,8 +77,13 @@ export function ReceiveLineDialog({
   canSeeLots: boolean;
   onClose: () => void;
   onReceived: () => Promise<void>;
+  /** Over Stock: the confirmation offers Open the order (55a). */
+  onOpenOrder?: () => void;
 }) {
   const intl = useIntl();
+  const toast = useToast();
+  // What the confirmation says, worked out as the receipt is sent.
+  const said = useRef('');
   // Set when the quantity is typed with a thousands separator (ADR-054).
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -84,18 +94,24 @@ export function ReceiveLineDialog({
     note: '',
   });
 
-  const { submitting, error, reset, submit } = useSubmit(
-    async () => {
-      close();
-      await onReceived();
-    },
-    {
-      success: intl.formatMessage({
-        id: 'orders.status.received',
-        defaultMessage: 'Received',
-      }),
-    },
-  );
+  // The confirmation says what happened (the design language's After
+  // saving; 55a), with Open the order over Stock.
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    toast(
+      said.current,
+      onOpenOrder
+        ? {
+            label: intl.formatMessage({
+              id: 'orders.openTheOrder',
+              defaultMessage: 'Open the order',
+            }),
+            onClick: onOpenOrder,
+          }
+        : undefined,
+    );
+    close();
+    await onReceived();
+  });
 
   function close() {
     setQuantityError(null);
@@ -118,6 +134,17 @@ export function ReceiveLineDialog({
       return;
     }
     setQuantityError(null);
+    said.current = intl.formatMessage(
+      {
+        id: 'orders.receivedOn',
+        defaultMessage: 'Received {quantity} of {code} on {order}',
+      },
+      {
+        quantity: displayWithUnit(quantity, line.unitOfMeasure, intl),
+        code: line.sku,
+        order: orderNumber,
+      },
+    );
 
     void submit(() =>
       api(`/orders/${orderId}/lines/${line.id}/receipts`, {

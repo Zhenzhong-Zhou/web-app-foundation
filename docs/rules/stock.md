@@ -138,6 +138,12 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "sends the places above each place, its warehouse first, on Stock and Where it stands" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-312
+- **A movement names the document it was for only to a reader who may
+  see it:** the order it was received, shipped or returned on with
+  orders.view, the run with production.view (55a).
+  [ADR-093](../adr/0093-inventory-and-movements.md) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "names the order each movement was received or shipped on, for a reader who may see orders" ·
+  MC-305
 - **An export is the rows its list shows, with its filters, in the
   screen's words and the reader's language:** a status as Low, Out or
   Enough, a unit as "each", never a stored code; quantities and days

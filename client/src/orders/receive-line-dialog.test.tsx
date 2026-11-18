@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { Delivery, Location, OrderLine } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { orderLine } from '../test/factories';
 import { server } from '../test/setup';
 import { ReceiveLineDialog } from './receive-line-dialog';
@@ -50,6 +51,7 @@ async function receive(line: OrderLine, lotCode?: string) {
   render(
     <ReceiveLineDialog
       orderId="order-1"
+      orderNumber="PO-000001"
       line={line}
       locations={[DOCK]}
       canSeeLots={false}
@@ -83,6 +85,7 @@ describe('ReceiveLineDialog', () => {
     render(
       <ReceiveLineDialog
         orderId="order-1"
+        orderNumber="PO-000001"
         line={orderLine({ unitOfMeasure: 'kg' })}
         locations={[DOCK]}
         canSeeLots={false}
@@ -133,16 +136,23 @@ describe('ReceiveLineDialog', () => {
         },
       ),
     );
+    let opened = 0;
     render(
-      <ReceiveLineDialog
-        orderId={delivery.orderId}
-        line={delivery.line}
-        delivery={delivery}
-        locations={[DOCK]}
-        canSeeLots
-        onClose={() => undefined}
-        onReceived={() => Promise.resolve()}
-      />,
+      <ToastProvider>
+        <ReceiveLineDialog
+          orderId={delivery.orderId}
+          orderNumber={delivery.number}
+          line={delivery.line}
+          delivery={delivery}
+          locations={[DOCK]}
+          canSeeLots
+          onClose={() => undefined}
+          onReceived={() => Promise.resolve()}
+          onOpenOrder={() => {
+            opened += 1;
+          }}
+        />
+      </ToastProvider>,
     );
 
     const dialog = screen.getByRole('dialog', {
@@ -166,5 +176,15 @@ describe('ReceiveLineDialog', () => {
           toLocationId: 'loc-dock',
         }),
       ]);
+    // What happened, with Open the order (55a).
+    // The dialog stays open here, its parent owning it, so the toast
+    // behind it is hidden from the tree.
+    expect(
+      await screen.findByRole('status', { hidden: true }),
+    ).toHaveTextContent('Received 48 each of VITC-100 on PO-000012');
+    await user.click(
+      screen.getByRole('button', { name: 'Open the order', hidden: true }),
+    );
+    expect(opened).toBe(1);
   });
 });

@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Delivery, Location } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
 import { ReceiveStockDialog } from './receive-stock-dialog';
@@ -183,6 +184,37 @@ describe('ReceiveStockDialog', () => {
     await waitFor(() => {
       expect(body).toMatchObject({ quantity: '2.5000', reason: 'receipt' });
     });
+  });
+
+  // 55a: the confirmation says what happened, and that no order was it.
+  it('says what was received, with no order', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post('/api/v1/stock/movements', () =>
+        HttpResponse.json({ movement: { id: 'm' } }, { status: 201 }),
+      ),
+    );
+    render(
+      <ToastProvider>
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          defaultLocationId="location-a"
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+        />
+      </ToastProvider>,
+    );
+
+    await choose('Item', /PLAIN-1/);
+    await user.type(quantityField(), '3000');
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    // The dialog stays open here, its parent owning it, so the toast
+    // behind it is hidden from the tree.
+    expect(
+      await screen.findByRole('status', { hidden: true }),
+    ).toHaveTextContent(/^Received 3,000 \S+ of PLAIN-1 with no order$/);
   });
 
   it('refuses a thousands separator on the field, sending nothing', async () => {

@@ -1839,6 +1839,12 @@ export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
 };
 
+export type MovementDocument = {
+  kind: 'order' | 'run';
+  id: string;
+  number: string | null;
+};
+
 export type Movement = {
   id: string;
   sku: string;
@@ -1854,6 +1860,7 @@ export type Movement = {
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
+  document: MovementDocument | null;
 };
 
 export type MovementPage = {
