@@ -330,6 +330,7 @@
   "components.expiry.expired": "{days, plural, other {已过期 # 天}}",
   "components.expiry.inDays": "{days, plural, =0 {今天过期} other {# 天后过期}}",
   "components.formError.label": "错误",
+  "components.listTable.scrollsSideways": "{table}，可左右滚动",
   "components.loadMore": "加载更多",
   "components.loadMore.count": "再显示 {count} 个",
   "components.loadMore.failed": "{count, select, 0 {下一页没能加载。} other {后面 {count} 个没能加载。}}",

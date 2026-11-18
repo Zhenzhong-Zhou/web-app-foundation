@@ -5,28 +5,47 @@ const paletteOf = (theme: Theme) =>
   (theme.vars ?? theme).palette as Theme['palette'];
 
 /**
- * A held column's left edge while columns pass under it (ADR-091's
- * review): a line in the edge token, and the column cut under it fading
- * into the held cell's own ground, so "200" cut to "20" does not read as
- * a smaller number. For a sticky cell, which holds its `::before`.
+ * A held column's edge while columns pass under it (ADR-091's review): a
+ * line in the edge token, and the column cut under it fading into the
+ * held cell's own ground, so "200" cut to "20" does not read as a smaller
+ * number. Its left edge for a column held at the right, as an order's
+ * Total and actions are; its right edge for a list's name pinned at the
+ * left (ADR-090, amended November 2026). For a sticky cell, which holds
+ * its `::before`.
  */
-export function cutEdge(theme: Theme, ground: 'head' | 'paper') {
+export function cutEdge(
+  theme: Theme,
+  ground: 'head' | 'paper',
+  side: 'left' | 'right' = 'left',
+) {
   const palette = paletteOf(theme);
   const fill =
     ground === 'head' ? palette.surface.head : palette.background.paper;
-  return {
-    boxShadow: `inset 1px 0 0 ${palette.surface.edge}`,
-    '&::before': {
-      content: '""',
-      position: 'absolute' as const,
-      top: 0,
-      bottom: 0,
-      right: '100%',
-      width: 24,
-      pointerEvents: 'none' as const,
-      background: `linear-gradient(to right, transparent, ${fill})`,
-    },
+  const shade = {
+    content: '""',
+    position: 'absolute' as const,
+    top: 0,
+    bottom: 0,
+    width: 24,
+    pointerEvents: 'none' as const,
   };
+  return side === 'left'
+    ? {
+        boxShadow: `inset 1px 0 0 ${palette.surface.edge}`,
+        '&::before': {
+          ...shade,
+          right: '100%',
+          background: `linear-gradient(to right, transparent, ${fill})`,
+        },
+      }
+    : {
+        boxShadow: `inset -1px 0 0 ${palette.surface.edge}`,
+        '&::before': {
+          ...shade,
+          left: '100%',
+          background: `linear-gradient(to left, transparent, ${fill})`,
+        },
+      };
 }
 
 /**

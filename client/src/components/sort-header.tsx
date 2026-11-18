@@ -3,6 +3,7 @@ import { TableCell, type TableCellProps, TableSortLabel } from '@mui/material';
 import type { ReactNode } from 'react';
 
 import type { SortOrder } from '../lib/use-list-sort';
+import { NUMBER_COLUMN } from './number-column';
 
 /**
  * A column header that sorts its list (ADR-057). Only columns the server
@@ -21,6 +22,9 @@ import type { SortOrder } from '../lib/use-list-sort';
  * solid for its way (ADR-093; v2's board): Stock, the Lot view and
  * Reorder first, the others as their screens are next changed. Their
  * default is marked, `active`, when no other is chosen.
+ *
+ * `number`, a number column's header in a `ListTable`, right-aligned and
+ * as wide as its figures need (`NUMBER_COLUMN`).
  */
 export function SortHeader({
   label,
@@ -28,6 +32,7 @@ export function SortHeader({
   order,
   onSort,
   align,
+  number = false,
   after,
   atRest = false,
 }: {
@@ -36,12 +41,14 @@ export function SortHeader({
   order: SortOrder;
   onSort: () => void;
   align?: TableCellProps['align'];
+  number?: boolean;
   after?: ReactNode;
   atRest?: boolean;
 }) {
   return (
     <TableCell
       align={align}
+      {...(number && NUMBER_COLUMN)}
       sortDirection={active ? order : false}
       aria-sort={
         active ? (order === 'asc' ? 'ascending' : 'descending') : undefined

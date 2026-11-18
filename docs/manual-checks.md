@@ -1920,6 +1920,31 @@ Paper is checked first because it must not change at all.
   frame stops at 1,600, centred; at 1366 every page looks as it did, each
   title in the same place. Home's tiles stay in even rows of three at
   1366, 1920 and 2560. At Larger text the frame does not grow.
+- **MC-1567** *(ADR-090, amended November 2026, #632)* A list's header
+  that stays. In a window 1920 × 1080 with Help closed, on Inventory,
+  scroll down Stock: its header row stays right under the top bar, solid,
+  with a line and a soft shadow under it only once it sticks; scroll back
+  up and they go. Shift+Tab back up through the rows: each control shows
+  whole below the header, never under it. The same in dark mode, the
+  header's words still clear. In a window 1180 × 820, a tablet held
+  sideways, it stays too; in one 1920 px wide but under 500 px tall, or
+  1100 px wide and under 700 px tall, the header scrolls away with the
+  page and only the top bar stays. On a phone, cards and no header. Each
+  number column, On hand and Free among them, is as wide as its figures
+  need at 1920, the item's name taking the room. Printed (⌘P), the header
+  is a plain row with no shadow.
+- **MC-1568** *(ADR-090, amended November 2026, #632)* A table too wide
+  for its box. In a window 1366 × 768, on Inventory's Stock with Help
+  closed, or Reorder with Help beside the page: the table scrolls
+  sideways inside its panel, and its header scrolls away with the page.
+  Tab to the table's box: it takes focus, a screen reader names it
+  "Stock, scrolls sideways", and the arrow keys scroll it. Scrolled
+  sideways, the item's name stays at the left, Reorder's tick box with
+  it, with a line and a fade where the other columns pass under; a row
+  tinted under the pointer is tinted under the name too. Close Help on
+  Reorder: the table fits again, and its header stays as the page
+  scrolls (MC-1567). In French and Chinese the box's name is in that
+  language.
 
 ## 16. Files (ADR-059)
 
@@ -6821,3 +6846,7 @@ first.
   signed-in page in 1,600 px, centred beside the rail; Home, Your account
   and Organization, named narrower in their routes, in today's 1,200,
   centred the same way: MC-1566.
+- 2026-11-18: ADR-090's amendment (#632), the shared list table: a
+  list's header stays under the top bar on a window tall enough, a number
+  column is as wide as its figures, and a table too wide scrolls sideways
+  in a named box with its name pinned: MC-1567 and MC-1568 added.
