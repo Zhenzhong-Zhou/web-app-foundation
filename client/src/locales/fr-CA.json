@@ -812,7 +812,7 @@
   "inventory.reorder.today.withDraft": "Position avec {inDraft} en brouillon",
   "inventory.reorder.unnumbered": "{kind, select, run {Ordre de fabrication en brouillon} other {Bon de commande en brouillon}}",
   "inventory.search": "Rechercher",
-  "inventory.showEmptied": "Afficher les emplacements vidés",
+  "inventory.showEmptied": "Afficher le stock vidé",
   "inventory.showing": "{of, select, lot {{shown} sur {total, plural, one {# lot} other {# lots}} affichés} other {{shown} sur {total, plural, one {# code} other {# codes}} affichés}}",
   "inventory.stock.allCategories": "Toutes les catégories",
   "inventory.stock.allTypes": "Tous les types",

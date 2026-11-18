@@ -4,7 +4,7 @@ L’inventaire montre ce que vous avez et où : une ligne par code, qui s’ouv
 
 ## Lire le stock {#stock}
 
-Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une variante : un article offert en trois formats a donc trois lignes. La liste contient tous les codes qui sont en stock, qu’une vente confirmée attend, qui est à venir, ou qu’un point de commande surveille; **Afficher les emplacements vidés** ajoute les autres. Elle charge cinquante lignes à la fois, et **Afficher 50 de plus** ajoute les cinquante suivantes.
+Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une variante : un article offert en trois formats a donc trois lignes. La liste contient tous les codes qui sont en stock, qu’une vente confirmée attend, qui est à venir, ou qu’un point de commande surveille; **Afficher le stock vidé** ajoute les autres. Elle charge cinquante lignes à la fois, et **Afficher 50 de plus** ajoute les cinquante suivantes.
 
 - Le nom d’abord, son code en gris dessous, et son type. Appuyez sur le nom, ou sur la ligne, pour ouvrir la page de l’article.
 - **Où** : le nombre d’emplacements qui en contiennent, comme « 2 emplacements ». Appuyez dessus pour ouvrir les emplacements, puis sur les lots d’un emplacement pour les ouvrir : les lots qui expirent en premier en haut, les périmés au-dessus, un lot sans date d’expiration en dernier. Le code d’un lot ouvre son suivi.

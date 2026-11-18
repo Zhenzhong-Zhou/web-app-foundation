@@ -1479,7 +1479,8 @@ Paper is checked first because it must not change at all.
   Expiring soon keeps the codes with a lot within 90 days, ELD-24A's
   among them, the expired VC-0301's too. Each count is the number of rows
   it shows with the others on; with a search that matches none of them,
-  the counts drop to 0.
+  the counts drop to 0. In Français Show emptied reads « Afficher le stock
+  vidé », in 中文 显示已清空的库存: stock, not places.
 - **MC-1529** Expires first shows days left within 90 days, amber, and
   within 30 days red (ELD-24A: "20 days left"), the date beside each; a
   lot two years off shows only its date. Quantities read "400 each".
@@ -6759,3 +6760,6 @@ first.
   Variants table, and Names in other languages until its cards (#589),
   take keyboard focus, named for their headings, so the keyboard scrolls
   them: MC-301.
+- 2026-11-17: ADR-093's review, from the chat: Show emptied names stock,
+  not places, in French « Afficher le stock vidé » and in 中文
+  显示已清空的库存, Help's Inventory guide with them: MC-1528.
