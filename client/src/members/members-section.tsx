@@ -7,10 +7,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -22,6 +20,7 @@ import { FormattedMessage, useIntl } from 'react-intl';
 
 import type { Member, Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ListTable } from '../components/list-table';
 import { PersonAvatar } from '../components/person-avatar';
 import { formatMoment } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
@@ -264,106 +263,104 @@ export function MembersSection({
           {loading ? (
             skeleton
           ) : (
-            <TableContainer>
-              <Table
-                aria-label={intl.formatMessage({
-                  id: 'layout.menu.members',
-                  defaultMessage: 'Members',
-                })}
-              >
-                <TableHead>
-                  <TableRow>
+            <ListTable
+              label={intl.formatMessage({
+                id: 'layout.menu.members',
+                defaultMessage: 'Members',
+              })}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.name',
+                      defaultMessage: 'Name',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'auth.field.email',
+                      defaultMessage: 'Email',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'members.roles',
+                      defaultMessage: 'Roles',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'people.lastActive',
+                      defaultMessage: 'Last active',
+                    })}
+                  </TableCell>
+                  {anyActions && (
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'common.name',
-                        defaultMessage: 'Name',
-                      })}
+                      <Box component="span" sx={HIDDEN}>
+                        {intl.formatMessage({
+                          id: 'common.actions',
+                          defaultMessage: 'Actions',
+                        })}
+                      </Box>
+                    </TableCell>
+                  )}
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {members?.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      {/* Their face beside their name (ADR-063). */}
+                      <Stack
+                        direction="row"
+                        spacing={1.5}
+                        sx={{ alignItems: 'center' }}
+                      >
+                        <PersonAvatar
+                          userId={member.id}
+                          name={member.name}
+                          email={member.email}
+                          photoFileId={member.photoFileId}
+                        />
+                        <span>
+                          {member.name}
+                          {you(member)}
+                        </span>
+                      </Stack>
+                    </TableCell>
+                    <TableCell
+                      title={member.email}
+                      sx={{
+                        maxWidth: EMAIL_MAX_WIDTH,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {member.email}
                     </TableCell>
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'auth.field.email',
-                        defaultMessage: 'Email',
-                      })}
+                      <RoleChips roles={member.roles} />
                     </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'members.roles',
-                        defaultMessage: 'Roles',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'people.lastActive',
-                        defaultMessage: 'Last active',
-                      })}
+                    <TableCell
+                      sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}
+                      title={
+                        member.lastActiveAt
+                          ? formatMoment(member.lastActiveAt)
+                          : undefined
+                      }
+                    >
+                      {activeLabel(member, intl)}
                     </TableCell>
                     {anyActions && (
-                      <TableCell>
-                        <Box component="span" sx={HIDDEN}>
-                          {intl.formatMessage({
-                            id: 'common.actions',
-                            defaultMessage: 'Actions',
-                          })}
-                        </Box>
-                      </TableCell>
+                      <TableCell align="right">{more(member)}</TableCell>
                     )}
                   </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {members?.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        {/* Their face beside their name (ADR-063). */}
-                        <Stack
-                          direction="row"
-                          spacing={1.5}
-                          sx={{ alignItems: 'center' }}
-                        >
-                          <PersonAvatar
-                            userId={member.id}
-                            name={member.name}
-                            email={member.email}
-                            photoFileId={member.photoFileId}
-                          />
-                          <span>
-                            {member.name}
-                            {you(member)}
-                          </span>
-                        </Stack>
-                      </TableCell>
-                      <TableCell
-                        title={member.email}
-                        sx={{
-                          maxWidth: EMAIL_MAX_WIDTH,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {member.email}
-                      </TableCell>
-                      <TableCell>
-                        <RoleChips roles={member.roles} />
-                      </TableCell>
-                      <TableCell
-                        sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}
-                        title={
-                          member.lastActiveAt
-                            ? formatMoment(member.lastActiveAt)
-                            : undefined
-                        }
-                      >
-                        {activeLabel(member, intl)}
-                      </TableCell>
-                      {anyActions && (
-                        <TableCell align="right">{more(member)}</TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </ListTable>
           )}
         </Paper>
       )}

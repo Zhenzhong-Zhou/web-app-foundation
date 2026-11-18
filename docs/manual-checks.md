@@ -1981,6 +1981,15 @@ Paper is checked first because it must not change at all.
   sideways inside its panel, Planned pinned at its left (MC-1568).
   A screen reader names each table: Production, Partners, Price lists,
   Licences, Waiting for a cost and By item and lot.
+- **MC-1573** *(ADR-090, amended November 2026, #632)* Members,
+  Roles, the audit log and the settings lists on the one table. In a
+  window 1280 × 720 with Help closed, scroll down Members, with an
+  invitation waiting, Roles, Audit log, Your activity, Tax codes and
+  Exchange rates: each header stays under the top bar as in MC-1567,
+  and on Members and Roles each of the two tables keeps its own header.
+  Rate is as wide as its figures need at 1920. A screen reader names
+  each table: Invited, Members, Built in and Made here with their
+  counts, Audit log, Your activity, Tax codes and Exchange rates.
 
 ## 16. Files (ADR-059)
 
@@ -6893,3 +6902,6 @@ first.
   and Returns on the shared table: MC-1571 added.
 - 2026-11-18: ADR-090's amendment (#632), Production, Partners, Price
   lists, Licences and Stock value on the shared table: MC-1572 added.
+- 2026-11-18: ADR-090's amendment (#632), Members, Roles, the audit log,
+  Your activity, Tax codes and Exchange rates on the shared table:
+  MC-1573 added.
