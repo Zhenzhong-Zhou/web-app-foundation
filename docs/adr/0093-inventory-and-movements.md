@@ -888,7 +888,11 @@ The chat's answers, each by its number:
   hundred, and now reads the refusal's words (58a, 6672519b); help.spec
   met Stock's sort label half past the table's edge beside Help, which a
   browser leaves half cut on focus, fixed for the four tables this
-  branch made (646ad661).
+  branch made (646ad661); stock.spec met Show all stock leaving Expired
+  on, the box, emptied at once, writing the cleared search 300 ms later
+  from the address react-router had yet to show, now one write the box
+  follows (3db1aa29). PR CI's burn-in passed #516's 150-test line, and
+  timed out at 20 minutes on shard 1 after the retry.
 
 ### Deferred, added
 
