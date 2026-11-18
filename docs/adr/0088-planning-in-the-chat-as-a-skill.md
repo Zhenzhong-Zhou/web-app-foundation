@@ -355,3 +355,10 @@ Written into the skill with
 - **The canvas is drawn by the chat,** with its Artifact tool: a brief's
   canvas step is the chat's, as step 11 of flows and states found when
   the brief named the maintainer and Claude Design.
+
+## Amendment (November 2026) — packed as a `.skill` file (#632)
+
+On 18 November 2026 `scripts/pack-chat-skill.mjs` began writing
+`tmp/plan-feature.skill`, the file claude.ai's upload asks for: the same
+archive as the zip named above, under another name. That text stays as
+history.
