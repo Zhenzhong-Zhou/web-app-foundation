@@ -452,9 +452,12 @@ a second organization.
   Lot view, in French « 50 sur … codes affichés », in 中文 已显示 50 个，共
   … 个编码. Each place reads as its path, the warehouse first:
   D3-1000-120's "Richmond warehouse › Ambient › Aisle 1 › Shelf 1-B", on
-  its row, on the Lot view and on its page's By place and lot. At 390 px
-  a long path is cut from the left, "…Aisle 1 › Shelf 1-B", the place
-  itself kept; the pointer on it, or Tab to it, shows the whole path.
+  its row, on the Lot view and on its page's By place and lot. At 1920
+  and 1366 px it shows whole, starting under the item's name, and the
+  Item header is whole. Where it does not fit, as at 390 px, it is cut
+  from the left with "…" at its start, "…Aisle 1 › Shelf 1-B", the place's
+  own name and code always whole; the pointer on it, or Tab to it, shows
+  the whole path.
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, Expires' arrow solid and "Soonest
   first, the expired on top." above the list; Item, Location and
@@ -6775,3 +6778,6 @@ first.
   order over Stock, or "with no order"; the history dialog's Why names
   each movement's order or run, linked, for a reader who may see it:
   MC-305 and MC-310.
+- 2026-11-17: ADR-093's review, Bob's message on 57a at 1920 × 1080: a
+  place's path is cut only where it does not fit, from the left with
+  "…", the place whole, starting under the item's name: MC-312.

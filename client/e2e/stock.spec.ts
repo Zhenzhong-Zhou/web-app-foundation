@@ -959,53 +959,96 @@ test('on a phone: cards with On hand and Free, the filters behind one Filters bu
   await expect(page.getByRole('combobox', { name: 'Location' })).toBeVisible();
 });
 
-// A place written as its path, the warehouse first (57a): on a phone the
-// path is cut from the left, the place itself kept, and whole on hover
-// and on focus.
-test('on a phone, a place deep in its warehouse: its path cut from the left, whole on hover and on focus', async ({
+// ---------------------------------------------------------------------------
+// A place written as its path (57a)
+// ---------------------------------------------------------------------------
+
+/** A place three deep, its names long, and an item with stock there. */
+async function deepPlace(api: APIRequestContext, names: string[]) {
+  let parentId: string | undefined;
+  let place: { id: string; name: string } | undefined;
+  for (const [depth, name] of names.entries()) {
+    place = await createLocation(api, {
+      name,
+      type: ['site', 'zone', 'shelf'][depth],
+      parentId,
+    });
+    parentId = place.id;
+  }
+  const product = await createProduct(api, { name: 'E2E Rosehip' });
+  await receive(api, product, place!, '12');
+  return product;
+}
+
+/** A path as drawn: the "…" and what follows it where cut, else whole. */
+const drawn = (page: Page, whole: string) =>
+  page
+    .locator(`[data-whole="${whole}"]`)
+    .first()
+    .evaluate((path) => {
+      // The span drawn, then its cut text where it is cut.
+      const box = path.querySelector(':scope > span:not([aria-hidden])')!;
+      const shown = box.querySelector('[aria-hidden="true"]');
+      return (shown ?? box).textContent;
+    });
+
+test('Stock, a place within its warehouse, 1920 px: its whole path, starting under the item’s name; the Item header whole', async ({
   page,
   freshOrg,
 }) => {
-  const main = await createLocation(freshOrg.api, {
-    name: 'E2E Main warehouse',
-  });
-  const zone = await createLocation(freshOrg.api, {
-    name: 'E2E Zone A by the loading dock',
-    type: 'zone',
-    parentId: main.id,
-  });
-  const shelf = await createLocation(freshOrg.api, {
-    name: 'E2E Shelf A2',
-    type: 'shelf',
-    parentId: zone.id,
-  });
-  const product = await createProduct(freshOrg.api, {
-    name: 'E2E Rosehip',
-  });
-  await receive(freshOrg.api, product, shelf, '12');
-  const whole =
-    'E2E Main warehouse › E2E Zone A by the loading dock › E2E Shelf A2';
+  await deepPlace(freshOrg.api, ['E2E Main', 'E2E Cold room']);
+  const whole = 'E2E Main › E2E Cold room';
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/inventory');
+  await placesOf(page, 'E2E Rosehip').click();
+
+  await expect.poll(() => drawn(page, whole)).toBe(whole);
+  const name = page.getByRole('link', { name: 'E2E Rosehip' });
+  const path = page.locator(`[data-whole="${whole}"]`);
+  const [nameAt, pathAt] = await Promise.all([
+    name.boundingBox(),
+    path.boundingBox(),
+  ]);
+  expect(Math.abs(pathAt!.x - nameAt!.x)).toBeLessThanOrEqual(1);
+
+  // The first header whole, the table not scrolled.
+  const header = page.getByRole('columnheader').first();
+  await expect(header).toHaveText(/^Item/);
+  expect(
+    await header.evaluate((cell) => {
+      const box = cell.getBoundingClientRect();
+      const table = cell.closest('.MuiTableContainer-root')!;
+      return {
+        inside: box.left >= table.getBoundingClientRect().left,
+        scrolled: table.scrollLeft,
+        cut: cell.scrollWidth > cell.clientWidth,
+      };
+    }),
+  ).toEqual({ inside: true, scrolled: 0, cut: false });
+});
+
+test('Stock, on a phone, a place deep in its warehouse: its path cut from the left with “…”, the place whole; whole on hover and on focus', async ({
+  page,
+  freshOrg,
+}) => {
+  const names = [
+    'E2E Main warehouse on the river',
+    'E2E Zone A by the loading dock',
+    'E2E Shelf A2',
+  ];
+  await deepPlace(freshOrg.api, names);
+  const whole = names.join(' › ');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await signInAs(page, freshOrg.api);
   await page.goto('/inventory');
   await placesOf(page, 'E2E Rosehip').click();
 
-  const path = page.getByRole('main').getByText(whole, { exact: true });
-  await expect(path).toBeVisible();
-  // Cut, and from the left: what shows ends with the place itself.
-  expect(
-    await path.evaluate((inner) => {
-      const outer = inner.parentElement!;
-      return {
-        cut: outer.scrollWidth > outer.clientWidth,
-        direction: getComputedStyle(outer).direction,
-        overflow: getComputedStyle(outer).textOverflow,
-      };
-    }),
-  ).toEqual({ cut: true, direction: 'rtl', overflow: 'ellipsis' });
+  await expect.poll(() => drawn(page, whole)).toMatch(/^….* › E2E Shelf A2$/);
 
-  await path.hover();
+  const box = page.locator(`[data-whole="${whole}"] [tabindex="0"]`);
+  await box.hover();
   await expect(page.getByRole('tooltip')).toHaveText(whole);
   await page.mouse.move(0, 0);
   await expect(page.getByRole('tooltip')).toHaveCount(0);
@@ -1013,7 +1056,6 @@ test('on a phone, a place deep in its warehouse: its path cut from the left, who
   // By the keyboard, as a person reaches it: the places button, then Tab
   // until the path, which takes focus because it is cut.
   await placesOf(page, 'E2E Rosehip').focus();
-  const box = path.locator('..');
   for (let presses = 0; presses < 10; presses += 1) {
     if (await box.evaluate((element) => element === document.activeElement))
       break;

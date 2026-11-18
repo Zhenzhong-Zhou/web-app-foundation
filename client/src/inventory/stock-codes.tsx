@@ -58,6 +58,13 @@ import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { type Pile, StockActions } from './stock-actions';
 import { placeName } from './stock-places';
 
+/**
+ * Where the item's name starts in its cell: the cell's 16 px, the cover's
+ * 40 and NameAndCode's 12 px gap. A place's path under it starts there
+ * too (57a).
+ */
+const UNDER_THE_NAME = 2 + (40 + 12) / 8;
+
 /** What a row's menus do, as the Stock tab answers them. */
 export interface StockHandlers {
   canMove: boolean;
@@ -894,7 +901,7 @@ function PlacesRows({
 
   const line = choosing && (
     <TableRow sx={{ bgcolor: 'action.hover' }}>
-      <TableCell colSpan={7} sx={{ pl: 6 }}>
+      <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
         <ChooseLine places={places} mode={choosing} />
       </TableCell>
       <WideOnlyCells />
@@ -985,7 +992,7 @@ function PlaceTableRow({
   return (
     <>
       <TableRow id={id} sx={{ bgcolor: 'action.hover' }}>
-        <TableCell sx={{ pl: 6 }}>
+        <TableCell sx={{ pl: UNDER_THE_NAME }}>
           <Stack sx={{ minWidth: 0 }}>
             <PlacePath place={place} />
             {!place.isAvailable && <NotUsableHere />}
@@ -1141,7 +1148,8 @@ function LotTableRow({
 
   return (
     <TableRow id={id} sx={{ bgcolor: 'action.hover' }}>
-      <TableCell sx={{ pl: 3 + depth * 3 }}>
+      {/* Under the item's name, and a step further under a place. */}
+      <TableCell sx={{ pl: UNDER_THE_NAME + (depth - 1) * 3 }}>
         {lot.lotId && lot.lotCode ? (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'baseline' }}>
             <span>

@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import {
+  createLocation,
   createProduct,
   inviteByLink,
   joinByLink,
@@ -9,7 +10,7 @@ import {
   uniqueEmail,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
-import { reorderScene, stockScene } from './support/stock';
+import { receive, reorderScene, stockScene } from './support/stock';
 
 /**
  * The item's page, Where it stands (ADR-093, R8), row by row: each row of
@@ -352,4 +353,48 @@ test('Where it stands, its figures: five tiles in a row at 1366 px, fewer at 820
   await expect(menu.getByRole('menuitem', { name: /^Move…/ })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Trace lot' })).toBeVisible();
   await expect(section.getByRole('button', { name: /^Move / })).toHaveCount(0);
+});
+
+// A place written as its path (57a), as on Stock: whole where it fits;
+// cut from the left with "…" where it does not, the place whole.
+test('Where it stands, By place and lot: a place’s whole path where it fits, cut from the left with “…” on a phone, the place whole', async ({
+  page,
+  freshOrg,
+}) => {
+  const names = [
+    'E2E Main warehouse on the river',
+    'E2E Zone A by the loading dock',
+    'E2E Shelf A2',
+  ];
+  let parentId: string | undefined;
+  let place: { id: string; name: string } | undefined;
+  for (const [depth, name] of names.entries()) {
+    place = await createLocation(freshOrg.api, {
+      name,
+      type: ['site', 'zone', 'shelf'][depth],
+      parentId,
+    });
+    parentId = place.id;
+  }
+  const product = await createProduct(freshOrg.api, { name: 'E2E Rosehip' });
+  await receive(freshOrg.api, product, place!, '12');
+  const whole = names.join(' › ');
+  const drawn = () =>
+    standing(page)
+      .locator(`[data-whole="${whole}"]`)
+      .first()
+      .evaluate((path) => {
+        // The span drawn, then its cut text where it is cut.
+        const box = path.querySelector(':scope > span:not([aria-hidden])')!;
+        const shown = box.querySelector('[aria-hidden="true"]');
+        return (shown ?? box).textContent;
+      });
+
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await signInAs(page, freshOrg.api);
+  await itemFrom(page, product.id);
+  await expect.poll(drawn).toBe(whole);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(drawn).toMatch(/^….* › E2E Shelf A2$/);
 });
