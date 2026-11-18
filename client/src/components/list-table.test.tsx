@@ -16,10 +16,13 @@ import { ListTable } from './list-table';
 import { NUMBER_COLUMN } from './number-column';
 import { SortHeader } from './sort-header';
 
-/** The box as wide as jsdom says, and what is in it this wide. */
+/** The box as wide as jsdom says, and the table in it this wide. */
 function widths(box: number, content: number) {
   vi.spyOn(Element.prototype, 'clientWidth', 'get').mockReturnValue(box);
   vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockReturnValue(content);
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(
+    content,
+  );
 }
 
 function Stock({

@@ -146,7 +146,10 @@ export function ListTable({
           ? width(last)
           : 0;
       const next: Shape = {
-        fits: frame.scrollWidth <= frame.clientWidth + 1,
+        // The table's own width, not the box's scroll width: the stuck
+        // header's shadow runs 8 px past its last cell, and counted, a
+        // table that grew while it stuck, by Show 50 more, stayed too wide.
+        fits: element.offsetWidth <= frame.clientWidth + 1,
         // Guard 1 (E12a): the actions pinned while the two sides take no
         // more than half the box, as it is wide now, never as it scrolls.
         end: actions && start + actions <= frame.clientWidth / 2 ? actions : 0,
