@@ -625,7 +625,13 @@ describe('A code’s figures (e2e)', () => {
     const refused = await invoicer
       .get(`/v1/products/${productId}/stock`)
       .expect(403);
-    expect(JSON.stringify(refused.body)).not.toContain('590');
+    // No figure in the refusal's words. Its path, request id and time are
+    // left out: random, about one refusal in a hundred holds "590" in
+    // them by chance, which failed this once in 12 runs (58a).
+    const { path, requestId, timestamp, ...words } =
+      body<Record<string, unknown>>(refused);
+    expect([path, requestId, timestamp]).not.toContain(undefined);
+    expect(JSON.stringify(words)).not.toContain('590');
     expect(body<{ message: string }>(refused).message).toMatch(/Invoicer/);
   });
 
