@@ -292,8 +292,9 @@ describe('Where it stands (ADR-093, R8)', () => {
   });
 
   // Review 47: the places are Move's alone, read once it opens, not on
-  // every visit.
-  it('reads the places only when Move first opens', async () => {
+  // every visit. Each lot's actions are its Actions menu, as on Stock
+  // (Bob's fourth message).
+  it('gives each lot its Actions menu, and reads the places only when Move first opens', async () => {
     let placesRead = 0;
     const leaf = (id: string, name: string) => ({
       id,
@@ -348,23 +349,114 @@ describe('Where it stands (ADR-093, R8)', () => {
           ],
         }),
       ],
-      ['products.view', 'stock.view', 'stock.move', 'locations.view'],
+      [
+        'products.view',
+        'stock.view',
+        'stock.move',
+        'stock.adjust',
+        'locations.view',
+      ],
     );
 
-    const move = await screen.findByRole('button', { name: 'Move EB-01' });
+    const actions = await screen.findByRole('button', {
+      name: 'Actions for lot EB-01 at Shelf A',
+    });
+    expect(screen.queryByRole('button', { name: /^Move/ })).toBeNull();
     expect(placesRead).toBe(0);
     // The place as Stock writes it, its warehouse path first (57a).
     expect(
       screen.getAllByText('Main warehouse › Zone A › Shelf A')[0],
     ).toBeInTheDocument();
 
-    await userEvent.click(move);
+    await userEvent.click(actions);
+    const menu = await screen.findByRole('menu');
+    for (const name of [
+      'Move…',
+      'Ship out…',
+      'Send sample…',
+      'Correct the count…',
+      'Edit lot details…',
+      'Trace lot',
+      'Movements',
+    ]) {
+      expect(within(menu).getByRole('menuitem', { name })).toBeVisible();
+    }
+    await userEvent.click(
+      within(menu).getByRole('menuitem', { name: 'Move…' }),
+    );
     const dialog = await screen.findByRole('dialog');
     expect(placesRead).toBe(1);
     await userEvent.click(within(dialog).getByRole('combobox', { name: /To/ }));
     expect(
       await screen.findByRole('option', { name: 'Shelf B' }),
     ).toBeInTheDocument();
+  });
+
+  // v2's board (Bob's fourth message): one code, the title inside its
+  // card with its actions on the same line, the status under them; Left
+  // below zero in the short colour.
+  it('puts the title in its card beside its actions, the status under them, Left below zero in red', async () => {
+    renderStanding(
+      [standing()],
+      ['stock.view', 'orders.view', 'orders.create', 'stock.reorder'],
+    );
+
+    const title = await screen.findByRole('heading', {
+      name: 'Where it stands',
+    });
+    const card = title.closest<HTMLElement>('.MuiPaper-root')!;
+    expect(card).not.toBeNull();
+    expect(within(card).getByRole('button', { name: 'Buy 30' })).toBeVisible();
+    expect(
+      within(card).getByRole('button', { name: 'Change reorder point' }),
+    ).toBeVisible();
+    const status = within(card).getByText('-20 left · reorder at 96');
+    // The status under the title's line, not on it.
+    expect(
+      title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(title.parentElement!.contains(status)).toBe(false);
+
+    const valueOf = (label: string) =>
+      screen.getByText(label, { selector: 'dt' }).nextElementSibling!;
+    const red = getComputedStyle(
+      screen.getByText('20 short: orders want 90'),
+    ).color;
+    expect(getComputedStyle(valueOf('Left')).color).toBe(red);
+    expect(getComputedStyle(valueOf('On hand')).color).not.toBe(red);
+  });
+
+  // Several codes: the section's title above them, each card titled by
+  // its code; a code without a point has no status line.
+  it('titles each card by its code when there are several, the status only with a point', async () => {
+    renderStanding(
+      [
+        standing(),
+        standing({
+          variantId: 'variant-2',
+          sku: 'ELDER-500',
+          variantName: '500 ml',
+          position: '30.0000',
+          reorderPoint: null,
+          status: null,
+          source: null,
+          suggestion: null,
+        }),
+      ],
+      ['stock.view', 'stock.reorder'],
+    );
+
+    const title = await screen.findByRole('heading', {
+      name: 'Where it stands',
+    });
+    expect(title.closest('.MuiPaper-root')).toBeNull();
+    const second = screen
+      .getByRole('heading', { name: '500 ml · ELDER-500' })
+      .closest<HTMLElement>('.MuiPaper-root')!;
+    expect(within(second).queryByText(/reorder at/)).toBeNull();
+    expect(
+      within(second).getByRole('button', { name: 'Set a reorder point' }),
+    ).toBeVisible();
   });
 
   it('is not drawn, nor read, without stock.view', () => {

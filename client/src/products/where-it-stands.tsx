@@ -5,12 +5,14 @@ import {
   Paper,
   Skeleton,
   Stack,
+  type SxProps,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  type Theme,
   Typography,
 } from '@mui/material';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
@@ -30,7 +32,12 @@ import { ListError } from '../components/list-error';
 import { LotLink } from '../components/lot-link';
 import { Reference } from '../components/reference';
 import { TableOrCards } from '../components/table-or-cards';
-import { MoveStockDialog } from '../inventory/move-stock-dialog';
+import { EditLotDialog } from '../inventory/edit-lot-dialog';
+import { type MoveMode, MoveStockDialog } from '../inventory/move-stock-dialog';
+import {
+  type HistoryOf,
+  MovementHistoryDialog,
+} from '../inventory/movement-history-dialog';
 import { PlacePath } from '../inventory/place-path';
 import {
   type ReorderOpening,
@@ -38,8 +45,10 @@ import {
 } from '../inventory/reorder-point-dialog';
 import { fieldQuantity } from '../inventory/reorder-points';
 import { LeftLine, ReorderStatusChip } from '../inventory/reorder-status';
+import { StockActions } from '../inventory/stock-actions';
 import { isZero } from '../lib/decimal';
 import { displayQuantity, formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -103,7 +112,6 @@ const WORDS = defineMessages({
   place: { id: 'inventory.location', defaultMessage: 'Location' },
   lot: { id: 'inventory.lot', defaultMessage: 'Lot' },
   expires: { id: 'products.stock.expires', defaultMessage: 'Expires' },
-  move: { id: 'inventory.actions.move', defaultMessage: 'Move' },
   actions: { id: 'common.actions', defaultMessage: 'Actions' },
 });
 
@@ -136,12 +144,18 @@ function Standing({ product }: { product: ProductDetail }) {
   const showSkeleton = useDelayedFlag(loading);
   const [opening, setOpening] = useState<ReorderOpening | null>(null);
   const [planning, setPlanning] = useState<CodeStanding | null>(null);
-  const [moving, setMoving] = useState<StockPile | null>(null);
-  // The places read once Move first opens, then kept, never on a visit
-  // that moves nothing (review 47); the dialog waits for their answer.
+  const [moving, setMoving] = useState<{
+    mode: MoveMode;
+    row: StockPile;
+  } | null>(null);
+  const [viewing, setViewing] = useState<HistoryOf | null>(null);
+  const [editingLot, setEditingLot] = useState<StockPile | null>(null);
+  // The places read once a lot's Move, Ship out, Send sample or Correct
+  // the count first opens, then kept, never on a visit that moves nothing
+  // (review 47); the dialog waits for their answer.
   const [movedOnce, setMovedOnce] = useState(false);
   const { locations, answered: placesAnswered } = useLocations(
-    movedOnce && can('stock.move') && can('locations.view'),
+    movedOnce && can('locations.view'),
   );
 
   const codes = (data?.codes ?? []).filter(
@@ -193,30 +207,32 @@ function Standing({ product }: { product: ProductDetail }) {
         }),
       }),
     onMake: setPlanning,
-    onMove: (pile) => {
-      setMovedOnce(true);
-      setMoving(pile);
+    lot: {
+      canMove: can('stock.move'),
+      canAdjust: can('stock.adjust'),
+      onMove: (mode, row) => {
+        setMovedOnce(true);
+        setMoving({ mode, row });
+      },
+      onHistory: setViewing,
+      onEditLot: setEditingLot,
     },
   };
+  // One code: the section's title inside its card, beside its actions
+  // (v2's board); several, the section's title above them, each card
+  // titled by its code.
+  const single = codes.length === 1;
 
   return (
     <Box component="section" aria-labelledby="stock">
-      <Typography
-        id="stock"
-        tabIndex={-1}
-        variant="h6"
-        component="h2"
-        sx={{ mb: 2, outline: 'none' }}
-      >
-        {intl.formatMessage(WORDS.title)}
-      </Typography>
+      {!single && <SectionTitle sx={{ mb: 2 }} />}
 
       <Stack spacing={3}>
         {codes.map((code) => (
           <CodeBlock
             key={code.variantId}
             code={code}
-            titled={codes.length > 1}
+            single={single}
             heldId={code === heldAt ? 'held' : undefined}
             handlers={handlers}
           />
@@ -254,14 +270,25 @@ function Standing({ product }: { product: ProductDetail }) {
 
       {moving && placesAnswered && (
         <MoveStockDialog
-          mode="transfer"
-          row={moving}
+          mode={moving.mode}
+          row={moving.row}
           locations={leavesOf(locations).filter((each) => each.isActive)}
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={reload}
         />
       )}
+
+      {viewing && (
+        <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
+      )}
+
+      <EditLotDialog
+        key={editingLot?.lotId ?? 'closed'}
+        row={editingLot}
+        onClose={() => setEditingLot(null)}
+        onSaved={reload}
+      />
     </Box>
   );
 }
@@ -270,18 +297,42 @@ interface Handlers {
   onPoint: (code: CodeStanding) => void;
   onBuy: (code: CodeStanding) => void;
   onMake: (code: CodeStanding) => void;
-  onMove: (pile: StockPile) => void;
+  /** A lot's own Actions, as Stock's (Bob's fourth message). */
+  lot: {
+    canMove: boolean;
+    canAdjust: boolean;
+    onMove: (mode: MoveMode, row: StockPile) => void;
+    onHistory: (of: HistoryOf) => void;
+    onEditLot: (row: StockPile) => void;
+  };
+}
+
+/** The section's title, its arrival's focus (#stock). */
+function SectionTitle({ sx }: { sx?: SxProps<Theme> }) {
+  const intl = useIntl();
+  return (
+    <Typography
+      id="stock"
+      tabIndex={-1}
+      variant="h6"
+      component="h2"
+      sx={[{ outline: 'none' }, ...(Array.isArray(sx) ? sx : [sx])]}
+    >
+      {intl.formatMessage(WORDS.title)}
+    </Typography>
+  );
 }
 
 /** One code: its status, its figures with what is behind them, its lots. */
 function CodeBlock({
   code,
-  titled,
+  single,
   heldId,
   handlers,
 }: {
   code: CodeStanding;
-  titled: boolean;
+  /** The item's one code: its card holds the section's title. */
+  single: boolean;
   heldId?: string;
   handlers: Handlers;
 }) {
@@ -297,38 +348,62 @@ function CodeBlock({
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack spacing={2}>
-        {titled && (
-          // The name first, its code grey (the design language's Rows).
-          <Typography component="h3" sx={{ fontWeight: 600 }}>
-            {code.variantName && (
-              <>
-                {code.variantName}
-                {SEPARATOR}
-              </>
-            )}
-            <Box
-              component="span"
-              sx={{ color: 'text.secondary', fontWeight: 400 }}
-            >
-              <Reference>{code.sku}</Reference>
-            </Box>
-          </Typography>
-        )}
+        {/* The title and the actions on one line (v2's board), the status
+            under them when the code has a point (Bob's fourth message). */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          useFlexGap
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: { sm: 'center' },
+            flexWrap: 'wrap',
+          }}
+        >
+          {single ? (
+            <SectionTitle />
+          ) : (
+            // The name first, its code grey (the design language's Rows).
+            <Typography component="h3" sx={{ fontWeight: 600 }}>
+              {code.variantName && (
+                <>
+                  {code.variantName}
+                  {SEPARATOR}
+                </>
+              )}
+              <Box
+                component="span"
+                sx={{ color: 'text.secondary', fontWeight: 400 }}
+              >
+                <Reference>{code.sku}</Reference>
+              </Box>
+            </Typography>
+          )}
+          {!empty && <Actions code={code} handlers={handlers} />}
+        </Stack>
 
         {empty ? (
           <Empty code={code} handlers={handlers} />
         ) : (
           <>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              sx={{ justifyContent: 'space-between' }}
-            >
-              <StatusLine code={code} />
-              <Actions code={code} handlers={handlers} />
-            </Stack>
+            <StatusLine code={code} />
 
-            <Box component="dl" sx={{ m: 0 }}>
+            {/* The five figures as tiles, five to a row at a laptop's
+                width, fewer narrower, a list on a phone. */}
+            <Box
+              component="dl"
+              sx={{
+                m: 0,
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(3, minmax(0, 1fr))',
+                  lg: 'repeat(5, minmax(0, 1fr))',
+                },
+                gap: { xs: 0, sm: 1.5 },
+              }}
+            >
               <Figure
                 label={intl.formatMessage(WORDS.onHand)}
                 value={qty(code.onHand)}
@@ -353,6 +428,8 @@ function CodeBlock({
               <Figure
                 label={intl.formatMessage(WORDS.left)}
                 value={qty(code.position)}
+                // Below zero, in the short colour.
+                short={code.position.startsWith('-')}
                 lines={
                   <Line>
                     {intl.formatMessage(
@@ -372,7 +449,7 @@ function CodeBlock({
               />
             </Box>
 
-            {code.places && <ByPlace code={code} onMove={handlers.onMove} />}
+            {code.places && <ByPlace code={code} lot={handlers.lot} />}
             {code.lots && <UsableLots code={code} />}
           </>
         )}
@@ -381,29 +458,42 @@ function CodeBlock({
   );
 }
 
-/** A figure: its name, its value at the figure's size, and its lines. */
+/**
+ * A figure: its name, its value at the figure's size, and its lines; a
+ * tile from 600 px, a row of a list on a phone (Bob's fourth message).
+ */
 function Figure({
   label,
   id,
   value,
   lines,
+  short = false,
 }: {
   label: string;
   id?: string;
   value: string;
   lines: ReactNode;
+  /** Below zero: the value in the short colour. */
+  short?: boolean;
 }) {
   return (
     <Box
       id={id}
       tabIndex={id ? -1 : undefined}
       sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: `${rem(120)} ${rem(200)} 1fr` },
-        columnGap: 2,
-        alignItems: 'baseline',
-        py: 1,
-        '& + &': { borderTop: 1, borderColor: 'divider' },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+        minWidth: 0,
+        py: { xs: 1, sm: 1.5 },
+        px: { xs: 0, sm: 1.5 },
+        // No border shorthand: a breakpoint's comes after the colour, in its
+        // media query, and resets it to the text's.
+        borderStyle: 'solid',
+        borderWidth: { xs: 0, sm: 1 },
+        borderColor: 'divider',
+        borderRadius: { sm: 1 },
+        '& + &': { borderTop: 1, borderTopColor: 'divider' },
       }}
     >
       <Typography component="dt" sx={{ color: 'text.secondary' }}>
@@ -416,6 +506,7 @@ function Figure({
           fontSize: rem(TYPE.figure),
           lineHeight: 40 / TYPE.figure,
           fontVariantNumeric: 'tabular-nums',
+          ...(short && { color: 'error.main' }),
         }}
       >
         {value}
@@ -441,7 +532,7 @@ function Line({ children, tone }: { children: ReactNode; tone?: 'error' }) {
 
 /** The status in Home's words, and "10 left · reorder at 36". */
 function StatusLine({ code }: { code: CodeStanding }) {
-  if (!code.status || code.reorderPoint === null) return <Box />;
+  if (!code.status || code.reorderPoint === null) return null;
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
       <ReorderStatusChip status={code.status} />
@@ -807,16 +898,8 @@ function ComingLines({ code }: { code: CodeStanding }) {
 }
 
 /** By place and lot, for a reader with locations.view: Move by stock.move. */
-function ByPlace({
-  code,
-  onMove,
-}: {
-  code: CodeStanding;
-  onMove: (pile: StockPile) => void;
-}) {
+function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
   const intl = useIntl();
-  const can = useCan();
-  const canMove = can('stock.move');
   const rows = code.places!.flatMap((place) =>
     place.lots.map((pile) => ({ place, pile })),
   );
@@ -833,23 +916,17 @@ function ByPlace({
       })}
     </Line>
   );
-  const move = (pile: StockPile) =>
-    canMove && (
-      <Button
-        variant="text"
-        size="small"
-        aria-label={intl.formatMessage(
-          {
-            id: 'products.stock.moveLot',
-            defaultMessage: 'Move {what}',
-          },
-          { what: pile.lotCode ?? pile.sku },
-        )}
-        onClick={openDialog(() => onMove(pile))}
-      >
-        {intl.formatMessage(WORDS.move)}
-      </Button>
-    );
+  // The lot's own Actions, as on Stock (Bob's fourth message).
+  const actions = (pile: StockPile) => (
+    <StockActions
+      row={pile}
+      canMove={lot.canMove}
+      canAdjust={lot.canAdjust}
+      onSelect={lot.onMove}
+      onHistory={lot.onHistory}
+      onEditLot={lot.onEditLot}
+    />
+  );
 
   return (
     <Stack spacing={1}>
@@ -872,9 +949,13 @@ function ByPlace({
                   <TableCell align="right">
                     {intl.formatMessage(WORDS.onHand)}
                   </TableCell>
-                  {canMove && (
-                    <TableCell>{intl.formatMessage(WORDS.actions)}</TableCell>
-                  )}
+                  {/* Named to a screen reader: each row's button says its
+                      word (R6). */}
+                  <TableCell padding="checkbox" sx={{ position: 'relative' }}>
+                    <Box component="span" sx={HIDDEN}>
+                      {intl.formatMessage(WORDS.actions)}
+                    </Box>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -897,7 +978,7 @@ function ByPlace({
                     <TableCell align="right">
                       {displayWithUnit(pile.quantity, code.unitOfMeasure, intl)}
                     </TableCell>
-                    {canMove && <TableCell>{move(pile)}</TableCell>}
+                    <TableCell padding="checkbox">{actions(pile)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -932,7 +1013,7 @@ function ByPlace({
                 <span>
                   {displayWithUnit(pile.quantity, code.unitOfMeasure, intl)}
                 </span>
-                {move(pile)}
+                {actions(pile)}
               </Stack>
             ))}
           </Stack>

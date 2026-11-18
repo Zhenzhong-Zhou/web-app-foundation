@@ -311,3 +311,45 @@ test('Items, a row’s Low: Where it stands, Low first', async ({
   await expect(page).toHaveURL(new RegExp(`/items/${scene.vitamin.id}#stock$`));
   await expect(standing(page).getByText('Low', { exact: true })).toBeVisible();
 });
+
+// v2's board (Bob's fourth message): the five figures as tiles, five to a
+// row at a laptop's width, fewer narrower, a list on a phone; each lot's
+// actions its Actions menu, as on Stock.
+test('Where it stands, its figures: five tiles in a row at 1366 px, fewer at 820, a list at 390; each lot its Actions menu', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  const figures = standing(page).locator('dl').first().locator('> div');
+  /** How many tiles share the first one's row. */
+  const firstRow = () =>
+    figures.evaluateAll((tiles) => {
+      const top = tiles[0].getBoundingClientRect().top;
+      return tiles.filter(
+        (tile) => Math.abs(tile.getBoundingClientRect().top - top) < 2,
+      ).length;
+    });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await itemFrom(page, scene.vitamin.id);
+  await expect(figures).toHaveCount(5);
+  expect(await firstRow()).toBe(5);
+
+  await page.setViewportSize({ width: 820, height: 1000 });
+  await expect.poll(firstRow).toBe(2);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(firstRow).toBe(1);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const section = standing(page);
+  await section
+    .getByRole('button', { name: /^Actions for lot VC-SOON at / })
+    .first()
+    .click();
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem', { name: /^Move…/ })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Trace lot' })).toBeVisible();
+  await expect(section.getByRole('button', { name: /^Move / })).toHaveCount(0);
+});

@@ -361,14 +361,21 @@ a second organization.
   are each at least 44 px tall.
 - **MC-219** *(ADR-093, R8)* Where it stands, as the demo Owner, first
   under the item's title; arrived at from a link, focus is on the title
-  (Back or a reload leaves it to the browser). ELDER-250's page: Low, "58 left · reorder at
+  (Back or a reload leaves it to the browser). An item with one code
+  holds the title inside its card, Change reorder point and Buy on its
+  line, the status under it; one with several, such as MAGCAP, has the
+  title above the cards, each titled by its code. The five figures are
+  tiles, five in a row at 1366 px, two at 820 px, a list at 390 px; Left
+  below zero in red. ELDER-250's page: Low, "58 left · reorder at
   96"; On hand with what is not usable and why, or "all usable"; Free
   with "what you can still promise"; Held 60 "for 2 confirmed orders",
   SO-DEMO-9 and SO-DEMO-10 listed oldest first, each a link; Coming with
   PO-DEMO-12, its day and "late"; Left with "70 usable + 48 coming − 60
   for orders"; By place and lot, each lot's code a link to its trace,
-  with Move, whose dialog lists every other place under To (the places
-  are read as Move first opens, not on arrival). Change reorder point opens the point's dialog filled in,
+  its expiry as Stock's chip, each lot's Actions the lot's menu as on
+  Stock (Move…, Ship out…, Send sample…, Correct the count…, Edit lot
+  details…, Trace lot, Movements), whose Move… lists every other place
+  under To (the places are read as Move… first opens, not on arrival). Change reorder point opens the point's dialog filled in,
   and Escape returns focus to it; Save closes it, and Low with its "left
   · reorder at" line shows the point saved; Buy 134 opens New order, a purchase,
   with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
@@ -386,11 +393,11 @@ a second organization.
 - **MC-220** *(ADR-093, ADR-080)* Where it stands by permission. As
   Fatima Haddad (Sales), with no `locations.view`: ELDER-250's page
   lists "Usable lots", each with how many places hold it, and any not
-  usable as one line, no place named, with no Move and no Change
+  usable as one line, no place named, with no Actions and no Change
   reorder point; Held's orders are listed, and Buy 134 is there.
   SLEEP-60CT's page lists no run under Coming, and in Make's place a
   line says her role does not include planning runs, and whom to ask. As
-  Tom Becker (Warehouse): By place and lot with Move, and in Buy's place
+  Tom Becker (Warehouse): By place and lot with each lot's Actions, and in Buy's place
   the line for buying. A role made with `products.view` alone sees no
   Where it stands section, and nothing says it is missing.
 
@@ -6742,3 +6749,7 @@ first.
   path, the warehouse first, on Stock, the Lot view and Where it stands;
   cut from the left at a phone's width, whole on hover and on focus:
   MC-312.
+- 2026-11-17: ADR-093's review, Bob's fourth message (2): Where it stands
+  as v2's board, the title inside its card with its actions, the status
+  under it, the figures as tiles, Left below zero in red, each lot's
+  Actions menu: MC-219 and MC-220.

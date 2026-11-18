@@ -48,9 +48,9 @@ Premier sous le titre d’un article, **État du stock** montre chacun de ses co
 - **Réservé**, les ventes qui retiennent du stock, chacune un lien, la plus ancienne d’abord, avec ce que chacune retient de ce qu’elle demande.
 - **À venir**, les bons de commande et les ordres de fabrication qui doivent encore apporter du stock, chacun avec son jour.
 - **Il en reste**, avec son calcul en mots simples : « 30 utilisables + 0 à venir − 20 pour les commandes ».
-- **Par emplacement et lot**, chaque emplacement avec ses lots, les plus proches d’abord, le code de chaque lot un lien vers son suivi, et **Déplacer**.
+- **Par emplacement et lot**, chaque emplacement écrit depuis son entrepôt, avec ses lots, les plus proches d’abord, le code de chaque lot un lien vers son suivi, et les **Actions** de chaque lot, comme dans Stock.
 
-Les actions sont **Modifier le point de commande**, **Acheter 30** ou **Fabriquer 1 000**, et **Déplacer**, chacune montrée selon ce que votre rôle permet; sinon, une ligne dit à qui demander. **Acheter** et **Fabriquer** ouvrent leur formulaire rempli avec la commande suggérée et n’enregistrent rien avant que vous ne le créiez. Un code sans stock ni arrivage dit « Rien en stock, rien à venir. » avec **Fixer un point de commande** et **Recevoir du stock**.
+Les actions, sur la carte du code à côté de son titre, sont **Modifier le point de commande**, et **Acheter 30** ou **Fabriquer 1 000**, chacune montrée selon ce que votre rôle permet; sinon, une ligne dit à qui demander. **Acheter** et **Fabriquer** ouvrent leur formulaire rempli avec la commande suggérée et n’enregistrent rien avant que vous ne le créiez. Un code sans stock ni arrivage dit « Rien en stock, rien à venir. » avec **Fixer un point de commande** et **Recevoir du stock**.
 
 > Seule une personne qui peut voir le stock voit **État du stock**. Sans la permission de voir les emplacements, **Lots utilisables** et une ligne « inutilisable » remplacent les emplacements; sans celle de voir les commandes, un nombre dit combien de commandes attendent; les ordres de fabrication demandent la permission de voir la production.
 
