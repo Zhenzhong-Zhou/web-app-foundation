@@ -46,6 +46,12 @@ export function codeFigures(
   organizationId: string,
   today: string,
   variants: SQL,
+  /**
+   * False for a reader of the status alone, a count or a status filter:
+   * `expires_first` is then null, its pass over the lots not read (review
+   * 39, again).
+   */
+  { expiresFirst = true }: { expiresFirst?: boolean } = {},
 ): SQL {
   const org = sql`${organizationId}::uuid`;
 
@@ -102,9 +108,13 @@ export function codeFigures(
           c.variant_id, 0, 0, 0, 0, 0, 0, c.quantity,
           c.expected_at, null, null, null, null
         from (${comingOf(organizationId, variants)}) c
-        union all
+        ${
+          expiresFirst
+            ? sql`union all
         select ex.variant_id, 0, 0, 0, 0, 0, 0, 0, null, ex.expires_first, null, null, null
-        from (${expiresFirstOf(organizationId, today, variants)}) ex
+        from (${expiresFirstOf(organizationId, today, variants)}) ex`
+            : sql``
+        }
       ) p
       group by p.variant_id
       -- Only a code of this organization's items: its own row is there.

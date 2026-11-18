@@ -176,13 +176,6 @@ function rowFilters(
   /** A page's codes alone, the rows statement's (review 40). */
   variants?: SQL,
 ) {
-  const at = { locationId: query.locationId, variants };
-  const holding = (filters: Parameters<typeof stockRowsOf>[0]) =>
-    sql`${productVariants.id} in (
-      select ${stockLevels.variantId}
-      from ${stockRowsOf({ ...at, ...filters }, organizationId, today)}
-    )`;
-
   return {
     expiring:
       days === undefined
@@ -197,7 +190,23 @@ function rowFilters(
       sql`lt.expires_at < ${today}::date`,
       query.locationId,
     ),
-    needsCost: holding({ needsCost: 'true' }),
+    // Waiting for a cost from the stock rows alone (review 39, again): as
+    // a stock row's filter (stockRowsOf), without its joins to the item,
+    // the place and the lot, which only it needs; a stock row's item and
+    // place are always this organization's.
+    needsCost: sql`${productVariants.id} in (
+      select ${stockLevels.variantId}
+      from ${stockLevels}
+      where ${and(
+        sql`${stockLevels.organizationId} = ${organizationId}::uuid`,
+        sql`${stockLevels.quantity} > 0`,
+        query.locationId
+          ? sql`${stockLevels.locationId} = ${query.locationId}::uuid`
+          : undefined,
+        variants ? sql`${stockLevels.variantId} in ${variants}` : undefined,
+        quickFiltersOf(organizationId, today, undefined, variants).needsCost,
+      )}
+    )`,
   };
 }
 
@@ -520,7 +529,12 @@ export class StockGroupedService {
         )
         ${
           status
-            ? sql`, f as materialized (${codeFigures(organizationId, today, pointed(organizationId))})`
+            ? sql`, f as materialized (${codeFigures(
+                organizationId,
+                today,
+                pointed(organizationId),
+                { expiresFirst: false },
+              )})`
             : sql``
         }
         ${sort === 'name' ? sql`` : sql`, ${sortedKeys(organizationId, today, sort, here)}`}
@@ -731,7 +745,12 @@ export class StockGroupedService {
           from ${codesFrom(organizationId)}
           where ${codesWhere(query, organizationId)}
         ),
-        f as materialized (${codeFigures(organizationId, today, pointed(organizationId))})
+        f as materialized (${codeFigures(
+          organizationId,
+          today,
+          pointed(organizationId),
+          { expiresFirst: false },
+        )})
         select ${facetCounts(facets)}
         from codes c
         left join f on f.variant_id = c.variant_id
