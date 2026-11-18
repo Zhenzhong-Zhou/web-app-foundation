@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -21,6 +19,7 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
+import { ListTable } from '../components/list-table';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -164,103 +163,104 @@ export function PartnersPage() {
             ) : null}
           </Stack>
         ) : shown.length ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'layout.nav.partners',
+              defaultMessage: 'Partners',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'common.name',
+                    defaultMessage: 'Name',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'partners.code',
+                    defaultMessage: 'Code',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'partners.taxId',
+                    defaultMessage: 'Tax ID',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'common.status',
+                    defaultMessage: 'Status',
+                  })}
+                </TableCell>
+                {/* The column exists only when it can hold anything. An empty
+                  actions column is a promise the screen cannot keep. */}
+                {canEdit && (
+                  <TableCell align="right">
                     {intl.formatMessage({
-                      id: 'common.name',
-                      defaultMessage: 'Name',
+                      id: 'common.edit',
+                      defaultMessage: 'Edit',
                     })}
                   </TableCell>
+                )}
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {shown.map((partner) => (
+                <TableRow key={partner.id} hover>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'partners.code',
-                      defaultMessage: 'Code',
-                    })}
+                    <Link component={RouterLink} to={`/partners/${partner.id}`}>
+                      {partner.name}
+                    </Link>
                   </TableCell>
+
+                  {/* An em dash rather than an empty cell: blank reads as a
+                    rendering fault, and every one of these is optional. */}
+                  <TableCell>{partner.code ?? NO_VALUE}</TableCell>
+                  <TableCell>{partner.taxId ?? NO_VALUE}</TableCell>
+
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'partners.taxId',
-                      defaultMessage: 'Tax ID',
-                    })}
+                    {partner.isActive ? (
+                      intl.formatMessage({
+                        id: 'common.active',
+                        defaultMessage: 'Active',
+                      })
+                    ) : (
+                      // Retired rather than deleted: a partner referenced by
+                      // an order cannot be removed without inventing gaps in
+                      // the history the order exists to record.
+                      <StatusChip
+                        tone="neutral"
+                        label={intl.formatMessage({
+                          id: 'common.retired',
+                          defaultMessage: 'Retired',
+                        })}
+                      />
+                    )}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                  {/* The column exists only when it can hold anything. An empty
-                    actions column is a promise the screen cannot keep. */}
+
                   {canEdit && (
                     <TableCell align="right">
-                      {intl.formatMessage({
-                        id: 'common.edit',
-                        defaultMessage: 'Edit',
-                      })}
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={openDialog(() => setEditing(partner))}
+                      >
+                        {intl.formatMessage({
+                          id: 'common.edit',
+                          defaultMessage: 'Edit',
+                        })}
+                      </Button>
                     </TableCell>
                   )}
                 </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {shown.map((partner) => (
-                  <TableRow key={partner.id} hover>
-                    <TableCell>
-                      <Link
-                        component={RouterLink}
-                        to={`/partners/${partner.id}`}
-                      >
-                        {partner.name}
-                      </Link>
-                    </TableCell>
-
-                    {/* An em dash rather than an empty cell: blank reads as a
-                      rendering fault, and every one of these is optional. */}
-                    <TableCell>{partner.code ?? NO_VALUE}</TableCell>
-                    <TableCell>{partner.taxId ?? NO_VALUE}</TableCell>
-
-                    <TableCell>
-                      {partner.isActive ? (
-                        intl.formatMessage({
-                          id: 'common.active',
-                          defaultMessage: 'Active',
-                        })
-                      ) : (
-                        // Retired rather than deleted: a partner referenced by
-                        // an order cannot be removed without inventing gaps in
-                        // the history the order exists to record.
-                        <StatusChip
-                          tone="neutral"
-                          label={intl.formatMessage({
-                            id: 'common.retired',
-                            defaultMessage: 'Retired',
-                          })}
-                        />
-                      )}
-                    </TableCell>
-
-                    {canEdit && (
-                      <TableCell align="right">
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={openDialog(() => setEditing(partner))}
-                        >
-                          {intl.formatMessage({
-                            id: 'common.edit',
-                            defaultMessage: 'Edit',
-                          })}
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </ListTable>
         ) : (
           <EmptyState learnMore={{ guide: 'partners', section: 'add' }}>
             {search || items?.length

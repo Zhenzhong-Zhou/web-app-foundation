@@ -1970,6 +1970,17 @@ Paper is checked first because it must not change at all.
   figures need, the partner's and customer's names taking the room. A
   screen reader names each table by its page: Orders, Invoices, Credit
   notes and Returns.
+- **MC-1572** *(ADR-090, amended November 2026, #632)* Production,
+  Partners, Price lists, Licences and Stock value on the one table. In a
+  window 1280 × 720 with Help closed, scroll down each list: its header
+  stays under the top bar as in MC-1567. On Stock value, each of its two
+  tables keeps its own header: Waiting for a cost's goes with its table
+  as By item and lot's comes up to the bar. Quantity, Produced, Items,
+  Unit cost and Value are as wide as their figures need at 1920. On a
+  phone, Production's table, which had no box of its own, scrolls
+  sideways inside its panel, Planned pinned at its left (MC-1568).
+  A screen reader names each table: Production, Partners, Price lists,
+  Licences, Waiting for a cost and By item and lot.
 
 ## 16. Files (ADR-059)
 
@@ -6880,3 +6891,5 @@ first.
   bringing the list's first row under it: MC-1569 and MC-1570 added.
 - 2026-11-18: ADR-090's amendment (#632), Orders, Invoices, Credit notes
   and Returns on the shared table: MC-1571 added.
+- 2026-11-18: ADR-090's amendment (#632), Production, Partners, Price
+  lists, Licences and Stock value on the shared table: MC-1572 added.

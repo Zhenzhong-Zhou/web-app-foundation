@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -19,6 +17,8 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import type { PriceList } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
+import { ListTable } from '../components/list-table';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -100,72 +100,76 @@ export function PriceListsPage() {
             })}
           </EmptyState>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'layout.menu.priceLists',
+              defaultMessage: 'Price lists',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'common.name',
+                    defaultMessage: 'Name',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'priceLists.side',
+                    defaultMessage: 'Side',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'components.currency.label',
+                    defaultMessage: 'Currency',
+                  })}
+                </TableCell>
+                <TableCell {...NUMBER_COLUMN}>
+                  {intl.formatMessage({
+                    id: 'orders.items',
+                    defaultMessage: 'Items',
+                  })}
+                </TableCell>
+                <TableCell
+                  aria-label={intl.formatMessage({
+                    id: 'common.status',
+                    defaultMessage: 'Status',
+                  })}
+                />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {lists.map((list) => (
+                <TableRow key={list.id}>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.name',
-                      defaultMessage: 'Name',
-                    })}
+                    <Link
+                      component={RouterLink}
+                      to={`/settings/price-lists/${list.id}`}
+                    >
+                      {list.name}
+                    </Link>
                   </TableCell>
+                  <TableCell>{sideLabel(list.direction)}</TableCell>
+                  <TableCell>{list.currency}</TableCell>
+                  <TableCell align="right">{list.itemCount}</TableCell>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'priceLists.side',
-                      defaultMessage: 'Side',
-                    })}
+                    {!list.isActive && (
+                      <StatusChip
+                        tone="neutral"
+                        label={intl.formatMessage({
+                          id: 'common.retired',
+                          defaultMessage: 'Retired',
+                        })}
+                      />
+                    )}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'components.currency.label',
-                      defaultMessage: 'Currency',
-                    })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {intl.formatMessage({
-                      id: 'orders.items',
-                      defaultMessage: 'Items',
-                    })}
-                  </TableCell>
-                  <TableCell
-                    aria-label={intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  />
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {lists.map((list) => (
-                  <TableRow key={list.id}>
-                    <TableCell>
-                      <Link
-                        component={RouterLink}
-                        to={`/settings/price-lists/${list.id}`}
-                      >
-                        {list.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{sideLabel(list.direction)}</TableCell>
-                    <TableCell>{list.currency}</TableCell>
-                    <TableCell align="right">{list.itemCount}</TableCell>
-                    <TableCell>
-                      {!list.isActive && (
-                        <StatusChip
-                          tone="neutral"
-                          label={intl.formatMessage({
-                            id: 'common.retired',
-                            defaultMessage: 'Retired',
-                          })}
-                        />
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </ListTable>
         )}
       </Paper>
 
