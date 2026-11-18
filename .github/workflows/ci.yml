@@ -540,9 +540,14 @@ jobs:
       # mirror gone silent, not one crawling. Each try's 5 minutes, about
       # twice the slowest healthy install, are the guarantee: a stall ends
       # the try, not the job. Before a retry, the try's apt-get is stopped,
-      # dpkg finishes an install cut off mid-way, and the Azure mirror
+      # dpkg finishes an install cut off mid-way, and any regional mirror
       # leaves apt's list, so the retry fetches from archive.ubuntu.com,
-      # the image's next, keeping the packages already fetched. If stalls
+      # the image's next, keeping the packages already fetched. The
+      # image's first mirror may be Azure's or a regional EC2 one (#633:
+      # us-east-2.ec2.archive.ubuntu.com, where removing Azure's alone left
+      # all three tries on it), so the pattern matches any name before
+      # .archive.ubuntu.com, and the retry's warning names the mirror the
+      # next try uses, so a log shows whether the switch happened. If stalls
       # continue, Playwright's Docker image is the heavier fix, though this
       # job starts containers of its own (the services above).
       - name: Install browsers
@@ -561,7 +566,9 @@ jobs:
               sudo pkill -KILL -x apt-get || true
               while pgrep -x 'apt-get|dpkg' > /dev/null; do sleep 1; done
               sudo dpkg --configure -a
-              sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+              sudo sed -i -E '/https?:\/\/[^/]+\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+              mirror=$(awk 'NR == 1 { print $1 }' /etc/apt/apt-mirrors.txt)
+              echo "::warning title=Install browsers::Try $try of 3 fetches from ${mirror:-no mirror listed}."
               sleep 10
             fi
             timeout --kill-after=20s 5m npx playwright install --with-deps "${browsers[@]}" && exit 0
