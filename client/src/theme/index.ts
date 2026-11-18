@@ -216,6 +216,18 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        /**
+         * One scroll margin (ADR-090, amended November 2026; WCAG 2.4.11):
+         * a control focused, or brought into view, stops below the top
+         * bar, a list's header while it sticks, and 8 px of room, never
+         * under them. `--bar-height` is the bar's own measure
+         * (useBarHeight); `--stuck-header` a list's header's height while
+         * it sticks, 0 otherwise.
+         */
+        html: {
+          scrollPaddingTop:
+            'calc(var(--bar-height, 0px) + var(--stuck-header, 0px) + 8px)',
+        },
         // Every digit the same width, so figures line up down a column.
         body: { fontVariantNumeric: 'tabular-nums' },
         /**

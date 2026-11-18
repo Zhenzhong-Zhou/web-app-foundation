@@ -72,6 +72,7 @@ import { RailTop } from './rail-top';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 import { UnverifiedBannerContext } from './unverified-banner-context';
+import { useBarHeight } from './use-bar-height';
 import { useMoreBelow } from './use-more-below';
 
 /** This device's choice of a folded rail. */
@@ -221,6 +222,7 @@ function Frame() {
   // Whether the page asks to confirm the address itself (ADR-079).
   const [unverifiedCovered, setUnverifiedCovered] = useState(false);
   const bar = useRef<HTMLElement>(null);
+  useBarHeight(bar);
 
   /**
    * Only to close the drawer when the window grows past the breakpoint with

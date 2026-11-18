@@ -1898,6 +1898,19 @@ Paper is checked first because it must not change at all.
   is in. Pressing a filter or a tab on a list shows no bar, only the
   list's own placeholder. With Reduce motion on (the system's
   accessibility settings), the bar stands still while shown.
+- **MC-1565** *(ADR-090, amended November 2026, #632)* One height under
+  the top bar. At Larger text in a window about 1024 × 768, the bar has a
+  word under each icon and is taller than at 1440. Roles → New role, open
+  every area and scroll: the summary beside the boxes stays about 32 px
+  under the bar's line, never under it. On Home, Customise Home and
+  scroll: Reset to default and Done stay right under the bar. On
+  Inventory, scroll down, then Shift+Tab back up through the rows: each
+  control that takes focus shows whole below the bar, with a little room
+  above it, never half under it (Firefox brings it to the middle of the
+  window instead). The same at Standard text and 1440 × 900, where the
+  bar is shorter; there, open Help: it starts right under the bar at
+  each text size. On a phone, Home's Stock value · Waiting for a cost
+  still lands its list's heading just under the bar.
 
 ## 16. Files (ADR-059)
 
@@ -6792,3 +6805,6 @@ first.
 - 2026-11-17: ADR-093's review, Bob's row after PR #635: a control in
   Stock's, the Lot view's, Reorder's or Where it stands' table, reached
   half past the table's edge, scrolls whole into view: MC-301.
+- 2026-11-18: ADR-090's amendment (#632), one height under the top bar:
+  the bar's measure set once on the root, read by what stays under it,
+  and one scroll margin that keeps a focused control below it: MC-1565.

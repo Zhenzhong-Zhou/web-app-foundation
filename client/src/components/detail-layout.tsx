@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { underBar } from '../layout/use-bar-height';
 import { rem } from '../theme/rem';
 
 export interface DetailTab<T extends string> {
@@ -63,8 +64,8 @@ export function DetailLayout<T extends string>({
       sx={{
         p: 2,
         position: { md: 'sticky' },
-        // Below the 56px top bar, with room to breathe.
-        top: { md: 72 },
+        // Below the top bar, at its measured height, with room to breathe.
+        top: { md: underBar(16) },
       }}
     >
       {summary}
