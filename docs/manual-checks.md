@@ -416,7 +416,9 @@ a second organization.
   and lots keeps each cell under its header: a lot's expiry under Expires
   first, its Actions under Actions, nothing scrolling sideways; Reorder's
   opened row too. At 320 px, in Français and at Larger text, an expiry
-  chip's words wrap rather than end in "…", its date under it; on a card,
+  chip's words wrap rather than end in "…", its date under it, and « Il en
+  reste … · point de commande … » wraps beside its chip on Stock's and
+  Reorder's cards; on a card,
   a lot's quantity and Actions go under the lot; the item's page puts Add
   variant under Variants; nothing scrolls sideways. At 390 px the item's
   Variants and Names in other languages tables, cut, each take Tab, named
@@ -6781,3 +6783,6 @@ first.
 - 2026-11-17: ADR-093's review, Bob's message on 57a at 1920 × 1080: a
   place's path is cut only where it does not fit, from the left with
   "…", the place whole, starting under the item's name: MC-312.
+- 2026-11-17: ADR-093's review, the full verify: on a phone, Stock's and
+  Reorder's "… left · reorder at …" wraps, as French at Larger text is
+  wider than 320 px beside its chip: MC-301.

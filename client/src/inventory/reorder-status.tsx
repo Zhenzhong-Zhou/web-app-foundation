@@ -84,7 +84,9 @@ export function LeftLine({
       to={whereItStands(productId)}
       state={OFFER_BACK}
       variant="body2"
-      sx={{ whiteSpace: 'nowrap' }}
+      // One line in a table; on a phone it wraps, as French at Larger
+      // text is wider than 320 px beside its chip (cut-text, Linux).
+      sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' } }}
     >
       {words}
     </Link>
