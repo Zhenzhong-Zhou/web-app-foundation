@@ -16802,6 +16802,12 @@
               "null"
             ]
           },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "isAvailable": {
             "type": "boolean"
           },
@@ -16819,6 +16825,7 @@
           "locationId",
           "locationName",
           "locationCode",
+          "locationPath",
           "isAvailable",
           "onHand",
           "lots"
@@ -16930,6 +16937,12 @@
               "null"
             ]
           },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "isAvailable": {
             "type": "boolean"
           },
@@ -16956,6 +16969,7 @@
           "productId",
           "type",
           "coverFileId",
+          "locationPath",
           "isAvailable",
           "places"
         ]

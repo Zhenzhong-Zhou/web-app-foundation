@@ -130,9 +130,12 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
   MC-313
 - **A place's name goes only to a reader who may see places;** the rest
-  read the lots and their figures without it.
+  read the lots and their figures without it. Stock and Where it stands
+  write it as its path, the places above it by name, its warehouse
+  first, read for the page's rows alone (57a).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "sends the places above each place, its warehouse first, on Stock and Where it stands" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-312
 - **An export is the rows its list shows, with its filters, in the

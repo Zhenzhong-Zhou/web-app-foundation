@@ -322,6 +322,7 @@ describe('Where it stands (ADR-093, R8)', () => {
               locationId: 'loc-1',
               locationName: 'Shelf A',
               locationCode: null,
+              locationPath: ['Main warehouse', 'Zone A'],
               isAvailable: true,
               onHand: '70.0000',
               lots: [
@@ -352,6 +353,10 @@ describe('Where it stands (ADR-093, R8)', () => {
 
     const move = await screen.findByRole('button', { name: 'Move EB-01' });
     expect(placesRead).toBe(0);
+    // The place as Stock writes it, its warehouse path first (57a).
+    expect(
+      screen.getAllByText('Main warehouse › Zone A › Shelf A')[0],
+    ).toBeInTheDocument();
 
     await userEvent.click(move);
     const dialog = await screen.findByRole('dialog');

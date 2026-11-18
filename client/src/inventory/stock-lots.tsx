@@ -18,12 +18,13 @@ import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
 import { TableOrCards } from '../components/table-or-cards';
 import type { StockLotSort } from '../lib/api-names';
-import { itemName, nameAndCode, NO_VALUE } from '../lib/format';
+import { itemName, NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import type { SortOrder } from '../lib/use-list-sort';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { EmptiedLine } from './emptied-line';
+import { PlacePath } from './place-path';
 import { PileActions, type StockHandlers } from './stock-codes';
 import { withPlaceNumbers } from './stock-places';
 
@@ -214,8 +215,8 @@ function Where({ row, index }: { row: StockLotRow; index: number }) {
   const intl = useIntl();
 
   return (
-    <Stack>
-      <span>{nameAndCode(row.locationName ?? '', row.locationCode)}</span>
+    <Stack sx={{ minWidth: 0 }}>
+      <PlacePath place={row} />
       {row.places > 1 && (
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(

@@ -1,4 +1,6 @@
 import type { Location, StockLotRow } from '../api/types.gen';
+import { nameAndCode } from '../lib/format';
+import { pathName } from '../products/item-list';
 
 /**
  * The places stock can sit in, under the place at the top of the tree
@@ -40,4 +42,24 @@ export function withPlaceNumbers(
     seen.set(row.lotId ?? row.id, index);
     return { row, index };
   });
+}
+
+/** What a place's path is written from, as Stock's reads send it. */
+export interface Placed {
+  locationName: string | null;
+  locationCode: string | null;
+  locationPath: string[];
+}
+
+/**
+ * A place as its path, its warehouse first, "Main warehouse › Zone A ›
+ * Shelf A2 (A2)" (57a): the names above it, then its own with its code,
+ * joined as a category's path is. Data, not words, so the same in every
+ * language.
+ */
+export function placeName(place: Placed): string {
+  return pathName([
+    ...place.locationPath,
+    nameAndCode(place.locationName ?? '', place.locationCode),
+  ]);
 }

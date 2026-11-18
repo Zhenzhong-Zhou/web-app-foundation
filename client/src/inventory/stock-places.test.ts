@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Location, StockLotRow } from '../api/types.gen';
-import { byWarehouse, withPlaceNumbers } from './stock-places';
+import { byWarehouse, placeName, withPlaceNumbers } from './stock-places';
 
 function place(id: string, parentId: string | null = null): Location {
   return {
@@ -73,5 +73,21 @@ describe('withPlaceNumbers', () => {
       ['p4', 1],
       ['p5', 3],
     ]);
+  });
+});
+
+describe('placeName', () => {
+  // 57a: a place is written as its path, its warehouse first.
+  it('writes the places above it, then its own name and code', () => {
+    expect(
+      placeName({
+        locationName: 'Shelf A2',
+        locationCode: 'A2',
+        locationPath: ['Main warehouse', 'Zone A'],
+      }),
+    ).toBe('Main warehouse › Zone A › Shelf A2 (A2)');
+    expect(
+      placeName({ locationName: 'BACK', locationCode: null, locationPath: [] }),
+    ).toBe('BACK');
   });
 });

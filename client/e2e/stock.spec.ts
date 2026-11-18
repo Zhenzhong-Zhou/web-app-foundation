@@ -951,3 +951,67 @@ test('on a phone: cards with On hand and Free, the filters behind one Filters bu
   await page.getByRole('button', { name: 'Filters' }).click();
   await expect(page.getByRole('combobox', { name: 'Location' })).toBeVisible();
 });
+
+// A place written as its path, the warehouse first (57a): on a phone the
+// path is cut from the left, the place itself kept, and whole on hover
+// and on focus.
+test('on a phone, a place deep in its warehouse: its path cut from the left, whole on hover and on focus', async ({
+  page,
+  freshOrg,
+}) => {
+  const main = await createLocation(freshOrg.api, {
+    name: 'E2E Main warehouse',
+  });
+  const zone = await createLocation(freshOrg.api, {
+    name: 'E2E Zone A by the loading dock',
+    type: 'zone',
+    parentId: main.id,
+  });
+  const shelf = await createLocation(freshOrg.api, {
+    name: 'E2E Shelf A2',
+    type: 'shelf',
+    parentId: zone.id,
+  });
+  const product = await createProduct(freshOrg.api, {
+    name: 'E2E Rosehip',
+  });
+  await receive(freshOrg.api, product, shelf, '12');
+  const whole =
+    'E2E Main warehouse › E2E Zone A by the loading dock › E2E Shelf A2';
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/inventory');
+  await placesOf(page, 'E2E Rosehip').click();
+
+  const path = page.getByRole('main').getByText(whole, { exact: true });
+  await expect(path).toBeVisible();
+  // Cut, and from the left: what shows ends with the place itself.
+  expect(
+    await path.evaluate((inner) => {
+      const outer = inner.parentElement!;
+      return {
+        cut: outer.scrollWidth > outer.clientWidth,
+        direction: getComputedStyle(outer).direction,
+        overflow: getComputedStyle(outer).textOverflow,
+      };
+    }),
+  ).toEqual({ cut: true, direction: 'rtl', overflow: 'ellipsis' });
+
+  await path.hover();
+  await expect(page.getByRole('tooltip')).toHaveText(whole);
+  await page.mouse.move(0, 0);
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+
+  // By the keyboard, as a person reaches it: the places button, then Tab
+  // until the path, which takes focus because it is cut.
+  await placesOf(page, 'E2E Rosehip').focus();
+  const box = path.locator('..');
+  for (let presses = 0; presses < 10; presses += 1) {
+    if (await box.evaluate((element) => element === document.activeElement))
+      break;
+    await page.keyboard.press('Tab');
+  }
+  await expect(box).toBeFocused();
+  await expect(page.getByRole('tooltip')).toHaveText(whole);
+});

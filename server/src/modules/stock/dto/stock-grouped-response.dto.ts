@@ -146,6 +146,13 @@ export class StockPlace {
   /** Null for a reader without `locations.view` (ADR-093, A6). */
   locationName!: string | null;
   locationCode!: string | null;
+  /**
+   * The places above it, its warehouse or site first, by name: Stock and
+   * Where it stands write "Main warehouse › Zone A › Shelf A2" (57a).
+   * Empty for a place at the top, and for a reader without
+   * `locations.view`.
+   */
+  locationPath!: string[];
   /** False at a place not available, such as quarantine (ADR-042). */
   isAvailable!: boolean;
   onHand!: string;
@@ -166,6 +173,13 @@ export class StockLotRow extends StockPile {
   productId!: string;
   type!: ProductType;
   coverFileId!: string | null;
+  /**
+   * The places above it, its warehouse or site first, by name: Stock and
+   * Where it stands write "Main warehouse › Zone A › Shelf A2" (57a).
+   * Empty for a place at the top, and for a reader without
+   * `locations.view`.
+   */
+  locationPath!: string[];
   /** False at a place not available, such as quarantine (ADR-042). */
   isAvailable!: boolean;
   /** How many places hold its lot. */

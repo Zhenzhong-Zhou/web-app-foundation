@@ -39,13 +39,7 @@ import { TableOrCards } from '../components/table-or-cards';
 import { api, withQuery } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
 import { isZero } from '../lib/decimal';
-import {
-  displayQuantity,
-  formatDay,
-  itemName,
-  nameAndCode,
-  NO_VALUE,
-} from '../lib/format';
+import { displayQuantity, formatDay, itemName, NO_VALUE } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -58,9 +52,11 @@ import { EmptiedLine } from './emptied-line';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import type { HistoryOf } from './movement-history-dialog';
+import { PlacePath } from './place-path';
 import type { ReorderItem } from './reorder-point-dialog';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { type Pile, StockActions } from './stock-actions';
+import { placeName } from './stock-places';
 
 /** What a row's menus do, as the Stock tab answers them. */
 export interface StockHandlers {
@@ -977,7 +973,7 @@ function PlaceTableRow({
     if (lotsOpen) setOpen(true);
   }
   const tracked = place.lots.some((lot) => lot.lotId !== null);
-  const where = nameAndCode(place.locationName ?? '', place.locationCode);
+  const where = placeName(place);
   const words = intl.formatMessage(
     {
       id: 'inventory.stock.lots',
@@ -990,8 +986,8 @@ function PlaceTableRow({
     <>
       <TableRow id={id} sx={{ bgcolor: 'action.hover' }}>
         <TableCell sx={{ pl: 6 }}>
-          <Stack>
-            <span>{where}</span>
+          <Stack sx={{ minWidth: 0 }}>
+            <PlacePath place={place} />
             {!place.isAvailable && <NotUsableHere />}
           </Stack>
         </TableCell>
@@ -1088,7 +1084,7 @@ function PlaceMovements({
   handlers: StockHandlers;
 }) {
   const intl = useIntl();
-  const where = nameAndCode(place.locationName ?? '', place.locationCode);
+  const where = placeName(place);
 
   return (
     <Link
@@ -1368,9 +1364,9 @@ function OpenedCard({
               spacing={1}
               sx={{ justifyContent: 'space-between' }}
             >
-              <Stack>
-                <Typography sx={{ fontWeight: 600 }}>
-                  {nameAndCode(each.locationName ?? '', each.locationCode)}
+              <Stack sx={{ minWidth: 0 }}>
+                <Typography component="div" sx={{ fontWeight: 600 }}>
+                  <PlacePath place={each} />
                 </Typography>
                 {!each.isAvailable && <NotUsableHere />}
               </Stack>

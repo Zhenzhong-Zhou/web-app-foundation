@@ -886,6 +886,13 @@ export class StockGroupedService {
       const placesOf = new Map(
         spread.map((row): [string, number] => [row.lot_id, row.places]),
       );
+      const pathOf = seesPlaces
+        ? await pathsOf(
+            tx,
+            organizationId,
+            page.entries.map((row) => row.location_id),
+          )
+        : new Map<string, string[]>();
 
       return {
         entries: page.entries.map((row) => ({
@@ -893,6 +900,7 @@ export class StockGroupedService {
           productId: row.product_id,
           type: row.type,
           coverFileId: row.cover_file_id,
+          locationPath: pathOf.get(row.location_id) ?? [],
           isAvailable: row.is_available,
           places: placesOf.get(row.lot_id!) ?? 0,
         })),
@@ -1149,6 +1157,14 @@ export async function placesOf(
       ${lots.expiresAt} asc nulls last, ${lots.code}, ${stockLevels.id}
   `);
 
+  const pathOf = seesPlaces
+    ? await pathsOf(
+        tx,
+        organizationId,
+        rows.map((row) => row.location_id),
+      )
+    : new Map<string, string[]>();
+
   const placed = new Map<string, StockPlace[]>();
   for (const row of rows) {
     const places = placed.get(row.variant_id) ?? [];
@@ -1159,6 +1175,7 @@ export async function placesOf(
         locationId: row.location_id,
         locationName: seesPlaces ? row.location_name : null,
         locationCode: seesPlaces ? row.location_code : null,
+        locationPath: pathOf.get(row.location_id) ?? [],
         isAvailable: row.is_available,
         onHand: row.place_on_hand!,
         lots: [],
@@ -1168,6 +1185,47 @@ export async function placesOf(
     place.lots.push(pileOf(row, seesPlaces, timeZone));
   }
   return placed;
+}
+
+/**
+ * The places above each place given, by name, its warehouse or site first
+ * (57a): read after a page's rows are chosen, for theirs alone, never in
+ * the counts or a sort. The tree is at most five deep; ten stops a loop.
+ */
+async function pathsOf(
+  tx: Transaction,
+  organizationId: string,
+  placeIds: string[],
+): Promise<Map<string, string[]>> {
+  const ids = [...new Set(placeIds)];
+  if (!ids.length) return new Map();
+  const org = sql`${organizationId}::uuid`;
+  const { rows } = await tx.execute<{ place_id: string; path: string[] }>(sql`
+    with recursive up (place_id, parent_id, name, depth) as (
+      select l.id, l.parent_id, l.name, 0
+      from locations l
+      where l.organization_id = ${org}
+        and l.id in (${sql.join(
+          ids.map((id) => sql`${id}::uuid`),
+          sql`, `,
+        )})
+      union all
+      select up.place_id, p.parent_id, p.name, up.depth + 1
+      from up
+      join locations p
+        on p.id = up.parent_id
+        and p.organization_id = ${org}
+      where up.depth < 10
+    )
+    select place_id,
+      coalesce(
+        array_agg(name order by depth desc) filter (where depth > 0),
+        '{}'
+      ) as path
+    from up
+    group by place_id
+  `);
+  return new Map(rows.map((row) => [row.place_id, row.path]));
 }
 
 /** The organization's warning days, Expiring soon's (ADR-060). */

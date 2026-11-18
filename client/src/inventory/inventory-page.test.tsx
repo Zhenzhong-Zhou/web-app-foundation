@@ -100,6 +100,7 @@ const PLACES: StockPlace[] = [
     locationId: 'loc-2',
     locationName: 'Quarantine',
     locationCode: null,
+    locationPath: [],
     isAvailable: false,
     onHand: '12.0000',
     lots: [pile('3', 'NN-2401', '2026-01-01', 'Quarantine')],
@@ -108,6 +109,8 @@ const PLACES: StockPlace[] = [
     locationId: 'loc-1',
     locationName: 'Shelf A',
     locationCode: null,
+    // Written as its path, the warehouse first (57a).
+    locationPath: ['Main warehouse', 'Zone A'],
     isAvailable: true,
     onHand: '30.0000',
     lots: [
@@ -260,14 +263,17 @@ describe('InventoryPage', () => {
         '2 places: hide where Vitamin D (60ct) is',
       );
       expect(places).toHaveFocus();
-      expect(await screen.findByText('Shelf A')).toBeVisible();
+      // The place as its path, the warehouse first (57a).
+      expect(
+        await screen.findByText('Main warehouse › Zone A › Shelf A'),
+      ).toBeVisible();
       expect(
         screen.getByText('Not usable: a place not available'),
       ).toBeVisible();
 
       await user.click(
         screen.getByRole('button', {
-          name: '2 lots: show the lots at Shelf A',
+          name: '2 lots: show the lots at Main warehouse › Zone A › Shelf A',
         }),
       );
       const lots = screen
@@ -629,12 +635,14 @@ describe('InventoryPage', () => {
       // A plain link, not a menu of one (ADR-093 v3).
       await user.click(
         await screen.findByRole('button', {
-          name: 'Movements of Vitamin D (60ct) at Shelf A',
+          name: 'Movements of Vitamin D (60ct) at Main warehouse › Zone A › Shelf A',
         }),
       );
 
       expect(
-        await screen.findByRole('dialog', { name: /at Shelf A/ }),
+        await screen.findByRole('dialog', {
+          name: /at Main warehouse › Zone A › Shelf A/,
+        }),
       ).toBeVisible();
       await vi.waitFor(() => expect(asked?.get('locationId')).toBe('loc-1'));
     });
@@ -693,7 +701,7 @@ describe('InventoryPage', () => {
       );
       await user.click(
         await screen.findByRole('button', {
-          name: '2 lots: show the lots at Shelf A',
+          name: '2 lots: show the lots at Main warehouse › Zone A › Shelf A',
         }),
       );
       await user.click(
@@ -757,7 +765,7 @@ describe('InventoryPage', () => {
       );
       await user.click(
         await screen.findByRole('button', {
-          name: '1 lot: show the lots at Shelf A',
+          name: '1 lot: show the lots at Main warehouse › Zone A › Shelf A',
         }),
       );
       expect(screen.getByText('Emptied Nov 14, 2026')).toBeVisible();
@@ -842,6 +850,7 @@ describe('InventoryPage', () => {
               productId: PRODUCT,
               type: 'good',
               coverFileId: null,
+              locationPath: [],
               isAvailable: true,
               places: 1,
             },
@@ -896,6 +905,7 @@ describe('InventoryPage', () => {
               productId: PRODUCT,
               type: 'good',
               coverFileId: null,
+              locationPath: [],
               isAvailable: true,
               places: 1,
             },
@@ -1019,6 +1029,7 @@ describe('InventoryPage', () => {
               productId: PRODUCT,
               type: 'good',
               coverFileId: null,
+              locationPath: [],
               isAvailable: true,
               places: 1,
             },
@@ -1112,6 +1123,7 @@ describe('InventoryPage', () => {
                 productId: PRODUCT,
                 type: 'good',
                 coverFileId: null,
+                locationPath: [],
                 isAvailable: false,
                 places: 1,
               },

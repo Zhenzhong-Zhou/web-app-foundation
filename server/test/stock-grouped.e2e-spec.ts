@@ -4,6 +4,7 @@ import {
   addMember,
   body,
   createE2eApp,
+  createLocation,
   customRole,
   registerOrganization,
 } from './utils/fixtures';
@@ -540,6 +541,81 @@ describe('Inventory, grouped (e2e)', () => {
     // Another organization's code is not here.
     const beta = await registerOrganization(app, 'beta');
     await beta.agent.get(`/v1/stock/by-code/${vitc}/places`).expect(404);
+  });
+
+  // A place written as its path, the warehouse first (57a): the names
+  // above it come with the page's rows, for a reader who may see places.
+  it('sends the places above each place, its warehouse first, on Stock and Where it stands', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const main = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Main warehouse',
+    });
+    const zone = await createLocation(alpha.agent, {
+      type: 'zone',
+      name: 'Zone A',
+      parentId: main,
+    });
+    const shelf = await createLocation(alpha.agent, {
+      type: 'shelf',
+      name: 'Shelf A2',
+      code: 'A2',
+      parentId: zone,
+    });
+    const back = await site(alpha.agent, 'BACK');
+    const vitc = await item(alpha.agent, 'VITC', true);
+    await receive(alpha.agent, vitc, shelf, '30', { code: 'VC-1' });
+    await receive(alpha.agent, vitc, back, '5', { code: 'VC-1' });
+
+    type Placed = {
+      locationName: string | null;
+      locationPath: string[];
+    };
+    const pathsOf = (places: Placed[]) =>
+      places.map((place) => [...place.locationPath, place.locationName]);
+
+    const { places } = body<{ places: Placed[] }>(
+      await alpha.agent.get(`/v1/stock/by-code/${vitc}/places`).expect(200),
+    );
+    expect(pathsOf(places)).toEqual([
+      ['BACK'],
+      ['Main warehouse', 'Zone A', 'Shelf A2'],
+    ]);
+
+    const lots = body<{ entries: (Placed & { productId: string })[] }>(
+      await alpha.agent.get('/v1/stock/by-lot?sort=location').expect(200),
+    ).entries;
+    expect(pathsOf(lots)).toEqual([
+      ['BACK'],
+      ['Main warehouse', 'Zone A', 'Shelf A2'],
+    ]);
+
+    const standing = body<{ codes: { places: Placed[] | null }[] }>(
+      await alpha.agent
+        .get(`/v1/products/${lots[0].productId}/stock`)
+        .expect(200),
+    );
+    expect(pathsOf(standing.codes[0].places!)).toEqual([
+      ['BACK'],
+      ['Main warehouse', 'Zone A', 'Shelf A2'],
+    ]);
+
+    // A reader without locations.view: no names above, as none of its own.
+    await customRole(app, alpha.organizationId, 'Counter', ['stock.view']);
+    const counter = await addMember(
+      app,
+      alpha,
+      'counter@example.com',
+      'Counter',
+    );
+    const theirs = body<{ places: Placed[] }>(
+      await counter.get(`/v1/stock/by-code/${vitc}/places`).expect(200),
+    );
+    expect(theirs.places.map((place) => place.locationPath)).toEqual([[], []]);
+    const theirLots = body<{ entries: Placed[] }>(
+      await counter.get('/v1/stock/by-lot').expect(200),
+    ).entries;
+    expect(theirLots.map((lot) => lot.locationPath)).toEqual([[], []]);
   });
 
   it('lists a row per lot at each place, soonest first, the expired on top, a lot’s places together', async () => {

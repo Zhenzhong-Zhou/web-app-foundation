@@ -31,6 +31,7 @@ import { LotLink } from '../components/lot-link';
 import { Reference } from '../components/reference';
 import { TableOrCards } from '../components/table-or-cards';
 import { MoveStockDialog } from '../inventory/move-stock-dialog';
+import { PlacePath } from '../inventory/place-path';
 import {
   type ReorderOpening,
   ReorderPointDialog,
@@ -38,13 +39,7 @@ import {
 import { fieldQuantity } from '../inventory/reorder-points';
 import { LeftLine, ReorderStatusChip } from '../inventory/reorder-status';
 import { isZero } from '../lib/decimal';
-import {
-  displayQuantity,
-  formatDay,
-  nameAndCode,
-  NO_VALUE,
-  SEPARATOR,
-} from '../lib/format';
+import { displayQuantity, formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -826,8 +821,10 @@ function ByPlace({
     place.lots.map((pile) => ({ place, pile })),
   );
   if (rows.length === 0) return null;
-  const where = (place: (typeof rows)[number]['place']) =>
-    nameAndCode(place.locationName ?? '', place.locationCode);
+  // The place as Stock writes it, its warehouse path first (57a).
+  const where = (place: (typeof rows)[number]['place']) => (
+    <PlacePath place={place} />
+  );
   const notAvailable = (
     <Line tone="error">
       {intl.formatMessage({
@@ -925,7 +922,7 @@ function ByPlace({
                 {/* The lot keeps room to be read; its quantity and Move go
                     under it where all three do not fit (R14). */}
                 <Stack sx={{ flex: '1 1 10rem', minWidth: 0 }}>
-                  <span>{where(place)}</span>
+                  {where(place)}
                   {!place.isAvailable && notAvailable}
                   {pile.lotId && pile.lotCode && (
                     <LotLink id={pile.lotId} code={pile.lotCode} />

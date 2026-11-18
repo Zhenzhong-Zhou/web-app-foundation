@@ -441,7 +441,11 @@ a second organization.
   first new row; on the volume database it reads "Showing 50 of …
   codes" beside it, the total changing with each filter, "… lots" on the
   Lot view, in French « 50 sur … codes affichés », in 中文 已显示 50 个，共
-  … 个编码.
+  … 个编码. Each place reads as its path, the warehouse first:
+  D3-1000-120's "Richmond warehouse › Ambient › Aisle 1 › Shelf 1-B", on
+  its row, on the Lot view and on its page's By place and lot. At 390 px
+  a long path is cut from the left, "…Aisle 1 › Shelf 1-B", the place
+  itself kept; the pointer on it, or Tab to it, shows the whole path.
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, Expires' arrow solid and "Soonest
   first, the expired on top." above the list; Item, Location and
@@ -6734,3 +6738,7 @@ first.
 - 2026-11-17: ADR-093's review, Bob's third message (7): the Lot view's
   headers sort it by Expires, Item, Location and Quantity, each way, its
   order line only while Expires sorts it: MC-313.
+- 2026-11-17: ADR-093's review, 57a from the chat: a place reads as its
+  path, the warehouse first, on Stock, the Lot view and Where it stands;
+  cut from the left at a phone's width, whole on hover and on focus:
+  MC-312.

@@ -1946,6 +1946,7 @@ export type StockPlace = {
   locationId: string;
   locationName: string | null;
   locationCode: string | null;
+  locationPath: Array<string>;
   isAvailable: boolean;
   onHand: string;
   lots: Array<StockPile>;
@@ -1974,6 +1975,7 @@ export type StockLotRow = {
   productId: string;
   type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
   coverFileId: string | null;
+  locationPath: Array<string>;
   isAvailable: boolean;
   places: number;
 };
