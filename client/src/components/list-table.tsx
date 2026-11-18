@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   type FocusEventHandler,
   type ReactNode,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -13,6 +14,7 @@ import { useIntl } from 'react-intl';
 
 import { cutEdge } from '../theme/cut-edge';
 import { HEADER_STAYS, HEADER_STAYS_QUERY } from '../theme/media';
+import { SortPressed } from './sort-pressed';
 
 /** The property a stuck header's height is kept in, on the document's root. */
 const STUCK_HEADER = '--stuck-header';
@@ -62,7 +64,9 @@ const same = (a: Shape, b: Shape) =>
  *
  * Whether it fits is measured (a `ResizeObserver` on the box and the
  * table); when the header sticks is CSS media queries (#567), and once
- * it has stuck, two sentinels under an `IntersectionObserver` say.
+ * it has stuck, two sentinels under an `IntersectionObserver` say. A
+ * header that sorts, pressed while it stays, brings the list's first row
+ * back under it (E11a; `SortPressed`).
  */
 export function ListTable({
   label,
@@ -170,6 +174,21 @@ export function ListTable({
     };
   }, [stuck, shape.head]);
 
+  // A sort pressed while the header stays brings the list's first row
+  // back under it (E11a): the sort starts the list again from its first
+  // page, which the page left where it was would scroll past. The header's
+  // cells sit below the table's own top only while they stay; the window
+  // moves up by that much, so they meet the bar at rest. Focus is not
+  // moved: it stays on the header pressed.
+  const toFirstRow = useCallback(() => {
+    const element = tableRef.current;
+    const cell = element?.tHead?.rows[0]?.cells[0];
+    if (!element || !cell) return;
+    const by =
+      element.getBoundingClientRect().top - cell.getBoundingClientRect().top;
+    if (by < -1) window.scrollTo({ top: window.scrollY + by });
+  }, []);
+
   const sideways = !shape.fits;
 
   return (
@@ -197,11 +216,13 @@ export function ListTable({
           '--pin-start': `${shape.tick ?? 0}px`,
         } as CSSProperties
       }
-      sx={frame}
+      sx={(theme) => frame(theme, sideways, stuck)}
     >
       {shape.fits && <Box ref={top} aria-hidden sx={SENTINEL.top} />}
       <Table ref={tableRef} aria-label={label} {...table}>
-        {children}
+        <SortPressed.Provider value={toFirstRow}>
+          {children}
+        </SortPressed.Provider>
       </Table>
       {shape.fits && <Box ref={bottom} aria-hidden sx={SENTINEL.bottom} />}
     </TableContainer>
@@ -238,9 +259,13 @@ const SENTINEL = {
 /** The header row's cells. */
 const HEAD = '& > table > thead > tr > th';
 
-/** A column's cells in the head or the body; a cell spanning more is none. */
+/**
+ * A column's cells in the head or the body; a cell spanning more is none.
+ * By type, as a row's cells are all of one kind: Emotion warns of
+ * `:nth-child` on every render, a server-rendering worry this app has not.
+ */
 const cells = (part: 'thead' | 'tbody', column: 1 | 2) =>
-  `& > table > ${part} > tr > :nth-child(${column}):not([colspan])`;
+  `& > table > ${part} > tr > :nth-of-type(${column}):not([colspan])`;
 
 /**
  * The name column pinned, from `left`: the head keeps its own tint; a
@@ -276,7 +301,12 @@ const edge = (theme: Theme, column: 1 | 2) => ({
   [cells('tbody', column)]: cutEdge(theme, 'paper', 'right'),
 });
 
-const frame = (theme: Theme) => {
+/**
+ * The box's styles. The stuck header's and the pinned name's are built
+ * only while they apply, as an order's held Total is: a component test's
+ * default theme has none of the app's surface tokens.
+ */
+const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
   const palette = paletteOf(theme);
   return {
     position: 'relative',
@@ -290,32 +320,36 @@ const frame = (theme: Theme) => {
           top: 'var(--bar-height, 0px)',
           zIndex: 2,
         },
-        '&[data-stuck]': {
-          [HEAD]: {
-            boxShadow: `inset 0 -1px 0 ${palette.surface.edge}`,
-            // The lift's shadow, cast by a strip along the cell's foot
-            // wider than the cell and cut at its sides, so the cells'
-            // shadows meet in one and none falls on its neighbour.
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: 0,
-              left: -8,
-              right: -8,
-              height: 8,
-              boxShadow: palette.surface.lift,
-              clipPath: 'inset(8px 8px -8px 8px)',
-              pointerEvents: 'none',
+        ...(stuck && {
+          '&[data-stuck]': {
+            [HEAD]: {
+              boxShadow: `inset 0 -1px 0 ${palette.surface.edge}`,
+              // The lift's shadow, cast by a strip along the cell's foot
+              // wider than the cell and cut at its sides, so the cells'
+              // shadows meet in one and none falls on its neighbour.
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: 0,
+                left: -8,
+                right: -8,
+                height: 8,
+                boxShadow: palette.surface.lift,
+                clipPath: 'inset(8px 8px -8px 8px)',
+                pointerEvents: 'none',
+              },
             },
           },
-        },
+        }),
       },
     },
-    '&:not([data-fits])': {
-      ...pinned(theme, 1, '0px'),
-      '&[data-tick]': pinned(theme, 2, 'var(--pin-start)'),
-      '&[data-scrolled]:not([data-tick])': edge(theme, 1),
-      '&[data-scrolled][data-tick]': edge(theme, 2),
-    },
+    ...(sideways && {
+      '&:not([data-fits])': {
+        ...pinned(theme, 1, '0px'),
+        '&[data-tick]': pinned(theme, 2, 'var(--pin-start)'),
+        '&[data-scrolled]:not([data-tick])': edge(theme, 1),
+        '&[data-scrolled][data-tick]': edge(theme, 2),
+      },
+    }),
   } as const;
 };

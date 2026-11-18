@@ -10,10 +10,8 @@ import {
   MenuItem,
   Paper,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -37,6 +35,7 @@ import { ExportButton } from '../components/export-button';
 import { FilterRow, QuickFilterPill } from '../components/filter-row';
 import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
@@ -1125,106 +1124,110 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             <TableOrCards
               loading={loading}
               table={
-                <TableContainer onFocus={wholeOnFocus}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        {choosing && (
-                          <TableCell padding="checkbox">
-                            <Checkbox
-                              disabled={!choosable.length}
-                              checked={
-                                !!choosable.length &&
-                                chosenHere.length === choosable.length
-                              }
-                              indeterminate={
-                                chosenHere.length > 0 &&
-                                chosenHere.length < choosable.length
-                              }
-                              onChange={(event) =>
-                                chooseAll(event.target.checked)
-                              }
-                              slotProps={{
-                                input: {
-                                  'aria-label': intl.formatMessage({
-                                    id: 'inventory.reorder.chooseAll',
-                                    defaultMessage:
-                                      'Choose every item to order',
-                                  }),
-                                },
-                              }}
-                            />
-                          </TableCell>
-                        )}
-                        <TableCell>
-                          {intl.formatMessage({
-                            id: 'inventory.item',
-                            defaultMessage: 'Item',
-                          })}
-                        </TableCell>
-                        {/* Low first, the list's own order, the furthest
-                            below their point first (ADR-085). */}
-                        <SortHeader
-                          label={intl.formatMessage({
-                            id: 'common.status',
-                            defaultMessage: 'Status',
-                          })}
-                          active={sort?.key === 'low'}
-                          order="asc"
-                          onSort={() => setSort('low', 'asc')}
-                          atRest
-                        />
-                        <TableCell>
-                          {intl.formatMessage({
-                            id: 'products.stock.title',
-                            defaultMessage: 'Where it stands',
-                          })}
-                        </TableCell>
-                        <SortHeader
-                          align="right"
-                          label={intl.formatMessage({
-                            id: 'inventory.reorder.suggested',
-                            defaultMessage: 'Suggested order',
-                          })}
-                          {...suggestedHeader}
-                          atRest
-                        />
-                        <TableCell sx={WIDE_ONLY}>
-                          {intl.formatMessage({
-                            id: 'inventory.reorder.inDraft',
-                            defaultMessage: 'In draft',
-                          })}
-                        </TableCell>
-                        {/* Every header named (R6), this one to a screen
-                            reader: each row's button says its word. */}
-                        <TableCell
-                          padding="checkbox"
-                          sx={{ position: 'relative' }}
-                        >
-                          <Box component="span" sx={HIDDEN}>
-                            {intl.formatMessage({
-                              id: 'common.actions',
-                              defaultMessage: 'Actions',
-                            })}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {loading && (
-                        <PlaceholderRows columns={columns} wideOnly={1} />
-                      )}
-                      {!loading &&
-                        rows?.map((row) => (
-                          <PointRow
-                            key={row.id}
-                            columns={columns}
-                            {...rowProps(row)}
+                <ListTable
+                  label={intl.formatMessage({
+                    id: 'inventory.tab.reorder',
+                    defaultMessage: 'Reorder',
+                  })}
+                  onFocus={wholeOnFocus}
+                  size="small"
+                >
+                  <TableHead>
+                    <TableRow>
+                      {choosing && (
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            disabled={!choosable.length}
+                            checked={
+                              !!choosable.length &&
+                              chosenHere.length === choosable.length
+                            }
+                            indeterminate={
+                              chosenHere.length > 0 &&
+                              chosenHere.length < choosable.length
+                            }
+                            onChange={(event) =>
+                              chooseAll(event.target.checked)
+                            }
+                            slotProps={{
+                              input: {
+                                'aria-label': intl.formatMessage({
+                                  id: 'inventory.reorder.chooseAll',
+                                  defaultMessage: 'Choose every item to order',
+                                }),
+                              },
+                            }}
                           />
-                        ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.item',
+                          defaultMessage: 'Item',
+                        })}
+                      </TableCell>
+                      {/* Low first, the list's own order, the furthest
+                          below their point first (ADR-085). */}
+                      <SortHeader
+                        label={intl.formatMessage({
+                          id: 'common.status',
+                          defaultMessage: 'Status',
+                        })}
+                        active={sort?.key === 'low'}
+                        order="asc"
+                        onSort={() => setSort('low', 'asc')}
+                        atRest
+                      />
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'products.stock.title',
+                          defaultMessage: 'Where it stands',
+                        })}
+                      </TableCell>
+                      <SortHeader
+                        number
+                        label={intl.formatMessage({
+                          id: 'inventory.reorder.suggested',
+                          defaultMessage: 'Suggested order',
+                        })}
+                        {...suggestedHeader}
+                        atRest
+                      />
+                      <TableCell sx={WIDE_ONLY}>
+                        {intl.formatMessage({
+                          id: 'inventory.reorder.inDraft',
+                          defaultMessage: 'In draft',
+                        })}
+                      </TableCell>
+                      {/* Every header named (R6), this one to a screen
+                          reader: each row's button says its word. */}
+                      <TableCell
+                        padding="checkbox"
+                        sx={{ position: 'relative' }}
+                      >
+                        <Box component="span" sx={HIDDEN}>
+                          {intl.formatMessage({
+                            id: 'common.actions',
+                            defaultMessage: 'Actions',
+                          })}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {loading && (
+                      <PlaceholderRows columns={columns} wideOnly={1} />
+                    )}
+                    {!loading &&
+                      rows?.map((row) => (
+                        <PointRow
+                          key={row.id}
+                          columns={columns}
+                          {...rowProps(row)}
+                        />
+                      ))}
+                  </TableBody>
+                </ListTable>
               }
               cards={
                 <Stack component="ul" sx={{ m: 0, p: 0 }}>

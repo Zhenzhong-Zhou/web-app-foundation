@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import type { SortOrder } from '../lib/use-list-sort';
 import { NUMBER_COLUMN } from './number-column';
+import { useSortPressed } from './sort-pressed';
 
 /**
  * A column header that sorts its list (ADR-057). Only columns the server
@@ -25,6 +26,10 @@ import { NUMBER_COLUMN } from './number-column';
  *
  * `number`, a number column's header in a `ListTable`, right-aligned and
  * as wide as its figures need (`NUMBER_COLUMN`).
+ *
+ * Pressed in a `ListTable` whose header has stuck under the top bar, the
+ * list's first row comes back under it, the header keeping its focus
+ * (E11a; `SortPressed`).
  */
 export function SortHeader({
   label,
@@ -45,6 +50,7 @@ export function SortHeader({
   after?: ReactNode;
   atRest?: boolean;
 }) {
+  const pressed = useSortPressed();
   return (
     <TableCell
       align={align}
@@ -58,7 +64,11 @@ export function SortHeader({
       <TableSortLabel
         active={active}
         direction={active ? order : 'asc'}
-        onClick={onSort}
+        onClick={() => {
+          // Measured as the page stands, before the list reads again.
+          pressed();
+          onSort();
+        }}
         {...(atRest &&
           !active && {
             IconComponent: UnfoldMore,

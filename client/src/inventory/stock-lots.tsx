@@ -1,10 +1,8 @@
 import {
   Box,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -13,6 +11,7 @@ import { defineMessages, useIntl } from 'react-intl';
 
 import type { StockLotRow } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
+import { ListTable } from '../components/list-table';
 import { LotLink } from '../components/lot-link';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
@@ -71,87 +70,92 @@ export function StockLots({
     <TableOrCards
       loading={loading}
       table={
-        <TableContainer onFocus={wholeOnFocus}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
+        <ListTable
+          label={intl.formatMessage({
+            id: 'inventory.tab.stock',
+            defaultMessage: 'Stock',
+          })}
+          onFocus={wholeOnFocus}
+          size="small"
+        >
+          <TableHead>
+            <TableRow>
+              <SortHeader
+                label={intl.formatMessage(HEADS.item)}
+                {...header('item')}
+                atRest
+              />
+              <TableCell>{intl.formatMessage(HEADS.lot)}</TableCell>
+              <SortHeader
+                label={intl.formatMessage(HEADS.expires)}
+                {...header('expires')}
+                atRest
+              />
+              {seesPlaces && (
                 <SortHeader
-                  label={intl.formatMessage(HEADS.item)}
-                  {...header('item')}
+                  label={intl.formatMessage(HEADS.location)}
+                  {...header('location')}
                   atRest
                 />
-                <TableCell>{intl.formatMessage(HEADS.lot)}</TableCell>
-                <SortHeader
-                  label={intl.formatMessage(HEADS.expires)}
-                  {...header('expires')}
-                  atRest
-                />
-                {seesPlaces && (
-                  <SortHeader
-                    label={intl.formatMessage(HEADS.location)}
-                    {...header('location')}
-                    atRest
+              )}
+              <SortHeader
+                number
+                label={intl.formatMessage(HEADS.quantity)}
+                {...header('quantity')}
+                atRest
+              />
+              {/* Every header named (R6), this one to a screen reader:
+                  each row's button says its word. */}
+              <TableCell padding="checkbox" sx={{ position: 'relative' }}>
+                <Box component="span" sx={HIDDEN}>
+                  {intl.formatMessage(HEADS.actions)}
+                </Box>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading && <PlaceholderRows columns={seesPlaces ? 6 : 5} />}
+            {numbered.map(({ row, index }) => (
+              <TableRow key={row.id} hover>
+                <TableCell>
+                  <NameAndCode
+                    name={itemName(row.productName, row.variantName)}
+                    code={row.sku}
+                    withType
+                    type={row.type}
+                    coverFileId={row.coverFileId}
+                    to={`/items/${row.productId}`}
                   />
+                </TableCell>
+                <TableCell>
+                  {row.lotId && row.lotCode ? (
+                    <LotLink id={row.lotId} code={row.lotCode} />
+                  ) : (
+                    NO_VALUE
+                  )}
+                  <EmptiedLine pile={row} />
+                  {/* Without places, why it is not usable, never where
+                      (A6). */}
+                  {!seesPlaces && !row.isAvailable && <NotUsable />}
+                </TableCell>
+                <TableCell>
+                  <ExpiryChip expiresAt={row.lotExpiresAt} />
+                </TableCell>
+                {seesPlaces && (
+                  <TableCell>
+                    <Where row={row} index={index} />
+                  </TableCell>
                 )}
-                <SortHeader
-                  align="right"
-                  label={intl.formatMessage(HEADS.quantity)}
-                  {...header('quantity')}
-                  atRest
-                />
-                {/* Every header named (R6), this one to a screen reader:
-                    each row's button says its word. */}
-                <TableCell padding="checkbox" sx={{ position: 'relative' }}>
-                  <Box component="span" sx={HIDDEN}>
-                    {intl.formatMessage(HEADS.actions)}
-                  </Box>
+                <TableCell align="right">
+                  {displayWithUnit(row.quantity, row.unitOfMeasure, intl)}
+                </TableCell>
+                <TableCell padding="checkbox">
+                  <PileActions pile={row} handlers={handlers} />
                 </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && <PlaceholderRows columns={seesPlaces ? 6 : 5} />}
-              {numbered.map(({ row, index }) => (
-                <TableRow key={row.id} hover>
-                  <TableCell>
-                    <NameAndCode
-                      name={itemName(row.productName, row.variantName)}
-                      code={row.sku}
-                      withType
-                      type={row.type}
-                      coverFileId={row.coverFileId}
-                      to={`/items/${row.productId}`}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {row.lotId && row.lotCode ? (
-                      <LotLink id={row.lotId} code={row.lotCode} />
-                    ) : (
-                      NO_VALUE
-                    )}
-                    <EmptiedLine pile={row} />
-                    {/* Without places, why it is not usable, never where
-                        (A6). */}
-                    {!seesPlaces && !row.isAvailable && <NotUsable />}
-                  </TableCell>
-                  <TableCell>
-                    <ExpiryChip expiresAt={row.lotExpiresAt} />
-                  </TableCell>
-                  {seesPlaces && (
-                    <TableCell>
-                      <Where row={row} index={index} />
-                    </TableCell>
-                  )}
-                  <TableCell align="right">
-                    {displayWithUnit(row.quantity, row.unitOfMeasure, intl)}
-                  </TableCell>
-                  <TableCell padding="checkbox">
-                    <PileActions pile={row} handlers={handlers} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            ))}
+          </TableBody>
+        </ListTable>
       }
       cards={
         <Stack component="ul" sx={{ m: 0, p: 0 }}>

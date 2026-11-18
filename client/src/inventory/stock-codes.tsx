@@ -3,10 +3,8 @@ import {
   Button,
   Link,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -31,7 +29,9 @@ import type {
 } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { ExpiryChip } from '../components/expiry-chip';
+import { ListTable } from '../components/list-table';
 import { LotLink } from '../components/lot-link';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { OpeningButton } from '../components/opening-button';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
@@ -185,70 +185,75 @@ export function StockCodes({
     <TableOrCards
       loading={loading}
       table={
-        <TableContainer onFocus={wholeOnFocus}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <SortHeader
-                  label={intl.formatMessage(HEADS.item)}
-                  {...header('name')}
-                  atRest
-                />
-                <TableCell>
-                  {place
-                    ? intl.formatMessage(HEADS.lotsHere)
-                    : intl.formatMessage(HEADS.where)}
-                </TableCell>
-                <SortHeader
-                  align="right"
-                  label={
-                    place
-                      ? intl.formatMessage(HEADS.onHandHere)
-                      : intl.formatMessage(HEADS.onHand)
-                  }
-                  {...header('onHand')}
-                  atRest
-                />
-                <TableCell align="right">
-                  {place
-                    ? intl.formatMessage(HEADS.freeEverywhere)
-                    : intl.formatMessage(HEADS.free)}
-                </TableCell>
-                <TableCell align="right" sx={WIDE_ONLY}>
-                  {place
-                    ? intl.formatMessage(HEADS.heldEverywhere)
-                    : intl.formatMessage(HEADS.held)}
-                </TableCell>
-                <TableCell align="right" sx={WIDE_ONLY}>
-                  {intl.formatMessage(HEADS.coming)}
-                </TableCell>
-                <TableCell>{intl.formatMessage(HEADS.status)}</TableCell>
-                <SortHeader
-                  label={
-                    place
-                      ? intl.formatMessage(HEADS.expiresFirstHere)
-                      : intl.formatMessage(HEADS.expiresFirst)
-                  }
-                  {...header('expires')}
-                  atRest
-                />
-                {/* Every header named (R6), this one to a screen reader:
-                    each row's button says its word. */}
-                <TableCell padding="checkbox" sx={{ position: 'relative' }}>
-                  <Box component="span" sx={HIDDEN}>
-                    {intl.formatMessage(HEADS.actions)}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && <PlaceholderRows columns={9} wideOnly={2} />}
-              {rows?.map((row) => (
-                <CodeTableRow key={row.variantId} row={row} {...opened} />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ListTable
+          label={intl.formatMessage({
+            id: 'inventory.tab.stock',
+            defaultMessage: 'Stock',
+          })}
+          onFocus={wholeOnFocus}
+          size="small"
+        >
+          <TableHead>
+            <TableRow>
+              <SortHeader
+                label={intl.formatMessage(HEADS.item)}
+                {...header('name')}
+                atRest
+              />
+              <TableCell>
+                {place
+                  ? intl.formatMessage(HEADS.lotsHere)
+                  : intl.formatMessage(HEADS.where)}
+              </TableCell>
+              <SortHeader
+                number
+                label={
+                  place
+                    ? intl.formatMessage(HEADS.onHandHere)
+                    : intl.formatMessage(HEADS.onHand)
+                }
+                {...header('onHand')}
+                atRest
+              />
+              <TableCell {...NUMBER_COLUMN}>
+                {place
+                  ? intl.formatMessage(HEADS.freeEverywhere)
+                  : intl.formatMessage(HEADS.free)}
+              </TableCell>
+              <TableCell {...NUMBER_COLUMN} sx={WIDE_ONLY}>
+                {place
+                  ? intl.formatMessage(HEADS.heldEverywhere)
+                  : intl.formatMessage(HEADS.held)}
+              </TableCell>
+              <TableCell {...NUMBER_COLUMN} sx={WIDE_ONLY}>
+                {intl.formatMessage(HEADS.coming)}
+              </TableCell>
+              <TableCell>{intl.formatMessage(HEADS.status)}</TableCell>
+              <SortHeader
+                label={
+                  place
+                    ? intl.formatMessage(HEADS.expiresFirstHere)
+                    : intl.formatMessage(HEADS.expiresFirst)
+                }
+                {...header('expires')}
+                atRest
+              />
+              {/* Every header named (R6), this one to a screen reader:
+                  each row's button says its word. */}
+              <TableCell padding="checkbox" sx={{ position: 'relative' }}>
+                <Box component="span" sx={HIDDEN}>
+                  {intl.formatMessage(HEADS.actions)}
+                </Box>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading && <PlaceholderRows columns={9} wideOnly={2} />}
+            {rows?.map((row) => (
+              <CodeTableRow key={row.variantId} row={row} {...opened} />
+            ))}
+          </TableBody>
+        </ListTable>
       }
       cards={
         <Stack component="ul" sx={{ m: 0, p: 0 }}>

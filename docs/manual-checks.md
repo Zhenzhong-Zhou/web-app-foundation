@@ -1945,6 +1945,22 @@ Paper is checked first because it must not change at all.
   Reorder: the table fits again, and its header stays as the page
   scrolls (MC-1567). In French and Chinese the box's name is in that
   language.
+- **MC-1569** *(ADR-090, amended November 2026, #632)* Sorting from a
+  header that stays. In a window 1920 × 1080, on Inventory's Stock,
+  scroll down until the header stays under the top bar, then press On
+  hand: the list is sorted, the page moves up so the list's first row
+  sits right under the header, and focus stays on On hand. Press it
+  again: the order is reversed and the page does not move. The same
+  pressed from the keyboard (Tab to the header, Enter). With the header
+  at rest, near the page's top, a sort leaves the page where it is.
+- **MC-1570** *(ADR-090, amended November 2026, #632)* Inventory's and
+  Items' other lists on the one table. In a window 1280 × 720 with Help
+  closed, scroll down Stock's By lot view, Reorder, Items, Movements and
+  Trace a lot's matches for a code that finds several: each header stays
+  under the top bar as in MC-1567. Their figures, On hand, Quantity,
+  Suggested order and Change, sit in columns as wide as they need, the
+  names taking the rest. A screen reader names each table: Stock,
+  Reorder, Items, Movements and Trace a lot.
 
 ## 16. Files (ADR-059)
 
@@ -6850,3 +6866,6 @@ first.
   list's header stays under the top bar on a window tall enough, a number
   column is as wide as its figures, and a table too wide scrolls sideways
   in a named box with its name pinned: MC-1567 and MC-1568 added.
+- 2026-11-18: ADR-090's amendment (#632), Inventory's and Items' lists
+  on the shared table, and a sort pressed from a header that stays
+  bringing the list's first row under it: MC-1569 and MC-1570 added.
