@@ -1951,8 +1951,9 @@ Paper is checked first because it must not change at all.
   hand: the list is sorted, the page moves up so the list's first row
   sits right under the header, and focus stays on On hand. Press it
   again: the order is reversed and the page does not move. The same
-  pressed from the keyboard (Tab to the header, Enter). With the header
-  at rest, near the page's top, a sort leaves the page where it is.
+  pressed from the keyboard: Tab and Shift+Tab along the header that
+  stays leave the page where it is, then Enter. With the header at rest,
+  near the page's top, a sort leaves the page where it is.
 - **MC-1570** *(ADR-090, amended November 2026, #632)* Inventory's and
   Items' other lists on the one table. In a window 1280 × 720 with Help
   closed, scroll down Stock's By lot view, Reorder, Items, Movements and
@@ -6912,3 +6913,5 @@ first.
   MC-1573 added.
 - 2026-11-18: ADR-090's amendment (#632), Your devices' Recent activity
   on the shared table: MC-1574 added.
+- 2026-11-18: ADR-090's amendment (#632), a control in a header that
+  stays, reached by Tab, leaves the page where it is: MC-1569.

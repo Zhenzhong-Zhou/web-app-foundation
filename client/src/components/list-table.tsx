@@ -323,6 +323,12 @@ const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
         ...(stuck && {
           '&[data-stuck]': {
             [HEAD]: {
+              // Its own controls give the stuck header's share of the one
+              // scroll margin back: they stand above it, under the bar,
+              // and a Tab onto one jumped the page to the table's top.
+              '& *': {
+                scrollMarginTop: 'calc(-1 * (var(--stuck-header, 0px) + 8px))',
+              },
               boxShadow: `inset 0 -1px 0 ${palette.surface.edge}`,
               // The lift's shadow, cast by a strip along the cell's foot
               // wider than the cell and cut at its sides, so the cells'

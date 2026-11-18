@@ -62,6 +62,24 @@ export async function moveLot(
   );
 }
 
+/**
+ * Fifty-two codes with stock, one more page's worth than the first fifty:
+ * "E2E Page 01" to "E2E Page 52", 3 each on one shelf.
+ */
+export async function fiftyTwo(api: APIRequestContext): Promise<void> {
+  const shelf = await createLocation(api, { name: 'E2E Bulk' });
+  for (let start = 1; start <= 52; start += 13) {
+    await Promise.all(
+      Array.from({ length: 13 }, async (_, index) => {
+        const product = await createProduct(api, {
+          name: `E2E Page ${String(start + index).padStart(2, '0')}`,
+        });
+        await receive(api, product, shelf, '3');
+      }),
+    );
+  }
+}
+
 /** A reorder point (ADR-085): what makes a code Low stock or Out. */
 export async function reorderAt(
   api: APIRequestContext,

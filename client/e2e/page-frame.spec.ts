@@ -1,13 +1,17 @@
+import type { Locator, Page } from '@playwright/test';
+
 import { expect, test } from './fixtures';
 import {
   inviteByLink,
   joinByLink,
   registerOrganization,
+  type SeededOrganization,
   signInAs,
   uniqueEmail,
 } from './support/api';
 import { everyPage } from './support/every-page';
 import { confirmEmailInDatabase } from './support/mail';
+import { fiftyTwo } from './support/stock';
 
 /**
  * The page frame (ADR-090, amended November 2026, #632): every signed-in
@@ -113,3 +117,82 @@ function inFrame(width: number): string[] {
   }
   return problems;
 }
+
+// ---------------------------------------------------------------------------
+// A list's header under the top bar
+// ---------------------------------------------------------------------------
+
+/** Stock's table, by its name. */
+const stockTable = (page: Page) => page.getByRole('table', { name: 'Stock' });
+
+/** A list table's box, the shared table's `TableContainer`. */
+const boxOf = (table: Locator) => table.locator('xpath=..');
+
+/** The rows' item links, top to bottom: each name's alone. */
+const itemLinks = (table: Locator) =>
+  table.locator('tbody a[href^="/items/"]:not([href*="#"])');
+
+/** The window's scroll, read once the frame has drawn. */
+const scrolled = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<number>((resolve) =>
+        requestAnimationFrame(() => resolve(window.scrollY)),
+      ),
+  );
+
+/**
+ * A list page's own table keeps its header under the top bar (ADR-090,
+ * amended November 2026): Stock of fifty-two codes, made once for the
+ * tests here, which only read it, at 1920 × 1080, where it fits its box
+ * and the window is tall enough for its header to stay.
+ */
+test.describe('a list’s header under the top bar', () => {
+  let owner: SeededOrganization;
+
+  test.beforeAll(async () => {
+    test.setTimeout(120_000);
+    owner = await registerOrganization('header');
+    await fiftyTwo(owner.api);
+  });
+  test.afterAll(async () => {
+    await owner.api.dispose();
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await signInAs(page, owner.api);
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/inventory');
+    await expect(itemLinks(stockTable(page))).toHaveCount(50);
+  });
+
+  /**
+   * The one scroll margin counts the stuck header's height so a row's
+   * control stops below it; a control in the header itself sits above
+   * that margin, and once it jumped the page to the table's top, about
+   * 550 px in Chromium. Tab and Shift+Tab across the header move nothing.
+   */
+  test('a stuck header’s sort button, reached by Tab, leaves the page where it is', async ({
+    page,
+  }) => {
+    const table = stockTable(page);
+    const item = table
+      .getByRole('columnheader', { name: 'Item' })
+      .getByRole('button');
+    const onHand = table
+      .getByRole('columnheader', { name: 'On hand' })
+      .getByRole('button');
+    await item.focus();
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await expect(boxOf(table)).toHaveAttribute('data-stuck', 'true');
+    const at = await scrolled(page);
+
+    await page.keyboard.press('Tab');
+    await expect(onHand).toBeFocused();
+    expect(Math.abs((await scrolled(page)) - at)).toBeLessThanOrEqual(3);
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(item).toBeFocused();
+    expect(Math.abs((await scrolled(page)) - at)).toBeLessThanOrEqual(3);
+  });
+});
