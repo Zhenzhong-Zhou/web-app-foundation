@@ -44,7 +44,7 @@ const FIREFOX = Boolean(process.env.CI || process.env.E2E_FIREFOX);
 
 /** The specs WebKit and Firefox run besides Chromium (projects, below). */
 const EVERY_ENGINE =
-  /(?:accessibility|document-refusals|sign-in-return)\.spec\.ts/;
+  /(?:accessibility|document-refusals|page-frame|sign-in-return)\.spec\.ts/;
 
 const E2E_DATABASE_URL = process.env.DATABASE_URL_E2E;
 
@@ -123,8 +123,11 @@ export default defineConfig({
    * difference in layout, focus or contrast shows; and the refused PDF's
    * page, which each browser reaches by its own navigation, from a plain
    * link (ADR-071, amended for #526), and signing in from its link, where
-   * two navigations at once land in each engine's order. On an iPhone's
-   * screen and engine, mobile.spec.
+   * two navigations at once land in each engine's order; and the page
+   * frame's spec, a list's header that stays under the top bar and a table
+   * too wide for its box, since sticking, scroll margins and focus's
+   * scrolling differ between engines (ADR-090, amended November 2026). On
+   * an iPhone's screen and engine, mobile.spec.
    *
    * Only specs that make their own organization, or change nothing, run in
    * more than one project: the rest share the owner's organization and fixed
