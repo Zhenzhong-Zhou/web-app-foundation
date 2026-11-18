@@ -1990,6 +1990,11 @@ Paper is checked first because it must not change at all.
   Rate is as wide as its figures need at 1920. A screen reader names
   each table: Invited, Members, Built in and Made here with their
   counts, Audit log, Your activity, Tax codes and Exchange rates.
+- **MC-1574** *(ADR-090, amended November 2026, #632)* Your devices'
+  Recent activity on the one table. In a window 1280 × 720 with Help
+  closed, on Your devices, scroll down to Recent activity: its header
+  stays under the top bar as in MC-1567, and a screen reader names the
+  table Recent activity.
 
 ## 16. Files (ADR-059)
 
@@ -6905,3 +6910,5 @@ first.
 - 2026-11-18: ADR-090's amendment (#632), Members, Roles, the audit log,
   Your activity, Tax codes and Exchange rates on the shared table:
   MC-1573 added.
+- 2026-11-18: ADR-090's amendment (#632), Your devices' Recent activity
+  on the shared table: MC-1574 added.
