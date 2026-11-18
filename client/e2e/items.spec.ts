@@ -879,7 +879,8 @@ test('as it should be: each row its type’s icon, name, code, category, stock a
   const lowRow = row(page, 'E2E Low');
   await expect(lowRow).toContainText('E2E-LOW');
   await expect(lowRow).toContainText('Vitamins');
-  await expect(lowRow).toContainText('Low stock');
+  // The status's own word, as Reorder's chip says it (97f32e50).
+  await expect(lowRow.getByText('Low', { exact: true })).toBeVisible();
   await expect(
     lowRow.getByRole('link', { name: /^5\b.*, stock of E2E Low$/ }),
   ).toBeVisible();
@@ -1029,7 +1030,7 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await expect(cards).toHaveCount(2);
   await expect(page.getByRole('table')).toHaveCount(0);
   await expect(cards.first()).toContainText('E2E Alpha');
-  await expect(cards.nth(1)).toContainText('Low stock');
+  await expect(cards.nth(1).getByText('Low', { exact: true })).toBeVisible();
   // Each card's links, the item's, its stock's and its status's, a
   // fingertip tall.
   for (const link of await page.getByRole('list').getByRole('link').all()) {
