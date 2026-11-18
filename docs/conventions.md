@@ -746,15 +746,15 @@ The error tracker hears of real faults only (ADR-084).
   <suite>`). A test that fails in any of them is not committed, and the
   commit's step gives the command and the result in its summary.
 - **CI burns in the browser specs a pull request changes** (ADR-089's
-  amendment): after the browser job's run, the specs it changes and those
-  importing a file it changes run five times each in Chromium, with
+  amendments): after the browser job's run, the tests of the specs it
+  changes and of those importing a file it changes run in Chromium, with
   retries off (`--only-changed`, `.github/workflows/ci.yml`), each shard
-  taking a third of the runs, within 20 minutes. More than 150 tests, each
-  counted once before the five repeats, as a change to a file every spec
-  imports gives, burns in only the specs the pull request changes itself,
-  and the job's summary says which ran, with a warning on the pull
-  request, the trigger of #516. Its
-  list, beforehand: `npx playwright test --list --only-changed=origin/main
+  taking a third of the runs, within 20 minutes. They share a budget of
+  750 runs: each test runs `floor(750 / tests)` times, at least once and
+  at most five, so a change to a file every spec imports still burns in
+  every test, fewer times each (#516). The job's summary says the tests ×
+  repeats, the runs on each shard and the minutes they took. Its list,
+  beforehand: `npx playwright test --list --only-changed=origin/main
   --project=chromium` in `client/`.
 
 ---
