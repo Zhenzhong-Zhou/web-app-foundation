@@ -540,6 +540,14 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   {
+    // At a phone's width its variants table is cut, and scrolls: the
+    // keyboard reaches it (axe's scrollable-region-focusable).
+    name: 'an item at 390 px, its variants table',
+    path: (seed) => `/items/${seed.productId}`,
+    open: (page) => page.setViewportSize({ width: 390, height: 844 }),
+    ready: (page) => page.getByRole('region', { name: /Variants/ }),
+  },
+  {
     // None on hand and no reorder point: the next step (ADR-093's states).
     name: 'an item with none on hand, Where it stands',
     path: (seed) => `/items/${seed.bareProductId}`,

@@ -418,7 +418,9 @@ a second organization.
   opened row too. At 320 px, in Français and at Larger text, an expiry
   chip's words wrap rather than end in "…", its date under it; on a card,
   a lot's quantity and Actions go under the lot; the item's page puts Add
-  variant under Variants; nothing scrolls sideways.
+  variant under Variants; nothing scrolls sideways. At 390 px the item's
+  Variants and Names in other languages tables, cut, each take Tab, named
+  for its heading, and scroll by the arrow keys.
 - **MC-318** *(ADR-093)* Stock's first use and done. Register a new
   organization and add a location: Stock says "No stock yet. Receive what
   you have, …" with Receive stock. Invite a Viewer to it: in Receive
@@ -6753,3 +6755,7 @@ first.
   as v2's board, the title inside its card with its actions, the status
   under it, the figures as tiles, Left below zero in red, each lot's
   Actions menu: MC-219 and MC-220.
+- 2026-11-17: ADR-093's review, from the chat: at 390 px the item's
+  Variants table, and Names in other languages until its cards (#589),
+  take keyboard focus, named for their headings, so the keyboard scrolls
+  them: MC-301.

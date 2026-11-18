@@ -217,7 +217,10 @@ export function ItemNames({
       )}
 
       <Paper variant="outlined">
-        <TableContainer>
+        {/* Reached and scrolled by the keyboard where it is cut, at a
+            phone's width, until its cards come (#589): a region named for
+            its heading (WCAG 2.1.1; axe's scrollable-region-focusable). */}
+        <TableContainer tabIndex={0} role="region" aria-labelledby={titleId}>
           <Table
             size="small"
             aria-labelledby={titleId}
