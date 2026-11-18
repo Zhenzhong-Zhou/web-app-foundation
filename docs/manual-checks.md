@@ -1961,6 +1961,15 @@ Paper is checked first because it must not change at all.
   Suggested order and Change, sit in columns as wide as they need, the
   names taking the rest. A screen reader names each table: Stock,
   Reorder, Items, Movements and Trace a lot.
+- **MC-1571** *(ADR-090, amended November 2026, #632)* Orders,
+  Invoices, Credit notes and Returns on the one table. In a window
+  1280 × 720 with Help closed, scroll down each list: its header stays
+  under the top bar as in MC-1567, and a sort pressed there, Expected,
+  Date, Total or Amount, brings the list's first row under it
+  (MC-1569). At 1920, Fulfilled, Total and Amount are as wide as their
+  figures need, the partner's and customer's names taking the room. A
+  screen reader names each table by its page: Orders, Invoices, Credit
+  notes and Returns.
 
 ## 16. Files (ADR-059)
 
@@ -6869,3 +6878,5 @@ first.
 - 2026-11-18: ADR-090's amendment (#632), Inventory's and Items' lists
   on the shared table, and a sort pressed from a header that stays
   bringing the list's first row under it: MC-1569 and MC-1570 added.
+- 2026-11-18: ADR-090's amendment (#632), Orders, Invoices, Credit notes
+  and Returns on the shared table: MC-1571 added.

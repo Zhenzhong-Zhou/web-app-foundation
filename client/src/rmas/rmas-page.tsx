@@ -3,10 +3,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -18,6 +16,7 @@ import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -170,83 +169,87 @@ export function RmasPage() {
                     })}
             </EmptyState>
           ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
+            <ListTable
+              label={intl.formatMessage({
+                id: 'layout.nav.returns',
+                defaultMessage: 'Returns',
+              })}
+              size="small"
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.customer',
+                      defaultMessage: 'Customer',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.trace.order',
+                      defaultMessage: 'Order',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.void.reason',
+                      defaultMessage: 'Reason',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'rmas.raised',
+                      defaultMessage: 'Raised',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows?.map((row) => (
+                  <TableRow key={row.id} hover>
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.number',
-                        defaultMessage: 'Number',
-                      })}
+                      <Link
+                        component={RouterLink}
+                        to={`/return-authorizations/${row.id}`}
+                      >
+                        {row.number}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.partnerName}</TableCell>
+                    <TableCell>
+                      <Link
+                        component={RouterLink}
+                        to={`/orders/${row.orderId}`}
+                      >
+                        {row.orderNumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.reason}</TableCell>
+                    <TableCell>
+                      {formatDay(organizationDayOf(row.createdAt))}
                     </TableCell>
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.customer',
-                        defaultMessage: 'Customer',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'inventory.trace.order',
-                        defaultMessage: 'Order',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.void.reason',
-                        defaultMessage: 'Reason',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'rmas.raised',
-                        defaultMessage: 'Raised',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'common.status',
-                        defaultMessage: 'Status',
-                      })}
+                      <StatusChip
+                        tone={STATUS_TONES.returnAuthorization[row.status]}
+                        label={rmaStatus(row.status).label}
+                      />
                     </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows?.map((row) => (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Link
-                          component={RouterLink}
-                          to={`/return-authorizations/${row.id}`}
-                        >
-                          {row.number}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.partnerName}</TableCell>
-                      <TableCell>
-                        <Link
-                          component={RouterLink}
-                          to={`/orders/${row.orderId}`}
-                        >
-                          {row.orderNumber}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.reason}</TableCell>
-                      <TableCell>
-                        {formatDay(organizationDayOf(row.createdAt))}
-                      </TableCell>
-                      <TableCell>
-                        <StatusChip
-                          tone={STATUS_TONES.returnAuthorization[row.status]}
-                          label={rmaStatus(row.status).label}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </ListTable>
           )}
         </Paper>
       )}
