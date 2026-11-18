@@ -1064,3 +1064,49 @@ test('Stock, on a phone, a place deep in its warehouse: its path cut from the le
   await expect(box).toBeFocused();
   await expect(page.getByRole('tooltip')).toHaveText(whole);
 });
+
+// A browser scrolls a focused control into its box only when it is wholly
+// out of it; Stock's table brings one half past its edge in whole too
+// (help.spec beside Help at 1280 × 800, on CI's fonts).
+test('Stock beside Help, 1280 × 800: a header half past the table’s edge, reached by Tab, shows whole', async ({
+  page,
+  freshOrg,
+}) => {
+  await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/inventory');
+  await expect(itemLinks(page).first()).toBeVisible();
+  await page
+    .getByRole('banner')
+    .getByRole('button', { name: 'Help', exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole('complementary', { name: 'Help', exact: true })
+      .getByRole('heading', { level: 2 }),
+  ).toBeVisible();
+
+  const onHand = page.getByRole('button', { name: /^On hand/ });
+  const expires = page.getByRole('button', { name: /^Expires first/ });
+  await onHand.focus();
+  // The table scrolled so Expires first is half past its box's right edge.
+  await expires.evaluate((label) => {
+    const box = label.closest('.MuiTableContainer-root') as HTMLElement;
+    const edge = box.getBoundingClientRect().right;
+    const { left, width } = label.getBoundingClientRect();
+    box.scrollLeft += left + width / 2 - edge;
+  });
+  await page.keyboard.press('Tab');
+
+  await expect(expires).toBeFocused();
+  expect(
+    await expires.evaluate((label) => {
+      const box = label
+        .closest('.MuiTableContainer-root')!
+        .getBoundingClientRect();
+      const { left, right } = label.getBoundingClientRect();
+      return left >= box.left - 0.5 && right <= box.right + 0.5;
+    }),
+  ).toBe(true);
+});

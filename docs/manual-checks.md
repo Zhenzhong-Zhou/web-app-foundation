@@ -420,7 +420,10 @@ a second organization.
   reste … · point de commande … » wraps beside its chip on Stock's and
   Reorder's cards; on a card,
   a lot's quantity and Actions go under the lot; the item's page puts Add
-  variant under Variants; nothing scrolls sideways. At 390 px the item's
+  variant under Variants; nothing scrolls sideways. Beside Help at 1280 × 800,
+  Tab along Stock's headers and rows: each control reached that was half
+  past the table's edge scrolls whole into view, Expires first among them;
+  the Lot view, Reorder and Where it stands the same. At 390 px the item's
   Variants and Names in other languages tables, cut, each take Tab, named
   for its heading, and scroll by the arrow keys.
 - **MC-318** *(ADR-093)* Stock's first use and done. Register a new
@@ -6786,3 +6789,6 @@ first.
 - 2026-11-17: ADR-093's review, the full verify: on a phone, Stock's and
   Reorder's "… left · reorder at …" wraps, as French at Larger text is
   wider than 320 px beside its chip: MC-301.
+- 2026-11-17: ADR-093's review, Bob's row after PR #635: a control in
+  Stock's, the Lot view's, Reorder's or Where it stands' table, reached
+  half past the table's edge, scrolls whole into view: MC-301.

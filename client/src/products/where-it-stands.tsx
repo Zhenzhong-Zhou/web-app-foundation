@@ -54,6 +54,7 @@ import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useLocations } from '../lib/use-locations';
 import { useResource } from '../lib/use-resource';
+import { wholeOnFocus } from '../lib/whole-on-focus';
 import { leavesOf } from '../locations/tree';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
@@ -939,7 +940,7 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
       <TableOrCards
         loading={false}
         table={
-          <TableContainer>
+          <TableContainer onFocus={wholeOnFocus}>
             <Table size="small">
               <TableHead>
                 <TableRow>
