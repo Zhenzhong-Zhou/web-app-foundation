@@ -20,6 +20,7 @@ import { FormattedMessage, useIntl } from 'react-intl';
 
 import type { Member, Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ACTIONS_COLUMN } from '../components/actions-column';
 import { ListTable } from '../components/list-table';
 import { PersonAvatar } from '../components/person-avatar';
 import { formatMoment } from '../lib/format';
@@ -296,7 +297,7 @@ export function MembersSection({
                     })}
                   </TableCell>
                   {anyActions && (
-                    <TableCell>
+                    <TableCell {...ACTIONS_COLUMN}>
                       <Box component="span" sx={HIDDEN}>
                         {intl.formatMessage({
                           id: 'common.actions',

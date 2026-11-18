@@ -27,6 +27,7 @@ import type {
   StockCodeRow,
   StockPlace,
 } from '../api/types.gen';
+import { ACTIONS_COLUMN } from '../components/actions-column';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ListTable } from '../components/list-table';
@@ -240,7 +241,11 @@ export function StockCodes({
               />
               {/* Every header named (R6), this one to a screen reader:
                   each row's button says its word. */}
-              <TableCell padding="checkbox" sx={{ position: 'relative' }}>
+              <TableCell
+                {...ACTIONS_COLUMN}
+                padding="checkbox"
+                sx={{ position: 'relative' }}
+              >
                 <Box component="span" sx={HIDDEN}>
                   {intl.formatMessage(HEADS.actions)}
                 </Box>

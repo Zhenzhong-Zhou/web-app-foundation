@@ -23,25 +23,46 @@ const STUCK_HEADER = '--stuck-header';
 const paletteOf = (theme: Theme) =>
   (theme.vars ?? theme).palette as Theme['palette'];
 
-/** What the table's box measures, asked again as either changes size. */
+/**
+ * What the table's box measures, asked again as the box or the table
+ * changes size, never as it scrolls.
+ */
 interface Shape {
   /** The table as wide as its box, or narrower. */
   fits: boolean;
-  /** Scrolled sideways from its start, so columns pass under the name. */
-  scrolled: boolean;
   /** The tick box's width, where it comes before the name; else null. */
   tick: number | null;
+  /** The columns pinned at the start: the name, with a tick box before it. */
+  start: number;
+  /**
+   * The row's actions' width, pinned at the end (E12a): 0 where the list
+   * names none, or where they and the start would take more than half the
+   * box (guard 1), which leaves the start pinned alone.
+   */
+  end: number;
   /** The header row's height. */
   head: number;
 }
 
-const AT_REST: Shape = { fits: true, scrolled: false, tick: null, head: 0 };
+const AT_REST: Shape = { fits: true, tick: null, start: 0, end: 0, head: 0 };
 
 const same = (a: Shape, b: Shape) =>
   a.fits === b.fits &&
-  a.scrolled === b.scrolled &&
   a.tick === b.tick &&
+  a.start === b.start &&
+  a.end === b.end &&
   a.head === b.head;
+
+/**
+ * Whether columns lie under each pinned side, read as the box scrolls:
+ * scrolled from the start, or short of the end.
+ */
+interface Under {
+  start: boolean;
+  end: boolean;
+}
+
+const NOTHING_UNDER: Under = { start: false, end: false };
 
 /**
  * A list page's own table (ADR-090, amended November 2026): a record's
@@ -58,9 +79,13 @@ const same = (a: Shape, b: Shape) =>
  * - **Too wide for its box,** at any width, the box scrolls sideways and
  *   the header goes with the page: a header kept in step by script would
  *   be a copy (E3). The box takes focus, a region named "{table}, scrolls
- *   sideways", and the name column stays pinned, its edge shown while
- *   columns pass under it (E10b): the first column, or the tick box and
- *   the name after it.
+ *   sideways", and the name column stays pinned at the start (E10b): the
+ *   first column, or the tick box and the name after it. A list's row
+ *   actions, its last column marked `ACTIONS_COLUMN`, stay pinned at the
+ *   end while the two sides take no more than half the box (E12a). Each
+ *   side's edge shows only while columns lie under it, and the box's
+ *   scroll padding is the pinned sides' widths, so a control reached by
+ *   Tab or Shift+Tab is scrolled wholly clear of them.
  *
  * Whether it fits is measured (a `ResizeObserver` on the box and the
  * table); when the header sticks is CSS media queries (#567), and once
@@ -85,6 +110,7 @@ export function ListTable({
   const top = useRef<HTMLDivElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const [shape, setShape] = useState(AT_REST);
+  const [under, setUnder] = useState(NOTHING_UNDER);
   const [stuck, setStuck] = useState(false);
 
   // Before the first paint, so a table too wide is drawn so at once.
@@ -92,22 +118,47 @@ export function ListTable({
     const frame = box.current;
     const element = tableRef.current;
     if (!frame || !element) return;
+    // Columns under each pinned side, read as the box scrolls; the 1 px
+    // is a width rounded, as useHeldTotal's is.
+    const read = () => {
+      const next: Under = {
+        start: frame.scrollLeft > 0,
+        end: frame.scrollLeft + frame.clientWidth < frame.scrollWidth - 1,
+      };
+      setUnder((was) =>
+        was.start === next.start && was.end === next.end ? was : next,
+      );
+    };
     const measure = () => {
       const head = element.tHead;
-      const first = head?.rows[0]?.cells[0];
+      const cells = head?.rows[0]?.cells;
+      const first = cells?.[0];
+      const tick = first?.classList.contains('MuiTableCell-paddingCheckbox')
+        ? first
+        : undefined;
+      const name = cells?.[tick ? 1 : 0];
+      const last = cells?.[cells.length - 1];
+      const width = (cell?: Element) =>
+        cell?.getBoundingClientRect().width ?? 0;
+      const start = width(tick) + width(name);
+      const actions =
+        last && last !== name && last.hasAttribute('data-actions')
+          ? width(last)
+          : 0;
       const next: Shape = {
-        // The 1 px is a width rounded, as useHeldTotal's is.
         fits: frame.scrollWidth <= frame.clientWidth + 1,
-        scrolled: frame.scrollLeft > 0,
-        tick: first?.classList.contains('MuiTableCell-paddingCheckbox')
-          ? first.getBoundingClientRect().width
-          : null,
+        // Guard 1 (E12a): the actions pinned while the two sides take no
+        // more than half the box, as it is wide now, never as it scrolls.
+        end: actions && start + actions <= frame.clientWidth / 2 ? actions : 0,
+        tick: tick ? width(tick) : null,
+        start,
         head: head?.getBoundingClientRect().height ?? 0,
       };
       setShape((was) => (same(was, next) ? was : next));
+      read();
     };
     measure();
-    frame.addEventListener('scroll', measure, { passive: true });
+    frame.addEventListener('scroll', read, { passive: true });
     // Not in jsdom, as Help's panel finds; measured once there.
     const observer =
       typeof ResizeObserver === 'undefined'
@@ -116,7 +167,7 @@ export function ListTable({
     observer?.observe(frame);
     observer?.observe(element);
     return () => {
-      frame.removeEventListener('scroll', measure);
+      frame.removeEventListener('scroll', read);
       observer?.disconnect();
     };
   }, []);
@@ -190,6 +241,7 @@ export function ListTable({
   }, []);
 
   const sideways = !shape.fits;
+  const end = sideways && shape.end > 0;
 
   return (
     <TableContainer
@@ -197,8 +249,10 @@ export function ListTable({
       onFocus={onFocus}
       data-fits={shape.fits || undefined}
       data-stuck={stuck || undefined}
-      data-scrolled={(sideways && shape.scrolled) || undefined}
       data-tick={(sideways && shape.tick !== null) || undefined}
+      data-end={end || undefined}
+      data-under-start={(sideways && under.start) || undefined}
+      data-under-end={(end && under.end) || undefined}
       {...(sideways && {
         role: 'region',
         tabIndex: 0,
@@ -214,6 +268,11 @@ export function ListTable({
         {
           '--list-head': `${shape.head}px`,
           '--pin-start': `${shape.tick ?? 0}px`,
+          // Guard 2 (E12a): a control focused is scrolled clear of both.
+          ...(sideways && {
+            scrollPaddingInlineStart: shape.start,
+            scrollPaddingInlineEnd: shape.end,
+          }),
         } as CSSProperties
       }
       sx={(theme) => frame(theme, sideways, stuck)}
@@ -259,27 +318,35 @@ const SENTINEL = {
 /** The header row's cells. */
 const HEAD = '& > table > thead > tr > th';
 
+/** A row's first or second cell from the start, or its last. */
+type Column = 1 | 2 | 'last';
+
 /**
  * A column's cells in the head or the body; a cell spanning more is none.
  * By type, as a row's cells are all of one kind: Emotion warns of
  * `:nth-child` on every render, a server-rendering worry this app has not.
  */
-const cells = (part: 'thead' | 'tbody', column: 1 | 2) =>
-  `& > table > ${part} > tr > :nth-of-type(${column}):not([colspan])`;
+const cells = (part: 'thead' | 'tbody', column: Column) =>
+  `& > table > ${part} > tr > :${column === 'last' ? 'last-of-type' : `nth-of-type(${column})`}:not([colspan])`;
 
 /**
- * The name column pinned, from `left`: the head keeps its own tint; a
+ * A column pinned, `at` its inset from the start or the end: the name at
+ * the start, the row's actions at the end. The head keeps its own tint; a
  * body cell is the panel's colour, so columns pass beneath it, with the
- * row's own tint (under the pointer, or an opened row's) laid back over
- * it. Its edge shows while columns pass under it.
+ * row's own tint (under the pointer, a ticked row's, or an opened row's)
+ * laid back over it.
  */
-const pinned = (theme: Theme, column: 1 | 2, left: string) => {
+const pinned = (
+  theme: Theme,
+  column: Column,
+  at: { insetInlineStart: string } | { insetInlineEnd: string },
+) => {
   const paper = paletteOf(theme).background.paper;
   return {
-    [cells('thead', column)]: { position: 'sticky', left, zIndex: 1 },
+    [cells('thead', column)]: { position: 'sticky', ...at, zIndex: 1 },
     [cells('tbody', column)]: {
       position: 'sticky',
-      left,
+      ...at,
       zIndex: 1,
       backgroundColor: 'inherit',
       backgroundImage: `linear-gradient(${paper}, ${paper})`,
@@ -295,14 +362,17 @@ const pinned = (theme: Theme, column: 1 | 2, left: string) => {
   };
 };
 
-/** The name column's edge, on its head and body cells. */
-const edge = (theme: Theme, column: 1 | 2) => ({
-  [cells('thead', column)]: cutEdge(theme, 'head', 'right'),
-  [cells('tbody', column)]: cutEdge(theme, 'paper', 'right'),
+/**
+ * A pinned column's edge, on its head and body cells, on the side columns
+ * pass under: the name's right, the row's actions' left.
+ */
+const edge = (theme: Theme, column: Column, side: 'left' | 'right') => ({
+  [cells('thead', column)]: cutEdge(theme, 'head', side),
+  [cells('tbody', column)]: cutEdge(theme, 'paper', side),
 });
 
 /**
- * The box's styles. The stuck header's and the pinned name's are built
+ * The box's styles. The stuck header's and the pinned columns' are built
  * only while they apply, as an order's held Total is: a component test's
  * default theme has none of the app's surface tokens.
  */
@@ -351,10 +421,14 @@ const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
     },
     ...(sideways && {
       '&:not([data-fits])': {
-        ...pinned(theme, 1, '0px'),
-        '&[data-tick]': pinned(theme, 2, 'var(--pin-start)'),
-        '&[data-scrolled]:not([data-tick])': edge(theme, 1),
-        '&[data-scrolled][data-tick]': edge(theme, 2),
+        ...pinned(theme, 1, { insetInlineStart: '0px' }),
+        '&[data-tick]': pinned(theme, 2, {
+          insetInlineStart: 'var(--pin-start)',
+        }),
+        '&[data-end]': pinned(theme, 'last', { insetInlineEnd: '0px' }),
+        '&[data-under-start]:not([data-tick])': edge(theme, 1, 'right'),
+        '&[data-under-start][data-tick]': edge(theme, 2, 'right'),
+        '&[data-under-end]': edge(theme, 'last', 'left'),
       },
     }),
   } as const;

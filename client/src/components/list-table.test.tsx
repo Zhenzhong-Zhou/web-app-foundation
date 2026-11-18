@@ -6,11 +6,12 @@ import {
   TableRow,
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { themeFor } from '../theme';
+import { ACTIONS_COLUMN } from './actions-column';
 import { ListTable } from './list-table';
 import { NUMBER_COLUMN } from './number-column';
 import { SortHeader } from './sort-header';
@@ -50,6 +51,7 @@ function Stock({
               onSort={onSort}
             />
             <TableCell {...NUMBER_COLUMN}>Free</TableCell>
+            <TableCell {...ACTIONS_COLUMN}>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -63,9 +65,12 @@ function Stock({
             <TableCell>Shelf A2</TableCell>
             <TableCell align="right">48</TableCell>
             <TableCell align="right">40</TableCell>
+            <TableCell>
+              <button type="button">Actions for Vitamin C 500 mg</button>
+            </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell colSpan={ticks ? 5 : 4}>Choose a lot</TableCell>
+            <TableCell colSpan={ticks ? 6 : 5}>Choose a lot</TableCell>
           </TableRow>
         </TableBody>
       </ListTable>
@@ -74,6 +79,22 @@ function Stock({
 }
 
 const positionOf = (element: Element) => getComputedStyle(element).position;
+
+/** Each cell this wide, as the browser would lay it out. */
+function cellWidths(width: number) {
+  vi.spyOn(
+    HTMLTableCellElement.prototype,
+    'getBoundingClientRect',
+  ).mockReturnValue({ width, height: 40, top: 0 } as DOMRect);
+}
+
+/** The row's actions' cells: the head's and the row's. */
+const actionsCells = () => [
+  screen.getByRole('columnheader', { name: 'Actions' }),
+  screen
+    .getByRole('button', { name: 'Actions for Vitamin C 500 mg' })
+    .closest('td')!,
+];
 
 describe('ListTable (ADR-090, amended November 2026)', () => {
   afterEach(() => {
@@ -122,6 +143,75 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
     );
     expect(positionOf(screen.getByText('Vitamin C 500 mg'))).toBe('sticky');
     expect(positionOf(screen.getByText('Shelf A2'))).not.toBe('sticky');
+  });
+
+  describe('too wide, its row actions pinned at the end (E12a)', () => {
+    it('beside the name, while the two take no more than half the box', () => {
+      // 150 + 150 of a box 800 wide.
+      widths(800, 1100);
+      cellWidths(150);
+      render(<Stock />);
+
+      const region = screen.getByRole('region');
+      for (const cell of actionsCells()) {
+        expect(positionOf(cell)).toBe('sticky');
+      }
+      expect(positionOf(screen.getByText('Vitamin C 500 mg'))).toBe('sticky');
+      // Guard 2: a control focused is scrolled clear of both.
+      expect(region).toHaveStyle({
+        scrollPaddingInlineStart: '150px',
+        scrollPaddingInlineEnd: '150px',
+      });
+    });
+
+    it('past half the box, the name pinned alone', () => {
+      // 250 + 250 of a box 800 wide: more than half.
+      widths(800, 1100);
+      cellWidths(250);
+      render(<Stock />);
+
+      const region = screen.getByRole('region');
+      for (const cell of actionsCells()) {
+        expect(positionOf(cell)).not.toBe('sticky');
+      }
+      expect(positionOf(screen.getByText('Vitamin C 500 mg'))).toBe('sticky');
+      expect(region).toHaveStyle({
+        scrollPaddingInlineStart: '250px',
+        scrollPaddingInlineEnd: '0px',
+      });
+    });
+
+    it('shows each side’s edge only while columns lie under it', () => {
+      widths(800, 1100);
+      cellWidths(150);
+      const scrollLeft = vi.spyOn(Element.prototype, 'scrollLeft', 'get');
+      render(<Stock />);
+      const region = screen.getByRole('region');
+      const name = screen.getByText('Vitamin C 500 mg');
+      const [head, cell] = actionsCells();
+      const edged = (element: Element) =>
+        getComputedStyle(element).boxShadow.startsWith('inset');
+      const scrollTo = (left: number) => {
+        scrollLeft.mockReturnValue(left);
+        fireEvent.scroll(region);
+      };
+
+      // At its start: columns lie under the actions alone.
+      expect(edged(name)).toBe(false);
+      expect(edged(head)).toBe(true);
+      expect(edged(cell)).toBe(true);
+
+      // Between: under both.
+      scrollTo(100);
+      expect(edged(name)).toBe(true);
+      expect(edged(cell)).toBe(true);
+
+      // At its end, 300 of 1,100 past a box of 800: under the name alone.
+      scrollTo(300);
+      expect(edged(name)).toBe(true);
+      expect(edged(head)).toBe(false);
+      expect(edged(cell)).toBe(false);
+    });
   });
 
   it('gives a number column the width its figures need, the text the rest', () => {

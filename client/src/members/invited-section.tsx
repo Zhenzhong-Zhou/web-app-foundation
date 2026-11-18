@@ -19,6 +19,7 @@ import { type ReactNode, useId, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 
 import type { Invitation, Role } from '../api/types.gen';
+import { ACTIONS_COLUMN } from '../components/actions-column';
 import { DialogFooter } from '../components/dialog-footer';
 import { ListTable } from '../components/list-table';
 import { StatusChip } from '../components/status-chip';
@@ -189,7 +190,7 @@ export function InvitedSection({
                     defaultMessage: 'Link',
                   })}
                 </TableCell>
-                <TableCell>
+                <TableCell {...ACTIONS_COLUMN}>
                   <Box component="span" sx={HIDDEN}>
                     {intl.formatMessage({
                       id: 'common.actions',

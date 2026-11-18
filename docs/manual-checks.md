@@ -1996,6 +1996,25 @@ Paper is checked first because it must not change at all.
   closed, on Your devices, scroll down to Recent activity: its header
   stays under the top bar as in MC-1567, and a screen reader names the
   table Recent activity.
+- **MC-1575** *(ADR-090, amended November 2026, #632)* A row's Actions
+  pinned at the end of a table too wide (E12a). In a window 1366 × 768
+  with Help closed, on Inventory's Stock in English: each row's Actions
+  stays at the table's right while the item's name stays at its left,
+  each with its own background, so every row's Actions shows whole
+  without scrolling. A line and a fade show on the side of Actions only
+  while more columns lie past it, and on the name's side only once the
+  table is scrolled. Scroll the table to its end: the line beside
+  Actions goes, the one beside the name shows. Tab and Shift+Tab along a
+  row: each control comes whole into view, never under the name or
+  under Actions. Tinted under the pointer, both pinned cells take the
+  row's tint, in light and dark. Open Help on Reorder: where the tick
+  box, the name and Actions together would take more than half the
+  table's width, Actions scrolls with the row and only the tick box and
+  the name stay; widen the window and Actions is pinned again. Members,
+  Licences, Partners, Tax codes, Exchange rates and Stock value's
+  Waiting for a cost pin their actions too: in a window narrow enough
+  that one scrolls sideways, its actions stay at the right while they
+  and the name take no more than half the table's width.
 
 ## 16. Files (ADR-059)
 
@@ -6915,3 +6934,7 @@ first.
   on the shared table: MC-1574 added.
 - 2026-11-18: ADR-090's amendment (#632), a control in a header that
   stays, reached by Tab, leaves the page where it is: MC-1569.
+- 2026-11-18: ADR-090's amendment (#632), E12a: a row's Actions pinned at
+  the end of a table too wide while it and the name take no more than
+  half the box, an edge on each side only while columns lie under it:
+  MC-1575 added.

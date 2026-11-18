@@ -16,6 +16,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { ExchangeRate, OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ACTIONS_COLUMN } from '../components/actions-column';
 import { EmptyState } from '../components/empty-state';
 import { ListTable } from '../components/list-table';
 import { NUMBER_COLUMN } from '../components/number-column';
@@ -215,6 +216,7 @@ export function ExchangeRatesPage() {
                       })}
                 </TableCell>
                 <TableCell
+                  {...ACTIONS_COLUMN}
                   align="right"
                   aria-label={intl.formatMessage({
                     id: 'orders.lines.actions',

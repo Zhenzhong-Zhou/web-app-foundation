@@ -10,6 +10,7 @@ import {
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { StockLotRow } from '../api/types.gen';
+import { ACTIONS_COLUMN } from '../components/actions-column';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ListTable } from '../components/list-table';
 import { LotLink } from '../components/lot-link';
@@ -106,7 +107,11 @@ export function StockLots({
               />
               {/* Every header named (R6), this one to a screen reader:
                   each row's button says its word. */}
-              <TableCell padding="checkbox" sx={{ position: 'relative' }}>
+              <TableCell
+                {...ACTIONS_COLUMN}
+                padding="checkbox"
+                sx={{ position: 'relative' }}
+              >
                 <Box component="span" sx={HIDDEN}>
                   {intl.formatMessage(HEADS.actions)}
                 </Box>

@@ -30,6 +30,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import type { ReorderPointCounts, ReorderPointRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ACTIONS_COLUMN } from '../components/actions-column';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow, QuickFilterPill } from '../components/filter-row';
@@ -1202,6 +1203,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                       {/* Every header named (R6), this one to a screen
                           reader: each row's button says its word. */}
                       <TableCell
+                        {...ACTIONS_COLUMN}
                         padding="checkbox"
                         sx={{ position: 'relative' }}
                       >
