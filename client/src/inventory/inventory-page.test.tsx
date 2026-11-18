@@ -1,17 +1,23 @@
-import { screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { type ReactNode, useState } from 'react';
 import {
+  createPath,
   Link,
   MemoryRouter,
+  type Navigator,
   Route,
+  Router,
   Routes,
+  type To,
   useLocation,
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Delivery, StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
+import { SEARCH_WAIT_MS } from '../lib/use-list-search';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -180,6 +186,42 @@ function renderAt(address: string, permissions: string[]) {
     </MemoryRouter>,
     { permissions },
   );
+}
+
+/**
+ * A router as react-router 7 is on a slow runner: a write reaches the
+ * address at once, and the page shows it only when `show` is called, as
+ * the transition react-router renders it in can finish after a search's
+ * wait has ended.
+ */
+function heldRouter(start: string) {
+  let address = start;
+  let show = () => {};
+  const write = (to: To) => {
+    address = typeof to === 'string' ? to : createPath(to);
+  };
+  const navigator: Navigator = {
+    createHref: (to) => (typeof to === 'string' ? to : createPath(to)),
+    go: () => {},
+    push: write,
+    replace: write,
+  };
+
+  function HeldRouter({ children }: { children: ReactNode }) {
+    const [shown, setShown] = useState(start);
+    show = () => setShown(address);
+    return (
+      <Router location={shown} navigator={navigator}>
+        {children}
+      </Router>
+    );
+  }
+
+  return {
+    HeldRouter,
+    address: () => address,
+    show: () => act(() => show()),
+  };
 }
 
 const CHANGES = ['Move…', 'Ship out…', 'Send sample…', 'Edit lot details…'];
@@ -1398,6 +1440,39 @@ describe('InventoryPage', () => {
         screen.getByRole('searchbox', { name: 'Search items, codes or lots' }),
       ).toHaveValue('NN-2410');
       await expect.poll(() => asked.lots.at(-1)?.get('search')).toBe('NN-2410');
+    });
+
+    // Show all stock clears it with the filters, in one write, the box
+    // following the address once the page shows it. The box emptied
+    // first left the search to write itself from the address still
+    // shown: where the page showed the cleared filters only after the
+    // search's wait, that put Expired back on (PR CI runs 747 and 749).
+    it('is cleared with the filters by Show all stock, in one write', async () => {
+      answer([]);
+      const router = heldRouter('/inventory?search=E2E-MAG&expired=1');
+      renderWithAuth(
+        <router.HeldRouter>
+          <InventoryPage />
+        </router.HeldRouter>,
+        { permissions: ['stock.view'] },
+      );
+      const showAll = await screen.findByRole('button', {
+        name: 'Show all stock',
+      });
+
+      // fireEvent, not userEvent: Testing Library's wrapper around
+      // userEvent waits on a setTimeout the fake clock would hold.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      fireEvent.click(showAll);
+      act(() => vi.advanceTimersByTime(SEARCH_WAIT_MS));
+      expect(router.address()).toBe('/inventory');
+
+      router.show();
+      expect(
+        screen.getByRole('searchbox', { name: 'Search items, codes or lots' }),
+      ).toHaveValue('');
+      act(() => vi.advanceTimersByTime(SEARCH_WAIT_MS));
+      expect(router.address()).toBe('/inventory');
     });
 
     it('is one search on Stock and Reorder, either way', async () => {

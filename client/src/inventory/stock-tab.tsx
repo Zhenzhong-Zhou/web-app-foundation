@@ -592,20 +592,24 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     !categoryId &&
     !locationId &&
     !search;
-  const clearFilters = () => {
-    setText('');
-    setFilters({
-      low: false,
-      out: false,
-      expiring: false,
-      expired: false,
-      needsCost: false,
-      type: '',
-      categoryId: '',
-      locationId: '',
-      productId: '',
-    });
-  };
+  // The search and the filters in one write, each at its default, left
+  // out; the box follows the address once the page shows it. Emptied
+  // here first, the box would write the search itself from the address
+  // still shown, which react-router shows in a transition: one finished
+  // after the search's wait put a filter back (PR CI runs 747 and 749).
+  const clearFilters = () =>
+    writeAddress({
+      search: null,
+      low: null,
+      out: null,
+      expiring: null,
+      expired: null,
+      needsCost: null,
+      type: null,
+      categoryId: null,
+      locationId: null,
+      productId: null,
+    } satisfies Partial<Record<keyof typeof ADDRESS_FILTERS | 'search', null>>);
 
   return (
     <Stack spacing={3}>
