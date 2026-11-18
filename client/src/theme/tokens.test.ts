@@ -187,6 +187,23 @@ describe('tokens (ADR-055)', () => {
     },
   );
 
+  // #561, a list's header while it sticks (ADR-090, amended November
+  // 2026): its words on the head's solid ground, muted at rest and in the
+  // main text once sorted; the line under it seen on that ground and on
+  // the rows passing beneath; and, for each preset, the focus ring on a
+  // header that sorts and a ticked box that chooses every row, seen on it.
+  it.each(SCHEMES)('keeps the %s stuck header readable', (name, s) => {
+    for (const words of [s.muted, s.text]) {
+      expect(contrast(words, s.head)).toBeGreaterThanOrEqual(AA);
+    }
+    for (const ground of [s.head, s.surface]) {
+      expect(contrast(s.edge, ground)).toBeGreaterThanOrEqual(3);
+    }
+    for (const brand of ACCENTS) {
+      expect(contrast(accentIn(name, brand), s.head)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it.each(SCHEMES)('keeps every %s status tone readable', (_, s) => {
     for (const tone of Object.values(s.tones)) {
       expect(contrast(tone.fg, tone.bg)).toBeGreaterThanOrEqual(AA);
