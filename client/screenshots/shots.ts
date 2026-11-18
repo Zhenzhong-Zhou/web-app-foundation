@@ -9,7 +9,10 @@ export type Width =
   | 'tablet'
   | 'duo-open'
   | 'duo-closed'
-  | 'phone';
+  | 'phone'
+  // The page frame's two extra sizes, taken only with FRAME_SIZES=1.
+  | 'laptop-1366'
+  | 'wide-2560';
 
 /** A message in the language being pictured, by its catalogue id. */
 export type Words = (id: string) => string;

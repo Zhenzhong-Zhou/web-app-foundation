@@ -22,6 +22,13 @@ import { config as loadEnv } from 'dotenv';
  * `npm run screenshots -- --grep 02-order` takes one page, and
  * `--project phone` one size.
  *
+ * Two more sizes, for a change to the page frame (#632), only when
+ * FRAME_SIZES=1 is set, so the default run is unchanged: a laptop's
+ * 1366 × 768, the narrowest the frame is held to, and a wide screen's
+ * 2560 × 1440, where it stops growing:
+ *
+ *     FRAME_SIZES=1 npm run screenshots -- --project=laptop-1366 --project=wide-2560
+ *
  * Its own API and client, on ports 3200 and 5373, beside any dev servers
  * already running on 3000 and 5173. A run makes a few hundred requests in a
  * minute or two, past the dev rate limit of 100 a minute, so this API runs
@@ -47,6 +54,9 @@ const touch = (width: number, height: number) => ({
   isMobile: true,
   hasTouch: true,
 });
+
+/** The frame's two extra sizes, added by FRAME_SIZES=1 alone. */
+const FRAME_SIZES = process.env.FRAME_SIZES === '1';
 
 if (!DATABASE_URL) {
   throw new Error(
@@ -129,6 +139,28 @@ export default defineConfig({
       name: 'phone',
       use: touch(390, 844),
     },
+    ...(FRAME_SIZES
+      ? [
+          {
+            // A common laptop's screen, Help closed: the narrowest the
+            // page frame is held to (#632).
+            name: 'laptop-1366',
+            use: {
+              ...devices['Desktop Chrome'],
+              viewport: { width: 1366, height: 768 },
+            },
+          },
+          {
+            // A wide screen, where the 1,600 px frame stops growing and
+            // the space beside it shows (#632).
+            name: 'wide-2560',
+            use: {
+              ...devices['Desktop Chrome'],
+              viewport: { width: 2560, height: 1440 },
+            },
+          },
+        ]
+      : []),
   ],
 
   webServer: [

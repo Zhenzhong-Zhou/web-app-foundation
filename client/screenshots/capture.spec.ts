@@ -19,7 +19,8 @@ const MODES = ['light', 'dark'] as const;
 
 /**
  * A size from each width class (ADR-090). The laptop's 1200 is the top
- * bar's alone: the desktop's 1440 is the same class.
+ * bar's alone: the desktop's 1440 is the same class. The last two exist
+ * only in a run with FRAME_SIZES=1, whose config adds their projects.
  */
 const DEFAULT_WIDTHS: Width[] = [
   'wide',
@@ -28,6 +29,8 @@ const DEFAULT_WIDTHS: Width[] = [
   'duo-open',
   'duo-closed',
   'phone',
+  'laptop-1366',
+  'wide-2560',
 ];
 
 function catalogue(language: string): Record<string, string> {
