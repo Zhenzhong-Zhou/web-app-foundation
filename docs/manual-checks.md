@@ -1911,6 +1911,15 @@ Paper is checked first because it must not change at all.
   bar is shorter; there, open Help: it starts right under the bar at
   each text size. On a phone, Home's Stock value · Waiting for a cost
   still lands its list's heading just under the bar.
+- **MC-1566** *(ADR-090, amended November 2026, #632)* One page frame.
+  In a window 1920 px wide with Help closed, Inventory fills about
+  1,600 px, with a little room on each side beside the rail, and Orders
+  and an order's page the same. Home, Your account and Organization stay
+  narrower, as before, centred in the same room: going from Inventory to
+  Home, the title moves right and nothing else jumps. At 2560 px the
+  frame stops at 1,600, centred; at 1366 every page looks as it did, each
+  title in the same place. Home's tiles stay in even rows of three at
+  1366, 1920 and 2560. At Larger text the frame does not grow.
 
 ## 16. Files (ADR-059)
 
@@ -6808,3 +6817,7 @@ first.
 - 2026-11-18: ADR-090's amendment (#632), one height under the top bar:
   the bar's measure set once on the root, read by what stays under it,
   and one scroll margin that keeps a focused control below it: MC-1565.
+- 2026-11-18: ADR-090's amendment (#632), one page frame: every
+  signed-in page in 1,600 px, centred beside the rail; Home, Your account
+  and Organization, named narrower in their routes, in today's 1,200,
+  centred the same way: MC-1566.

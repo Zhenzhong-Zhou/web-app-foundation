@@ -368,7 +368,7 @@ function OrganizationHome() {
   }
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 1140 }}>
+    <Stack spacing={3}>
       {/* The main action at the right of the greeting's row from `md`, as
           each list page has its own; below it, under What we do, full
           width (ADR-091). It stays, faded, while Home is customised. */}
