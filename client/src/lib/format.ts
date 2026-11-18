@@ -263,22 +263,26 @@ export function formatCredit(
 /**
  * A unit cost, with the places a currency's minor units would hide: a
  * capsule at 0.0123 is not 0.01. Up to four, never fewer than the currency's
- * own. Display only, as formatMoney is.
+ * own. Display only, as formatMoney is. `code` writes the currency's code,
+ * "USD 4.20", for an amount in another currency than its group's
+ * (ADR-055).
  */
 export function formatUnitCost(
   amount: string | null,
   currency: string | null,
   locale: string | undefined = current,
+  display: 'symbol' | 'code' = 'symbol',
 ): string {
   if (amount === null) return '—';
   if (!currency) return amount;
 
   return cached(
-    `unit-cost:${locale}:${currency}`,
+    `unit-cost:${locale}:${currency}:${display}`,
     () =>
       new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
+        currencyDisplay: display,
         maximumFractionDigits: 4,
       }),
   ).format(Number(amount));

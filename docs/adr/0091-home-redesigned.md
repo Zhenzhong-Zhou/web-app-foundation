@@ -3,7 +3,7 @@ status: accepted
 date: 2026-11-04
 areas: [home, organizations, ui]
 amends: [ADR-051, ADR-055, ADR-057, ADR-058, ADR-069, ADR-079, ADR-090]
-amended-by: [ADR-092]
+amended-by: [ADR-092, ADR-093]
 ---
 
 # ADR-091 — Home, redesigned: a few large tiles that open their lists (amends ADR-051, ADR-055, ADR-057, ADR-058, ADR-069, ADR-079 and ADR-090)
@@ -774,3 +774,11 @@ Its Deferred "Which lists sort, and by what" fired with Items, the first
 list built to the design language after Home. ADR-092 writes the rule
 into `docs/design-language.md`, with ADR-090's amendment of the same
 month.
+
+## Amendment (November 2026) — the tiles' lists after Inventory's redesign (ADR-093)
+
+- **Expiring soon and its late button open Inventory by lot,** one row
+  per lot, the soonest first and the expired on top; the count is
+  unchanged, the expired among the expiring.
+- **Low stock and its late button open Reorder,** the tab's new name,
+  with Low stock or Out chosen.

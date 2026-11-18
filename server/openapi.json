@@ -2432,6 +2432,14 @@
             }
           },
           {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -2599,6 +2607,14 @@
                 "only",
                 "include"
               ]
+            }
+          },
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -4106,283 +4122,6 @@
         ]
       }
     },
-    "/v1/stock": {
-      "get": {
-        "operationId": "StockController_list_v1",
-        "parameters": [
-          {
-            "name": "locationId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "variantId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "productId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "includeEmpty",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
-            "name": "expiringWithin",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 3650,
-              "type": "number"
-            }
-          },
-          {
-            "name": "expired",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "needsCost",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "expiry"
-              ]
-            }
-          },
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StockPage"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Stock"
-        ]
-      }
-    },
-    "/v1/stock/export": {
-      "get": {
-        "operationId": "StockController_exportInventory_v1",
-        "parameters": [
-          {
-            "name": "locationId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "variantId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "productId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "includeEmpty",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
-            "name": "expiringWithin",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 3650,
-              "type": "number"
-            }
-          },
-          {
-            "name": "expired",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "needsCost",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "expiry"
-              ]
-            }
-          },
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Stock"
-        ]
-      }
-    },
     "/v1/stock/movements": {
       "post": {
         "operationId": "StockController_record_v1",
@@ -4512,140 +4251,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MovementPage"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Stock"
-        ]
-      }
-    },
-    "/v1/stock/counts": {
-      "get": {
-        "operationId": "StockController_counts_v1",
-        "parameters": [
-          {
-            "name": "locationId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "variantId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "productId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "includeEmpty",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
-            "name": "expiringWithin",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 3650,
-              "type": "number"
-            }
-          },
-          {
-            "name": "expired",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "needsCost",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "expiry"
-              ]
-            }
-          },
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StockCounts"
                 }
               }
             }
@@ -4826,6 +4431,1001 @@
         ]
       }
     },
+    "/v1/stock/by-code": {
+      "get": {
+        "operationId": "StockGroupedController_byCode_v1",
+        "parameters": [
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "onHand",
+                "expires"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCodePage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
+    "/v1/stock/by-code/counts": {
+      "get": {
+        "operationId": "StockGroupedController_counts_v1",
+        "parameters": [
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCodeCounts"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
+    "/v1/stock/by-code/export": {
+      "get": {
+        "operationId": "StockGroupedController_exportByCode_v1",
+        "parameters": [
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "onHand",
+                "expires"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
+    "/v1/stock/by-code/{variantId}/places": {
+      "get": {
+        "operationId": "StockGroupedController_places_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCodePlaces"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
+    "/v1/stock/by-lot": {
+      "get": {
+        "operationId": "StockGroupedController_byLot_v1",
+        "parameters": [
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "expires",
+                "item",
+                "location",
+                "quantity"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockLotPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
+    "/v1/stock/by-lot/counts": {
+      "get": {
+        "operationId": "StockGroupedController_lotCounts_v1",
+        "parameters": [
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockLotCounts"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
+    "/v1/stock/by-lot/export": {
+      "get": {
+        "operationId": "StockGroupedController_exportByLot_v1",
+        "parameters": [
+          {
+            "name": "low",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "out",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3650,
+              "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needsCost",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeEmpty",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "expires",
+                "item",
+                "location",
+                "quantity"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "StockGrouped"
+        ]
+      }
+    },
     "/v1/stock/lots/search": {
       "get": {
         "operationId": "LotTraceController_search_v1",
@@ -4898,24 +5498,15 @@
         ]
       }
     },
-    "/v1/stock/availability": {
+    "/v1/stock/lots/{id}/recipients/export": {
       "get": {
-        "operationId": "AvailabilityController_list_v1",
+        "operationId": "LotTraceController_exportRecipients_v1",
         "parameters": [
           {
-            "name": "promised",
-            "required": false,
-            "in": "query",
+            "name": "id",
+            "required": true,
+            "in": "path",
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "productId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
               "type": "string"
             }
           },
@@ -4930,21 +5521,11 @@
         ],
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Availability"
-                  }
-                }
-              }
-            }
+            "description": ""
           }
         },
         "tags": [
-          "Availability"
+          "LotTrace"
         ]
       }
     },
@@ -4994,6 +5575,29 @@
               "enum": [
                 "low",
                 "out"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suggested"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
               ]
             }
           },
@@ -5068,6 +5672,29 @@
             }
           },
           {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suggested"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
@@ -5130,6 +5757,29 @@
             }
           },
           {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suggested"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
@@ -5169,6 +5819,27 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points/items": {
+      "get": {
+        "operationId": "ReorderPointsController_items_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointItems"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5371,6 +6042,44 @@
         },
         "tags": [
           "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/products/{id}/stock": {
+      "get": {
+        "operationId": "WhereItStandsController_read_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductStock"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WhereItStands"
         ]
       }
     },
@@ -5928,6 +6637,14 @@
               "minimum": 1,
               "maximum": 100,
               "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -7066,6 +7783,40 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        },
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/v1/orders/deliveries": {
+      "get": {
+        "operationId": "OrdersController_deliveries_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Delivery"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -9272,7 +10023,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.4",
+    "version": "1.5",
     "contact": {}
   },
   "tags": [],
@@ -12396,6 +13147,12 @@
               "null"
             ]
           },
+          "notUsable": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "unitOfMeasure": {
             "type": [
               "string",
@@ -12412,6 +13169,12 @@
               "low",
               null
             ]
+          },
+          "stockStatusCodes": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -12426,8 +13189,10 @@
           "createdAt",
           "updatedAt",
           "onHand",
+          "notUsable",
           "unitOfMeasure",
-          "stockStatus"
+          "stockStatus",
+          "stockStatusCodes"
         ]
       },
       "ProductTypeCount": {
@@ -12467,12 +13232,16 @@
           },
           "discontinued": {
             "type": "number"
+          },
+          "low": {
+            "type": "number"
           }
         },
         "required": [
           "types",
           "all",
-          "discontinued"
+          "discontinued",
+          "low"
         ]
       },
       "ProductPage": {
@@ -15455,115 +16224,6 @@
           "strandedLines"
         ]
       },
-      "StockRow": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "variantId": {
-            "type": "string"
-          },
-          "sku": {
-            "type": "string"
-          },
-          "productName": {
-            "type": "string"
-          },
-          "variantName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "coverFileId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "unitOfMeasure": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "locationName": {
-            "type": "string"
-          },
-          "locationCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotExpiresAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotIsAssigned": {
-            "type": [
-              "boolean",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "variantId",
-          "sku",
-          "productName",
-          "variantName",
-          "coverFileId",
-          "unitOfMeasure",
-          "locationId",
-          "locationName",
-          "locationCode",
-          "lotId",
-          "lotCode",
-          "lotExpiresAt",
-          "lotIsAssigned",
-          "quantity"
-        ]
-      },
-      "StockPage": {
-        "type": "object",
-        "properties": {
-          "entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StockRow"
-            }
-          },
-          "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "entries",
-          "nextCursor"
-        ]
-      },
       "MovementLotDto": {
         "type": "object",
         "properties": {
@@ -15652,19 +16312,30 @@
           "movement"
         ]
       },
-      "StockCounts": {
+      "MovementDocument": {
         "type": "object",
         "properties": {
-          "expiring": {
-            "type": "number"
+          "kind": {
+            "type": "string",
+            "enum": [
+              "order",
+              "run"
+            ]
           },
-          "needsCost": {
-            "type": "number"
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
-          "expiring",
-          "needsCost"
+          "kind",
+          "id",
+          "number"
         ]
       },
       "Movement": {
@@ -15736,6 +16407,16 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementDocument"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -15752,7 +16433,8 @@
           "lotCode",
           "actorName",
           "actorEmail",
-          "createdAt"
+          "createdAt",
+          "document"
         ]
       },
       "MovementPage": {
@@ -15814,6 +16496,568 @@
             "type": "string"
           }
         }
+      },
+      "StockHere": {
+        "type": "object",
+        "properties": {
+          "onHand": {
+            "type": "string"
+          },
+          "lots": {
+            "type": "number"
+          },
+          "expiresFirst": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "onHand",
+          "lots",
+          "expiresFirst"
+        ]
+      },
+      "StockCodeRow": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "places": {
+            "type": "number"
+          },
+          "lots": {
+            "type": "number"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "usable": {
+            "type": "string"
+          },
+          "notUsable": {
+            "type": "string"
+          },
+          "expired": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          },
+          "unavailable": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "free": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          },
+          "coming": {
+            "type": "string"
+          },
+          "comingOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "type": "string"
+          },
+          "expiresFirst": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reorderPoint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "out",
+              "low",
+              "discontinued",
+              "enough",
+              null
+            ]
+          },
+          "needsCost": {
+            "type": "boolean"
+          },
+          "stocked": {
+            "type": "boolean"
+          },
+          "here": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StockHere"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "variantId",
+          "productId",
+          "type",
+          "coverFileId",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "places",
+          "lots",
+          "onHand",
+          "usable",
+          "notUsable",
+          "expired",
+          "issued",
+          "unavailable",
+          "held",
+          "free",
+          "short",
+          "coming",
+          "comingOn",
+          "position",
+          "expiresFirst",
+          "reorderPoint",
+          "status",
+          "needsCost",
+          "stocked",
+          "here"
+        ]
+      },
+      "StockCodePage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockCodeRow"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "StockCodeCounts": {
+        "type": "object",
+        "properties": {
+          "low": {
+            "type": "number"
+          },
+          "out": {
+            "type": "number"
+          },
+          "expiring": {
+            "type": "number"
+          },
+          "expired": {
+            "type": "number"
+          },
+          "needsCost": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "out",
+          "expiring",
+          "expired",
+          "needsCost",
+          "total"
+        ]
+      },
+      "StockPile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotIsAssigned": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "emptiedOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "locationId",
+          "locationName",
+          "locationCode",
+          "lotId",
+          "lotCode",
+          "lotExpiresAt",
+          "lotIsAssigned",
+          "quantity",
+          "emptiedOn"
+        ]
+      },
+      "StockPlace": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockPile"
+            }
+          }
+        },
+        "required": [
+          "locationId",
+          "locationName",
+          "locationCode",
+          "locationPath",
+          "isAvailable",
+          "onHand",
+          "lots"
+        ]
+      },
+      "StockCodePlaces": {
+        "type": "object",
+        "properties": {
+          "places": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockPlace"
+            }
+          }
+        },
+        "required": [
+          "places"
+        ]
+      },
+      "StockLotRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotIsAssigned": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "emptiedOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "productId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "places": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "locationId",
+          "locationName",
+          "locationCode",
+          "lotId",
+          "lotCode",
+          "lotExpiresAt",
+          "lotIsAssigned",
+          "quantity",
+          "emptiedOn",
+          "productId",
+          "type",
+          "coverFileId",
+          "locationPath",
+          "isAvailable",
+          "places"
+        ]
+      },
+      "StockLotPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockLotRow"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "StockLotCounts": {
+        "type": "object",
+        "properties": {
+          "low": {
+            "type": "number"
+          },
+          "expiring": {
+            "type": "number"
+          },
+          "expired": {
+            "type": "number"
+          },
+          "needsCost": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "expiring",
+          "expired",
+          "needsCost",
+          "total"
+        ]
       },
       "LotMatch": {
         "type": "object",
@@ -16100,6 +17344,12 @@
           },
           "returned": {
             "type": "string"
+          },
+          "leftOn": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -16114,7 +17364,8 @@
           "sku",
           "shipped",
           "sampled",
-          "returned"
+          "returned",
+          "leftOn"
         ]
       },
       "LotTrace": {
@@ -16161,52 +17412,6 @@
           "madeFrom",
           "wentInto",
           "recipients"
-        ]
-      },
-      "Availability": {
-        "type": "object",
-        "properties": {
-          "variantId": {
-            "type": "string"
-          },
-          "sku": {
-            "type": "string"
-          },
-          "productName": {
-            "type": "string"
-          },
-          "variantName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "unitOfMeasure": {
-            "type": "string"
-          },
-          "onHand": {
-            "type": "string"
-          },
-          "held": {
-            "type": "string"
-          },
-          "free": {
-            "type": "string"
-          },
-          "backordered": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "variantId",
-          "sku",
-          "productName",
-          "variantName",
-          "unitOfMeasure",
-          "onHand",
-          "held",
-          "free",
-          "backordered"
         ]
       },
       "LineHold": {
@@ -16270,6 +17475,26 @@
           },
           "variantId": {
             "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "sku": {
             "type": "string"
@@ -16362,6 +17587,9 @@
         "required": [
           "id",
           "variantId",
+          "productId",
+          "type",
+          "coverFileId",
           "sku",
           "productName",
           "variantName",
@@ -16421,6 +17649,20 @@
           "all",
           "low",
           "out"
+        ]
+      },
+      "ReorderPointItems": {
+        "type": "object",
+        "properties": {
+          "variantIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "variantIds"
         ]
       },
       "ReorderPointValues": {
@@ -16615,6 +17857,9 @@
           "drafted": {
             "type": "boolean"
           },
+          "inDraft": {
+            "type": "string"
+          },
           "after": {
             "type": "string"
           },
@@ -16634,6 +17879,7 @@
           "suggestion",
           "suggestedMultiples",
           "drafted",
+          "inDraft",
           "after",
           "afterStatus"
         ]
@@ -16678,6 +17924,343 @@
           "rule"
         ]
       },
+      "StockHold": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wanted": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "expectedAt",
+          "wanted",
+          "held",
+          "short"
+        ]
+      },
+      "ComingPurchase": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "late": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "quantity",
+          "expectedAt",
+          "late"
+        ]
+      },
+      "ComingRun": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "runId",
+          "reference",
+          "partnerName",
+          "quantity"
+        ]
+      },
+      "UsableLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "places": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lotId",
+          "lotCode",
+          "expiresAt",
+          "quantity",
+          "places"
+        ]
+      },
+      "CodeStanding": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "usable": {
+            "type": "string"
+          },
+          "notUsable": {
+            "type": "string"
+          },
+          "expired": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          },
+          "unavailable": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "free": {
+            "type": "string"
+          },
+          "stillNeeded": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          },
+          "coming": {
+            "type": "string"
+          },
+          "comingOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "type": "string"
+          },
+          "expiresFirst": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reorderPoint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "out",
+              "low",
+              "discontinued",
+              "enough",
+              null
+            ]
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "bought",
+              "made",
+              null
+            ]
+          },
+          "suggestion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "heldOrders": {
+            "type": "number"
+          },
+          "holds": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StockHold"
+            }
+          },
+          "purchases": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ComingPurchase"
+            }
+          },
+          "runs": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ComingRun"
+            }
+          },
+          "places": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StockPlace"
+            }
+          },
+          "lots": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/UsableLot"
+            }
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "variantName",
+          "unitOfMeasure",
+          "isActive",
+          "onHand",
+          "usable",
+          "notUsable",
+          "expired",
+          "issued",
+          "unavailable",
+          "held",
+          "free",
+          "stillNeeded",
+          "short",
+          "coming",
+          "comingOn",
+          "position",
+          "expiresFirst",
+          "reorderPoint",
+          "status",
+          "source",
+          "suggestion",
+          "heldOrders",
+          "holds",
+          "purchases",
+          "runs",
+          "places",
+          "lots"
+        ]
+      },
+      "ProductStock": {
+        "type": "object",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeStanding"
+            }
+          }
+        },
+        "required": [
+          "codes"
+        ]
+      },
       "LookupResult": {
         "type": "object",
         "properties": {
@@ -16717,6 +18300,21 @@
               "null"
             ]
           },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment",
+              null
+            ]
+          },
           "close": {
             "type": "boolean"
           }
@@ -16729,6 +18327,7 @@
           "expiresAt",
           "productId",
           "coverFileId",
+          "type",
           "close"
         ]
       },
@@ -18021,6 +19620,35 @@
           "variantId": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotId": {
             "type": [
               "string",
@@ -18071,6 +19699,11 @@
           "reason",
           "sku",
           "variantId",
+          "productId",
+          "productName",
+          "variantName",
+          "type",
+          "coverFileId",
           "lotId",
           "lotCode",
           "quantity",
@@ -19105,6 +20738,79 @@
         "required": [
           "entries",
           "nextCursor"
+        ]
+      },
+      "DeliveryLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "quantityOrdered": {
+            "type": "string"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          },
+          "quantityOutstanding": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "tracksLots",
+          "unitOfMeasure",
+          "quantityOrdered",
+          "quantityFulfilled",
+          "quantityOutstanding"
+        ]
+      },
+      "Delivery": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "line": {
+            "$ref": "#/components/schemas/DeliveryLine"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "expectedAt",
+          "late",
+          "line"
         ]
       },
       "ChosenSite": {
@@ -22487,7 +24193,8 @@
           "reorder_maximum_not_above_point",
           "code_in_use",
           "item_name_missing",
-          "product_names_changed"
+          "product_names_changed",
+          "stock_not_usable"
         ]
       },
       "ApiVocabulary": {

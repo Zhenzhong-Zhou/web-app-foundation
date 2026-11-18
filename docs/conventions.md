@@ -262,7 +262,12 @@ Use these rather than writing the thing again. The client's are under
   `dto/calendar-day.ts` (`IsCalendarDay`, which reads
   `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`),
   `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`). A DTO never
-  restates a rule's message; `$property` names the field.
+  restates a rule's message; `$property` names the field. A list sorted
+  pages through `sorted-page.ts`: `pagedBy` for a kept column, the cursor
+  a row's id; `orderOf`, `afterKeys`, `cursorOf` and `readKeys` for a
+  worked-out figure, the cursor its values; `notInThisList`, every list's
+  refusal of a cursor. An export through `export.ts`: `everyRow`,
+  `csvFile`, and `inWords` for a code it writes as the screen's word.
 - **`core/documents/`:** `sheet.ts` (`masthead`, `party`, `linesTable`,
   `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
   for who and where it names, and `DocumentsService.send` with a
@@ -273,7 +278,13 @@ Use these rather than writing the thing again. The client's are under
   `return-authorizations/lock-open.ts`. Also `stock/rates.ts`
   (`baseCurrency`, `rateOnOrBefore`), `stock/availability.ts`
   (`inVariantOrder`, the one order product locks are taken in),
-  `orders/order-line-pricing.ts` (`pricedCurrencies`,
+  `stock/usable-stock.ts` (`usableByLocation`, the one rule for usable
+  stock), `stock/code-figures.ts` (`codeFigures`, the one read for a
+  code's figures, which Inventory, Where it stands and Reorder share),
+  `stock/code-lines.ts` (the lines behind them: Coming's documents,
+  Held's sales, the usable lots),
+  `stock/reorder-status.ts` (`statusOf`, the one rule for a code's
+  status), `orders/order-line-pricing.ts` (`pricedCurrencies`,
   `assertOneSaleCurrency`), `orders/lot-items.ts` (what a shipment or
   return moved), `return-authorizations/lines-with-progress.ts`,
   `invoices/issued-invoice.ts` (`partiesOf`, `stored`) and
@@ -751,7 +762,7 @@ The error tracker hears of real faults only (ADR-084).
 ### What is worth a component test
 
 Pure functions first — no rendering, most logic per test:
-`lib/validation.ts`, `lib/format.ts`, `locations/tree.ts` including the
+`lib/validation.ts`, `lib/format.ts`, `lib/tree.ts` including the
 orphan case, `edit-location-dialog`'s `eligibleParents` (a real graph walk,
 currently covered only by one expensive e2e test), and `lib/api.ts` —
 `ApiError` construction, the 204 path, the array-message flattening.
@@ -939,8 +950,10 @@ destination goes into a group in `navigation.ts`, never into the bar.
 A screen's layout follows the same rule: CSS `display` at the breakpoint decides
 what shows. The exception is a list whose table and cards would each draw every
 row: CSS `display` would draw every row twice, one copy hidden, so it switches
-with `useMediaQuery` and `noSsr: true`, which gives the first draw the width, as
-Items and Members do
+with `useMediaQuery` and `noSsr: true`, which gives the first draw the width:
+`TableOrCards` draws one or the other, as Items does, and `useCards` is the
+same question for the rest of its page; Members asks it by hand until it is
+next changed
 ([ADR-090, The width switch](adr/0090-the-design-language.md#decision--the-width-switch)).
 Help's switch is a fix (#505); the other screens that branch on the width wait
 in #567, each judged when next touched.
@@ -1019,7 +1032,9 @@ Use these rather than writing the thing again on a page:
   status adds its row to that table.
 - **`ExpiryChip`** for any lot's expiry: days left within 90 days (amber, red
   within 30 or past) with the date beside it; the date alone further off. The
-  thresholds are `EXPIRY_DAYS` in `lib/expiry.ts`.
+  thresholds are `EXPIRY_DAYS` in `lib/expiry.ts`. **`useExpiryStatus`**
+  (`lib/use-expiry-status.ts`) is the same words and tone for a lot's own
+  page: "Expired 4 days ago" beside its title (#479).
 - **`displayQuantity`** for a quantity people read: no padding zeros, grouped.
   **`formatQuantity`** for a quantity in a field, which must stay what
   `toApiDecimal` accepts.
@@ -1028,6 +1043,9 @@ Use these rather than writing the thing again on a page:
   sections stay one page.
 - **`FilterRow`** above a list: search, the list's selects, quick filters with
   counts. Never a column of full-width fields.
+- **`FiltersButton`** inside `FilterRow` on a phone, for the fields a phone
+  hides: one button, "Filters · 2", opening a sheet named by its heading
+  with those fields, Clear and Show 12 (ADR-093, #481). Items' first.
 - **`FilterChips`** under it: what a link narrowed or ordered that no button
   shows, each chip's × undoing it, focus then on the chip left or the page's
   heading (#505's 57).
@@ -1037,6 +1055,9 @@ Use these rather than writing the thing again on a page:
 - **`useKeysetList`** with **`LoadMoreButton`** for a list read a page at a
   time: one hook for every list's Load more (#33), the cursor's name and what
   the first page carries beside its rows, such as Items' counts, its options.
+  The button says "Show 50 more" given its page's size, and a next page that
+  failed, "The next 50 could not be loaded." with Try again, given `failed`
+  (#544): Items and Stock pass it, the other lists as they are next changed.
 - **`PlaceholderRows`** in a list's table body while it reads, its head kept on
   the page, so a header pressed to sort keeps its focus (#505's 54).
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
@@ -1050,12 +1071,44 @@ Use these rather than writing the thing again on a page:
   hyphen; **`ReferencesWhole`** for text the server wrote, which keeps every
   hyphenated word whole (ADR-081). A code over 16 characters may still
   break, rather than run off a phone's screen; a page heading is left alone.
+- **`LotLink`** for a lot's code wherever it appears: kept whole, a link to
+  its trace, which offers Back (ADR-093; the design language's Rows).
 - **`IconBadge`** for an icon on a tinted square or circle, a tile's, a
   card's, a way in's or a row's mark: square with the control's corner, or
   round, its colours the caller's (#505's 52). Never a box drawn by hand.
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
+- **`ActionsMenu`** for a row's actions: a button reading Actions with a
+  small down arrow after it, named for its row, "Actions for VITC-100", opening a menu of what the reader
+  may do there, each choice run once the menu has closed; nothing to
+  offer, no button (ADR-093; the design language's Rows). Stock's and
+  Reorder's rows first; the others move as their screens are next changed.
+- **`NameAndCode`** (`products/name-and-code.tsx`) for an item in a list's
+  row or card: the cover or the type's icon, the name first in bold and the
+  code grey under it, the name the row's one link (ADR-093; the design
+  language's Rows). Items' rows first; the others move as their screens are
+  next changed.
+- **`OpeningButton`** with **`useOpenRows`** for a row that opens to the
+  rows under it, a code's places or a place's lots: a disclosure button
+  with its words and count, "2 places", its rows read each time it opens,
+  "Reading…" past 250 ms, focus kept on it (ADR-093), read again while
+  open whenever its `again` changes, as after stock moved. Its name holds
+  its words first, "2 places: show where … is" (WCAG 2.5.3). Never a
+  chevron alone.
+- **`TableOrCards`** for a list's rows as a table from 600 px and as cards
+  below, two grey cards while the cards are read; `useCards` asks the same
+  width for the rest of the page (ADR-090's width switch).
+- **`useLocations`** for the locations a filter or a form offers, read when
+  it opens and only for a reader with `locations.view`, on `useResource`,
+  with `retry` for Try again.
+- **`useResource(path | null)`** for any read a page makes, a null path
+  asking nothing: a quiet read, such as the counts beside a filter or a
+  picker's marks, ignores its `error` rather than writing its own effect
+  (ADR-093's review, 28).
+- **`treeOf`** (`lib/tree.ts`) for a tree the server sends flat, the
+  locations' and the categories': each row's children mapped once, a row
+  whose parent is missing at the top, never dropped (#551's 64).
 
 The whole app asks a browser not to translate it: `translate="no"` on the
 html element and Google's `notranslate` meta tag in client/index.html (#245).

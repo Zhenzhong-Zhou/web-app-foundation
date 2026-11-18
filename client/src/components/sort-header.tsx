@@ -1,3 +1,4 @@
+import UnfoldMore from '@mui/icons-material/UnfoldMore';
 import { TableCell, type TableCellProps, TableSortLabel } from '@mui/material';
 import type { ReactNode } from 'react';
 
@@ -14,6 +15,12 @@ import type { SortOrder } from '../lib/use-list-sort';
  *
  * `after` sits beside the label on the same line, as Items' date column
  * keeps its menu of which date to show.
+ *
+ * `atRest`, a faint up-and-down arrow on a header not sorting, so every
+ * header that sorts says so before it is pressed, the sorted one's arrow
+ * solid for its way (ADR-093; v2's board): Stock, the Lot view and
+ * Reorder first, the others as their screens are next changed. Their
+ * default is marked, `active`, when no other is chosen.
  */
 export function SortHeader({
   label,
@@ -22,6 +29,7 @@ export function SortHeader({
   onSort,
   align,
   after,
+  atRest = false,
 }: {
   label: string;
   active: boolean;
@@ -29,6 +37,7 @@ export function SortHeader({
   onSort: () => void;
   align?: TableCellProps['align'];
   after?: ReactNode;
+  atRest?: boolean;
 }) {
   return (
     <TableCell
@@ -43,6 +52,11 @@ export function SortHeader({
         active={active}
         direction={active ? order : 'asc'}
         onClick={onSort}
+        {...(atRest &&
+          !active && {
+            IconComponent: UnfoldMore,
+            sx: { '& .MuiTableSortLabel-icon': { opacity: 0.4 } },
+          })}
       >
         {label}
       </TableSortLabel>

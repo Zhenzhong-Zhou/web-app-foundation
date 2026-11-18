@@ -1,10 +1,12 @@
 import { ConflictException } from '@nestjs/common';
-import { type SQL, sql } from 'drizzle-orm';
+import { and, eq, type SQL, sql } from 'drizzle-orm';
 
-import type { Locale } from '../../common/locales';
+import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { todayOf } from '../../core/organizations/time-zone';
+import { productVariants } from '../../database/schema';
 import { t } from '../../i18n/translate';
-import { namesIn } from './item-name';
 import type { Tx } from './stock.service';
+import { usableByItem, usableByLocation } from './usable-stock';
 
 /** One open sale line's hold on a product (ADR-045). */
 export interface LineHold {
@@ -20,66 +22,47 @@ export interface LineHold {
 }
 
 /**
- * Every open confirmed sale line, with what each holds (ADR-045).
+ * Every open confirmed sale line of the items in `variants`, a
+ * parenthesised list or subquery of ids, with what each holds (ADR-045).
  *
  * Computed, never stored. A line holds what is left of its product's supply
  * after every earlier-confirmed line, up to what it still needs — so when
  * stock runs short the first order confirmed keeps its hold and the last goes
- * short, rather than every order blocking every other. Supply is stock at
- * locations marked available: a retention or quarantine bin holds stock
- * nobody can promise (ADR-042).
+ * short, rather than every order blocking every other. Supply is usable
+ * stock, the one rule (usable-stock.ts; ADR-045 amended by ADR-093): at
+ * locations marked available, since a retention or quarantine bin holds
+ * stock nobody can promise (ADR-042), less lots expired by the
+ * organization's `today` and what released runs were issued.
  *
- * One query for one product or for all of them, so the rule exists once: the
- * availability list and the check that guards a shipment cannot disagree.
+ * One query for one product or for many, so the rule exists once: an
+ * order's own lines and the check that guards a shipment read it, and a
+ * code's figures its total, the least of the usable and what the lines
+ * still need, which every line's hold sums to (code-figures.ts; ADR-093,
+ * 34a).
  */
-function holdsSql(organizationId: string, variantId?: string): SQL {
-  const onlySupply = variantId
-    ? sql`and sl.variant_id = ${variantId}::uuid`
-    : sql``;
-  const onlyDemand = variantId
-    ? sql`and ol.variant_id = ${variantId}::uuid`
-    : sql``;
-
+export function holdsSql(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+): SQL {
   return sql`
-    with supply as (
-      select sl.variant_id, sum(sl.quantity) as quantity
-      from stock_levels sl
-      join locations loc on loc.id = sl.location_id
-      where sl.organization_id = ${organizationId}::uuid
-        and loc.is_available
-        ${onlySupply}
-      group by sl.variant_id
-    ),
-    demand as (
+    with demand as (
       select
-        ol.variant_id,
-        ol.id as line_id,
-        o.id as order_id,
-        ol.quantity_ordered - ol.quantity_fulfilled as outstanding,
+        ln.variant_id,
+        ln.line_id,
+        ln.order_id,
+        ln.outstanding,
         coalesce(
-          sum(ol.quantity_ordered - ol.quantity_fulfilled) over (
-            partition by ol.variant_id
-            order by o.confirmed_at, o.id, ol.id
+          sum(ln.outstanding) over (
+            partition by ln.variant_id
+            order by ln.confirmed_at, ln.order_id, ln.line_id
             rows between unbounded preceding and 1 preceding
           ),
           0
         ) as before
-      from order_lines ol
-      join orders o on o.id = ol.order_id
-      where ol.organization_id = ${organizationId}::uuid
-        -- Redundant for correctness, since a line's order is in its
-        -- organization, but without it Postgres cannot use
-        -- orders_org_status_idx and reads every tenant's confirmed sales
-        -- to join them (ADR-051's plan check found it).
-        and o.organization_id = ${organizationId}::uuid
-        and o.direction = 'sale'
-        and o.status = 'confirmed'
-        -- order_lines_open_idx is built on exactly these two conditions;
-        -- change them together or the index stops being used.
-        and not ol.is_closed_short
-        and ol.quantity_ordered > ol.quantity_fulfilled
-        ${onlyDemand}
-    )
+      from (${openSaleLines(organizationId, variants)}) ln
+    ),
+    supply as (${usableByItem(organizationId, today, variants)})
     select
       d.variant_id,
       d.line_id,
@@ -87,28 +70,129 @@ function holdsSql(organizationId: string, variantId?: string): SQL {
       d.outstanding,
       -- Cast back to the column's type: a literal 0 winning greatest()
       -- would otherwise print as "0" beside "40.0000".
-      greatest(0, least(d.outstanding, coalesce(s.quantity, 0) - d.before))::numeric(18, 4) as held
+      greatest(0, least(d.outstanding, coalesce(s.usable, 0) - d.before))::numeric(18, 4) as held
     from demand d
     left join supply s on s.variant_id = d.variant_id
   `;
 }
 
-/** One product's supply at available locations, and every line's hold on it. */
+/**
+ * The demand holds share out (ADR-045): every open confirmed sale line
+ * of the items in `variants`, what it still needs, and when its order was
+ * confirmed. Rows `variant_id, line_id, order_id, confirmed_at,
+ * outstanding`; the holds read them line by line, a code's figures their
+ * sum (code-figures.ts).
+ */
+export function openSaleLines(
+  organizationId: string,
+  /** Those items' lines alone; none, every item's. */
+  variants?: SQL,
+): SQL {
+  return sql`
+    select
+      ol.variant_id,
+      ol.id as line_id,
+      o.id as order_id,
+      o.confirmed_at,
+      ol.quantity_ordered - ol.quantity_fulfilled as outstanding
+    from order_lines ol
+    join orders o on o.id = ol.order_id
+    where ol.organization_id = ${organizationId}::uuid
+      -- Redundant for correctness, since a line's order is in its
+      -- organization, but without it Postgres cannot use
+      -- orders_org_status_idx and reads every tenant's confirmed sales
+      -- to join them (ADR-051's plan check found it).
+      and o.organization_id = ${organizationId}::uuid
+      and o.direction = 'sale'
+      and o.status = 'confirmed'
+      -- order_lines_open_idx is built on exactly these two conditions;
+      -- change them together or the index stops being used.
+      and not ol.is_closed_short
+      and ol.quantity_ordered > ol.quantity_fulfilled
+      ${variants ? sql`and ol.variant_id in ${variants}` : sql``}
+  `;
+}
+
+/**
+ * What is coming, line by line (ADR-093): each confirmed purchase's line
+ * still to receive, and each released run's output still to make. The
+ * one rule a code's Coming figure sums, its lines list and the codes a
+ * list holds read, and the deliveries a receipt may be. Rows
+ * `variant_id, kind ('purchase' or 'run'), id, line_id, number,
+ * partner_id, quantity, expected_at`; a run has no line and no day.
+ */
+export function comingOf(
+  organizationId: string,
+  /** Those items' alone; none, every item's. */
+  variants?: SQL,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select
+      ol.variant_id,
+      'purchase' as kind,
+      o.id,
+      ol.id as line_id,
+      o.number,
+      o.partner_id,
+      ol.quantity_ordered - ol.quantity_fulfilled as quantity,
+      o.expected_at
+    from order_lines ol
+    join orders o
+      on o.id = ol.order_id
+      and o.organization_id = ${org}
+    where ol.organization_id = ${org}
+      and o.direction = 'purchase'
+      and o.status = 'confirmed'
+      -- order_lines_open_idx is built on exactly these two conditions;
+      -- change them together or the index stops being used.
+      and not ol.is_closed_short
+      and ol.quantity_ordered > ol.quantity_fulfilled
+      ${variants ? sql`and ol.variant_id in ${variants}` : sql``}
+    union all
+    select
+      po.output_variant_id,
+      'run',
+      po.id,
+      null::uuid,
+      po.reference,
+      po.partner_id,
+      po.quantity_planned - po.quantity_produced,
+      null::date
+    from production_orders po
+    where po.organization_id = ${org}
+      and po.status = 'released'
+      and po.quantity_planned > po.quantity_produced
+      ${variants ? sql`and po.output_variant_id in ${variants}` : sql``}
+  `;
+}
+
+/**
+ * One product's usable stock, what is expired or issued beside it, and
+ * every line's hold on it. Expired and issued are the not usable at
+ * places marked available: what a hold cannot draw on, though it is on
+ * the shelf a shipment takes from.
+ */
 export async function holdsFor(
   tx: Tx,
   organizationId: string,
   variantId: string,
-): Promise<{ supply: string; lines: LineHold[] }> {
+): Promise<{
+  supply: string;
+  expiredOrIssued: string;
+  lines: LineHold[];
+}> {
+  const today = await todayOf(tx, organizationId);
+
   const [supply] = (
     await tx.execute(sql`
-      select coalesce(sum(sl.quantity), 0)::numeric(18, 4)::text as quantity
-      from stock_levels sl
-      join locations loc on loc.id = sl.location_id
-      where sl.organization_id = ${organizationId}::uuid
-        and sl.variant_id = ${variantId}::uuid
-        and loc.is_available
+      select
+        coalesce(sum(u.usable), 0)::numeric(18, 4)::text as usable,
+        coalesce(sum(u.expired + u.issued), 0)::numeric(18, 4)::text as expired_or_issued
+      from (${usableByLocation(organizationId, today, sql`(${variantId}::uuid)`)}) u
     `)
-  ).rows as { quantity: string }[];
+  ).rows as { usable: string; expired_or_issued: string }[];
 
   const lines = (
     await tx.execute(sql`
@@ -119,7 +203,7 @@ export async function holdsFor(
         h.outstanding::text as outstanding,
         h.held::text as held,
         (h.outstanding - h.held)::text as short
-      from (${holdsSql(organizationId, variantId)}) h
+      from (${holdsSql(organizationId, today, sql`(${variantId}::uuid)`)}) h
     `)
   ).rows as {
     variant_id: string;
@@ -131,7 +215,8 @@ export async function holdsFor(
   }[];
 
   return {
-    supply: supply.quantity,
+    supply: supply.usable,
+    expiredOrIssued: supply.expired_or_issued,
     lines: lines.map((row) => ({
       variantId: row.variant_id,
       lineId: row.line_id,
@@ -141,94 +226,6 @@ export async function holdsFor(
       short: row.short,
     })),
   };
-}
-
-/**
- * Per product: on hand where it can be promised, held, free, and backordered.
- * Only products with stock or open demand are listed; with `promisedOnly`,
- * only those with open demand: what the Inventory page's "Promised to
- * customers" table shows. That list grows with open orders, not with the
- * catalogue, where the full one was 5,000 rows at ADR-051's large scale.
- * With `productId`, that item's variants alone (ADR-092). Each item named
- * in the reader's language (ADR-056).
- */
-export async function availability(
-  tx: Tx,
-  organizationId: string,
-  locale: Locale,
-  promisedOnly = false,
-  productId?: string,
-) {
-  const listed = promisedOnly
-    ? sql`h.variant_id is not null`
-    : sql`(s.variant_id is not null or h.variant_id is not null)`;
-  const ofItem = productId ? sql`and pr.id = ${productId}::uuid` : sql``;
-  const shown = namesIn(locale, organizationId, {
-    product: 'pr',
-    variant: 'pv',
-  });
-
-  const rows = (
-    await tx.execute(sql`
-      with supply as (
-        select sl.variant_id, sum(sl.quantity) as quantity
-        from stock_levels sl
-        join locations loc on loc.id = sl.location_id
-        where sl.organization_id = ${organizationId}::uuid
-          and loc.is_available
-        group by sl.variant_id
-      ),
-      holds as (
-        select
-          h.variant_id,
-          sum(h.held) as held,
-          sum(h.outstanding) as demand
-        from (${holdsSql(organizationId)}) h
-        group by h.variant_id
-      )
-      select
-        pv.id as variant_id,
-        pv.sku,
-        ${shown.productName} as product_name,
-        ${shown.variantName} as variant_name,
-        pv.unit_of_measure,
-        coalesce(s.quantity, 0)::numeric(18, 4)::text as on_hand,
-        coalesce(h.held, 0)::numeric(18, 4)::text as held,
-        (coalesce(s.quantity, 0) - coalesce(h.held, 0))::numeric(18, 4)::text as free,
-        (coalesce(h.demand, 0) - coalesce(h.held, 0))::numeric(18, 4)::text as backordered
-      from product_variants pv
-      join products pr
-        on pr.id = pv.product_id and pr.organization_id = ${organizationId}::uuid
-      left join supply s on s.variant_id = pv.id
-      left join holds h on h.variant_id = pv.id
-      where pv.organization_id = ${organizationId}::uuid
-        and ${listed}
-        ${ofItem}
-      order by pv.sku
-    `)
-  ).rows as {
-    variant_id: string;
-    sku: string;
-    product_name: string;
-    variant_name: string | null;
-    unit_of_measure: string;
-    on_hand: string;
-    held: string;
-    free: string;
-    backordered: string;
-  }[];
-
-  return rows.map((row) => ({
-    variantId: row.variant_id,
-    sku: row.sku,
-    productName: row.product_name,
-    variantName: row.variant_name,
-    unitOfMeasure: row.unit_of_measure,
-    onHand: row.on_hand,
-    held: row.held,
-    free: row.free,
-    backordered: row.backordered,
-  }));
 }
 
 /**
@@ -271,11 +268,15 @@ export function inVariantOrder<T>(
 /**
  * Refuses to take more than may be taken (ADR-045).
  *
- * For an order: its own hold plus whatever nobody holds. For anything else —
- * a production release, a hand-out, a one-off shipment — only what nobody
- * holds. Compared in SQL, so no quantity goes through a double (ADR-025).
- * Locks the product first, so the answer stays true until the caller's
- * transaction ends.
+ * For an order: its own hold plus whatever usable stock nobody holds. For
+ * anything else — a production release, a hand-out, a one-off shipment —
+ * only the usable stock nobody holds. Stock expired or issued to a run is
+ * on the shelf but holds nothing, so taking it would leave the orders that
+ * need the usable short (ADR-045 amended by ADR-093): refused, saying how
+ * many are expired or issued, with the item for the screen to open its
+ * Where it stands. Compared in SQL, so no quantity goes through a double
+ * (ADR-025). Locks the product first, so the answer stays true until the
+ * caller's transaction ends.
  */
 export async function assertTakeable(
   tx: Tx,
@@ -289,7 +290,7 @@ export async function assertTakeable(
 ): Promise<void> {
   await lockProduct(tx, input.organizationId, input.variantId);
 
-  const { supply, lines } = await holdsFor(
+  const { supply, expiredOrIssued, lines } = await holdsFor(
     tx,
     input.organizationId,
     input.variantId,
@@ -307,7 +308,8 @@ export async function assertTakeable(
         sum(v.held) > 0 as anything_held,
         (${supply}::numeric - sum(v.held)) < ${input.quantity}::numeric as too_much,
         greatest(${supply}::numeric - sum(v.held), 0)::numeric(18, 4)::text as takeable,
-        sum(v.held)::numeric(18, 4)::text as held
+        sum(v.held)::numeric(18, 4)::text as held,
+        ${expiredOrIssued}::numeric > 0 as any_not_usable
       from (values ${values}) as v(held)
     `)
   ).rows as {
@@ -315,6 +317,7 @@ export async function assertTakeable(
     too_much: boolean;
     takeable: string;
     held: string;
+    any_not_usable: boolean;
   }[];
 
   /**
@@ -323,7 +326,19 @@ export async function assertTakeable(
    * which names the location and says "not enough stock" — is the right
    * one to answer it.
    */
-  if (check.anything_held && check.too_much) {
+  if (!(check.anything_held && check.too_much)) return;
+
+  const orders = input.forOrderId
+    ? t({
+        id: 'stock.heldForOtherOrders',
+        defaultMessage: 'other orders',
+      })
+    : t({
+        id: 'stock.heldForConfirmedOrders',
+        defaultMessage: 'confirmed orders',
+      });
+
+  if (!check.any_not_usable) {
     throw new ConflictException(
       t(
         {
@@ -331,21 +346,39 @@ export async function assertTakeable(
           defaultMessage:
             'Only {takeable} {sku} can be taken: {held} is held for {orders}.',
         },
+        { takeable: check.takeable, sku: input.sku, held: check.held, orders },
+      ),
+    );
+  }
+
+  const [variant] = await tx
+    .select({ productId: productVariants.productId })
+    .from(productVariants)
+    .where(
+      and(
+        eq(productVariants.id, input.variantId),
+        eq(productVariants.organizationId, input.organizationId),
+      ),
+    );
+
+  throw new ConflictException(
+    withCode(
+      t(
+        {
+          id: 'stock.takeableSkuNotUsable',
+          defaultMessage:
+            'Only {takeable} {sku} can be taken: {held} is held for {orders}, and {notUsable} more is expired or issued to a run. Where it stands, on the item’s page, shows which.',
+        },
         {
           takeable: check.takeable,
           sku: input.sku,
           held: check.held,
-          orders: input.forOrderId
-            ? t({
-                id: 'stock.heldForOtherOrders',
-                defaultMessage: 'other orders',
-              })
-            : t({
-                id: 'stock.heldForConfirmedOrders',
-                defaultMessage: 'confirmed orders',
-              }),
+          orders,
+          notUsable: expiredOrIssued,
         },
       ),
-    );
-  }
+      ERROR_CODES.stockNotUsable,
+      { productId: variant.productId },
+    ),
+  );
 }

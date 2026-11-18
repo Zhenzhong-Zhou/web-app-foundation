@@ -31,8 +31,8 @@ A tile opens its list with just what it counts, the most urgent first:
 
 - **To ship** and **To receive**: Orders, the late first.
 - **Orders · Draft**: Orders, the drafts, the oldest first. It is hidden until you show it in Customise Home.
-- **Low stock**: Reorder points, on [Inventory](/inventory#reorder-points), the furthest below their point first.
-- **Expiring soon**: Inventory, the lots that expire soonest.
+- **Low stock**: Reorder, on [Inventory](/inventory#reorder-points), the furthest below their point first. It counts codes, as Reorder does.
+- **Expiring soon**: Inventory, grouped by lot, the lots that expire soonest and the expired first. It counts lots at each place: a lot in two places is two.
 - **Stock value · Waiting for a cost**: Stock value, where you set the cost of stock that arrived without one.
 - **Invoices · To issue**: Invoices, the drafts.
 - **Open returns**: Returns, the open ones.
@@ -43,7 +43,7 @@ The list keeps that choice while you work there: Back from a record returns to i
 
 ## What is late {#late}
 
-When anything is late, expired or out, Home says how many things need you now, with a button for each kind, such as **2 late orders to ship**. Each opens its list with just the late ones: **Late** chosen on Orders, **Out** on Reorder points, **Expired** on Inventory and on Licences.
+When anything is late, expired or out, Home says how many things need you now, with a button for each kind, such as **2 late orders to ship**. Each opens its list with just the late ones: **Late** chosen on Orders, **Out** on Reorder, **Expired** on Inventory and on Licences.
 
 With nothing late, one line says **Nothing is late today**; with nothing at all to do, **Nothing needs you today**.
 

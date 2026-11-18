@@ -278,7 +278,7 @@ function aboutOne(
       {
         id: 'notifications.stockLow.oneBody',
         defaultMessage:
-          '{source, select, made {{name}. Plan a run from Reorder points.} other {{name}. Raise a purchase order from Reorder points.}}',
+          '{source, select, made {{name}. Make it from Reorder.} other {{name}. Buy it from Reorder.}}',
       },
       { source: item.source, name },
     ),
@@ -311,7 +311,7 @@ function aboutSeveral(items: Claimed[]): Pick<Emission, 'title' | 'body'> {
       {
         id: 'notifications.stockLow.severalBody',
         defaultMessage:
-          '{what, select, bought {{items}. Order them from Reorder points.} made {{items}. Plan them from Reorder points.} other {{items}. Order or plan them from Reorder points.}}',
+          '{what, select, bought {{items}. Buy them from Reorder.} made {{items}. Make them from Reorder.} other {{items}. Buy or make them from Reorder.}}',
       },
       {
         what,

@@ -23,6 +23,7 @@ import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
+import { treeOf } from '../lib/tree';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { rem } from '../theme/rem';
@@ -318,13 +319,7 @@ function CategoryTree({
       option.count,
     ]),
   );
-  const ids = new Set(categories.map((category) => category.id));
-  const childrenOf = (parentId: string | null) =>
-    categories.filter((category) =>
-      parentId === null
-        ? category.parentId === null || !ids.has(category.parentId)
-        : category.parentId === parentId,
-    );
+  const childrenOf = treeOf(categories);
 
   const branch = (parentId: string | null, depth: number) => (
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>

@@ -9,6 +9,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { QuickFilterPill } from '../components/filter-row';
 import { drawnIn } from '../test/drawn-colour';
 import { themeFor } from '.';
 import { contrast, safeAccent } from './accent';
@@ -122,6 +123,30 @@ describe('the type scale', () => {
     const { fontSize, lineHeight } = themeFor('zh-Hans').typography[variant];
 
     expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
+  });
+});
+
+// A quick filter is read to decide by: 14 px, never MUI's small 13 (#566).
+describe('a quick filter', () => {
+  it('sets its words at 14 px', () => {
+    render(
+      <ThemeProvider theme={themeFor('en')}>
+        <QuickFilterPill
+          filter={{
+            id: 'expiring',
+            label: 'Expiring soon',
+            count: 2,
+            pressed: false,
+            onToggle: () => undefined,
+          }}
+        />
+      </ThemeProvider>,
+    );
+
+    const { fontSize } = getComputedStyle(
+      screen.getByRole('button', { name: /Expiring soon/ }),
+    );
+    expect(parseFloat(fontSize) * (fontSize.endsWith('rem') ? 16 : 1)).toBe(14);
   });
 });
 

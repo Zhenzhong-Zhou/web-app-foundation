@@ -60,11 +60,13 @@ describe('LicencesPage', () => {
     expect(expiring).toHaveAttribute('aria-pressed', 'true');
 
     // Expired cleared: every licence expiring soon.
-    const chip = screen.getByRole('button', { name: 'Expired' });
+    const chip = screen.getByRole('button', {
+      name: 'Remove filter: Expired',
+    });
     chip.focus();
     await user.keyboard('{Delete}');
     expect(
-      screen.queryByRole('button', { name: 'Expired' }),
+      screen.queryByRole('button', { name: 'Remove filter: Expired' }),
     ).not.toBeInTheDocument();
     await expect
       .poll(() => Object.fromEntries(asked.at(-1)!))

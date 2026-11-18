@@ -87,6 +87,20 @@ again, its tables staying under autovacuum's threshold: before trusting a
 figure over budget, run `vacuum analyze` on it (Home at large read 337 ms
 before, 190–225 ms after).
 
+One receipt in six is put away in two bins, a third of it in a second one,
+so a code reaches several places over the year and a lot sits in two (ADR-093):
+what Inventory's rows open to and its Lot view groups. The seed's sales,
+runs and counts draw on the first bin alone, so none is refused, and the
+reorder points are set on the whole stock. By position, not from the random
+source: the rest of the year is the year it was.
+
+One lot in five expires within the year after the seed's day, spread
+evenly over it, and one in a hundred has expired already, also by position
+(ADR-093): so Inventory's Expiring soon and Expired, and the sorts by
+Expires first, have rows whenever the volume is read that year, GitHub's
+cached one included. The expired are never drawn on by the seed's sales,
+since no sale may hold them.
+
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
@@ -143,11 +157,12 @@ At 10 connections, each sending its next request as soon as the last one
 answers:
 
 - **Reads, p95 under 300 ms:**
-  - the order list (open, all, a deep page), an order, the Inventory page's
-    two calls (`/stock` and `/stock/availability?promised=true`), a deep
-    page of `/stock` and a search, the unfiltered availability list (no
-    screen reads it; kept to watch it), the movement list (first page, a
-    deep page, one product), the invoice list, and a lot trace;
+  - the order list (open, all, a deep page), an order, Inventory's reads
+    (ADR-093: a row per code, searched, Low stock, sorted by On hand and
+    by Expires first, its counts, and a code's places; the Lot view, a
+    deep page of it, Expiring soon and its counts) and an item's Where it
+    stands, the movement list (first page, a deep page, one product), the
+    invoice list, and a lot trace;
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item
     pickers by pinyin, both asked in Chinese; and Partners by part of a
@@ -158,9 +173,9 @@ answers:
     items beneath it, which reads its whole branch, and at the
     bottom-level one under it with the most items, both asked in Chinese;
   - Home (ADR-058), an owner's and a newcomer's, and Recently opened;
-  - dates and sorting (ADR-057): the first page of the invoices by total,
-    the orders by expected date and the stock by expiry, and the invoices
-    and movements of the last thirty days.
+  - dates and sorting (ADR-057): the first page of the invoices by total
+    and the orders by expected date, and the invoices and movements of the
+    last thirty days.
 - **One invoice's PDF, p95 under 1,200 ms** (ADR-071), each request the
   next of the first page of issued invoices. It stands for the six PDF
   routes, which share the renderer. Drawing is the server's own work, one

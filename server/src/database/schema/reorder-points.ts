@@ -53,7 +53,7 @@ export const reorderPoints = pgTable(
       .notNull()
       .references(() => productVariants.id, { onDelete: 'restrict' }),
 
-    source: text('source').notNull(),
+    source: text('source').$type<ReorderSource>().notNull(),
 
     /** Low below this. */
     reorderPoint: numeric('reorder_point', {
@@ -61,7 +61,7 @@ export const reorderPoints = pgTable(
       scale: 4,
     }).notNull(),
 
-    rule: text('rule').notNull(),
+    rule: text('rule').$type<ReorderRule>().notNull(),
 
     /** What a fixed rule orders in whole multiples of. Set exactly then. */
     fixedQuantity: numeric('fixed_quantity', { precision: 18, scale: 4 }),

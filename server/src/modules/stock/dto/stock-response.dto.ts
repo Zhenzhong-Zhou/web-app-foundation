@@ -40,6 +40,19 @@ export class StockCounts {
   needsCost!: number;
 }
 
+/**
+ * The document a movement was for (55a): the order it was received,
+ * shipped or returned on, or the run it was issued to or made by.
+ */
+export class MovementDocument {
+  /** Which page opens it: an order's or a run's. */
+  kind!: 'order' | 'run';
+  /** The order's or the run's id. */
+  id!: string;
+  /** The order's number; a run's reference, null when it has none. */
+  number!: string | null;
+}
+
 /** A movement as the ledger lists it. */
 export class Movement {
   id!: string;
@@ -60,6 +73,11 @@ export class Movement {
   /** Null when the actor was anonymised (ADR-012). */
   actorEmail!: string | null;
   createdAt!: Date;
+  /**
+   * What it was for, from its reference (55a); null with none, and for a
+   * reader who may not see orders, or runs. Never in the export.
+   */
+  document!: MovementDocument | null;
 }
 
 /** GET /stock/movements: one page. */

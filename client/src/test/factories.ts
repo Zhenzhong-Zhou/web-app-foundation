@@ -1,6 +1,7 @@
 import type {
   HomeCard,
   HomeResponse,
+  Movement,
   OrderLine,
   Role,
   RoleRef,
@@ -41,6 +42,33 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
     isComplete: false,
     isClosedShort: false,
     closedReason: null,
+    ...over,
+  };
+}
+
+/**
+ * A movement as GET /v1/stock/movements lists it (#282): 王建国 shipping 24
+ * of 维生素 D (60 粒), VITD-60, from Shelf A, lot NN-2410-07, with whatever
+ * the case is about overridden. One builder for every spec that lists a
+ * movement, so a field the API adds to a movement is added here once.
+ */
+export function movement(over: Partial<Movement> = {}): Movement {
+  return {
+    id: 'movement-1',
+    sku: 'VITD-60',
+    productName: '维生素 D',
+    variantName: '60 粒',
+    quantity: '24.0000',
+    reason: 'shipment',
+    reasonDetail: null,
+    note: null,
+    fromLocationName: 'Shelf A',
+    toLocationName: null,
+    lotCode: 'NN-2410-07',
+    actorName: '王建国',
+    actorEmail: 'wang@example.com',
+    createdAt: '2026-10-30T17:00:00.000Z',
+    document: null,
     ...over,
   };
 }

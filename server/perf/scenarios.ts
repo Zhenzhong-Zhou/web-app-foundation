@@ -34,6 +34,7 @@ type Anchors = VolumeManifest['organizations'][number];
 
 interface Hot {
   variantId: string;
+  sku: string;
   locationId: string;
   lots: number;
 }
@@ -48,14 +49,16 @@ export interface Org {
   orderIds: string[];
   deepOrders: string;
   deepMovements: string;
-  /** About a thousand rows into the stock list. */
-  deepStock: string;
+  /** About a thousand rows into the Lot view. */
+  deepLots: string;
   /** The top-level category with the most items beneath it (ADR-092). */
   categoryTop: string;
   /** The bottom-level category under it with the most items. */
   categoryBottom: string;
   /** The first page of the invoices issued, which the PDF read takes in turn. */
   issuedInvoiceIds: string[];
+  /** An item with a code low, whose Where it stands is timed (ADR-093). */
+  lowProductId: string;
 }
 
 export interface Scenario {
@@ -66,7 +69,8 @@ export interface Scenario {
   send: Send;
 }
 
-interface StockRow {
+/** A row of the Lot view: a lot at one place. */
+interface LotRow {
   variantId: string;
   sku: string;
   locationId: string;
@@ -103,7 +107,7 @@ export async function discover(
   newcomer: Session,
 ): Promise<Org> {
   const [{ rows, deep }, locations] = await Promise.all([
-    everyStockRow(session, '/stock'),
+    everyLotRow(session),
     session.json<{ id: string; isAvailable: boolean }[]>('GET', '/locations'),
   ]);
 
@@ -125,6 +129,7 @@ export async function discover(
     const key = `${row.variantId}:${row.locationId}`;
     const hot = byShelf.get(key) ?? {
       variantId: row.variantId,
+      sku: row.sku,
       locationId: row.locationId,
       lots: 0,
     };
@@ -171,6 +176,23 @@ export async function discover(
     );
   }
 
+  // An item with a code low, or any item in stock: Where it stands reads
+  // its codes, their lines and places (ADR-093).
+  const [low] = (
+    await session.json<{ entries: { productId: string }[] }>(
+      'GET',
+      '/stock/by-code?low=true&limit=1',
+    )
+  ).entries;
+  const lowProductId =
+    low?.productId ??
+    (
+      await session.json<{ entries: { productId: string }[] }>(
+        'GET',
+        '/stock/by-code?limit=1',
+      )
+    ).entries[0].productId;
+
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
   const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
@@ -188,10 +210,11 @@ export async function discover(
     orderIds: orders.ids,
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
-    deepStock: deep,
+    deepLots: deep,
     categoryTop: picked.top,
     categoryBottom: picked.bottom,
     issuedInvoiceIds: issued.entries.map((entry) => entry.id),
+    lowProductId,
   };
 }
 
@@ -260,16 +283,55 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /orders/:id',
       (org, n) => `/orders/${org.orderIds[n % org.orderIds.length]}`,
     ),
-    // The Inventory page makes these two together.
-    read('GET /stock', () => '/stock'),
+    // Inventory's grouped read (ADR-093): a row per code, its counts and
+    // a code's places, and the Lot view.
+    read('GET /stock/by-code', () => '/stock/by-code'),
+    read('GET /stock/by-code/counts', () => '/stock/by-code/counts'),
+    read('GET /stock/by-code?search', () => '/stock/by-code?search=G-001'),
+    read('GET /stock/by-code?low', () => '/stock/by-code?low=true'),
+    read('GET /stock/by-code?sort=onHand', () => '/stock/by-code?sort=onHand'),
     read(
-      'GET /stock/availability?promised',
-      () => '/stock/availability?promised=true',
+      'GET /stock/by-code?sort=expires',
+      () => '/stock/by-code?sort=expires',
     ),
-    read('GET /stock, page 21', (org) => `/stock?before=${org.deepStock}`),
-    read('GET /stock?search', () => '/stock?search=G-001'),
-    // The whole list, which no screen asks for any more: kept to watch it.
-    read('GET /stock/availability', () => '/stock/availability'),
+    read(
+      'GET /stock/by-code/:variantId/places',
+      (org) => `/stock/by-code/${org.hot[0].variantId}/places`,
+    ),
+    read('GET /stock/by-lot', () => '/stock/by-lot'),
+    read(
+      'GET /stock/by-lot, page 21',
+      (org) => `/stock/by-lot?before=${org.deepLots}`,
+    ),
+    read(
+      'GET /stock/by-lot?expiringWithin',
+      () => '/stock/by-lot?expiringWithin=90',
+    ),
+    read('GET /stock/by-lot/counts', () => '/stock/by-lot/counts'),
+    // The Lot view's other sorts (Bob's third message, 7), each the way a
+    // header's second press asks it, at most 300 ms at large or dropped.
+    read(
+      'GET /stock/by-lot?sort=item',
+      () => '/stock/by-lot?sort=item&order=desc',
+    ),
+    read(
+      'GET /stock/by-lot?sort=location',
+      () => '/stock/by-lot?sort=location&order=desc',
+    ),
+    read(
+      'GET /stock/by-lot?sort=quantity',
+      () => '/stock/by-lot?sort=quantity&order=desc',
+    ),
+    read(
+      'GET /stock/by-lot?sort=expires&order=desc',
+      () => '/stock/by-lot?sort=expires&order=desc',
+    ),
+    // Where it stands (ADR-093, R8): an item's codes from the one read,
+    // their sales, purchases, runs, places and lots, as an Owner reads it.
+    read(
+      'GET /products/:id/stock',
+      (org) => `/products/${org.lowProductId}/stock`,
+    ),
     read('GET /stock/movements', () => '/stock/movements'),
     read(
       'GET /stock/movements, page 21',
@@ -313,6 +375,10 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Items sorted by stock (ADR-092): every item's stock summed to order
     // them, where the other sorts read the page's alone.
     read('GET /products?sort=stock', () => '/products?sort=stock', 'zh-Hans'),
+    // Items' Low stock (ADR-093, 21a): the items with a code low or out,
+    // worked out from the codes with a reorder point alone, as Reorder's
+    // read starts (#534's question of a status filter's budget).
+    read('GET /products?low', () => '/products?low=true', 'zh-Hans'),
     // The category tree (ADR-092): every category with its items by type,
     // read each time Items opens, for its filter's counts.
     read('GET /products/categories', () => '/products/categories', 'zh-Hans'),
@@ -351,6 +417,11 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /stock/reorder-points?status=low',
       () => '/stock/reorder-points?status=low',
     ),
+    // Reorder by the suggested order, most first (ADR-093; #473's 16).
+    read(
+      'GET /stock/reorder-points?sort=suggested',
+      () => '/stock/reorder-points?sort=suggested',
+    ),
     // Dates and sorting (ADR-057): a sorted list's first page and a month's
     // range, each served by its index.
     read('GET /invoices?sort=total', () => '/invoices?sort=total&order=desc'),
@@ -358,7 +429,6 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /orders?sort=expectedAt',
       () => '/orders?status=all&sort=expectedAt',
     ),
-    read('GET /stock?sort=expiry', () => '/stock?sort=expiry'),
     read('GET /invoices?from&to', () => `/invoices?${lastMonthDays()}`),
     read(
       'GET /stock/movements?from&until',
@@ -724,17 +794,17 @@ async function ensureSupply(
   demand: Map<Hot, number>,
   tag: string,
 ): Promise<void> {
-  const availability = await org.session.json<
-    { variantId: string; free: string; backordered: string }[]
-  >('GET', '/stock/availability');
-
   const receipts: { hot: Hot; quantity: number }[] = [];
 
   for (const [hot, need] of demand) {
-    const row = availability.find((entry) => entry.variantId === hot.variantId);
+    // Its code's row, which a search for its code lists among others.
+    const { entries } = await org.session.json<{
+      entries: { variantId: string; free: string; short: string }[];
+    }>('GET', `/stock/by-code?search=${encodeURIComponent(hot.sku)}`);
+    const row = entries.find((entry) => entry.variantId === hot.variantId);
     const needed = toUnits(String(need));
     const free = row ? toUnits(row.free) : 0n;
-    const backordered = row ? toUnits(row.backordered) : 0n;
+    const backordered = row ? toUnits(row.short) : 0n;
     const onShelf = await stockAt(org, hot);
 
     const short = [needed + backordered - free, needed - onShelf].reduce(
@@ -812,28 +882,31 @@ async function openOrder(
 
 /** On hand for one product on one shelf, every lot, in exact units. */
 async function stockAt(org: Org, hot: Hot): Promise<bigint> {
-  const { rows } = await everyStockRow(
-    org.session,
-    `/stock?variantId=${hot.variantId}&locationId=${hot.locationId}`,
+  const { places } = await org.session.json<{
+    places: { lots: { quantity: string }[] }[];
+  }>(
+    'GET',
+    `/stock/by-code/${hot.variantId}/places?locationId=${hot.locationId}`,
   );
-  return sumUnits(rows.map((row) => row.quantity));
+  return sumUnits(
+    places.flatMap((place) => place.lots.map((lot) => lot.quantity)),
+  );
 }
 
 /**
- * Every row of a stock-list query, page by page, and the cursor about a
- * thousand rows in for the deep-page read. Untimed: discovery and checks,
- * never a measurement.
+ * Every row of the Lot view, a lot at each place, page by page, and the
+ * cursor about a thousand rows in for the deep-page read. Untimed:
+ * discovery, never a measurement.
  */
-async function everyStockRow(session: Session, path: string) {
-  const rows: StockRow[] = [];
+async function everyLotRow(session: Session) {
+  const rows: LotRow[] = [];
   let cursor: string | null = null;
   let deep: string | null = null;
-  const join = path.includes('?') ? '&' : '?';
 
   do {
     const after: string = cursor ? `&before=${cursor}` : '';
-    const page: { entries: StockRow[]; nextCursor: string | null } =
-      await session.json('GET', `${path}${join}limit=100${after}`);
+    const page: { entries: LotRow[]; nextCursor: string | null } =
+      await session.json('GET', `/stock/by-lot?limit=100${after}`);
 
     rows.push(...page.entries);
     cursor = page.nextCursor;

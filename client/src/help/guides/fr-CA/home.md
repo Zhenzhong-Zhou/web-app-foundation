@@ -31,8 +31,8 @@ Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’
 
 - **À expédier** et **À recevoir** : Commandes, les commandes en retard d’abord.
 - **Commandes · Brouillon** : Commandes, les commandes en brouillon, les plus anciennes d’abord. Elle reste masquée tant que vous ne l’affichez pas dans Personnaliser l’accueil.
-- **Stock bas** : Points de commande, dans [Inventaire](/inventory#reorder-points), les articles les plus loin sous leur point en premier.
-- **Expire bientôt** : Inventaire, les lots qui périment le plus tôt.
+- **Stock bas** : Réapprovisionner, dans [Inventaire](/inventory#reorder-points), les codes les plus loin sous leur point en premier. Il compte des codes, comme Réapprovisionner.
+- **Expire bientôt** : Inventaire, regroupé par lot, les lots qui périment le plus tôt, les périmés en tête. Il compte des lots à chaque emplacement : un lot à deux emplacements en compte deux.
 - **Valeur du stock · En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
 - **Factures · À émettre** : Factures, les brouillons.
 - **Retours en cours** : Retours, ceux qui sont en cours.
@@ -43,7 +43,7 @@ La liste garde ce choix pendant que vous y travaillez : en revenant d’une fic
 
 ## Ce qui est en retard {#late}
 
-Quand quelque chose est en retard, périmé ou épuisé, l’accueil dit combien d’éléments sont à traiter maintenant, avec un bouton par sorte, comme **2 commandes en retard à expédier**. Chacun ouvre sa liste avec seulement ce qui est en retard : **En retard** choisi dans Commandes, **Épuisé** dans Points de commande, **Périmés** dans Inventaire et **Expirées** dans Licences.
+Quand quelque chose est en retard, périmé ou épuisé, l’accueil dit combien d’éléments sont à traiter maintenant, avec un bouton par sorte, comme **2 commandes en retard à expédier**. Chacun ouvre sa liste avec seulement ce qui est en retard : **En retard** choisi dans Commandes, **Épuisé** dans Réapprovisionner, **Périmés** dans Inventaire et **Expirées** dans Licences.
 
 Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; sans rien du tout à faire, **Rien ne vous attend aujourd’hui**.
 

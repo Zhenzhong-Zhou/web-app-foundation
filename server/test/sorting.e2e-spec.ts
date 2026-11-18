@@ -202,16 +202,23 @@ describe('Sorting (e2e)', () => {
       })
       .expect(201);
 
-    const rows = await walk<{ sku: string; lotCode: string | null }>(
-      alpha,
-      '/v1/stock?sort=expiry',
-    );
-    expect(rows.map((row) => row.lotCode ?? row.sku)).toEqual([
+    // The Lot view, soonest first, the expired on top (ADR-093).
+    const lots = await walk<{ lotCode: string }>(alpha, '/v1/stock/by-lot');
+    expect(lots.map((row) => row.lotCode)).toEqual([
       'LOT-SOON',
       'LOT-MID',
       'LOT-LATE',
-      'BOX',
     ]);
+
+    // A row per code by Expires first, its usable stock's soonest: a code
+    // with nothing to expire last, either way.
+    for (const order of ['asc', 'desc']) {
+      const codes = await walk<{ sku: string }>(
+        alpha,
+        `/v1/stock/by-code?sort=expires&order=${order}`,
+      );
+      expect(codes.map((row) => row.sku)).toEqual(['FOCUS-60', 'BOX']);
+    }
   });
 
   it.each([
@@ -220,7 +227,10 @@ describe('Sorting (e2e)', () => {
     ['/v1/credit-notes?sort=creditDate', '/v1/credit-notes?sort=invoiceDate'],
     ['/v1/credit-notes?sort=total&order=desc', '/v1/credit-notes?sort=partner'],
     ['/v1/orders?status=all&sort=expectedAt', '/v1/orders?sort=reference'],
-    ['/v1/stock?sort=expiry&order=desc', '/v1/stock?sort=quantity'],
+    [
+      '/v1/stock/by-code?sort=expires&order=desc',
+      '/v1/stock/by-code?sort=free',
+    ],
   ])('reads %s and refuses an unoffered sort', async (good, bad) => {
     const alpha = await registerOrganization(app, 'alpha');
 

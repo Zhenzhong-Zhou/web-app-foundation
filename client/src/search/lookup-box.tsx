@@ -26,6 +26,7 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
+import { productTypeIcon, typeAfter } from '../products/product-types';
 import { rem } from '../theme/rem';
 import { KIND_LABELS, LIST_LABELS, listOf, pathOf } from './lookup-kinds';
 import { lookupLongEnough } from './lookup-minimum';
@@ -329,12 +330,17 @@ function LookupField({
               spacing={1.5}
               sx={{ alignItems: 'center', minWidth: 0, width: '100%' }}
             >
-              {/* An item shows its product's cover, or the plain tile, so
-                items line up either way (ADR-066). */}
+              {/* An item shows its product's cover, or its type's icon, as
+                Items does, so items line up either way (ADR-066, #546). */}
               {option.kind === 'item' && (
                 <ProductCover
                   fileId={option.result.coverFileId}
                   name={option.result.title}
+                  icon={
+                    option.result.type
+                      ? productTypeIcon(option.result.type)
+                      : undefined
+                  }
                   size={32}
                 />
               )}
@@ -366,11 +372,15 @@ function LookupField({
                 >
                   {option.result.detail && (
                     <Typography
-                      variant="caption"
+                      variant="body2"
                       noWrap
                       sx={{ color: 'text.secondary' }}
                     >
+                      {/* An item's code, and its type as a word beside its
+                        icon, since Items holds every type (#548). */}
                       {option.result.detail}
+                      {option.result.type &&
+                        typeAfter(option.result.type, intl)}
                     </Typography>
                   )}
                   {option.result.expiresAt && (

@@ -228,7 +228,7 @@ describe('Time zone (e2e)', () => {
 
       const expiring = async () =>
         body<{ entries: { lotCode: string | null }[] }>(
-          await org.agent.get('/v1/stock?expiringWithin=1').expect(200),
+          await org.agent.get('/v1/stock/by-lot?expiringWithin=1').expect(200),
         ).entries.map((row) => row.lotCode);
 
       await inZone(org, KIRITIMATI);

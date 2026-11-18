@@ -20,11 +20,14 @@ test('receives stock and shows it in the inventory table', async ({
   api,
 }) => {
   const product = await createProduct(api, { name: 'E2E Receivable Widget' });
-  const location = await createLocation(api, { name: 'E2E Receiving Bay' });
+  // A place named for this run: the shared organization keeps every run's
+  // places, so a fixed name is two options by the second (--repeat-each).
+  const location = await createLocation(api);
 
   await page.goto('/inventory');
 
-  await page.getByRole('button', { name: 'Receive stock' }).click();
+  // The header's; a first use's empty list offers it too (ADR-093).
+  await page.getByRole('button', { name: 'Receive stock' }).first().click();
 
   const dialog = page.getByRole('dialog');
 
@@ -43,15 +46,19 @@ test('receives stock and shows it in the inventory table', async ({
    * The server's 40.5000, read without padding zeros (displayQuantity,
    * ADR-055): trimmed as text, never parsed, so a column turned float would
    * still show here as its digits changed. Matched as the whole cell, since
-   * "40.5 each" is inside "140.5 each".
+   * "40.5 each" is inside "140.5 each"; On hand is the first, Free the
+   * same beside it. A row per code (ADR-093) opens to where it is.
    */
   const row = page.getByRole('row', { name: new RegExp(product.sku) });
 
   await expect(row).toBeVisible();
   await expect(
-    row.getByRole('cell', { name: '40.5 each', exact: true }),
+    row.getByRole('cell', { name: '40.5 each', exact: true }).first(),
   ).toBeVisible();
-  await expect(row).toContainText(location.name);
+  await row.getByRole('button', { name: /^1 place: show where/ }).click();
+  await expect(
+    page.getByRole('row', { name: new RegExp(location.name) }),
+  ).toBeVisible();
 });
 
 test('requires a lot for a lot-tracked variant', async ({ page, api }) => {
@@ -59,10 +66,10 @@ test('requires a lot for a lot-tracked variant', async ({ page, api }) => {
     name: 'E2E Tracked Widget',
     tracksLots: true,
   });
-  const location = await createLocation(api, { name: 'E2E Tracked Bay' });
+  const location = await createLocation(api);
 
   await page.goto('/inventory');
-  await page.getByRole('button', { name: 'Receive stock' }).click();
+  await page.getByRole('button', { name: 'Receive stock' }).first().click();
 
   const dialog = page.getByRole('dialog');
 
@@ -86,10 +93,15 @@ test('requires a lot for a lot-tracked variant', async ({ page, api }) => {
   const row = page.getByRole('row', { name: new RegExp(product.sku) });
 
   await expect(row).toBeVisible();
-  await expect(row).toContainText('L2024-A');
   await expect(
-    row.getByRole('cell', { name: '12 each', exact: true }),
+    row.getByRole('cell', { name: '12 each', exact: true }).first(),
   ).toBeVisible();
+  // Its place, then the place's lot, a link to its trace (ADR-093, R2).
+  await row.getByRole('button', { name: /^1 place: show where/ }).click();
+  await page
+    .getByRole('button', { name: `1 lot: show the lots at ${location.name}` })
+    .click();
+  await expect(page.getByRole('link', { name: 'L2024-A' })).toBeVisible();
 });
 
 test('refuses to ship more than the shelf holds', async ({ page, api }) => {
@@ -126,6 +138,43 @@ test('refuses to ship more than the shelf holds', async ({ page, api }) => {
   await page.goto('/inventory');
   const row = page.getByRole('row', { name: new RegExp(product.sku) });
   await expect(
-    row.getByRole('cell', { name: '5 each', exact: true }),
+    row.getByRole('cell', { name: '5 each', exact: true }).first(),
   ).toBeVisible();
+});
+
+// Out has no lots to list (ADR-093, 31a): said, with the way back.
+test('says items that are out have no lots, with Group by Item', async ({
+  page,
+}) => {
+  await page.goto('/inventory?out=1');
+  await page.getByRole('button', { name: 'Lot', exact: true }).click();
+
+  await expect(page).toHaveURL(/group=lot/);
+  await expect(
+    page.getByText('Items that are out have no lots.'),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Group by Item' }).click();
+  await expect(page).not.toHaveURL(/group=lot/);
+  await expect(page.getByRole('button', { name: /^Out/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+// A quick filter is read to decide by, so 14 px, not MUI's small 13
+// (#566), and a fingertip tall on touch (#170), on every list's FilterRow.
+test.describe('on a touch tablet', () => {
+  test.use({ viewport: { width: 820, height: 1180 }, hasTouch: true });
+
+  test('a quick filter is 14 px and 44 px tall', async ({ page }) => {
+    await page.goto('/inventory');
+    const filter = page.getByRole('button', { name: /^Expiring soon/ });
+    await expect(filter).toBeVisible();
+
+    expect((await filter.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    expect(await filter.evaluate((el) => getComputedStyle(el).fontSize)).toBe(
+      '14px',
+    );
+  });
 });

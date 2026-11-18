@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-09
 areas: [products, i18n, ui]
 amends: [ADR-048, ADR-051, ADR-054, ADR-056, ADR-068, ADR-090, ADR-091]
+amended-by: [ADR-093]
 ---
 
 # ADR-092 — Items: everything the company keeps, by type and category (amends ADR-048, ADR-051, ADR-054, ADR-056, ADR-068, ADR-090 and ADR-091)
@@ -587,3 +588,34 @@ on the item's page*, from then on:
   name is its name there, changed with Edit.
 - **What documents will refuse is the server's,** on the item's detail
   (#551's 65); the page no longer works it out.
+
+## Amendment (November 2026) — Where it stands on the item's page (ADR-093)
+
+- **The item's page's stock** promised above, by location, is ADR-093's
+  Where it stands: the first section under the title, per code, each
+  part shown by permission.
+- **Items' Low and Out open it** (#570), and the badge and the quantity
+  beside it read from one count, what the badge leaves out said beside
+  it (#590).
+
+As built on Inventory's branch (#635, 17 November 2026):
+
+- **Only the name opens an item** (ADR-093's 46a): a click elsewhere on
+  Items' row or card opens nothing, the row tinting under the pointer,
+  where the decision above made the whole row one link. Items' card
+  links its name alone.
+- **Items' stock from `codeFigures`:** on hand with "72 not usable"
+  beside it; the worst code's status, a link to Where it stands, "Low ·
+  1 of 3 codes"; the Low stock filter, `?low=1`, beside Discontinued,
+  counting items. The sort by stock keeps its own sum of the same on
+  hand, which `stock_levels` never takes below 0, since reading every
+  item's figures would make it as slow as a sort by a figure.
+- **A row's stock opens Inventory for that item** by `productId` on
+  `GET /v1/stock/by-code`, since `GET /v1/stock` and its availability
+  read are gone.
+- **#594's two lines:** Edit item, and a variant's Edit named for its
+  code; a variant's code 44 px tall on touch.
+- **Items' first page works out the Low set** for its count on every
+  read: 40 to about 160 ms at large, inside the budget (#625).
+- **Items' cards on a phone wait 250 ms** before their grey placeholders,
+  as the table's rows do (`TableOrCards`).

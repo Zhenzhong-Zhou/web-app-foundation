@@ -681,6 +681,7 @@ export function OrderDetailPage() {
       <ReceiveLineDialog
         key={receiving?.id ?? 'closed'}
         orderId={order.id}
+        orderNumber={order.number}
         line={receiving}
         locations={leaves}
         canSeeLots={can('stock.view')}

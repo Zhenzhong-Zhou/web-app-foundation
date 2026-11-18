@@ -18,6 +18,7 @@ import { type IntlShape, useIntl } from 'react-intl';
 
 import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import type { Variant } from './products-page';
 import { unitLabel } from './units';
@@ -130,6 +131,8 @@ export function VariantRow({
               type="button"
               disabled={!canEdit || saving !== null}
               onClick={onStartEdit}
+              // A fingertip's height on touch (#594, #170).
+              sx={{ [TOUCH]: { minHeight: rem(44) } }}
             >
               {variant.sku}
             </Link>
@@ -176,9 +179,18 @@ export function VariantRow({
 
         <TableCell align="right">
           {canEdit && (
+            // Its name says which variant, beside the page's Edit item
+            // (#594); the word seen is the name's start (WCAG 2.5.3).
             <Button
               variant="text"
               size="small"
+              aria-label={intl.formatMessage(
+                {
+                  id: 'products.variant.editOf',
+                  defaultMessage: 'Edit variant {sku}',
+                },
+                { sku: variant.sku },
+              )}
               onClick={openDialog(() => onOpenEdit())}
             >
               {intl.formatMessage({

@@ -279,23 +279,37 @@ How this file is kept is in the [README](README.md).
   MC-209
 - **A row gives the item's first code and how many variants it has, its
   category's path from the top, and its stock on hand in every location,
-  summed in its unit, or its number of variants where their units
-  differ.** The stock is read from Inventory's figures for the page's
-  items, never kept on the item.
+  summed in its unit, with the part not usable beside it, or its number
+  of variants where their units differ.** The stock is read from its
+  codes' figures, Inventory's, for the page's items, never kept on the
+  item.
   [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
   [test](../../server/test/items-list.e2e-spec.ts) "sums the stock on hand of every variant and place in its unit, or counts its variants where units differ" ·
   [test](../../server/test/items-list.e2e-spec.ts) "narrows to a type, to a category with those under it, or to the Uncategorised" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
   [test](../../client/src/products/products-page.test.tsx) "shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out" ·
   [test](../../client/e2e/items.spec.ts) "as it should be: each row its type’s icon, name, code, category, stock and status" ·
   [Help](../../client/src/help/guides/en/items.md#what-a-row-shows-rows) ·
   MC-208
 - **A row says Low or Out from the item's reorder points: out where any
-  of its variants is out, else low where any is low; a discontinued item
-  never.**
+  of its variants is out, else low where any is low, with how many of its
+  codes share it; a discontinued item never.**
   [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
   [test](../../server/test/items-list.e2e-spec.ts) "says low or out from its reorder points, out before low" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
   [test](../../client/src/products/products-page.test.tsx) "shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out" ·
-  MC-208
+  [test](../../client/src/products/item-rows.test.tsx) "says what is not usable beside the number, and how many codes share the status, opening Where it stands" ·
+  MC-208 · MC-218
+- **Low stock narrows the list to the items with a code low or out,
+  counted beside the filter with the others on and its own off; the
+  export follows it.** It counts items, where Reorder and Home count
+  codes.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each" ·
+  [test](../../client/src/products/products-page.test.tsx) "narrows to the items low or out by Low stock, its count beside it, in the address" ·
+  MC-218
 - **Another organization's items, categories and stock are never listed
   nor counted.**
   [ADR-003](../adr/0003-multi-tenancy.md#decision) ·
@@ -336,7 +350,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/reservations.e2e-spec.ts) "lists one item alone when asked, refusing another organization’s" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "lists one item alone when the address names it, named on a chip that removes it" ·
   [test](../../client/e2e/items.spec.ts) "Items, a row’s stock: Inventory, that item alone; Back, Items as it was" ·
-  [test](../../client/e2e/items.spec.ts) "Items, a row, anywhere: the item’s page; Back, Items as it was" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a row, its name: the item’s page; Back, Items as it was; elsewhere on the row, nothing" ·
   MC-208
 - **Items' list is always in one of five states, and says which.** Empty,
   it says there are no items yet and what to add first, with Add item, or
@@ -710,13 +724,13 @@ How this file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused) ·
   MC-1801
 - **The cover shows beside the item's name on Items and in Inventory,
-  and beside an item in the top bar's lookup. With no image, Items shows
-  the icon of the item's type; Inventory and the lookup show the same
-  plain tile for every type.**
+  and beside an item in the top bar's lookup. With no image, each shows
+  the icon of the item's type (#546).**
   [ADR-062](../adr/0062-product-images.md#decision--where-they-show) ·
   [ADR-066](../adr/0066-covers-in-the-lookup.md#decision--an-items-result-shows-its-products-cover) ·
   [test](../../server/test/product-images.e2e-spec.ts) "adds images in order, the first the cover in the list" ·
   [test](../../server/test/lookup.e2e-spec.ts) "shows an item's cover, and none for other kinds" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "names an item's type, and none for other kinds" ·
   [test](../../client/e2e/product-images.spec.ts) "adds an image that becomes the cover in the list" ·
   partly tested ·
   MC-1801 · MC-2201

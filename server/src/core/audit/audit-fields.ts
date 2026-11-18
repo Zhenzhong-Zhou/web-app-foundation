@@ -185,13 +185,21 @@ const LIST_WORDS: Record<string, Translatable> = {
     id: 'audit.value.list.inventory',
     defaultMessage: 'Inventory',
   }),
+  'inventory-lots': t({
+    id: 'audit.value.list.inventoryLots',
+    defaultMessage: 'Inventory, by lot',
+  }),
+  recall: t({
+    id: 'audit.value.list.recall',
+    defaultMessage: 'A lot’s recall list',
+  }),
   movements: t({
     id: 'audit.value.list.movements',
     defaultMessage: 'Movements',
   }),
   reorder_points: t({
     id: 'audit.value.list.reorderPoints',
-    defaultMessage: 'Reorder points',
+    defaultMessage: 'Reorder',
   }),
   audit: t({ id: 'audit.value.list.audit', defaultMessage: 'The audit log' }),
   'your-activity': t({

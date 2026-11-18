@@ -669,12 +669,12 @@ describe('Costs (e2e)', () => {
       });
 
       // Inventory holds it where it stands.
-      const stock = body<{ entries: { sku: string; quantity: string }[] }>(
-        await s.agent.get('/v1/stock').expect(200),
+      const stock = body<{ entries: { sku: string; onHand: string }[] }>(
+        await s.agent.get('/v1/stock/by-code').expect(200),
       ).entries;
       expect(
         stock
-          .map(({ sku, quantity }) => ({ sku, quantity }))
+          .map(({ sku, onHand }) => ({ sku, quantity: onHand }))
           .sort((a, b) => a.sku.localeCompare(b.sku)),
       ).toEqual([
         { sku: 'FILLER', quantity: '1.0000' },
@@ -704,12 +704,12 @@ describe('Costs (e2e)', () => {
       expect(await needsCost(s)).toEqual([]);
       expect(
         body<{ entries: unknown[] }>(
-          await s.agent.get('/v1/stock?needsCost=true').expect(200),
+          await s.agent.get('/v1/stock/by-code?needsCost=true').expect(200),
         ).entries,
       ).toEqual([]);
       expect(
         body<{ needsCost: number }>(
-          await s.agent.get('/v1/stock/counts').expect(200),
+          await s.agent.get('/v1/stock/by-code/counts').expect(200),
         ),
       ).toMatchObject({ needsCost: 0 });
     });

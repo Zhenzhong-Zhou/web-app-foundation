@@ -12,6 +12,12 @@ import { EXPORT_LIMIT } from '../../common/export';
 import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { searchTerms } from '../../common/search';
+import {
+  afterKeys,
+  cursorOf,
+  orderOf,
+  readKeys,
+} from '../../common/sorted-page';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import type { RequestContext } from '../../core/auth/request-context';
@@ -33,11 +39,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { languageName, t } from '../../i18n/translate';
 import { namesIn, productNameOrder } from '../stock/item-name';
-import {
-  itemStock,
-  type ItemStockStatus,
-  itemStockStatus,
-} from '../stock/item-stock';
+import { itemFigures, type ItemStockStatus } from '../stock/item-stock';
 import {
   assertCategoryIn,
   categoryPaths,
@@ -64,14 +66,11 @@ import type {
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import {
-  afterKeys,
   countedOf,
   countsOf,
-  cursorOf,
   itemOrder,
+  lowStockOf,
   matchedBy,
-  orderOf,
-  readCursor,
   shownOf,
   type TypeCount,
 } from './item-list';
@@ -183,18 +182,15 @@ type PageRow = {
   counts: TypeCount[] | null;
 };
 
-/** An item's variants and stock on hand, as itemStock gives them. */
+/** An item's variants and stock, as itemFigures gives them. */
 type StockRow = {
   product_id: string;
   variants: number;
   unit: string | null;
   on_hand: string | null;
-};
-
-/** An item that is low or out, as itemStockStatus gives it. */
-type StatusRow = {
-  product_id: string;
-  status: ItemStockStatus;
+  not_usable: string | null;
+  status: ItemStockStatus | null;
+  status_codes: number | null;
 };
 
 @Injectable()
@@ -264,10 +260,11 @@ export class ProductsService {
   /**
    * Items' list (ADR-092): a page of fifty unless asked, narrowed by its
    * type, its category with every category under it, or Uncategorised, and
-   * its search, discontinued items hidden unless asked; sorted by item-list's
-   * key, the cursor after the last row's. Each row named for the reader,
-   * with its first code, its category's path, and its stock on hand and
-   * status read for the page's items alone; the counts with the first page.
+   * its search, discontinued items hidden unless asked, the low alone when
+   * asked (ADR-093); sorted by item-list's key, the cursor after the last
+   * row's. Each row named for the reader, with its first code, its
+   * category's path, and its stock from its codes' figures, read for the
+   * page's items alone; the counts with the first page.
    *
    * With a search, only the items it finds through any of their variants,
    * as an item is found everywhere (item-search), each ranked by its
@@ -278,6 +275,7 @@ export class ProductsService {
     const terms = query.search ? searchTerms(query.search) : null;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      const today = await todayOf(tx, organizationId);
       const search = itemSearch(terms, locale, organizationId);
       const { parts, order, joins } = itemOrder(
         query,
@@ -286,13 +284,17 @@ export class ProductsService {
         search,
       );
       const matched = matchedBy(query, search, organizationId);
+      // The items low or out, worked out once, for the filter and the
+      // first page's count; neither on a later page without the filter.
+      const low = lowStockOf(organizationId, today);
+      const lowRead = query.low === 'true' || !query.cursor;
       const after = query.cursor
-        ? afterKeys(parts, readCursor(query.cursor, order, parts))
+        ? afterKeys(parts, readKeys(query.cursor, order, parts))
         : undefined;
       const shown = and(
         eq(products.organizationId, organizationId),
         matched,
-        shownOf(query),
+        shownOf(query, low.among),
         after,
       );
       const placed = sql`page as (
@@ -317,13 +319,13 @@ export class ProductsService {
       const {
         rows: [{ places, counts }],
       } = await tx.execute<PageRow>(sql`
-        ${withOf(search?.cte, placed)}
+        ${withOf(search?.cte, lowRead ? low.cte : undefined, placed)}
         select (select coalesce(json_agg(page), '[]'::json) from page)
             as places,
           ${
             query.cursor
               ? sql`null`
-              : sql`(${countedOf(organizationId, query, matched)})`
+              : sql`(${countedOf(organizationId, query, matched, low.among)})`
           } as counts
       `);
 
@@ -333,6 +335,7 @@ export class ProductsService {
         entries: await this.rowsOf(
           tx,
           organizationId,
+          today,
           locale,
           page.map((place) => place.id),
         ),
@@ -346,11 +349,12 @@ export class ProductsService {
   /**
    * The rows for the page's items, in the page's order: each named for
    * the reader, its first code, its category's path, and its variants'
-   * stock on hand and status, read for these items alone.
+   * stock from their figures (itemFigures), read for these items alone.
    */
   private async rowsOf(
     tx: Transaction,
     organizationId: string,
+    today: string,
     locale: Locale,
     ids: string[],
   ): Promise<ProductSummary[]> {
@@ -394,21 +398,12 @@ export class ProductsService {
         ),
       );
 
-    const { rows: stock } = await tx.execute<StockRow>(sql`
-      select s.product_id, s.variants, s.unit, s.on_hand
-      from ${itemStock(organizationId, items)} s
-    `);
-    const today = await todayOf(tx, organizationId);
-    const { rows: statuses } = await tx.execute<StatusRow>(sql`
-      select s.product_id, s.status
-      from ${itemStockStatus(organizationId, today, items)} s
-    `);
+    const { rows: stock } = await tx.execute<StockRow>(
+      itemFigures(organizationId, today, items),
+    );
 
     const byId = new Map(details.map((row) => [row.id, row]));
     const stockOf = new Map(stock.map((row) => [row.product_id, row]));
-    const statusOf = new Map(
-      statuses.map((row) => [row.product_id, row.status]),
-    );
 
     return ids.map((id) => {
       const row = byId.get(id)!;
@@ -428,8 +423,10 @@ export class ProductsService {
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         onHand: held.on_hand,
+        notUsable: held.not_usable,
         unitOfMeasure: held.unit,
-        stockStatus: statusOf.get(id) ?? null,
+        stockStatus: held.status,
+        stockStatusCodes: held.status_codes,
       };
     });
   }
@@ -453,6 +450,10 @@ export class ProductsService {
       const org = sql`${organizationId}::uuid`;
       const search = itemSearch(terms, locale, organizationId);
       const { parts, joins } = itemOrder(query, locale, organizationId, search);
+      const low =
+        query.low === 'true'
+          ? lowStockOf(organizationId, await todayOf(tx, organizationId))
+          : undefined;
 
       // A search's matching items worked out once, for the match and the
       // order alike (#547).
@@ -469,7 +470,7 @@ export class ProductsService {
         product_names: Record<string, string> | null;
         variant_names: Record<string, string> | null;
       }>(sql`
-        ${withOf(search?.cte)}
+        ${withOf(search?.cte, low?.cte)}
         select pv.id, pv.sku, ${products.name} as product_name,
           pv.name as variant_name, ${products.type} as type,
           shelf.names as category, pv.unit_of_measure, pv.tracks_lots,
@@ -494,7 +495,7 @@ export class ProductsService {
         where ${and(
           eq(products.organizationId, organizationId),
           matchedBy(query, search, organizationId),
-          shownOf(query),
+          shownOf(query, low?.among),
         )}
         order by ${sql.join(orderOf(parts), sql`, `)},
           pv.sku collate numeric_order, pv.id

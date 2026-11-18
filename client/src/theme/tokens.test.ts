@@ -156,6 +156,37 @@ describe('tokens (ADR-055)', () => {
     },
   );
 
+  // #561, for the pieces Inventory's screens use (ADR-093): the button
+  // that opens a row, open in the accent on the chosen tint and under the
+  // pointer on MUI's, its ring on a panel; and a quick filter, its count
+  // muted on the page at rest and under the pointer, and pressed, on
+  // MUI's tint of the main text, in the main text.
+  it.each(SCHEMES)(
+    'keeps the %s opening row and quick filter readable in each state',
+    (name, s) => {
+      const { overlay, hover, selected } = STATES[name];
+      for (const brand of ACCENTS) {
+        const accent = accentIn(name, brand);
+        for (const ground of [
+          mix(accent, s.surface, CHOSEN_WEIGHT),
+          mix(accent, s.surface, hover),
+        ]) {
+          expect(contrast(accent, ground)).toBeGreaterThanOrEqual(AA);
+        }
+        expect(contrast(accent, s.surface)).toBeGreaterThanOrEqual(3);
+      }
+      for (const ground of [s.page, mix(overlay, s.page, hover)]) {
+        expect(contrast(s.muted, ground)).toBeGreaterThanOrEqual(AA);
+      }
+      for (const ground of [
+        mix(s.text, s.page, selected),
+        mix(s.text, s.page, selected + hover),
+      ]) {
+        expect(contrast(s.text, ground)).toBeGreaterThanOrEqual(AA);
+      }
+    },
+  );
+
   it.each(SCHEMES)('keeps every %s status tone readable', (_, s) => {
     for (const tone of Object.values(s.tones)) {
       expect(contrast(tone.fg, tone.bg)).toBeGreaterThanOrEqual(AA);

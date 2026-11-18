@@ -41,6 +41,7 @@ import { auditor, recordOpeningHistory } from './seed-demo-audit';
 import { addCategories } from './seed-demo-categories';
 import { addMarkets } from './seed-demo-markets';
 import { orderSteps } from './seed-demo-orders';
+import { readBackStock } from './seed-demo-stock';
 import {
   addTeam,
   daysAgo,
@@ -905,8 +906,17 @@ async function seedDemo(): Promise<void> {
           organizationId: account.organizationId,
         });
 
+        // What Inventory's screens read (ADR-093), read back through its
+        // own reads, so a step above that stops making one fails the seed.
+        const stockStates = await readBackStock(
+          app,
+          db,
+          account.organizationId,
+        );
+
         logger.log(`History opened with ${opened} records, by the Owner`);
         logger.log(teamWork);
+        logger.log(stockStates);
         logger.log(sorted);
         logger.log(markets);
         logger.log(describeTeam(team, DEMO_PASSWORD));

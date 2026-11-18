@@ -8,11 +8,15 @@ import {
 import { and, eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { todayOf } from '../../core/organizations/time-zone';
 import { isCheckViolation } from '../../database/errors';
 import { orderLines } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { comingOf } from '../stock/availability';
+import { quantity } from '../stock/code-figures';
 import { StockService } from '../stock/stock.service';
+import type { Delivery } from './dto/order-response.dto';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import { loadOrder } from './load-order';
 
@@ -32,6 +36,80 @@ export class OrderReceiptsService {
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
   ) {}
+
+  /**
+   * The deliveries a receipt of this item may be (ADR-093, v3): each
+   * confirmed purchase's line still to come, read from Coming's own rule
+   * (comingOf), so the question Stock asks before receiving lists what
+   * Coming counts and nothing else. The day expected first, those with
+   * none last. Another organization's item has none.
+   */
+  deliveries(variantId: string): Promise<Delivery[]> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const org = sql`${organizationId}::uuid`;
+      const today = await todayOf(tx, organizationId);
+      const { rows } = await tx.execute<{
+        order_id: string;
+        number: string;
+        partner_name: string;
+        expected_at: string | null;
+        late: boolean;
+        line_id: string;
+        variant_id: string;
+        sku: string;
+        tracks_lots: boolean;
+        unit_of_measure: string;
+        ordered: string;
+        fulfilled: string;
+        outstanding: string;
+      }>(sql`
+        select
+          c.id as order_id,
+          c.number,
+          pa.name as partner_name,
+          c.expected_at::text as expected_at,
+          coalesce(c.expected_at < ${today}::date, false) as late,
+          ol.id as line_id,
+          ol.variant_id,
+          ol.sku,
+          pv.tracks_lots,
+          pv.unit_of_measure,
+          ${quantity(sql`ol.quantity_ordered`)} as ordered,
+          ${quantity(sql`ol.quantity_fulfilled`)} as fulfilled,
+          ${quantity(sql`c.quantity`)} as outstanding
+        from (${comingOf(organizationId, sql`(${variantId}::uuid)`)}) c
+        join order_lines ol
+          on ol.id = c.line_id
+          and ol.organization_id = ${org}
+        join product_variants pv
+          on pv.id = ol.variant_id
+          and pv.organization_id = ${org}
+        join partners pa
+          on pa.id = c.partner_id
+          and pa.organization_id = ${org}
+        where c.kind = 'purchase'
+        order by c.expected_at nulls last, c.number, ol.id
+      `);
+
+      return rows.map((row) => ({
+        orderId: row.order_id,
+        number: row.number,
+        partnerName: row.partner_name,
+        expectedAt: row.expected_at,
+        late: row.late,
+        line: {
+          id: row.line_id,
+          variantId: row.variant_id,
+          sku: row.sku,
+          tracksLots: row.tracks_lots,
+          unitOfMeasure: row.unit_of_measure,
+          quantityOrdered: row.ordered,
+          quantityFulfilled: row.fulfilled,
+          quantityOutstanding: row.outstanding,
+        },
+      }));
+    });
+  }
 
   /**
    * Receiving against a line: the movement and the fulfilment in one

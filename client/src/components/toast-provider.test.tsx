@@ -41,4 +41,43 @@ describe('ToastProvider', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
+
+  // 55a: a confirmation may carry one button, "Open the order", which
+  // does what its caller says and closes it.
+  it('carries a button after its message that does what its caller says', async () => {
+    let opened = 0;
+    function Receive() {
+      const toast = useToast();
+      return (
+        <button
+          type="button"
+          onClick={() =>
+            toast('Received 20 each of FOCUS on PO-000009', {
+              label: 'Open the order',
+              onClick: () => {
+                opened += 1;
+              },
+            })
+          }
+        >
+          Receive
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <Receive />
+      </ToastProvider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    const confirmation = await screen.findByRole('status');
+    expect(confirmation).toHaveTextContent(
+      'Received 20 each of FOCUS on PO-000009',
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Open the order' }),
+    );
+    expect(opened).toBe(1);
+  });
 });

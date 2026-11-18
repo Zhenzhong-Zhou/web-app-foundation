@@ -141,7 +141,7 @@ test.describe('on a touch phone', () => {
   }) => {
     await signInAs(page, freshOrg.api);
     await page.goto('/orders?direction=sale&outstanding=1&late=1');
-    const chip = page.locator('.MuiChip-deletable').filter({ hasText: 'Late' });
+    const chip = page.getByRole('button', { name: 'Remove filter: Late' });
     await expect(chip).toBeVisible();
 
     for (const target of [chip, chip.locator('.MuiChip-deleteIcon')]) {
@@ -351,7 +351,9 @@ test('each tile opens its list with its count’s rows, a late button just the l
     /\/orders\?direction=purchase&outstanding=1&late=1$/,
   );
   await expect(orderLinks(page)).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Late' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Remove filter: Late' }),
+  ).toBeVisible();
 });
 
 /**
@@ -392,10 +394,13 @@ test('the drafts tile opens Orders oldest first, its chip removable, Back keepin
   await page.getByRole('link', { name: 'Orders · Draft, 3' }).click();
 
   await expect(page).toHaveURL(/\/orders\?status=draft&order=asc$/);
+  // Each chip by its name, which says what pressing it does (#578).
   await expect(
-    page.getByRole('button', { name: 'Draft', exact: true }),
+    page.getByRole('button', { name: 'Remove filter: Draft', exact: true }),
   ).toBeVisible();
-  const oldest = page.getByRole('button', { name: 'Oldest first' });
+  const oldest = page.getByRole('button', {
+    name: 'Remove filter: Oldest first',
+  });
   await expect(oldest).toBeVisible();
   await expect(orderLinks(page)).toHaveText(made);
 
@@ -444,7 +449,8 @@ test('Expiring soon opens Inventory’s expiring lots, and nothing late is one c
   await expect(page.getByText('Nothing is late today.')).toBeVisible();
   await page.getByRole('link', { name: 'Expiring soon, 1' }).click();
 
-  await expect(page).toHaveURL(/\/inventory\?expiring=1$/);
+  // The Lot view, soonest first (ADR-091, amended by ADR-093).
+  await expect(page).toHaveURL(/\/inventory\?group=lot&expiring=1$/);
   await expect(
     page.getByRole('button', { name: /^Expiring soon/ }),
   ).toHaveAttribute('aria-pressed', 'true');

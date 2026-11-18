@@ -87,6 +87,25 @@ Finding, adding and sorting what the company keeps, from Items.
   put the uncategorised items into categories; see which products are
   low and open one's stock; change an item's type.
 
+## stock
+
+What is on hand, what of it can be used, and who is waiting for it,
+from Home through Inventory and an item's Where it stands (ADR-093).
+
+- **Starts on:** Home.
+- **Personas:** the senior who reads only Chinese, the warehouse worker,
+  the first-week buyer (Mei).
+- **Tasks:** find which lot of an item expires first; find why an
+  item's Free is less than its On hand; find who is waiting for an item
+  that is short; buy what is low.
+- **For the senior:** the first two tasks, by reading alone: which lot
+  expires first, and why Free is less than On hand.
+- **For the warehouse worker:** which lot expires first and where it
+  is, then why Free is less than On hand.
+- **For the first-week buyer:** who is waiting for an item that is
+  short, then buy what is low, from Home's Low stock to a purchase
+  order filled in.
+
 ## buy
 
 - **Starts on:** Home.

@@ -4,13 +4,17 @@ import { useIntl } from 'react-intl';
 
 import type { VariantOption } from '../api/types.gen';
 import type { ProductType } from '../lib/api-names';
-import { itemName } from '../lib/format';
+import { itemName, SEPARATOR } from '../lib/format';
 import { usePickerSearch } from '../lib/use-picker-search';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 
-/** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
+/**
+ * "Widget (Large) · WIDGET-1": the name first, then the code, as every row
+ * reads (#563; the design language's Rows). A typed code still finds it:
+ * the server matches, not this label (usePickerSearch).
+ */
 function labelFor(option: VariantOption): string {
-  return `${option.sku} — ${itemName(option.productName, option.variantName)}`;
+  return `${itemName(option.productName, option.variantName)}${SEPARATOR}${option.sku}`;
 }
 
 /** What an item is picked for, which decides the types listed first. */
@@ -77,6 +81,7 @@ export function VariantPicker({
   error = false,
   autoFocus = false,
   task,
+  marked,
 }: {
   id: string;
   label: string;
@@ -97,6 +102,12 @@ export function VariantPicker({
   autoFocus?: boolean;
   /** What the item is for; none groups every type, none first. */
   task?: PickerTask;
+  /**
+   * Items to mark in the list, and the words that mark them, so a person
+   * sees which before picking (#538): Add reorder point's "Has a reorder
+   * point".
+   */
+  marked?: { ids: ReadonlySet<string>; words: string };
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
@@ -156,7 +167,13 @@ export function VariantPicker({
           translate="no"
           sx={{ flexWrap: 'wrap', columnGap: 2 }}
         >
-          <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>{labelFor(option)}</Box>
+          <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
+            {itemName(option.productName, option.variantName)}
+            {SEPARATOR}
+            <Box component="span" sx={{ color: 'text.secondary' }}>
+              {option.sku}
+            </Box>
+          </Box>
           <Typography
             component="div"
             variant="body2"
@@ -165,6 +182,16 @@ export function VariantPicker({
           >
             {productTypeLabel(option.type, intl)}
           </Typography>
+          {marked?.ids.has(option.id) && (
+            <Typography
+              component="div"
+              variant="body2"
+              translate="yes"
+              sx={{ color: 'text.secondary', flexBasis: '100%' }}
+            >
+              {marked.words}
+            </Typography>
+          )}
         </Box>
       )}
       isOptionEqualToValue={(option, current) => option.id === current.id}

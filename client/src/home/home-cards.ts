@@ -253,29 +253,30 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     title: TITLES.lowStock,
     empty: EMPTY.lowStock,
     icon: Inventory2Outlined,
-    list: '/inventory?tab=reorder-points&status=low',
+    list: '/inventory?tab=reorder&status=low',
     // Out: nothing usable and nothing coming (ADR-085).
     late: {
       pill: PILLS.out,
       button: BUTTONS.lowStock,
-      list: '/inventory?tab=reorder-points&status=out',
+      list: '/inventory?tab=reorder&status=out',
       hidden: HIDDEN_LATE.out,
     },
     unset: {
       empty: LOW_STOCK_UNSET.empty,
-      list: '/inventory?tab=reorder-points',
+      list: '/inventory?tab=reorder',
     },
   },
   expiring: {
     title: TITLES.expiring,
     empty: EMPTY.expiring,
     icon: HourglassBottomOutlined,
-    // By expiry, the soonest first, whenever the filter is on (ADR-091).
-    list: '/inventory?expiring=1',
+    // The Lot view, soonest first, the expired on top (ADR-091, amended
+    // by ADR-093): a row per lot at each place, as the tile counts them.
+    list: '/inventory?group=lot&expiring=1',
     late: {
       pill: PILLS.expiredLots,
       button: BUTTONS.expiring,
-      list: '/inventory?expiring=1&expired=1',
+      list: '/inventory?group=lot&expiring=1&expired=1',
       hidden: HIDDEN_LATE.expiredLots,
     },
   },

@@ -3,19 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StockRow } from '../api/types.gen';
+import type { StockPile } from '../api/types.gen';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { MoveStockDialog } from './move-stock-dialog';
 
-const ROW: StockRow = {
+const ROW: StockPile = {
   id: 'row-1',
   variantId: 'variant-plain',
   sku: 'MAGCAP-120',
   productName: 'Magnesium',
   variantName: null,
-  coverFileId: null,
   unitOfMeasure: 'each',
   locationId: 'location-a',
   locationName: 'Main Site',
@@ -25,6 +24,7 @@ const ROW: StockRow = {
   lotExpiresAt: null,
   lotIsAssigned: null,
   quantity: '12',
+  emptiedOn: null,
 };
 
 // stock.takeableSkuTakenHeld, as the server words it, with the demo's codes.

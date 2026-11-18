@@ -187,7 +187,7 @@ describe('HomePage', () => {
     });
     for (const [name, href] of [
       ['Orders · Draft, 3', '/orders?status=draft&order=asc'],
-      ['Low stock, 3', '/inventory?tab=reorder-points&status=low'],
+      ['Low stock, 3', '/inventory?tab=reorder&status=low'],
       ['Invoices · To issue, 4', '/invoices?status=draft'],
       ['Open returns, 1', '/return-authorizations?status=open'],
       ['Production · In progress, 2', '/production?status=released'],
@@ -202,7 +202,7 @@ describe('HomePage', () => {
 
   // The ninth tile (ADR-085): red with its out count, opening Reorder
   // points on Low, and its late button on Out.
-  it('shows Low stock with its out count, opening Reorder points on Low, and Out from what is late', async () => {
+  it('shows Low stock with its out count, opening Reorder on Low, and Out from what is late', async () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [
@@ -213,10 +213,10 @@ describe('HomePage', () => {
 
     expect(
       await screen.findByRole('link', { name: 'Low stock, 3, 1 out' }),
-    ).toHaveAttribute('href', '/inventory?tab=reorder-points&status=low');
+    ).toHaveAttribute('href', '/inventory?tab=reorder&status=low');
     expect(
       screen.getByRole('link', { name: '1 item out of stock' }),
-    ).toHaveAttribute('href', '/inventory?tab=reorder-points&status=out');
+    ).toHaveAttribute('href', '/inventory?tab=reorder&status=out');
   });
 
   /**
@@ -249,7 +249,7 @@ describe('HomePage', () => {
       ]),
     ).toEqual([
       ['2 late orders to ship', '/orders?direction=sale&outstanding=1&late=1'],
-      ['1 expired lot', '/inventory?expiring=1&expired=1'],
+      ['1 expired lot', '/inventory?group=lot&expiring=1&expired=1'],
       ['1 expired licence', '/licences?expiring=1&expired=1'],
     ]);
     // The number in bold, the words after.
@@ -257,7 +257,7 @@ describe('HomePage', () => {
     // The tile opens all of its kind, the late first; the button just those.
     expect(
       screen.getByRole('link', { name: 'Expiring soon, 4, 1 expired' }),
-    ).toHaveAttribute('href', '/inventory?expiring=1');
+    ).toHaveAttribute('href', '/inventory?group=lot&expiring=1');
   });
 
   /**
@@ -417,10 +417,7 @@ describe('HomePage', () => {
     const low = await screen.findByRole('link', {
       name: 'Low stock, Nothing low',
     });
-    expect(low).toHaveAttribute(
-      'href',
-      '/inventory?tab=reorder-points&status=low',
-    );
+    expect(low).toHaveAttribute('href', '/inventory?tab=reorder&status=low');
     expect(within(low).getByText('Nothing low')).toBeVisible();
     expect(within(low).queryByText('0')).toBeNull();
   });
@@ -437,7 +434,7 @@ describe('HomePage', () => {
     const low = await screen.findByRole('link', {
       name: 'Low stock, No reorder points set yet',
     });
-    expect(low).toHaveAttribute('href', '/inventory?tab=reorder-points');
+    expect(low).toHaveAttribute('href', '/inventory?tab=reorder');
     expect(within(low).queryByText('Nothing low')).toBeNull();
   });
 

@@ -3,7 +3,9 @@ import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
+import { dayIn } from '../../common/today';
 import type { ReleaseLicenceStatus } from '../../database/schema';
+import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemName, namesIn } from './item-name';
@@ -380,7 +382,8 @@ export class LotTraceService {
    * recipient it was checked against (ADR-042); a return through its order. A
    * shipment or sample with no recipient on record is kept, with the partner
    * left empty: a recall has to know how much went somewhere it cannot name.
-   * A voided shipment is left out: it was recorded, but nothing left.
+   * A voided shipment is left out: it was recorded, but nothing left. Each
+   * says the day it first left for them, as a recall letter needs.
    */
   private async recipients(tx: Tx, organizationId: string, lotIds: string[]) {
     const ids = sql.join(
@@ -402,7 +405,8 @@ export class LotTraceService {
           sm.sku,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'shipment'), 0)::text as shipped,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'sample'), 0)::text as sampled,
-          coalesce(sum(sm.quantity) filter (where sm.reason = 'return'), 0)::text as returned
+          coalesce(sum(sm.quantity) filter (where sm.reason = 'return'), 0)::text as returned,
+          min(sm.created_at) filter (where sm.reason in ('shipment', 'sample')) as left_at
         from stock_movements sm
         join lots l on l.id = sm.lot_id
         left join shipments s
@@ -437,7 +441,10 @@ export class LotTraceService {
       shipped: string;
       sampled: string;
       returned: string;
+      left_at: Date | string | null;
     }[];
+
+    const timeZone = requestTimeZone();
 
     return rows.map((row) => ({
       partnerId: row.partner_id,
@@ -452,6 +459,8 @@ export class LotTraceService {
       shipped: row.shipped,
       sampled: row.sampled,
       returned: row.returned,
+      // The organization's day it first left for them (ADR-044, amended).
+      leftOn: row.left_at ? dayIn(timeZone, row.left_at) : null,
     }));
   }
 }

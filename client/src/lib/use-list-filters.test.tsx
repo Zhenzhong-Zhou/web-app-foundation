@@ -29,7 +29,7 @@ const FILTERS = {
 
 function Probe() {
   const [filters, setFilters] = useListFilters(FILTERS);
-  const { sort, header } = useListSort(
+  const { sort, header, set, clear } = useListSort(
     ['expiry', 'total'],
     filters.late ? { key: 'expiry', order: 'asc' } : null,
   );
@@ -52,6 +52,8 @@ function Probe() {
         November
       </button>
       <button onClick={header('expiry').onSort}>Expires</button>
+      <button onClick={() => set('total', 'desc')}>Largest first</button>
+      <button onClick={() => clear({ status: null })}>Clear</button>
       <Link to="/list?status=out">Out from elsewhere</Link>
     </>
   );
@@ -203,5 +205,23 @@ describe('useListSort', () => {
 
     await press('Expires');
     expect(screen.getByText('sort expiry desc')).toBeInTheDocument();
+  });
+
+  it('sets a sort chosen another way than its header', async () => {
+    open('/list?status=low');
+
+    await press('Largest first');
+    expect(
+      screen.getByText('address ?status=low&sort=total&order=desc'),
+    ).toBeInTheDocument();
+  });
+
+  // One write, so the filter cleared beside it stays cleared (#551's 62).
+  it('clears the sort and what the same press clears, in one write', async () => {
+    open('/list?status=low&late=1&sort=total&order=asc');
+
+    await press('Clear');
+    expect(screen.getByText('address ?late=1')).toBeInTheDocument();
+    expect(screen.getByText('sort expiry asc')).toBeInTheDocument();
   });
 });

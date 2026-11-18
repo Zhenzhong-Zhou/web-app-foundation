@@ -582,7 +582,7 @@ export function ReleaseRunDialog({
                             </TableCell>
                             <TableCell align="right">
                               {intl.formatMessage({
-                                id: 'inventory.promised.onHand',
+                                id: 'common.onHand',
                                 defaultMessage: 'On hand',
                               })}
                             </TableCell>

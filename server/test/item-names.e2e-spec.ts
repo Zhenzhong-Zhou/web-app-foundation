@@ -115,31 +115,69 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
-    operation: 'GET /v1/stock',
+    // Stock value's Waiting for a cost (#296): the receipt has no cost.
+    operation: 'GET /v1/costs/needs-cost',
     of: 'item',
     ask: async (world, language) => {
-      const page = await read<{ entries: (Named & { variantId: string })[] }>(
-        world,
-        language,
-        '/v1/stock',
-      );
-      const row = page.entries.find(
-        (entry) => entry.variantId === world.variantId,
-      )!;
+      const entry = (
+        await read<{ entries: (Omit<Named, 'id'> & { variantId: string })[] }>(
+          world,
+          language,
+          '/v1/costs/needs-cost',
+        )
+      ).entries.find((each) => each.variantId === world.variantId)!;
+      return itemName(entry.productName, entry.variantName);
+    },
+  },
+  {
+    operation: 'GET /v1/stock/by-code',
+    of: 'item',
+    ask: async (world, language) => {
+      const row = (
+        await read<{ entries: (Omit<Named, 'id'> & { variantId: string })[] }>(
+          world,
+          language,
+          '/v1/stock/by-code',
+        )
+      ).entries.find((entry) => entry.variantId === world.variantId)!;
       return itemName(row.productName, row.variantName);
     },
   },
   {
-    operation: 'GET /v1/stock/availability',
+    operation: 'GET /v1/stock/by-code/{variantId}/places',
+    of: 'item',
+    ask: async (world, language) => {
+      const { places } = await read<{ places: { lots: Named[] }[] }>(
+        world,
+        language,
+        `/v1/stock/by-code/${world.variantId}/places`,
+      );
+      const [pile] = places[0].lots;
+      return itemName(pile.productName, pile.variantName);
+    },
+  },
+  {
+    operation: 'GET /v1/products/{id}/stock',
+    of: 'item',
+    ask: async (world, language) => {
+      const { codes } = await read<{
+        codes: { places: { lots: Named[] }[] }[];
+      }>(world, language, `/v1/products/${world.productId}/stock`);
+      const [pile] = codes[0].places[0].lots;
+      return itemName(pile.productName, pile.variantName);
+    },
+  },
+  {
+    operation: 'GET /v1/stock/by-lot',
     of: 'item',
     ask: async (world, language) => {
       const row = (
-        await read<(Omit<Named, 'id'> & { variantId: string })[]>(
+        await read<{ entries: (Named & { variantId: string })[] }>(
           world,
           language,
-          '/v1/stock/availability',
+          '/v1/stock/by-lot',
         )
-      ).find((each) => each.variantId === world.variantId)!;
+      ).entries.find((entry) => entry.variantId === world.variantId)!;
       return itemName(row.productName, row.variantName);
     },
   },
@@ -528,9 +566,9 @@ describe('Names in the reader’s language (e2e)', () => {
         lot: { code: 'L-01', expiresAt: '2030-01-01' },
       })
       .expect(201);
-    const lotId = body<{ entries: { lotId: string | null }[] }>(
-      await agent.get('/v1/stock').expect(200),
-    ).entries[0].lotId!;
+    const lotId = body<{ entries: { lotId: string }[] }>(
+      await agent.get('/v1/stock/by-lot').expect(200),
+    ).entries[0].lotId;
 
     // A sale, shipped, and one back.
     const order = body<{ order: { id: string; lines: { id: string }[] } }>(
@@ -671,7 +709,8 @@ describe('Names in the reader’s language (e2e)', () => {
 
     for (const path of [
       `/v1/price-lists/${priceListId}/export`,
-      '/v1/stock/export',
+      '/v1/stock/by-code/export',
+      '/v1/stock/by-lot/export',
       '/v1/stock/movements/export',
       '/v1/stock/reorder-points/export',
     ]) {

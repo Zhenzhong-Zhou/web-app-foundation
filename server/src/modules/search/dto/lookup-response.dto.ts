@@ -1,3 +1,4 @@
+import type { ProductType } from '../../../database/schema';
 import type { LookupKind } from '../lookup.service';
 
 /**
@@ -16,6 +17,8 @@ export class LookupResult {
   productId!: string | null;
   /** An item's product's cover (ADR-066); null for other kinds. */
   coverFileId!: string | null;
+  /** An item's type, for its icon where it has no cover (#546); null for other kinds. */
+  type!: ProductType | null;
   /** Found by similarity, after the exact matches: a typo. */
   close!: boolean;
 }

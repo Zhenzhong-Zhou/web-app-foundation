@@ -215,3 +215,35 @@ export class ReceivedMovement {
 export class ReceiptEnvelope {
   movement!: ReceivedMovement;
 }
+
+/**
+ * The line a delivery is, as receiving it needs it: the receive-line
+ * dialog's fields, OrderLine's own.
+ */
+export class DeliveryLine {
+  id!: string;
+  variantId!: string;
+  /** Snapshotted when the order was raised (ADR-023). */
+  sku!: string;
+  tracksLots!: boolean;
+  unitOfMeasure!: string;
+  quantityOrdered!: string;
+  quantityFulfilled!: string;
+  quantityOutstanding!: string;
+}
+
+/**
+ * A delivery an item's receipt may be (ADR-093, v3): a confirmed
+ * purchase's line still to come, as Coming counts it (availability.ts's
+ * comingOf), with its order, its supplier and the day it is expected.
+ */
+export class Delivery {
+  orderId!: string;
+  /** Ours, PO- (ADR-071). */
+  number!: string;
+  partnerName!: string;
+  expectedAt!: string | null;
+  /** Expected before the organization's today (ADR-072). */
+  late!: boolean;
+  line!: DeliveryLine;
+}

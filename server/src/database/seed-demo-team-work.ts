@@ -53,8 +53,9 @@ export interface TeamAnchors {
  *
  * - 王建国 (warehouse): a second site with zones, an aisle, shelves, a
  *   quarantine and an address; receipts there; a transfer between sites; a
- *   count that found two short and one over; a write-off; a lot whose
- *   expiry turned out to be past, moved to quarantine.
+ *   count that found two short and one over; a write-off; a vitamin C
+ *   code corrected after its receipts; a lot whose expiry turned out to
+ *   be past, moved to quarantine.
  * - Daniel (operations): a product in three sizes, named in French and
  *   Chinese; equipment; three suppliers, one billing in euros; four
  *   purchases, one of them late and priced from the supplier's list.
@@ -707,10 +708,13 @@ export async function addTeamWork(
       );
     }
 
+    // Typed with the code the first order was written under, VITC-90, and
+    // corrected to VITC-100 after its first receipts (below): the ledger
+    // keeps each movement under the code it had (ADR-093, 7a).
     const vitaminC = await product(actor, {
       type: 'good',
       name: 'Vitamin C 500 mg, 100 tablets',
-      variant: { sku: 'VITC-100', unitOfMeasure: 'each', tracksLots: true },
+      variant: { sku: 'VITC-90', unitOfMeasure: 'each', tracksLots: true },
     });
     await audited(
       actor,
@@ -775,6 +779,7 @@ export async function addTeamWork(
       magcap120: variants[1].id,
       magcap240: variants[2].id,
       vitaminC: vitaminC.variants[0].id,
+      vitaminCProductId: vitaminC.id,
       chamomile: chamomile.variants[0].id,
       melatonin: melatonin.variants[0].id,
       amberBottle: amberBottle.variants[0].id,
@@ -1004,6 +1009,28 @@ export async function addTeamWork(
       expiresInDays: 420,
     });
     await setStatus(actor, bought.id, 'fulfilled');
+
+    // The vitamin C arrived labelled VITC-100, as its name says, not the
+    // VITC-90 its order was written under, so 王建国 corrects the code
+    // before anything of it moves: a code changed once, after its first
+    // movements. Those two receipts keep VITC-90 in the ledger and
+    // PO-DEMO-8 on its line; the rest reads VITC-100 (ADR-093, 7a).
+    await audited(
+      actor,
+      {
+        action: AUDIT_ACTIONS.PRODUCT_VARIANT_UPDATED,
+        type: 'product',
+        id: catalogue.vitaminCProductId,
+        body: { sku: 'VITC-100' },
+        fields: ['sku'],
+      },
+      () =>
+        products.updateVariant(
+          catalogue.vitaminCProductId,
+          catalogue.vitaminC,
+          { sku: 'VITC-100' },
+        ),
+    );
 
     await receive(actor, machine, catalogue.filler, '1', richmond.cage);
     await setStatus(actor, machine.id, 'fulfilled');
@@ -1643,6 +1670,20 @@ export async function addTeamWork(
     }),
   );
 
+  // MAGCAP-240's one lot held back in Richmond's Quarantine, so its code
+  // is out with stock on hand, none of it usable (ADR-093, R23).
+  await actingAs(team.jianguo.id, async (actor) =>
+    move(actor, {
+      variantId: catalogue.magcap240,
+      lotId: await lotOf('MC240-0815'),
+      fromLocationId: richmond.shelfA,
+      toLocationId: richmond.quarantine,
+      quantity: '48',
+      reason: 'transfer',
+      note: 'Cartons crushed in delivery; held for the supplier to inspect',
+    }),
+  );
+
   /**
    * The Owner's points, one per state: out, its lots expired; low and
    * bought in cases; the sample bag, made and low; Sleep, made and low with
@@ -1650,7 +1691,11 @@ export async function addTeamWork(
    * purchase coming and two sales needing it, up to a maximum; cartons,
    * under their point on the shelf but kept above it by what is on its
    * way; 90-count bottles, enough, with half issued to CALM-RUN-01 and
-   * left out; and Zinc, discontinued, its point kept.
+   * left out; Zinc, discontinued, its point kept; and two of MAGCAP's
+   * three sizes, so one item has a code low and one out, which Items and
+   * the item's page read as its worst and how many share it (ADR-093,
+   * R23): the 120, low and bought in cases, and the 240, out, its lot in
+   * quarantine.
    */
   const points: [string, SetReorderPointDto][] = [
     [vitaminC, { source: 'bought', reorderPoint: '48', rule: 'just_enough' }],
@@ -1703,6 +1748,19 @@ export async function addTeamWork(
       await variantOf('ZINC-60'),
       { source: 'bought', reorderPoint: '24', rule: 'just_enough' },
     ],
+    [
+      catalogue.magcap120,
+      {
+        source: 'bought',
+        reorderPoint: '100',
+        rule: 'fixed',
+        fixedQuantity: '24',
+      },
+    ],
+    [
+      catalogue.magcap240,
+      { source: 'bought', reorderPoint: '24', rule: 'just_enough' },
+    ],
   ];
   for (const [variantId, point] of points) {
     await audited(
@@ -1719,9 +1777,9 @@ export async function addTeamWork(
   // Read back as the list counts them, so a change upstream that moves an
   // item to another state fails the seed, and CI with it.
   const counts = await app.get(ReorderPointsReadsService).counts();
-  if (counts.all !== 9 || counts.low !== 6 || counts.out !== 1) {
+  if (counts.all !== 11 || counts.low !== 8 || counts.out !== 2) {
     throw new Error(
-      `Reorder points read All ${counts.all} · Low ${counts.low} · Out ${counts.out}, where the demo sets All 9 · Low 6 · Out 1`,
+      `Reorder points read All ${counts.all} · Low ${counts.low} · Out ${counts.out}, where the demo sets All 11 · Low 8 · Out 2`,
     );
   }
 
@@ -1730,6 +1788,7 @@ export async function addTeamWork(
     'MAGCAP in three sizes',
     'PO-DEMO-7 in euros, PO-DEMO-9 late, a capsule filler in the cage',
     'PO-DEMO-11 waiting to be received',
+    'VITC-90 corrected to VITC-100 after its two receipts',
     'VC-0301 expired and quarantined',
     'SLEEP-BLEND-01 from hand-picked CHA-0522',
     'SLEEP-60-01 made 450 + 520 of 1000',
@@ -1738,6 +1797,6 @@ export async function addTeamWork(
     `SO-DEMO-7 from Co-op members CAD and SO-DEMO-8 in USD, invoiced as ${numbers.join(' and ')}`,
     `${rma.number} to replace two bottles`,
     'Retail CAD 2025 retired',
-    'reorder points on nine items, All 9 · Low 6 · Out 1: VC-0402 past its date too, PO-DEMO-12 late and PO-DEMO-13 a draft, SO-DEMO-9 and SO-DEMO-10 holding elderberry, MAGCAP-SAMPLE packed by MCS-RUN-01 at the Office',
+    'reorder points on eleven items, All 11 · Low 8 · Out 2: VC-0402 past its date too, PO-DEMO-12 late and PO-DEMO-13 a draft, SO-DEMO-9 and SO-DEMO-10 holding elderberry, MAGCAP-SAMPLE packed by MCS-RUN-01 at the Office, MAGCAP-120 low and MAGCAP-240 out, its lot quarantined',
   ].join('; ');
 }

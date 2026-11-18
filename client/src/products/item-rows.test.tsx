@@ -22,8 +22,10 @@ function item(sku: string, variantCount: number): ProductSummary {
     createdAt: '2026-11-09T12:00:00.000Z',
     updatedAt: '2026-11-09T12:00:00.000Z',
     onHand: '0.0000',
+    notUsable: '0.0000',
     unitOfMeasure: 'each',
     stockStatus: null,
+    stockStatusCodes: null,
   };
 }
 
@@ -51,8 +53,9 @@ describe('a row’s codes', () => {
 
 describe('a card on a phone', () => {
   // Nothing on a phone opened an item's stock (ADR-092's review, 2): the
-  // card's stock is a link of its own, beside the item's.
-  it('opens Inventory for the item alone from its stock, and the item from the rest', () => {
+  // card's stock is a link of its own, beside the item's; its status opens
+  // where it stands (#570).
+  it('opens Inventory for the item alone from its stock, Where it stands from its status, and the item from the rest', () => {
     render(
       <MemoryRouter>
         <ItemCards
@@ -67,7 +70,61 @@ describe('a card on a phone', () => {
     ).toHaveAttribute('href', '/inventory?productId=FOCUS-60CT');
     expect(
       screen.getAllByRole('link').map((link) => link.getAttribute('href')),
-    ).toEqual(['/items/FOCUS-60CT', '/inventory?productId=FOCUS-60CT']);
+    ).toEqual([
+      '/items/FOCUS-60CT',
+      '/inventory?productId=FOCUS-60CT',
+      '/items/FOCUS-60CT#stock',
+    ]);
+  });
+});
+
+describe('a row’s stock and status (ADR-093, #590)', () => {
+  // Out beside 72 read as false until what is not usable was said beside
+  // it; an item of several codes says how many share its status.
+  it('says what is not usable beside the number, and how many codes share the status, opening Where it stands', () => {
+    render(
+      <MemoryRouter>
+        <ItemTable
+          items={[
+            {
+              ...item('VITC-100', 1),
+              onHand: '72.0000',
+              notUsable: '72.0000',
+              stockStatus: 'out',
+              stockStatusCodes: 1,
+            },
+            {
+              ...item('MAGCAP-60', 3),
+              onHand: '204.0000',
+              notUsable: '48.0000',
+              stockStatus: 'low',
+              stockStatusCodes: 1,
+            },
+          ]}
+          loading={false}
+          sort={{ key: 'name', order: 'asc' }}
+          header={() => ({
+            active: false,
+            order: 'asc',
+            onSort: () => undefined,
+          })}
+          onDate={() => undefined}
+          firstNew={null}
+        />
+      </MemoryRouter>,
+    );
+
+    const [, one, three] = screen.getAllByRole('row');
+    expect(one).toHaveTextContent('72 each72 not usableOut');
+    expect(
+      screen.getByRole('link', { name: 'Out: where VITC-100 stands' }),
+    ).toHaveAttribute('href', '/items/VITC-100#stock');
+    expect(three).toHaveTextContent('204 each48 not usable');
+    expect(
+      screen.getByRole('link', {
+        name: 'Low · 1 of 3 codes: where MAGCAP-60 stands',
+      }),
+    ).toHaveAttribute('href', '/items/MAGCAP-60#stock');
   });
 });
 

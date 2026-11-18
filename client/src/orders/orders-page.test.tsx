@@ -62,14 +62,16 @@ describe('OrdersPage', () => {
       { permissions: ['orders.view'] },
     );
 
-    const chip = await screen.findByRole('button', { name: 'Still to ship' });
+    const chip = await screen.findByRole('button', {
+      name: 'Remove filter: Still to ship',
+    });
     await expect.poll(() => asked.length).toBeGreaterThan(0);
     expect(asked[0].searchParams.get('outstanding')).toBe('true');
 
     chip.focus();
     await user.keyboard('{Delete}');
     expect(
-      screen.queryByRole('button', { name: 'Still to ship' }),
+      screen.queryByRole('button', { name: 'Remove filter: Still to ship' }),
     ).not.toBeInTheDocument();
     await expect
       .poll(() => asked.at(-1)?.searchParams.has('outstanding'))
@@ -119,7 +121,9 @@ describe('OrdersPage', () => {
       { permissions: ['orders.view'] },
     );
 
-    const chip = await screen.findByRole('button', { name: 'Late' });
+    const chip = await screen.findByRole('button', {
+      name: 'Remove filter: Late',
+    });
     await expect.poll(() => asked.length).toBeGreaterThan(0);
     expect(Object.fromEntries(asked[0])).toMatchObject({
       outstanding: 'true',
@@ -138,7 +142,7 @@ describe('OrdersPage', () => {
     chip.focus();
     await user.keyboard('{Delete}');
     expect(
-      screen.queryByRole('button', { name: 'Late' }),
+      screen.queryByRole('button', { name: 'Remove filter: Late' }),
     ).not.toBeInTheDocument();
     await expect.poll(() => asked.at(-1)?.has('late')).toBe(false);
     expect(asked.at(-1)?.get('order')).toBe('desc');
@@ -187,8 +191,12 @@ describe('OrdersPage', () => {
       { permissions: ['orders.view'] },
     );
 
-    const chip = await screen.findByRole('button', { name: 'Oldest first' });
-    expect(screen.getByRole('button', { name: 'Draft' })).toBeVisible();
+    const chip = await screen.findByRole('button', {
+      name: 'Remove filter: Oldest first',
+    });
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Draft' }),
+    ).toBeVisible();
     await expect.poll(() => asked.length).toBeGreaterThan(0);
     expect(Object.fromEntries(asked[0])).toEqual({
       status: 'draft',
@@ -198,11 +206,13 @@ describe('OrdersPage', () => {
     chip.focus();
     await user.keyboard('{Delete}');
     expect(
-      screen.queryByRole('button', { name: 'Oldest first' }),
+      screen.queryByRole('button', { name: 'Remove filter: Oldest first' }),
     ).not.toBeInTheDocument();
     await expect.poll(() => asked.at(-1)?.has('order')).toBe(false);
     expect(asked.at(-1)?.get('status')).toBe('draft');
-    expect(screen.getByRole('button', { name: 'Draft' })).toHaveFocus();
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Draft' }),
+    ).toHaveFocus();
   });
 
   // A header chosen replaces it, its order now the column's.
@@ -226,13 +236,15 @@ describe('OrdersPage', () => {
       { permissions: ['orders.view'] },
     );
 
-    await screen.findByRole('button', { name: 'Oldest first' });
+    await screen.findByRole('button', {
+      name: 'Remove filter: Oldest first',
+    });
     await user.click(await screen.findByRole('button', { name: 'Expected' }));
 
     await expect.poll(() => asked.at(-1)?.get('sort')).toBe('expectedAt');
     expect(asked.at(-1)?.get('order')).toBe('asc');
     expect(
-      screen.queryByRole('button', { name: 'Oldest first' }),
+      screen.queryByRole('button', { name: 'Remove filter: Oldest first' }),
     ).not.toBeInTheDocument();
     expect(
       await screen.findByRole('columnheader', { name: 'Expected' }),

@@ -2,6 +2,7 @@
 status: accepted
 date: 2026-09-23
 areas: [orders, stock]
+amended-by: [ADR-093]
 ---
 
 # ADR-045 — Reservations: available to promise, computed rather than stored
@@ -67,3 +68,21 @@ sum for the priority, and one over its stock levels. Nothing scans the ledger.
 Deferred: manual priority overrides, holds on specific lots
 for customers who require them, reserving components for planned production
 runs, and holds that expire.
+
+## Amendment (November 2026) — Free from usable stock (ADR-093)
+
+ADR-093 takes #333's promise half: the holds draw on usable stock, the
+rule ADR-085's position reads, so a row's Free and its status cannot
+disagree.
+
+- **Supply is usable stock:** at places marked available, less lots
+  expired by the organization's today and what released runs were
+  issued. The earliest confirmed order still holds first.
+- **Free is usable less held, never below 0;** what confirmed orders
+  want beyond what they hold is backordered, said "20 short".
+- **The check that guards a shipment reads the same holds:** a shipment
+  that would take expired or issued stock another order needs is
+  refused, and says how many are expired or issued, with the item's
+  Where it stands as the way out.
+- **Which lot a shipment takes** stays #333's picking half, with
+  expired lots.

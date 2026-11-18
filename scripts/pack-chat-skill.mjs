@@ -317,6 +317,6 @@ if (import.meta.main) {
     process.exit(1);
   }
   console.log(
-    `Wrote ${path.relative(ROOT, ARCHIVE)}: upload it in claude.ai under Settings → Capabilities → Skills, in place of the old one, then walk ${path.relative(ROOT, path.join(folder, EVALS))}.`,
+    `Wrote ${path.relative(ROOT, ARCHIVE)}: in claude.ai the skill is a plugin, so replace it with Edit on its page, then walk ${path.relative(ROOT, path.join(folder, EVALS))}.`,
   );
 }

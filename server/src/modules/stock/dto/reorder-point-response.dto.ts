@@ -1,5 +1,9 @@
-import type { ReorderRule, ReorderSource } from '../../../database/schema';
-import type { ReorderStatus } from '../reorder-position';
+import type {
+  ProductType,
+  ReorderRule,
+  ReorderSource,
+} from '../../../database/schema';
+import type { ReorderStatus } from '../reorder-status';
 
 /**
  * Reorder points as the API returns them (ADR-068, ADR-085): each item
@@ -27,6 +31,12 @@ export class ReorderPointRow {
   /** The point itself; also the list's cursor (ADR-051). */
   id!: string;
   variantId!: string;
+  /** The item, for its page and its Where it stands (ADR-093). */
+  productId!: string;
+  /** The item's type, for its icon and its word (#546). */
+  type!: ProductType;
+  /** The product's cover (ADR-062), or null. */
+  coverFileId!: string | null;
   sku!: string;
   /** In the reader's language (ADR-056). */
   productName!: string;
@@ -136,6 +146,11 @@ export class ReorderPointPreview {
   /** Low, with its drafts leaving nothing to suggest. */
   drafted!: boolean;
   /**
+   * Draft purchases and runs of the item, which `after` counts, so the
+   * dialog names them beside it (#540).
+   */
+  inDraft!: string;
+  /**
    * The position once what is in draft and the suggestion arrive: the
    * position, what is in draft, and the suggestion, which leaves it out.
    */
@@ -145,13 +160,26 @@ export class ReorderPointPreview {
 }
 
 /**
+ * GET /stock/reorder-points/items: every item with a point, so Add's
+ * picker marks them before one is picked (#538).
+ */
+export class ReorderPointItems {
+  variantIds!: string[];
+}
+
+/**
  * GET /stock/reorder-points/:variantId: an opened row's lines. What is in
  * draft is not here: it is the row's own, which the list sends.
  */
 export class ReorderPointDetail {
   /** The point itself, so Edit opens with what is kept. */
   point!: ReorderPointValues;
-  /** By location, each marked available that holds the item. */
+  /**
+   * By location, each marked available that holds the item, for a reader
+   * who may see places; none for the rest, the row's usable standing
+   * alone, since a place's name is never sent past locations.view
+   * (ADR-080; ADR-093's A6).
+   */
   usable!: UsableStock[];
   /** Left out in all, as expired. */
   expired!: string;

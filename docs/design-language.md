@@ -85,10 +85,11 @@ Each with what holds it in the code today, or the issue that will.
 
 ### Rows
 
-- A list's row with controls of its own has one link, its name; a click
-  or tap elsewhere in the row opens it too, without being a second link,
-  so a screen reader hears the name, not the whole row (Items' rows,
-  `item-rows.tsx`; #473 for every list).
+- A list's row with controls of its own has one link, its name: the one
+  way in. A click or tap elsewhere in the row, or on its card, opens
+  nothing; the row tints under the pointer, which stays an arrow, so a
+  screen reader and a pointer meet the same one link (ADR-093 v3; Stock,
+  Reorder and Items, their cards and the Lot view).
 - A row with nothing in it but what it opens, as Home's Recently opened
   and Getting started's steps are, is one link, its whole row.
 - A row's own controls, a check box, a figure with its status and its
@@ -97,19 +98,33 @@ Each with what holds it in the code today, or the issue that will.
 - The name first, then the code: "Omega-3 fish oil · OMG-120". A second
   code says what it is ("their ref. SO-DEMO-1").
 - A table's Code column comes after its name, each table moved when its
-  list is next changed, Inventory's in Movements' turn (ADR-093).
+  list is next changed, Inventory's on ADR-093's Inventory branch.
 - A picker's option reads "Vitamin C 500 mg · VITC-100", the code grey
   after the name, a typed code still finding it and an exact one still
-  leading its group (#563; `VariantPicker` puts the code first today).
+  leading its group (`VariantPicker`, #563).
 - A code with a page of its own is a link wherever it appears, a lot's
   code included.
-- A row's actions have words, not icons alone.
+- A row's actions have words, not icons alone: one quiet button,
+  "Actions" in grey with a small down arrow and no border, its tint and
+  accent on hover and focus, named for what it acts on ("Actions for
+  Vitamin C 500 mg", "Actions for lot VC-0302 at Shelf A2"), its
+  column's header for a screen reader alone (`ActionsMenu`, ADR-093).
+- Its menu groups its choices with dividers, "…" after one that asks
+  more, and a line first where one says what comes next ("3 lots in 2
+  places: you choose the lot next"). A choice that cannot be done here
+  is greyed with its reason beneath ("Nothing on hand to move"),
+  `aria-disabled` and still reached by the keyboard; one the role cannot
+  use is not shown; a menu of one is a plain link.
+- A place reads as its path, the warehouse first: "Main warehouse › Zone
+  A › Shelf A2". Where it does not fit it is cut from the left, "…"
+  first and the place's own name whole, the whole path on hover and on
+  focus; it starts where the row's name starts (`PlacePath`, ADR-093).
 - A kind is a word: an item's type in a mixed list is a word on the
   row's second line beside its icon, and on the record the line under
   its title (#548, which gives each type its singular).
 - An icon that tells a kind is never alone, and a kind takes no status's
-  colour, since a kind is not a state (on All, Items' type is an icon
-  today, said only to a screen reader).
+  colour, since a kind is not a state: on Items' All, Stock and the
+  lookup, "VITC-100 · Product" (`NameAndCode`'s `withType`).
 
 ### Numbers
 
@@ -121,17 +136,21 @@ Each with what holds it in the code today, or the issue that will.
 - Numbers are right-aligned in tabular figures, and nothing covers them:
   a pinned column never sits over a cell.
 - The figure beside a status is the figure it judges, or links to where
-  it is worked out. Items' Low and Out are to open "Where it stands", the
-  figure they judge; today only the stock on hand beside them links, to
-  Inventory for that item alone (`item-rows.tsx`), as ADR-090's as-built
-  for flows and states says.
+  it is worked out. Items' Low and Out open the item's "Where it stands",
+  the figures they judge, and the stock on hand beside them, read from
+  the same count with what of it is not usable, opens Inventory for that
+  item alone (`item-rows.tsx`; ADR-093, #570, #590).
 
 ### Sorting and filters
 
 - A list sorts on the few columns a person decides by; its default is
   the one most asked for, named in that list's own ADR (ADR-092).
-- What sorts looks sortable; the sort is kept in the address with the
-  filters.
+- What sorts looks sortable before it is pressed: a faint up-and-down
+  arrow on each header that sorts, the sorted one's solid for its way,
+  the default marked while nothing else is chosen, `aria-sort` on the
+  header (`SortHeader`'s `atRest`; Stock, the Lot view and Reorder, each
+  other list as it is next changed). The sort is kept in the address
+  with the filters.
 - A date column shows the date the list is sorted by; where a list keeps
   two dates, the column's header switches between them.
 - After sorting from the keyboard, focus stays on the column's header.
@@ -141,8 +160,8 @@ Each with what holds it in the code today, or the issue that will.
 ### Lists on a phone
 
 - Below 600 px a list's rows become cards: the name, its status, and the
-  one or two numbers that matter, the card opening as its row does
-  (#159). Each list names its card's fields, built list by list as each
+  one or two numbers that matter, the card opened by its name, as its
+  row is (#159). Each list names its card's fields, built list by list as each
   is next changed.
 - Above it, a table scrolls inside its own container, as ADR-055 set,
   and shows where it is cut (`scrollShades`, `client/src/theme/cut-edge.ts`).
@@ -154,10 +173,12 @@ Each with what holds it in the code today, or the issue that will.
   - its scrolling part taking keyboard focus, with a name;
   - a detail opened from a row opening below it, the scroll kept, never
     sliding the table sideways.
-- The next cards are Inventory's two tabs, Stock and Reorder points, in
-  Movements' turn (ADR-093), and the item's names table in Items' next.
-- Reorder points' card holds the name, the status, "12 left · reorder at
-  36" and the main action; at `sm`, the suggested order too.
+- Inventory's two tabs have their cards (ADR-093): Stock's holds the
+  name, the status, On hand, Free and Expires first, and opens to Held,
+  Coming and its lots; Reorder's holds the name, the status, "12 left ·
+  reorder at 36" and the main action; at `sm`, the suggested order too.
+  The next cards are Movements', in its branch, and the item's names
+  table, in Items' next.
 
 ### A main action the role cannot use
 
@@ -265,17 +286,24 @@ Each with what holds it in the code today, or the issue that will.
   visited.
 - Back returns a list as it was: its loaded rows, its scroll, and focus
   on the row the person opened (#473, #509); today its filters and sort
-  come back from the address, the rest does not.
-- Back to Home focuses the tile the person left from (#473, #509).
+  come back from the address, and Stock's opened rows (`?open=`) with
+  focus on the row left by (`return-focus.ts`, ADR-093); the rest does
+  not.
+- Back to Home focuses the tile the person left from (`return-focus.ts`,
+  ADR-093).
 - A page reached by a link puts focus on its title, so a screen reader
   hears where it is, as GOV.UK and React Router advise for an app that
   changes pages without reloading (#565).
-- Today only a page whose action took away the focused button does, by
+- Today the item's page does when a link brings a person there
+  (ADR-093), and a page whose action took away the focused button, by
   `PageHeader`'s `headingRef`, such as after Remove a member, Delete a
   role or a category, and Issue an invoice.
 - Nothing pinned covers the focused control (WCAG 2.4.11): the top bar,
   a sticky header, a dialog's buttons and a message leave room by one
   scroll margin from the top bar's height (#507's 41).
+- A control that takes focus inside a table's scrolling box is brought
+  wholly into view, never left half past the box's edge (`wholeOnFocus`;
+  Inventory's tables, ADR-093, the others as each is next changed).
 
 ### One Settings page
 
@@ -319,10 +347,10 @@ and the places #337 names, each when its trigger comes.
   - a caption is only for footnotes, and nothing else a person reads is
     under 14 px, stricter than Material's 12 px labels, for older eyes
     and for Chinese.
-- Three places are under it today, each brought to 14 px in the theme
-  by #566: a floated label at 12 px, the line under a reorder point's
-  item at 12.5 (`caption`), and a quick filter at 13 (MUI's small
-  `ToggleButton`, `QuickFilterPill`); a status chip is 14 already
+- One place is under it today: a floated label at 12 px, which waits
+  for #566's decision on labels above the field. The line under a
+  reorder point's item is on `body2`, and a quick filter is 14 px in the
+  theme (`MuiToggleButton`, `QuickFilterPill`), as a status chip is
   (`MuiChip`).
 - The scale steps by 1.25: a section heading at 20 px and a page's title
   at 25 px, so a heading is told apart by size, not weight alone. Line
@@ -398,15 +426,18 @@ refused.
 | A link (`MuiLink`) | ✓ | ✓ | ✓ | — | — | — | — | — | — | — |
 | A field | ✓ | ✓ | ✓ | — | — | ✓ | — | ✓ | — | #566: its floated label at 14 px |
 | A select, or a picker | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | #566: its floated label at 14 px |
-| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | #170: 44 px on touch |
+| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — |
 | A switch (`MuiSwitch`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | #170: 44 px on touch |
-| A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #566 and #170: a quick filter at 14 px and 44 px on touch |
+| A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 | A tab | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 | A row | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #170: touch density, each control in it 44 px |
 | A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 | A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
 | The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
-| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: a failed page, with Try again, as Items' has |
+| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: each list but Items, Stock and Reorder passes its failed page |
+| The opening row, a row's places or a place's lots (`aria-expanded`) | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | — |
+| A row's Actions (`ActionsMenu`), selected while open, a choice greyed with its reason | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| A header that sorts (`SortHeader`), selected while it sorts | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | Items, Orders, Invoices and Credit notes: `atRest` as each is next changed |
 | A drag handle (Customise Home's) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 
 - **✓ marks a state the piece has,** and — one it has not; in To

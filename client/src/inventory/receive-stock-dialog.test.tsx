@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Location } from '../api/types.gen';
+import type { Delivery, Location } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
 import { ReceiveStockDialog } from './receive-stock-dialog';
@@ -185,6 +186,37 @@ describe('ReceiveStockDialog', () => {
     });
   });
 
+  // 55a: the confirmation says what happened, and that no order was it.
+  it('says what was received, with no order', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post('/api/v1/stock/movements', () =>
+        HttpResponse.json({ movement: { id: 'm' } }, { status: 201 }),
+      ),
+    );
+    render(
+      <ToastProvider>
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          defaultLocationId="location-a"
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+        />
+      </ToastProvider>,
+    );
+
+    await choose('Item', /PLAIN-1/);
+    await user.type(quantityField(), '3000');
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    // The dialog stays open here, its parent owning it, so the toast
+    // behind it is hidden from the tree.
+    expect(
+      await screen.findByRole('status', { hidden: true }),
+    ).toHaveTextContent(/^Received 3,000 \S+ of PLAIN-1 with no order$/);
+  });
+
   it('refuses a thousands separator on the field, sending nothing', async () => {
     const user = userEvent.setup();
     let sent = false;
@@ -265,5 +297,123 @@ describe('ReceiveStockDialog', () => {
      * is exactly how it was first reported.
      */
     expect(await screen.findByText(/no items yet/i)).toBeInTheDocument();
+  });
+
+  describe('Which delivery is this? (ADR-093, v3)', () => {
+    const DELIVERY: Delivery = {
+      orderId: 'order-12',
+      number: 'PO-000012',
+      partnerName: 'Harbour Supply',
+      expectedAt: '2026-11-20',
+      late: false,
+      line: {
+        id: 'line-12',
+        variantId: 'variant-plain',
+        sku: 'PLAIN-1',
+        tracksLots: false,
+        unitOfMeasure: 'each',
+        quantityOrdered: '48.0000',
+        quantityFulfilled: '0.0000',
+        quantityOutstanding: '48.0000',
+      },
+    };
+
+    function asking(
+      { defaultVariantId = '', deliveries = [DELIVERY] } = {},
+      onDelivery = vi.fn(),
+    ) {
+      const asked: string[] = [];
+      server.use(
+        http.get('/api/v1/orders/deliveries', ({ request }) => {
+          asked.push(new URL(request.url).searchParams.get('variantId')!);
+          return HttpResponse.json(deliveries);
+        }),
+      );
+      render(
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          defaultLocationId="location-a"
+          defaultVariantId={defaultVariantId}
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+          onDelivery={onDelivery}
+        />,
+      );
+      return { asked, onDelivery };
+    }
+
+    // The page's Receive stock: the question once such an item is chosen,
+    // nothing chosen for the reader.
+    it('asks which delivery it is once an item still to come is chosen, and hands the order on', async () => {
+      const user = userEvent.setup();
+      const { asked, onDelivery } = asking();
+
+      await choose('Item', /PLAIN-1/);
+      const question = await screen.findByRole('radiogroup', {
+        name: 'Which delivery is this?',
+      });
+      expect(asked).toEqual(['variant-plain']);
+      expect(question).toHaveTextContent('PO-000012 from Harbour Supply');
+      expect(question).toHaveTextContent('48 each still to come, expected');
+      // The fields wait for the answer.
+      expect(screen.queryByRole('textbox', { name: 'Quantity' })).toBeNull();
+
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(
+        await screen.findByText('Choose the delivery, or Not on an order.'),
+      ).toBeVisible();
+
+      await user.click(screen.getByRole('radio', { name: /PO-000012/ }));
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(onDelivery).toHaveBeenCalledWith(DELIVERY);
+    });
+
+    // An item's own Receive stock…: its one order chosen already.
+    it('has the one order chosen already from an item’s Receive stock…', async () => {
+      asking({ defaultVariantId: 'variant-plain' });
+
+      expect(
+        await screen.findByRole('radio', { name: /PO-000012/ }),
+      ).toBeChecked();
+    });
+
+    it('carries on in the free dialog for Not on an order, and still receives', async () => {
+      const user = userEvent.setup();
+      let posted: unknown = null;
+      server.use(
+        http.post('/api/v1/stock/movements', async ({ request }) => {
+          posted = await request.json();
+          return HttpResponse.json({}, { status: 201 });
+        }),
+      );
+      const { onDelivery } = asking({ defaultVariantId: 'variant-plain' });
+
+      await user.click(
+        await screen.findByRole('radio', { name: 'Not on an order' }),
+      );
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      await user.type(quantityField(), '5');
+      await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+      await waitFor(() =>
+        expect(posted).toMatchObject({
+          variantId: 'variant-plain',
+          quantity: '5',
+          reason: 'receipt',
+        }),
+      );
+      expect(onDelivery).not.toHaveBeenCalled();
+    });
+
+    it('asks nothing of an item with no delivery', async () => {
+      asking({ deliveries: [] });
+
+      await choose('Item', /PLAIN-1/);
+      expect(
+        await screen.findByRole('textbox', { name: 'Quantity' }),
+      ).toBeVisible();
+      expect(screen.queryByRole('radiogroup')).toBeNull();
+    });
   });
 });

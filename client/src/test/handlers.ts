@@ -87,9 +87,40 @@ export const handlers = [
   http.post(`${BASE}/recent`, () => new HttpResponse(null, { status: 204 })),
   http.get(`${BASE}/recent`, () => HttpResponse.json({ recent: [] })),
   http.get(`${BASE}/products/variants`, () => HttpResponse.json(VARIANTS)),
+  // The items Add reorder point's picker marks (#538): none.
+  http.get(`${BASE}/stock/reorder-points/items`, () =>
+    HttpResponse.json({ variantIds: [] }),
+  ),
   http.get(`${BASE}/locations`, () => HttpResponse.json(LOCATIONS)),
-  http.get(`${BASE}/stock`, () =>
+  // Inventory's grouped read (ADR-093): nothing, and nothing counted.
+  http.get(`${BASE}/stock/by-code`, () =>
     HttpResponse.json({ entries: [], nextCursor: null }),
+  ),
+  http.get(`${BASE}/stock/by-code/counts`, () =>
+    HttpResponse.json({
+      low: 0,
+      out: 0,
+      expiring: 0,
+      expired: 0,
+      needsCost: 0,
+      total: 0,
+    }),
+  ),
+  http.get(`${BASE}/stock/by-lot`, () =>
+    HttpResponse.json({ entries: [], nextCursor: null }),
+  ),
+  http.get(`${BASE}/stock/by-lot/counts`, () =>
+    HttpResponse.json({
+      low: 0,
+      expiring: 0,
+      expired: 0,
+      needsCost: 0,
+      total: 0,
+    }),
+  ),
+  // Stock's Category filter reads them (ADR-093).
+  http.get(`${BASE}/products/categories`, () =>
+    HttpResponse.json({ categories: [], uncategorised: [] }),
   ),
   http.post(`${BASE}/stock/movements`, () =>
     HttpResponse.json({ movement: { id: 'movement-1' } }, { status: 201 }),

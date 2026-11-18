@@ -48,7 +48,10 @@ import { useFailureWords } from './use-failure-words';
  * not here: `data?.priceList` reads plainly, and a selector passed in would
  * need to be kept stable for the effect's sake.
  */
-export function useResource<T>(path: string) {
+export function useResource<T>(
+  /** Null asks nothing, for a read a page makes only sometimes (review 28). */
+  path: string | null,
+) {
   const [read, setRead] = useState<{ path: string; data: T } | null>(null);
   const data = read?.path === path ? read.data : null;
   // A read's failure as it came, or the page's own words.
@@ -64,6 +67,7 @@ export function useResource<T>(path: string) {
 
   useEffect(() => {
     current.current = `${locale} ${path}`;
+    if (path === null) return;
     let ignore = false;
 
     void api<T>(path)
@@ -87,6 +91,7 @@ export function useResource<T>(path: string) {
   }, [path, locale]);
 
   const reload = useCallback(async () => {
+    if (path === null) return;
     const asked = `${locale} ${path}`;
 
     try {

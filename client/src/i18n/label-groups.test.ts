@@ -173,7 +173,7 @@ const GROUPS: { shown: string; ids: string[] }[] = [
     ],
   },
   {
-    shown: "Reorder points' filters",
+    shown: "Reorder's filters",
     ids: [
       'inventory.reorder.filter.all',
       'inventory.reorder.filter.low',
@@ -415,8 +415,8 @@ const GROUPS: { shown: string; ids: string[] }[] = [
 /** A select inside one message, by its id and argument: its options likewise. */
 const SELECTS: { id: string; argument: string }[] = [
   { id: 'inventory.reorder.status', argument: 'status' },
-  { id: 'inventory.reorder.kind', argument: 'source' },
-  { id: 'inventory.reorder.kind', argument: 'rule' },
+  { id: 'inventory.reorder.kindLine', argument: 'source' },
+  { id: 'inventory.reorder.kindLine', argument: 'rule' },
   { id: 'inventory.reorder.ruleLine', argument: 'rule' },
   { id: 'settings.numbering.format', argument: 'reset' },
 ];

@@ -139,11 +139,14 @@ export async function addVariety(
     variantId: string,
     quantity: string,
     toLocationId: string,
-    lot?: { code: string; expiresInDays: number },
+    lot?: { code: string; expiresInDays?: number },
   ) {
     const expiring = lot && {
       code: lot.code,
-      expiresAt: daysFromNow(lot.expiresInDays),
+      expiresAt:
+        lot.expiresInDays === undefined
+          ? undefined
+          : daysFromNow(lot.expiresInDays),
     };
 
     await ordering.receive(order.id, lineOf(order, variantId), {
@@ -350,13 +353,18 @@ export async function addVariety(
   });
   await ordering.setStatus(stocking.id, 'confirmed');
 
-  await receive(stocking, vitaminD.variantId, '120', anchors.shelfId, {
+  await receive(stocking, vitaminD.variantId, '100', anchors.shelfId, {
     code: 'D3-A11',
     expiresInDays: 540,
   });
   await receive(stocking, vitaminD.variantId, '120', anchors.shelfId, {
     code: 'D3-B02',
     expiresInDays: 700,
+  });
+  // A lot with no expiry beside the two dated ones: its place lists it
+  // after them (ADR-093, R2). The line's 240 are received all the same.
+  await receive(stocking, vitaminD.variantId, '20', anchors.shelfId, {
+    code: 'D3-C07',
   });
   await receive(stocking, omega.variantId, '180', anchors.shelfId, {
     code: 'OMG-0417',

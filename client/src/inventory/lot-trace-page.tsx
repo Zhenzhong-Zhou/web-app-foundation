@@ -27,24 +27,27 @@ import {
 
 import type { LotMatch, LotTrace } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ExportButton } from '../components/export-button';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { LotCostPanel } from '../costs/lot-cost-panel';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import {
+  displayQuantity,
   formatDate,
   formatDay,
-  formatQuantity,
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
 import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useExpiryStatus } from '../lib/use-expiry-status';
 import { useResource } from '../lib/use-resource';
 import { LicenceAtRelease } from '../licences/licence-at-release';
-import { withUnit } from '../products/units';
+import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
+import { COLOR_OF_TONE } from '../theme/status';
 
 /**
  * Finding a lot by the start of its code (ADR-044).
@@ -227,6 +230,8 @@ export function LotTracePage() {
   useRecordOpened('lot', id, trace !== null && trace !== undefined);
 
   const showSkeleton = useDelayedFlag(loading);
+  // Carried from the list to the lot's own page, beside its title (#479).
+  const expiry = useExpiryStatus(trace?.lot.expiresAt ?? null);
 
   if (error) {
     return (
@@ -278,6 +283,11 @@ export function LotTracePage() {
           { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
           { code: trace.lot.code },
         )}
+        status={
+          expiry
+            ? { label: expiry.label, color: COLOR_OF_TONE[expiry.tone] }
+            : undefined
+        }
         subtitle={[
           trace.lot.sku,
           trace.lot.description,
@@ -334,7 +344,7 @@ export function LotTracePage() {
                   />
                 )}
               </>,
-              withUnit(row.quantity, trace.lot.unitOfMeasure, intl),
+              displayWithUnit(row.quantity, trace.lot.unitOfMeasure, intl),
             ])}
             alignRight={[1]}
           />
@@ -372,7 +382,7 @@ export function LotTracePage() {
                         linkToLicences={can('product_licences.view')}
                       />
                     ),
-                    amount: withUnit(
+                    amount: displayWithUnit(
                       source.quantity,
                       trace.lot.unitOfMeasure,
                       intl,
@@ -423,6 +433,14 @@ export function LotTracePage() {
           id: 'inventory.trace.receivedBy',
           defaultMessage: 'Who received it',
         })}
+        // The recall list as a file, for a recall letter (ADR-044, amended).
+        action={
+          trace.recipients.length > 0 && (
+            <ExportButton
+              path={`/stock/lots/${trace.lot.id}/recipients/export`}
+            />
+          )
+        }
       >
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
@@ -476,6 +494,10 @@ export function LotTracePage() {
                 id: 'inventory.trace.returned',
                 defaultMessage: 'Returned',
               }),
+              intl.formatMessage({
+                id: 'inventory.trace.leftOn',
+                defaultMessage: 'Date',
+              }),
             ]}
             rows={trace.recipients.map((row) => [
               row.partnerId ? (
@@ -514,9 +536,10 @@ export function LotTracePage() {
               <Link component={RouterLink} to={`/lots/${row.lotId}`}>
                 {row.lotCode}
               </Link>,
-              formatQuantity(row.shipped),
-              formatQuantity(row.sampled),
-              formatQuantity(row.returned),
+              displayQuantity(row.shipped),
+              displayQuantity(row.sampled),
+              displayQuantity(row.returned),
+              row.leftOn ? formatDay(row.leftOn) : NO_VALUE,
             ])}
             alignRight={[3, 4, 5]}
           />
@@ -699,12 +722,33 @@ function Onward({
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  /** The section's own action, beside its heading. */
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <Stack spacing={1}>
-      <Typography variant="h6" component="h2">
-        {title}
-      </Typography>
+      <Stack
+        direction="row"
+        spacing={2}
+        useFlexGap
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography variant="h6" component="h2">
+          {title}
+        </Typography>
+        {action}
+      </Stack>
       {children}
     </Stack>
   );

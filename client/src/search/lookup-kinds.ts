@@ -71,7 +71,8 @@ export function listOf(kind: LookupKind, query: string): string | null {
     case 'invoice':
       return `/invoices?${search}`;
     case 'lot':
-      return `/inventory?${search}`;
+      // The Lot view, since it was a lot that was looked for (ADR-093).
+      return `/inventory?group=lot&${search}`;
     case 'item':
       // On All, discontinued items included, so whatever the top bar found
       // is on the list (ADR-092, amending ADR-056).

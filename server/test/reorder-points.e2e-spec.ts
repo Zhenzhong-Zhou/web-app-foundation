@@ -41,6 +41,9 @@ interface Refusal {
 interface Row {
   id: string;
   variantId: string;
+  productId: string;
+  type: string;
+  coverFileId: string | null;
   sku: string;
   productName: string;
   status: string;
@@ -513,7 +516,7 @@ describe('Reorder points (e2e)', () => {
   }
 
   describe('the list', () => {
-    it('puts the low first, the furthest below its point as a share of it first, then the rest by SKU', async () => {
+    it('puts the low first, the furthest below its point as a share of it first, then the rest by code', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await sixItems(alpha);
 
@@ -538,11 +541,75 @@ describe('Reorder points (e2e)', () => {
       expect(page.entries[1]).toMatchObject({
         sku: 'F-QUARTER',
         productName: 'F-QUARTER',
+        // The item, for its name's link and its Where it stands (ADR-093).
+        type: 'good',
+        coverFileId: null,
         position: '250.0000',
         suggestion: '750.0000',
         suggestedMultiples: null,
       });
+      const { rows } = await db.execute<{ product_id: string }>(
+        sql`select product_id from product_variants where id = ${page.entries[1].variantId}`,
+      );
+      expect(page.entries[1].productId).toBe(rows[0].product_id);
       expect(page.nextCursor).toBeNull();
+    });
+
+    it('sorts by the suggested order, most first unless asked, the list’s own order breaking ties, page after page', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await sixItems(alpha);
+
+      // Suggestions: F-QUARTER 750, B-HALF 50, C-OUT and D-NEAR 10 each
+      // (the out first, as the list's own order has it), A-ENOUGH and
+      // E-AT none, by SKU.
+      const mostFirst = [
+        'F-QUARTER',
+        'B-HALF',
+        'C-OUT',
+        'D-NEAR',
+        'A-ENOUGH',
+        'E-AT',
+      ];
+      const leastFirst = ['C-OUT', 'D-NEAR', 'B-HALF', 'F-QUARTER'];
+
+      for (const [query, expected] of [
+        ['?sort=suggested', mostFirst],
+        ['?sort=suggested&order=desc', mostFirst],
+        // Least first: the nothing to suggest first, then the low,
+        // each tie in the list's own order.
+        ['?sort=suggested&order=asc', ['A-ENOUGH', 'E-AT', ...leastFirst]],
+      ] as const) {
+        expect(skus(await listed(alpha, query))).toEqual(expected);
+
+        const seen: string[] = [];
+        let cursor: string | null = null;
+        do {
+          const page: Page = await listed(
+            alpha,
+            `${query}&limit=1${cursor ? `&before=${cursor}` : ''}`,
+          );
+          seen.push(...skus(page));
+          cursor = page.nextCursor;
+        } while (cursor);
+        expect(seen).toEqual(expected);
+      }
+
+      // The export follows the sort.
+      const csv = await alpha.agent
+        .get('/v1/stock/reorder-points/export?sort=suggested')
+        .expect(200);
+      expect(
+        csv.text
+          .replace(/^\uFEFF/, '')
+          .trim()
+          .split('\r\n')
+          .slice(1)
+          .map((line) => line.split(',')[0]),
+      ).toEqual(mostFirst);
+
+      await alpha.agent
+        .get('/v1/stock/reorder-points?sort=position')
+        .expect(400);
     });
 
     it('filters to the low, the out among them, or the out alone, and counts each', async () => {
@@ -689,10 +756,17 @@ describe('Reorder points (e2e)', () => {
     it('lists only its own organization’s points', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
-      await point(alpha.agent, await item(alpha.agent, 'OURS'), '5');
+      const ours = await item(alpha.agent, 'OURS');
+      await point(alpha.agent, ours, '5');
       await point(beta.agent, await item(beta.agent, 'THEIRS'), '5');
 
       expect(skus(await listed(alpha))).toEqual(['OURS']);
+      // The items Add's picker marks (#538): its own alone.
+      expect(
+        body(
+          await alpha.agent.get('/v1/stock/reorder-points/items').expect(200),
+        ),
+      ).toEqual({ variantIds: [ours] });
       expect(
         body(
           await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
@@ -710,6 +784,7 @@ describe('Reorder points (e2e)', () => {
         '/v1/stock/reorder-points',
         '/v1/stock/reorder-points/counts',
         '/v1/stock/reorder-points/export',
+        '/v1/stock/reorder-points/items',
         `/v1/stock/reorder-points/${d3}`,
       ]) {
         await viewer.get(path).expect(200);
@@ -728,6 +803,7 @@ describe('Reorder points (e2e)', () => {
         'Sales',
       );
       await sales.get('/v1/stock/reorder-points').expect(403);
+      await sales.get('/v1/stock/reorder-points/items').expect(403);
       await sales.get(`/v1/stock/reorder-points/${d3}`).expect(403);
     });
   });
@@ -813,6 +889,52 @@ describe('Reorder points (e2e)', () => {
       // The row's usable is what the lines add up to.
       const [row] = (await listed(alpha)).entries;
       expect(row.position).toBe('440.0000');
+    });
+
+    it('names no place to a reader without locations.view: the row’s usable stands alone', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const bottle = await item(alpha.agent, 'BOTTLE', true);
+      const shelf = await site(alpha.agent, 'SHELF');
+      await receive(alpha.agent, bottle, shelf, '40', {
+        code: 'L-OLD',
+        expiresAt: '2020-01-01',
+      });
+      await receive(alpha.agent, bottle, shelf, '500', {
+        code: 'L-NEW',
+        expiresAt: '2099-01-01',
+      });
+      await point(alpha.agent, bottle, '100');
+
+      await customRole(app, alpha.organizationId, 'Counter', ['stock.view']);
+      const counter = await addMember(
+        app,
+        alpha,
+        'counter@example.com',
+        'Counter',
+      );
+      await customRole(app, alpha.organizationId, 'Keeper', [
+        'stock.view',
+        'locations.view',
+      ]);
+      const keeper = await addMember(
+        app,
+        alpha,
+        'keeper@example.com',
+        'Keeper',
+      );
+
+      const without = body<Detail>(await counter.get(path(bottle)).expect(200));
+      expect(without.usable).toEqual([]);
+      expect(JSON.stringify(without)).not.toContain('SHELF');
+      // What was left out is said in all, with no place.
+      expect(without.expired).toBe('40.0000');
+
+      const withPlaces = body<Detail>(
+        await keeper.get(path(bottle)).expect(200),
+      );
+      expect(withPlaces.usable).toMatchObject([
+        { locationName: 'SHELF', usable: '500.0000' },
+      ]);
     });
 
     it('lists each purchase and run coming, a purchase late once its day has passed, and each sale still needing it', async () => {
@@ -946,6 +1068,7 @@ describe('Reorder points (e2e)', () => {
         suggestion: '2000.0000',
         suggestedMultiples: '2',
         drafted: false,
+        inDraft: '0.0000',
         after: '2800.0000',
         afterStatus: 'enough',
       });
@@ -1000,6 +1123,8 @@ describe('Reorder points (e2e)', () => {
         position: '800.0000',
         status: 'low',
         suggestion: '200.0000',
+        // Named beside where it would stand, which counts it (#540).
+        inDraft: '500.0000',
         after: '1500.0000',
         afterStatus: 'enough',
       });
@@ -1098,7 +1223,26 @@ describe('Reorder points (e2e)', () => {
         )
           .map((id) => said('zh-Hans', id))
           .join(','),
-        'C-OUT,C-OUT,,out,bought,0.0000,0.0000,0.0000,0.0000,10.0000,just_enough,,,0.0000,10.0000,each',
+        // Status, bought or made, the rule and the unit in the reader's
+        // words, as the screen says them (ADR-093; #473's 29).
+        [
+          'C-OUT',
+          'C-OUT',
+          '',
+          said('zh-Hans', 'stock.status.out'),
+          said('zh-Hans', 'stock.source.bought'),
+          '0.0000',
+          '0.0000',
+          '0.0000',
+          '0.0000',
+          '10.0000',
+          said('zh-Hans', 'stock.rule.justEnough'),
+          '',
+          '',
+          '0.0000',
+          '10.0000',
+          said('zh-Hans', 'products.unit.each'),
+        ].join(','),
       ]);
       expect(res.headers['content-disposition']).toMatch(
         /^attachment; filename="reorder-points-\d{4}-\d{2}-\d{2}\.csv"$/,

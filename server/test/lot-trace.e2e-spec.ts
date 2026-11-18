@@ -305,6 +305,65 @@ describe('Lot trace (e2e)', () => {
     expect(found.map((lot) => lot.code)).toEqual(['FOC-1']);
   });
 
+  // A recall letter goes to everyone on it (ADR-044, amended; #473's 17).
+  it('exports the recall list as Who received it lists it, in the reader’s words', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await story(alpha);
+    const id = await lotId('BF-1');
+
+    const lines = async (language: string) =>
+      (
+        await alpha.agent
+          .get(`/v1/stock/lots/${id}/recipients/export`)
+          .set('Accept-Language', language)
+          .expect(200)
+      ).text
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+
+    const chinese = await lines('zh-Hans');
+    expect(chinese[0]).toEqual([
+      '收货方',
+      '订单',
+      '批次',
+      '编码',
+      '已发货',
+      '已寄送样品',
+      '已退回',
+      '日期',
+    ]);
+    // The trace's rows, in its order; nobody on record said so in words.
+    const found = await trace(alpha, 'BF-1');
+    expect(chinese.slice(1).map((row) => row.slice(2, 7))).toEqual(
+      found.recipients.map((row) => [
+        row.lotCode,
+        'FOCUS',
+        row.shipped,
+        row.sampled,
+        row.returned,
+      ]),
+    );
+    expect(chinese.slice(1).map((row) => row[0])).toEqual([
+      'Northside Pharmacy',
+      'Prospect Health',
+      '未记录收货方',
+    ]);
+    // Each with the day it first left.
+    for (const row of chinese.slice(1)) {
+      expect(row[7]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+
+    const english = await lines('en');
+    expect(english[0][0]).toBe('Who');
+    expect(english[3][0]).toBe('No recipient recorded');
+
+    // Another organization's lot is not exported.
+    const beta = await registerOrganization(app, 'beta');
+    await beta.agent.get(`/v1/stock/lots/${id}/recipients/export`).expect(404);
+  });
+
   it('does not trace another organization lot', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const beta = await registerOrganization(app, 'beta');

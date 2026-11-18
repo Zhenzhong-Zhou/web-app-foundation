@@ -1,17 +1,15 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
+import { notInThisList } from '../../common/sorted-page';
 import { todayOf } from '../../core/organizations/time-zone';
 import {
   products,
+  type ProductType,
   productVariants,
   reorderPoints,
   type ReorderRule,
@@ -20,12 +18,17 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemMatches } from '../products/item-search';
+import { coverOf } from '../products/product-images';
+import { openSaleLines } from './availability';
+import { quantity } from './code-figures';
+import { comingLinesOf } from './code-lines';
 import type { ListReorderPointsDto } from './dto/list-reorder-points.dto';
 import type {
   ComingSupply,
   ReorderPointCounts,
   ReorderPointDetail,
   ReorderPointDraft,
+  ReorderPointItems,
   ReorderPointPage,
   ReorderPointPreview,
   ReorderPointRow,
@@ -39,13 +42,10 @@ import {
   noPoint,
   refuseMaximumAtOrBelowPoint,
 } from './reorder-points.service';
-import {
-  positionsOf,
-  type ReorderStatus,
-  statusOf,
-  usableByLocation,
-} from './reorder-position';
+import { positionsOf } from './reorder-position';
+import { type ReorderStatus, statusOf } from './reorder-status';
 import type { Tx } from './stock.service';
+import { usableByLocation } from './usable-stock';
 
 /** A page of the list unless the caller asks for fewer (ADR-051). */
 const PAGE_SIZE = 50;
@@ -54,6 +54,9 @@ const PAGE_SIZE = 50;
 type PositionRow = {
   id: string;
   variant_id: string;
+  product_id: string;
+  type: ProductType;
+  cover_file_id: string | null;
   sku: string;
   product_name: string;
   variant_name: string | null;
@@ -176,9 +179,22 @@ function countsOver(from: SQL, search: SQL[]): SQL {
   `;
 }
 
-/** Quantities as the API sends them: four places, as the columns hold them. */
-function quantity(column: SQL): SQL {
-  return sql`(${column})::numeric(18, 4)::text`;
+/**
+ * The list's order as one key, a position `p` and its item's SKU `sku`
+ * read (ADR-085): the low first, the furthest below their point as a
+ * share of it first, then by SKU; by the suggested order first when
+ * asked, most first unless asked otherwise (ADR-093; #473's 16), the
+ * list's own order breaking its ties. Every part ascending, so a row's
+ * key and its cursor's compare as one row: the suggestion is negated to
+ * run most first.
+ */
+function orderKey(query: ListReorderPointsDto, p: string, sku: SQL): SQL {
+  const own = sql`${sql.raw(p)}.low_first, ${sql.raw(p)}.share, ${sku}, ${sql.raw(p)}.id`;
+  if (query.sort !== 'suggested') return own;
+  const suggestion = sql`${sql.raw(p)}.suggestion`;
+  return query.order === 'asc'
+    ? sql`${suggestion}, ${own}`
+    : sql`-${suggestion}, ${own}`;
 }
 
 /**
@@ -193,7 +209,8 @@ export class ReorderPointsReadsService {
 
   /**
    * A page of the list, in ADR-085's order: the low first, the furthest
-   * below their point as a share of it first; then the rest, by SKU.
+   * below their point as a share of it first; then the rest, by SKU. Or
+   * by the suggested order first, when asked (orderKey).
    *
    * The order is worked out, not indexed, so each page works out every
    * point's position and reads its slice; the cursor is a point's id, its
@@ -262,17 +279,10 @@ export class ReorderPointsReadsService {
             ),
           );
 
-        if (!cursor) {
-          throw new BadRequestException(
-            t({
-              id: 'stock.cursorList',
-              defaultMessage: 'That cursor is not in this list',
-            }),
-          );
-        }
+        if (!cursor) throw notInThisList();
 
-        conditions.push(sql`(p.low_first, p.share, ${productVariants.sku}, p.id) > (
-          select c.low_first, c.share, cv.sku, c.id
+        conditions.push(sql`(${orderKey(query, 'p', sql`${productVariants.sku}`)}) > (
+          select ${orderKey(query, 'c', sql`cv.sku`)}
           from p c
           join product_variants cv
             on cv.id = c.variant_id
@@ -286,6 +296,9 @@ export class ReorderPointsReadsService {
         select
           p.id,
           p.variant_id,
+          ${products.id} as product_id,
+          ${products.type} as type,
+          ${coverOf()} as cover_file_id,
           ${productVariants.sku} as sku,
           ${shown.productName} as product_name,
           ${shown.variantName} as variant_name,
@@ -306,7 +319,7 @@ export class ReorderPointsReadsService {
           p.drafted
         from ${namedPositions(organizationId)}
         ${whereOf(conditions)}
-        order by p.low_first, p.share, ${productVariants.sku}, p.id
+        order by ${orderKey(query, 'p', sql`${productVariants.sku}`)}
         limit ${limit + 1}
       `);
 
@@ -323,6 +336,9 @@ export class ReorderPointsReadsService {
         entries: page.entries.map((row) => ({
           id: row.id,
           variantId: row.variant_id,
+          productId: row.product_id,
+          type: row.type,
+          coverFileId: row.cover_file_id,
           sku: row.sku,
           productName: row.product_name,
           variantName: row.variant_name,
@@ -379,6 +395,21 @@ export class ReorderPointsReadsService {
   }
 
   /**
+   * Every item with a point (ADR-085), by its id, so Add's picker marks
+   * them before one is picked, rather than refusing after (#538). One
+   * read of the points' own unique index.
+   */
+  items(): Promise<ReorderPointItems> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const rows = await tx
+        .select({ variantId: reorderPoints.variantId })
+        .from(reorderPoints)
+        .where(eq(reorderPoints.organizationId, organizationId));
+      return { variantIds: rows.map((row) => row.variantId) };
+    });
+  }
+
+  /**
    * An opened row's lines (ADR-085): usable stock by location, with what
    * was left out as expired or issued to a run; each purchase and run
    * still coming, a purchase late once its day has passed; each sale still
@@ -386,8 +417,12 @@ export class ReorderPointsReadsService {
    * the lines make the row's figures, and the point itself, for Edit. An
    * item with no point is not found, as another organization's is, which
    * is how the dialog knows to add one.
+   *
+   * Usable by location only for a reader who may see places (ADR-080;
+   * ADR-093's A6): for the rest, none, the row's own usable standing
+   * alone, and what was left out still in all.
    */
-  detail(variantId: string): Promise<ReorderPointDetail> {
+  detail(variantId: string, seesPlaces: boolean): Promise<ReorderPointDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [point] = await tx
         .select({
@@ -428,47 +463,17 @@ export class ReorderPointsReadsService {
       `);
       const [anywhere] = usable.rows;
 
+      // Line by line, as Where it stands lists them (code-lines.ts).
       const coming = await tx.execute<ComingRow>(sql`
-        select * from (
-          select
-            'purchase' as kind,
-            o.id,
-            o.number,
-            pa.name as partner_name,
-            ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity,
-            o.expected_at::text as expected_at,
-            coalesce(o.expected_at < ${today}::date, false) as late
-          from order_lines ol
-          join orders o
-            on o.id = ol.order_id
-            and o.organization_id = ${org}
-          join partners pa
-            on pa.id = o.partner_id
-            and pa.organization_id = ${org}
-          where ol.organization_id = ${org}
-            and ol.variant_id = ${item}
-            and o.direction = 'purchase'
-            and o.status = 'confirmed'
-            and not ol.is_closed_short
-            and ol.quantity_ordered > ol.quantity_fulfilled
-          union all
-          select
-            'run' as kind,
-            po.id,
-            po.reference,
-            pa.name,
-            ${quantity(sql`po.quantity_planned - po.quantity_produced`)},
-            null,
-            false
-          from production_orders po
-          left join partners pa
-            on pa.id = po.partner_id
-            and pa.organization_id = ${org}
-          where po.organization_id = ${org}
-            and po.output_variant_id = ${item}
-            and po.status = 'released'
-            and po.quantity_planned > po.quantity_produced
-        ) c
+        select
+          c.kind,
+          c.id,
+          c.number,
+          c.partner_name,
+          ${quantity(sql`c.quantity`)} as quantity,
+          c.expected_at::text as expected_at,
+          c.late
+        from (${comingLinesOf(organizationId, today, sql`(${item})`)}) c
         order by c.kind, c.expected_at nulls last, c.id
       `);
 
@@ -477,37 +482,33 @@ export class ReorderPointsReadsService {
           o.id as order_id,
           o.number,
           pa.name as partner_name,
-          ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity
-        from order_lines ol
+          ${quantity(sql`s.outstanding`)} as quantity
+        -- The lines Still needed sums (availability.ts), with their orders.
+        from (${openSaleLines(organizationId, sql`(${item})`)}) s
         join orders o
-          on o.id = ol.order_id
+          on o.id = s.order_id
           and o.organization_id = ${org}
         join partners pa
           on pa.id = o.partner_id
           and pa.organization_id = ${org}
-        where ol.organization_id = ${org}
-          and ol.variant_id = ${item}
-          and o.direction = 'sale'
-          and o.status = 'confirmed'
-          and not ol.is_closed_short
-          and ol.quantity_ordered > ol.quantity_fulfilled
         order by o.expected_at nulls last, o.number, o.id
       `);
 
       return {
-        // Text columns its check constraints hold to the two lists.
         point: {
-          source: point.source as ReorderSource,
+          source: point.source,
           reorderPoint: point.reorderPoint,
-          rule: point.rule as ReorderRule,
+          rule: point.rule,
           fixedQuantity: point.fixedQuantity,
           maximumQuantity: point.maximumQuantity,
         },
-        usable: usable.rows.map((row): UsableStock => ({
-          locationId: row.location_id,
-          locationName: row.location_name,
-          usable: row.usable,
-        })),
+        usable: seesPlaces
+          ? usable.rows.map((row): UsableStock => ({
+              locationId: row.location_id,
+              locationName: row.location_name,
+              usable: row.usable,
+            }))
+          : [],
         expired: anywhere?.expired_in_all ?? '0.0000',
         issued: anywhere?.issued_in_all ?? '0.0000',
         coming: coming.rows.map((row): ComingSupply => ({
@@ -552,10 +553,6 @@ export class ReorderPointsReadsService {
       const afterStatus = statusOf({
         position: after,
         reorderPoint: sql`p.reorder_point`,
-        rule: sql`p.rule`,
-        fixedQuantity: sql`p.fixed_quantity`,
-        maximumQuantity: sql`p.maximum_quantity`,
-        inDraft: sql`p.in_draft`,
         active: sql`p.status <> 'discontinued'`,
       });
 
@@ -565,6 +562,7 @@ export class ReorderPointsReadsService {
         suggestion: string;
         suggested_multiples: string | null;
         drafted: boolean;
+        in_draft: string;
         after: string;
         after_status: ReorderStatus;
       }>(sql`
@@ -574,6 +572,7 @@ export class ReorderPointsReadsService {
           ${quantity(sql`p.suggestion`)} as suggestion,
           p.suggested_multiples::text as suggested_multiples,
           p.drafted,
+          ${quantity(sql`p.in_draft`)} as in_draft,
           ${quantity(after)} as after,
           ${afterStatus} as after_status
         from (${positionsOf(organizationId, today, variantId, typed)}) p
@@ -592,6 +591,7 @@ export class ReorderPointsReadsService {
         suggestion: row.suggestion,
         suggestedMultiples: row.suggested_multiples,
         drafted: row.drafted,
+        inDraft: row.in_draft,
         after: row.after,
         afterStatus: row.after_status,
       };

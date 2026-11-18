@@ -13,7 +13,7 @@ Chaque article appartient à l’un des six types. Chaque type est un onglet de 
 - **Échantillons** : donnés, pas vendus.
 - **Équipement** : machines et outils. L’équipement est reçu, déplacé et compté là où il se trouve, mais il ne fait pas partie de la valeur du stock, car c’est un actif, pas un stock à vendre.
 
-Le type peut être changé à tout moment avec **Modifier** sur la page de l’article. L’article passe dans son nouvel onglet, et son stock, ses lots et son historique restent tels quels.
+Le type peut être changé à tout moment avec **Modifier l’article** sur la page de l’article. L’article passe dans son nouvel onglet, et son stock, ses lots et son historique restent tels quels.
 
 ## Trouver des articles {#find}
 
@@ -21,6 +21,7 @@ La page Articles s’ouvre sur Produits, ou sur le premier type qui a des articl
 
 - Le champ **Rechercher** trouve un article par une partie d’un code, ou de son nom ou de celui d’une variante dans n’importe quelle langue, avec ou sans accents; un nom chinois aussi par son pinyin, ou par un seul caractère. Le nombre d’articles sur chaque onglet change selon la recherche. Quand un onglet ne donne aucun résultat, la liste indique où se trouvent les résultats, avec un bouton pour les voir.
 - La liste **Catégorie** propose les catégories qui ont des articles dans cet onglet, avec leur total, et **Sans catégorie** pour les articles qui n’en ont aucune. En choisir une montre ses articles et ceux de toutes les catégories qu’elle contient, et une pastille la nomme; le **×** de la pastille montre de nouveau toutes les catégories.
+- **Stock bas** montre les articles dont un code est sous son point de commande, ou épuisé, avec leur total; il se place à côté de **Abandonné** et est conservé dans l’adresse. Il compte des articles, pas des codes : un article dont trois codes sont sous leur point compte une fois.
 - **Abandonné** montre seuls les articles abandonnés, avec leur total. Autrement, ils sont masqués. **Tout afficher dans Articles**, dans la barre du haut, ouvre Tous avec la recherche et les articles abandonnés inclus, et une pastille qui le dit.
 - Appuyez sur **Nom**, **Catégorie**, **En stock** ou la date en tête d’une colonne pour trier selon elle; appuyez de nouveau pour inverser. La colonne de date montre la date selon laquelle la liste est triée, et son menu permet de passer de **Dernière modification** à **Date d’ajout**.
 - La liste charge cinquante articles à la fois. **Afficher 50 de plus** ajoute les cinquante suivants.
@@ -32,10 +33,26 @@ Sur un téléphone, chaque article est une carte, et **Filtres** ouvre la catég
 
 - La photo de couverture, ou une icône du type, puis le nom avec son code dessous. Un article à plusieurs variantes en indique le nombre et les codes.
 - Sa catégorie, comme chemin depuis le haut, par exemple Flacons › Bouchons.
-- Le stock en main dans tous les emplacements, additionné dans l’unité de l’article. Quand ses variantes sont comptées en unités différentes, la ligne indique plutôt le nombre de variantes.
-- **Stock bas** ou **Épuisé** à côté du stock, d’après les points de commande de l’article. Ce sont les mêmes mots et les mêmes couleurs que sur l’accueil et dans Inventaire.
+- Ce qui est en stock dans tous les emplacements, additionné dans l’unité de l’article, avec « Inutilisable : 72 » à côté quand une partie est périmée, remise à un ordre de fabrication ou à un emplacement non disponible. Quand ses variantes sont comptées en unités différentes, la ligne indique plutôt le nombre de variantes.
+- **Bas** ou **Épuisé** à côté du stock, d’après les points de commande de l’article : le statut de son pire code et, pour un article à plusieurs codes, combien le partagent, comme « Bas · 1 sur 3 codes ». Ce sont les mêmes mots et les mêmes couleurs que dans Réapprovisionner. Appuyez dessus pour ouvrir la page de l’article à **État du stock**.
 
 Appuyez sur la ligne pour ouvrir l’article. Appuyez sur son stock pour ouvrir Inventaire pour cet article seul; le **×** de la pastille y montre de nouveau tout le stock, et Retour ramène aux Articles tels qu’ils étaient.
+
+## État du stock {#stands}
+
+Premier sous le titre d’un article, **État du stock** montre chacun de ses codes, les plus bas d’abord, et dit pourquoi chaque chiffre est ce qu’il est. Une partie ne s’affiche que s’il y a quelque chose à dire, et seulement pour une personne qui peut la voir.
+
+- Le statut du code et « Il en reste 10 · point de commande 36 » : le stock utilisable, plus ce qui est à venir, moins ce que les ventes confirmées demandent encore.
+- **En stock**, avec ce qui n’est pas utilisable et pourquoi : périmé, remis à un ordre de fabrication, ou à un emplacement non disponible.
+- **Libre**, ce que vous pouvez encore promettre, ou « 20 manquants : les commandes en veulent 90 » quand les commandes confirmées en veulent plus qu’il n’y en a.
+- **Réservé**, les ventes qui retiennent du stock, chacune un lien, la plus ancienne d’abord, avec ce que chacune retient de ce qu’elle demande.
+- **À venir**, les bons de commande et les ordres de fabrication qui doivent encore apporter du stock, chacun avec son jour.
+- **Il en reste**, avec son calcul en mots simples : « 30 utilisables + 0 à venir − 20 pour les commandes ».
+- **Par emplacement et lot**, chaque emplacement écrit depuis son entrepôt, avec ses lots, les plus proches d’abord, le code de chaque lot un lien vers son suivi, et les **Actions** de chaque lot, comme dans Stock.
+
+Les actions, sur la carte du code à côté de son titre, sont **Modifier le point de commande**, et **Acheter 30** ou **Fabriquer 1 000**, chacune montrée selon ce que votre rôle permet; sinon, une ligne dit à qui demander. **Acheter** et **Fabriquer** ouvrent leur formulaire rempli avec la commande suggérée et n’enregistrent rien avant que vous ne le créiez. Un code sans stock ni arrivage dit « Rien en stock, rien à venir. » avec **Fixer un point de commande** et **Recevoir du stock**.
+
+> Seule une personne qui peut voir le stock voit **État du stock**. Sans la permission de voir les emplacements, **Lots utilisables** et une ligne « inutilisable » remplacent les emplacements; sans celle de voir les commandes, un nombre dit combien de commandes attendent; les ordres de fabrication demandent la permission de voir la production.
 
 ## Catégories {#categories}
 
@@ -45,7 +62,7 @@ L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les c
 
 1. Appuyez sur **Ajouter une catégorie**, saisissez son nom, puis dans **Sous**, choisissez la catégorie qui la contiendra, ou aucune pour la mettre au premier niveau.
 2. **Actions** sur une ligne propose **Renommer**, **Déplacer** et **Supprimer**. Une catégorie ne peut pas aller sous elle-même : sa propre branche n’est donc pas proposée.
-3. Choisissez la catégorie d’un article avec **Modifier** sur sa page, ou celle de plusieurs avec **Définir la catégorie**.
+3. Choisissez la catégorie d’un article avec **Modifier l’article** sur sa page, ou celle de plusieurs avec **Définir la catégorie**.
 
 > Seule une personne qui peut modifier les articles voit **Ajouter une catégorie** et **Actions**. Quiconque peut voir les articles peut lire l’arbre.
 
@@ -78,7 +95,7 @@ Chaque changement dit ce qu’il a fait et offre **Annuler** pendant 10 secondes
 
 Sur la page d’un article, son type et sa catégorie sont sous le nom.
 
-- **Modifier** change le nom, la description, la catégorie et le type.
+- **Modifier l’article** change le nom, la description, la catégorie et le type.
 - **Ajouter une variante** ajoute un autre format, avec son propre code et l’unité dans laquelle son stock est compté.
 - **Modifier** sur une variante enregistre son poids, ses dimensions et combien d’unités partent par caisse.
 - **Ajouter des images** accepte jusqu’à 8 photos. La première est la couverture, affichée à côté du nom dans les listes.
@@ -86,11 +103,11 @@ Sur la page d’un article, son type et sa catégorie sont sous le nom.
 
 Le tableau **Noms dans d’autres langues** comporte une ligne pour l’article et une pour chaque variante ayant son propre nom, avec une colonne par langue. La ligne de l’article commence par son propre nom, celui donné lors de son ajout.
 
-Quand votre organisation a défini la langue dans laquelle ses articles sont nommés, sous **Les articles sont nommés en** dans [Organisation](/settings/organization#documents), la colonne de cette langue vient en premier et contient le propre nom de chaque ligne, indiqué par **Propre nom de l’article**. C’est le nom dans cette langue : il n’y manque donc jamais, et **Modifier les noms** n’a pas de champ pour lui; changez-le avec **Modifier**. Les noms dans les autres langues sont conservés à côté, et une personne qui lit dans une langue sans nom voit le propre nom. Tant que la langue n’est pas définie, le propre nom s’affiche dans toutes les langues qui n’ont pas de nom particulier; dans la page de l’article, il est indiqué par **Propre nom de l’article** dans sa ligne, et une ligne au-dessus du tableau dit qu’il ne compte encore comme le nom dans aucune langue, et où choisir la langue.
+Quand votre organisation a défini la langue dans laquelle ses articles sont nommés, sous **Les articles sont nommés en** dans [Organisation](/settings/organization#documents), la colonne de cette langue vient en premier et contient le propre nom de chaque ligne, indiqué par **Propre nom de l’article**. C’est le nom dans cette langue : il n’y manque donc jamais, et **Modifier les noms** n’a pas de champ pour lui; changez-le avec **Modifier l’article**. Les noms dans les autres langues sont conservés à côté, et une personne qui lit dans une langue sans nom voit le propre nom. Tant que la langue n’est pas définie, le propre nom s’affiche dans toutes les langues qui n’ont pas de nom particulier; dans la page de l’article, il est indiqué par **Propre nom de l’article** dans sa ligne, et une ligne au-dessus du tableau dit qu’il ne compte encore comme le nom dans aucune langue, et où choisir la langue.
 
 Les langues dans lesquelles vos documents exigent un nom sont indiquées. Un nom exigé mais absent est indiqué par **Manquant**. **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
 
-> Seule une personne qui peut ajouter des articles voit **Ajouter un article**, et seule une personne qui peut les modifier voit **Ajouter une variante**, **Modifier**, **Modifier les noms** et **Abandonner**.
+> Seule une personne qui peut ajouter des articles voit **Ajouter un article**, et seule une personne qui peut les modifier voit **Ajouter une variante**, **Modifier l’article**, **Modifier**, **Modifier les noms** et **Abandonner**.
 
 ## Rédiger sa recette {#recipe}
 
@@ -125,7 +142,7 @@ Les codes-barres viendront plus tard. Le Code est le vôtre, ce n’est pas un c
 - **Variante** : un format ou une sorte d’article, ce dans quoi le stock est compté.
 - **Propre nom** : le nom donné à un article ou à une variante lors de son ajout. Quand les articles sont nommés dans une langue, c’est son nom dans cette langue.
 - **Sans catégorie** : dans aucune catégorie.
-- **Stock bas** et **Épuisé** : sous son point de commande, et plus rien en stock. Voir [Points de commande](/inventory#reorder-points).
+- **Stock bas** et **Épuisé** : sous son point de commande, et plus rien en stock, dit d’un article par son pire code. Voir [Points de commande](/inventory#reorder-points) et [ce que chaque total compte](/inventory#counts).
 - **Abandonné** : retiré de l’usage avec **Abandonner**, il n’est plus proposé quand on choisit un article. **Réactiver** le rétablit.
 - **Brouillon**, **active** et **archivée** : une recette en cours de rédaction, celle en usage, et une recette remplacée.
 

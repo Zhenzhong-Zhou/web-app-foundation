@@ -159,7 +159,7 @@ describe('NotificationBell', () => {
     serveOneEntry({
       type: 'stock.low',
       title: '5 items fell below their reorder point',
-      body: 'CALM-90, CAP-38MM and 3 more. Order them from Reorder points.',
+      body: 'CALM-90, CAP-38MM and 3 more. Buy them from Reorder.',
       resourceType: 'reorder_points',
       resourceId: null,
     });
@@ -192,7 +192,7 @@ describe('NotificationBell', () => {
     );
 
     expect(
-      await screen.findByText('At /inventory?tab=reorder-points&status=low'),
+      await screen.findByText('At /inventory?tab=reorder&status=low'),
     ).toBeVisible();
   });
 

@@ -9,7 +9,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { StockRow } from '../api/types.gen';
+import type { StockPile } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
@@ -30,7 +30,7 @@ export function EditLotDialog({
   onClose,
   onSaved,
 }: {
-  row: StockRow | null;
+  row: StockPile | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -166,7 +166,7 @@ export function EditLotDialog({
                   defaultMessage:
                     'This changes the lot everywhere, not only the units at {location}.',
                 },
-                { location: row?.locationName },
+                { location: row?.locationName ?? '' },
               )}
             </Alert>
           </Stack>

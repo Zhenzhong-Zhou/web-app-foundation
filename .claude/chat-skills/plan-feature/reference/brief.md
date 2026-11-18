@@ -25,9 +25,10 @@ repeat; a brief holds only its decisions and its steps.
    unless it says otherwise. Who is `Claude Code`; `Claude Code, main
    session` for the reviews, which `/build-from-brief` refuses and
    `/review-step` runs; `Chat`, a canvas row among its steps; or `Bob`. Model is `opus`, `sonnet` or
-   `haiku` for each Claude Code step, from `docs/engineering.md`'s
-   "Which model runs a step", and a dash for the others; the loop
-   refuses a run whose Claude Code step has none. A run stops at every
+   `haiku` for each Claude Code step, `opus` for the main session's
+   reviews too, from `docs/engineering.md`'s "Which model runs a step",
+   and a dash for the chat's and Bob's; the loop refuses a run whose
+   Claude Code step has none, the reviews' included. A run stops at every
    step not Claude Code's, so a restart or a pull by hand is a step of
    Bob's.
    - Each step names the requirements it meets, from the ADR's

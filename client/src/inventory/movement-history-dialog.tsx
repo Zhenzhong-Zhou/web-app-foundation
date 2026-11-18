@@ -6,6 +6,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Link,
   Skeleton,
   Stack,
   Table,
@@ -17,8 +18,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
 
-import type { Movement, StockRow } from '../api/types.gen';
+import type { Movement, MovementDocument, StockPile } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { Reference } from '../components/reference';
@@ -28,7 +30,9 @@ import {
   formatMoment,
   itemName,
   relativeTime,
+  SEPARATOR,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { describeMovement, movementActor } from './describe-movement';
@@ -41,18 +45,32 @@ import {
 const PAGE_SIZE = 25;
 
 /**
+ * What the dialog shows the movements of: a code, or one of its lots; a
+ * Stock row per code passes the code alone (ADR-093, until Movements'
+ * branch).
+ */
+export type HistoryOf = Pick<
+  StockPile,
+  'variantId' | 'sku' | 'productName' | 'variantName' | 'lotId' | 'lotCode'
+> & {
+  /** A place's Movements: the code's at that place alone (ADR-093). */
+  at?: { locationId: string; locationName: string } | null;
+};
+
+/**
  * Scoped to the lot when the row has one, because the dialog's own title
  * claims it is: "History for WIDGET-1 · lot L2024-A" over every movement of
  * the variant is the answer to a different question, and the wrong one to act
  * on during a recall.
  */
-function queryFor(row: StockRow): string {
+function queryFor(row: HistoryOf): string {
   const params = new URLSearchParams({
     variantId: row.variantId,
     limit: String(PAGE_SIZE),
   });
 
   if (row.lotId) params.set('lotId', row.lotId);
+  if (row.at) params.set('locationId', row.at.locationId);
 
   return params.toString();
 }
@@ -73,7 +91,7 @@ export function MovementHistoryDialog({
   row,
   onClose,
 }: {
-  row: StockRow | null;
+  row: HistoryOf | null;
   onClose: () => void;
 }) {
   const intl = useIntl();
@@ -89,28 +107,40 @@ export function MovementHistoryDialog({
       {/* The item's name beside its SKU, in the reader's language (#256):
           every row below is the same item, so the title names it once. */}
       <DialogTitle>
-        {row?.lotCode
+        {row?.at
           ? intl.formatMessage(
               {
-                id: 'inventory.history.titleItemWithLot',
-                defaultMessage: 'History for {sku} {name} · lot {lot}',
+                id: 'inventory.history.titleItemAt',
+                defaultMessage: 'History for {sku} {name} at {place}',
               },
               {
                 sku: <Reference>{row.sku}</Reference>,
                 name: itemName(row.productName, row.variantName),
-                lot: <Reference>{row.lotCode}</Reference>,
+                place: row.at.locationName,
               },
             )
-          : intl.formatMessage(
-              {
-                id: 'inventory.history.titleItem',
-                defaultMessage: 'History for {sku} {name}',
-              },
-              {
-                sku: <Reference>{row?.sku}</Reference>,
-                name: row && itemName(row.productName, row.variantName),
-              },
-            )}
+          : row?.lotCode
+            ? intl.formatMessage(
+                {
+                  id: 'inventory.history.titleItemWithLot',
+                  defaultMessage: 'History for {sku} {name} · lot {lot}',
+                },
+                {
+                  sku: <Reference>{row.sku}</Reference>,
+                  name: itemName(row.productName, row.variantName),
+                  lot: <Reference>{row.lotCode}</Reference>,
+                },
+              )
+            : intl.formatMessage(
+                {
+                  id: 'inventory.history.titleItem',
+                  defaultMessage: 'History for {sku} {name}',
+                },
+                {
+                  sku: <Reference>{row?.sku}</Reference>,
+                  name: row && itemName(row.productName, row.variantName),
+                },
+              )}
       </DialogTitle>
 
       <DialogContent>
@@ -219,6 +249,9 @@ export function MovementHistoryDialog({
                               {reasonDetailLabel(movement.reasonDetail, intl)}
                             </Box>
                           )}
+                          {movement.document && (
+                            <DocumentOf document={movement.document} />
+                          )}
                           {/* Required on an adjustment, because a person
                             asserting the system is wrong has to say what they
                             found (ADR-023). This is where it gets read. */}
@@ -273,5 +306,34 @@ export function MovementHistoryDialog({
         </Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+/**
+ * The document a movement was for, after its reason: "Receipt ·
+ * PO-000009", "Shipment · SO-000011", a link to its order, or to its run
+ * by its reference (55a). Only what the reader may see comes.
+ */
+function DocumentOf({ document }: { document: MovementDocument }) {
+  const intl = useIntl();
+  const to =
+    document.kind === 'order'
+      ? `/orders/${document.id}`
+      : `/production/${document.id}`;
+
+  return (
+    <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+      {SEPARATOR}
+      <Link component={RouterLink} to={to} state={OFFER_BACK}>
+        {document.number ? (
+          <Reference>{document.number}</Reference>
+        ) : (
+          intl.formatMessage({
+            id: 'products.stock.run',
+            defaultMessage: 'A run',
+          })
+        )}
+      </Link>
+    </Box>
   );
 }

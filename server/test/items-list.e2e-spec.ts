@@ -17,8 +17,10 @@ interface Row {
   category: { id: string; path: string[] } | null;
   isActive: boolean;
   onHand: string | null;
+  notUsable: string | null;
   unitOfMeasure: string | null;
   stockStatus: 'low' | 'out' | null;
+  stockStatusCodes: number | null;
 }
 
 interface Page {
@@ -28,6 +30,7 @@ interface Page {
     types: { type: string; count: number }[];
     all: number;
     discontinued: number;
+    low: number;
   } | null;
 }
 
@@ -145,6 +148,7 @@ describe('Items’ list (e2e)', () => {
       types: [{ type: 'good', count: 5 }],
       all: 5,
       discontinued: 0,
+      low: 0,
     });
 
     const second = await list(alpha, {
@@ -250,6 +254,7 @@ describe('Items’ list (e2e)', () => {
       all: 1,
       // The open tab's: Products'.
       discontinued: 1,
+      low: 0,
     });
 
     const only = await list(alpha, { discontinued: 'only' });
@@ -261,6 +266,7 @@ describe('Items’ list (e2e)', () => {
       ],
       all: 2,
       discontinued: 2,
+      low: 0,
     });
 
     expect(names(await list(alpha, { discontinued: 'include' }))).toEqual([
@@ -293,6 +299,7 @@ describe('Items’ list (e2e)', () => {
       ],
       all: 2,
       discontinued: 0,
+      low: 0,
     });
 
     const none = await list(alpha, { type: 'good', search: 'powder' });
@@ -461,6 +468,70 @@ describe('Items’ list (e2e)', () => {
     expect(shown.stockStatus).toBeNull();
   });
 
+  it('reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await site(alpha.agent, 'SHELF');
+    const quarantine = await site(alpha.agent, 'QUARANTINE', false);
+    // 72 on hand, all of it at a place not available: Out beside 72,
+    // which the row now says is not usable (#590).
+    const held = await item(alpha.agent, 'Held back');
+    await receive(alpha.agent, held.variantId, quarantine, '72');
+    await point(alpha.agent, held.variantId, '10');
+    // Three codes, one low, two enough.
+    const three = await item(alpha.agent, 'Three', { sku: 'THREE-1' });
+    for (const sku of ['THREE-2', 'THREE-3']) {
+      const added = body<{ variant: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/products/${three.id}/variants`)
+          .send({ sku, name: sku })
+          .expect(201),
+      ).variant.id;
+      await receive(alpha.agent, added, shelf, '500');
+      await point(alpha.agent, added, '100');
+    }
+    await receive(alpha.agent, three.variantId, shelf, '50');
+    await point(alpha.agent, three.variantId, '100');
+    await item(alpha.agent, 'Unwatched');
+
+    expect(
+      (await list(alpha)).entries.map((row) => [
+        row.displayName,
+        row.onHand,
+        row.notUsable,
+        row.stockStatus,
+        row.stockStatusCodes,
+      ]),
+    ).toEqual([
+      ['Held back', '72.0000', '72.0000', 'out', 1],
+      ['Three', '1050.0000', '0.0000', 'low', 1],
+      ['Unwatched', '0.0000', '0.0000', null, null],
+    ]);
+
+    // Low stock, the out among it, an item counted once whatever its
+    // codes; its count with the others on and its own off.
+    const lowOnly = await list(alpha, { low: 'true' });
+    expect(names(lowOnly)).toEqual(['Held back', 'Three']);
+    expect(lowOnly.counts).toEqual({
+      types: [{ type: 'good', count: 2 }],
+      all: 2,
+      discontinued: 0,
+      low: 2,
+    });
+    expect((await list(alpha)).counts?.low).toBe(2);
+    expect((await list(alpha, { search: 'three' })).counts?.low).toBe(1);
+    expect(names(await list(alpha, { low: 'true', type: 'material' }))).toEqual(
+      [],
+    );
+    // A discontinued item is never low, and the export follows the list.
+    await discontinue(alpha.agent, held.id);
+    expect(names(await list(alpha, { low: 'true' }))).toEqual(['Three']);
+    const exported = await alpha.agent
+      .get('/v1/products/export?low=true')
+      .expect(200);
+    expect(exported.text).toContain('THREE-1');
+    expect(exported.text).not.toContain('Unwatched');
+  });
+
   it('sorts by date added and last changed, either way', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const first = await item(alpha.agent, 'First');
@@ -523,6 +594,7 @@ describe('Items’ list (e2e)', () => {
       ],
       all: 3,
       discontinued: 0,
+      low: 0,
     });
     // The match's own test, a variant's name, and the rank's, a code
     // exactly: each once, in one statement, which the counts ride in.
@@ -585,6 +657,7 @@ describe('Items’ list (e2e)', () => {
         ],
         all: 0,
         discontinued: 0,
+        low: 0,
       });
     }
   });

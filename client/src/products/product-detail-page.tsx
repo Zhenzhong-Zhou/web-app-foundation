@@ -12,9 +12,9 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigationType, useParams } from 'react-router-dom';
 
 import type {
   OrganizationEnvelope,
@@ -43,6 +43,7 @@ import { productTypeSingular } from './product-types';
 import type { Variant } from './products-page';
 import { TranslationsDialog } from './translations-dialog';
 import { VariantRow } from './variant-row';
+import { WhereItStands } from './where-it-stands';
 
 /** The product's detail and translations, generated (ADR-068). */
 export type { ProductDetail, ProductTranslation } from '../api/types.gen';
@@ -62,6 +63,16 @@ export function ProductDetailPage() {
   } = useResource<ProductDetail>(`/products/${id!}`);
   // Remembered as recently opened, once loaded (ADR-058).
   useRecordOpened('product', id, product !== null && product !== undefined);
+  // Arrived by a link, focus on the title, where the page begins (ADR-093's
+  // item's page table); a link to one of its parts, #held, focuses that
+  // part instead, and Back or a reload leaves focus to the browser.
+  const heading = useRef<HTMLHeadingElement>(null);
+  const arrival = useNavigationType();
+  const { hash, key } = useLocation();
+  const loaded = !!product;
+  useEffect(() => {
+    if (loaded && arrival === 'PUSH' && !hash) heading.current?.focus();
+  }, [loaded, arrival, hash, key]);
   // Its category's path under its name, and Edit's list (ADR-092).
   const { data: tree } = useResource<ProductCategoryList>(
     '/products/categories',
@@ -198,17 +209,20 @@ export function ProductDetailPage() {
         ]}
         // The reader's language; the forms edit `name`, the base (ADR-056).
         title={product.displayName}
+        headingRef={heading}
         actions={
           <>
             <HistoryButton resourceId={product.id} />
             {canEdit && (
+              // Named for what it edits, beside a variant's own Edit and
+              // Edit names (#594).
               <Button
                 variant="outlined"
                 onClick={openDialog(() => setEditingItem(true))}
               >
                 {intl.formatMessage({
-                  id: 'common.edit',
-                  defaultMessage: 'Edit',
+                  id: 'products.editItem',
+                  defaultMessage: 'Edit item',
                 })}
               </Button>
             )}
@@ -241,6 +255,10 @@ export function ProductDetailPage() {
           .filter(Boolean)
           .join(SEPARATOR)}
       />
+
+      {/* First under the title, since someone who knows the trade looks
+          there first (ADR-093, R8). */}
+      <WhereItStands product={product} />
 
       {product.description && (
         <Typography variant="body1">{product.description}</Typography>
@@ -289,7 +307,13 @@ export function ProductDetailPage() {
         />
       )}
 
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+      {/* Add variant goes under the title where both do not fit (R14). */}
+      <Stack
+        direction="row"
+        spacing={2}
+        useFlexGap
+        sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+      >
         <Typography
           id={variantsTitleId}
           variant="h6"
@@ -313,7 +337,14 @@ export function ProductDetailPage() {
       </Stack>
 
       <Paper variant="outlined">
-        <TableContainer>
+        {/* Reached and scrolled by the keyboard where it is cut, at a
+            phone's width: a region named for its heading (WCAG 2.1.1;
+            axe's scrollable-region-focusable). */}
+        <TableContainer
+          tabIndex={0}
+          role="region"
+          aria-labelledby={variantsTitleId}
+        >
           <Table size="small" aria-labelledby={variantsTitleId}>
             <TableHead>
               <TableRow>

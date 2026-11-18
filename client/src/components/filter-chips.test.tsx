@@ -29,10 +29,15 @@ function List({ on }: { on: string[] }) {
   );
 }
 
-function pressDelete(name: string) {
-  const chip = screen.getByRole('button', { name });
+/** A chip by its label, as its name says it: "Remove filter: Late". */
+const chipOf = (label: string) =>
+  screen.getByRole('button', { name: `Remove filter: ${label}` });
+
+function press(label: string, key: 'Delete' | 'Enter' | ' ') {
+  const chip = chipOf(label);
   chip.focus();
-  fireEvent.keyUp(chip, { key: 'Delete' });
+  if (key === 'Enter') fireEvent.keyDown(chip, { key });
+  else fireEvent.keyUp(chip, { key });
 }
 
 describe('FilterChips', () => {
@@ -51,12 +56,25 @@ describe('FilterChips', () => {
   it('undoes what a chip narrowed, focus on the chip left, then the heading', () => {
     render(<List on={['Sales only', 'Late']} />);
 
-    pressDelete('Late');
+    press('Late', 'Delete');
     expect(screen.getByText('on Sales only')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sales only' })).toHaveFocus();
+    expect(chipOf('Sales only')).toHaveFocus();
 
-    pressDelete('Sales only');
+    press('Sales only', 'Delete');
     expect(screen.getByText('on none')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+  });
+
+  // #578: a keyboard removes it as a button is pressed, and its name says
+  // that it removes, not only what it narrows.
+  it('is removed by Enter and by Space too, its name saying so', () => {
+    render(<List on={['Sales only', 'Late']} />);
+
+    press('Late', 'Enter');
+    expect(screen.getByText('on Sales only')).toBeInTheDocument();
+    expect(chipOf('Sales only')).toHaveFocus();
+
+    press('Sales only', ' ');
+    expect(screen.getByText('on none')).toBeInTheDocument();
   });
 });

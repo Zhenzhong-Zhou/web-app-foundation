@@ -1,7 +1,12 @@
 import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
-import { createLocation, createProduct, signInAs } from './support/api';
+import {
+  createLocation,
+  createProduct,
+  type SeededProduct,
+  signInAs,
+} from './support/api';
 
 /**
  * Two screens that read the same ledger.
@@ -22,11 +27,15 @@ import { createLocation, createProduct, signInAs } from './support/api';
  * matched as its whole cell, since "6 each" is inside "16 each".
  */
 
-/** A row's whole cell holding exactly this text, such as "6 each". */
+/**
+ * A row's whole cell holding exactly this text, such as "6 each": the
+ * first, On hand, on a code's row, where Free beside it may say the same.
+ */
 function cellOf(page: Page, row: RegExp, text: string) {
   return page
     .getByRole('row', { name: row })
-    .getByRole('cell', { name: text, exact: true });
+    .getByRole('cell', { name: text, exact: true })
+    .first();
 }
 
 async function receive(
@@ -85,11 +94,23 @@ async function seedLedger(
   return { product, from, to };
 }
 
-/** Opens the row menu for a SKU on the inventory screen and picks an action. */
-async function rowAction(page: Page, sku: string, action: string) {
-  const row = page.getByRole('row', { name: new RegExp(sku) });
-  await row.getByRole('button', { name: /Actions for/ }).click();
-  await page.getByRole('menuitem', { name: action }).click();
+/**
+ * Opens a code's row to its places on the inventory screen (ADR-093), then
+ * the menu of its pile at a place, and picks an action.
+ */
+async function rowAction(
+  page: Page,
+  product: SeededProduct,
+  location: string,
+  action: string,
+) {
+  const row = page.getByRole('row', { name: new RegExp(product.sku) });
+  await row.getByRole('button', { name: /show where/ }).click();
+  await page
+    .getByRole('button', { name: `Actions for ${product.name} at ${location}` })
+    .click();
+  // Exactly: one choice's words, never another's.
+  await page.getByRole('menuitem', { name: action, exact: true }).click();
   return page.getByRole('dialog');
 }
 
@@ -101,7 +122,7 @@ test('ships stock out and reduces the count', async ({ page, api }) => {
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, 'Ship out');
+  const dialog = await rowAction(page, product, location.name, 'Ship out…');
   await dialog.getByLabel('Quantity').fill('4');
   await dialog.getByRole('button', { name: 'Ship' }).click();
 
@@ -116,7 +137,7 @@ test('refuses to ship more than the shelf holds', async ({ page, api }) => {
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, 'Ship out');
+  const dialog = await rowAction(page, product, location.name, 'Ship out…');
   await dialog.getByLabel('Quantity').fill('6');
   await dialog.getByRole('button', { name: 'Ship' }).click();
 
@@ -140,30 +161,30 @@ test('moves stock between locations without changing the total', async ({
   api,
 }) => {
   const product = await createProduct(api, { name: 'E2E Movable Widget' });
-  const from = await createLocation(api, { name: 'E2E Shelf A' });
-  const to = await createLocation(api, { name: 'E2E Shelf B' });
+  // Places named for this run: the shared organization keeps every run's
+  // places, so a fixed name is two options by the second (--repeat-each).
+  const from = await createLocation(api);
+  const to = await createLocation(api);
 
   await receive(api, product.variantId, from.id, '40');
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, 'Move');
+  const dialog = await rowAction(page, product, from.name, 'Move…');
   await dialog.getByLabel('To').click();
   await page.getByRole('option', { name: to.name }).click();
   await dialog.getByLabel('Quantity').fill('15');
   await dialog.getByRole('button', { name: 'Move' }).click();
 
   /**
-   * Two rows now, and the total is unchanged. A transfer is one movement
+   * Two places now, and the total is unchanged. A transfer is one movement
    * touching two cache rows (ADR-023), and this is the first time the
-   * deterministic lock ordering in StockService runs from a browser.
+   * deterministic lock ordering in StockService runs from a browser. The
+   * opened row reads its places again once stock has moved.
    */
-  await expect(
-    cellOf(page, new RegExp(`${product.sku}.*E2E Shelf A`), '25 each'),
-  ).toBeVisible();
-  await expect(
-    cellOf(page, new RegExp(`${product.sku}.*E2E Shelf B`), '15 each'),
-  ).toBeVisible();
+  await expect(cellOf(page, new RegExp(product.sku), '40 each')).toBeVisible();
+  await expect(cellOf(page, new RegExp(from.name), '25 each')).toBeVisible();
+  await expect(cellOf(page, new RegExp(to.name), '15 each')).toBeVisible();
 });
 
 test('corrects a count and requires an explanation', async ({ page, api }) => {
@@ -174,7 +195,12 @@ test('corrects a count and requires an explanation', async ({ page, api }) => {
 
   await page.goto('/inventory');
 
-  const dialog = await rowAction(page, product.sku, 'Correct the count');
+  const dialog = await rowAction(
+    page,
+    product,
+    location.name,
+    'Correct the count…',
+  );
 
   // A receipt explains itself; an adjustment is a person asserting the system
   // is wrong, and a blank one is unauditable (ADR-023). Required in the DTO,

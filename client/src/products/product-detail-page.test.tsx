@@ -305,8 +305,8 @@ describe('ProductDetailPage', () => {
     });
     expect(await within(table).findByText('Item’s own name')).toBeVisible();
 
-    // The page's Edit comes first, before the variant's.
-    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
+    // The page's Edit item, named apart from the variant's (#594).
+    await user.click(screen.getByRole('button', { name: 'Edit item' }));
     expect(
       screen.getByRole('textbox', { name: /^Name/ }),
     ).toHaveAccessibleDescription('In Chinese');
@@ -322,7 +322,7 @@ describe('ProductDetailPage', () => {
     await user.click(
       within(screen.getByRole('table', { name: 'Variants' })).getByRole(
         'button',
-        { name: 'Edit' },
+        { name: /^Edit variant / },
       ),
     );
     expect(
@@ -342,7 +342,7 @@ describe('ProductDetailPage', () => {
       }),
     ).toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Edit item' }));
     expect(
       screen.getByRole('textbox', { name: /^Name/ }),
     ).not.toHaveAccessibleDescription();
@@ -387,7 +387,7 @@ describe('ProductDetailPage', () => {
       'products.update',
     ]);
 
-    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    await user.click(await screen.findByRole('button', { name: 'Edit item' }));
     const dialog = screen.getByRole('dialog', { name: 'Edit the item' });
     expect(screen.getByRole('textbox', { name: /^Name/ })).toHaveValue(
       'Calm 90ct',

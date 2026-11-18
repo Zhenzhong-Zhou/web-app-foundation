@@ -55,7 +55,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/production-orders.e2e-spec.ts) "shows what release then issues, to the fourth place" ·
   [test](../../client/src/production/create-run-dialog.test.tsx) "opens filled in, and shows what the run would use for the quantity as it is" ·
   MC-4216
-- **Plan a run from Reorder points opens filled in:** the item, the
+- **Make from Reorder opens Plan a run filled in:** the item, the
   quantity that brings it back to its point, and a note saying so; Made at
   is left to choose.
   [ADR-085](../adr/0085-low-stock.md#decision--from-the-list-to-a-purchase-order-or-a-run) ·
@@ -161,9 +161,11 @@ file is kept is in the [README](README.md).
   [test](../../server/test/production-orders.e2e-spec.ts) "refuses a release the lots cannot cover, naming the component" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/production.md#if-something-is-refused-refused)
-- **Release, and a top-up at close, take only stock no confirmed sale
-  holds.**
+- **Release, and a top-up at close, take only usable stock no confirmed
+  sale holds.** Stock expired, or issued to another run, holds nothing,
+  so taking it from an order that needs the usable is refused too.
   [ADR-045](../adr/0045-reservations.md#decision--enforced-where-stock-leaves-or-is-committed) ·
+  [ADR-045, amended](../adr/0045-reservations.md#amendment-november-2026--free-from-usable-stock-adr-093) ·
   [test](../../server/test/production-orders.e2e-spec.ts) "refuses a top-up of stock a confirmed sale holds" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/production.md#if-something-is-refused-refused)

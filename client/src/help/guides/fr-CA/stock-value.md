@@ -1,6 +1,6 @@
 # Valeur du stock
 
-Ce que vaut le stock en main, dans la devise de base. Chaque lot porte ce qu’il a coûté; le stock sans lot porte un coût moyen courant. Les valeurs sont le coût des matières seulement : ce qui a été acheté, et ce qui est entré dans un lot.
+Ce que vaut ce qui est en stock, dans la devise de base. Chaque lot porte ce qu’il a coûté; le stock sans lot porte un coût moyen courant. Les valeurs sont le coût des matières seulement : ce qui a été acheté, et ce qui est entré dans un lot.
 
 L’équipement n’est compté ni ici ni sous **En attente d’un coût** : les machines et les outils sont conservés, mais ne sont ni vendus ni consommés. [Inventaire](/inventory) montre toujours où chacun se trouve.
 

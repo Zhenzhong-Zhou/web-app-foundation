@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-08
 areas: [api, ui]
-amended-by: [ADR-072, ADR-076, ADR-091]
+amended-by: [ADR-072, ADR-076, ADR-091, ADR-093]
 ---
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
@@ -234,3 +234,43 @@ As built (7 November 2026): the planner reads the orders' primary key
 forward, not the organization's index backwards, about 1 ms for the
 drafts at large. Past 10 ms, `npm run perf:plans` fails and says to widen
 the orders' status index.
+
+## Amendment (November 2026) — Inventory's and Movements' sorts (ADR-093)
+
+"More sortable columns" fires for Inventory and Movements, since the
+sorts were asked for (#473's 16):
+
+- **Stock** sorts by the item's name, the default, and by On hand, Free
+  and Expires first; **by lot,** by expiry, the expired first;
+  **Reorder** by the suggested order, most first; **Movements** by
+  when, newest first.
+- **Each sort comes with its index and its timing;** a sort by a
+  worked-out figure past its budget at large is dropped before the
+  merge or its figure kept in a column, a decision then.
+- **Each export writes the screen's words,** its headers and values in
+  the reader's language (#473's 29).
+
+As built on Inventory's branch (#635, 17 November 2026):
+
+- **Stock by item** sorts by the item's name, its default, and by On
+  hand and Expires first, each way; under Expiring soon or Expired,
+  Expires first is the default. **Free is no sort** (ADR-093's 35a):
+  working out every code's usable stock and what its sales still need
+  took 315 to 335 ms at large, so `sort=free` is a 400.
+- **No sort has an index:** each sorts a worked-out figure, read alone
+  for every code before the page's 50 in full, or a name in the
+  reader's language. Each is in the plan check and timed instead: On
+  hand 183 and 184 ms at large, Expires first 210 and 212.
+- **The Lot view** sorts by its headers: Expires, its default, soonest
+  first with the expired on top, then Item, Location and Quantity, each
+  way, keyset by 50, in the address, its export following it; 90 to 143
+  ms at large.
+- **Reorder** opens sorted by the suggested order, most first; Status
+  sorts by the list's own order, `?sort=low`.
+- **Every header that sorts says so at rest:** a faint up-and-down
+  arrow, the sorted one's solid for its way, the default marked while
+  nothing else is chosen, `aria-sort` on the header (`SortHeader`'s
+  `atRest`). Stock, the Lot view and Reorder now; Items, Orders, Invoices
+  and Credit notes as each is next changed.
+- **Deferred:** a sort by Coming's date, timed at large before it is
+  offered (#630). Movements' sort comes with its branch.

@@ -26,6 +26,7 @@ const LOW: ReorderPointPreview = {
   suggestion: '2000.0000',
   suggestedMultiples: '2',
   drafted: false,
+  inDraft: '0.0000',
   after: '2800.0000',
   afterStatus: 'enough',
 };
@@ -127,6 +128,50 @@ describe('ReorderPointDialog', () => {
     } finally {
       localStorage.removeItem('language');
     }
+  });
+
+  // A second figure only when something would change it, its drafts named
+  // (#540).
+  it('draws the bar after only when something is suggested or in draft, naming what is', async () => {
+    let answer: ReorderPointPreview = {
+      ...LOW,
+      status: 'enough',
+      suggestion: '0.0000',
+      suggestedMultiples: null,
+      after: '800.0000',
+    };
+    previews(() => HttpResponse.json(answer));
+    open({ kind: 'edit', item: D3, point: DETAIL.point });
+
+    await userEvent.clear(pointField());
+    await userEvent.type(pointField(), '500');
+    expect(await screen.findByText(/^At or above 500 now/)).toBeInTheDocument();
+    expect(screen.getByText('Position now')).toBeInTheDocument();
+    expect(screen.queryByText(/^Position after|^Position with/)).toBeNull();
+
+    // Nothing suggested, but 2,000 in draft: the bar says so.
+    answer = {
+      ...answer,
+      status: 'low',
+      drafted: true,
+      inDraft: '2000.0000',
+      after: '2800.0000',
+    };
+    await userEvent.clear(pointField());
+    await userEvent.type(pointField(), '900');
+    expect(
+      await screen.findByText('Position with 2,000 in draft'),
+    ).toBeInTheDocument();
+
+    // Both: the suggested order, with the draft named.
+    answer = { ...LOW, inDraft: '2000.0000', after: '4800.0000' };
+    await userEvent.clear(pointField());
+    await userEvent.type(pointField(), '2000');
+    expect(
+      await screen.findByText(
+        'Position after the suggested order, with 2,000 in draft',
+      ),
+    ).toBeInTheDocument();
   });
 
   // Chosen as every card choice is (ADR-055): two pixels of the accent.
@@ -299,9 +344,45 @@ describe('ReorderPointDialog', () => {
     expect(
       await screen.findByRole('button', { name: 'Made', pressed: true }),
     ).toBeInTheDocument();
+    // Named on screen, and why it was chosen (#542).
+    expect(
+      screen.getByRole('group', { name: 'Bought or made' }),
+    ).toHaveAccessibleDescription('Made, since it has a recipe.');
+    expect(screen.getByText('Bought or made')).toBeVisible();
+    // A made item's fixed quantity talks of runs, not a supplier.
+    expect(
+      screen.getByText('In whole runs, as it is made: a batch, a minimum'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/as the supplier sells/)).toBeNull();
+    // Chosen by the person, it no longer says why.
+    await userEvent.click(screen.getByRole('button', { name: 'Bought' }));
+    expect(
+      screen.queryByText('Made, since it has a recipe.'),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Remove reorder point' }),
     ).not.toBeInTheDocument();
+  });
+
+  // Recognised, not recalled (#538): the items with a point are marked
+  // before one is picked.
+  it('marks in the picker each item that has a point already', async () => {
+    server.use(
+      http.get('/api/v1/stock/reorder-points/items', () =>
+        HttpResponse.json({ variantIds: ['variant-lotted'] }),
+      ),
+    );
+    open({ kind: 'add' });
+
+    await userEvent.click(screen.getByRole('combobox', { name: /Item/ }));
+    expect(
+      await screen.findByRole('option', {
+        name: /LOTTED-1.*Has a reorder point/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: /PLAIN-1/ }),
+    ).not.toHaveTextContent('Has a reorder point');
   });
 
   // Recipes are not every setter's to see (#356): without boms.view the

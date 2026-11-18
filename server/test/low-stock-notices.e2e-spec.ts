@@ -91,7 +91,7 @@ describe('Low stock notices (e2e)', () => {
     expect(await bell(alpha.agent)).toEqual([
       expect.objectContaining({
         title: 'FOCUS-60CT is low on stock',
-        body: 'FOCUS-60CT. Raise a purchase order from Reorder points.',
+        body: 'FOCUS-60CT. Buy it from Reorder.',
         // The list, which the bell opens filtered to Low.
         resourceType: 'reorder_points',
         resourceId: null,
@@ -177,20 +177,20 @@ describe('Low stock notices (e2e)', () => {
     expect(await bell(alpha.agent)).toEqual([
       expect.objectContaining({
         title: '5 items are low on stock',
-        body: 'CALM-90, CAP-38MM and 3 more. Order or plan them from Reorder points.',
+        body: 'CALM-90, CAP-38MM and 3 more. Buy or make them from Reorder.',
       }),
     ]);
     // Three are all named: "and 1 more" would be no shorter.
     expect(await bell(buyer)).toEqual([
       expect.objectContaining({
         title: '3 items are low on stock',
-        body: 'CALM-90, CAP-38MM and LID-38MM. Order them from Reorder points.',
+        body: 'CALM-90, CAP-38MM and LID-38MM. Buy them from Reorder.',
       }),
     ]);
     expect(await bell(maker)).toEqual([
       expect.objectContaining({
         title: '2 items are low on stock',
-        body: 'SAMPLE-BAG and SCOOP-BAG. Plan them from Reorder points.',
+        body: 'SAMPLE-BAG and SCOOP-BAG. Make them from Reorder.',
       }),
     ]);
     expect(await bell(clerk)).toEqual([]);
@@ -199,7 +199,7 @@ describe('Low stock notices (e2e)', () => {
     expect(await bell(beta.agent)).toEqual([
       expect.objectContaining({
         title: '2 items are low on stock',
-        body: 'BETA-1 and BETA-2. Order them from Reorder points.',
+        body: 'BETA-1 and BETA-2. Buy them from Reorder.',
       }),
     ]);
   });
@@ -237,7 +237,7 @@ describe('Low stock notices (e2e)', () => {
     expect(await bell(alpha.agent, 'zh-Hans')).toEqual([
       expect.objectContaining({
         title: 'FOCUS-60CT 库存不足',
-        body: '专注胶囊 (60粒)。请在“库存下限”中计划生产订单。',
+        body: '专注胶囊 (60粒)。请在“补货”中生产。',
       }),
     ]);
   });

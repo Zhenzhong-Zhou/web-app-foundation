@@ -8,7 +8,7 @@ Un lot est une quantité avec son propre code et sa date de péremption, reçue 
 2. Saisissez n’importe quelle partie du code de lot; le numéro de lot suffit généralement. Appuyez sur Entrée.
 3. Choisissez le lot parmi ceux listés. Son code complet l’ouvre directement.
 
-Vous pouvez aussi trouver un lot par son code avec **Tout rechercher**, ou l’ouvrir avec **Tracer le lot** sur une ligne de l’inventaire.
+Vous pouvez aussi trouver un lot par son code avec **Tout rechercher**, ou appuyer sur le code d’un lot partout où il est listé : dans l’inventaire, sous **État du stock** sur la page d’un article, et sous **En attente d’un coût** dans Valeur du stock. **Tracer le lot** sur une ligne de l’inventaire l’ouvre aussi.
 
 ## Lire une traçabilité {#read}
 
@@ -19,6 +19,8 @@ Vous pouvez aussi trouver un lot par son code avec **Tout rechercher**, ou l’o
 - **Qui l’a reçu** : chaque client à qui ce lot, ou ce qui en a été fabriqué, a été expédié ou donné en échantillon, et ce qui est revenu.
 
 Certaines unités ont pu partir sans destinataire enregistré : expédiées sans commande, ou données en échantillon sans nom. Elles figurent sans partenaire.
+
+À côté de **Qui l’a reçu**, **Exporter** écrit la liste de rappel : les mêmes lignes, dans votre langue, avec ce qui a été expédié, donné en échantillon et retourné, et le jour où le lot est parti la première fois. Les quantités et les dates suivent le format de votre langue, l’argent montre sa devise, et une date de péremption passée dit depuis combien de temps : « Expiré depuis 4 jours ».
 
 > Seule une personne qui peut voir les coûts voit le coût du lot et l’évolution de sa valeur.
 

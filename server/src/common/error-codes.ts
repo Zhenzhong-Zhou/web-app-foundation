@@ -161,6 +161,13 @@ export const ERROR_CODES = {
    * each choice whose row still stands.
    */
   productNamesChanged: 'product_names_changed',
+  /**
+   * Taking stock would leave confirmed orders short, and part of the item
+   * on the shelf is expired or issued to a run, which no hold draws on
+   * (ADR-045, amended by ADR-093): the message says how many, and
+   * `details.productId` is the item, whose Where it stands shows which.
+   */
+  stockNotUsable: 'stock_not_usable',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -184,7 +191,8 @@ export interface ErrorDetails {
   day?: string;
   /**
    * The item a refusal is about: the one that holds a code already
-   * (ADR-092), or the one whose name is missing (ADR-071, amended).
+   * (ADR-092), the one whose name is missing (ADR-071, amended), or the
+   * one whose stock is not usable (ADR-093).
    */
   productId?: string;
 }

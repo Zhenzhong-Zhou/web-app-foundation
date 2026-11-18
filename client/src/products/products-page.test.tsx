@@ -36,8 +36,10 @@ function product(name: string): ProductSummary {
     createdAt: '2026-11-09T12:00:00.000Z',
     updatedAt: '2026-11-09T12:00:00.000Z',
     onHand: '0.0000',
+    notUsable: '0.0000',
     unitOfMeasure: 'each',
     stockStatus: null,
+    stockStatusCodes: null,
   };
 }
 
@@ -60,6 +62,7 @@ function countsOf(
     types: entries.map(([type, count]) => ({ type, count })),
     all: entries.reduce((sum, [, count]) => sum + count, 0),
     discontinued,
+    low: 0,
   };
 }
 
@@ -438,21 +441,48 @@ describe('ProductsPage', () => {
     );
 
     renderAt('/items?tab=all&discontinued=include&search=calm');
-    // On All a row's type follows its name, which the tile's icon alone
-    // showed (ADR-092's review, 17).
-    await screen.findByRole('link', { name: 'Calm 90ct, Products' });
+    // On All a row's type is a word beside its code, which the tile's
+    // icon alone showed (ADR-092's review, 17; #548).
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    expect(screen.getByText(/· Product$/)).toBeVisible();
     expect(asked[0]).toBe(
       'discontinued=include&search=calm&sort=name&order=asc',
     );
 
     await user.click(
       within(
-        screen.getByRole('button', { name: 'Discontinued included' }),
+        screen.getByRole('button', {
+          name: 'Remove filter: Discontinued included',
+        }),
       ).getByTestId('CancelIcon'),
     );
     await expect
       .poll(() => asked.at(-1))
       .toBe('search=calm&sort=name&order=asc');
+  });
+
+  // Items' Low stock (ADR-093, 21a): the items low or out, its count with
+  // the other filters on, kept in the address beside Discontinued.
+  it('narrows to the items low or out by Low stock, its count beside it, in the address', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf(() =>
+      pageOf([product('Calm 90ct')], { ...countsOf({ good: 1 }), low: 4 }),
+    );
+
+    renderAt('/items?search=calm');
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    await user.click(screen.getByRole('button', { name: /^Low stock/ }));
+
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('type=good&low=true&search=calm&sort=name&order=asc');
+    expect(
+      screen.getByRole('button', { name: /^Low stock/ }),
+    ).toHaveTextContent('Low stock4');
+    expect(screen.getByRole('button', { name: /^Low stock/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out', async () => {
@@ -492,7 +522,7 @@ describe('ProductsPage', () => {
     expect(
       within(fish).getByRole('link', { name: '1,240 each, stock of Fish oil' }),
     ).toHaveAttribute('href', '/inventory?productId=fish');
-    expect(within(fish).getByText('Low stock')).toBeVisible();
+    expect(within(fish).getByText('Low')).toBeVisible();
 
     const focus = screen.getByRole('link', { name: 'Focus' }).closest('tr')!;
     expect(within(focus).getByText('3 variants · FOC-30, …')).toBeVisible();
@@ -503,7 +533,9 @@ describe('ProductsPage', () => {
     expect(within(focus).getByText('Out')).toBeVisible();
   });
 
-  it('opens the item from anywhere on its row', async () => {
+  // The name is the row's one way in (ADR-093 v3): elsewhere on the row
+  // opens nothing.
+  it('opens the item from its name alone, not from elsewhere on its row', async () => {
     const user = userEvent.setup();
     readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
     renderWithAuth(
@@ -517,7 +549,9 @@ describe('ProductsPage', () => {
     );
 
     await user.click(await screen.findByText('CALM 90CT'));
+    expect(screen.queryByText('The item’s page')).not.toBeInTheDocument();
 
+    await user.click(screen.getAllByRole('link', { name: 'Calm 90ct' })[0]!);
     expect(await screen.findByText('The item’s page')).toBeVisible();
   });
 
@@ -773,7 +807,9 @@ describe('ProductsPage', () => {
         'type=good&category=00000000-0000-4000-8000-000000000002&sort=name&order=asc',
       );
     expect(
-      screen.getByRole('button', { name: 'Vitamins › Vitamin C' }),
+      screen.getByRole('button', {
+        name: 'Remove filter: Vitamins › Vitamin C',
+      }),
     ).toBeVisible();
   });
 

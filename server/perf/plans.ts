@@ -18,6 +18,7 @@ import { runInTenantContext } from '../src/database/tenant-context';
 import { CostsService } from '../src/modules/costs/costs.service';
 import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
+import { OrderReceiptsService } from '../src/modules/orders/order-receipts.service';
 import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
 import { ReturnsService } from '../src/modules/orders/returns.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
@@ -31,10 +32,11 @@ import {
 } from '../src/modules/recent/recent.service';
 import { ReturnAuthorizationsService } from '../src/modules/return-authorizations/return-authorizations.service';
 import { LookupService } from '../src/modules/search/lookup.service';
-import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
+import { StockGroupedService } from '../src/modules/stock/stock-grouped.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
+import { WhereItStandsService } from '../src/modules/stock/where-it-stands.service';
 import { type Captured, QueryCapture } from './capture';
 import { pickCategories } from './categories';
 import { readManifest } from './manifest';
@@ -209,8 +211,10 @@ async function buildProbes(
   org: VolumeManifest['organizations'][number],
 ): Promise<Probe[]> {
   const orders = app.get(OrdersService);
+  const receipts = app.get(OrderReceiptsService);
   const stock = app.get(StockReadsService);
-  const availability = app.get(AvailabilityService);
+  const grouped = app.get(StockGroupedService);
+  const standing = app.get(WhereItStandsService);
   const invoices = app.get(InvoicesService);
   const traces = app.get(LotTraceService);
   const shipping = app.get(ShippingService);
@@ -237,11 +241,10 @@ async function buildProbes(
     20,
   );
 
-  const shelf = (await stock.list({ limit: 100 }, 'en')).entries.find(
-    (row) => row.lotId,
-  );
-  const deepStock = await cursorAfter(
-    (before) => stock.list({ before }, 'en'),
+  // A lot on a shelf: the Lot view lists lot-tracked stock alone.
+  const [shelf] = (await grouped.byLot({ limit: 1 }, 'en', true)).entries;
+  const deepLots = await cursorAfter(
+    (before) => grouped.byLot({ before }, 'en', true),
     20,
   );
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
@@ -255,7 +258,7 @@ async function buildProbes(
   if (!priceList) throw new Error('No price list: was this volume-seeded?');
 
   // An open sale to preview: what earliest expiry first reads before a ship.
-  const sale = await firstSale(orders, stock);
+  const sale = await firstSale(orders, grouped);
 
   // An order a return came back on, so its lot balances read both the
   // shipments and the returns: the volume seed receives each against an RMA.
@@ -274,6 +277,11 @@ async function buildProbes(
     );
   }
   const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
+  // An item with a code low, or any in stock, for Where it stands.
+  const lowProductId = (
+    (await grouped.byCode({ low: 'true', limit: 1 }, 'en')).entries[0] ??
+    (await grouped.byCode({ limit: 1 }, 'en')).entries[0]
+  ).productId;
 
   const probes: Probe[] = [
     { name: 'orders: open', run: () => orders.list({}) },
@@ -291,27 +299,82 @@ async function buildProbes(
       // As the Owner reads it, every figure on it.
       run: () => orders.findById(firstOrders.entries[0].id, EVERYTHING, 'en'),
     },
-    { name: 'inventory', run: () => stock.list({}, 'en') },
+    // Inventory's grouped read (ADR-093): a row per code by each sort and
+    // filter that works out every code, its counts, a code's places, and
+    // the Lot view.
+    { name: 'stock by code', run: () => grouped.byCode({}, 'en') },
     {
-      name: 'inventory: page 21',
-      run: () => stock.list({ before: deepStock }, 'en'),
+      name: 'stock by code: search',
+      run: () => grouped.byCode({ search: 'G-001' }, 'en'),
     },
     {
-      name: 'inventory: search',
-      run: () => stock.list({ search: 'G-001' }, 'en'),
+      name: 'stock by code: one shelf',
+      run: () => grouped.byCode({ locationId: shelf.locationId }, 'en'),
     },
     {
-      name: 'inventory: one shelf',
-      run: () => stock.list({ locationId: shelf.locationId }, 'en'),
+      // Items' stock number opens Stock for its item alone (ADR-092).
+      name: 'stock by code: one item',
+      run: () => grouped.byCode({ productId: shelf.productId }, 'en'),
     },
     {
-      name: 'inventory: one product',
-      run: () => stock.list({ variantId: shelf.variantId }, 'en'),
+      name: 'stock by code: low stock',
+      run: () => grouped.byCode({ low: 'true' }, 'en'),
     },
-    { name: 'availability', run: () => availability.list('en') },
     {
-      name: 'availability: promised',
-      run: () => availability.list('en', true),
+      name: 'stock by code: by on hand',
+      run: () => grouped.byCode({ sort: 'onHand' }, 'en'),
+    },
+    {
+      name: 'stock by code: by expiry',
+      run: () => grouped.byCode({ sort: 'expires' }, 'en'),
+    },
+    { name: 'stock by code: counts', run: () => grouped.counts({}) },
+    {
+      name: 'stock by code: a code’s places',
+      run: () => grouped.places(shelf.variantId, {}, 'en', true),
+    },
+    { name: 'stock by lot', run: () => grouped.byLot({}, 'en', true) },
+    {
+      name: 'stock by lot: page 21',
+      run: () => grouped.byLot({ before: deepLots }, 'en', true),
+    },
+    {
+      name: 'stock by lot: expiring',
+      run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
+    },
+    { name: 'stock by lot: counts', run: () => grouped.lotCounts({}) },
+    // The Lot view by its other sorts, each way (Bob's third message, 7).
+    ...(['item', 'location', 'quantity', 'expires'] as const).flatMap((sort) =>
+      (['asc', 'desc'] as const).map((order) => ({
+        name: `stock by lot: by ${sort}, ${order}`,
+        run: () => grouped.byLot({ sort, order }, 'zh-Hans', true),
+      })),
+    ),
+    // The deliveries Stock asks about before receiving an item (ADR-093,
+    // v3): its confirmed purchases still to come, from Coming's rule.
+    {
+      name: 'deliveries of an item',
+      run: () => receipts.deliveries(shelf.variantId),
+    },
+    // Where it stands (ADR-093, R8), as an Owner reads it, every part;
+    // and as a reader without places, its usable lots instead.
+    {
+      name: 'where it stands',
+      run: () =>
+        standing.read(lowProductId, 'en', {
+          places: true,
+          orders: true,
+          runs: true,
+        }),
+    },
+    {
+      name: 'where it stands: without places',
+      run: () =>
+        standing.read(lowProductId, 'en', {
+          places: false,
+          orders: false,
+          runs: false,
+        }),
     },
     { name: 'movements', run: () => stock.listMovements({}, 'en') },
     {
@@ -426,10 +489,6 @@ async function buildProbes(
       run: () => orders.list({ status: 'all', order: 'asc' }),
     },
     {
-      name: 'inventory: by expiry',
-      run: () => stock.list({ sort: 'expiry' }, 'en'),
-    },
-    {
       name: 'invoices: a month',
       run: () => invoices.list({ ...MONTH_DAYS }),
     },
@@ -443,7 +502,21 @@ async function buildProbes(
       name: 'reorder points: low',
       run: () => reorder.list({ status: 'low' }, 'en'),
     },
+    // Reorder by the suggested order (ADR-093; #473's 16): the same
+    // positions, ordered by what each suggests.
+    {
+      name: 'reorder points: by suggested order',
+      run: () => reorder.list({ sort: 'suggested' }, 'en'),
+    },
+    // Add's picker marks the items with a point (#538).
+    { name: 'reorder points: items', run: () => reorder.items() },
     { name: 'valuation', run: () => costs.stockValuation() },
+    // Stock value's Waiting for a cost, each row with its item's names and
+    // cover since 3fb4b3e5 (review 74), in Chinese as a reader there sees it.
+    {
+      name: 'waiting for a cost',
+      run: () => costs.needsCost({}, 'zh-Hans'),
+    },
     // The catalogue's reads that join products (#226), each with the
     // organization on its join: without it, Postgres reads every tenant's
     // products to join one tenant's variants.
@@ -478,6 +551,12 @@ async function buildProbes(
     {
       name: 'products: by stock',
       run: () => products.list({ sort: 'stock' }, 'zh-Hans'),
+    },
+    // Items' Low stock (ADR-093, 21a): the codes with a point worked out,
+    // as Reorder's read starts, their items the filter.
+    {
+      name: 'products: low stock',
+      run: () => products.list({ low: 'true' }, 'zh-Hans'),
     },
     {
       name: 'products: by stock, page 2',
@@ -581,7 +660,7 @@ async function cursorAfter(
  * confirmed orders are perf's own purchases, and a first page with no sale
  * on it left the preview probe out of the check without a word.
  */
-async function firstSale(orders: OrdersService, stock: StockReadsService) {
+async function firstSale(orders: OrdersService, grouped: StockGroupedService) {
   let before: string | undefined;
 
   for (let page = 0; page < 40; page++) {
@@ -601,12 +680,9 @@ async function firstSale(orders: OrdersService, stock: StockReadsService) {
 
       // The shelf holding most of it: the volume seed keeps each product on
       // one shelf, and ships from there.
-      const { entries: rows } = await stock.list(
-        { variantId: line.variantId, limit: 100 },
-        'en',
-      );
-      const shelf = rows.sort((a, b) =>
-        toUnits(b.quantity) > toUnits(a.quantity) ? 1 : -1,
+      const { places } = await grouped.places(line.variantId, {}, 'en', true);
+      const shelf = places.sort((a, b) =>
+        toUnits(b.onHand) > toUnits(a.onHand) ? 1 : -1,
       )[0];
       if (!shelf) continue;
 

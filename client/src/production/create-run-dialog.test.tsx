@@ -547,7 +547,7 @@ describe('CreateRunDialog', () => {
         filled={{
           outputVariantId: VARIANT.id,
           quantityPlanned: '60',
-          note: 'Filled from Reorder points: 60 brings it back to its reorder point, 100.',
+          note: 'Filled from Reorder: 60 brings it back to its reorder point, 100.',
         }}
         onClose={() => undefined}
         onCreated={() => undefined}
@@ -556,7 +556,7 @@ describe('CreateRunDialog', () => {
 
     expect(
       screen.getByText(
-        'Filled from Reorder points: 60 brings it back to its reorder point, 100.',
+        'Filled from Reorder: 60 brings it back to its reorder point, 100.',
       ),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/Quantity to make/)).toHaveValue('60');

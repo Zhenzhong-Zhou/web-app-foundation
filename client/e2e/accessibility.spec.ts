@@ -63,6 +63,10 @@ interface Screen {
 interface Seed {
   orderId: string;
   productId: string;
+  /** An item with nothing on hand, coming or needed, and no point. */
+  bareProductId: string;
+  /** Where the product's lot is. */
+  locationId: string;
   /** A role made from the Warehouse template, held by nobody. */
   roleId: string;
   viewerId: string;
@@ -199,6 +203,15 @@ const SCREENS: Screen[] = [
     ready: (page) => joined(page).and(keyboardOn(page)),
   },
   {
+    // The bar's bell at a phone's width, its word above an unread count:
+    // its name holds the words it shows, in order (WCAG 2.5.3).
+    name: 'home at 390 px, the bell with an unread notice',
+    path: () => '/',
+    open: (page) => page.setViewportSize({ width: 390, height: 844 }),
+    ready: (page) =>
+      page.getByRole('button', { name: /^Notifications, \d+ unread$/ }),
+  },
+  {
     // Getting started dismissed, so Home has its main action and More.
     name: 'Home’s More menu, the keyboard on an entry',
     path: () => '/',
@@ -251,11 +264,58 @@ const SCREENS: Screen[] = [
       page.getByRole('button', { name: 'Drag To receive', exact: true }),
   },
   { name: 'inventory', path: () => '/inventory', ready: heading },
+  // The Lot view (ADR-093, R4).
+  {
+    name: 'inventory, by lot',
+    path: () => '/inventory?group=lot',
+    ready: heading,
+  },
+  {
+    // A row opened to its place, the place to its lot: the opening
+    // button open, in the accent, and the rows it opened (ADR-093, R2).
+    name: 'inventory, a row opened to its places and lots',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page.getByRole('button', { name: /^1 place: show where / }).click();
+      await page
+        .getByRole('button', { name: /^1 lot: show the lots at / })
+        .click();
+    },
+    ready: (page) => page.getByRole('link', { name: 'A11Y-LOT-1' }),
+  },
+  {
+    // An item still to come on the seed's purchase: Receive stock… asks
+    // which delivery it is, its one order chosen (ADR-093, v3).
+    name: 'inventory, Receive stock… asking which delivery it is',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Actions for E2E Widget / })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Receive stock…' }).click();
+    },
+    ready: (page) =>
+      page.getByRole('radiogroup', { name: 'Which delivery is this?' }),
+  },
+  {
+    // One place chosen: each header "here", the line saying Free and Held
+    // count every place (ADR-093, 20a).
+    name: 'inventory, one place chosen',
+    path: (seed) => `/inventory?locationId=${seed.locationId}`,
+    ready: (page) => page.getByRole('columnheader', { name: 'On hand here' }),
+  },
+  {
+    // Out in the Lot view: its empty state, with Group by Item (31a).
+    name: 'inventory, by lot with Out on',
+    path: () => '/inventory?group=lot&out=1',
+    ready: (page) => page.getByText('Items that are out have no lots.'),
+  },
   {
     // A low row opened and chosen: its four boxes and the floating bar
     // (ADR-085).
     name: 'reorder points, a row opened and chosen',
-    path: () => '/inventory?tab=reorder-points',
+    path: () => '/inventory?tab=reorder',
     open: async (page) => {
       await page.getByRole('button', { name: /^Where .* stands$/ }).click();
       await page
@@ -271,10 +331,10 @@ const SCREENS: Screen[] = [
   {
     // Edit from a row's menu: the rule's cards and Today (ADR-085).
     name: 'reorder points, the Edit dialog',
-    path: () => '/inventory?tab=reorder-points',
+    path: () => '/inventory?tab=reorder',
     open: async (page) => {
       await page
-        .getByRole('button', { name: /^Actions for .* reorder point$/ })
+        .getByRole('button', { name: /^Actions for / })
         .first()
         .click();
       await page.getByRole('menuitem', { name: 'Edit reorder point' }).click();
@@ -436,7 +496,11 @@ const SCREENS: Screen[] = [
     name: 'items, a row ticked and the bar over it',
     path: () => '/items',
     open: async (page) => {
-      await page.getByRole('checkbox', { name: /^Select (?!every)/ }).check();
+      // The first of its two items, the bare one among them.
+      await page
+        .getByRole('checkbox', { name: /^Select (?!every)/ })
+        .first()
+        .check();
     },
     ready: (page) => page.getByRole('region', { name: 'Selected items' }),
   },
@@ -444,7 +508,11 @@ const SCREENS: Screen[] = [
     name: 'items, Set category',
     path: () => '/items',
     open: async (page) => {
-      await page.getByRole('checkbox', { name: /^Select (?!every)/ }).check();
+      // The first of its two items, the bare one among them.
+      await page
+        .getByRole('checkbox', { name: /^Select (?!every)/ })
+        .first()
+        .check();
       await page.getByRole('button', { name: 'Set category' }).click();
     },
     ready: (page) =>
@@ -472,11 +540,24 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   {
+    // At a phone's width its variants table is cut, and scrolls: the
+    // keyboard reaches it (axe's scrollable-region-focusable).
+    name: 'an item at 390 px, its variants table',
+    path: (seed) => `/items/${seed.productId}`,
+    open: (page) => page.setViewportSize({ width: 390, height: 844 }),
+    ready: (page) => page.getByRole('region', { name: /Variants/ }),
+  },
+  {
+    // None on hand and no reorder point: the next step (ADR-093's states).
+    name: 'an item with none on hand, Where it stands',
+    path: (seed) => `/items/${seed.bareProductId}`,
+    ready: (page) => page.getByRole('button', { name: 'Set a reorder point' }),
+  },
+  {
     name: 'an item, Edit',
     path: (seed) => `/items/${seed.productId}`,
-    // The item's Edit, in its header, before each variant's.
-    open: (page) =>
-      page.getByRole('button', { name: 'Edit', exact: true }).first().click(),
+    // The item's Edit item, in its header, named apart from a variant's.
+    open: (page) => page.getByRole('button', { name: 'Edit item' }).click(),
     ready: (page) => page.getByRole('dialog', { name: 'Edit the item' }),
   },
   { name: 'partners', path: () => '/partners', ready: heading },
@@ -665,9 +746,13 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
     }),
   );
 
+  const bare = await createProduct(api, { name: 'E2E Bare Widget' });
+
   return {
     orderId: order.id,
     productId: product.id,
+    bareProductId: bare.id,
+    locationId: location.id,
     roleId: role.id,
     viewerId: await roleIdNamed(api, 'Viewer'),
   };

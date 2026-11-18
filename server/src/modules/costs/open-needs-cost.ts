@@ -43,7 +43,11 @@ export function inStockValue(organizationId: string, variantId: SQL): SQL {
  * outer row's column it read every organization's run closes to do so
  * (#276).
  */
-export function openNeedsCost(organizationId: string): SQL {
+export function openNeedsCost(
+  organizationId: string,
+  /** Those items alone, a page's (review 40); none, every item. */
+  variants?: SQL,
+): SQL {
   return sql`
     select v.id, v.variant_id, v.lot_id, v.created_at
     from stock_valuations v
@@ -51,6 +55,7 @@ export function openNeedsCost(organizationId: string): SQL {
       on m.id = v.movement_id and m.organization_id = ${organizationId}::uuid
     where v.organization_id = ${organizationId}::uuid
       and v.needs_cost
+      ${variants ? sql`and v.variant_id in ${variants}` : sql``}
       and ${inStockValue(organizationId, sql`v.variant_id`)}
       and not exists (
         select 1

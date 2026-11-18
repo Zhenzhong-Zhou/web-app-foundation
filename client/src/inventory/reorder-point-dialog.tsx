@@ -17,12 +17,13 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useEffect, useMemo, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type {
   Bom,
   ReorderPointDetail,
+  ReorderPointItems,
   ReorderPointPreview,
   ReorderPointRow,
   ReorderPointValues,
@@ -46,6 +47,7 @@ import {
   useDebouncedRead,
 } from '../lib/use-debounced-read';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { displayWithUnit, unitLabel } from '../products/units';
@@ -93,7 +95,7 @@ const RULE_TITLES = defineMessages<ReorderRule>({
   },
 });
 
-const RULE_LINES = defineMessages<ReorderRule>({
+const RULE_LINES = defineMessages<ReorderRule | 'made_fixed'>({
   just_enough: {
     id: 'inventory.reorder.rule.justEnoughLine',
     defaultMessage: 'The shortfall, back to the point',
@@ -102,6 +104,11 @@ const RULE_LINES = defineMessages<ReorderRule>({
     id: 'inventory.reorder.rule.fixedLine',
     defaultMessage:
       'In whole multiples, as the supplier sells: cases, a minimum',
+  },
+  // A made item's fixed quantity is a run's, never a supplier's (#542).
+  made_fixed: {
+    id: 'inventory.reorder.rule.fixedLineMade',
+    defaultMessage: 'In whole runs, as it is made: a batch, a minimum',
   },
   maximum: {
     id: 'inventory.reorder.rule.maximumLine',
@@ -227,6 +234,16 @@ export function ReorderPointDialog({
   );
   const [removing, setRemoving] = useState(false);
   const { variants, answered } = useVariants(opening.kind === 'add');
+  // Add's picker marks each item that has a point already (#538), so the
+  // 409 below is the rare case, not the way to find out.
+  // Silent: without the marks the picker still works, and Add says so.
+  const marks = useResource<ReorderPointItems>(
+    opening.kind === 'add' ? '/stock/reorder-points/items' : null,
+  ).data;
+  const pointed = useMemo<ReadonlySet<string>>(
+    () => new Set(marks?.variantIds ?? []),
+    [marks],
+  );
 
   const editing = !!kept;
   // The read's skeleton only once it takes a while (conventions, Loading
@@ -302,11 +319,13 @@ export function ReorderPointDialog({
     };
   }, [adding, canSeeRecipes]);
 
-  const source: ReorderSource =
-    form.source ??
-    (made && made.variantId === item?.variantId && made.made
-      ? 'made'
-      : 'bought');
+  // Chosen for the person, from the recipe, until they choose (#542).
+  const byRecipe =
+    form.source === null &&
+    !!made &&
+    made.variantId === item?.variantId &&
+    made.made;
+  const source: ReorderSource = form.source ?? (byRecipe ? 'made' : 'bought');
 
   const refusals = {
     aboveZero: intl.formatMessage({
@@ -459,6 +478,13 @@ export function ReorderPointDialog({
                   autoFocus
                   options={variants}
                   loading={!answered}
+                  marked={{
+                    ids: pointed,
+                    words: intl.formatMessage({
+                      id: 'inventory.reorder.hasPoint',
+                      defaultMessage: 'Has a reorder point',
+                    }),
+                  }}
                   value={item?.variantId ?? ''}
                   onChange={(variantId) => {
                     const picked = variants.find((row) => row.id === variantId);
@@ -540,31 +566,58 @@ export function ReorderPointDialog({
               )
             ) : (
               <>
-                <ToggleButtonGroup
-                  exclusive
-                  size="small"
-                  value={source}
-                  onChange={(_, next: ReorderSource | null) => {
-                    if (next) change({ source: next });
-                  }}
-                  aria-label={intl.formatMessage({
-                    id: 'inventory.reorder.source',
-                    defaultMessage: 'Bought or made',
-                  })}
-                >
-                  <ToggleButton value="bought">
+                {/* Its name on screen, not only to a screen reader, and
+                    why it was chosen when the dialog chose it (#542). */}
+                <Stack spacing={0.75}>
+                  <Typography
+                    id="reorder-source-label"
+                    variant="body2"
+                    sx={{ fontWeight: 600 }}
+                  >
                     {intl.formatMessage({
-                      id: 'inventory.reorder.bought',
-                      defaultMessage: 'Bought',
+                      id: 'inventory.reorder.source',
+                      defaultMessage: 'Bought or made',
                     })}
-                  </ToggleButton>
-                  <ToggleButton value="made">
-                    {intl.formatMessage({
-                      id: 'inventory.reorder.made',
-                      defaultMessage: 'Made',
-                    })}
-                  </ToggleButton>
-                </ToggleButtonGroup>
+                  </Typography>
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    color="primary"
+                    value={source}
+                    onChange={(_, next: ReorderSource | null) => {
+                      if (next) change({ source: next });
+                    }}
+                    aria-labelledby="reorder-source-label"
+                    aria-describedby={
+                      byRecipe ? 'reorder-source-why' : undefined
+                    }
+                  >
+                    <ToggleButton value="bought">
+                      {intl.formatMessage({
+                        id: 'inventory.reorder.bought',
+                        defaultMessage: 'Bought',
+                      })}
+                    </ToggleButton>
+                    <ToggleButton value="made">
+                      {intl.formatMessage({
+                        id: 'inventory.reorder.made',
+                        defaultMessage: 'Made',
+                      })}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  {byRecipe && (
+                    <Typography
+                      id="reorder-source-why"
+                      variant="body2"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {intl.formatMessage({
+                        id: 'inventory.reorder.madeByRecipe',
+                        defaultMessage: 'Made, since it has a recipe.',
+                      })}
+                    </Typography>
+                  )}
+                </Stack>
 
                 <TextField
                   id="reorder-point"
@@ -625,7 +678,13 @@ export function ReorderPointDialog({
                                   variant="caption"
                                   sx={{ color: 'text.secondary' }}
                                 >
-                                  {intl.formatMessage(RULE_LINES[rule])}
+                                  {intl.formatMessage(
+                                    RULE_LINES[
+                                      rule === 'fixed' && source === 'made'
+                                        ? 'made_fixed'
+                                        : rule
+                                    ],
+                                  )}
                                 </Typography>
                               </Stack>
                             }
@@ -817,6 +876,37 @@ function Today({
                 },
               );
 
+  // The second bar only when something would change it (#540): the
+  // suggestion, or what is in draft, named, so no figure stands unsaid.
+  const suggests = !atOrBelowZero(result.suggestion);
+  const inDraft = !atOrBelowZero(result.inDraft);
+  const afterLabel = suggests
+    ? inDraft
+      ? intl.formatMessage(
+          {
+            id: 'inventory.reorder.today.afterWithDraft',
+            defaultMessage:
+              '{source, select, other {Position after the suggested order, with {inDraft} in draft}}',
+          },
+          { source, inDraft: displayQuantity(result.inDraft) },
+        )
+      : intl.formatMessage(
+          {
+            id: 'inventory.reorder.today.after',
+            defaultMessage:
+              '{source, select, other {Position after the suggested order}}',
+          },
+          { source },
+        )
+    : inDraft
+      ? intl.formatMessage(
+          {
+            id: 'inventory.reorder.today.withDraft',
+            defaultMessage: 'Position with {inDraft} in draft',
+          },
+          { inDraft: displayQuantity(result.inDraft) },
+        )
+      : null;
   const bars = [
     {
       id: 'now',
@@ -827,19 +917,16 @@ function Today({
       position: result.position,
       status: result.status,
     },
-    {
-      id: 'after',
-      label: intl.formatMessage(
-        {
-          id: 'inventory.reorder.today.after',
-          defaultMessage:
-            '{source, select, other {Position after the suggested order}}',
-        },
-        { source },
-      ),
-      position: result.after,
-      status: result.afterStatus,
-    },
+    ...(afterLabel
+      ? [
+          {
+            id: 'after',
+            label: afterLabel,
+            position: result.after,
+            status: result.afterStatus,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -869,6 +956,8 @@ function Today({
             variant="body2"
             sx={{
               fontWeight: 600,
+              // A number and its unit on one line (#540).
+              whiteSpace: 'nowrap',
               ...(atOrBelowZero(bar.position) && { color: 'error.main' }),
             }}
           >

@@ -23,6 +23,15 @@ export function toScaled(value: string): bigint | null {
   return BigInt(whole + fraction.padEnd(SCALE, '0'));
 }
 
+/**
+ * Whether a quantity the API sent is nothing, however many places it is
+ * written with: what every screen asks before it says "None on hand" or
+ * leaves a figure out (review 26), never a comparison of its text.
+ */
+export function isZero(value: string): boolean {
+  return toScaled(value) === 0n;
+}
+
 /** Back to four places, the way the server prints numeric(18, 4). */
 export function fromScaled(value: bigint): string {
   const digits = value.toString().padStart(SCALE + 1, '0');

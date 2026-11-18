@@ -197,7 +197,9 @@ test('the top bar, Show all in Items: the list opens on All with the search, dis
   // What the top bar found is on the list, the discontinued one too.
   await expect(rowNames(page)).toHaveCount(3);
   await expect(row(page, 'E2E Quartz Old')).toContainText('Discontinued');
-  const chip = page.getByRole('button', { name: 'Discontinued included' });
+  const chip = page.getByRole('button', {
+    name: 'Remove filter: Discontinued included',
+  });
   await expect(chip).toBeVisible();
 
   // Back: the page before.
@@ -250,7 +252,9 @@ test('Items, a tab: the list reads that type; the search, category and sort stay
     // Searched, in Vitamins, Z to A: neither Beta nor the uncategorised one.
     await expect(searchBox(page)).toHaveValue('Alpha');
     await expect(
-      page.getByRole('button', { name: 'Vitamins', exact: true }),
+      page.getByRole('button', {
+        name: 'Remove filter: Vitamins',
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole('columnheader', { name: 'Name' }),
@@ -336,7 +340,9 @@ test('Items, a category: the list holds it and those under it; a chip shows it, 
     'Vitamins',
   );
 
-  const chip = page.getByRole('button', { name: 'Vitamins', exact: true });
+  const chip = page.getByRole('button', {
+    name: 'Remove filter: Vitamins',
+  });
   const asItWas = async () => {
     await expect(page).toHaveURL(new RegExp(`/items\\?category=${vitamins}$`));
     await expect(rowNames(page)).toHaveText(['E2E Chewable C', 'E2E Multi']);
@@ -373,9 +379,9 @@ test('Items, a header: sorts by it, again reverses; focus stays on the header; t
     'E2E Charlie',
   ]);
 
-  // In stock, fewest first, then again the other way, from the keyboard.
-  const stock = page.getByRole('button', { name: 'In stock' });
-  const stockHeader = page.getByRole('columnheader', { name: 'In stock' });
+  // On hand, least first, then again the other way, from the keyboard.
+  const stock = page.getByRole('button', { name: 'On hand' });
+  const stockHeader = page.getByRole('columnheader', { name: 'On hand' });
   await stock.focus();
   await page.keyboard.press('Enter');
   await expect(stockHeader).toHaveAttribute('aria-sort', 'ascending');
@@ -439,7 +445,7 @@ test('Items, Show 50 more: the next fifty below; focus on the first new row', as
   );
 });
 
-test('Items, a row, anywhere: the item’s page; Back, Items as it was', async ({
+test('Items, a row, its name: the item’s page; Back, Items as it was; elsewhere on the row, nothing', async ({
   page,
   freshOrg,
 }) => {
@@ -454,9 +460,14 @@ test('Items, a row, anywhere: the item’s page; Back, Items as it was', async (
   await page.goto('/items?search=Row&sort=name&order=desc');
   await expect(rowNames(page)).toHaveText(['E2E Row Tonic', 'E2E Row Elixir']);
 
-  // Its category's cell, not its name: the whole row is the link.
+  // Its category's cell opens nothing: the name is the one way in
+  // (ADR-093 v3).
   await row(page, 'E2E Row Tonic')
     .getByRole('cell', { name: 'Vitamins', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/items\?search=Row/);
+  await row(page, 'E2E Row Tonic')
+    .getByRole('link', { name: 'E2E Row Tonic', exact: true })
     .click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'E2E Row Tonic' }),
@@ -491,11 +502,11 @@ test('Items, a row’s stock: Inventory, that item alone; Back, Items as it was'
     new RegExp(`/inventory\\?productId=${tonic.id}`),
   );
   await expect(
-    page.getByRole('button', { name: 'Item: E2E Shelf Tonic' }),
+    page.getByRole('button', { name: 'Remove filter: Item: E2E Shelf Tonic' }),
   ).toBeVisible();
-  // Its variants in every location, and nothing else's.
+  // Its one code, in two places (ADR-093), and nothing else's.
   await expect(page.getByRole('row', { name: /E2E Shelf Tonic/ })).toHaveCount(
-    2,
+    1,
   );
   await expect(page.getByRole('row', { name: /E2E Shelf Other/ })).toHaveCount(
     0,
@@ -798,8 +809,8 @@ test('the item’s page, Edit then Save: saved; a new type moves it to that tab'
     page.getByRole('heading', { level: 1, name: 'E2E Retype' }),
   ).toBeVisible();
 
-  // The item's Edit, in its header, before each variant's.
-  await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+  // The item's Edit item, in its header, named apart from a variant's.
+  await page.getByRole('button', { name: 'Edit item' }).click();
   const dialog = page.getByRole('dialog', { name: 'Edit the item' });
   await dialog.getByRole('combobox', { name: 'Type' }).click();
   // One item's type, in the singular; its tab, in the plural (#548).
@@ -868,7 +879,8 @@ test('as it should be: each row its type’s icon, name, code, category, stock a
   const lowRow = row(page, 'E2E Low');
   await expect(lowRow).toContainText('E2E-LOW');
   await expect(lowRow).toContainText('Vitamins');
-  await expect(lowRow).toContainText('Low stock');
+  // The status's own word, as Reorder's chip says it (97f32e50).
+  await expect(lowRow.getByText('Low', { exact: true })).toBeVisible();
   await expect(
     lowRow.getByRole('link', { name: /^5\b.*, stock of E2E Low$/ }),
   ).toBeVisible();
@@ -1018,8 +1030,9 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await expect(cards).toHaveCount(2);
   await expect(page.getByRole('table')).toHaveCount(0);
   await expect(cards.first()).toContainText('E2E Alpha');
-  await expect(cards.nth(1)).toContainText('Low stock');
-  // Each card's two links, the item's and its stock's, a fingertip tall.
+  await expect(cards.nth(1).getByText('Low', { exact: true })).toBeVisible();
+  // Each card's links, the item's, its stock's and its status's, a
+  // fingertip tall.
   for (const link of await page.getByRole('list').getByRole('link').all()) {
     expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }
@@ -1029,13 +1042,13 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await expect(type).toHaveText('Products (2)');
   await expect(page.getByRole('tab')).toHaveCount(0);
 
-  // The sheet from the bottom: Sort, fewest first.
+  // The sheet from the bottom: Sort, least first.
   await page.getByRole('button', { name: 'Filters' }).click();
   const sheet = page.getByRole('presentation').filter({
     has: page.getByRole('heading', { name: 'Filters and sort' }),
   });
   await sheet.getByRole('combobox', { name: 'Sort' }).click();
-  await page.getByRole('option', { name: 'In stock, fewest first' }).click();
+  await page.getByRole('option', { name: 'On hand, least first' }).click();
   await sheet.getByRole('button', { name: 'Show 2' }).click();
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/sort=stock&order=asc/);
@@ -1066,7 +1079,7 @@ test('on a phone, a card’s stock: Inventory, that item alone; Back, Items as i
     new RegExp(`/inventory\\?productId=${tonic.id}`),
   );
   await expect(
-    page.getByRole('button', { name: 'Item: E2E Card Tonic' }),
+    page.getByRole('button', { name: 'Remove filter: Item: E2E Card Tonic' }),
   ).toBeVisible();
 
   await page.getByRole('button', { name: 'Back' }).click();

@@ -9,6 +9,7 @@ import {
   uniqueEmail,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
+import { stockScene } from './support/stock';
 
 /**
  * Text cut by its box on a newcomer's first screens (ADR-054's November
@@ -122,6 +123,19 @@ const KNOWN: {
       [
         'Confirmer le nouveau mot de passe *',
         '[Çóñfíŕm ñéŵ páššŵóŕď one two] *',
+      ].includes(cut.text),
+  },
+  {
+    // Inventory's search box: its label, raised above the field once it
+    // holds words, is wider than the field on a phone in French and en-XA.
+    // The same raised label as Change password's above; #566's labels
+    // above the field would clear it.
+    issue: '#566',
+    is: (cut, { screen }) =>
+      (screen === 'Stock' || screen === 'The Lot view') &&
+      [
+        'Rechercher des articles, des codes ou des lots',
+        '[Šéáŕçĥ íťémš, çóďéš óŕ ĺóťš one two three]',
       ].includes(cut.text),
   },
 ];
@@ -483,6 +497,106 @@ for (const language of LANGUAGES) {
 
         await context.close();
         await member.dispose();
+        expect(found, 'text cut by its box, or wider than the screen').toEqual(
+          [],
+        );
+      });
+    }
+  }
+}
+
+/**
+ * Inventory's screens (ADR-093, R14): Stock with a row opened to its
+ * places, the Lot view, Reorder and the item's Where it stands, at the
+ * reflow width, a phone's and a tablet's, each text size and language,
+ * signed in as the owner of an organization with stock in two places, a
+ * lot expired, an order short and a reorder point low (support/stock.ts).
+ */
+const INVENTORY_WIDTHS = [
+  { width: 320, height: 640 },
+  { width: 390, height: 844 },
+  { width: 820, height: 1180 },
+] as const;
+
+/*
+ * Its first run found, in 16 of the 24 walks, an expiry chip's words cut
+ * and its day past a card's edge, a header placed outside its table at
+ * 820 px, rows spanning columns the head hid there, and "Add variant" past
+ * the edge at 320 px: each fixed in ADR-093's review (52, 54). The search
+ * box's raised label is #566's, in KNOWN.
+ */
+
+for (const language of LANGUAGES) {
+  for (const size of TEXT_SIZES) {
+    for (const { width, height } of INVENTORY_WIDTHS) {
+      test(`cuts no text on Inventory's screens at ${width} × ${height}, ${size.name} text, in ${language.tag}`, async ({
+        browser,
+        baseURL,
+      }) => {
+        test.setTimeout(60_000);
+        const org = await registerOrganization('cut-stock');
+        if (language.account !== 'en') {
+          const chosen = await org.api.patch('/v1/account/profile', {
+            data: { locale: language.account },
+          });
+          expect(chosen.ok(), await chosen.text()).toBeTruthy();
+        }
+        const scene = await stockScene(org.api);
+
+        const context = await browser.newContext({
+          viewport: { width, height },
+          reducedMotion: 'reduce',
+          storageState: {
+            cookies: (await org.api.storageState()).cookies,
+            origins: [
+              {
+                origin: new URL(baseURL!).origin,
+                localStorage: [
+                  { name: 'language', value: language.tag },
+                  ...(size.stored
+                    ? [{ name: 'textSize', value: size.stored }]
+                    : []),
+                ],
+              },
+            ],
+          },
+        });
+        const page = await context.newPage();
+        const found: string[] = [];
+        const walk = { organization: org.organizationName, width };
+        const named = (name: string) =>
+          page.getByRole('main').getByText(name, { exact: true }).first();
+
+        await page.goto('/inventory');
+        await expect(page.locator('html')).toHaveCSS('font-size', size.rem);
+        await expect(named('E2E Vitamin C')).toBeVisible();
+        // The vitamin's "2 places", named for it in any of the languages;
+        // not its Actions, a menu button.
+        const opening = page
+          .getByRole('main')
+          .locator(
+            'button[aria-expanded]:not([aria-haspopup])[aria-label*="E2E Vitamin C"]',
+          );
+        await opening.click();
+        await expect(opening).toHaveAttribute('aria-expanded', 'true');
+        found.push(...(await cuts(page, { ...walk, screen: 'Stock' })));
+
+        await page.goto('/inventory?group=lot');
+        await expect(named('VC-GONE')).toBeVisible();
+        found.push(...(await cuts(page, { ...walk, screen: 'The Lot view' })));
+
+        await page.goto('/inventory?tab=reorder');
+        await expect(named('E2E Vitamin C')).toBeVisible();
+        found.push(...(await cuts(page, { ...walk, screen: 'Reorder' })));
+
+        await page.goto(`/items/${scene.vitamin.id}`);
+        await expect(named('VC-LATE')).toBeVisible();
+        found.push(
+          ...(await cuts(page, { ...walk, screen: 'Where it stands' })),
+        );
+
+        await context.close();
+        await org.api.dispose();
         expect(found, 'text cut by its box, or wider than the screen').toEqual(
           [],
         );

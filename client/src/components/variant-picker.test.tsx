@@ -80,8 +80,8 @@ describe('VariantPicker', () => {
     await user.click(box());
 
     expect(shown()).toEqual([
-      'PLAIN-1 — Plain Widget Products',
-      'LOTTED-1 — Tracked Supplement (60ct) Products',
+      'Plain Widget · PLAIN-1 Products',
+      'Tracked Supplement (60ct) · LOTTED-1 Products',
     ]);
     expect(asked).toEqual([]);
   });
@@ -101,8 +101,8 @@ describe('VariantPicker', () => {
     ).toBeVisible();
     expect(asked).toEqual(['zzjn']);
     expect(shown()).toEqual([
-      'LOTTED-1 — Tracked Supplement (60ct) Products',
-      'PLAIN-1 — Plain Widget Products',
+      'Tracked Supplement (60ct) · LOTTED-1 Products',
+      'Plain Widget · PLAIN-1 Products',
     ]);
 
     await user.click(screen.getByRole('option', { name: /LOTTED-1/ }));
@@ -193,7 +193,7 @@ describe('VariantPicker', () => {
     answerFirst();
     // Every chance for the late answer to land before checking it didn't.
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(shown()).toEqual(['LOTTED-1 — Tracked Supplement (60ct) Products']);
+    expect(shown()).toEqual(['Tracked Supplement (60ct) · LOTTED-1 Products']);
   });
 });
 
@@ -228,7 +228,7 @@ function groups() {
         ?.textContent,
       within(group)
         .getAllByRole('option')
-        .map((option) => option.textContent?.split(' — ')[0]),
+        .map((option) => option.querySelector('span')?.textContent),
     ]);
 }
 
@@ -318,12 +318,12 @@ describe('VariantPicker, by type', () => {
 
     expect(
       screen.getByRole('option', {
-        name: 'BLEND-1 — Vitamin C powder Raw materials',
+        name: 'Vitamin C powder · BLEND-1 Raw materials',
       }),
     ).toBeVisible();
     expect(
       screen.getByRole('option', {
-        name: 'VITC-S10 — Vitamin C trial pack Samples',
+        name: 'Vitamin C trial pack · VITC-S10 Samples',
       }),
     ).toBeVisible();
   });

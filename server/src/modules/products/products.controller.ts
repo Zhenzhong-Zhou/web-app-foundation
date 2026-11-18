@@ -111,6 +111,7 @@ export class ProductsController {
             ? { categoryId: query.category }
             : {}),
         ...(query.discontinued ? { discontinued: query.discontinued } : {}),
+        ...(query.low === 'true' ? { low: true } : {}),
       },
       rows: rows.length,
     });

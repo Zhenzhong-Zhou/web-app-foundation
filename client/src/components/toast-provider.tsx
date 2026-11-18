@@ -1,9 +1,13 @@
-import { Alert, Snackbar, Stack } from '@mui/material';
+import { Alert, Button, Snackbar, Stack } from '@mui/material';
 import { type ReactNode, useCallback, useState } from 'react';
 
 import { rem } from '../theme/rem';
 import { ReferencesWhole } from './reference';
-import { type ShowToast, ToastContext } from './toast-context';
+import {
+  type ShowToast,
+  type ToastAction,
+  ToastContext,
+} from './toast-context';
 
 /**
  * "Saved" for the person who just did something.
@@ -28,12 +32,14 @@ export function ToastProvider({
   foot?: ReactNode;
 }) {
   const [message, setMessage] = useState<string | null>(null);
+  const [action, setAction] = useState<ToastAction | null>(null);
   const [open, setOpen] = useState(false);
 
   // Stable across renders, so every consumer of the context does not
   // re-render each time a toast opens or closes.
-  const show = useCallback<ShowToast>((next) => {
+  const show = useCallback<ShowToast>((next, nextAction) => {
     setMessage(next);
+    setAction(nextAction ?? null);
     setOpen(true);
   }, []);
 
@@ -54,7 +60,9 @@ export function ToastProvider({
       >
         <Snackbar
           open={open}
-          autoHideDuration={4000}
+          // Longer with a button to press, held while the pointer or the
+          // keyboard is on it, as MUI's snackbar does.
+          autoHideDuration={action ? 8000 : 4000}
           onClose={(_event, reason) => {
             // A click elsewhere is somebody carrying on, not dismissing.
             if (reason !== 'clickaway') setOpen(false);
@@ -78,6 +86,19 @@ export function ToastProvider({
           >
             {/* Finished words: their references kept whole (ADR-081). */}
             {message && <ReferencesWhole text={message} />}
+            {action && (
+              <Button
+                color="inherit"
+                size="small"
+                sx={{ ml: 1, textDecoration: 'underline' }}
+                onClick={() => {
+                  setOpen(false);
+                  action.onClick();
+                }}
+              >
+                {action.label}
+              </Button>
+            )}
           </Alert>
         </Snackbar>
         {foot}

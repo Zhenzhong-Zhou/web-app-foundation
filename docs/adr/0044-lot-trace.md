@@ -2,6 +2,7 @@
 status: accepted
 date: 2026-09-23
 areas: [stock]
+amended-by: [ADR-093]
 ---
 
 # ADR-044 — Lot trace
@@ -47,3 +48,17 @@ ledger. A depth limit of ten and a path guard stop a bad record looping.
 
 Deferred: exporting the recipient list for a recall
 letter, and quantities per downstream batch proportioned from the ingredient.
+
+## Amendment (November 2026) — the recall list's export, and a lot's expired days (ADR-093)
+
+ADR-093 takes the export this ADR deferred, asked for by a reviewer
+(#473's 17):
+
+- **The trace exports its recall list,** every customer who received
+  the lot, with the quantity and the day, in the screen's words.
+- **Its numbers are the page's,** "48", not "48.0000", and money has its
+  currency (#472's 24).
+- **A lot past its expiry says so beside its date,** "Expired 4 days
+  ago" (#479's lot half).
+
+Quantities per downstream batch stay deferred.

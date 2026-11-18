@@ -97,8 +97,11 @@ export class CostsController {
 
   @Get('needs-cost')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  needsCost(@Query() query: ListNeedsCostDto): Promise<NeedsCostPage> {
-    return this.costs.needsCost(query);
+  needsCost(
+    @Query() query: ListNeedsCostDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<NeedsCostPage> {
+    return this.costs.needsCost(query, localeOf(acceptLanguage));
   }
 
   /**

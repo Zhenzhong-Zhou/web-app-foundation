@@ -4,26 +4,12 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { Movement } from '../api/types.gen';
+import { movement } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { MovementsPage } from './movements-page';
 
-const MOVEMENT: Movement = {
-  id: 'movement-1',
-  sku: 'VITD-60',
-  productName: '维生素 D',
-  variantName: '60 粒',
-  quantity: '24.0000',
-  reason: 'shipment',
-  reasonDetail: null,
-  note: null,
-  fromLocationName: 'Shelf A',
-  toLocationName: null,
-  lotCode: 'NN-2410-07',
-  actorName: '王建国',
-  actorEmail: 'wang@example.com',
-  createdAt: '2026-10-30T17:00:00.000Z',
-};
+const MOVEMENT = movement();
 
 /**
  * What moved and who moved it, readable by someone who knows products and

@@ -28,10 +28,12 @@ import { localeOf, translate } from '../../i18n/translate';
 import { CloseLineDto } from './dto/close-line.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { DuplicateOrderDto } from './dto/duplicate-order.dto';
+import { ListDeliveriesDto } from './dto/list-deliveries.dto';
 import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import type {
   AddedOrderLineEnvelope,
+  Delivery,
   OrderDetail,
   OrderEnvelope,
   OrderPage,
@@ -94,6 +96,17 @@ export class OrdersController {
       rows,
       localeOf(acceptLanguage),
     );
+  }
+
+  /**
+   * The deliveries a receipt of an item may be (ADR-093, v3): Stock asks
+   * which one before receiving an item still to come, so ordered stock is
+   * received on its order. For whoever may see orders and receive on them.
+   */
+  @Get('deliveries')
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW, PERMISSIONS.ORDERS_RECEIVE)
+  deliveries(@Query() query: ListDeliveriesDto): Promise<Delivery[]> {
+    return this.receipts.deliveries(query.variantId);
   }
 
   /**

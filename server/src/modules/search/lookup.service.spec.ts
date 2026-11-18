@@ -14,6 +14,7 @@ const row = (kind: LookupKind, position: number, title: string) => ({
   expiresAt: null,
   productId: null,
   coverFileId: null,
+  type: null,
 });
 
 describe('byKind', () => {

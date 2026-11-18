@@ -769,7 +769,7 @@ describe('The welcome (e2e)', () => {
         (await welcome(sam.agent))?.access.whomToAsk.map((each) => each.name),
       ).toEqual(['Owner']);
 
-      const refused = await sam.agent.get('/v1/stock').expect(403);
+      const refused = await sam.agent.get('/v1/stock/by-code').expect(403);
       expect(body<{ message: string }>(refused).message).toMatch(
         /\. Owner can change your roles\.$/,
       );
