@@ -33,12 +33,16 @@ export function useBarHeight(bar: RefObject<HTMLElement | null>): void {
     if (!element) return;
     const root = document.documentElement.style;
     // Not rounded, as offsetHeight would be: at Larger it can be a
-    // fraction, and what sits under the bar would cover its line.
-    const measure = () =>
-      root.setProperty(
-        BAR_HEIGHT,
-        `${element.getBoundingClientRect().height}px`,
-      );
+    // fraction, and what sits under the bar would cover its line. Written
+    // only when it changes: the bar is also seen to resize as the window
+    // grows wider, and each write restyles the whole page.
+    let height = '';
+    const measure = () => {
+      const next = `${element.getBoundingClientRect().height}px`;
+      if (next === height) return;
+      height = next;
+      root.setProperty(BAR_HEIGHT, next);
+    };
     measure();
     // Not in jsdom, as Help's panel finds; measured once there.
     const observer =
