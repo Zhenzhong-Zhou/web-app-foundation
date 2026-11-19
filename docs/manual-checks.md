@@ -2009,14 +2009,20 @@ Paper is checked first because it must not change at all.
   Actions goes, the one beside the name shows. Tab and Shift+Tab along a
   row: each control comes whole into view, never under the name or
   under Actions. Tinted under the pointer, both pinned cells take the
-  row's tint, in light and dark. Open Help on Reorder: where the tick
+  row's tint, in light and dark. A row opened across the table, Stock's
+  "Choose the lot to …" line or its "Its places could not be read.",
+  pins nothing: scrolled, the whole line moves with the columns and no
+  empty cell covers its end. Open Help on Reorder: where the tick
   box, the name and Actions together would take more than half the
   table's width, Actions scrolls with the row and only the tick box and
   the name stay; widen the window and Actions is pinned again. Members,
   Licences, Partners, Tax codes, Exchange rates and Stock value's
   Waiting for a cost pin their actions too: in a window narrow enough
   that one scrolls sideways, its actions stay at the right while they
-  and the name take no more than half the table's width.
+  and the name take no more than half the table's width. In a window
+  narrow enough that Reorder scrolls sideways with its Actions pinned,
+  open a row's Where it stands: the detail shows whole across the row,
+  nothing pinned over its right or its left.
 
 ## 16. Files (ADR-059)
 

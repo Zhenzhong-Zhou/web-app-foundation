@@ -36,6 +36,7 @@ import { NUMBER_COLUMN } from '../components/number-column';
 import { OpeningButton } from '../components/opening-button';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
+import { SPANNING_ROW } from '../components/spanning-row';
 import { TableOrCards } from '../components/table-or-cards';
 import { api, withQuery } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
@@ -887,7 +888,7 @@ function PlacesRows({
 
   if (failure) {
     return (
-      <TableRow id={id}>
+      <TableRow id={id} {...SPANNING_ROW}>
         <TableCell colSpan={7}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Typography variant="body2" sx={{ color: 'error.main' }}>
@@ -911,7 +912,7 @@ function PlacesRows({
   if (!places) return <TableRow id={id} />;
 
   const line = choosing && (
-    <TableRow sx={{ bgcolor: 'action.hover' }}>
+    <TableRow sx={{ bgcolor: 'action.hover' }} {...SPANNING_ROW}>
       <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
         <ChooseLine places={places} mode={choosing} />
       </TableCell>

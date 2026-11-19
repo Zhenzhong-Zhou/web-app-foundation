@@ -325,12 +325,13 @@ const HEAD = '& > table > thead > tr > th';
 type Column = 1 | 2 | 'last';
 
 /**
- * A column's cells in the head or the body; a cell spanning more is none.
- * By type, as a row's cells are all of one kind: Emotion warns of
- * `:nth-child` on every render, a server-rendering worry this app has not.
+ * A column's cells in the head or the body; a cell spanning more is none,
+ * and neither is any cell of a row marked `SPANNING_ROW`. By type, as a
+ * row's cells are all of one kind: Emotion warns of `:nth-child` on every
+ * render, a server-rendering worry this app has not.
  */
 const cells = (part: 'thead' | 'tbody', column: Column) =>
-  `& > table > ${part} > tr > :${column === 'last' ? 'last-of-type' : `nth-of-type(${column})`}:not([colspan])`;
+  `& > table > ${part} > tr:not([data-spans]) > :${column === 'last' ? 'last-of-type' : `nth-of-type(${column})`}:not([colspan])`;
 
 /**
  * A column pinned, `at` its inset from the start or the end: the name at

@@ -41,6 +41,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
+import { SPANNING_ROW } from '../components/spanning-row';
 import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
@@ -494,7 +495,7 @@ function PointRow({
         </TableCell>
       </TableRow>
       {open && (
-        <TableRow id={detailId}>
+        <TableRow id={detailId} {...SPANNING_ROW}>
           <TableCell colSpan={columns - 1} sx={{ pt: 0 }}>
             <ReorderPointDetail row={row} />
           </TableCell>

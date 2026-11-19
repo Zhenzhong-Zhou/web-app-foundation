@@ -15,6 +15,7 @@ import { ACTIONS_COLUMN } from './actions-column';
 import { ListTable } from './list-table';
 import { NUMBER_COLUMN } from './number-column';
 import { SortHeader } from './sort-header';
+import { SPANNING_ROW } from './spanning-row';
 
 /** The box as wide as jsdom says, and the table in it this wide. */
 function widths(box: number, content: number) {
@@ -74,6 +75,14 @@ function Stock({
           </TableRow>
           <TableRow>
             <TableCell colSpan={ticks ? 6 : 5}>Choose a lot</TableCell>
+          </TableRow>
+          {/* An opened row: its detail across all but the last column, an
+              empty cell under Actions. */}
+          <TableRow {...SPANNING_ROW}>
+            <TableCell colSpan={ticks ? 5 : 4}>
+              10 left · reorder at 36
+            </TableCell>
+            <TableCell data-testid="under-actions" />
           </TableRow>
         </TableBody>
       </ListTable>
@@ -165,6 +174,24 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
         scrollPaddingInlineStart: '150px',
         scrollPaddingInlineEnd: '150px',
       });
+    });
+
+    it('pins no cell of an opened row, so none covers its detail', () => {
+      widths(800, 1100);
+      cellWidths(100);
+      render(<Stock ticks />);
+
+      for (const cell of actionsCells()) {
+        expect(positionOf(cell)).toBe('sticky');
+      }
+      // Neither at the end, under Actions, nor at the start, the second
+      // cell where the name stands after a tick box.
+      expect(positionOf(screen.getByTestId('under-actions'))).not.toBe(
+        'sticky',
+      );
+      expect(positionOf(screen.getByText('10 left · reorder at 36'))).not.toBe(
+        'sticky',
+      );
     });
 
     it('past half the box, the name pinned alone', () => {
