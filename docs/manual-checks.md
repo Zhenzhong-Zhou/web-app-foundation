@@ -2009,7 +2009,8 @@ Paper is checked first because it must not change at all.
   Actions goes, the one beside the name shows. Tab and Shift+Tab along a
   row: each control comes whole into view, never under the name or
   under Actions. Tinted under the pointer, both pinned cells take the
-  row's tint, in light and dark. A row opened across the table, Stock's
+  row's tint, in light and dark, and so does the fade beside each edge:
+  no band of the panel's colour beside the line. A row opened across the table, Stock's
   "Choose the lot to …" line or its "Its places could not be read.",
   pins nothing: scrolled, the whole line moves with the columns and no
   empty cell covers its end. Open Help on Reorder: where the tick

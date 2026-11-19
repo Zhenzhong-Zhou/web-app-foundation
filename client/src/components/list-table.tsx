@@ -23,7 +23,7 @@ import {
   STUCK_HEADER,
   STUCK_HEADER_VAR,
 } from '../layout/use-bar-height';
-import { cutEdge } from '../theme/cut-edge';
+import { CUT_FADE, cutEdge } from '../theme/cut-edge';
 import { HEADER_STAYS, HEADER_STAYS_QUERY } from '../theme/media';
 import { paletteOf } from '../theme/palette-of';
 import { SortPressed } from './sort-pressed';
@@ -375,10 +375,27 @@ const pinned = (
  * A pinned column's edge, on its head and body cells, on the side columns
  * pass under: the name's right, the row's actions' left.
  */
-const edge = (theme: Theme, column: Column, side: 'left' | 'right') => ({
-  [cells('thead', column)]: cutEdge(theme, 'head', side),
-  [cells('tbody', column)]: cutEdge(theme, 'paper', side),
-});
+const edge = (theme: Theme, column: Column, side: 'left' | 'right') => {
+  // The edge is on the cell's right for the name, its left for actions.
+  const out = side === 'right' ? 'right' : 'left';
+  return {
+    [cells('thead', column)]: cutEdge(theme, 'head', side),
+    [cells('tbody', column)]: {
+      ...cutEdge(theme, 'paper', side),
+      // The fade, the panel's colour, under the row's tint laid back over
+      // the cell (pinned's ::after), which reaches over the fade and fades
+      // with it: in a tinted row, no band of the panel's colour beside it.
+      '&::before': {
+        ...cutEdge(theme, 'paper', side)['&::before'],
+        zIndex: -1,
+      },
+      '&::after': {
+        [out]: -CUT_FADE,
+        maskImage: `linear-gradient(to ${out}, black calc(100% - ${CUT_FADE}px), transparent)`,
+      },
+    },
+  };
+};
 
 /**
  * The box's styles. The stuck header's and the pinned columns' are built

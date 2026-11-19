@@ -2,6 +2,9 @@ import type { Theme } from '@mui/material/styles';
 
 import { paletteOf } from './palette-of';
 
+/** How far the fade beside a held column's edge reaches, in px. */
+export const CUT_FADE = 24;
+
 /**
  * A held column's edge while columns pass under it (ADR-091's review): a
  * line in the edge token, and the column cut under it fading into the
@@ -24,7 +27,7 @@ export function cutEdge(
     position: 'absolute' as const,
     top: 0,
     bottom: 0,
-    width: 24,
+    width: CUT_FADE,
     pointerEvents: 'none' as const,
   };
   return side === 'left'
