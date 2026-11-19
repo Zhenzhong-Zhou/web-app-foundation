@@ -1,5 +1,5 @@
 import UnfoldMore from '@mui/icons-material/UnfoldMore';
-import { TableCell, type TableCellProps, TableSortLabel } from '@mui/material';
+import { TableCell, TableSortLabel } from '@mui/material';
 import type { ReactNode } from 'react';
 
 import type { SortOrder } from '../lib/use-list-sort';
@@ -36,7 +36,6 @@ export function SortHeader({
   active,
   order,
   onSort,
-  align,
   number = false,
   after,
   atRest = false,
@@ -45,7 +44,6 @@ export function SortHeader({
   active: boolean;
   order: SortOrder;
   onSort: () => void;
-  align?: TableCellProps['align'];
   number?: boolean;
   after?: ReactNode;
   atRest?: boolean;
@@ -53,7 +51,6 @@ export function SortHeader({
   const pressed = useSortPressed();
   return (
     <TableCell
-      align={align}
       {...(number && NUMBER_COLUMN)}
       sortDirection={active ? order : false}
       aria-sort={
