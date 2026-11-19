@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 import type { Targets } from './targets';
 
@@ -65,6 +65,15 @@ async function press(page: Page, filter: string) {
   );
   await page.getByRole('button', { name: filter }).first().click();
   await answered;
+}
+
+/**
+ * A list page's own table, by its name in the language pictured, and the
+ * box the shared table draws round it: a region once it scrolls sideways.
+ */
+function listTable(page: Page, name: string): { table: Locator; box: Locator } {
+  const table = page.getByRole('table', { name, exact: true });
+  return { table, box: table.locator('xpath=..') };
 }
 
 /** Home's date, time and greeting: three in the afternoon in Vancouver. */
@@ -211,6 +220,52 @@ export const SHOTS: Shot[] = [
         .first()
         .click();
       await page.getByRole('dialog').waitFor();
+    },
+  },
+  // The page frame and a list's header (#632): Reorder's list, with its
+  // tick boxes, and Your account in the narrower frame Home has.
+  { name: '25-reorder', path: () => '/inventory?tab=reorder' },
+  { name: '26-your-account', path: () => '/account' },
+  {
+    // Stock's header stuck under the top bar, its line and shadow shown:
+    // the window scrolled until the list's fourth row meets the bar.
+    name: '27-stuck-header',
+    path: () => '/inventory',
+    widths: ['wide'],
+    windowOnly: true,
+    prepare: async (page, words) => {
+      const { table, box } = listTable(page, words('inventory.tab.stock'));
+      await table.evaluate((element: HTMLTableElement) => {
+        const bar = document
+          .querySelector('header.MuiAppBar-root')!
+          .getBoundingClientRect().bottom;
+        const row = element.tBodies[0].rows[3].getBoundingClientRect();
+        window.scrollBy(0, row.top - bar);
+      });
+      await expect(box).toHaveAttribute('data-stuck', 'true');
+    },
+  },
+  {
+    // Help beside Reorder on a laptop takes the table's room: it scrolls
+    // sideways, here to its end, the tick box and the name pinned at the
+    // start with their edge; its Actions pinned too only while the two
+    // sides take no more than half the box (E12a). Only in a run with
+    // FRAME_SIZES=1, which adds the size.
+    name: '28-table-beside-help',
+    path: () => '/inventory?tab=reorder',
+    widths: ['laptop-1366'],
+    windowOnly: true,
+    prepare: async (page, words) => {
+      await page
+        .getByRole('banner')
+        .getByRole('button', { name: words('help.title'), exact: true })
+        .click();
+      const { box } = listTable(page, words('inventory.tab.reorder'));
+      await expect(box).toHaveAttribute('role', 'region');
+      await box.evaluate((element) => {
+        element.scrollLeft = element.scrollWidth;
+      });
+      await expect(box).toHaveAttribute('data-under-start', 'true');
     },
   },
 ];
