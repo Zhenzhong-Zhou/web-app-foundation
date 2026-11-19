@@ -1159,10 +1159,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   system's, and no analytics, CDN or Google service is called. A page that
   needs one would fail in mainland China; keep it that way, or make it
   optional.
-- Playwright runs every spec in Chromium, accessibility.spec and
-  document-refusals.spec in WebKit and Firefox (`EVERY_ENGINE` in
-  `playwright.config.ts`), and mobile.spec on an iPhone's screen and
-  engine. A spec that shares the owner's organization runs in Chromium
+- Playwright runs every spec in Chromium, accessibility.spec,
+  document-refusals.spec, page-frame.spec and sign-in-return.spec in
+  WebKit and Firefox (`EVERY_ENGINE` in `playwright.config.ts`), and
+  mobile.spec on an iPhone's screen and engine. A spec that shares the owner's organization runs in Chromium
   only. Firefox runs in CI and with E2E_FIREFOX=1; Playwright's build of
   it cannot start on some macOS versions. In CI a pull request runs
   Chromium only, in three shards; every browser runs on main, nightly,
