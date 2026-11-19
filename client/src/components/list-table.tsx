@@ -1,4 +1,10 @@
-import { Box, Table, TableContainer, type TableProps } from '@mui/material';
+import {
+  Box,
+  Table,
+  tableCellClasses,
+  TableContainer,
+  type TableProps,
+} from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import {
   type CSSProperties,
@@ -132,7 +138,7 @@ export function ListTable({
       const head = element.tHead;
       const cells = head?.rows[0]?.cells;
       const first = cells?.[0];
-      const tick = first?.classList.contains('MuiTableCell-paddingCheckbox')
+      const tick = first?.classList.contains(tableCellClasses.paddingCheckbox)
         ? first
         : undefined;
       const name = cells?.[tick ? 1 : 0];
