@@ -135,6 +135,10 @@ export function ListTable({
         was.start === next.start && was.end === next.end ? was : next,
       );
     };
+    // The name's narrowest width, read when the table first overflows its
+    // box: every column is then at its narrowest, the least width
+    // (NAME_LEAST) not yet on the name.
+    let narrowest = 0;
     const measure = () => {
       const head = element.tHead;
       const cells = head?.rows[0]?.cells;
@@ -151,11 +155,20 @@ export function ListTable({
         last && last !== name && last.hasAttribute('data-actions')
           ? width(last)
           : 0;
+      // The table's own width, not the box's scroll width: the stuck
+      // header's shadow runs 8 px past its last cell, and counted, a table
+      // that grew while it stuck, by Show 50 more, stayed too wide. While
+      // too wide, the name's least width taken back out, so a box grown
+      // wide enough, as Help closes, fits the table again.
+      const least = !frame.hasAttribute('data-fits');
+      if (!least && element.offsetWidth > frame.clientWidth + 1) {
+        narrowest = width(name);
+      }
+      const own = least
+        ? element.offsetWidth - width(name) + narrowest
+        : element.offsetWidth;
       const next: Shape = {
-        // The table's own width, not the box's scroll width: the stuck
-        // header's shadow runs 8 px past its last cell, and counted, a
-        // table that grew while it stuck, by Show 50 more, stayed too wide.
-        fits: element.offsetWidth <= frame.clientWidth + 1,
+        fits: own <= frame.clientWidth + 1,
         // Guard 1 (E12a): the actions pinned while the two sides take no
         // more than half the box, as it is wide now, never as it scrolls.
         end: actions && start + actions <= frame.clientWidth / 2 ? actions : 0,
