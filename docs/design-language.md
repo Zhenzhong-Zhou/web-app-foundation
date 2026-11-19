@@ -151,7 +151,7 @@ Each with what holds it in the code today, or the issue that will.
     sideways" in the reader's language.
   - The name stays pinned at the start, after a tick box where a list
     has one, and the row's Actions at the end, the last column a list
-    marks `ACTIONS_COLUMN` (E12a), so each row's Actions shows without
+    heads with `ActionsHeader` (E12a), so each row's Actions shows without
     scrolling.
   - The pinned name keeps a least width, 320 px in rem with its picture,
     so the demo's longest name takes two lines at 1366, not the five its
@@ -165,7 +165,9 @@ Each with what holds it in the code today, or the issue that will.
   - The box's scroll padding is the pinned sides' widths, so a control
     reached by Tab or Shift + Tab is scrolled wholly clear of both.
   - A pinned cell keeps its row's tint, under the pointer, ticked or
-    opened, in light and dark.
+    opened, in light and dark, and so does the fade beside its edge. A
+    row whose cells do not stand under the columns, an opened row's
+    detail or a line across the row (`SPANNING_ROW`), pins nothing.
 
 ### Numbers
 

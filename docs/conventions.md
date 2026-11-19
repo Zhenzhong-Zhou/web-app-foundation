@@ -1058,6 +1058,17 @@ Use these rather than writing the thing again on a page:
   The button says "Show 50 more" given its page's size, and a next page that
   failed, "The next 50 could not be loaded." with Try again, given `failed`
   (#544): Items and Stock pass it, the other lists as they are next changed.
+- **`ListTable`** for a list page's own table (ADR-090, amended November
+  2026, #632), named by its `label`: its header stays under the top bar
+  while it fits, and too wide for its box it scrolls sideways as a named
+  region, its name pinned at the start. A record's lines, a dialog's table
+  and one opened inside a row keep their own `TableContainer`. Within it,
+  **`NUMBER_COLUMN`** (or `SortHeader`'s `number`) on a number column's
+  header, as wide as its figures; **`ActionsHeader`** for the row actions'
+  header, pinned at the end beside the name, which
+  `actions-header.test.ts` holds for every list; and **`SPANNING_ROW`** on
+  a row whose cells do not stand under the columns, an opened row's detail
+  or a line across the row, which pins nothing.
 - **`PlaceholderRows`** in a list's table body while it reads, its head kept on
   the page, so a header pressed to sort keeps its focus (#505's 54).
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
