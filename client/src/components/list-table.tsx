@@ -26,6 +26,7 @@ import {
 import { CUT_FADE, cutEdge } from '../theme/cut-edge';
 import { HEADER_STAYS, HEADER_STAYS_QUERY } from '../theme/media';
 import { paletteOf } from '../theme/palette-of';
+import { rem } from '../theme/rem';
 import { SortPressed } from './sort-pressed';
 
 /**
@@ -323,6 +324,15 @@ const SENTINEL = {
   },
 } as const;
 
+/**
+ * The least width of a name pinned in a table too wide, its picture and
+ * padding included. Left to the table it took its narrowest, and the
+ * demo's longest item name, 57 letters, ran to five lines at 1366; at
+ * this width it takes two (ADR-090, amended November 2026). In rem, so it
+ * grows with the text.
+ */
+const NAME_LEAST = rem(320);
+
 /** The header row's cells. */
 const HEAD = '& > table > thead > tr > th';
 
@@ -448,9 +458,17 @@ const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
     ...(sideways && {
       '&:not([data-fits])': {
         ...pinned(theme, 1, { insetInlineStart: '0px' }),
-        '&[data-tick]': pinned(theme, 2, {
-          insetInlineStart: 'var(--pin-start)',
-        }),
+        // The name pinned keeps a least width (NAME_LEAST).
+        '&:not([data-tick])': { [cells('thead', 1)]: { minWidth: NAME_LEAST } },
+        '&[data-tick]': {
+          ...pinned(theme, 2, { insetInlineStart: 'var(--pin-start)' }),
+          [cells('thead', 2)]: {
+            ...pinned(theme, 2, { insetInlineStart: 'var(--pin-start)' })[
+              cells('thead', 2)
+            ],
+            minWidth: NAME_LEAST,
+          },
+        },
         '&[data-end]': pinned(theme, 'last', { insetInlineEnd: '0px' }),
         '&[data-under-start]:not([data-tick])': edge(theme, 1, 'right'),
         '&[data-under-start][data-tick]': edge(theme, 2, 'right'),

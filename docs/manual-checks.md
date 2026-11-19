@@ -1940,7 +1940,10 @@ Paper is checked first because it must not change at all.
   Tab to the table's box: it takes focus, a screen reader names it
   "Stock, scrolls sideways", and the arrow keys scroll it. Scrolled
   sideways, the item's name stays at the left, Reorder's tick box with
-  it, with a line and a fade where the other columns pass under; a row
+  it, with a line and a fade where the other columns pass under. The
+  name keeps its width: Ashwagandha root extract, standardised to 5%
+  withanolides takes two lines, not five, and Actions still stays at the
+  right on Stock (MC-1575); a row
   tinted under the pointer is tinted under the name too. Close Help on
   Reorder: the table fits again, and its header stays as the page
   scrolls (MC-1567). In French and Chinese the box's name is in that

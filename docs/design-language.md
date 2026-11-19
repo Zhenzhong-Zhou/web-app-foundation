@@ -153,6 +153,9 @@ Each with what holds it in the code today, or the issue that will.
     has one, and the row's Actions at the end, the last column a list
     marks `ACTIONS_COLUMN` (E12a), so each row's Actions shows without
     scrolling.
+  - The pinned name keeps a least width, 320 px in rem with its picture,
+    so the demo's longest name takes two lines at 1366, not the five its
+    narrowest gave; the other columns pass under it.
   - Both are pinned only while together they take no more than half the
     box; past that, the name alone. It follows the box's width, never
     how far the table has scrolled, so the pins do not change sides.

@@ -144,6 +144,20 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
     expect(positionOf(screen.getByText('Choose a lot'))).not.toBe('sticky');
   });
 
+  it('too wide, keeps the name pinned at its least width, not its narrowest', () => {
+    const least = (name: string) =>
+      getComputedStyle(screen.getByRole('columnheader', { name })).minWidth;
+
+    widths(1000, 1000);
+    const { unmount } = render(<Stock />);
+    expect(least('Item')).not.toBe('320px');
+    unmount();
+
+    widths(800, 1100);
+    render(<Stock ticks />);
+    expect(least('Item')).toBe('320px');
+  });
+
   it('too wide, pins the name after a tick box with the box', () => {
     widths(800, 1100);
     render(<Stock ticks />);
