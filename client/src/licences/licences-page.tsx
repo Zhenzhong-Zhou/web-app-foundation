@@ -17,7 +17,7 @@ import { useIntl } from 'react-intl';
 import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
@@ -217,14 +217,7 @@ export function LicencesPage() {
                     defaultMessage: 'Notes',
                   })}
                 </TableCell>
-                <TableCell
-                  {...ACTIONS_COLUMN}
-                  align="right"
-                  aria-label={intl.formatMessage({
-                    id: 'orders.lines.actions',
-                    defaultMessage: 'Actions',
-                  })}
-                />
+                <ActionsHeader align="right" />
               </TableRow>
             </TableHead>
 

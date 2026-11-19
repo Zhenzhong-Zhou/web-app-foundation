@@ -19,12 +19,11 @@ import { type ReactNode, useId, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 
 import type { Invitation, Role } from '../api/types.gen';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { DialogFooter } from '../components/dialog-footer';
 import { ListTable } from '../components/list-table';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
-import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useSubmit } from '../lib/use-submit';
@@ -190,14 +189,7 @@ export function InvitedSection({
                     defaultMessage: 'Link',
                   })}
                 </TableCell>
-                <TableCell {...ACTIONS_COLUMN}>
-                  <Box component="span" sx={HIDDEN}>
-                    {intl.formatMessage({
-                      id: 'common.actions',
-                      defaultMessage: 'Actions',
-                    })}
-                  </Box>
-                </TableCell>
+                <ActionsHeader />
               </TableRow>
             </TableHead>
             <TableBody>

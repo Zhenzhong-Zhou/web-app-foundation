@@ -22,7 +22,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { ExportButton } from '../components/export-button';
 import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
@@ -285,14 +285,7 @@ export function StockValuePage() {
                         defaultMessage: 'Since',
                       })}
                     </TableCell>
-                    <TableCell
-                      {...ACTIONS_COLUMN}
-                      align="right"
-                      aria-label={intl.formatMessage({
-                        id: 'orders.lines.actions',
-                        defaultMessage: 'Actions',
-                      })}
-                    />
+                    <ActionsHeader align="right" />
                   </TableRow>
                 </TableHead>
 

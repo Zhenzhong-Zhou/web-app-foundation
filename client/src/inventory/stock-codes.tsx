@@ -27,7 +27,7 @@ import type {
   StockCodeRow,
   StockPlace,
 } from '../api/types.gen';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ListTable } from '../components/list-table';
@@ -42,7 +42,6 @@ import { api, withQuery } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
 import { isZero } from '../lib/decimal';
 import { displayQuantity, formatDay, itemName, NO_VALUE } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
@@ -117,7 +116,6 @@ const HEADS = defineMessages({
     id: 'inventory.stock.expiresFirst',
     defaultMessage: 'Expires first',
   },
-  actions: { id: 'common.actions', defaultMessage: 'Actions' },
   noneOnHand: {
     id: 'inventory.stock.noneOnHand',
     defaultMessage: 'None on hand',
@@ -242,15 +240,7 @@ export function StockCodes({
               />
               {/* Every header named (R6), this one to a screen reader:
                   each row's button says its word. */}
-              <TableCell
-                {...ACTIONS_COLUMN}
-                padding="checkbox"
-                sx={{ position: 'relative' }}
-              >
-                <Box component="span" sx={HIDDEN}>
-                  {intl.formatMessage(HEADS.actions)}
-                </Box>
-              </TableCell>
+              <ActionsHeader padding="checkbox" />
             </TableRow>
           </TableHead>
           <TableBody>

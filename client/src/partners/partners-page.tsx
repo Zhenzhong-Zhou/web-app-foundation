@@ -16,7 +16,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { Partner } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
@@ -200,12 +200,12 @@ export function PartnersPage() {
                 {/* The column exists only when it can hold anything. An empty
                   actions column is a promise the screen cannot keep. */}
                 {canEdit && (
-                  <TableCell {...ACTIONS_COLUMN} align="right">
+                  <ActionsHeader align="right">
                     {intl.formatMessage({
                       id: 'common.edit',
                       defaultMessage: 'Edit',
                     })}
-                  </TableCell>
+                  </ActionsHeader>
                 )}
               </TableRow>
             </TableHead>

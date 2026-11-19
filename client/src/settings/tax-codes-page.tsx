@@ -15,7 +15,7 @@ import { useIntl } from 'react-intl';
 import type { TaxCode } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { ListTable } from '../components/list-table';
 import { PageHeader } from '../components/page-header';
@@ -126,14 +126,7 @@ export function TaxCodesPage() {
                     defaultMessage: 'Status',
                   })}
                 </TableCell>
-                <TableCell
-                  {...ACTIONS_COLUMN}
-                  align="right"
-                  aria-label={intl.formatMessage({
-                    id: 'orders.lines.actions',
-                    defaultMessage: 'Actions',
-                  })}
-                />
+                <ActionsHeader align="right" />
               </TableRow>
             </TableHead>
 

@@ -20,11 +20,10 @@ import { FormattedMessage, useIntl } from 'react-intl';
 
 import type { Member, Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { ListTable } from '../components/list-table';
 import { PersonAvatar } from '../components/person-avatar';
 import { formatMoment } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { activeLabel } from '../people/people-types';
@@ -296,16 +295,7 @@ export function MembersSection({
                       defaultMessage: 'Last active',
                     })}
                   </TableCell>
-                  {anyActions && (
-                    <TableCell {...ACTIONS_COLUMN}>
-                      <Box component="span" sx={HIDDEN}>
-                        {intl.formatMessage({
-                          id: 'common.actions',
-                          defaultMessage: 'Actions',
-                        })}
-                      </Box>
-                    </TableCell>
-                  )}
+                  {anyActions && <ActionsHeader />}
                 </TableRow>
               </TableHead>
 

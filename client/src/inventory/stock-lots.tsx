@@ -10,7 +10,7 @@ import {
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { StockLotRow } from '../api/types.gen';
-import { ACTIONS_COLUMN } from '../components/actions-column';
+import { ActionsHeader } from '../components/actions-header';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ListTable } from '../components/list-table';
 import { LotLink } from '../components/lot-link';
@@ -19,7 +19,6 @@ import { SortHeader } from '../components/sort-header';
 import { TableOrCards } from '../components/table-or-cards';
 import type { StockLotSort } from '../lib/api-names';
 import { itemName, NO_VALUE } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import type { SortOrder } from '../lib/use-list-sort';
 import { wholeOnFocus } from '../lib/whole-on-focus';
 import { NameAndCode } from '../products/name-and-code';
@@ -36,7 +35,6 @@ const HEADS = defineMessages({
   expires: { id: 'inventory.lot.expires', defaultMessage: 'Expires' },
   location: { id: 'inventory.location', defaultMessage: 'Location' },
   quantity: { id: 'inventory.quantity', defaultMessage: 'Quantity' },
-  actions: { id: 'common.actions', defaultMessage: 'Actions' },
 });
 
 /**
@@ -107,15 +105,7 @@ export function StockLots({
               />
               {/* Every header named (R6), this one to a screen reader:
                   each row's button says its word. */}
-              <TableCell
-                {...ACTIONS_COLUMN}
-                padding="checkbox"
-                sx={{ position: 'relative' }}
-              >
-                <Box component="span" sx={HIDDEN}>
-                  {intl.formatMessage(HEADS.actions)}
-                </Box>
-              </TableCell>
+              <ActionsHeader padding="checkbox" />
             </TableRow>
           </TableHead>
           <TableBody>
