@@ -19,11 +19,8 @@ import {
 } from '../layout/use-bar-height';
 import { cutEdge } from '../theme/cut-edge';
 import { HEADER_STAYS, HEADER_STAYS_QUERY } from '../theme/media';
+import { paletteOf } from '../theme/palette-of';
 import { SortPressed } from './sort-pressed';
-
-/** The palette as CSS variables when the theme has them, else as values. */
-const paletteOf = (theme: Theme) =>
-  (theme.vars ?? theme).palette as Theme['palette'];
 
 /**
  * What the table's box measures, asked again as the box or the table

@@ -14,6 +14,7 @@ import { type Brand, DEFAULT_BRAND } from './brand-store';
 import { scrollShades } from './cut-edge';
 import { TOUCH } from './media';
 import { OptionGroup } from './option-group';
+import { paletteOf } from './palette-of';
 import { rem } from './rem';
 import {
   accentHover,
@@ -100,10 +101,6 @@ function palette(
     },
   };
 }
-
-/** The palette as CSS variables when the theme has them, else as values. */
-const paletteOf = (theme: Theme) =>
-  (theme.vars ?? theme).palette as Theme['palette'];
 
 /**
  * A chip's colour prop names a tone (ADR-055): one meaning per colour,

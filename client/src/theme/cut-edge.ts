@@ -1,8 +1,6 @@
 import type { Theme } from '@mui/material/styles';
 
-/** The palette as CSS variables when the theme has them, else as values. */
-const paletteOf = (theme: Theme) =>
-  (theme.vars ?? theme).palette as Theme['palette'];
+import { paletteOf } from './palette-of';
 
 /**
  * A held column's edge while columns pass under it (ADR-091's review): a
