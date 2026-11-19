@@ -37,6 +37,7 @@ import {
 import { FormError } from '../components/form-error';
 import { IconBadge } from '../components/icon-badge';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
+import { BAR_HEIGHT_VAR, barHeight } from '../layout/use-bar-height';
 import type { HomeKind } from '../lib/api-names';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
@@ -152,7 +153,7 @@ const VALUED = defineMessages<
 const STICKY = {
   [TALL_WINDOW]: {
     position: 'sticky',
-    top: 'var(--bar-height, 0px)',
+    top: BAR_HEIGHT_VAR,
     zIndex: 1,
   },
 } as const;
@@ -618,12 +619,8 @@ function scrollBy(top: number) {
  */
 function inView(card: Element, row: Element | null) {
   const { top, bottom } = card.getBoundingClientRect();
-  const bar =
-    Number.parseFloat(
-      getComputedStyle(card).getPropertyValue('--bar-height'),
-    ) || 0;
   const below =
-    Math.max(bar, row?.getBoundingClientRect().bottom ?? 0) + MARGIN;
+    Math.max(barHeight(), row?.getBoundingClientRect().bottom ?? 0) + MARGIN;
   if (top < below) scrollBy(top - below);
   else if (bottom > window.innerHeight - MARGIN) {
     scrollBy(Math.min(bottom - window.innerHeight + MARGIN, top - below));

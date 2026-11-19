@@ -2,6 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { MAIN_CONTENT_ID } from '../layout/skip-link';
+import { barHeight } from '../layout/use-bar-height';
 
 /**
  * A link to a part of a page, its address's `hash`: once that part is
@@ -27,17 +28,11 @@ export function useArrival(
     const part = section.current;
     const main = document.getElementById(MAIN_CONTENT_ID);
     if (!part || !main) return;
-    const bar =
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue(
-          '--bar-height',
-        ),
-      ) || 0;
     window.scrollTo({
       top:
         window.scrollY +
         part.getBoundingClientRect().top -
-        bar -
+        barHeight() -
         parseFloat(getComputedStyle(main).paddingTop),
     });
     heading.current?.focus({ preventScroll: true });

@@ -12,12 +12,14 @@ import {
 } from 'react';
 import { useIntl } from 'react-intl';
 
+import {
+  BAR_HEIGHT_VAR,
+  STUCK_HEADER,
+  STUCK_HEADER_VAR,
+} from '../layout/use-bar-height';
 import { cutEdge } from '../theme/cut-edge';
 import { HEADER_STAYS, HEADER_STAYS_QUERY } from '../theme/media';
 import { SortPressed } from './sort-pressed';
-
-/** The property a stuck header's height is kept in, on the document's root. */
-const STUCK_HEADER = '--stuck-header';
 
 /** The palette as CSS variables when the theme has them, else as values. */
 const paletteOf = (theme: Theme) =>
@@ -301,7 +303,7 @@ const SENTINEL = {
   top: {
     position: 'absolute',
     insetInline: 0,
-    top: 'calc(-1px - var(--bar-height, 0px))',
+    top: `calc(-1px - ${BAR_HEIGHT_VAR})`,
     height: '1px',
     display: 'none',
     pointerEvents: 'none',
@@ -310,7 +312,7 @@ const SENTINEL = {
   bottom: {
     position: 'absolute',
     insetInline: 0,
-    bottom: 'calc(var(--bar-height, 0px) + var(--list-head, 0px))',
+    bottom: `calc(${BAR_HEIGHT_VAR} + var(--list-head, 0px))`,
     height: '1px',
     display: 'none',
     pointerEvents: 'none',
@@ -391,7 +393,7 @@ const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
       [HEADER_STAYS]: {
         [HEAD]: {
           position: 'sticky',
-          top: 'var(--bar-height, 0px)',
+          top: BAR_HEIGHT_VAR,
           zIndex: 2,
         },
         ...(stuck && {
@@ -401,7 +403,7 @@ const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
               // scroll margin back: they stand above it, under the bar,
               // and a Tab onto one jumped the page to the table's top.
               '& *': {
-                scrollMarginTop: 'calc(-1 * (var(--stuck-header, 0px) + 8px))',
+                scrollMarginTop: `calc(-1 * (${STUCK_HEADER_VAR} + 8px))`,
               },
               boxShadow: `inset 0 -1px 0 ${palette.surface.edge}`,
               // The lift's shadow, cast by a strip along the cell's foot

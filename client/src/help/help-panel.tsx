@@ -34,6 +34,7 @@ import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
 import { BAR } from '../layout/bar';
 import { RAIL_FOLDED_PX } from '../layout/rail';
+import { BAR_HEIGHT_VAR } from '../layout/use-bar-height';
 import { copyrightLine, useAppName } from '../lib/app-name';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -238,7 +239,7 @@ export function HelpFrame({
               }}
               sx={{
                 position: 'fixed',
-                top: 'var(--bar-height, 0px)',
+                top: BAR_HEIGHT_VAR,
                 right: 0,
                 bottom: 0,
                 width: `min(${rem(WIDTH_PX)}, 100%)`,

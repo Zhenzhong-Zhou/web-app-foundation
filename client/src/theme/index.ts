@@ -6,6 +6,7 @@ import {
 } from '@mui/material/styles';
 import { createElement } from 'react';
 
+import { BAR_HEIGHT_VAR, STUCK_HEADER_VAR } from '../layout/use-bar-height';
 import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
@@ -225,8 +226,7 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
          * it sticks, 0 otherwise.
          */
         html: {
-          scrollPaddingTop:
-            'calc(var(--bar-height, 0px) + var(--stuck-header, 0px) + 8px)',
+          scrollPaddingTop: `calc(${BAR_HEIGHT_VAR} + ${STUCK_HEADER_VAR} + 8px)`,
         },
         // Every digit the same width, so figures line up down a column.
         body: { fontVariantNumeric: 'tabular-nums' },
