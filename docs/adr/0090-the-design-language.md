@@ -1199,3 +1199,111 @@ has no table.
   design language → the pictures after → the dependencies again → the
   reviews → the as-built and the pull request, closing #632 and #516,
   and part of #159, #507, #561 and #565.
+
+## Amendment (November 2026) — as built (#644)
+
+`fix-632-page-frame`, built on 18 November 2026 from its brief in
+`tmp/fix-632-page-frame/`, in a row of steps and then one at a time: 39
+commits with this as-built, pull request #644. Where building settled
+or changed what the amendment above decided:
+
+### The requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R1 | Met (14a584b5): `FRAME_WIDTH`, 1,600, the one setting in `client/src/layout/frame.ts`, read by the main `Container`; records and forms take it too |
+| R2 | Met (14a584b5): a route says `narrower: true` in `client/src/routes.ts`, read through `frameWidth(pathname)`; Home's own 1,140 and Home without an organization's 1,080 gone. Home and Organization look as before at 1366; Home's content is 1,152 at 1920, from 1,140 |
+| R3 | Met (14a584b5, 2ed1ca9f): `page-frame.spec.ts` holds every signed-in route to its width, proved failing once; the design language holds the frame and its list |
+| R4 | Met (80cdf159, 27c7e9f9): `NUMBER_COLUMN` and `SortHeader`'s `number`; a browser test finds Stock's number columns as wide at 1920 as at 1366. Stock value's By item and lot gave its spare width to an unheaded chip column until 310219d7 |
+| R5 | Met (80cdf159, 187318c3, d04d4c1a, 3dd00261, 52988555, 288a0a9f): `ListTable` on 22 lists, each list's own `TableContainer` gone (Production had none) |
+| R6 | Met: `HEADER_STAYS`, CSS media queries in `client/src/theme/media.ts`; rows 5 and 7 are browser tests |
+| R7 | Met (80cdf159, 824f646a): the line and the soft shadow once stuck, marked by a sentinel; the colours in #561's table, light and dark; the picture `27-stuck-header` |
+| R8 | Changed (7a72b2a5, d57a4505): one scroll margin on the root, the bar plus a stuck header plus 8 px; a stuck header's own controls take their share back, since Tab onto one moved the page 553 px in Chromium and 76 in WebKit. Firefox centres a focused control, so the tests ask for it wholly below the header, not 8 px under it. Reorder's bar at the foot is not in the margin |
+| R9 | Met (80cdf159): a region named "{table}, scrolls sideways", with a tab stop; row 6 a browser test |
+| R10 | Met (6869029f, 7112e179, 10b4807e): 1366 and 2560 by `FRAME_SIZES=1`; 1,068 pictures before and 1,176 after, taken again after the reviews' fixes; the four new shots after only (D2a); Home's tiles in even rows at every size |
+| R11 | Met (2ed1ca9f, c9a9e594, ab03116c): the frame, the narrower pages, the header that stays and the table too wide in the design language; its 2.4.11 line now true, and no longer saying a dialog's buttons and the Undo message use the margin, since they sit at the foot with their own room; #561's tests are in `client/src/theme/tokens.test.ts`; `.claude/rules/ui.md` at 2,998 of its 3,000 characters |
+| R12 | Met: the canvas rows v2 and v3, and "第四版 · v4" for E12 |
+| R13 | Met (d608474d): `RUN_BUDGET` 750, the summary printing the tests × repeats, the runs and the minutes and seconds a run; ADR-089's line and a bullet in `docs/conventions.md`; the full Chromium suite is 497 tests. #644's burn-in summary read at the merge |
+| R14 | Met (91337964): ADR-088's line; the requirement's own grep still finds ADR-088's text, kept as history, and this table's row |
+| R15 | Changed (b32c15c7, 4ac8fe55, 8f65850a): see Decided while building |
+| R16 | Met: the handoff at the first commit and with this as-built; the Performance run of 23 November had not run, so Movements' branch reads it |
+| R17 | Changed by E12a (f2af8789, 77efd6d3, 5c48c12b, 916e53f5, 1a395b84, a865b27f): see Decided while building |
+| R18 | Met (187318c3): the test checks the first row under the header and focus on it, not a scroll position, since the list empties while it reads again |
+| R19 | Met (7a72b2a5, 12416268, 976e1236): `--bar-height` set once on the root by `useBarHeight`, the names `--bar-height` and `--stuck-header` kept in `client/src/layout/use-bar-height.ts`, written only when the measure changes; the bar is 57 px, 76 at Larger text below 1,200 |
+
+### Decided while building
+
+The maintainer's answers, each by its letter:
+
+- **Stock at 1366 (D1a):** it scrolls sideways, as planned. Step 5
+  found it too wide with Help closed, the Deferred line's trigger: 33 px
+  short in English, 8 in Chinese and 270 in French. Moving columns under
+  the row is #637, `later`.
+- **A row's Actions pinned at the end (E12a):** in a table too wide,
+  the name stays pinned at the start (with Reorder's tick box) and the
+  row's Actions at the end, while the two take no more than half the
+  box; past that, the name alone. The choice changes when the box's
+  width does, never while it scrolls (E12c, switching sides by the
+  scroll's direction, was not taken). An edge shows on a side only while
+  something lies under it, and the box's scroll padding keeps a focused
+  control clear of both. `ActionsHeader` marks the column on ten lists,
+  a test failing on a list without it; an opened row (`SPANNING_ROW`)
+  pins none of its cells. Reorder beside Help at 1366 keeps Actions
+  unpinned in every language: half its box is 416 px, and the two need
+  463 in English, 501 in French and 421 in Chinese.
+- **A pinned name's least width (finding 51):** 320 px in a table too
+  wide, so the demo's longest name wraps to two lines, not four to
+  seven; whether the table fits is measured with the name at its
+  narrowest (a865b27f). Stock at 1366 then scrolls 187 px in English and
+  424 in French, where it was 36 and 272 short; Chinese fits.
+- **A scroll bar kept in view (E13a):** later, on #637, with the
+  reviews' evidence that five walkers missed the columns past the edge.
+- **The dependencies (RDc, S14c):** vite 8.3.8, prettier 3.10.0, Sentry
+  11.12.0, nodemailer 10.5.0, `@aws-sdk/client-s3` 3.1166.0 and 3.1167.0
+  and msw 3.0.5, each 7 days old; prettier 3.10.1, `@formatjs/cli`
+  6.19.0, with the eight native packages it pins, and user-event
+  14.6.10, taken 2 to 11 hours short of their 7 days by the
+  maintainer's choice, the rule waived for those three alone. Installed
+  with `npm install --before` and each lock file read package by
+  package, nothing moved back. `@playwright/test` 1.65.1 with #521's
+  check, typescript-eslint 8.73.0 and the minimatch overrides' removal
+  go to Movements' branch.
+- **Lists' counts (P1a, P2a, R1a):** the count always, "31 codes" when
+  everything fits, on Items, Stock and Reorder, and no column of row
+  numbers: #638, built in Movements' branch with #473's Back after Show
+  more. Drawn as the canvas row "列表的分页 第一版 · Paged lists v1".
+- **The every-browser spec lists (S12a):** `docs/conventions.md` and
+  `docs/engineering.md` name `page-frame` and `sign-in-return`.
+
+### Found while building
+
+- **A fit that could not come back (4a46965d):** the fit counted the
+  stuck header's 8 px shadow, so after Show 50 more Stock at 1920 became
+  a sideways box for good; it is measured by the table's own width.
+- **The browser tests make their own records** through the API helpers,
+  as the suite has no demo; Stock's test adds a long code, since its
+  names fit at 1366 where the demo's do not.
+- **The reviews (54 findings):** fixed 3 with 46, 45, 47 to 50, 28 to
+  32, 36, 51 and 54, with a chore to `/build-from-brief`'s checks
+  (efd8f4f7); issues #639 to #642; comments on #159, #473, #481, #581,
+  #607 and #637; left 18, 20, 33, 37 to 44, 52 and 53. Finding 33, the
+  stuck header's share added to the margin and taken back on its
+  controls, stays: proved in four engines.
+- **For this ADR's next amendment,** the panel's findings 1 (a table
+  too wide says so with a line and a fade alone), 4 (targets under
+  44 px, #170), 8 (可用 with two meanings, one figure with three names,
+  for Movements' branch), 10 (nothing leads to Larger text, kept per
+  device) and 11 (secondary text at 14 px).
+- **The full verify,** green but for one Linux WebKit test,
+  `document-refusals`' way back to the order, timing out under the
+  suite's load and passing alone, as before this branch: #643,
+  `fix-now`, named in #644. #530's crash came once on Node 26.12.0, the
+  version it would pin: a comment there.
+
+### Still owed
+
+- Before the merge: every browser by hand, the device checks of
+  `/production-readiness browsers`, MC-1565 to MC-1575 walked, and the
+  pictures in #644's table.
+- After it: `/triage`, the comments the amendment's Consequences name;
+  Movements' boards at 1920 (E7) at its branch's first step.
