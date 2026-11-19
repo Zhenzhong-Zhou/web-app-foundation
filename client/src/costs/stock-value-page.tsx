@@ -422,7 +422,11 @@ export function StockValuePage() {
                         defaultMessage: 'Value',
                       })}
                     </TableCell>
+                    {/* As wide as its chip, as a number column is: a
+                        text column it is not, and taking the rest it
+                        left the figures mid-table (E1). */}
                     <TableCell
+                      sx={{ width: '1%' }}
                       aria-label={intl.formatMessage({
                         id: 'common.status',
                         defaultMessage: 'Status',

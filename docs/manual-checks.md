@@ -1977,7 +1977,9 @@ Paper is checked first because it must not change at all.
   stays under the top bar as in MC-1567. On Stock value, each of its two
   tables keeps its own header: Waiting for a cost's goes with its table
   as By item and lot's comes up to the bar. Quantity, Produced, Items,
-  Unit cost and Value are as wide as their figures need at 1920. On a
+  Unit cost and Value are as wide as their figures need at 1920, and By
+  item and lot's Provisional chip as wide as itself, the item's code
+  and its lot taking the room, no empty third at the right. On a
   phone, Production's table, which had no box of its own, scrolls
   sideways inside its panel, Planned pinned at its left (MC-1568).
   A screen reader names each table: Production, Partners, Price lists,
