@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -22,7 +20,9 @@ import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { ExportButton } from '../components/export-button';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { VariantPicker } from '../components/variant-picker';
 import { NameAndEmail } from '../components/who-and-when';
@@ -244,128 +244,132 @@ export function MovementsPage() {
               ) : null}
             </Stack>
           ) : entries?.length ? (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      {intl.formatMessage(MOVEMENT_HEADINGS.when)}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage(MOVEMENT_HEADINGS.item)}
-                    </TableCell>
-                    <TableCell align="right">
-                      {intl.formatMessage(MOVEMENT_HEADINGS.change)}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage(MOVEMENT_HEADINGS.where)}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage(MOVEMENT_HEADINGS.why)}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage(MOVEMENT_HEADINGS.by)}
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
+            <ListTable
+              label={intl.formatMessage({
+                id: 'layout.nav.movements',
+                defaultMessage: 'Movements',
+              })}
+              size="small"
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.when)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.item)}
+                  </TableCell>
+                  <TableCell {...NUMBER_COLUMN}>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.change)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.where)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.why)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.by)}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
 
-                <TableBody>
-                  {entries.map((movement) => {
-                    const { sign, where } = describeMovement(movement);
+              <TableBody>
+                {entries.map((movement) => {
+                  const { sign, where } = describeMovement(movement);
 
-                    return (
-                      <TableRow key={movement.id} hover>
-                        <TableCell>
-                          <span title={formatMoment(movement.createdAt)}>
-                            {relativeTime(movement.createdAt)}
-                          </span>
-                        </TableCell>
+                  return (
+                    <TableRow key={movement.id} hover>
+                      <TableCell>
+                        <span title={formatMoment(movement.createdAt)}>
+                          {relativeTime(movement.createdAt)}
+                        </span>
+                      </TableCell>
 
-                        {/* The SKU snapshotted on the row (ADR-023), so a rename
-                        does not rewrite what this movement said at the time;
-                        the name beside it from the catalogue, in the reader's
-                        language (#256), as Reorder points names an item. */}
-                        <TableCell>
-                          {intl.formatMessage(
-                            {
-                              id: 'inventory.movements.item',
-                              defaultMessage: '{sku} {name}',
-                            },
-                            {
-                              sku: (
-                                <Box component="span" sx={{ fontWeight: 600 }}>
-                                  {movement.sku}
-                                </Box>
-                              ),
-                              name: itemName(
-                                movement.productName,
-                                movement.variantName,
-                              ),
-                            },
-                          )}
-                          {movement.lotCode && (
-                            <Chip
-                              label={movement.lotCode}
-                              size="small"
-                              sx={{ ml: 1 }}
-                            />
-                          )}
-                        </TableCell>
-
-                        {/* Read without padding zeros, grouped the language's
-                        way (displayQuantity, #256), but never parsed: a
-                        numeric through a JS double is the loss ADR-025
-                        exists to avoid. */}
-                        <TableCell align="right">
-                          {sign}
-                          {displayQuantity(movement.quantity)}
-                        </TableCell>
-
-                        <TableCell>{where}</TableCell>
-
-                        <TableCell>
+                      {/* The SKU snapshotted on the row (ADR-023), so a rename
+                      does not rewrite what this movement said at the time;
+                      the name beside it from the catalogue, in the reader's
+                      language (#256), as Reorder points names an item. */}
+                      <TableCell>
+                        {intl.formatMessage(
+                          {
+                            id: 'inventory.movements.item',
+                            defaultMessage: '{sku} {name}',
+                          },
+                          {
+                            sku: (
+                              <Box component="span" sx={{ fontWeight: 600 }}>
+                                {movement.sku}
+                              </Box>
+                            ),
+                            name: itemName(
+                              movement.productName,
+                              movement.variantName,
+                            ),
+                          },
+                        )}
+                        {movement.lotCode && (
                           <Chip
-                            label={reasonLabel(movement.reason, intl)}
+                            label={movement.lotCode}
                             size="small"
+                            sx={{ ml: 1 }}
                           />
-                          {/* A margin, not a space: a space would be text, and
-                          text here would be English (ADR-054). */}
-                          {movement.reasonDetail && (
-                            <Box component="span" sx={{ ml: 0.5 }}>
-                              {reasonDetailLabel(movement.reasonDetail, intl)}
-                            </Box>
-                          )}
-                          {/* Required on an adjustment, because a person asserting
-                          the system is wrong has to say what they found
-                          (ADR-023). This is where it gets read. */}
-                          {movement.note && (
-                            <Typography
-                              variant="caption"
-                              component="div"
-                              sx={{ color: 'text.secondary' }}
-                            >
-                              {movement.note}
-                            </Typography>
-                          )}
-                        </TableCell>
+                        )}
+                      </TableCell>
 
-                        {/* Who by name, their email beneath (#256); Deleted
-                        user once anonymised (ADR-012). The row survives its
-                        author, which is what RESTRICT on actor_id is for. */}
-                        <TableCell>
-                          <NameAndEmail
-                            {...movementActor(
-                              movement,
-                              intl.formatMessage(MOVEMENT_HEADINGS.deletedUser),
-                            )}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                      {/* Read without padding zeros, grouped the language's
+                      way (displayQuantity, #256), but never parsed: a
+                      numeric through a JS double is the loss ADR-025
+                      exists to avoid. */}
+                      <TableCell align="right">
+                        {sign}
+                        {displayQuantity(movement.quantity)}
+                      </TableCell>
+
+                      <TableCell>{where}</TableCell>
+
+                      <TableCell>
+                        <Chip
+                          label={reasonLabel(movement.reason, intl)}
+                          size="small"
+                        />
+                        {/* A margin, not a space: a space would be text, and
+                        text here would be English (ADR-054). */}
+                        {movement.reasonDetail && (
+                          <Box component="span" sx={{ ml: 0.5 }}>
+                            {reasonDetailLabel(movement.reasonDetail, intl)}
+                          </Box>
+                        )}
+                        {/* Required on an adjustment, because a person asserting
+                        the system is wrong has to say what they found
+                        (ADR-023). This is where it gets read. */}
+                        {movement.note && (
+                          <Typography
+                            variant="caption"
+                            component="div"
+                            sx={{ color: 'text.secondary' }}
+                          >
+                            {movement.note}
+                          </Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Who by name, their email beneath (#256); Deleted
+                      user once anonymised (ADR-012). The row survives its
+                      author, which is what RESTRICT on actor_id is for. */}
+                      <TableCell>
+                        <NameAndEmail
+                          {...movementActor(
+                            movement,
+                            intl.formatMessage(MOVEMENT_HEADINGS.deletedUser),
+                          )}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </ListTable>
           ) : (
             <Typography sx={{ color: 'text.secondary', p: 3 }}>
               {variantId || locationId || reason

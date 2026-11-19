@@ -41,7 +41,8 @@
 # run.
 #
 # The full run ends with the specs every browser runs, the accessibility
-# spec and the refused PDF's page (playwright.config.ts's EVERY_ENGINE),
+# spec, the refused PDF's page, the page frame and the return after
+# sign-in (playwright.config.ts's EVERY_ENGINE),
 # in Firefox, then in Linux WebKit, neither of which a pull request's CI
 # runs, since it runs Chromium alone: a failure in Firefox first met main
 # (#506). Playwright's Firefox cannot start on some Macs, so it runs from

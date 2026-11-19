@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -19,9 +17,11 @@ import { useIntl } from 'react-intl';
 import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
+import { ListTable } from '../components/list-table';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -172,109 +172,105 @@ export function LicencesPage() {
             })}
           </Alert>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.number',
-                      defaultMessage: 'Number',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'licences.issuedBy',
-                      defaultMessage: 'Issued by',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'licences.issued',
-                      defaultMessage: 'Issued',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'licences.validUntil',
-                      defaultMessage: 'Valid until',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'boms.notes',
-                      defaultMessage: 'Notes',
-                    })}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    aria-label={intl.formatMessage({
-                      id: 'orders.lines.actions',
-                      defaultMessage: 'Actions',
-                    })}
-                  />
-                </TableRow>
-              </TableHead>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'layout.nav.licences',
+              defaultMessage: 'Licences',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'invoices.number',
+                    defaultMessage: 'Number',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'licences.issuedBy',
+                    defaultMessage: 'Issued by',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'licences.issued',
+                    defaultMessage: 'Issued',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'licences.validUntil',
+                    defaultMessage: 'Valid until',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'common.status',
+                    defaultMessage: 'Status',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'boms.notes',
+                    defaultMessage: 'Notes',
+                  })}
+                </TableCell>
+                <ActionsHeader align="right" />
+              </TableRow>
+            </TableHead>
 
-              <TableBody>
-                {licences?.map((licence) => (
-                  <TableRow key={licence.id}>
-                    <TableCell>
-                      <Reference>{licence.number}</Reference>
-                    </TableCell>
-                    <TableCell>{licence.authority}</TableCell>
-                    <TableCell>
-                      {licence.issuedAt
-                        ? formatDay(licence.issuedAt)
-                        : NO_VALUE}
-                    </TableCell>
-                    <TableCell>
-                      {licence.expiresAt
-                        ? formatDay(licence.expiresAt)
-                        : NO_VALUE}
-                    </TableCell>
-                    <TableCell>
-                      {/* Derived, not stored: a date passes on its own, and a
-                          flag needs somebody to remember. */}
-                      <Chip
+            <TableBody>
+              {licences?.map((licence) => (
+                <TableRow key={licence.id}>
+                  <TableCell>
+                    <Reference>{licence.number}</Reference>
+                  </TableCell>
+                  <TableCell>{licence.authority}</TableCell>
+                  <TableCell>
+                    {licence.issuedAt ? formatDay(licence.issuedAt) : NO_VALUE}
+                  </TableCell>
+                  <TableCell>
+                    {licence.expiresAt
+                      ? formatDay(licence.expiresAt)
+                      : NO_VALUE}
+                  </TableCell>
+                  <TableCell>
+                    {/* Derived, not stored: a date passes on its own, and a
+                        flag needs somebody to remember. */}
+                    <Chip
+                      size="small"
+                      label={licenceStatus(licence).label}
+                      color={licenceStatus(licence).tone}
+                      variant={
+                        licenceStatus(licence).usable ? 'filled' : 'outlined'
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>{licence.notes ?? NO_VALUE}</TableCell>
+                  <TableCell align="right">
+                    {/* A correction is the change people come looking for:
+                        "who changed the number, and when". */}
+                    <HistoryButton resourceId={licence.id} />
+
+                    {canUpdate && (
+                      <Button
+                        variant="text"
                         size="small"
-                        label={licenceStatus(licence).label}
-                        color={licenceStatus(licence).tone}
-                        variant={
-                          licenceStatus(licence).usable ? 'filled' : 'outlined'
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>{licence.notes ?? NO_VALUE}</TableCell>
-                    <TableCell align="right">
-                      {/* A correction is the change people come looking for:
-                          "who changed the number, and when". */}
-                      <HistoryButton resourceId={licence.id} />
-
-                      {canUpdate && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={openDialog(() => setEditing(licence))}
-                        >
-                          {intl.formatMessage({
-                            id: 'common.edit',
-                            defaultMessage: 'Edit',
-                          })}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        onClick={openDialog(() => setEditing(licence))}
+                      >
+                        {intl.formatMessage({
+                          id: 'common.edit',
+                          defaultMessage: 'Edit',
+                        })}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </ListTable>
         )}
       </Paper>
 

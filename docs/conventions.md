@@ -746,15 +746,15 @@ The error tracker hears of real faults only (ADR-084).
   <suite>`). A test that fails in any of them is not committed, and the
   commit's step gives the command and the result in its summary.
 - **CI burns in the browser specs a pull request changes** (ADR-089's
-  amendment): after the browser job's run, the specs it changes and those
-  importing a file it changes run five times each in Chromium, with
+  amendments): after the browser job's run, the tests of the specs it
+  changes and of those importing a file it changes run in Chromium, with
   retries off (`--only-changed`, `.github/workflows/ci.yml`), each shard
-  taking a third of the runs, within 20 minutes. More than 150 tests, each
-  counted once before the five repeats, as a change to a file every spec
-  imports gives, burns in only the specs the pull request changes itself,
-  and the job's summary says which ran, with a warning on the pull
-  request, the trigger of #516. Its
-  list, beforehand: `npx playwright test --list --only-changed=origin/main
+  taking a third of the runs, within 20 minutes. They share a budget of
+  750 runs: each test runs `floor(750 / tests)` times, at least once and
+  at most five, so a change to a file every spec imports still burns in
+  every test, fewer times each (#516). The job's summary says the tests ×
+  repeats, the runs on each shard and the minutes they took. Its list,
+  beforehand: `npx playwright test --list --only-changed=origin/main
   --project=chromium` in `client/`.
 
 ---
@@ -1058,6 +1058,17 @@ Use these rather than writing the thing again on a page:
   The button says "Show 50 more" given its page's size, and a next page that
   failed, "The next 50 could not be loaded." with Try again, given `failed`
   (#544): Items and Stock pass it, the other lists as they are next changed.
+- **`ListTable`** for a list page's own table (ADR-090, amended November
+  2026, #632), named by its `label`: its header stays under the top bar
+  while it fits, and too wide for its box it scrolls sideways as a named
+  region, its name pinned at the start. A record's lines, a dialog's table
+  and one opened inside a row keep their own `TableContainer`. Within it,
+  **`NUMBER_COLUMN`** (or `SortHeader`'s `number`) on a number column's
+  header, as wide as its figures; **`ActionsHeader`** for the row actions'
+  header, pinned at the end beside the name, which
+  `actions-header.test.ts` holds for every list; and **`SPANNING_ROW`** on
+  a row whose cells do not stand under the columns, an opened row's detail
+  or a line across the row, which pins nothing.
 - **`PlaceholderRows`** in a list's table body while it reads, its head kept on
   the page, so a header pressed to sort keeps its focus (#505's 54).
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
@@ -1159,10 +1170,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   system's, and no analytics, CDN or Google service is called. A page that
   needs one would fail in mainland China; keep it that way, or make it
   optional.
-- Playwright runs every spec in Chromium, accessibility.spec and
-  document-refusals.spec in WebKit and Firefox (`EVERY_ENGINE` in
-  `playwright.config.ts`), and mobile.spec on an iPhone's screen and
-  engine. A spec that shares the owner's organization runs in Chromium
+- Playwright runs every spec in Chromium, accessibility.spec,
+  document-refusals.spec, page-frame.spec and sign-in-return.spec in
+  WebKit and Firefox (`EVERY_ENGINE` in `playwright.config.ts`), and
+  mobile.spec on an iPhone's screen and engine. A spec that shares the owner's organization runs in Chromium
   only. Firefox runs in CI and with E2E_FIREFOX=1; Playwright's build of
   it cannot start on some macOS versions. In CI a pull request runs
   Chromium only, in three shards; every browser runs on main, nightly,

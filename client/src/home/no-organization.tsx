@@ -50,7 +50,7 @@ export function NoOrganization() {
   const email = session?.user.email ?? '';
 
   return (
-    <Stack spacing={2.5} sx={{ maxWidth: 1080 }}>
+    <Stack spacing={2.5}>
       <Typography variant="h5" component="h1">
         {greeting(intl, session?.user.name ?? '')}
       </Typography>

@@ -28,6 +28,7 @@ import {
 import type { LotMatch, LotTrace } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
+import { ListTable } from '../components/list-table';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { LotCostPanel } from '../costs/lot-cost-panel';
@@ -155,49 +156,53 @@ export function LotSearchPage() {
 
       {!!matches?.length && (
         <Paper variant="outlined">
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'inventory.trace.title',
+              defaultMessage: 'Trace a lot',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'inventory.lot',
+                    defaultMessage: 'Lot',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.sku',
+                    defaultMessage: 'Code',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'inventory.lot.expires',
+                    defaultMessage: 'Expires',
+                  })}
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {matches.map((lot) => (
+                <TableRow key={lot.id} hover>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'inventory.lot',
-                      defaultMessage: 'Lot',
-                    })}
+                    <Link component={RouterLink} to={`/lots/${lot.id}`}>
+                      {lot.code}
+                    </Link>
                   </TableCell>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'products.sku',
-                      defaultMessage: 'Code',
-                    })}
+                    <Reference>{lot.sku}</Reference>
                   </TableCell>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'inventory.lot.expires',
-                      defaultMessage: 'Expires',
-                    })}
+                    {lot.expiresAt ? formatDay(lot.expiresAt) : NO_VALUE}
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {matches.map((lot) => (
-                  <TableRow key={lot.id} hover>
-                    <TableCell>
-                      <Link component={RouterLink} to={`/lots/${lot.id}`}>
-                        {lot.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Reference>{lot.sku}</Reference>
-                    </TableCell>
-                    <TableCell>
-                      {lot.expiresAt ? formatDay(lot.expiresAt) : NO_VALUE}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </ListTable>
         </Paper>
       )}
     </Stack>

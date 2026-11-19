@@ -5,10 +5,8 @@ import {
   Link,
   Paper,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -24,7 +22,9 @@ import { ExportButton } from '../components/export-button';
 import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { Reference } from '../components/reference';
@@ -298,133 +298,134 @@ export function OrdersPage() {
           {/* The table's head stays while the rows are read, a sort's
               included, so the header pressed keeps its focus (#505's 54). */}
           {loading || items?.length ? (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
+            <ListTable
+              label={intl.formatMessage({
+                id: 'layout.nav.orders',
+                defaultMessage: 'Orders',
+              })}
+              size="small"
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.partner',
+                      defaultMessage: 'Partner',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.direction',
+                      defaultMessage: 'Direction',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.reference',
+                      defaultMessage: 'Reference',
+                    })}
+                  </TableCell>
+                  <SortHeader label={expected} {...header('expectedAt')} />
+                  <TableCell {...NUMBER_COLUMN}>
+                    {intl.formatMessage({
+                      id: 'orders.fulfilled',
+                      defaultMessage: 'Fulfilled',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {loading && <PlaceholderRows columns={7} />}
+                {items?.map((order) => (
+                  <TableRow key={order.id} hover>
+                    {/* Ours, which every order has (ADR-071): the link. */}
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'orders.number',
-                        defaultMessage: 'Number',
-                      })}
+                      <Link component={RouterLink} to={`/orders/${order.id}`}>
+                        <Reference>{order.number}</Reference>
+                      </Link>
                     </TableCell>
+                    <TableCell>{order.partnerName}</TableCell>
+
+                    {/* Which way the goods go, in a person's words — the first
+                    thing anyone scanning this list wants to know. */}
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'orders.partner',
-                        defaultMessage: 'Partner',
-                      })}
+                      {order.direction === 'purchase'
+                        ? intl.formatMessage({
+                            id: 'orders.direction.buying',
+                            defaultMessage: 'Buying',
+                          })
+                        : intl.formatMessage({
+                            id: 'orders.direction.selling',
+                            defaultMessage: 'Selling',
+                          })}
+                      {/* Beside the direction rather than instead of it: a
+                      sample is still stock leaving (ADR-042). */}
+                      {order.isSample && (
+                        <Chip
+                          label={intl.formatMessage({
+                            id: 'orders.sample',
+                            defaultMessage: 'Sample',
+                          })}
+                          size="small"
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                        />
+                      )}
                     </TableCell>
+
+                    {/* Their number, not ours. Nullable, because an order placed
+                    by phone has none. */}
+                    <TableCell>{order.reference ?? NO_VALUE}</TableCell>
+
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'orders.direction',
-                        defaultMessage: 'Direction',
-                      })}
+                      {order.expectedAt
+                        ? formatDay(order.expectedAt)
+                        : NO_VALUE}
+                      <LateChip expected={order.expectedAt} today={today} />
                     </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'orders.reference',
-                        defaultMessage: 'Reference',
-                      })}
-                    </TableCell>
-                    <SortHeader label={expected} {...header('expectedAt')} />
+
+                    {/* Rendered as Postgres computed them, only the decimal
+                    separator the language's. Parsing a numeric(18,4) into a
+                    JS number to make a percentage is how a quantity loses
+                    its last decimal place (ADR-025). */}
                     <TableCell align="right">
-                      {intl.formatMessage({
-                        id: 'orders.fulfilled',
-                        defaultMessage: 'Fulfilled',
-                      })}
+                      {intl.formatMessage(
+                        {
+                          id: 'orders.fulfilledOfOrdered',
+                          defaultMessage: '{fulfilled} / {ordered}',
+                        },
+                        {
+                          fulfilled: displayQuantity(order.quantityFulfilled),
+                          ordered: displayQuantity(order.quantityOrdered),
+                        },
+                      )}
                     </TableCell>
+
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'common.status',
-                        defaultMessage: 'Status',
-                      })}
+                      {/* Its tone from the one table (ADR-055), its words
+                        from the catalogue rather than CSS capitalisation. */}
+                      <StatusChip
+                        tone={STATUS_TONES.order[order.status]}
+                        label={orderStatusLabel(order.status, order.direction)}
+                      />
                     </TableCell>
                   </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {loading && <PlaceholderRows columns={7} />}
-                  {items?.map((order) => (
-                    <TableRow key={order.id} hover>
-                      {/* Ours, which every order has (ADR-071): the link. */}
-                      <TableCell>
-                        <Link component={RouterLink} to={`/orders/${order.id}`}>
-                          <Reference>{order.number}</Reference>
-                        </Link>
-                      </TableCell>
-                      <TableCell>{order.partnerName}</TableCell>
-
-                      {/* Which way the goods go, in a person's words — the first
-                      thing anyone scanning this list wants to know. */}
-                      <TableCell>
-                        {order.direction === 'purchase'
-                          ? intl.formatMessage({
-                              id: 'orders.direction.buying',
-                              defaultMessage: 'Buying',
-                            })
-                          : intl.formatMessage({
-                              id: 'orders.direction.selling',
-                              defaultMessage: 'Selling',
-                            })}
-                        {/* Beside the direction rather than instead of it: a
-                        sample is still stock leaving (ADR-042). */}
-                        {order.isSample && (
-                          <Chip
-                            label={intl.formatMessage({
-                              id: 'orders.sample',
-                              defaultMessage: 'Sample',
-                            })}
-                            size="small"
-                            variant="outlined"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
-                      </TableCell>
-
-                      {/* Their number, not ours. Nullable, because an order placed
-                      by phone has none. */}
-                      <TableCell>{order.reference ?? NO_VALUE}</TableCell>
-
-                      <TableCell>
-                        {order.expectedAt
-                          ? formatDay(order.expectedAt)
-                          : NO_VALUE}
-                        <LateChip expected={order.expectedAt} today={today} />
-                      </TableCell>
-
-                      {/* Rendered as Postgres computed them, only the decimal
-                      separator the language's. Parsing a numeric(18,4) into a
-                      JS number to make a percentage is how a quantity loses
-                      its last decimal place (ADR-025). */}
-                      <TableCell align="right">
-                        {intl.formatMessage(
-                          {
-                            id: 'orders.fulfilledOfOrdered',
-                            defaultMessage: '{fulfilled} / {ordered}',
-                          },
-                          {
-                            fulfilled: displayQuantity(order.quantityFulfilled),
-                            ordered: displayQuantity(order.quantityOrdered),
-                          },
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        {/* Its tone from the one table (ADR-055), its words
-                          from the catalogue rather than CSS capitalisation. */}
-                        <StatusChip
-                          tone={STATUS_TONES.order[order.status]}
-                          label={orderStatusLabel(
-                            order.status,
-                            order.direction,
-                          )}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </ListTable>
           ) : (
             // No Raise an order here: the page header already offers it, and
             // a second button for the same act is one too many.

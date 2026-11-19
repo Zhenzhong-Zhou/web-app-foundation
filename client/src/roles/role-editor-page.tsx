@@ -43,6 +43,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { GoHome } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
+import { underBar } from '../layout/use-bar-height';
 import { api, hasCode } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -588,8 +589,8 @@ function RoleEditor({
           </Typography>
         </Stack>
 
-        {/* Beside the boxes on a computer, held in view as they scroll;
-            below them on a phone, then the buttons. */}
+        {/* Beside the boxes on a computer, held in view under the top bar
+            as they scroll; below them on a phone, then the buttons. */}
         <Paper
           variant="outlined"
           component="aside"
@@ -597,7 +598,7 @@ function RoleEditor({
           sx={{
             p: 2.5,
             position: { md: 'sticky' },
-            top: { md: 88 },
+            top: { md: underBar(32) },
           }}
         >
           <Stack spacing={2.5}>

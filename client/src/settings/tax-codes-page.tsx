@@ -4,10 +4,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -17,7 +15,9 @@ import { useIntl } from 'react-intl';
 import type { TaxCode } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
+import { ListTable } from '../components/list-table';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -99,81 +99,79 @@ export function TaxCodesPage() {
             })}
           </EmptyState>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'layout.menu.taxCodes',
+              defaultMessage: 'Tax codes',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'common.name',
+                    defaultMessage: 'Name',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'settings.tax.charges',
+                    defaultMessage: 'Charges',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'common.status',
+                    defaultMessage: 'Status',
+                  })}
+                </TableCell>
+                <ActionsHeader align="right" />
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {codes?.map((code) => (
+                <TableRow key={code.id}>
+                  <TableCell>{code.name}</TableCell>
+                  <TableCell>{describeCharges(code)}</TableCell>
                   <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.name',
-                      defaultMessage: 'Name',
-                    })}
+                    <StatusChip
+                      tone={code.isActive ? 'info' : 'neutral'}
+                      label={
+                        code.isActive
+                          ? intl.formatMessage({
+                              id: 'locations.edit.inUse',
+                              defaultMessage: 'In use',
+                            })
+                          : intl.formatMessage({
+                              id: 'common.retired',
+                              defaultMessage: 'Retired',
+                            })
+                      }
+                    />
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'settings.tax.charges',
-                      defaultMessage: 'Charges',
-                    })}
+                  <TableCell align="right">
+                    {/* "Who set PST to 8%, and when" is the question. */}
+                    <HistoryButton resourceId={code.id} />
+
+                    {canUpdate && (
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={openDialog(() => setEditing(code))}
+                      >
+                        {intl.formatMessage({
+                          id: 'common.edit',
+                          defaultMessage: 'Edit',
+                        })}
+                      </Button>
+                    )}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    aria-label={intl.formatMessage({
-                      id: 'orders.lines.actions',
-                      defaultMessage: 'Actions',
-                    })}
-                  />
                 </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {codes?.map((code) => (
-                  <TableRow key={code.id}>
-                    <TableCell>{code.name}</TableCell>
-                    <TableCell>{describeCharges(code)}</TableCell>
-                    <TableCell>
-                      <StatusChip
-                        tone={code.isActive ? 'info' : 'neutral'}
-                        label={
-                          code.isActive
-                            ? intl.formatMessage({
-                                id: 'locations.edit.inUse',
-                                defaultMessage: 'In use',
-                              })
-                            : intl.formatMessage({
-                                id: 'common.retired',
-                                defaultMessage: 'Retired',
-                              })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      {/* "Who set PST to 8%, and when" is the question. */}
-                      <HistoryButton resourceId={code.id} />
-
-                      {canUpdate && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={openDialog(() => setEditing(code))}
-                        >
-                          {intl.formatMessage({
-                            id: 'common.edit',
-                            defaultMessage: 'Edit',
-                          })}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </ListTable>
         )}
       </Paper>
 

@@ -61,8 +61,10 @@ turn up to its stop, then nothing run.
 When the run's first step is Claude Code's, the run is refused, naming
 why and running nothing, when any of these holds:
 
-1. **Another branch:** `git branch --show-current` is not the brief's,
-   the first name in its `**Branch:**` line.
+1. **Another branch:** `git branch --show-current` is not the brief's:
+   the first name in backticks after `**Branch:**`, on the brief's line
+   that holds it, wherever it stands in that line, a list item's
+   `- **Branch:**` as well (`grep -m1 -F '**Branch:**' <brief>`).
 2. **A tracked file changed:** `git status --porcelain
    --untracked-files=no` prints anything; name the files.
 3. **Claude Code older than 2.1.251,** which first puts the model named
@@ -121,7 +123,9 @@ Claude Code needs a restart to find `.claude/agents/`.
    Another family stops the run at once, as BLOCKED, naming both.
 5. **Its last line:**
    - `DONE` goes on to the next step, in a row, unless a `STOP` file is
-     beside the brief, which stops it;
+     beside the brief, which stops it: asked as `if [ -e <dir>/STOP ];
+     then echo STOP; fi`, which ends 0 either way, never `ls`, whose
+     miss ends in exit 1 and reads as a failure;
    - `BLOCKED` goes to the escalation (section 8) when it qualifies, and
      otherwise stops the run.
 

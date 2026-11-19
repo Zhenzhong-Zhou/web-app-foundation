@@ -1898,6 +1898,135 @@ Paper is checked first because it must not change at all.
   is in. Pressing a filter or a tab on a list shows no bar, only the
   list's own placeholder. With Reduce motion on (the system's
   accessibility settings), the bar stands still while shown.
+- **MC-1565** *(ADR-090, amended November 2026, #632)* One height under
+  the top bar. At Larger text in a window about 1024 × 768, the bar has a
+  word under each icon and is taller than at 1440. Roles → New role, open
+  every area and scroll: the summary beside the boxes stays about 32 px
+  under the bar's line, never under it. On Home, Customise Home and
+  scroll: Reset to default and Done stay right under the bar. On
+  Inventory, scroll down, then Shift+Tab back up through the rows: each
+  control that takes focus shows whole below the bar, with a little room
+  above it, never half under it (Firefox brings it to the middle of the
+  window instead). The same at Standard text and 1440 × 900, where the
+  bar is shorter; there, open Help: it starts right under the bar at
+  each text size. On a phone, Home's Stock value · Waiting for a cost
+  still lands its list's heading just under the bar.
+- **MC-1566** *(ADR-090, amended November 2026, #632)* One page frame.
+  In a window 1920 px wide with Help closed, Inventory fills about
+  1,600 px, with a little room on each side beside the rail, and Orders
+  and an order's page the same. Home, Your account and Organization stay
+  narrower, as before, centred in the same room: going from Inventory to
+  Home, the title moves right and nothing else jumps. At 2560 px the
+  frame stops at 1,600, centred; at 1366 every page looks as it did, each
+  title in the same place. Home's tiles stay in even rows of three at
+  1366, 1920 and 2560. At Larger text the frame does not grow.
+- **MC-1567** *(ADR-090, amended November 2026, #632)* A list's header
+  that stays. In a window 1920 × 1080 with Help closed, on Inventory,
+  scroll down Stock: its header row stays right under the top bar, solid,
+  with a line and a soft shadow under it only once it sticks; scroll back
+  up and they go. Shift+Tab back up through the rows: each control shows
+  whole below the header, never under it. The same in dark mode, the
+  header's words still clear. In a window 1180 × 820, a tablet held
+  sideways, it stays too; in one 1920 px wide but under 500 px tall, or
+  1100 px wide and under 700 px tall, the header scrolls away with the
+  page and only the top bar stays. On a phone, cards and no header. Each
+  number column, On hand and Free among them, is as wide as its figures
+  need at 1920, the item's name taking the room. Printed (⌘P), the header
+  is a plain row with no shadow.
+- **MC-1568** *(ADR-090, amended November 2026, #632)* A table too wide
+  for its box. In a window 1366 × 768, on Inventory's Stock with Help
+  closed, or Reorder with Help beside the page: the table scrolls
+  sideways inside its panel, and its header scrolls away with the page.
+  Tab to the table's box: it takes focus, a screen reader names it
+  "Stock, scrolls sideways", and the arrow keys scroll it. Scrolled
+  sideways, the item's name stays at the left, Reorder's tick box with
+  it, with a line and a fade where the other columns pass under. The
+  name keeps its width: Ashwagandha root extract, standardised to 5%
+  withanolides takes two lines, not five, and Actions still stays at the
+  right on Stock (MC-1575); a row
+  tinted under the pointer is tinted under the name too. Close Help on
+  Reorder: the table fits again, and its header stays as the page
+  scrolls (MC-1567). In French and Chinese the box's name is in that
+  language.
+- **MC-1569** *(ADR-090, amended November 2026, #632)* Sorting from a
+  header that stays. In a window 1920 × 1080, on Inventory's Stock,
+  scroll down until the header stays under the top bar, then press On
+  hand: the list is sorted, the page moves up so the list's first row
+  sits right under the header, and focus stays on On hand. Press it
+  again: the order is reversed and the page does not move. The same
+  pressed from the keyboard: Tab and Shift+Tab along the header that
+  stays leave the page where it is, then Enter. With the header at rest,
+  near the page's top, a sort leaves the page where it is.
+- **MC-1570** *(ADR-090, amended November 2026, #632)* Inventory's and
+  Items' other lists on the one table. In a window 1280 × 720 with Help
+  closed, scroll down Stock's By lot view, Reorder, Items, Movements and
+  Trace a lot's matches for a code that finds several: each header stays
+  under the top bar as in MC-1567. Their figures, On hand, Quantity,
+  Suggested order and Change, sit in columns as wide as they need, the
+  names taking the rest. A screen reader names each table: Stock,
+  Reorder, Items, Movements and Trace a lot.
+- **MC-1571** *(ADR-090, amended November 2026, #632)* Orders,
+  Invoices, Credit notes and Returns on the one table. In a window
+  1280 × 720 with Help closed, scroll down each list: its header stays
+  under the top bar as in MC-1567, and a sort pressed there, Expected,
+  Date, Total or Amount, brings the list's first row under it
+  (MC-1569). At 1920, Fulfilled, Total and Amount are as wide as their
+  figures need, the partner's and customer's names taking the room. A
+  screen reader names each table by its page: Orders, Invoices, Credit
+  notes and Returns.
+- **MC-1572** *(ADR-090, amended November 2026, #632)* Production,
+  Partners, Price lists, Licences and Stock value on the one table. In a
+  window 1280 × 720 with Help closed, scroll down each list: its header
+  stays under the top bar as in MC-1567. On Stock value, each of its two
+  tables keeps its own header: Waiting for a cost's goes with its table
+  as By item and lot's comes up to the bar. Quantity, Produced, Items,
+  Unit cost and Value are as wide as their figures need at 1920, and By
+  item and lot's Provisional chip as wide as itself, the item's code
+  and its lot taking the room, no empty third at the right. On a
+  phone, Production's table, which had no box of its own, scrolls
+  sideways inside its panel, Planned pinned at its left (MC-1568).
+  A screen reader names each table: Production, Partners, Price lists,
+  Licences, Waiting for a cost and By item and lot.
+- **MC-1573** *(ADR-090, amended November 2026, #632)* Members,
+  Roles, the audit log and the settings lists on the one table. In a
+  window 1280 × 720 with Help closed, scroll down Members, with an
+  invitation waiting, Roles, Audit log, Your activity, Tax codes and
+  Exchange rates: each header stays under the top bar as in MC-1567,
+  and on Members and Roles each of the two tables keeps its own header.
+  Rate is as wide as its figures need at 1920. A screen reader names
+  each table: Invited, Members, Built in and Made here with their
+  counts, Audit log, Your activity, Tax codes and Exchange rates.
+- **MC-1574** *(ADR-090, amended November 2026, #632)* Your devices'
+  Recent activity on the one table. In a window 1280 × 720 with Help
+  closed, on Your devices, scroll down to Recent activity: its header
+  stays under the top bar as in MC-1567, and a screen reader names the
+  table Recent activity.
+- **MC-1575** *(ADR-090, amended November 2026, #632)* A row's Actions
+  pinned at the end of a table too wide (E12a). In a window 1366 × 768
+  with Help closed, on Inventory's Stock in English: each row's Actions
+  stays at the table's right while the item's name stays at its left,
+  each with its own background, so every row's Actions shows whole
+  without scrolling. A line and a fade show on the side of Actions only
+  while more columns lie past it, and on the name's side only once the
+  table is scrolled. Scroll the table to its end: the line beside
+  Actions goes, the one beside the name shows. Tab and Shift+Tab along a
+  row: each control comes whole into view, never under the name or
+  under Actions. Tinted under the pointer, both pinned cells take the
+  row's tint, in light and dark, and so does the fade beside each edge:
+  no band of the panel's colour beside the line. A row opened across the table, Stock's
+  "Choose the lot to …" line or its "Its places could not be read.",
+  pins nothing: scrolled, the whole line moves with the columns and no
+  empty cell covers its end. Open Help on Reorder: where the tick
+  box, the name and Actions together would take more than half the
+  table's width, Actions scrolls with the row and only the tick box and
+  the name stay; widen the window and Actions is pinned again. Members,
+  Licences, Partners, Tax codes, Exchange rates and Stock value's
+  Waiting for a cost pin their actions too: in a window narrow enough
+  that one scrolls sideways, its actions stay at the right while they
+  and the name take no more than half the table's width. In a window
+  narrow enough that Reorder scrolls sideways with its Actions pinned,
+  open a row's Where it stands: the detail shows whole across the row,
+  nothing pinned over its right or its left.
 
 ## 16. Files (ADR-059)
 
@@ -6792,3 +6921,32 @@ first.
 - 2026-11-17: ADR-093's review, Bob's row after PR #635: a control in
   Stock's, the Lot view's, Reorder's or Where it stands' table, reached
   half past the table's edge, scrolls whole into view: MC-301.
+- 2026-11-18: ADR-090's amendment (#632), one height under the top bar:
+  the bar's measure set once on the root, read by what stays under it,
+  and one scroll margin that keeps a focused control below it: MC-1565.
+- 2026-11-18: ADR-090's amendment (#632), one page frame: every
+  signed-in page in 1,600 px, centred beside the rail; Home, Your account
+  and Organization, named narrower in their routes, in today's 1,200,
+  centred the same way: MC-1566.
+- 2026-11-18: ADR-090's amendment (#632), the shared list table: a
+  list's header stays under the top bar on a window tall enough, a number
+  column is as wide as its figures, and a table too wide scrolls sideways
+  in a named box with its name pinned: MC-1567 and MC-1568 added.
+- 2026-11-18: ADR-090's amendment (#632), Inventory's and Items' lists
+  on the shared table, and a sort pressed from a header that stays
+  bringing the list's first row under it: MC-1569 and MC-1570 added.
+- 2026-11-18: ADR-090's amendment (#632), Orders, Invoices, Credit notes
+  and Returns on the shared table: MC-1571 added.
+- 2026-11-18: ADR-090's amendment (#632), Production, Partners, Price
+  lists, Licences and Stock value on the shared table: MC-1572 added.
+- 2026-11-18: ADR-090's amendment (#632), Members, Roles, the audit log,
+  Your activity, Tax codes and Exchange rates on the shared table:
+  MC-1573 added.
+- 2026-11-18: ADR-090's amendment (#632), Your devices' Recent activity
+  on the shared table: MC-1574 added.
+- 2026-11-18: ADR-090's amendment (#632), a control in a header that
+  stays, reached by Tab, leaves the page where it is: MC-1569.
+- 2026-11-18: ADR-090's amendment (#632), E12a: a row's Actions pinned at
+  the end of a table too wide while it and the name take no more than
+  half the box, an edge on each side only while columns lie under it:
+  MC-1575 added.

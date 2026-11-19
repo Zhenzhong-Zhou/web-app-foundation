@@ -330,6 +330,7 @@
   "components.expiry.expired": "{days, plural, one {Expired # day ago} other {Expired # days ago}}",
   "components.expiry.inDays": "{days, plural, =0 {Expires today} one {Expires in # day} other {Expires in # days}}",
   "components.formError.label": "Error",
+  "components.listTable.scrollsSideways": "{table}, scrolls sideways",
   "components.loadMore": "Load more",
   "components.loadMore.count": "Show {count} more",
   "components.loadMore.failed": "{count, select, 0 {The next page could not be loaded.} other {The next {count} could not be loaded.}}",

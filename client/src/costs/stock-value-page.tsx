@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -24,9 +22,12 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ActionsHeader } from '../components/actions-header';
 import { ExportButton } from '../components/export-button';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { LotLink } from '../components/lot-link';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
@@ -245,116 +246,110 @@ export function StockValuePage() {
                 })}
               </Alert>
             ) : (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
+              <ListTable
+                label={intl.formatMessage({
+                  id: 'costs.waiting',
+                  defaultMessage: 'Waiting for a cost',
+                })}
+                size="small"
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.lot',
+                        defaultMessage: 'Lot',
+                      })}
+                    </TableCell>
+                    <TableCell {...NUMBER_COLUMN}>
+                      {intl.formatMessage({
+                        id: 'inventory.quantity',
+                        defaultMessage: 'Quantity',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.why',
+                        defaultMessage: 'Why',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'costs.since',
+                        defaultMessage: 'Since',
+                      })}
+                    </TableCell>
+                    <ActionsHeader align="right" />
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {waiting.entries?.map((entry) => (
+                    <TableRow key={entry.id}>
                       <TableCell>
-                        {intl.formatMessage({
-                          id: 'inventory.item',
-                          defaultMessage: 'Item',
-                        })}
+                        {/* The name first, its code grey, as every list
+                            of items reads (#296; the design language's
+                            Rows). */}
+                        <NameAndCode
+                          name={itemName(entry.productName, entry.variantName)}
+                          code={entry.sku}
+                          type={entry.type}
+                          coverFileId={entry.coverFileId}
+                          to={`/items/${entry.productId}`}
+                        />
                       </TableCell>
                       <TableCell>
-                        {intl.formatMessage({
-                          id: 'inventory.lot',
-                          defaultMessage: 'Lot',
-                        })}
+                        {entry.lotId && entry.lotCode ? (
+                          <LotLink id={entry.lotId} code={entry.lotCode} />
+                        ) : (
+                          NO_VALUE
+                        )}
                       </TableCell>
                       <TableCell align="right">
-                        {intl.formatMessage({
-                          id: 'inventory.quantity',
-                          defaultMessage: 'Quantity',
-                        })}
+                        {displayQuantity(entry.quantity)}
                       </TableCell>
-                      <TableCell>
-                        {intl.formatMessage({
-                          id: 'inventory.why',
-                          defaultMessage: 'Why',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {intl.formatMessage({
-                          id: 'costs.since',
-                          defaultMessage: 'Since',
-                        })}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        aria-label={intl.formatMessage({
-                          id: 'orders.lines.actions',
-                          defaultMessage: 'Actions',
-                        })}
-                      />
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {waiting.entries?.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>
-                          {/* The name first, its code grey, as every list
-                              of items reads (#296; the design language's
-                              Rows). */}
-                          <NameAndCode
-                            name={itemName(
-                              entry.productName,
-                              entry.variantName,
-                            )}
-                            code={entry.sku}
-                            type={entry.type}
-                            coverFileId={entry.coverFileId}
-                            to={`/items/${entry.productId}`}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {entry.lotId && entry.lotCode ? (
-                            <LotLink id={entry.lotId} code={entry.lotCode} />
-                          ) : (
-                            NO_VALUE
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          {displayQuantity(entry.quantity)}
-                        </TableCell>
-                        <TableCell>{whyWaiting(entry, intl)}</TableCell>
-                        <TableCell>{formatDate(entry.createdAt)}</TableCell>
-                        <TableCell align="right">
-                          {entry.reason === 'production' &&
-                          entry.referenceId ? (
+                      <TableCell>{whyWaiting(entry, intl)}</TableCell>
+                      <TableCell>{formatDate(entry.createdAt)}</TableCell>
+                      <TableCell align="right">
+                        {entry.reason === 'production' && entry.referenceId ? (
+                          <Button
+                            variant="text"
+                            size="small"
+                            component={RouterLink}
+                            to={`/production/${entry.referenceId}`}
+                          >
+                            {intl.formatMessage({
+                              id: 'costs.openRun',
+                              defaultMessage: 'Open run',
+                            })}
+                          </Button>
+                        ) : (
+                          canUpdate &&
+                          currency &&
+                          takesACost(entry) && (
                             <Button
                               variant="text"
                               size="small"
-                              component={RouterLink}
-                              to={`/production/${entry.referenceId}`}
+                              onClick={openDialog(() => setCosting(entry))}
                             >
                               {intl.formatMessage({
-                                id: 'costs.openRun',
-                                defaultMessage: 'Open run',
+                                id: 'costs.set.title',
+                                defaultMessage: 'Set cost',
                               })}
                             </Button>
-                          ) : (
-                            canUpdate &&
-                            currency &&
-                            takesACost(entry) && (
-                              <Button
-                                variant="text"
-                                size="small"
-                                onClick={openDialog(() => setCosting(entry))}
-                              >
-                                {intl.formatMessage({
-                                  id: 'costs.set.title',
-                                  defaultMessage: 'Set cost',
-                                })}
-                              </Button>
-                            )
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                          )
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </ListTable>
             )}
 
             <LoadMoreButton
@@ -381,92 +376,100 @@ export function StockValuePage() {
                 })}
               </Alert>
             ) : (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        {intl.formatMessage({
-                          id: 'inventory.item',
-                          defaultMessage: 'Item',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {intl.formatMessage({
-                          id: 'inventory.lot',
-                          defaultMessage: 'Lot',
-                        })}
-                      </TableCell>
-                      <TableCell align="right">
-                        {intl.formatMessage({
-                          id: 'inventory.quantity',
-                          defaultMessage: 'Quantity',
-                        })}
-                      </TableCell>
-                      <TableCell align="right">
-                        {intl.formatMessage({
-                          id: 'costs.unitCost',
-                          defaultMessage: 'Unit cost',
-                        })}
-                      </TableCell>
-                      <TableCell align="right">
-                        {intl.formatMessage({
-                          id: 'costs.value',
-                          defaultMessage: 'Value',
-                        })}
-                      </TableCell>
-                      <TableCell
-                        aria-label={intl.formatMessage({
-                          id: 'common.status',
-                          defaultMessage: 'Status',
-                        })}
-                      />
-                    </TableRow>
-                  </TableHead>
+              <ListTable
+                label={intl.formatMessage({
+                  id: 'costs.byItemAndLot',
+                  defaultMessage: 'By item and lot',
+                })}
+                size="small"
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.lot',
+                        defaultMessage: 'Lot',
+                      })}
+                    </TableCell>
+                    <TableCell {...NUMBER_COLUMN}>
+                      {intl.formatMessage({
+                        id: 'inventory.quantity',
+                        defaultMessage: 'Quantity',
+                      })}
+                    </TableCell>
+                    <TableCell {...NUMBER_COLUMN}>
+                      {intl.formatMessage({
+                        id: 'costs.unitCost',
+                        defaultMessage: 'Unit cost',
+                      })}
+                    </TableCell>
+                    <TableCell {...NUMBER_COLUMN}>
+                      {intl.formatMessage({
+                        id: 'costs.value',
+                        defaultMessage: 'Value',
+                      })}
+                    </TableCell>
+                    {/* As wide as its chip, as a number column is: a
+                        text column it is not, and taking the rest it
+                        left the figures mid-table (E1). */}
+                    <TableCell
+                      sx={{ width: '1%' }}
+                      aria-label={intl.formatMessage({
+                        id: 'common.status',
+                        defaultMessage: 'Status',
+                      })}
+                    />
+                  </TableRow>
+                </TableHead>
 
-                  <TableBody>
-                    {valuation?.pools.map((pool) => (
-                      <TableRow key={`${pool.variantId}:${pool.lotId ?? ''}`}>
-                        <TableCell>
-                          <Reference>{pool.sku}</Reference>
-                        </TableCell>
-                        <TableCell>
-                          {pool.lotId ? (
-                            <Link
-                              component={RouterLink}
-                              to={`/lots/${pool.lotId}`}
-                            >
-                              {pool.lotCode}
-                            </Link>
-                          ) : (
-                            NO_VALUE
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          {displayQuantity(pool.quantity)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatUnitCost(pool.unitCost, currency)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatMoney(pool.value, currency)}
-                        </TableCell>
-                        <TableCell>
-                          {pool.provisional && (
-                            <StatusChip
-                              tone="warning"
-                              label={intl.formatMessage({
-                                id: 'costs.provisional',
-                                defaultMessage: 'Provisional',
-                              })}
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                <TableBody>
+                  {valuation?.pools.map((pool) => (
+                    <TableRow key={`${pool.variantId}:${pool.lotId ?? ''}`}>
+                      <TableCell>
+                        <Reference>{pool.sku}</Reference>
+                      </TableCell>
+                      <TableCell>
+                        {pool.lotId ? (
+                          <Link
+                            component={RouterLink}
+                            to={`/lots/${pool.lotId}`}
+                          >
+                            {pool.lotCode}
+                          </Link>
+                        ) : (
+                          NO_VALUE
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        {displayQuantity(pool.quantity)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {formatUnitCost(pool.unitCost, currency)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {formatMoney(pool.value, currency)}
+                      </TableCell>
+                      <TableCell>
+                        {pool.provisional && (
+                          <StatusChip
+                            tone="warning"
+                            label={intl.formatMessage({
+                              id: 'costs.provisional',
+                              defaultMessage: 'Provisional',
+                            })}
+                          />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </ListTable>
             )}
           </Paper>
         </>

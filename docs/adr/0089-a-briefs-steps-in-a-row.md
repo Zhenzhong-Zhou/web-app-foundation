@@ -1375,3 +1375,14 @@ checked as before. On `main`, or with no branch checked out, it
 refuses, writing nothing and naming the command that starts a branch.
 The planning skill, its `reference/brief.md` and `docs/engineering.md`'s
 Process name the same folder.
+
+## Amendment (November 2026) — the burn-in by a run budget (#516)
+
+On 18 November 2026, with [ADR-090](0090-the-design-language.md)'s
+amendment of that day (R13), CI's burn-in in *Decision — a new test
+proved before its commit, and burned in by CI* kept one selection,
+`--only-changed`, and shared a budget of 750 runs among its tests, each
+running `clamp(floor(750 / tests), 1, 5)` times; the second selection,
+the specs a pull request changes itself past 150 tests, went. The job's
+summary prints the tests × repeats, the runs on its shard and the
+minutes they took. That text stays as history.

@@ -47,6 +47,12 @@ export interface SignedInRoute {
   /** As the router matches it: `/orders/:id`. */
   path: string;
   page: ComponentType;
+  /**
+   * Home, or a page that is one form: `lg`'s 1,200 px frame, centred where
+   * the others' 1,600 px one is (layout/frame.ts; ADR-090, amended
+   * November 2026). This list is the only place a page's width is set.
+   */
+  narrower?: true;
 }
 
 /**
@@ -56,8 +62,8 @@ export interface SignedInRoute {
  * than opening Help on nothing (ADR-079).
  */
 export const SIGNED_IN_ROUTES: SignedInRoute[] = [
-  { path: '/', page: HomePage },
-  { path: '/account', page: AccountPage },
+  { path: '/', page: HomePage, narrower: true },
+  { path: '/account', page: AccountPage, narrower: true },
   { path: '/account/sessions', page: SessionsPage },
   { path: '/account/activity', page: YourActivityPage },
   { path: '/people', page: PeoplePage },
@@ -68,7 +74,7 @@ export const SIGNED_IN_ROUTES: SignedInRoute[] = [
   { path: '/settings/roles/:id', page: RolePage },
   { path: '/settings/roles/:id/edit', page: EditRolePage },
   { path: '/audit', page: AuditPage },
-  { path: '/settings/organization', page: OrganizationPage },
+  { path: '/settings/organization', page: OrganizationPage, narrower: true },
   { path: '/settings/tax-codes', page: TaxCodesPage },
   { path: '/settings/exchange-rates', page: ExchangeRatesPage },
   { path: '/settings/categories', page: CategoriesPage },

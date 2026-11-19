@@ -2,12 +2,15 @@ import { type RefObject, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { MAIN_CONTENT_ID } from '../layout/skip-link';
+import { barHeight } from '../layout/use-bar-height';
 
 /**
  * A link to a part of a page, its address's `hash`: once that part is
- * `ready`, it scrolls to where the page's content begins, under the bar,
- * and its heading takes focus, as a link to a part of a page gives it. Once
- * per arrival, never again on a later read of the page.
+ * `ready`, it scrolls to where the page's content begins, the page's own
+ * room under the bar, and its heading takes focus, as a link to a part of a
+ * page gives it. Once per arrival, never again on a later read of the page.
+ * The bar's height is read from `--bar-height`, its own measure on the root
+ * (useBarHeight), as everything that stays under the bar reads it.
  */
 export function useArrival(
   hash: string,
@@ -27,8 +30,9 @@ export function useArrival(
     if (!part || !main) return;
     window.scrollTo({
       top:
+        window.scrollY +
         part.getBoundingClientRect().top -
-        main.getBoundingClientRect().top -
+        barHeight() -
         parseFloat(getComputedStyle(main).paddingTop),
     });
     heading.current?.focus({ preventScroll: true });

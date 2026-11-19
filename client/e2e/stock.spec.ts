@@ -12,7 +12,13 @@ import {
   uniqueEmail,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
-import { orderOf, receive, reorderAt, stockScene } from './support/stock';
+import {
+  fiftyTwo,
+  orderOf,
+  receive,
+  reorderAt,
+  stockScene,
+} from './support/stock';
 
 /**
  * Inventory's Stock tab (ADR-093), row by row: each row of the ADR's
@@ -80,21 +86,6 @@ const isByCode = (url: URL) => url.pathname === '/api/v1/stock/by-code';
 const isPlaces = (url: URL) =>
   /^\/api\/v1\/stock\/by-code\/[0-9a-f-]+\/places$/.test(url.pathname);
 const isCounts = (url: URL) => url.pathname === '/api/v1/stock/by-code/counts';
-
-/** Fifty-two codes with stock, one more page's worth than the first fifty. */
-async function fiftyTwo(api: APIRequestContext): Promise<void> {
-  const shelf = await createLocation(api, { name: 'E2E Bulk' });
-  for (let start = 1; start <= 52; start += 13) {
-    await Promise.all(
-      Array.from({ length: 13 }, async (_, index) => {
-        const product = await createProduct(api, {
-          name: `E2E Page ${String(start + index).padStart(2, '0')}`,
-        });
-        await receive(api, product, shelf, '3');
-      }),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // The interaction table, row by row

@@ -4,7 +4,6 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -24,7 +23,9 @@ import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -176,7 +177,13 @@ export function ProductionOrdersPage() {
       {!!items?.length && (
         <>
           <Paper variant="outlined">
-            <Table size="small">
+            <ListTable
+              label={intl.formatMessage({
+                id: 'layout.nav.production',
+                defaultMessage: 'Production',
+              })}
+              size="small"
+            >
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -197,13 +204,13 @@ export function ProductionOrdersPage() {
                       defaultMessage: 'Status',
                     })}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell {...NUMBER_COLUMN}>
                     {intl.formatMessage({
                       id: 'inventory.quantity',
                       defaultMessage: 'Quantity',
                     })}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell {...NUMBER_COLUMN}>
                     {intl.formatMessage({
                       id: 'production.produced',
                       defaultMessage: 'Produced',
@@ -266,7 +273,7 @@ export function ProductionOrdersPage() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </ListTable>
           </Paper>
 
           <LoadMoreButton

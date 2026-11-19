@@ -28,8 +28,10 @@ import { parseArgs } from 'node:util';
 const LANGUAGES = { en: 'English', 'fr-CA': 'Français', 'zh-Hans': '中文' };
 const MODES = { light: 'Light', dark: 'Dark' };
 const WIDTHS = {
+  'wide-2560': 'Wide 2560',
   wide: 'Wide',
   desktop: 'Desktop',
+  'laptop-1366': 'Laptop 1366',
   laptop: 'Laptop',
   tablet: 'Tablet',
   'duo-open': 'Duo open',

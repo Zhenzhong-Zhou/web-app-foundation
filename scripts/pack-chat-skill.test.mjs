@@ -8,19 +8,25 @@
  * scripts/verify.sh and CI. Each failure comes from a small skill in a
  * temporary repository, its files listed as git would track them. Where
  * the system has zip and unzip, the archive is made into a temporary
- * folder, never over tmp/plan-feature.zip. The guard's tests clone a
+ * folder, never over tmp/plan-feature.skill. The guard's tests clone a
  * temporary repository whose main holds a skill, so origin is a folder
  * and never GitHub.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { folder, git, repository, write } from "./git-fixture.mjs";
-import { checkSkill, pack, uploaded, whyNotMain } from "./pack-chat-skill.mjs";
+import {
+  ARCHIVE,
+  checkSkill,
+  pack,
+  uploaded,
+  whyNotMain,
+} from "./pack-chat-skill.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILL = path.join(ROOT, ".claude/chat-skills/plan-feature");
@@ -293,7 +299,7 @@ const noZip =
 
 /** An archive's path in a temporary folder, removed when the test ends. */
 const archiveIn = (t) =>
-  path.join(folder(t, "pack-chat-skill"), "plan-feature.zip");
+  path.join(folder(t, "pack-chat-skill"), "plan-feature.skill");
 
 /** The entries an archive lists, each on its line. */
 const entriesOf = (archive) =>
@@ -316,6 +322,23 @@ test(
       entries.filter((entry) => !entry.endsWith("/")),
       uploaded(SKILL).map((file) => `plan-feature/${file}`),
     );
+  },
+);
+
+test("the pack is written to tmp/plan-feature.skill, the name claude.ai's upload asks for", () => {
+  assert.equal(path.relative(ROOT, ARCHIVE), "tmp/plan-feature.skill");
+});
+
+test(
+  "an archive named .skill is a zip that keeps that name",
+  { skip: noZip },
+  (t) => {
+    const archive = archiveIn(t);
+    assert.equal(pack(SKILL, archive).status, 0);
+    assert.deepEqual(readdirSync(path.dirname(archive)), [
+      "plan-feature.skill",
+    ]);
+    assert.equal(spawnSync("unzip", ["-tq", archive]).status, 0);
   },
 );
 

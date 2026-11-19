@@ -6,6 +6,7 @@ import {
 } from '@mui/material/styles';
 import { createElement } from 'react';
 
+import { BAR_HEIGHT_VAR, STUCK_HEADER_VAR } from '../layout/use-bar-height';
 import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
@@ -13,6 +14,7 @@ import { type Brand, DEFAULT_BRAND } from './brand-store';
 import { scrollShades } from './cut-edge';
 import { TOUCH } from './media';
 import { OptionGroup } from './option-group';
+import { paletteOf } from './palette-of';
 import { rem } from './rem';
 import {
   accentHover,
@@ -99,10 +101,6 @@ function palette(
     },
   };
 }
-
-/** The palette as CSS variables when the theme has them, else as values. */
-const paletteOf = (theme: Theme) =>
-  (theme.vars ?? theme).palette as Theme['palette'];
 
 /**
  * A chip's colour prop names a tone (ADR-055): one meaning per colour,
@@ -216,6 +214,17 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        /**
+         * One scroll margin (ADR-090, amended November 2026; WCAG 2.4.11):
+         * a control focused, or brought into view, stops below the top
+         * bar, a list's header while it sticks, and 8 px of room, never
+         * under them. `--bar-height` is the bar's own measure
+         * (useBarHeight); `--stuck-header` a list's header's height while
+         * it sticks, 0 otherwise.
+         */
+        html: {
+          scrollPaddingTop: `calc(${BAR_HEIGHT_VAR} + ${STUCK_HEADER_VAR} + 8px)`,
+        },
         // Every digit the same width, so figures line up down a column.
         body: { fontVariantNumeric: 'tabular-nums' },
         /**

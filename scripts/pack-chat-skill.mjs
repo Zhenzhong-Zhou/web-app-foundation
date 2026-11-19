@@ -3,7 +3,7 @@
  * The chat's planning skill, checked as claude.ai checks an upload, then
  * packed for it (ADR-088).
  *
- *     node scripts/pack-chat-skill.mjs            # checks, then, at main only, writes tmp/plan-feature.zip
+ *     node scripts/pack-chat-skill.mjs            # checks, then, at main only, writes tmp/plan-feature.skill
  *     node scripts/pack-chat-skill.mjs --check    # checks only, anywhere, as the Docs workflow does
  *
  * The skill is .claude/chat-skills/plan-feature/, its files the ones git
@@ -32,10 +32,12 @@
  * changes, and exits 1; so too when origin cannot be reached, since
  * then whether this is main's commit is unknown.
  *
- * The pack: tmp/plan-feature.zip, written fresh by the system's zip, run
- * from .claude/chat-skills/ so plan-feature/ is the archive's root, with
- * every file but evals.md. Upload it in claude.ai under Settings →
- * Capabilities → Skills, in place of the old one, then walk evals.md.
+ * The pack: tmp/plan-feature.skill, the file claude.ai's skill upload
+ * asks for, a zip archive under that name, written fresh by the system's
+ * zip, run from .claude/chat-skills/ so plan-feature/ is the archive's
+ * root, with every file but evals.md. Upload it in claude.ai under
+ * Settings → Capabilities → Skills, in place of the old one, then walk
+ * evals.md.
  *
  * Node's own modules only, with check-docs.mjs's. Its test, in pack-chat-skill.test.mjs, checks
  * the skill itself: `node --test scripts/`.
@@ -51,7 +53,7 @@ import { linksIn } from "./check-docs.mjs";
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS = path.join(ROOT, ".claude/chat-skills");
 const NAME = "plan-feature";
-const ARCHIVE = path.join(ROOT, `tmp/${NAME}.zip`);
+export const ARCHIVE = path.join(ROOT, `tmp/${NAME}.skill`);
 
 /** The skill's file that is walked by hand, never uploaded. */
 const EVALS = "evals.md";

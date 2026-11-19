@@ -54,5 +54,5 @@ As `brief-step`'s section 4 says: its `Model:` line, the five parts and
   summary's own.
 
 [review-step]: ../../../docs/engineering.md#the-review-step
-[models]: ../../../docs/adr/0089-a-briefs-steps-in-a-row.md#decision--the-loop-on-sonnet-the-reviews-on-opus
+[models]: ../../../docs/adr/0089-a-briefs-steps-in-a-row.md#amendment-november-2026--each-step-on-the-model-its-work-needs
 [step]: ../../agents/brief-step.md

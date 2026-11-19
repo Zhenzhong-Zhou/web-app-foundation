@@ -4,6 +4,7 @@ import { expect, test } from './fixtures';
 import {
   created,
   createLocation,
+  createPartner,
   createProduct,
   daysFromNow,
   E2E_PASSWORD,
@@ -199,6 +200,84 @@ test('at Larger, the invitation page reflows at 320px wide, signed out', async (
 
   expect(await overflowing(page)).toEqual([]);
   await context.close();
+});
+
+/**
+ * What stays under the top bar reads the bar's measured height (ADR-090,
+ * amended November 2026; #507's 41). At Larger below `lg` the bar's words
+ * make it taller than its 56 px, and an order's summary still stays 16 px
+ * under the bar's line, not under it; one scroll margin brings a control
+ * the keyboard reaches wholly below the bar, with room (WCAG 2.4.11).
+ */
+test('at Larger, an order’s summary and a control the keyboard reaches stay below the top bar', async ({
+  page,
+  freshOrg,
+}) => {
+  const partner = await createPartner(freshOrg.api, { name: 'E2E Bar Co' });
+  // Lines enough that the items run well past the summary beside them.
+  const lines = [];
+  for (let n = 1; n <= 20; n += 1) {
+    const product = await createProduct(freshOrg.api, {
+      sku: `E2E-BAR-${n}`,
+    });
+    lines.push({
+      variantId: product.variantId,
+      quantityOrdered: '1',
+      unitPrice: '1.00',
+      currency: 'CAD',
+    });
+  }
+  const { order } = await created<{ order: { id: string } }>(
+    await freshOrg.api.post('/v1/orders', {
+      data: { partnerId: partner.id, direction: 'sale', lines },
+    }),
+  );
+
+  await signInAs(page, freshOrg.api);
+  // A tablet held sideways: the summary beside the items, from `md`, and
+  // the bar's words under its icons, below `lg`.
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
+  await page.goto(`/orders/${order.id}`);
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+  const actions = page.getByRole('button', { name: /^Actions for E2E-BAR-/ });
+  await expect(actions).toHaveCount(20);
+
+  const bar = page.getByRole('banner');
+  const barFoot = async () => {
+    const box = (await bar.boundingBox())!;
+    return box.y + box.height;
+  };
+  // Taller than the 56 px the summary once assumed.
+  expect(await barFoot()).toBeGreaterThan(57);
+
+  // Scrolled down the items, the summary sits 16 px under the bar's line.
+  await page.evaluate(() => window.scrollTo(0, 400));
+  const summary = page.getByRole('complementary', { name: 'Summary' });
+  const foot = await barFoot();
+  await expect
+    .poll(async () => Math.abs((await summary.boundingBox())!.y - foot - 16))
+    .toBeLessThanOrEqual(1);
+
+  // A line's ⋮ half under the bar, the next one focused: Shift+Tab brings
+  // it wholly below the bar, with room above it: 8 px in Chromium and
+  // WebKit, which move it the least; Firefox puts it in the middle.
+  const target = actions.nth(3);
+  await actions.nth(4).focus();
+  await target.evaluate((button) => {
+    const under = document
+      .querySelector('header.MuiAppBar-root')!
+      .getBoundingClientRect();
+    const box = button.getBoundingClientRect();
+    window.scrollBy(0, box.top - under.bottom + box.height / 2);
+  });
+  expect((await target.boundingBox())!.y).toBeLessThan(foot);
+  await page.keyboard.press('Shift+Tab');
+  await expect(target).toBeFocused();
+  await expect
+    .poll(async () => (await target.boundingBox())!.y)
+    .toBeGreaterThanOrEqual(foot + 7);
+  await expect(target).toBeInViewport({ ratio: 1 });
 });
 
 /** A phone's width at Larger, from the first paint. */

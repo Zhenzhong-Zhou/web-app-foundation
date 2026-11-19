@@ -3,10 +3,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -16,6 +14,7 @@ import {
 import { useEffect, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
+import { ListTable } from '../components/list-table';
 import { api } from '../lib/api';
 import { NO_VALUE, relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -204,72 +203,76 @@ export function RecentActivity() {
 
       {!!events?.length && (
         <Paper variant="outlined">
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'account.activity.title',
+              defaultMessage: 'Recent activity',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'account.activity.what',
+                    defaultMessage: 'What',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'account.activity.browser',
+                    defaultMessage: 'Browser',
+                  })}
+                </TableCell>
+                {!phone && (
                   <TableCell>
                     {intl.formatMessage({
-                      id: 'account.activity.what',
-                      defaultMessage: 'What',
+                      id: 'account.activity.from',
+                      defaultMessage: 'From',
                     })}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'account.activity.browser',
-                      defaultMessage: 'Browser',
-                    })}
-                  </TableCell>
-                  {!phone && (
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'account.activity.from',
-                        defaultMessage: 'From',
-                      })}
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'account.activity.when',
-                      defaultMessage: 'When',
-                    })}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
+                )}
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'account.activity.when',
+                    defaultMessage: 'When',
+                  })}
+                </TableCell>
+              </TableRow>
+            </TableHead>
 
-              <TableBody>
-                {events.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell>
-                      {isKnownAction(event.action)
-                        ? intl.formatMessage(ACTION_LABELS[event.action])
-                        : event.action}
-                      {phone && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: 'text.secondary',
-                            overflowWrap: 'anywhere',
-                          }}
-                        >
-                          {event.ip ?? NO_VALUE}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {browserOf(event.userAgent) ??
-                        intl.formatMessage({
-                          id: 'account.activity.otherBrowser',
-                          defaultMessage: 'Other',
-                        })}
-                    </TableCell>
-                    {!phone && <TableCell>{event.ip ?? NO_VALUE}</TableCell>}
-                    <TableCell>{relativeTime(event.createdAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+            <TableBody>
+              {events.map((event) => (
+                <TableRow key={event.id}>
+                  <TableCell>
+                    {isKnownAction(event.action)
+                      ? intl.formatMessage(ACTION_LABELS[event.action])
+                      : event.action}
+                    {phone && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {event.ip ?? NO_VALUE}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {browserOf(event.userAgent) ??
+                      intl.formatMessage({
+                        id: 'account.activity.otherBrowser',
+                        defaultMessage: 'Other',
+                      })}
+                  </TableCell>
+                  {!phone && <TableCell>{event.ip ?? NO_VALUE}</TableCell>}
+                  <TableCell>{relativeTime(event.createdAt)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </ListTable>
         </Paper>
       )}
     </Stack>

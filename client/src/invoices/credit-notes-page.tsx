@@ -3,10 +3,8 @@ import {
   Link,
   Paper,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -19,6 +17,7 @@ import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
@@ -141,79 +140,79 @@ export function CreditNotesPage() {
                   })}
             </EmptyState>
           ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.number',
-                        defaultMessage: 'Number',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.invoice',
-                        defaultMessage: 'Invoice',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.customer',
-                        defaultMessage: 'Customer',
-                      })}
-                    </TableCell>
-                    <SortHeader label={creditDate} {...header('creditDate')} />
-                    <SortHeader
-                      align="right"
-                      label={amount}
-                      {...header('total')}
-                    />
-                    <TableCell />
-                  </TableRow>
-                </TableHead>
+            <ListTable
+              label={intl.formatMessage({
+                id: 'invoices.creditNotes',
+                defaultMessage: 'Credit notes',
+              })}
+              size="small"
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.invoice',
+                      defaultMessage: 'Invoice',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.customer',
+                      defaultMessage: 'Customer',
+                    })}
+                  </TableCell>
+                  <SortHeader label={creditDate} {...header('creditDate')} />
+                  <SortHeader number label={amount} {...header('total')} />
+                  <TableCell />
+                </TableRow>
+              </TableHead>
 
-                <TableBody>
-                  {loading && <PlaceholderRows columns={6} />}
-                  {rows?.map((row) => (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Link
-                          component={RouterLink}
-                          to={`/credit-notes/${row.id}`}
-                        >
-                          {row.number}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          component={RouterLink}
-                          to={`/invoices/${row.invoiceId}`}
-                        >
-                          {row.invoiceNumber ?? NO_VALUE}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.partnerName}</TableCell>
-                      <TableCell>{formatDay(row.creditDate)}</TableCell>
-                      <TableCell align="right">
-                        {formatCredit(row.total, row.currency)}
-                      </TableCell>
-                      <TableCell>
-                        {row.isVoid && (
-                          <StatusChip
-                            tone="critical"
-                            label={intl.formatMessage({
-                              id: 'invoices.creditNote.voids',
-                              defaultMessage: 'Voids invoice',
-                            })}
-                          />
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+              <TableBody>
+                {loading && <PlaceholderRows columns={6} />}
+                {rows?.map((row) => (
+                  <TableRow key={row.id} hover>
+                    <TableCell>
+                      <Link
+                        component={RouterLink}
+                        to={`/credit-notes/${row.id}`}
+                      >
+                        {row.number}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        component={RouterLink}
+                        to={`/invoices/${row.invoiceId}`}
+                      >
+                        {row.invoiceNumber ?? NO_VALUE}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.partnerName}</TableCell>
+                    <TableCell>{formatDay(row.creditDate)}</TableCell>
+                    <TableCell align="right">
+                      {formatCredit(row.total, row.currency)}
+                    </TableCell>
+                    <TableCell>
+                      {row.isVoid && (
+                        <StatusChip
+                          tone="critical"
+                          label={intl.formatMessage({
+                            id: 'invoices.creditNote.voids',
+                            defaultMessage: 'Voids invoice',
+                          })}
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </ListTable>
           )}
         </Paper>
       )}

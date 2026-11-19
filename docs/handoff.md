@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 17 November 2026
+# web-app-foundation — handoff, 18 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,8 +13,35 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 17 November 2026:
+On 18 November 2026:
 
+- **[#632], one 1,600 px page frame and table headers that stay,**
+  [ADR-090's amendment](adr/0090-the-design-language.md) of 18
+  November, with its as-built: planned and built on 18 November on
+  `fix-632-page-frame`, 39 commits with the as-built, pull request
+  [#644], open, closing #632 and [#516]; the canvas's rows "页面宽度和表头
+  第二版 · v2" to "第四版 · v4"; its brief in the ignored
+  `tmp/fix-632-page-frame/`. Every page in one 1,600 px frame, Home,
+  Your account and Organization at 1,200, centred; one shared list
+  table on 22 lists, its header staying under the top bar; a table too
+  wide for its box scrolling sideways with its name pinned and, while
+  the two take no more than half the box, its row's Actions; one height
+  for what stays under the bar. With it: #516's burn-in scaled to a run
+  budget, and the planning skill packed as a `.skill` file. The reviews
+  found 54 and fixed 18; their issues are [#639] to [#642]; filed with
+  them, [#637] (Stock and Reorder at 1366, columns under the row,
+  `later`), [#638] (a list's count shown always, for Movements) and
+  [#643] (Linux WebKit's one flaky test, `fix-now`). Then the merge
+  (Still to do, by hand), then Movements' branch.
+- **The triage of 18 November,** after [#635]'s merge, applied as
+  proposed (its choices M and 77a to 80a): [#550] and [#602] closed, 26
+  comments, [#607] and [#608] in the Fix-ups milestone, [#604] given its
+  kind and [#534] a new `Needs:` line; 180 issues open, 21 `fix-now`,
+  103 `when-touched` and 56 `later`. [#636], filed from #635's CI, a
+  list's address write starting from the address before the last one,
+  is fixed for Stock alone (3db1aa29) and rides with Movements.
+  Movements' choices from it are in the claude.ai Project's doc of
+  Movements' brief, v6.
 - **Inventory and Movements, ADR-093** ([#587]), with
   [its ADR](adr/0093-inventory-and-movements.md): planned on 14
   November in a chat of its own, its requirements confirmed before
@@ -24,7 +51,9 @@ On 17 November 2026:
   brief in the ignored `tmp/adr-093-inventory/`; then
   `adr-093-movements`, its brief in `tmp/adr-093-movements/`, started
   after Inventory and [#632] merge. Inventory was built from 15 to 17
-  November, 119 commits with its as-built, pull request [#635], open:
+  November, 119 commits with its as-built, pull request [#635], merged
+  on 18 November as a merge commit (749b2dfc) and deployed,
+  `/api/health` saying `apiRevision: 5`:
   one rule for usable stock and one read for a code's figures; Stock as
   a row per code opening to its places and lots, and the Lot view;
   Reorder; the item's Where it stands; Items' stock from the same count
@@ -36,8 +65,8 @@ On 17 November 2026:
   ([ADR-051's as-built](adr/0051-performance.md)). The reviews found 86;
   their issues are [#606] to [#631], with [#605] from the chat. The
   as-built is in [ADR-093](adr/0093-inventory-and-movements.md), each
-  requirement marked. Still to do: step 24, the maintainer's (Still to
-  do, by hand).
+  requirement marked. Its step 24 was done on 18 November (Still to do,
+  by hand).
 - **[#531], an item's own name in the organization's language,**
   [ADR-054's amendment](adr/0054-languages.md) of 14 November, with its
   as-built: planned and built on 14 November on `fix-531-base-name`, 36
@@ -287,7 +316,8 @@ On 17 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 17 November, [#634] ([#633]), the fix
+- **The last merges:** on 18 November, [#635] (Inventory, ADR-093) as a
+  merge commit (749b2dfc); on 17 November, [#634] ([#633]), the fix
   runner's, squashed (25d31add); on 16 November, [#603] ([#602]'s API
   half), the fix runner's, squashed (c0fa8432), and Dependabot's [#600],
   [#601] and [#599], each as a merge commit; on 15 November, [#597] ([#596]), the fix
@@ -397,14 +427,20 @@ On 17 November 2026:
   November at 10:07; every copy is 11.0.5. Inventory's branch took
   `@vitejs/plugin-react` 6.3.0, `typescript-eslint` 8.72.2,
   `@aws-sdk/client-s3` 3.1165.0 and `user-event` 14.6.9, the last three
-  on 16 November. For the next branch's dependencies, each coming of
-  age, by the UTC day b8905dd7's message gives: vite 8.3.8 on 18
-  November; `@formatjs/cli` 6.19.0 and prettier 3.10.1 on 19 November;
+  on 16 November. [#632]'s branch took vite 8.3.8 and
+  `@aws-sdk/client-s3` 3.1167.0, and, by the maintainer's choice on 18
+  November, prettier 3.10.1, `@formatjs/cli` 6.19.0 and `user-event`
+  14.6.10 hours short of their 7 days, the rule waived for those three
+  alone (ADR-090's as-built). For Movements' branch, each coming of
+  age, by the UTC day b8905dd7's message gives:
   `@nestjs/cli` 12.0.13 and `@nestjs/swagger` 12.1.2 on 20 November;
   msw 3.0.6, `eslint-plugin-react-refresh` 0.5.8 and nodemailer 10.6.0
   on 22 November; Nest 12.5.1, `@nestjs/throttler` 6.8.0,
   `@aws-sdk/client-s3` 3.1170.0, Sentry 11.13.0, `user-event` 14.6.12
-  and `typescript-eslint` 8.73.0 on 23 November. Held: `@playwright/test` at 1.64.1, pinned, its Firefox 159
+  and `typescript-eslint` 8.73.0 on 23 November; `@playwright/test`
+  1.65.1 on 20 November, taken only if [#521]'s seven pages pass in the
+  Linux image (`scripts/verify.sh --linux-browsers`). Held:
+  `@playwright/test` at 1.64.1, pinned, its Firefox 159
   crashing in the Linux image ([#521]); `jsdom` at 30.1.3, pinned, 17
   unit tests failing on 31 ([#522]); TypeScript 7 ([#336]); fontkit 3,
   outside its range.
@@ -460,34 +496,33 @@ On 17 November 2026:
 
 ## Still to do, by hand
 
-- **Before and after [#635]'s merge,** ADR-093's step 24, in this
-  order:
-  - the every-browser run by hand on the branch's last commit,
-    `gh workflow run ci.yml --ref adr-093-inventory`, until "CI — every
-    browser, by hand" passes;
-  - the budgets on GitHub's runners at small, about 75 minutes, each
-    median inside its budget:
-    `gh workflow run perf.yml --ref adr-093-inventory -f mode=budgets -f scale=small`;
-  - MC-316 and MC-317, and the receiving walk-through, MC-310, by hand;
-    the eight pictures dragged into the pull request's table; its Claude
-    Code Review comment read; its code scanning alerts read, none open
-    (review 82):
-    `gh api 'repos/{owner}/{repo}/code-scanning/alerts?state=open&ref=refs/pull/635/head'`;
-  - the merge, as a merge commit, from the terminal; no migration came;
-  - the deploy's checks: `/api/health` saying `apiRevision: 5`, and a
-    tab left on Inventory across the deploy told to reload (MC-3424);
-  - the planning skill packed from `main` and uploaded, since the
-    as-built changed its brief's reference;
-  - `/triage` over `stock`, `products`, `home`, `orders`, `search` and
-    `ui`;
-  - before `scripts/clean-local.sh --yes`, what Movements' branch reads
-    in `tmp/adr-093-inventory/` and `tmp/adr-093/` (the boards' copies,
-    the walkthroughs, ADR-091's panel reports) moved into
-    `tmp/adr-093-movements/`; then the prune and the clean-up, and
-    Project knowledge re-synced;
-  - then [#632], its own pull request, then Movements' branch. Next for
-    the fix runner: [#607] and [#608], `fix-now` from Inventory's
-    reviews; [#602]'s browser half waits for Node.
+- **Before and after [#644]'s merge** ([#632]): every browser by
+  `gh workflow run ci.yml --ref fix-632-page-frame`, until "CI — every
+  browser, by hand" passes, its one known miss [#643]; Stock scrolled
+  until its header sticks, then narrowed until it scrolls sideways, on
+  an Android phone in WeChat, in 360 or QQ in 极速模式 on Windows and on
+  an iPhone on iOS 16.4 or later; MC-1565 to MC-1575 walked; the
+  pictures in the pull request's table; #644's burn-in summary read
+  for #516; code scanning, none open. Then the merge, as a merge commit;
+  the deploy's checks, `/api/health`, and Stock and Home at 1920 on the
+  live site; `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`,
+  then `--yes`; Project knowledge re-synced; and `/triage` over `ui`,
+  `ops` and `docs`: comments on [#159], [#565] and [#616], and [#507]'s
+  41 ticked.
+- **After [#635]'s merge,** done on 18 November, ADR-093's step 24:
+  the every-browser run and the budgets at small on the branch, passing;
+  MC-310, MC-316 and MC-317 by hand; the eight pictures in the pull
+  request; code scanning, none open; the merge, as a merge commit; the
+  deploy's checks, `/api/health` saying `apiRevision: 5` and the new
+  Inventory on the live site (MC-3424); the planning skill packed from
+  `main` and uploaded; `/triage` (Where things stand); the prune and the
+  clean-up, which removed `tmp/adr-093/` before its board copies and
+  ADR-091's panel reports were moved, so Movements reads those findings
+  from the issues that hold them; Project knowledge re-synced. Still to
+  do: the first weekly Performance run to time #635's reads on `main`,
+  Monday 23 November, its result read here. Next: [#644]'s merge, then
+  Movements' branch; for the fix runner, [#607] and
+  [#608], `fix-now` from Inventory's reviews.
 - **After [#595]'s merge,** done on 15 November: the merge, as a merge
   commit, from the terminal; Dependabot alerts 11 and 12 seen fixed; the
   deploy; [#596], the account test that read the page while Your access
@@ -699,14 +734,16 @@ request or a set of them:
       the direction [#587]: designed together on 14 November in a chat of
       their own and two canvas rows, then built as two branches,
       Inventory first, each from `main` after the one before merged:
-      Inventory as [#635]; then [#632], one 1,600 px page frame with
-      table headers that stay, so Movements' boards are drawn in it; then
-      Movements, its brief checked against Inventory's as-built at its
-      first step. From the
-      ignored `tmp/adr-093/from-adr-091/`, ADR-091's panel's reports,
-      Movements' board ([#470]) and Inventory's findings: [#472]'s 6 (the name first, its code grey
-      under it), 18, 25 and 37, with [#459]'s and [#471]'s, and [#590], Items' stock badges; each person
-      choosing their main action and More's order, later; then [#310]'s
+      Inventory as [#635], merged on 18 November; then [#632], one
+      1,600 px page frame with table headers that stay, built on 18
+      November as [#644], so Movements' boards are drawn in it; then
+      Movements, its brief checked against Inventory's as-built and
+      #632's at its first step, reading ADR-091's panel's findings from
+      the issues that hold them, [#470], [#472], [#459] and [#481], and
+      taking [#638] with [#473]'s Back after Show more, [#640], the
+      dependencies its Dates name with [#521]'s check, and the
+      Performance run of 23 November; each person choosing their main
+      action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac; then Orders,
       built to the design language, its findings from ADR-091's panel,
       [#159] among them;
@@ -971,11 +1008,12 @@ Not repeated here; each list has one home:
 [#468]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/468
 [#469]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/469
 [#470]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/470
-[#471]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/471
 [#472]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/472
+[#473]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/473
 [#476]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/476
 [#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
+[#481]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/481
 [#483]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/483
 [#486]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/486
 [#487]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/487
@@ -1007,6 +1045,7 @@ Not repeated here; each list has one home:
 [#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
 [#548]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/548
+[#550]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/550
 [#551]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/551
 [#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552
 [#553]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/553
@@ -1018,6 +1057,7 @@ Not repeated here; each list has one home:
 [#559]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/559
 [#560]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/560
 [#561]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/561
+[#565]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/565
 [#567]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/567
 [#568]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/568
 [#569]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/569
@@ -1043,12 +1083,22 @@ Not repeated here; each list has one home:
 [#601]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/601
 [#602]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/602
 [#603]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/603
+[#604]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/604
 [#605]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/605
 [#606]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/606
 [#607]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/607
 [#608]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/608
+[#616]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/616
 [#631]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/631
 [#632]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/632
 [#633]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/633
 [#634]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/634
 [#635]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/635
+[#636]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/636
+[#637]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/637
+[#638]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/638
+[#639]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/639
+[#640]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/640
+[#642]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/642
+[#643]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/643
+[#644]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/644

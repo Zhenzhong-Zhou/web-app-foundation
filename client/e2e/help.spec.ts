@@ -1,16 +1,6 @@
-import { readFileSync } from 'node:fs';
-
-import type { APIRequestContext } from '@playwright/test';
-
 import { expect, test } from './fixtures';
-import {
-  created,
-  createLocation,
-  createPartner,
-  createProduct,
-  daysFromNow,
-  signInAs,
-} from './support/api';
+import { signInAs } from './support/api';
+import { everyPage } from './support/every-page';
 
 /**
  * Help (ADR-079): the page's guide in a panel from the top bar, following
@@ -240,24 +230,6 @@ test('a dialog opened beside Help leaves Help readable above its dimming', async
 const HELP_PANEL_ID = 'help-panel';
 
 /**
- * The router's own list, SIGNED_IN_ROUTES in src/routes.ts, read from its
- * source: importing it here would bring every page, which this project
- * does not compile.
- */
-function signedInPaths(): string[] {
-  const source = readFileSync(
-    new URL('../src/routes.ts', import.meta.url),
-    'utf8',
-  );
-  const list = source.slice(source.indexOf('SIGNED_IN_ROUTES'));
-  const paths = [...list.matchAll(/\{ path: '([^']+)', page: \w+ \}/g)].map(
-    ([, path]) => path,
-  );
-  if (paths.length < 30) throw new Error('SIGNED_IN_ROUTES not read');
-  return paths;
-}
-
-/**
  * Every page with Help open on a small laptop, 1280 × 800 (ADR-079): the
  * rail folds and the page takes the width beside Help, so nothing scrolls
  * sideways, the title row's actions are in view and not under Help, and a
@@ -269,27 +241,12 @@ test('every page keeps its width beside Help at 1280 × 800', async ({
   freshOrg,
 }) => {
   test.setTimeout(240_000);
-  const ids = await seedEveryPage(freshOrg.api);
-  const urls: Record<string, string> = {
-    '/people/:userId': `/people/${ids.userId}`,
-    '/settings/price-lists/:id': `/settings/price-lists/${ids.priceListId}`,
-    '/items/:id': `/items/${ids.productId}`,
-    '/lots/:id': `/lots/${ids.lotId}`,
-    '/partners/:id': `/partners/${ids.partnerId}`,
-    '/orders/:id': `/orders/${ids.orderId}`,
-    '/invoices/:id': `/invoices/${ids.invoiceId}`,
-    '/credit-notes/:id': `/credit-notes/${ids.creditNoteId}`,
-    '/return-authorizations/:id': `/return-authorizations/${ids.rmaId}`,
-    '/production/:id': `/production/${ids.runId}`,
-    '/settings/roles/:id': `/settings/roles/${ids.roleId}`,
-    '/settings/roles/:id/edit': `/settings/roles/${ids.roleId}/edit`,
-  };
+  const pages = await everyPage(freshOrg.api);
   await signInAs(page, freshOrg.api);
   await page.setViewportSize({ width: 1280, height: 800 });
 
   const problems: string[] = [];
-  for (const path of signedInPaths()) {
-    const url = path.includes(':') ? urls[path] : path;
+  for (const { path, url } of pages) {
     if (!url) {
       problems.push(`${path}: no record to open it with`);
       continue;
@@ -406,161 +363,4 @@ function besideHelp(panelId: string): string[] {
   }
   (document.activeElement as HTMLElement | null)?.blur();
   return problems;
-}
-
-/**
- * A record for each page that opens one: an order, invoiced, issued,
- * credited and returned; a lot; a run; a price list; and the Owner on People.
- */
-async function seedEveryPage(api: APIRequestContext) {
-  const { user } = await created<{ user: { id: string } }>(
-    await api.get('/v1/auth/me'),
-  );
-  const product = await createProduct(api, { tracksLots: true });
-  const location = await createLocation(api);
-  const partner = await createPartner(api);
-  // What issuing an invoice asks for: where the seller is, and where the
-  // customer is billed.
-  for (const response of [
-    await api.put('/v1/organization/address', {
-      data: { line1: '100 Main St', city: 'Vancouver', country: 'CA' },
-    }),
-    await api.post(`/v1/partners/${partner.id}/addresses`, {
-      data: {
-        line1: '9 Harbour Rd',
-        country: 'CA',
-        isBilling: true,
-        isShipping: true,
-      },
-    }),
-  ]) {
-    expect(response.ok(), await response.text()).toBeTruthy();
-  }
-
-  const { movement } = await created<{ movement: { lotId: string } }>(
-    await api.post('/v1/stock/movements', {
-      data: {
-        variantId: product.variantId,
-        toLocationId: location.id,
-        quantity: '24',
-        reason: 'receipt',
-        lot: { code: 'BESIDE-1', expiresAt: daysFromNow(200) },
-      },
-    }),
-  );
-
-  const { order } = await created<{
-    order: { id: string; lines: { id: string }[] };
-  }>(
-    await api.post('/v1/orders', {
-      data: {
-        partnerId: partner.id,
-        direction: 'sale',
-        lines: [
-          {
-            variantId: product.variantId,
-            quantityOrdered: '10',
-            unitPrice: '12.50',
-            currency: 'CAD',
-          },
-        ],
-      },
-    }),
-  );
-  const confirmed = await api.patch(`/v1/orders/${order.id}`, {
-    data: { status: 'confirmed' },
-  });
-  expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
-  const { taxCode } = await created<{ taxCode: { id: string } }>(
-    await api.post('/v1/tax-codes', {
-      data: { name: 'Exempt', components: [] },
-    }),
-  );
-  const { shipment } = await created<{ shipment: { id: string } }>(
-    await api.post(`/v1/orders/${order.id}/shipments`, {
-      data: {
-        fromLocationId: location.id,
-        lines: [{ lineId: order.lines[0].id, quantity: '6' }],
-      },
-    }),
-  );
-  const { invoice } = await created<{
-    invoice: { id: string; lines: { id: string; orderLineId: string }[] };
-  }>(
-    await api.post('/v1/invoices', {
-      data: { shipmentId: shipment.id, taxCodeId: taxCode.id },
-    }),
-  );
-  await created(
-    await api.post(`/v1/invoices/${invoice.id}/issue`, {
-      data: { invoiceDate: daysFromNow(0) },
-    }),
-  );
-  const { creditNote } = await created<{ creditNote: { id: string } }>(
-    await api.post(`/v1/invoices/${invoice.id}/credit-notes`, {
-      data: {
-        lines: [{ invoiceLineId: invoice.lines[0].id, quantity: '1' }],
-        reason: 'One arrived cracked',
-        creditDate: daysFromNow(0),
-      },
-    }),
-  );
-  const { returnAuthorization } = await created<{
-    returnAuthorization: { id: string };
-  }>(
-    await api.post('/v1/return-authorizations', {
-      data: {
-        orderId: order.id,
-        invoiceId: invoice.id,
-        reason: 'Cracked in transit',
-        expectsGoods: false,
-        lines: [
-          {
-            lineId: invoice.lines[0].orderLineId,
-            quantity: '1',
-            resolution: 'credit',
-          },
-        ],
-      },
-    }),
-  );
-
-  const { productionOrder } = await created<{
-    productionOrder: { id: string };
-  }>(
-    await api.post('/v1/production-orders', {
-      data: {
-        outputVariantId: product.variantId,
-        locationId: location.id,
-        quantityPlanned: '50',
-        reference: 'BESIDE-RUN',
-      },
-    }),
-  );
-  const { priceList } = await created<{ priceList: { id: string } }>(
-    await api.post('/v1/price-lists', {
-      data: { name: 'Retail', direction: 'sale', currency: 'CAD' },
-    }),
-  );
-
-  // A role made here, which its page and the editor open (ADR-080).
-  const role = await created<{ id: string }>(
-    await api.post('/v1/roles', {
-      data: { name: 'Dock crew', permissions: ['stock.view'] },
-    }),
-  );
-
-  return {
-    roleId: role.id,
-    userId: user.id,
-    productId: product.id,
-    lotId: movement.lotId,
-    partnerId: partner.id,
-    orderId: order.id,
-    invoiceId: invoice.id,
-    creditNoteId: creditNote.id,
-    rmaId: returnAuthorization.id,
-    runId: productionOrder.id,
-    priceListId: priceList.id,
-  };
 }

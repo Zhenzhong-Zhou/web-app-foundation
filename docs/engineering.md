@@ -581,7 +581,8 @@ reports success.
   style fail CI.
   The full run also checks the specs every browser runs, `EVERY_ENGINE` in
   `client/playwright.config.ts`, in Firefox and in Linux WebKit:
-  `e2e/accessibility.spec.ts` and `e2e/document-refusals.spec.ts`, from
+  `e2e/accessibility.spec.ts`, `e2e/document-refusals.spec.ts`,
+  `e2e/page-frame.spec.ts` and `e2e/sign-in-return.spec.ts`, from
   one container of Playwright's Linux image in Docker
   ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
   which a pull request's CI, Chromium alone, does not; Linux WebKit's

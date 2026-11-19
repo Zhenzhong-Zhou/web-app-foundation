@@ -34,6 +34,7 @@ import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
 import { BAR } from '../layout/bar';
 import { RAIL_FOLDED_PX } from '../layout/rail';
+import { BAR_HEIGHT_VAR } from '../layout/use-bar-height';
 import { copyrightLine, useAppName } from '../lib/app-name';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -113,9 +114,9 @@ const noDialog = () => false;
  *
  * Which of the three is the window's, not the room the rail leaves at the
  * moment: the rail folds as Help opens, and someone unfolding it with Help
- * beside the page keeps Help beside it. The top bar is measured rather than
- * assumed: Help beside the page starts under it, at whatever height the
- * text size gives it.
+ * beside the page keeps Help beside it. Help beside the page starts under
+ * the top bar, at whatever height the text size gives it: the bar's own
+ * measure, `--bar-height`, which the layout sets on the root (useBarHeight).
  *
  * A dialog the page opens moves into the room beside Help, and Help stays
  * above the dialog's dimming, so the steps can still be read while they
@@ -139,21 +140,13 @@ export function HelpFrame({
   const rail = useMediaQuery(theme.breakpoints.up(BAR), { noSsr: true });
   // A new text size changes the panel's width in px: render again for it.
   useTextSize();
-  const [size, setSize] = useState(() => ({
-    height: 56,
-    viewport: window.innerWidth,
-  }));
+  const [viewport, setViewport] = useState(() => window.innerWidth);
 
   useEffect(() => {
     const element = bar.current;
     if (!element || typeof ResizeObserver === 'undefined') return;
-    // The bar's width moves with the window's, so this sees both.
-    const observer = new ResizeObserver(() =>
-      setSize({
-        height: element.offsetHeight,
-        viewport: window.innerWidth,
-      }),
-    );
+    // The bar's width moves with the window's, so this sees it.
+    const observer = new ResizeObserver(() => setViewport(window.innerWidth));
     observer.observe(element);
     return () => observer.disconnect();
   }, [bar]);
@@ -162,7 +155,7 @@ export function HelpFrame({
   const width = (WIDTH_PX / 16) * rootPx;
   const railPx = rail ? (RAIL_FOLDED_PX / 16) * rootPx : 0;
   // Whether Help would be a sheet, open or not, so it closes as one.
-  const sheet = !phone && size.viewport - railPx - width < PAGE_MIN_PX;
+  const sheet = !phone && viewport - railPx - width < PAGE_MIN_PX;
   const beside = !!help?.open && !phone && !sheet;
 
   // Watched only while Help is beside the page: every tooltip, menu and
@@ -175,16 +168,7 @@ export function HelpFrame({
 
   return (
     <>
-      {/* The bar's height, for what stays in view under it as the page
-          scrolls, as Customise Home's Done does (ADR-091). */}
-      <Box
-        sx={[
-          { '--bar-height': `${size.height}px` },
-          beside && { pr: `${width}px` },
-        ]}
-      >
-        {children}
-      </Box>
+      <Box sx={[beside && { pr: `${width}px` }]}>{children}</Box>
 
       {/* A dialog centres in the room beside Help, not under it. */}
       {beside && (
@@ -255,7 +239,7 @@ export function HelpFrame({
               }}
               sx={{
                 position: 'fixed',
-                top: size.height,
+                top: BAR_HEIGHT_VAR,
                 right: 0,
                 bottom: 0,
                 width: `min(${rem(WIDTH_PX)}, 100%)`,

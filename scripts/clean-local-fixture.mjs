@@ -89,7 +89,7 @@ const FILES = {
   "tmp/docs-tidy/notes.md": "docs-tidy's, merged by #15.\n",
   "tmp/adr-090/brief.md": "The current branch's, though #18 is adr-090's.\n",
   "tmp/someday/notes.md": "No branch's.\n",
-  "tmp/plan-feature.zip": "A file in tmp/, not a branch's folder.\n",
+  "tmp/plan-feature.skill": "A file in tmp/, not a branch's folder.\n",
   "client/screenshots/out/home.png": "Kept for a comparison.\n",
   ".env": "SESSION_SECRET=secret\n",
   "server/storage/org-1/invoice.pdf": "Kept by FILE_STORAGE=local.\n",

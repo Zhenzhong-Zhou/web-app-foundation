@@ -2,10 +2,8 @@ import {
   Link,
   Paper,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -18,6 +16,7 @@ import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
@@ -192,83 +191,78 @@ export function InvoicesPage() {
                     })}
             </EmptyState>
           ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
+            <ListTable
+              label={intl.formatMessage({
+                id: 'layout.nav.invoices',
+                defaultMessage: 'Invoices',
+              })}
+              size="small"
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.customer',
+                      defaultMessage: 'Customer',
+                    })}
+                  </TableCell>
+                  <SortHeader label={invoiceDate} {...header('invoiceDate')} />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.due',
+                      defaultMessage: 'Due',
+                    })}
+                  </TableCell>
+                  <SortHeader number label={total} {...header('total')} />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {loading && <PlaceholderRows columns={6} />}
+                {rows?.map((row) => (
+                  <TableRow key={row.id} hover>
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.number',
-                        defaultMessage: 'Number',
-                      })}
+                      <Link component={RouterLink} to={`/invoices/${row.id}`}>
+                        {row.number ??
+                          intl.formatMessage({
+                            id: 'orders.status.draft',
+                            defaultMessage: 'Draft',
+                          })}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.partnerName}</TableCell>
+                    <TableCell>
+                      {row.invoiceDate ? formatDay(row.invoiceDate) : NO_VALUE}
                     </TableCell>
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.customer',
-                        defaultMessage: 'Customer',
-                      })}
+                      {row.dueDate ? formatDay(row.dueDate) : NO_VALUE}
                     </TableCell>
-                    <SortHeader
-                      label={invoiceDate}
-                      {...header('invoiceDate')}
-                    />
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'invoices.due',
-                        defaultMessage: 'Due',
-                      })}
+                    <TableCell align="right">
+                      {/* Stored at issue; a draft's total is on its page. */}
+                      {formatMoney(row.total, row.currency)}
                     </TableCell>
-                    <SortHeader
-                      align="right"
-                      label={total}
-                      {...header('total')}
-                    />
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'common.status',
-                        defaultMessage: 'Status',
-                      })}
+                      <StatusChip
+                        tone={STATUS_TONES.invoice[row.status]}
+                        label={invoiceStatus(row.status).label}
+                      />
                     </TableCell>
                   </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {loading && <PlaceholderRows columns={6} />}
-                  {rows?.map((row) => (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Link component={RouterLink} to={`/invoices/${row.id}`}>
-                          {row.number ??
-                            intl.formatMessage({
-                              id: 'orders.status.draft',
-                              defaultMessage: 'Draft',
-                            })}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.partnerName}</TableCell>
-                      <TableCell>
-                        {row.invoiceDate
-                          ? formatDay(row.invoiceDate)
-                          : NO_VALUE}
-                      </TableCell>
-                      <TableCell>
-                        {row.dueDate ? formatDay(row.dueDate) : NO_VALUE}
-                      </TableCell>
-                      <TableCell align="right">
-                        {/* Stored at issue; a draft's total is on its page. */}
-                        {formatMoney(row.total, row.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <StatusChip
-                          tone={STATUS_TONES.invoice[row.status]}
-                          label={invoiceStatus(row.status).label}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </ListTable>
           )}
         </Paper>
       )}

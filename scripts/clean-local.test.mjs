@@ -77,7 +77,7 @@ test("--yes removes the merged branches' tmp/ folders and Playwright's, and noth
     "client/screenshots/out/home.png",
     "server/storage/org-1/invoice.pdf",
     "tmp/adr-090/brief.md",
-    "tmp/plan-feature.zip",
+    "tmp/plan-feature.skill",
     "tmp/someday/notes.md",
   ]);
 

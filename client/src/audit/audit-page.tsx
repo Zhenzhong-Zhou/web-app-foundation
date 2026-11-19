@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -24,6 +22,7 @@ import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
+import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { ReferencesWhole } from '../components/reference';
@@ -176,21 +175,22 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
+  // The page's name, its table's too.
+  const title = mine
+    ? intl.formatMessage({
+        id: 'audit.yours.title',
+        defaultMessage: 'Your activity',
+      })
+    : intl.formatMessage({
+        id: 'layout.menu.auditLog',
+        defaultMessage: 'Audit log',
+      });
+
   return (
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title={
-          mine
-            ? intl.formatMessage({
-                id: 'audit.yours.title',
-                defaultMessage: 'Your activity',
-              })
-            : intl.formatMessage({
-                id: 'layout.menu.auditLog',
-                defaultMessage: 'Audit log',
-              })
-        }
+        title={title}
         subtitle={
           mine
             ? intl.formatMessage({
@@ -334,93 +334,91 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
       {!!entries?.length && (
         <>
           <Paper variant="outlined">
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'audit.action',
-                        defaultMessage: 'Action',
-                      })}
+            <ListTable label={title} size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'audit.action',
+                      defaultMessage: 'Action',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.movements.by',
+                      defaultMessage: 'By',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.movements.when',
+                      defaultMessage: 'When',
+                    })}
+                  </TableCell>
+                  {/* Where the change came from, its address: a word of
+                      its own, since the date filter's From is a day. */}
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'audit.fromWhere',
+                      defaultMessage: 'From',
+                    })}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {entries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    {/* A floor, so on a phone the table scrolls inside its
+                        box rather than squeezing what happened into a
+                        column of single words. Codes in it stay whole,
+                        as everywhere (ADR-055). */}
+                    <TableCell sx={{ minWidth: rem(260) }}>
+                      {entry.actionName}
+                      {/* Which one. Without it the organization-wide log
+                        reads as a column of "Product updated" (ADR-038). */}
+                      {entry.resourceLabel && (
+                        <Typography
+                          component="span"
+                          variant="inherit"
+                          sx={{ fontWeight: 600 }}
+                        >
+                          {SEPARATOR}
+                          <ReferencesWhole text={entry.resourceLabel} />
+                        </Typography>
+                      )}
+                      {/* component="div": the default <p> inside a cell
+                        alongside text is invalid markup. */}
+                      {entry.details.length > 0 && (
+                        <Typography
+                          variant="caption"
+                          component="div"
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <AuditDetails details={entry.details} />
+                        </Typography>
+                      )}
                     </TableCell>
+
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'inventory.movements.by',
-                        defaultMessage: 'By',
-                      })}
+                      {/* A tombstoned actor keeps its id and loses its
+                        email (ADR-012); the row stays, which is the point. */}
+                      <Who
+                        userId={entry.actorId}
+                        name={entry.actorName}
+                        email={entry.actorEmail}
+                        photoFileId={entry.actorPhotoFileId}
+                      />
                     </TableCell>
+
                     <TableCell>
-                      {intl.formatMessage({
-                        id: 'inventory.movements.when',
-                        defaultMessage: 'When',
-                      })}
+                      <When at={entry.createdAt} />
                     </TableCell>
-                    {/* Where the change came from, its address: a word of
-                        its own, since the date filter's From is a day. */}
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'audit.fromWhere',
-                        defaultMessage: 'From',
-                      })}
-                    </TableCell>
+                    <TableCell>{entry.ip ?? NO_VALUE}</TableCell>
                   </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {entries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      {/* A floor, so on a phone the table scrolls inside its
-                          box rather than squeezing what happened into a
-                          column of single words. Codes in it stay whole,
-                          as everywhere (ADR-055). */}
-                      <TableCell sx={{ minWidth: rem(260) }}>
-                        {entry.actionName}
-                        {/* Which one. Without it the organization-wide log
-                          reads as a column of "Product updated" (ADR-038). */}
-                        {entry.resourceLabel && (
-                          <Typography
-                            component="span"
-                            variant="inherit"
-                            sx={{ fontWeight: 600 }}
-                          >
-                            {SEPARATOR}
-                            <ReferencesWhole text={entry.resourceLabel} />
-                          </Typography>
-                        )}
-                        {/* component="div": the default <p> inside a cell
-                          alongside text is invalid markup. */}
-                        {entry.details.length > 0 && (
-                          <Typography
-                            variant="caption"
-                            component="div"
-                            sx={{ color: 'text.secondary' }}
-                          >
-                            <AuditDetails details={entry.details} />
-                          </Typography>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        {/* A tombstoned actor keeps its id and loses its
-                          email (ADR-012); the row stays, which is the point. */}
-                        <Who
-                          userId={entry.actorId}
-                          name={entry.actorName}
-                          email={entry.actorEmail}
-                          photoFileId={entry.actorPhotoFileId}
-                        />
-                      </TableCell>
-
-                      <TableCell>
-                        <When at={entry.createdAt} />
-                      </TableCell>
-                      <TableCell>{entry.ip ?? NO_VALUE}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </ListTable>
           </Paper>
 
           <LoadMoreButton

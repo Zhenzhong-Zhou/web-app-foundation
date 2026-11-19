@@ -12,10 +12,8 @@ import {
   Menu,
   MenuItem,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -25,6 +23,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { ProductSummary } from '../api/types.gen';
+import { ListTable } from '../components/list-table';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
@@ -297,126 +296,131 @@ export function ItemTable({
   const allTicked = !!items?.length && tickedHere?.length === items.length;
 
   return (
-    <TableContainer>
-      <Table size="small" aria-busy={loading}>
-        <TableHead>
-          <TableRow>
+    <ListTable
+      label={intl.formatMessage({
+        id: 'layout.nav.products',
+        defaultMessage: 'Items',
+      })}
+      size="small"
+      aria-busy={loading}
+    >
+      <TableHead>
+        <TableRow>
+          {ticks && (
+            <TableCell padding="checkbox">
+              <Checkbox
+                disabled={!items?.length}
+                checked={allTicked}
+                indeterminate={!!tickedHere?.length && !allTicked}
+                onChange={() => ticks.onTickAll(!allTicked)}
+                sx={TICK_SX}
+                slotProps={{
+                  input: {
+                    'aria-label': intl.formatMessage({
+                      id: 'products.tickAll',
+                      defaultMessage: 'Select every item shown',
+                    }),
+                  },
+                }}
+              />
+            </TableCell>
+          )}
+          <SortHeader
+            label={intl.formatMessage({
+              id: 'common.name',
+              defaultMessage: 'Name',
+            })}
+            {...header('name')}
+          />
+          <SortHeader
+            label={intl.formatMessage({
+              id: 'products.category',
+              defaultMessage: 'Category',
+            })}
+            {...header('category')}
+          />
+          <SortHeader
+            number
+            label={intl.formatMessage({
+              id: 'common.onHand',
+              defaultMessage: 'On hand',
+            })}
+            {...header('stock')}
+          />
+          <DateHeader
+            dateKey={dateKey}
+            header={header(dateKey)}
+            onDate={onDate}
+          />
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {loading && <PlaceholderRows columns={ticks ? 5 : 4} />}
+        {items?.map((item, index) => (
+          <TableRow
+            key={item.id}
+            hover
+            selected={ticks?.ticked.has(item.id)}
+            // The name is the row's one way in (ADR-093 v3): the row tints
+            // under the pointer, which stays an arrow.
+            sx={{ [TOUCH]: { height: rem(44) } }}
+          >
             {ticks && (
-              <TableCell padding="checkbox">
-                <Checkbox
-                  disabled={!items?.length}
-                  checked={allTicked}
-                  indeterminate={!!tickedHere?.length && !allTicked}
-                  onChange={() => ticks.onTickAll(!allTicked)}
-                  sx={TICK_SX}
-                  slotProps={{
-                    input: {
-                      'aria-label': intl.formatMessage({
-                        id: 'products.tickAll',
-                        defaultMessage: 'Select every item shown',
-                      }),
-                    },
-                  }}
-                />
+              <TableCell padding="checkbox" data-tick>
+                <Tick item={item} ticks={ticks} />
               </TableCell>
             )}
-            <SortHeader
-              label={intl.formatMessage({
-                id: 'common.name',
-                defaultMessage: 'Name',
-              })}
-              {...header('name')}
-            />
-            <SortHeader
-              label={intl.formatMessage({
-                id: 'products.category',
-                defaultMessage: 'Category',
-              })}
-              {...header('category')}
-            />
-            <SortHeader
-              align="right"
-              label={intl.formatMessage({
-                id: 'common.onHand',
-                defaultMessage: 'On hand',
-              })}
-              {...header('stock')}
-            />
-            <DateHeader
-              dateKey={dateKey}
-              header={header(dateKey)}
-              onDate={onDate}
-            />
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {loading && <PlaceholderRows columns={ticks ? 5 : 4} />}
-          {items?.map((item, index) => (
-            <TableRow
-              key={item.id}
-              hover
-              selected={ticks?.ticked.has(item.id)}
-              // The name is the row's one way in (ADR-093 v3): the row tints
-              // under the pointer, which stays an arrow.
-              sx={{ [TOUCH]: { height: rem(44) } }}
+            <TableCell>
+              <NameAndCode
+                name={item.displayName}
+                code={codes(item)}
+                type={item.type}
+                coverFileId={item.coverFileId}
+                to={`/items/${item.id}`}
+                linkRef={firstNew?.index === index ? firstNew.ref : undefined}
+                withType={withType}
+              />
+            </TableCell>
+            <TableCell
+              sx={item.category ? undefined : { color: 'text.secondary' }}
             >
-              {ticks && (
-                <TableCell padding="checkbox" data-tick>
-                  <Tick item={item} ticks={ticks} />
-                </TableCell>
+              {category(item)}
+            </TableCell>
+            <TableCell align="right">
+              <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
+                {/* Underlined, so it reads as a link by more than its
+                    colour (WCAG 1.4.1). */}
+                <Link
+                  component={RouterLink}
+                  to={stockPath(item)}
+                  state={OFFER_BACK}
+                  underline="always"
+                  aria-label={intl.formatMessage(
+                    {
+                      id: 'products.row.stockOf',
+                      defaultMessage: '{quantity}, stock of {name}',
+                    },
+                    { quantity: onHand(item), name: item.displayName },
+                  )}
+                  // A fingertip's height on touch, so a near miss does not
+                  // open the item instead (ADR-092).
+                  sx={{ whiteSpace: 'nowrap', ...TOUCH_TARGET }}
+                >
+                  {onHand(item)}
+                </Link>
+                <NotUsable item={item} />
+                <RowStatus item={item} />
+              </Stack>
+            </TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              {formatDate(
+                dateKey === 'added' ? item.createdAt : item.updatedAt,
               )}
-              <TableCell>
-                <NameAndCode
-                  name={item.displayName}
-                  code={codes(item)}
-                  type={item.type}
-                  coverFileId={item.coverFileId}
-                  to={`/items/${item.id}`}
-                  linkRef={firstNew?.index === index ? firstNew.ref : undefined}
-                  withType={withType}
-                />
-              </TableCell>
-              <TableCell
-                sx={item.category ? undefined : { color: 'text.secondary' }}
-              >
-                {category(item)}
-              </TableCell>
-              <TableCell align="right">
-                <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
-                  {/* Underlined, so it reads as a link by more than its
-                      colour (WCAG 1.4.1). */}
-                  <Link
-                    component={RouterLink}
-                    to={stockPath(item)}
-                    state={OFFER_BACK}
-                    underline="always"
-                    aria-label={intl.formatMessage(
-                      {
-                        id: 'products.row.stockOf',
-                        defaultMessage: '{quantity}, stock of {name}',
-                      },
-                      { quantity: onHand(item), name: item.displayName },
-                    )}
-                    // A fingertip's height on touch, so a near miss does not
-                    // open the item instead (ADR-092).
-                    sx={{ whiteSpace: 'nowrap', ...TOUCH_TARGET }}
-                  >
-                    {onHand(item)}
-                  </Link>
-                  <NotUsable item={item} />
-                  <RowStatus item={item} />
-                </Stack>
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                {formatDate(
-                  dateKey === 'added' ? item.createdAt : item.updatedAt,
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </ListTable>
   );
 }
 

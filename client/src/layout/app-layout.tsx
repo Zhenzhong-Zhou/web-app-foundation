@@ -56,6 +56,7 @@ import { VersionAnnouncement } from '../version/version-announcement';
 import { useNewVersion } from '../version/version-check';
 import { BAR, BAR_SX } from './bar';
 import { BarButton } from './bar-button';
+import { frameWidth } from './frame';
 import { IdleGuard } from './idle-guard';
 import { LoadingBar } from './loading-bar';
 import { ACCOUNT_ITEMS } from './navigation';
@@ -72,6 +73,7 @@ import { RailTop } from './rail-top';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 import { UnverifiedBannerContext } from './unverified-banner-context';
+import { useBarHeight } from './use-bar-height';
 import { useMoreBelow } from './use-more-below';
 
 /** This device's choice of a folded rail. */
@@ -221,6 +223,7 @@ function Frame() {
   // Whether the page asks to confirm the address itself (ADR-079).
   const [unverifiedCovered, setUnverifiedCovered] = useState(false);
   const bar = useRef<HTMLElement>(null);
+  useBarHeight(bar);
 
   /**
    * Only to close the drawer when the window grows past the breakpoint with
@@ -723,14 +726,19 @@ function Frame() {
         {/* The page's main landmark (#121), and where the skip link puts
             focus: -1 takes it by script without adding a Tab stop, and its
             outline is left off because nothing in it is pressed. Help sits
-            over the right of it, or beside it (ADR-079). */}
+            over the right of it, or beside it (ADR-079). As wide as the
+            frame, or as a narrower page, and centred beside the rail. */}
         <HelpFrame bar={bar}>
           <Container
             component="main"
             id={MAIN_CONTENT_ID}
             tabIndex={-1}
-            maxWidth="lg"
-            sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
+            maxWidth={false}
+            sx={{
+              maxWidth: frameWidth(location.pathname),
+              py: { xs: 2, sm: 4 },
+              '&:focus': { outline: 'none' },
+            }}
           >
             <Stack spacing={3}>
               {/* First: its saves would be refused (ADR-081). */}

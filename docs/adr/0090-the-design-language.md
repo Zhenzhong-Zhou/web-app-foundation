@@ -920,3 +920,390 @@ design language's lines in the same commit:
   link brings a person there (#565 for every page).
 - **Each piece's states** gains the Actions button and the header that
   sorts.
+
+## Amendment (November 2026) — one 1,600 px page frame, and table headers that stay (#632)
+
+At 1920 × 1080 every page sat in a 1,200 px frame: a table had about
+1,150 px, about 260 px stayed empty on each side, and long item names
+wrapped onto three lines. Scrolled down a long table, its column headers
+were gone, so a reader lost which column was which. Inventory's planning
+chat chose a frame and a header that stays on 17 November 2026 (60a to
+63b, with E1 to E8, 65b not taken) and wrote them into #632. This
+amendment was planned on 18 November 2026 on `fix-632-page-frame`,
+after Inventory's merge (#635) and before Movements' branch, the
+maintainer confirming the requirements first and choosing each new
+decision as recommended. The canvas draws it in three rows:
+"页面宽度和表头 第一版 · Page width and table headers v1", the widths
+compared; "第二版 · v2", as chosen; and "第三版 · v3", where a narrower
+page sits and a table too wide for its box. No API change and no
+migration.
+
+### Requirements, as confirmed
+
+The maintainer confirmed these on 18 November 2026, before drafting,
+with the assumptions, what is not included and the questions' answers;
+the check's decisions (N1b, E9b, E10b, E11a and Ra) changed R2, R6 and
+R9 and added R17 to R19 the same day. Each names its step in the brief,
+and the as-built marks each met, changed or deferred.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | One frame for every page, 1,600 px with its gutters, one setting (60a, 63b) | At 1920 × 1080 a list page has about 68 px empty on each side; at 1366 the pictures show no change | 8, 13 |
+| R2 | A narrower page, named in one list, keeps today's 1,200 px frame, centred in the space beside the rail (60a, N1b) | Home, Your account and Organization look as today at 1366, 1920 and 2560 | 8, 13 |
+| R3 | The frame and the list of narrower pages written in the design language; a test fails on a page with a width of its own (E5) | The width test passes, and fails once on a page given a width of its own | 8, 12 |
+| R4 | The extra width goes to the text columns; a number column keeps its own width, beside its neighbours (E1) | On Stock and Reorder each number column is as wide at 1920 as at 1366 | 9, 11 |
+| R5 | Every list page's table keeps its header under the top bar while the page scrolls (61a) | A browser test scrolls Stock and finds the header's top at the bar's bottom; every list page uses the shared table | 9, 10, 11 |
+| R6 | Only on a window tall enough: 500 px from 1,200 px wide, 700 px from 900 px wide (E2 as Q1b, E9b) | Just under each height the header scrolls away; a tablet sideways, 1180 × 820, keeps it | 9, 11 |
+| R7 | The table's own header row, solid in light and dark, a line and a soft shadow only once it sticks (E3) | One set of column headers for a screen reader; the pictures at rest and stuck, in both modes | 9, 13 |
+| R8 | No focused control under the bar or the header: one scroll margin, the bar's height plus a stuck header's (E3, WCAG 2.4.11) | A browser test Shift+Tabs to a row's control under the header and finds it wholly below | 7, 9, 11 |
+| R9 | A table wider than its box scrolls sideways and its header does not stick, at any width; phones keep cards (E4 as Q3a) | A browser test with Help beside a tablet-sized window finds the sideways scroll and no sticking | 9, 11 |
+| R10 | Pictures of every page at 1366, 1920 and 2560; Home's tiles still in even rows (E6) | In the pull request's table | 6, 13 |
+| R11 | This ADR amended; the design language holds the frame, the narrower pages, the header that stays and the table too wide; its WCAG 2.4.11 line made true; "Held today in part" names #561's contrast test | `scripts/check-docs.mjs` passes | 1, 12 |
+| R12 | The design on the canvas before the code | The rows v2 and v3, drawn on 18 November | — |
+| R13 | #516: one selection, the repeats scaled to a 750-run budget, the fallback gone; the summary prints the tests × repeats and the minutes (78a, 80a) | ADR-089's line; this pull request's burn-in shows both | 4 |
+| R14 | The planning skill packed as `tmp/plan-feature.skill`, the file claude.ai's upload asks for, with its test and every line naming the zip (76a) | `node --test scripts/` passes; no line names `plan-feature.zip` | 3 |
+| R15 | Dependencies at the start and before the reviews; Playwright 1.65.1 only if #521's seven pages pass in `--linux-browsers`; typescript-eslint 8.73.0 and its minimatch overrides when of age | Two commits; otherwise the pin kept, with a comment on #521 | 2, 14 |
+| R16 | The handoff: #635 merged and deployed, its step 24, the triage of 18 November, MC-3424, Movements reading ADR-091's findings from #470, #472, #459 and #481, this branch; at the as-built, the Performance run of 23 November if it has run | The handoff says each | 1, 16 |
+| R17 | A table too wide for its box keeps its name column pinned with an edge, and its box takes keyboard focus with a name (E10b) | A browser test scrolls a table sideways and finds the name in view and the box focusable, with its name | 9, 11 |
+| R18 | Sorting from a stuck header brings the list's first row under it, focus kept on the header (E11a) | A browser test sorts from a stuck header and finds the first row under it and focus on the header | 10, 11 |
+| R19 | Everything that stays under the top bar reads the bar's height; the stuck header's colours in #561's contrast table (Ra, #507's 41) | The details layout, the role editor, Customise Home, `useArrival` and the header read `--bar-height`; the contrast row passes in light and dark | 7, 9 |
+
+- **Assumptions:**
+  - A1: the frame is the main `Container`'s width: 1,600 px, or `lg`'s
+    1,200 for a narrower page, gutters included, centred beside the
+    rail; in px, not rem (65b).
+  - A2: a narrower page says so in its route (`client/src/routes.ts`),
+    the one list the design language names; Home's own 1,140 px goes.
+  - A3: the width test is a browser test that opens each signed-in
+    route at 1920 and holds the page's width to its route's.
+  - A4: one shared table, for every list page, holds whether the table
+    fits, the header that stays, the number columns' widths, the
+    pinned name and the stuck header's share of the scroll margin; an
+    inventory step lists the list pages first.
+  - A5: when the header sticks is CSS media queries, as #567's rule
+    asks; whether a table fits is the one part measured by script.
+  - A6: only a list page's own table sticks: not a record's lines, a
+    dialog's table, or one opened inside a row (Stock's places and
+    lots).
+  - A7: the screenshot tool gains 1366 × 768 and 2560 × 1440, run by
+    name; its default run is unchanged.
+  - A8: each row of the interaction table is a browser test on Opus,
+    in a spec every browser runs (`EVERY_ENGINE`), since sticking and
+    scroll margins differ between engines.
+  - A9: the five states follow the design language's States section:
+    the header stays above the loading rows; empty and failed have no
+    table.
+  - A10: the `.skill` file is the same archive under the name the
+    upload asks for; ADR-088's text stays, with a dated line.
+  - A11: the build waits for no package.
+- **Not included:**
+  - N1: the frame growing with the text size (65b).
+  - N2: Movements' boards at 1920 (E7), the chat's first step on
+    Movements' branch.
+  - N3: moving a table's less important columns under its row, and a
+    reading width for forms: both deferred below.
+  - N4: the page's heading and its filters, which scroll away.
+  - N5: #636, which rides with Movements; #607 and #608, on the API
+    credit; #616, which waits for Reorder's own change.
+- **The questions' answers:** Q1b, 500 px tall from 1,200 px wide; Q2a,
+  Home, Your account and Organization narrower; Q3a, whether a table
+  fits decides, at any width; Q4a, the check read `docs`, `ops` and
+  `ui`, with #616.
+
+### Checked before drafting
+
+On 18 November 2026, from `scripts/adr-check.mjs 090` on
+`fix-632-page-frame` at 749b2dfc: the areas `docs`, `ops` and `ui`, and
+the issues 516, 616 and 632, 92 open issues, 62 read whole; with them,
+this ADR's Deferred lines, ADR-051's watch list and Open decisions.
+
+- **Fired, and taken here:**
+  - #516's trigger, met on #635's pull request (R13).
+  - #507's item 41, one offset for what stays under the bar (R19, Ra).
+  - #561, in part: the stuck header's row in its contrast table (R19,
+    Ra).
+  - #159, in part: a table that stays a table owes a pinned name, an
+    edge where it scrolls and a box the keyboard reaches; the shared
+    table gives all three to every list that scrolls sideways (R17,
+    E10b).
+- **Not fired, and left:**
+  - #616, Reorder squeezed beside Help at `md`, waits for Reorder's own
+    change; R17 eases it.
+  - #509 (the scroll on a change of page), #473 (Back keeping the
+    place), #544 (focus after Load more), #170's sort header label and
+    #567's other screens: other code.
+  - #636 rides with Movements; #607 and #608 run on the API credit;
+    #521's pin follows R15.
+  - The other `ui` issues touch screens this branch changes only at
+    their table's wrapper.
+  - This ADR's Deferred (a list beside its record, a hinge, real
+    people, density per person, a state machine past fifteen rows, the
+    touch check everywhere): none fired; this interaction table has
+    nine rows. ADR-051's watch and Open decisions hold nothing on
+    layout.
+- **Found while checking:**
+  - The design language's "The way back" says the top bar, a sticky
+    header, a dialog's buttons and a message leave room by one scroll
+    margin (#507's 41); no code held it. R19 builds it.
+  - E2's 700 px would have left the commonest laptop without the
+    header: a 1366 × 768 screen's browser window is about 640 to
+    670 px tall. From 1,200 px wide only laptops have short windows,
+    hence Q1b.
+  - Home sets its own width, 1,140 px; it becomes a narrower page.
+  - 45 files build their own `TableContainer`, a scroll box that would
+    hold a sticky header to itself; hence one shared table.
+  - A sort starts its list again from the first page
+    (`client/src/lib/use-keyset-list.ts`), hence E11a.
+  - #565's "the focused title kept clear of the top bar" is met by
+    R19's margin.
+
+### Decision — one frame, and narrower pages centred in it
+
+- **Every signed-in page sits in one frame,** 1,600 px with its
+  gutters, centred beside the rail: about 68 px empty on each side at
+  1920, 388 at 2560, nothing changed at 1366. One setting. Shopify
+  gives a list of many columns a full-width page, and SAP's Fiori uses
+  the full screen for large tables; one width across the app keeps
+  both, and stops short of a table wider than a person reads across.
+- **Home and a page that is one form keep today's 1,200 px frame,**
+  centred (N1b), each named in its route: Home, Your account and
+  Organization today. The design language holds the list, and a test
+  fails on a page with a width of its own.
+- **Centred, a narrower page looks as it does today:** going from a
+  list to Home at 1920, the title moves 200 px right; at 1366 it does
+  not move.
+- **The frame stays 1,600 px** at Large and Larger text (65b).
+
+### Decision — the header that stays
+
+- **A list page's table keeps its own header row under the top bar**
+  while the page scrolls (61a): the table's header cells, never a
+  copy, so a screen reader keeps each cell's column (E3).
+- **It sticks when the table fits its box and the window is tall
+  enough:** 500 px from 1,200 px wide (Q1b), 700 px from 900 px wide
+  (E9b), the design language's Height counts. Phones keep cards.
+- **Solid behind,** in light and dark, with a line and a soft shadow
+  only once it sticks (E3).
+- **The extra width goes to the text columns;** a number column keeps
+  the width its figures need, beside its neighbours (E1).
+- **Sorting from a stuck header** brings the list's first row under
+  it, focus kept on the header (E11a): the sort starts the list again
+  from its first page.
+- **A list page's own table only:** not a record's lines, a dialog's
+  table, or a table opened inside a row.
+
+### Decision — a table too wide for its box
+
+- **It scrolls sideways, and its header goes with the page,** at any
+  width (Q3a). A header kept in step by script would be a copy, which
+  E3 refuses; a box as tall as the window would give two scroll bars.
+- **Its name column stays pinned,** with an edge where the other
+  columns scroll under it, and its box takes keyboard focus with a
+  name (E10b), as the design language asks of a table not yet turned
+  into cards (#159).
+
+### Decision — one height for what stays under the bar
+
+- **The top bar's measured height places everything that stays under
+  it** (Ra, #507's 41): the details layout's summary, the role editor's
+  summary, Customise Home's Done row, a link's landing (`useArrival`)
+  and a list's header, each from `--bar-height`, which Help's frame
+  already sets.
+- **One scroll margin,** the bar's height plus a stuck header's and a
+  little room, keeps a focused control wholly in view (WCAG 2.4.11).
+- **The stuck header's colours join #561's contrast table,** light and
+  dark, for each of ADR-060's presets (Ra).
+
+### Decision — what rides along
+
+- **#516:** the burn-in keeps one selection, `--only-changed`, and
+  scales its repeats to a run budget, `clamp(floor(750 / tests), 1, 5)`,
+  its second selection removed; its summary prints the tests × repeats
+  and the minutes taken, so the time a test takes is seen drifting
+  (78a, 80a). A line in [ADR-089](0089-a-briefs-steps-in-a-row.md)'s
+  amendments, in its commit.
+- **The planning skill packed as `tmp/plan-feature.skill`** (76a), the
+  file claude.ai's upload asks for; a line in
+  [ADR-088](0088-planning-in-the-chat-as-a-skill.md), in its commit.
+- **Pictures at 1366, 1920 and 2560** (E6), the screenshot tool's two
+  new sizes run by name.
+
+### Interaction table
+
+On the canvas as "第二版：交互表 · v2: the interaction table"; each row
+is a browser test. The other boards are the rows v2 (Stock at 1920, the
+header's looks, when it stays, narrower pages) and v3 (where a narrower
+page sits, a table too wide). The five states are the States section's:
+the header stays above the loading rows, and an empty or failed list
+has no table.
+
+| # | Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Any list, a laptop or wider | Scroll past the header | It stays under the top bar, a line and a soft shadow under it | The same page | Scroll back up: the line goes |
+| 2 | A stuck header | Press a header that sorts | Sorted; the list's first row under the header, focus on that header | The new order's first row | Press again: reversed |
+| 3 | A stuck header | Shift+Tab to a row's control under it | The page moves so the control shows wholly below the header | That control | — |
+| 4 | An item's page, opened from Stock | Back | Stock's row left from, focused, clear of the header | That row | — |
+| 5 | Any list on a laptop | Make the window under 500 px tall | The header scrolls with the page; only the top bar stays | The same page | Taller: it stays again |
+| 6 | Any list | Open Help, so the table no longer fits | The table scrolls sideways, its name pinned; the header goes with the page | The same page | Close Help: it stays again |
+| 7 | A tablet sideways, the table fitting | Scroll down | It stays, as in row 1 (E9b) | The same page | — |
+| 8 | A stuck header | Show 50 more | The new rows come in below; the header still stays | The same page | — |
+| 9 | A phone | Scroll down | A card per row, no header; only the top bar stays | The same page | — |
+
+### Considered and not done
+
+- **A frame that fills the screen:** wider than a person reads across
+  on a 2560 or a 4K screen (v1's boards).
+- **1,536 or 1,800 px** (63a, 63c): v1's boards.
+- **Narrower pages from the frame's left edge,** 60a's first reading:
+  788 px empty on Home's right at 2560, and the main button jumping
+  where the title would not (v3).
+- **Narrower pages filling the frame:** Home's tiles 510 px wide and a
+  form's fields too long to read (v3).
+- **A copy of the header kept in step by script,** to stick while a
+  table scrolls sideways: E3 refuses a copy.
+- **A table's box as tall as the window, scrolling inside:** two scroll
+  bars.
+- **700 px at every width** (E2 as written): the commonest laptop's
+  window is under it.
+- **The page staying where it was after a sort:** it shows the middle
+  of a list that now holds its first page alone.
+
+### Deferred — each with what brings it in
+
+- **Moving a table's less important columns under its row,** SAP's
+  pop-in, by each column's importance. Trigger: a list found not to fit
+  at 1366 × 768 with Help closed, by the inventory step or a walk.
+- **A reading width for forms,** narrower than 1,200 px, as Shopify's
+  small pages. Trigger: a form page redesigned, or a walker losing a
+  line across a field.
+- **The frame growing with the text size** (65b). Trigger: rows
+  wrapping at Larger text on a 1920 screen.
+
+### Consequences
+
+- **Amended:** ADR-089, for #516, and ADR-088, for the `.skill` file,
+  each by a dated line in its own commit.
+- **Docs:** the design language's frame, narrower pages, header that
+  stays and table too wide; its "The way back" line made true and its
+  "Held today in part" line naming #561's test; `docs/manual-checks.md`;
+  the handoff.
+- **The canvas:** the rows v2 and v3; Movements' boards drawn again at
+  1920 on its branch (E7).
+- **After the merge,** `/triage` comments on #159, #565 and #616, and
+  ticks #507's 41.
+- **Build order:** this amendment and the handoff → the dependencies →
+  the skill packed as a `.skill` file → the burn-in's budget → the
+  inventory of list pages → the screenshot sizes and the pictures
+  before → one height under the bar → the frame and the narrower pages
+  → the shared table → every list onto it → the browser tests → the
+  design language → the pictures after → the dependencies again → the
+  reviews → the as-built and the pull request, closing #632 and #516,
+  and part of #159, #507, #561 and #565.
+
+## Amendment (November 2026) — as built (#644)
+
+`fix-632-page-frame`, built on 18 November 2026 from its brief in
+`tmp/fix-632-page-frame/`, in a row of steps and then one at a time: 39
+commits with this as-built, pull request #644. Where building settled
+or changed what the amendment above decided:
+
+### The requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R1 | Met (14a584b5): `FRAME_WIDTH`, 1,600, the one setting in `client/src/layout/frame.ts`, read by the main `Container`; records and forms take it too |
+| R2 | Met (14a584b5): a route says `narrower: true` in `client/src/routes.ts`, read through `frameWidth(pathname)`; Home's own 1,140 and Home without an organization's 1,080 gone. Home and Organization look as before at 1366; Home's content is 1,152 at 1920, from 1,140 |
+| R3 | Met (14a584b5, 2ed1ca9f): `page-frame.spec.ts` holds every signed-in route to its width, proved failing once; the design language holds the frame and its list |
+| R4 | Met (80cdf159, 27c7e9f9): `NUMBER_COLUMN` and `SortHeader`'s `number`; a browser test finds Stock's number columns as wide at 1920 as at 1366. Stock value's By item and lot gave its spare width to an unheaded chip column until 310219d7 |
+| R5 | Met (80cdf159, 187318c3, d04d4c1a, 3dd00261, 52988555, 288a0a9f): `ListTable` on 22 lists, each list's own `TableContainer` gone (Production had none) |
+| R6 | Met: `HEADER_STAYS`, CSS media queries in `client/src/theme/media.ts`; rows 5 and 7 are browser tests |
+| R7 | Met (80cdf159, 824f646a): the line and the soft shadow once stuck, marked by a sentinel; the colours in #561's table, light and dark; the picture `27-stuck-header` |
+| R8 | Changed (7a72b2a5, d57a4505): one scroll margin on the root, the bar plus a stuck header plus 8 px; a stuck header's own controls take their share back, since Tab onto one moved the page 553 px in Chromium and 76 in WebKit. Firefox centres a focused control, so the tests ask for it wholly below the header, not 8 px under it. Reorder's bar at the foot is not in the margin |
+| R9 | Met (80cdf159): a region named "{table}, scrolls sideways", with a tab stop; row 6 a browser test |
+| R10 | Met (6869029f, 7112e179, 10b4807e): 1366 and 2560 by `FRAME_SIZES=1`; 1,068 pictures before and 1,176 after, taken again after the reviews' fixes; the four new shots after only (D2a); Home's tiles in even rows at every size |
+| R11 | Met (2ed1ca9f, c9a9e594, ab03116c): the frame, the narrower pages, the header that stays and the table too wide in the design language; its 2.4.11 line now true, and no longer saying a dialog's buttons and the Undo message use the margin, since they sit at the foot with their own room; #561's tests are in `client/src/theme/tokens.test.ts`; `.claude/rules/ui.md` at 2,998 of its 3,000 characters |
+| R12 | Met: the canvas rows v2 and v3, and "第四版 · v4" for E12 |
+| R13 | Met (d608474d): `RUN_BUDGET` 750, the summary printing the tests × repeats, the runs and the minutes and seconds a run; ADR-089's line and a bullet in `docs/conventions.md`; the full Chromium suite is 497 tests. #644's burn-in summary read at the merge |
+| R14 | Met (91337964): ADR-088's line; the requirement's own grep still finds ADR-088's text, kept as history, and this table's row |
+| R15 | Changed (b32c15c7, 4ac8fe55, 8f65850a): see Decided while building |
+| R16 | Met: the handoff at the first commit and with this as-built; the Performance run of 23 November had not run, so Movements' branch reads it |
+| R17 | Changed by E12a (f2af8789, 77efd6d3, 5c48c12b, 916e53f5, 1a395b84, a865b27f): see Decided while building |
+| R18 | Met (187318c3): the test checks the first row under the header and focus on it, not a scroll position, since the list empties while it reads again |
+| R19 | Met (7a72b2a5, 12416268, 976e1236): `--bar-height` set once on the root by `useBarHeight`, the names `--bar-height` and `--stuck-header` kept in `client/src/layout/use-bar-height.ts`, written only when the measure changes; the bar is 57 px, 76 at Larger text below 1,200 |
+
+### Decided while building
+
+The maintainer's answers, each by its letter:
+
+- **Stock at 1366 (D1a):** it scrolls sideways, as planned. Step 5
+  found it too wide with Help closed, the Deferred line's trigger: 33 px
+  short in English, 8 in Chinese and 270 in French. Moving columns under
+  the row is #637, `later`.
+- **A row's Actions pinned at the end (E12a):** in a table too wide,
+  the name stays pinned at the start (with Reorder's tick box) and the
+  row's Actions at the end, while the two take no more than half the
+  box; past that, the name alone. The choice changes when the box's
+  width does, never while it scrolls (E12c, switching sides by the
+  scroll's direction, was not taken). An edge shows on a side only while
+  something lies under it, and the box's scroll padding keeps a focused
+  control clear of both. `ActionsHeader` marks the column on ten lists,
+  a test failing on a list without it; an opened row (`SPANNING_ROW`)
+  pins none of its cells. Reorder beside Help at 1366 keeps Actions
+  unpinned in every language: half its box is 416 px, and the two need
+  463 in English, 501 in French and 421 in Chinese.
+- **A pinned name's least width (finding 51):** 320 px in a table too
+  wide, so the demo's longest name wraps to two lines, not four to
+  seven; whether the table fits is measured with the name at its
+  narrowest (a865b27f). Stock at 1366 then scrolls 187 px in English and
+  424 in French, where it was 36 and 272 short; Chinese fits.
+- **A scroll bar kept in view (E13a):** later, on #637, with the
+  reviews' evidence that five walkers missed the columns past the edge.
+- **The dependencies (RDc, S14c):** vite 8.3.8, prettier 3.10.0, Sentry
+  11.12.0, nodemailer 10.5.0, `@aws-sdk/client-s3` 3.1166.0 and 3.1167.0
+  and msw 3.0.5, each 7 days old; prettier 3.10.1, `@formatjs/cli`
+  6.19.0, with the eight native packages it pins, and user-event
+  14.6.10, taken 2 to 11 hours short of their 7 days by the
+  maintainer's choice, the rule waived for those three alone. Installed
+  with `npm install --before` and each lock file read package by
+  package, nothing moved back. `@playwright/test` 1.65.1 with #521's
+  check, typescript-eslint 8.73.0 and the minimatch overrides' removal
+  go to Movements' branch.
+- **Lists' counts (P1a, P2a, R1a):** the count always, "31 codes" when
+  everything fits, on Items, Stock and Reorder, and no column of row
+  numbers: #638, built in Movements' branch with #473's Back after Show
+  more. Drawn as the canvas row "列表的分页 第一版 · Paged lists v1".
+- **The every-browser spec lists (S12a):** `docs/conventions.md` and
+  `docs/engineering.md` name `page-frame` and `sign-in-return`.
+
+### Found while building
+
+- **A fit that could not come back (4a46965d):** the fit counted the
+  stuck header's 8 px shadow, so after Show 50 more Stock at 1920 became
+  a sideways box for good; it is measured by the table's own width.
+- **The browser tests make their own records** through the API helpers,
+  as the suite has no demo; Stock's test adds a long code, since its
+  names fit at 1366 where the demo's do not.
+- **The reviews (54 findings):** fixed 3 with 46, 45, 47 to 50, 28 to
+  32, 36, 51 and 54, with a chore to `/build-from-brief`'s checks
+  (efd8f4f7); issues #639 to #642; comments on #159, #473, #481, #581,
+  #607 and #637; left 18, 20, 33, 37 to 44, 52 and 53. Finding 33, the
+  stuck header's share added to the margin and taken back on its
+  controls, stays: proved in four engines.
+- **For this ADR's next amendment,** the panel's findings 1 (a table
+  too wide says so with a line and a fade alone), 4 (targets under
+  44 px, #170), 8 (可用 with two meanings, one figure with three names,
+  for Movements' branch), 10 (nothing leads to Larger text, kept per
+  device) and 11 (secondary text at 14 px).
+- **The full verify,** green but for one Linux WebKit test,
+  `document-refusals`' way back to the order, timing out under the
+  suite's load and passing alone, as before this branch: #643,
+  `fix-now`, named in #644. #530's crash came once on Node 26.12.0, the
+  version it would pin: a comment there.
+
+### Still owed
+
+- Before the merge: every browser by hand, the device checks of
+  `/production-readiness browsers`, MC-1565 to MC-1575 walked, and the
+  pictures in #644's table.
+- After it: `/triage`, the comments the amendment's Consequences name;
+  Movements' boards at 1920 (E7) at its branch's first step.

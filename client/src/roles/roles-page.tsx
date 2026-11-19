@@ -7,10 +7,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -24,6 +22,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 import type { Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
+import { ListTable } from '../components/list-table';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -253,48 +252,46 @@ function RoleSection({
   ) : (
     <Paper variant="outlined" component="section" aria-labelledby={headingId}>
       {heading}
-      <TableContainer>
-        <Table aria-labelledby={headingId}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ width: '30%' }}>
-                {intl.formatMessage({
-                  id: 'roles.column.role',
-                  defaultMessage: 'Role',
-                })}
-              </TableCell>
+      <ListTable label={title} aria-labelledby={headingId}>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ width: '30%' }}>
+              {intl.formatMessage({
+                id: 'roles.column.role',
+                defaultMessage: 'Role',
+              })}
+            </TableCell>
+            <TableCell>
+              {intl.formatMessage({
+                id: 'roles.column.for',
+                defaultMessage: 'What it is for',
+              })}
+            </TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              {intl.formatMessage({
+                id: 'roles.column.heldBy',
+                defaultMessage: 'Held by',
+              })}
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {roles.map((role) => (
+            <TableRow key={role.id}>
               <TableCell>
-                {intl.formatMessage({
-                  id: 'roles.column.for',
-                  defaultMessage: 'What it is for',
-                })}
+                <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
+                  {roleLink(role)}
+                  {kind(role)}
+                </Stack>
               </TableCell>
+              <TableCell>{role.description}</TableCell>
               <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                {intl.formatMessage({
-                  id: 'roles.column.heldBy',
-                  defaultMessage: 'Held by',
-                })}
+                {heldByLabel(role.holderCount, intl)}
               </TableCell>
             </TableRow>
-          </TableHead>
-          <TableBody>
-            {roles.map((role) => (
-              <TableRow key={role.id}>
-                <TableCell>
-                  <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
-                    {roleLink(role)}
-                    {kind(role)}
-                  </Stack>
-                </TableCell>
-                <TableCell>{role.description}</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  {heldByLabel(role.holderCount, intl)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          ))}
+        </TableBody>
+      </ListTable>
     </Paper>
   );
 }

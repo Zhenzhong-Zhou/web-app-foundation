@@ -1,8 +1,10 @@
 import UnfoldMore from '@mui/icons-material/UnfoldMore';
-import { TableCell, type TableCellProps, TableSortLabel } from '@mui/material';
+import { TableCell, TableSortLabel } from '@mui/material';
 import type { ReactNode } from 'react';
 
 import type { SortOrder } from '../lib/use-list-sort';
+import { NUMBER_COLUMN } from './number-column';
+import { useSortPressed } from './sort-pressed';
 
 /**
  * A column header that sorts its list (ADR-057). Only columns the server
@@ -21,13 +23,20 @@ import type { SortOrder } from '../lib/use-list-sort';
  * solid for its way (ADR-093; v2's board): Stock, the Lot view and
  * Reorder first, the others as their screens are next changed. Their
  * default is marked, `active`, when no other is chosen.
+ *
+ * `number`, a number column's header in a `ListTable`, right-aligned and
+ * as wide as its figures need (`NUMBER_COLUMN`).
+ *
+ * Pressed in a `ListTable` whose header has stuck under the top bar, the
+ * list's first row comes back under it, the header keeping its focus
+ * (E11a; `SortPressed`).
  */
 export function SortHeader({
   label,
   active,
   order,
   onSort,
-  align,
+  number = false,
   after,
   atRest = false,
 }: {
@@ -35,13 +44,14 @@ export function SortHeader({
   active: boolean;
   order: SortOrder;
   onSort: () => void;
-  align?: TableCellProps['align'];
+  number?: boolean;
   after?: ReactNode;
   atRest?: boolean;
 }) {
+  const pressed = useSortPressed();
   return (
     <TableCell
-      align={align}
+      {...(number && NUMBER_COLUMN)}
       sortDirection={active ? order : false}
       aria-sort={
         active ? (order === 'asc' ? 'ascending' : 'descending') : undefined
@@ -51,7 +61,11 @@ export function SortHeader({
       <TableSortLabel
         active={active}
         direction={active ? order : 'asc'}
-        onClick={onSort}
+        onClick={() => {
+          // Measured as the page stands, before the list reads again.
+          pressed();
+          onSort();
+        }}
         {...(atRest &&
           !active && {
             IconComponent: UnfoldMore,

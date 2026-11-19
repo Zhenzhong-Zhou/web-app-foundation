@@ -125,11 +125,58 @@ Each with what holds it in the code today, or the issue that will.
 - An icon that tells a kind is never alone, and a kind takes no status's
   colour, since a kind is not a state: on Items' All, Stock and the
   lookup, "VITC-100 · Product" (`NameAndCode`'s `withType`).
+- A list page's table keeps its own header row under the top bar while
+  the page scrolls: the table's header cells, never a copy, so a screen
+  reader keeps each cell's column (`ListTable`, ADR-090, #632). It is
+  every list page's own table, not a record's lines, a dialog's table or
+  one opened inside a row.
+  - It stays while the table fits its box and the window is tall enough
+    ([Height counts](#screen-sizes)): the window is decided by CSS media
+    queries, whether the table fits by measuring it. A phone has cards,
+    with no header, and paper a plain header row.
+  - It is solid, in light and dark, with a line and a soft shadow under
+    it only once it sticks; its words and its line are held in
+    `tokens.test.ts`.
+  - A focused control stops below it, by the one scroll margin
+    ([The way back](#the-way-back)); the header's own controls, reached
+    by Tab, leave the page where it is.
+  - A header that sorts, pressed while it stays, brings the list's first
+    row back under it, focus kept on that header: a sort starts the list
+    again from its first page.
+- A table wider than its box scrolls sideways, at any width, and its
+  header goes with the page, since a header kept in step by script would
+  be a copy. It is measured as the box or the table changes size, so
+  Show 50 more is counted as well.
+  - Its box takes keyboard focus, a region named "Stock, scrolls
+    sideways" in the reader's language.
+  - The name stays pinned at the start, after a tick box where a list
+    has one, and the row's Actions at the end, the last column a list
+    heads with `ActionsHeader` (E12a), so each row's Actions shows without
+    scrolling.
+  - The pinned name keeps a least width, 320 px in rem with its picture,
+    so the demo's longest name takes two lines at 1366, not the five its
+    narrowest gave; the other columns pass under it.
+  - Both are pinned only while together they take no more than half the
+    box; past that, the name alone. It follows the box's width, never
+    how far the table has scrolled, so the pins do not change sides.
+  - An edge shows on a pinned side only while columns lie under it: at
+    the start once the table has scrolled, at the end while more lies
+    past it.
+  - The box's scroll padding is the pinned sides' widths, so a control
+    reached by Tab or Shift + Tab is scrolled wholly clear of both.
+  - A pinned cell keeps its row's tint, under the pointer, ticked or
+    opened, in light and dark, and so does the fade beside its edge. A
+    row whose cells do not stand under the columns, an opened row's
+    detail or a line across the row (`SPANNING_ROW`), pins nothing.
 
 ### Numbers
 
 - A number says what it counts: "12 left · reorder at 36", not "12 of
   36".
+- A number column takes the width its header and figures need, no more;
+  the text columns take the rest. A wider frame gives its extra width to
+  the names, so each of Stock's number columns is as wide at 1920 as at
+  1366 (`NUMBER_COLUMN`, E1).
 - One format, the page's (`displayQuantity`): "48", not "48.0000", a
   dialog's text included (#160). Only a field keeps the exact places it
   takes.
@@ -173,6 +220,10 @@ Each with what holds it in the code today, or the issue that will.
   - its scrolling part taking keyboard focus, with a name;
   - a detail opened from a row opening below it, the scroll kept, never
     sliding the table sideways.
+- The shared list table gives the fixed name, the edge and the named
+  box taking focus to every list that scrolls sideways, at any width
+  ([Rows](#rows)); a list's key columns first and its detail below a row
+  are its own.
 - Inventory's two tabs have their cards (ADR-093): Stock's holds the
   name, the status, On hand, Free and Expires first, and opens to Held,
   Coming and its lots; Reorder's holds the name, the status, "12 left ·
@@ -298,9 +349,20 @@ Each with what holds it in the code today, or the issue that will.
   (ADR-093), and a page whose action took away the focused button, by
   `PageHeader`'s `headingRef`, such as after Remove a member, Delete a
   role or a category, and Issue an invoice.
-- Nothing pinned covers the focused control (WCAG 2.4.11): the top bar,
-  a sticky header, a dialog's buttons and a message leave room by one
-  scroll margin from the top bar's height (#507's 41).
+- Nothing under the top bar covers the focused control (WCAG 2.4.11):
+  one scroll margin on the root, the bar's height, a list's stuck
+  header's and 8 px (`scroll-padding-top`, `client/src/theme/index.ts`;
+  #507's 41).
+  - The bar's height is measured once, `--bar-height` on the root
+    (`useBarHeight`), and what else stays under the bar reads it: the
+    details layout's and the role editor's summaries, Customise Home's
+    Done row, Help beside the page and a link's landing (`useArrival`).
+  - A stuck header sets `--stuck-header`, its own height, while it
+    sticks, and 0 otherwise.
+  - A dialog's buttons and the message with Undo sit at the foot, not
+    under the bar, each with its own room
+    ([Height counts](#screen-sizes),
+    [Actions that cannot be undone](#actions-that-cannot-be-undone)).
 - A control that takes focus inside a table's scrolling box is brought
   wholly into view, never left half past the box's edge (`wholeOnFocus`;
   Inventory's tables, ADR-093, the others as each is next changed).
@@ -465,9 +527,12 @@ refused.
   1.4.3 and 1.4.11 say; the line beside it saying why stays at 4.5 : 1.
 - **A disabled control keeps its enabled size** (#170).
 - **Held today in part:** `tokens.test.ts` holds an entry hovered,
-  focused or chosen and the tonal button, and `index.test.tsx` a
-  switch's track and #557's hover; #561 holds every piece in every
-  state.
+  focused or chosen, the tonal button, the opening row and a quick
+  filter in each state (#561, b62ec32b), and a list's header while it
+  sticks (its words and line on the head, and the accent as its focus
+  ring, for ADR-060's six presets); `index.test.tsx` a switch's track,
+  #557's hover and a quick filter's 14 px; #561 holds every piece in
+  every state.
 
 ## Screen sizes
 
@@ -482,11 +547,38 @@ breakpoints:
 | Laptop (`lg`) | 1200–1535 | laptops; the menu becomes a rail |
 | Desktop (`xl`) | 1536 and wider | desktops |
 
+- **One frame for every signed-in page:** 1,600 px with its gutters,
+  centred beside the rail, one setting (`FRAME_WIDTH`,
+  `client/src/layout/frame.ts`). About 68 px stays empty on each side at
+  1920, 388 at 2560, and none at 1366, where the window is narrower than
+  it. It is in px, not rem, so it stays 1,600 at Large and Larger text;
+  wide enough for a table's columns, and stopping short of a table wider
+  than a person reads across (ADR-090, #632).
+- **A narrower page keeps `lg`'s 1,200 px,** centred like the frame, so
+  it looks as it did: Home, Your account (`/account`) and Organization
+  (`/settings/organization`).
+  - Each says so in its route, `narrower` in `client/src/routes.ts`, and
+    the layout reads it from the matched route; this list and those
+    routes agree.
+  - Why they are narrower: Home's tiles would be 510 px wide at the
+    frame's width, and a form's fields too long to read.
+- **A page sets no width of its own:** `client/e2e/page-frame.spec.ts`
+  opens every signed-in route at 1920 × 1080 and holds the page to its
+  route's width, centred.
+- The canvas draws the frame, the narrower pages, the header and the
+  table too wide in the rows "页面宽度和表头 第二版 · v2", "第三版 · v3"
+  and "第四版 · v4"; v4 is the last, with Actions pinned at the end.
 - **Each pattern says what it does in each class,** as Lists on a phone
   does.
 - **Height counts:** on a screen under about 700 px tall (a phone held
   sideways, the Duo open, about 626, or closed, about 678), nothing fixed
-  takes more than the top bar.
+  takes more than the top bar, with one exception.
+  - A list's header stays under the bar from `lg` on a window at least
+    500 px tall, since only a laptop's window is that short at that
+    width (a 1366 × 768 screen's browser window is about 640 to 670 px);
+    from `md` it needs 700 px, so a tablet held sideways, 1180 × 820,
+    keeps it and a phone held sideways does not. Below 900 px it goes
+    with the page.
   - A dialog's buttons stay pinned at its foot at every height, only its
     body scrolling, since a form taller than the dialog hides them at any
     height (#564).

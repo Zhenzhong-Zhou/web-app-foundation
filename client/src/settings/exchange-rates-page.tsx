@@ -5,10 +5,8 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -18,7 +16,10 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { ExchangeRate, OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
+import { ListTable } from '../components/list-table';
+import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
@@ -179,71 +180,69 @@ export function ExchangeRatesPage() {
             })}
           </EmptyState>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'settings.rates.day',
-                      defaultMessage: 'Day',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'components.currency.label',
-                      defaultMessage: 'Currency',
-                    })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {baseCurrency
-                      ? intl.formatMessage(
-                          {
-                            id: 'settings.rates.rateIn',
-                            defaultMessage: 'Rate (in {currency})',
-                          },
-                          { currency: baseCurrency },
-                        )
-                      : intl.formatMessage({
-                          id: 'settings.rates.rate',
-                          defaultMessage: 'Rate',
-                        })}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    aria-label={intl.formatMessage({
-                      id: 'orders.lines.actions',
-                      defaultMessage: 'Actions',
-                    })}
-                  />
-                </TableRow>
-              </TableHead>
+          <ListTable
+            label={intl.formatMessage({
+              id: 'layout.menu.exchangeRates',
+              defaultMessage: 'Exchange rates',
+            })}
+            size="small"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'settings.rates.day',
+                    defaultMessage: 'Day',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'components.currency.label',
+                    defaultMessage: 'Currency',
+                  })}
+                </TableCell>
+                <TableCell {...NUMBER_COLUMN}>
+                  {baseCurrency
+                    ? intl.formatMessage(
+                        {
+                          id: 'settings.rates.rateIn',
+                          defaultMessage: 'Rate (in {currency})',
+                        },
+                        { currency: baseCurrency },
+                      )
+                    : intl.formatMessage({
+                        id: 'settings.rates.rate',
+                        defaultMessage: 'Rate',
+                      })}
+                </TableCell>
+                <ActionsHeader align="right" />
+              </TableRow>
+            </TableHead>
 
-              <TableBody>
-                {loaded?.rates.map((rate) => (
-                  <TableRow key={rate.id}>
-                    <TableCell>{formatDay(rate.rateDate)}</TableCell>
-                    <TableCell>{rate.currency}</TableCell>
-                    <TableCell align="right">{trimRate(rate.rate)}</TableCell>
-                    <TableCell align="right">
-                      {canUpdate && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={openDialog(() => setEditing(rate))}
-                        >
-                          {intl.formatMessage({
-                            id: 'settings.rates.correct',
-                            defaultMessage: 'Correct',
-                          })}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+            <TableBody>
+              {loaded?.rates.map((rate) => (
+                <TableRow key={rate.id}>
+                  <TableCell>{formatDay(rate.rateDate)}</TableCell>
+                  <TableCell>{rate.currency}</TableCell>
+                  <TableCell align="right">{trimRate(rate.rate)}</TableCell>
+                  <TableCell align="right">
+                    {canUpdate && (
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={openDialog(() => setEditing(rate))}
+                      >
+                        {intl.formatMessage({
+                          id: 'settings.rates.correct',
+                          defaultMessage: 'Correct',
+                        })}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </ListTable>
         )}
       </Paper>
 

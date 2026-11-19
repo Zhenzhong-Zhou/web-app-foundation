@@ -7,10 +7,8 @@ import {
   DialogTitle,
   Paper,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -21,10 +19,11 @@ import { type ReactNode, useId, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 
 import type { Invitation, Role } from '../api/types.gen';
+import { ActionsHeader } from '../components/actions-header';
 import { DialogFooter } from '../components/dialog-footer';
+import { ListTable } from '../components/list-table';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
-import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useSubmit } from '../lib/use-submit';
@@ -164,72 +163,63 @@ export function InvitedSection({
       ) : (
         <Paper variant="outlined">
           {heading}
-          <TableContainer>
-            <Table
-              aria-label={intl.formatMessage({
-                id: 'members.invited.title',
-                defaultMessage: 'Invited',
-              })}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'members.invited.person',
-                      defaultMessage: 'Person',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'members.roles',
-                      defaultMessage: 'Roles',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'members.invited.link',
-                      defaultMessage: 'Link',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <Box component="span" sx={HIDDEN}>
-                      {intl.formatMessage({
-                        id: 'common.actions',
-                        defaultMessage: 'Actions',
-                      })}
+          <ListTable
+            label={intl.formatMessage({
+              id: 'members.invited.title',
+              defaultMessage: 'Invited',
+            })}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'members.invited.person',
+                    defaultMessage: 'Person',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'members.roles',
+                    defaultMessage: 'Roles',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'members.invited.link',
+                    defaultMessage: 'Link',
+                  })}
+                </TableCell>
+                <ActionsHeader />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {invitations.map((invitation) => (
+                <TableRow key={invitation.id}>
+                  <TableCell sx={{ maxWidth: EMAIL_MAX_WIDTH }}>
+                    <Box
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={invitation.email}
+                    >
+                      {invitation.email}
                     </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {invitedByLabel(invitation, selfId, intl)}
+                    </Typography>
                   </TableCell>
+                  <TableCell>{roleName(invitation)}</TableCell>
+                  <TableCell>{chip(invitation)}</TableCell>
+                  <TableCell align="right">{buttons(invitation)}</TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {invitations.map((invitation) => (
-                  <TableRow key={invitation.id}>
-                    <TableCell sx={{ maxWidth: EMAIL_MAX_WIDTH }}>
-                      <Box
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                        title={invitation.email}
-                      >
-                        {invitation.email}
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: 'text.secondary' }}
-                      >
-                        {invitedByLabel(invitation, selfId, intl)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{roleName(invitation)}</TableCell>
-                    <TableCell>{chip(invitation)}</TableCell>
-                    <TableCell align="right">{buttons(invitation)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </ListTable>
         </Paper>
       )}
 
