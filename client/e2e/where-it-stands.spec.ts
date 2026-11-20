@@ -14,9 +14,10 @@ import { receive, reorderScene, stockScene } from './support/stock';
 
 /**
  * The item's page, Where it stands (ADR-093, R8), row by row: each row of
- * the ADR's table for it is one test here, but Latest movements, which
- * Movements' branch builds; then its state with none on hand, each way
- * into it, and Items' Low stock filter (R23). Stock's ways in, its name,
+ * the ADR's table for it is one test here, but Latest movements' All
+ * movements, which is with Movements' own in movements-page.spec.ts; then
+ * its state with none on hand, each way into it, and Items' Low stock
+ * filter (R23). Stock's ways in, its name,
  * "20 left" and "15 short", are in stock.spec.ts with Stock's rows;
  * Reorder's here.
  *
@@ -85,7 +86,9 @@ test('Where it stands, Buy 80: a purchase order opens filled in, the supplier as
   await signInAs(page, freshOrg.api);
   await itemFrom(page, scene.vitamin.id);
 
-  await standing(page).getByRole('button', { name: 'Buy 80' }).click();
+  await standing(page)
+    .getByRole('button', { name: 'Buy 80 each', exact: true })
+    .click();
 
   await expect(page).toHaveURL(/\/orders\/new$/);
   await expect(page.getByRole('radio', { name: /^Buying/ })).toBeChecked();
@@ -161,8 +164,9 @@ test('By place and lot, a lot’s code: the lot’s trace; Back, the item’s pa
   await signInAs(page, freshOrg.api);
   await itemFrom(page, scene.vitamin.id);
 
-  const byPlace = standing(page);
-  await expect(byPlace.getByText('By place and lot')).toBeVisible();
+  await expect(standing(page).getByText('By place and lot')).toBeVisible();
+  // Its table, the first: Latest movements' after it names lots too.
+  const byPlace = standing(page).getByRole('table').first();
   // Each lot a link, by place, each place's soonest first, the expired
   // among them: A2's, then B1's.
   await expect(byPlace.getByRole('link', { name: /^VC-/ })).toHaveText([
@@ -220,7 +224,9 @@ test('for a Viewer: no Buy or Change reorder point, a line saying whom to ask; n
   await itemFrom(page, scene.vitamin.id);
 
   const section = standing(page);
-  await expect(section.getByRole('button', { name: 'Buy 80' })).toHaveCount(0);
+  await expect(
+    section.getByRole('button', { name: 'Buy 80 each', exact: true }),
+  ).toHaveCount(0);
   await expect(
     section.getByRole('button', { name: 'Change reorder point' }),
   ).toHaveCount(0);

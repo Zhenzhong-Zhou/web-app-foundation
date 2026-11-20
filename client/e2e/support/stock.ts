@@ -148,6 +148,8 @@ export interface StockScene {
   partner: SeededPartner;
   /** The sale waiting for magnesium. */
   waiting: SeededOrder;
+  /** The vitamin's lots' ids, by their codes. */
+  lots: { soon: string; late: string; gone: string };
 }
 
 export async function stockScene(api: APIRequestContext): Promise<StockScene> {
@@ -170,11 +172,11 @@ export async function stockScene(api: APIRequestContext): Promise<StockScene> {
     expiresAt: daysFromNow(10),
   });
   await moveLot(api, vitamin, soon!, shelfA, shelfB, '5');
-  await receive(api, vitamin, shelfA, '30', {
+  const late = await receive(api, vitamin, shelfA, '30', {
     code: 'VC-LATE',
     expiresAt: daysFromNow(200),
   });
-  await receive(api, vitamin, shelfB, '6', {
+  const gone = await receive(api, vitamin, shelfB, '6', {
     code: 'VC-GONE',
     expiresAt: daysFromNow(-4),
   });
@@ -184,7 +186,15 @@ export async function stockScene(api: APIRequestContext): Promise<StockScene> {
   await receive(api, magnesium, shelfA, '10');
   const waiting = await orderOf(api, partner, 'sale', magnesium, '25');
 
-  return { shelfA, shelfB, vitamin, magnesium, partner, waiting };
+  return {
+    shelfA,
+    shelfB,
+    vitamin,
+    magnesium,
+    partner,
+    waiting,
+    lots: { soon: soon!, late: late!, gone: gone! },
+  };
 }
 
 /** Reorder's scene: Stock's, and three more under reorder points. */

@@ -433,7 +433,9 @@ test('Items, Show 50 more: the next fifty below; focus on the first new row', as
   await signInAs(page, freshOrg.api);
   await page.goto('/items');
   await expect(rowNames(page)).toHaveCount(50);
-  await expect(page.getByText('Showing 50 of 52')).toBeVisible();
+  await expect(
+    page.getByText('Showing 50 of 52 items', { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Show 50 more' }).click();
 
