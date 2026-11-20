@@ -119,8 +119,9 @@ interface Ends {
  * across every place, what arrived and, negative, what left, a move
  * between two places 0, neither In nor Out, so the balance holds. A
  * quantity is never negative; its direction is which end is set
- * (ADR-023). The one rule each row's In and Out, the balance and the
- * period read.
+ * (ADR-023). The one rule each row's In, Out and signed change, the
+ * balance and the period read, so the screen and the export sign a row
+ * alike (review 24).
  */
 function changeOf(ends: Ends, locationId: string | undefined): SQL {
   if (locationId) {
@@ -280,6 +281,8 @@ export async function movementPage(
         then ${quantity(sql`${movement.change}`)} end`,
       quantityOut: sql<string | null>`case when ${movement.change} < 0
         then ${quantity(sql`-${movement.change}`)} end`,
+      change: sql<string | null>`case when ${movement.change} <> 0
+        then ${quantity(sql`${movement.change}`)} end`,
     })
     .from(movement)
     .leftJoin(from, eq(from.id, movement.fromLocationId))
@@ -361,6 +364,7 @@ export async function movementPage(
         document: documents.get(row.id) ?? null,
         quantityIn: row.quantityIn,
         quantityOut: row.quantityOut,
+        change: row.change,
         balance: balances.get(row.id) ?? null,
       };
     }),

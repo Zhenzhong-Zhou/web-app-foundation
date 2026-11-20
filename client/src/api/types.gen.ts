@@ -1877,6 +1877,7 @@ export type Movement = {
   document: MovementDocument | null;
   quantityIn: string | null;
   quantityOut: string | null;
+  change: string | null;
   balance: string | null;
 };
 

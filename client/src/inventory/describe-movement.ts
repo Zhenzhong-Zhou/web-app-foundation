@@ -1,21 +1,6 @@
 import type { Movement } from '../api/types.gen';
 
 /**
- * How a movement's quantity is signed in a table.
- *
- * Direction is which location is set, not a column (ADR-023), so it is
- * reconstructed here the same way the service validates it — a transfer has
- * both ends and no sign, stock arriving has only a destination (+), stock
- * leaving only a source (−). Read from the ends' ids, which every reader
- * gets: a reader without locations.view gets no place's name (ADR-093,
- * 96a). One copy, so no two lists sign the same row two ways.
- */
-export function describeMovement(movement: Movement): { sign: string } {
-  if (movement.fromLocationId && movement.toLocationId) return { sign: '' };
-  return { sign: movement.toLocationId ? '+' : '−' };
-}
-
-/**
  * Who made it, by name with their email beneath (ADR-063), or the email
  * alone for an account with no name. The server nulls an anonymised
  * account's email and keeps its stored name, Deleted User, which is

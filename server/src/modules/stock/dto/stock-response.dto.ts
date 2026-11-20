@@ -132,6 +132,13 @@ export class Movement {
   /** What went out of it, as `quantityIn`: a stock card's Out. */
   quantityOut!: string | null;
   /**
+   * The same change signed, a list's Change, which its export writes too,
+   * so the two never differ: `quantityIn`, or `quantityOut` negative.
+   * Null for a move counted as neither, between two places across every
+   * place.
+   */
+  change!: string | null;
+  /**
    * What the list counts after this movement: today's on hand, less what
    * moved after it (41a). Only for one code, its lot or place when chosen
    * too (85a), with every reason and no order (91a); null otherwise.

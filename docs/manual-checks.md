@@ -629,7 +629,10 @@ a second organization.
   each place by its path and an end outside the warehouse in grey words
   (supplier, customer, run, counted in, counted out), the lot linked with
   its expiry under it, For linked to its order or run, and By.
-  SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. Choose
+  SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. With
+  no Location chosen, a move between two places reads unsigned; choose a
+  Location: a move off it reads with its minus and one onto it with its
+  plus, and the export's Change writes the same. Choose
   VITC-100 under Item: the Item column goes, In, Out and Balance replace
   Change, the newest row's Balance is Stock's On hand for it, and the
   address reads `?variantId=` with an id. Choose a When range: Opening,
@@ -7194,3 +7197,7 @@ first.
   Trace a lot's guides gain the order's label and Receipts, Latest
   movements, the count and Back after Show more, and the recall list's
   true export: MC-324 added, MC-316 extended.
+- 2026-11-20: ADR-093's Movements branch, review 24: with a place
+  chosen, a move off it reads with its minus on the screen, as its
+  export already wrote it, both from the server's one sign: MC-320
+  extended.

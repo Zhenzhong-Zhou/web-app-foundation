@@ -60,6 +60,7 @@ interface Row {
   document: { kind: string; id: string; number: string | null } | null;
   quantityIn: string | null;
   quantityOut: string | null;
+  change: string | null;
   balance: string | null;
 }
 
@@ -976,5 +977,56 @@ describe('Movements (e2e)', () => {
     for (const name of ['SHELF', 'QUAR', 'LINE', 'RUN-7']) {
       expect(response.text).not.toContain(name);
     }
+  });
+
+  // ADR-093, 11a and 85a; review 24: each row's change, signed by the
+  // server as the list counts it, which the screen and the export both
+  // read, so the two never differ. With a place chosen, a move off it is
+  // Out there; across every place, neither, its quantity alone.
+  it('signs a move off the place chosen with its minus, the same on the list and in its export', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const back = await site(agent, 'BACK');
+    const focus = await item(agent, 'FOCUS');
+    await receive(agent, focus, shelf, '20');
+    await agent
+      .post('/v1/stock/movements')
+      .send({
+        variantId: focus,
+        fromLocationId: shelf,
+        toLocationId: back,
+        quantity: '12',
+        reason: 'transfer',
+      })
+      .expect(201);
+
+    const changes = (rows: Row[]) =>
+      rows.map((row) => [row.reason, row.change]);
+    expect(
+      changes((await list(agent, `?locationId=${shelf}`)).entries),
+    ).toEqual([
+      ['transfer', '-12.0000'],
+      ['receipt', '20.0000'],
+    ]);
+    expect(changes((await list(agent, `?locationId=${back}`)).entries)).toEqual(
+      [['transfer', '12.0000']],
+    );
+    expect(changes((await list(agent)).entries)).toEqual([
+      ['transfer', null],
+      ['receipt', '20.0000'],
+    ]);
+
+    // The export, oldest first: the same change, without padding zeros.
+    const changeIn = async (query: string) => {
+      const { header, rows } = csvOf(
+        (await agent.get(`/v1/stock/movements/export${query}`).expect(200))
+          .text,
+      );
+      return rows.map((row) => row[header.indexOf('Change')]);
+    };
+    expect(await changeIn(`?locationId=${shelf}`)).toEqual(['20', '-12']);
+    expect(await changeIn(`?locationId=${back}`)).toEqual(['12']);
+    expect(await changeIn('')).toEqual(['20', '12']);
   });
 });

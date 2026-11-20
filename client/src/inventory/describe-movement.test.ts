@@ -2,54 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Movement } from '../api/types.gen';
 import { movement } from '../test/factories';
-import { describeMovement, movementActor } from './describe-movement';
-
-/** A movement between these ends, each a place's id and its name. */
-function between(
-  from: [string, string | null] | null,
-  to: [string, string | null] | null,
-): Movement {
-  return movement({
-    fromLocationId: from?.[0] ?? null,
-    fromLocationName: from?.[1] ?? null,
-    toLocationId: to?.[0] ?? null,
-    toLocationName: to?.[1] ?? null,
-  });
-}
-
-describe('describeMovement', () => {
-  it('leaves a transfer unsigned', () => {
-    expect(
-      describeMovement(between(['a', 'Shelf A'], ['b', 'Shelf B'])),
-    ).toEqual({ sign: '' });
-  });
-
-  it('signs stock arriving with a plus', () => {
-    expect(describeMovement(between(null, ['a', 'Shelf A']))).toEqual({
-      sign: '+',
-    });
-  });
-
-  it('signs stock leaving with a minus', () => {
-    expect(describeMovement(between(['a', 'Shelf A'], null))).toEqual({
-      sign: '−',
-    });
-  });
-
-  // A reader without locations.view gets each place's id and no name
-  // (ADR-093, 96a): the sign still says which way it went.
-  it('signs by the ends’ ids for a reader who sees no place’s name', () => {
-    expect(describeMovement(between(['a', null], ['b', null]))).toEqual({
-      sign: '',
-    });
-    expect(describeMovement(between(null, ['a', null]))).toEqual({
-      sign: '+',
-    });
-    expect(describeMovement(between(['a', null], null))).toEqual({
-      sign: '−',
-    });
-  });
-});
+import { movementActor } from './describe-movement';
 
 describe('movementActor', () => {
   function by(actorName: string | null, actorEmail: string | null): Movement {

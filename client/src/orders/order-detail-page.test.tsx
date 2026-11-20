@@ -1013,6 +1013,7 @@ describe('OrderDetailPage receipts', () => {
     quantity: '60.0000',
     quantityIn: '60.0000',
     quantityOut: null,
+    change: '60.0000',
     fromLocationId: null,
     fromLocationName: null,
     fromLocationCode: null,

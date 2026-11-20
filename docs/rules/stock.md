@@ -238,6 +238,18 @@ file is kept is in the [README](README.md).
   [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipment: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
+- **Several items read each row's Change, signed as the list counts
+  it:** what came in with its plus, what went out with its minus; with a
+  place chosen, a move onto it In and a move off it Out; across every
+  place, a move between two places neither, its quantity unsigned. The
+  screen and the export read the one sign the server works out, so they
+  never differ.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "signs a move off the place chosen with its minus, the same on the list and in its export" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "signs a move off the place chosen with its minus, as its export does" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "leaves a move between two places unsigned across every place" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
 - **A date range for one code opens and closes: Opening, In, Out,
   Closing,** Closing the Opening plus In less Out, and a range ending
   today closing at today's on hand. With a reason chosen, In and Out
@@ -266,7 +278,6 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
   [test](../../server/test/movements.e2e-spec.ts) "names no place to a reader without locations.view, each place’s id kept" ·
-  [test](../../client/src/inventory/describe-movement.test.ts) "signs by the ends’ ids for a reader who sees no place’s name" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "has no From → to for a reader without locations.view (96a)" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/movements.md#correct-a-mistake-correct) ·

@@ -86,6 +86,7 @@ export function movement(over: Partial<Movement> = {}): Movement {
     // Out of every place, the list not a stock card (no balance).
     quantityIn: null,
     quantityOut: '24.0000',
+    change: '-24.0000',
     balance: null,
     ...over,
   };

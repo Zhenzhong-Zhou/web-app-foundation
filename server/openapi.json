@@ -16573,6 +16573,12 @@
               "null"
             ]
           },
+          "change": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "balance": {
             "type": [
               "string",
@@ -16611,6 +16617,7 @@
           "document",
           "quantityIn",
           "quantityOut",
+          "change",
           "balance"
         ]
       },

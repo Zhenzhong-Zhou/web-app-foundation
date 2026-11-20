@@ -50,8 +50,8 @@ updated with the rule it states (ADR-087).
   `place-paths.ts`.
 - **Movements is `movementPage` (`movement-view.ts`):** page, then
   joins; `created_at desc nulls last`, id; `cardOf`, `changeOf` and
-  `onHandByItem` give In, Out, balance and period; `orderId` 403
-  without `orders.view`.
+  `onHandByItem` give In, Out, `change`, balance and period;
+  `orderId` 403 without `orders.view`.
 - **The lines behind a code's figures are `code-lines.ts`:** Coming's
   documents, Held's sales and the usable lots without places, each read
   by the rule its figure is, so they add up; Where it stands

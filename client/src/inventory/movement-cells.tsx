@@ -14,11 +14,7 @@ import { OFFER_BACK } from '../lib/offer-back';
 import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
-import {
-  describeMovement,
-  movementActor,
-  type MovementColumns,
-} from './describe-movement';
+import { movementActor, type MovementColumns } from './describe-movement';
 import {
   MOVEMENT_HEADINGS,
   reasonDetailLabel,
@@ -192,19 +188,23 @@ export function MovementWhen({ movement }: { movement: Movement }) {
 }
 
 /**
- * The change with its unit, "−4 each", "+24 each", a move between two
- * places unsigned: read without padding zeros, never parsed, since a
- * numeric through a JavaScript number is the loss ADR-025 exists to
+ * The change with its unit, "−4 each", "+24 each": the server's signed
+ * change, which the export writes too, so the two never differ (review
+ * 24); a move counted as neither, between two places across every place,
+ * its quantity unsigned. Read without padding zeros, never parsed, since
+ * a numeric through a JavaScript number is the loss ADR-025 exists to
  * avoid.
  */
 export function MovementChange({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const { sign } = describeMovement(movement);
+  const { change, quantity, unitOfMeasure } = movement;
 
+  if (change === null) return displayWithUnit(quantity, unitOfMeasure, intl);
+  const out = change.startsWith('-');
   return (
     <>
-      {sign}
-      {displayWithUnit(movement.quantity, movement.unitOfMeasure, intl)}
+      {out ? '−' : '+'}
+      {displayWithUnit(out ? change.slice(1) : change, unitOfMeasure, intl)}
     </>
   );
 }

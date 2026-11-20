@@ -282,17 +282,12 @@ export function movementColumns(options: {
           : []),
       ]
     : [
-        // As the list's Change reads: what came in, what went out with
-        // its minus, a move within neither, its quantity alone.
+        // The list's Change, the server's one sign (review 24): what came
+        // in, what went out with its minus, a move counted as neither its
+        // quantity alone.
         asQuantity(
           t({ id: 'exports.column.change', defaultMessage: 'Change' }),
-          of(
-            (movement) =>
-              movement.quantityIn ??
-              (movement.quantityOut === null
-                ? movement.quantity
-                : `-${movement.quantityOut}`),
-          ),
+          of((movement) => movement.change ?? movement.quantity),
         ),
       ];
 

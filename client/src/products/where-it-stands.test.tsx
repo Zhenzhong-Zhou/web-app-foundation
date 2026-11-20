@@ -438,6 +438,7 @@ describe('Where it stands (ADR-093, R8)', () => {
               quantity: '4.0000',
               quantityIn: null,
               quantityOut: '4.0000',
+              change: '-4.0000',
               balance: '82.0000',
             }),
             movement({
@@ -457,6 +458,7 @@ describe('Where it stands (ADR-093, R8)', () => {
               toLocationPath: ['Main warehouse'],
               quantityIn: '86.0000',
               quantityOut: null,
+              change: '86.0000',
               balance: '86.0000',
             }),
           ],

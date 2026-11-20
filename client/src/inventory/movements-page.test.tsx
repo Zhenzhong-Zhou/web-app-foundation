@@ -232,7 +232,12 @@ describe('MovementsPage', () => {
 
   it('reads one code as a stock card: In, Out and Balance, no Item column', async () => {
     answer([
-      movement({ quantityIn: null, quantityOut: '4.0000', balance: '24.0000' }),
+      movement({
+        quantityIn: null,
+        quantityOut: '4.0000',
+        change: '-4.0000',
+        balance: '24.0000',
+      }),
     ]);
     renderAt(`/movements?variantId=${ITEM}`);
 
@@ -256,7 +261,9 @@ describe('MovementsPage', () => {
   });
 
   it('drops Balance with a reason chosen, saying why, and Clear Reason brings it back', async () => {
-    answer([movement({ quantityIn: null, quantityOut: '4.0000' })]);
+    answer([
+      movement({ quantityIn: null, quantityOut: '4.0000', change: '-4.0000' }),
+    ]);
     renderAt(`/movements?variantId=${ITEM}&reason=shipment`);
 
     expect(
@@ -271,6 +278,38 @@ describe('MovementsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear Reason' }));
 
     expect(addressOf()).toHaveTextContent(`?variantId=${ITEM}`);
+  });
+
+  // Review 24: the change the server signs, which the export writes too.
+  // At a place chosen, a move off it is Out there, with its minus; across
+  // every place, a move between two places is neither, its quantity
+  // alone.
+  const TRANSFER = movement({
+    reason: 'transfer',
+    quantity: '12.0000',
+    fromLocationId: SHELF,
+    fromLocationName: 'Shelf A2',
+    fromLocationCode: 'A2',
+    toLocationId: 'location-back',
+    toLocationName: 'Back room',
+    toLocationCode: 'B',
+    toLocationPath: ['Main warehouse'],
+    quantityIn: null,
+    quantityOut: null,
+    change: null,
+  });
+
+  it('signs a move off the place chosen with its minus, as its export does', async () => {
+    answer([{ ...TRANSFER, quantityOut: '12.0000', change: '-12.0000' }]);
+    renderAt(`/movements?locationId=${SHELF}`);
+
+    expect(await screen.findByRole('cell', { name: '−12 each' })).toBeVisible();
+  });
+
+  it('leaves a move between two places unsigned across every place', async () => {
+    const row = await rowFor(TRANSFER);
+
+    expect(within(row).getByRole('cell', { name: '12 each' })).toBeVisible();
   });
 
   it('says to choose one item while every item is listed at a place', async () => {
