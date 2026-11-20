@@ -151,7 +151,9 @@ test('Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?v
   await expect(head(page, 'Change')).toBeVisible();
   await expect(head(page, 'Item')).toBeVisible();
 
-  await page.getByRole('combobox', { name: 'Item' }).fill('Vitamin');
+  await page
+    .getByRole('combobox', { name: 'Find an item, lot or order' })
+    .fill('Vitamin');
   await page.getByRole('option', { name: /^E2E Vitamin C/ }).click();
 
   await expect(page).toHaveURL(
@@ -161,7 +163,7 @@ test('Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?v
   for (const name of ['In', 'Out', 'Balance']) {
     await expect(head(page, name)).toBeVisible();
   }
-  // The Item field says which; no Change, and no Item column (81a).
+  // The Item chip says which; no Change, and no Item column (81a).
   await expect(head(page, 'Change')).toHaveCount(0);
   await expect(head(page, 'Item')).toHaveCount(0);
   // Newest first: the receipt on the purchase, its balance today's 62.
@@ -227,9 +229,9 @@ test('Movements, every filter in the address: a reload keeps each, and the rows'
   await expect(rows(page)).toHaveCount(2);
 
   await page.reload();
-  await expect(page.getByRole('combobox', { name: 'Item' })).toHaveValue(
-    /^E2E Vitamin C/,
-  );
+  await expect(
+    page.getByRole('button', { name: /^Remove filter: Item: E2E Vitamin C/ }),
+  ).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Location' })).toHaveText(
     scene.shelfA.name,
   );
@@ -748,6 +750,65 @@ test('The order’s page, Receipts, All movements of PO-…: ?orderId=, a chip; 
   );
 });
 
+// 126: one find box for an item, a lot or an order, by the top bar's
+// lookup; each choice a filter in the address and a chip under the row.
+test('Movements, Find an item, lot or order › a lot by the keyboard: its item and the lot, each a chip, a stock card; › an order: its chip', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await movementsScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await movementsFrom(page);
+  const find = page.getByRole('combobox', {
+    name: 'Find an item, lot or order',
+  });
+
+  await find.fill('VC-LATE');
+  const lot = page.getByRole('option', {
+    name: /^Lot VC-LATE · E2E Vitamin C · expires /,
+  });
+  // The exact lot first, highlighted, as the top bar's search: Enter.
+  await expect(lot).toBeVisible();
+  await expect(page.getByRole('option').first()).toHaveText(/^Lot VC-LATE · /);
+  await page.keyboard.press('Enter');
+
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/movements\\?variantId=${scene.vitamin.variantId}&lotId=${scene.lots.late}$`,
+    ),
+  );
+  await expect(find).toHaveValue('');
+  await expect(
+    page.getByRole('button', { name: /^Remove filter: Item: E2E Vitamin C/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Remove filter: Lot: VC-LATE' }),
+  ).toBeVisible();
+  await expect(head(page, 'Balance')).toBeVisible();
+  await expect(rows(page)).toHaveCount(2);
+
+  await find.fill(scene.purchase.number);
+  await expect(
+    page.getByRole('option', {
+      name: `${scene.purchase.number} · ${scene.partner.name} · Partly received`,
+    }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page).not.toHaveURL(/orderId=/);
+  // The arrow opens the list again, as the top bar's search.
+  await page.keyboard.press('ArrowDown');
+  await page
+    .getByRole('option', { name: new RegExp(`^${scene.purchase.number}`) })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`orderId=${scene.purchase.id}`));
+  await expect(
+    page.getByRole('button', {
+      name: `Remove filter: Order: ${scene.purchase.number}`,
+    }),
+  ).toBeVisible();
+});
+
 // ---------------------------------------------------------------------------
 // The states, where ADR-093 says Movements' differ
 // ---------------------------------------------------------------------------
@@ -834,7 +895,9 @@ test('the balance hint: several items listed at a place, “Choose one item to s
   await expect(head(page, 'Change')).toBeVisible();
   await expect(rows(page)).toHaveCount(5);
 
-  await page.getByRole('combobox', { name: 'Item' }).fill('Magnesium');
+  await page
+    .getByRole('combobox', { name: 'Find an item, lot or order' })
+    .fill('Magnesium');
   await page.getByRole('option', { name: /^E2E Magnesium/ }).click();
   await expect(hint).toHaveCount(0);
   await expect(head(page, 'Balance')).toBeVisible();
@@ -868,6 +931,10 @@ test('on a phone: a card per movement, the filters and the sort behind one Filte
   await page.getByRole('button', { name: /^Filters/ }).click();
   await expect(page.getByRole('combobox', { name: 'Reason' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Sort' })).toBeVisible();
+  // The find box inside the sheet (126).
+  await expect(
+    page.getByRole('combobox', { name: 'Find an item, lot or order' }),
+  ).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------

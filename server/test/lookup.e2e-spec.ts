@@ -26,6 +26,9 @@ interface LookupResponse {
       id: string;
       title: string;
       detail: string | null;
+      status: string | null;
+      direction: string | null;
+      fulfillment: string | null;
       coverFileId: string | null;
       type: string | null;
       close: boolean;
@@ -239,6 +242,64 @@ describe('Lookup (e2e)', () => {
     expect(await orderFound('PO-00001')).toEqual([
       expect.objectContaining({ title: 'PO-000001', close: true }),
     ]);
+  });
+
+  // 126: Movements' find box says an order's state in words, as Orders
+  // does: its direction and how much of it has come, none for other kinds.
+  it("says an order's direction and how much of it has come, and neither for other kinds", async () => {
+    const alpha = await stocked('alpha');
+    const shelf = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Shelf A',
+    });
+    const partnerId = await createPartner(alpha.agent, {
+      name: 'Lakeshore Packaging',
+    });
+    const variantId = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Widget',
+      variant: { sku: 'WIDGET-1', tracksLots: false },
+    });
+    const order = body<{ order: { id: string; lines: { id: string }[] } }>(
+      await alpha.agent
+        .post('/v1/orders')
+        .send({
+          partnerId,
+          direction: 'purchase',
+          lines: [{ variantId, quantityOrdered: '10' }],
+        })
+        .expect(201),
+    ).order;
+    await alpha.agent
+      .patch(`/v1/orders/${order.id}`)
+      .send({ status: 'confirmed' })
+      .expect(204);
+    await alpha.agent
+      .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+      .send({ toLocationId: shelf, quantity: '4' })
+      .expect(201);
+
+    const orders = (await lookup(alpha, 'PO-000001')).find(
+      (group) => group.kind === 'order',
+    )?.results;
+    expect(orders).toEqual([
+      expect.objectContaining({
+        title: 'PO-000001',
+        detail: 'Lakeshore Packaging',
+        status: 'confirmed',
+        direction: 'purchase',
+        fulfillment: 'part',
+      }),
+    ]);
+
+    const lots = (await lookup(alpha, 'BF-2609')).find(
+      (group) => group.kind === 'lot',
+    )?.results;
+    expect(
+      lots?.every(
+        (result) => result.direction === null && result.fulfillment === null,
+      ),
+    ).toBe(true);
   });
 
   // ADR-051's amendment for #225: each pass is one statement, its kinds

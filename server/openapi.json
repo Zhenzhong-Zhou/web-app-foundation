@@ -18572,6 +18572,29 @@
               "null"
             ]
           },
+          "direction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "sale",
+              "purchase",
+              null
+            ]
+          },
+          "fulfillment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "all",
+              "part",
+              null
+            ]
+          },
           "expiresAt": {
             "type": [
               "string",
@@ -18614,6 +18637,8 @@
           "title",
           "detail",
           "status",
+          "direction",
+          "fulfillment",
           "expiresAt",
           "productId",
           "coverFileId",

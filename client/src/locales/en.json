@@ -708,6 +708,8 @@
   "inventory.movements.end.run": "run",
   "inventory.movements.end.sample": "sample",
   "inventory.movements.end.supplier": "supplier",
+  "inventory.movements.find": "Find an item, lot or order",
+  "inventory.movements.findLot": "Lot {code}",
   "inventory.movements.for": "For",
   "inventory.movements.fromTo": "From → to",
   "inventory.movements.in": "In",

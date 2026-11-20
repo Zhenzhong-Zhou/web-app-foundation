@@ -635,7 +635,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4 and 11)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4 and 11; 126)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -656,8 +656,14 @@ a second organization.
   Location: a move off it reads with its minus and one onto it with its
   plus, and the export's Change writes the same; "Choose one item to see
   In, Out and Balance." shows above the list. An order's All movements
-  of PO-… reads In and Out with no such line, a Location chosen too. Choose
-  VITC-100 under Item: the Item column goes, In, Out and Balance replace
+  of PO-… reads In and Out with no such line, a Location chosen too.
+  Type "VC" in Find an item, lot or order: Items, Lots and Orders
+  offered in words ("Lot VC-0302 · Vitamin C 500 mg · expires …",
+  "PO-… · … · Partly received"), never a run or a return, and nothing
+  filtered until one is chosen; arrows move, Enter chooses, Escape
+  closes. Choose a lot: its item and the lot as two chips, a stock card
+  of that lot; choose an order: its chip. Type "VITC" and choose
+  VITC-100: the Item column goes, In, Out and Balance replace
   Change, the newest row's Balance is Stock's On hand for it, a move
   between two places reads "moved 20 each, counted in neither" once
   across In and Out, in grey, its Balance unchanged and the period's In
@@ -695,8 +701,8 @@ a second organization.
   alone "until" and its day, never a dash at either end; a
   lot's Movements with a When range it has no movement in keeps "Lot:"
   and its code on the chip and names the code in the line. An archived
-  code's Movements, opened from its item's Where it stands, names it in
-  the Item field, and with Reason › Sampled leaving none, in the line
+  code's Movements, opened from its item's Where it stands, names it on
+  its Item chip, and with Reason › Sampled leaving none, in the line
   too. At
   390 px each movement is a card, a move counted in neither in its row's
   words, the filters behind one Filters button
@@ -7299,3 +7305,8 @@ first.
 - 2026-11-20: ADR-093's Movements branch, review 32: an archived code
   opened from Where it stands is named in the Item field from its
   movements, and in the no-result line: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 126: Movements' Item field
+  becomes one find box, Find an item, lot or order, reading the top
+  bar's lookup: items, lots and orders offered in words, each choice a
+  filter and its chip, typed text alone never a filter: MC-320
+  extended.

@@ -708,6 +708,8 @@
   "inventory.movements.end.run": "生产订单",
   "inventory.movements.end.sample": "样品",
   "inventory.movements.end.supplier": "供应商",
+  "inventory.movements.find": "查找物品、批次或订单",
+  "inventory.movements.findLot": "批次 {code}",
   "inventory.movements.for": "单据",
   "inventory.movements.fromTo": "从 → 到",
   "inventory.movements.in": "收入",

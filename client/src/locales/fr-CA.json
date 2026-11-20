@@ -708,6 +708,8 @@
   "inventory.movements.end.run": "fabrication",
   "inventory.movements.end.sample": "échantillon",
   "inventory.movements.end.supplier": "fournisseur",
+  "inventory.movements.find": "Trouver un article, un lot ou une commande",
+  "inventory.movements.findLot": "Lot {code}",
   "inventory.movements.for": "Document",
   "inventory.movements.fromTo": "De → à",
   "inventory.movements.in": "Entrée",

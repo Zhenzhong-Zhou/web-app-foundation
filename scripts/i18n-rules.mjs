@@ -324,6 +324,7 @@ const SAME_AS_ENGLISH = [
       "inventory.groupBy.lot",
       "inventory.lot",
       "inventory.lot.title",
+      "inventory.movements.findLot",
       "inventory.movements.lotChip",
       "inventory.stock.lots",
       "products.lots",

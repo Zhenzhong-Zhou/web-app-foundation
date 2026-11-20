@@ -217,14 +217,25 @@ file is kept is in the [README](README.md).
   that is set shows as a chip under the row, on a phone too: the item,
   the place, the lot, the order, the reason and the days, each chip's ×
   clearing its own filter alone; a lot and an order each by its code or
-  number though no movement listed carries it; an item the Item field does not list,
-  an archived code, is named there from its movements, and kept once a
+  number though no movement listed carries it. The item, a lot and an
+  order are chosen in one find box, Find an item, lot or order, which
+  reads the top bar's lookup, its kinds by the reader's permissions, and
+  offers items, lots and orders alone, never a run or a return: an item
+  sets the item, a lot its item and the lot, an order the order, each
+  then a chip; what is typed alone never filters. An archived code,
+  which the item list does not hold, is named on its chip from its
+  movements, and kept once a
   filter leaves none; Show all movements clears every one in a single
   write and keeps the sort. On a phone the Filters sheet's Clear clears
   the sheet's own fields alone, the lot's and the order's chips kept.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/inventory/movements-page.test.tsx) "asks the list by the address’s keys, the lot and the order as chips" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "shows a chip for every filter set, each × clearing its own key" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers items, lots and orders in words, grouped, never a run or a return" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "sets a lot’s item and the lot by the keyboard, each a chip, the box emptied" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "sets an order by its option, its chip under the row; Escape closes the list" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, Find an item, lot or order › a lot by the keyboard: its item and the lot, each a chip, a stock card; › an order: its chip" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
   [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a lot no row carries, on its chip and in what no result names" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names an order no row carries, on its chip and in what no result names" ·

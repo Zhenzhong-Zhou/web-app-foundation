@@ -339,6 +339,191 @@ describe('MovementsPage', () => {
     expect(keys().sort()).toEqual(['from', 'lotId', 'orderId', 'until']);
   });
 
+  // 126: the Item field is one find box for an item, a lot or an order,
+  // by the top bar's lookup; each choice a filter and its chip.
+  describe('Find an item, lot or order', () => {
+    const VITAMIN = {
+      id: ITEM,
+      sku: 'VITC-500',
+      productName: 'Vitamin C 500 mg',
+      variantName: null,
+      type: 'good' as const,
+      unitOfMeasure: 'each',
+      tracksLots: true,
+    };
+    const NONE = {
+      status: null,
+      direction: null,
+      fulfillment: null,
+      expiresAt: null,
+      productId: null,
+      coverFileId: null,
+      type: null,
+      close: false,
+    };
+
+    /** The lookup's answer, a return and a run among it; every question. */
+    function found(): string[] {
+      const asked: string[] = [];
+      server.use(
+        http.get('/api/v1/products/variants', () =>
+          HttpResponse.json([VITAMIN]),
+        ),
+        http.get('/api/v1/lookup', ({ request }) => {
+          asked.push(new URL(request.url).searchParams.get('q') ?? '');
+          return HttpResponse.json({
+            groups: [
+              {
+                kind: 'lot',
+                results: [
+                  {
+                    ...NONE,
+                    id: LOT,
+                    title: 'VC-0302',
+                    detail: 'VITC-500',
+                    expiresAt: '2026-11-22',
+                  },
+                ],
+              },
+              {
+                kind: 'order',
+                results: [
+                  {
+                    ...NONE,
+                    id: ORDER,
+                    title: 'PO-000009',
+                    detail: 'Lakeshore Packaging',
+                    status: 'confirmed',
+                    direction: 'purchase',
+                    fulfillment: 'part',
+                  },
+                ],
+              },
+              {
+                kind: 'item',
+                results: [
+                  {
+                    ...NONE,
+                    id: ITEM,
+                    title: 'Vitamin C 500 mg',
+                    detail: 'VITC-500',
+                  },
+                ],
+              },
+              {
+                kind: 'returnAuthorization',
+                results: [{ ...NONE, id: PARTNER, title: 'RA-000001' }],
+              },
+              {
+                kind: 'productionRun',
+                results: [{ ...NONE, id: PARTNER, title: 'RUN-000001' }],
+              },
+            ],
+          });
+        }),
+      );
+      return asked;
+    }
+
+    const box = () =>
+      screen.getByRole('combobox', { name: 'Find an item, lot or order' });
+
+    it('offers items, lots and orders in words, grouped, never a run or a return', async () => {
+      const user = userEvent.setup();
+      answer([MOVEMENT]);
+      found();
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', {
+          name: 'Find an item, lot or order',
+        }),
+        'VC',
+      );
+
+      const list = await screen.findByRole('listbox');
+      await within(list).findByRole('option', { name: /^Lot VC-0302/ });
+      expect(
+        within(list)
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual([
+        'Lot VC-0302 · Vitamin C 500 mg · expires Nov 22, 2026',
+        'PO-000009 · Lakeshore Packaging · Partly received',
+        'Vitamin C 500 mg · VITC-500',
+      ]);
+      expect(within(list).getByText('Lots')).toBeVisible();
+      expect(within(list).getByText('Orders')).toBeVisible();
+      expect(within(list).getByText('Items')).toBeVisible();
+      // Typed text alone never filters.
+      expect(addressOf().textContent).toBe('');
+    });
+
+    it('sets a lot’s item and the lot by the keyboard, each a chip, the box emptied', async () => {
+      const user = userEvent.setup();
+      answer([movement({ variantId: ITEM, lotId: LOT, lotCode: 'VC-0302' })]);
+      found();
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', {
+          name: 'Find an item, lot or order',
+        }),
+        'VC',
+      );
+      await screen.findByRole('option', { name: /^Lot VC-0302/ });
+      await user.keyboard('{Enter}');
+
+      const address = new URLSearchParams(addressOf().textContent ?? '');
+      expect(address.get('variantId')).toBe(ITEM);
+      expect(address.get('lotId')).toBe(LOT);
+      expect(box()).toHaveValue('');
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Item: Vitamin C 500 mg · VITC-500',
+        }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Remove filter: Lot: VC-0302' }),
+      ).toBeVisible();
+    });
+
+    it('sets an order by its option, its chip under the row; Escape closes the list', async () => {
+      const user = userEvent.setup();
+      answer([
+        movement({
+          document: { kind: 'order', id: ORDER, number: 'PO-000009' },
+        }),
+      ]);
+      found();
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', {
+          name: 'Find an item, lot or order',
+        }),
+        'PO',
+      );
+      await screen.findByRole('listbox');
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+      await user.keyboard('{ArrowDown}');
+      await user.click(
+        await screen.findByRole('option', { name: /^PO-000009/ }),
+      );
+
+      const address = new URLSearchParams(addressOf().textContent ?? '');
+      expect([...address.keys()]).toEqual(['orderId']);
+      expect(address.get('orderId')).toBe(ORDER);
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Order: PO-000009',
+        }),
+      ).toBeVisible();
+    });
+  });
+
   it('reads a place a reader may not see as Everywhere, never asking it', async () => {
     const asked = answer([MOVEMENT]);
     renderAt(`/movements?locationId=${SHELF}`, SALES);
@@ -669,7 +854,9 @@ describe('MovementsPage', () => {
     renderAt(`/movements?variantId=${ITEM}`);
 
     expect(
-      await screen.findByDisplayValue('Vitamin C · VITC-90'),
+      await screen.findByRole('button', {
+        name: 'Remove filter: Item: Vitamin C · VITC-90',
+      }),
     ).toBeVisible();
 
     await userEvent.click(screen.getByRole('combobox', { name: 'Reason' }));
@@ -678,7 +865,11 @@ describe('MovementsPage', () => {
     expect(await screen.findByText(/^No movements match/)).toHaveTextContent(
       'No movements match: Vitamin C and sampled.',
     );
-    expect(screen.getByDisplayValue('Vitamin C · VITC-90')).toBeVisible();
+    expect(
+      screen.getByRole('button', {
+        name: 'Remove filter: Item: Vitamin C · VITC-90',
+      }),
+    ).toBeVisible();
   });
 
   // #473's last line (P2a): Back after Show 25 more reads the pages shown

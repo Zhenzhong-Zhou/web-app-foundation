@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
-import type { LookupResponse, LookupResult } from '../api/types.gen';
+import type { LookupGroup, LookupResult } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
@@ -30,9 +30,7 @@ import { productTypeIcon, typeAfter } from '../products/product-types';
 import { rem } from '../theme/rem';
 import { KIND_LABELS, LIST_LABELS, listOf, pathOf } from './lookup-kinds';
 import { lookupLongEnough } from './lookup-minimum';
-
-/** Waits this long after the last key before asking. */
-const DELAY_MS = 200;
+import { useLookup } from './use-lookup';
 
 /** One row in the list: a record, a group's "Show all", or one recently
  * opened, offered before anything is typed (ADR-058). */
@@ -181,11 +179,10 @@ function LookupField({
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
-  const [text, setText] = useState('');
-  const [options, setOptions] = useState<Option[]>([]);
-  const [loading, setLoading] = useState(false);
+  const lookup = useLookup();
+  const { text, answer, loading } = lookup;
+  const options = answer ? optionsOf(answer.groups, answer.query) : [];
   const [recent, setRecent] = useState<Option[]>([]);
-  const latest = useRef(0);
 
   // Before anything is typed, the last records opened: `/` then Enter
   // reopens the last one. Read each time the field is focused, so it is
@@ -206,31 +203,6 @@ function LookupField({
     loadRecent();
   }, []);
 
-  // Fetches after the pause; the state that shows it is waiting, or that
-  // the text is too short, is set where the typing happens (onInputChange).
-  useEffect(() => {
-    const query = text.trim();
-    if (!lookupLongEnough(query)) return;
-
-    const asked = ++latest.current;
-    const timer = setTimeout(() => {
-      api<LookupResponse>(`/lookup?q=${encodeURIComponent(query)}`)
-        .then((response) => {
-          // An answer to an older question is dropped.
-          if (asked !== latest.current) return;
-          setOptions(optionsOf(response, query));
-        })
-        .catch(() => {
-          if (asked === latest.current) setOptions([]);
-        })
-        .finally(() => {
-          if (asked === latest.current) setLoading(false);
-        });
-    }, DELAY_MS);
-
-    return () => clearTimeout(timer);
-  }, [text]);
-
   function go(option: Option) {
     navigate(
       option.type === 'recent'
@@ -241,10 +213,7 @@ function LookupField({
       // Back returns to where the search was typed (#341).
       { state: OFFER_BACK },
     );
-    latest.current += 1;
-    setText('');
-    setOptions([]);
-    setLoading(false);
+    lookup.clear();
     onDone?.();
   }
 
@@ -276,14 +245,7 @@ function LookupField({
       inputValue={text}
       onInputChange={(_event, value, reason) => {
         if (reason === 'reset') return;
-        setText(value);
-        const long = lookupLongEnough(value);
-        setLoading(long);
-        if (!long) {
-          // Too short to ask: forget any answer still on its way.
-          latest.current += 1;
-          setOptions([]);
-        }
+        lookup.type(value);
       }}
       onChange={(_event, option) => {
         if (option) go(option);
@@ -431,8 +393,8 @@ function LookupField({
  * them is not a close match. Close matches are the lookup's alone
  * (ADR-056), so a list opened for them alone would find nothing (#311).
  */
-function optionsOf(response: LookupResponse, query: string): Option[] {
-  return response.groups.flatMap(({ kind, results }) => {
+function optionsOf(groups: LookupGroup[], query: string): Option[] {
+  return groups.flatMap(({ kind, results }) => {
     const rows: Option[] = results.map((result) => ({
       type: 'result',
       kind,

@@ -38,7 +38,6 @@ import { PlaceholderRows } from '../components/placeholder-rows';
 import { SelectField } from '../components/select-field';
 import { SortHeader } from '../components/sort-header';
 import { TableOrCards } from '../components/table-or-cards';
-import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { withQuery } from '../lib/api';
 import { withInstants } from '../lib/date-range';
@@ -77,6 +76,7 @@ import {
   MovementItem,
   MovementWhen,
 } from './movement-cells';
+import { MovementFinder } from './movement-finder';
 import {
   MOVEMENT_HEADINGS,
   MOVEMENT_REASONS,
@@ -133,7 +133,7 @@ export function MovementsPage() {
   const seesOrders = can('orders.view');
   // Silent if it fails: the filter degrades to an empty picker, and the
   // table below is the point of the page.
-  const { variants, answered: variantsAnswered } = useVariants(true);
+  const { variants } = useVariants(true);
   const { locations, answered, failure } = useLocations(seesPlaces);
   // Stock sits only at leaves (ADR-024), retired ones keeping their
   // history, so nothing else can be a row's place.
@@ -297,21 +297,15 @@ export function MovementsPage() {
     }),
   };
 
-  // A code chosen leaves its lot behind: another item has none of its
-  // lots.
+  // One find box for an item, a lot or an order (126), each choice a
+  // chip under the row: an item chosen leaves a lot behind, since
+  // another item has none of its lots; a lot sets its item with it.
   const itemFilter = (
-    <Box sx={{ flex: `1 1 ${rem(260)}`, minWidth: rem(220) }}>
-      <VariantPicker
-        id="movements-item"
-        label={words.item}
-        options={unlisted ? [...variants, unlisted] : variants}
-        loading={!variantsAnswered}
-        value={variantId}
-        onChange={(next) =>
-          setFilters(next === variantId ? {} : { variantId: next, lotId: '' })
-        }
-      />
-    </Box>
+    <MovementFinder
+      id="movements-find"
+      variants={variants}
+      onFind={(found) => setFilters(found)}
+    />
   );
 
   // Only places stock can sit in, grouped by their warehouse (20a), as
@@ -485,7 +479,7 @@ export function MovementsPage() {
               },
               {
                 name: variant
-                  ? itemName(variant.productName, variant.variantName)
+                  ? `${itemName(variant.productName, variant.variantName)} · ${variant.sku}`
                   : '…',
               },
             ),

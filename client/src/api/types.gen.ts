@@ -2304,6 +2304,8 @@ export type LookupResult = {
   title: string;
   detail: string | null;
   status: string | null;
+  direction: 'sale' | 'purchase' | null;
+  fulfillment: 'none' | 'all' | 'part' | null;
   expiresAt: string | null;
   productId: string | null;
   coverFileId: string | null;

@@ -231,6 +231,7 @@ as the catalogues word it.
 | Help | Aide | 帮助 | The button in the top bar, and the panel it opens (ADR-079). |
 | Menu | Menu | 菜单 | The top bar's word under ☰ below `lg`, which opens the drawer (ADR-091). |
 | Search | Rechercher | 搜索 | The top bar's word under the search's icon on a phone; the field itself is Search everything / Tout rechercher / 全局搜索. |
+| Find an item, lot or order | Trouver un article, un lot ou une commande | 查找物品、批次或订单 | Movements' find box (126): it reads the top bar's lookup, and what is chosen becomes a filter and its chip; typed text alone never filters, so it says Find, not Search. |
 | Notifications | Notifications | 通知 | The bell, and its word under it below `lg`. |
 | Account | Compte | 账户 | The top bar's word under the person's face below `lg`, which opens the account menu. |
 | Guide | Guide | 指南 | A page's help: what it is for, how to work in it, what may be refused. |
