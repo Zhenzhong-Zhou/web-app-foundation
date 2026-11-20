@@ -3,6 +3,7 @@ import {
   Button,
   Chip,
   Link,
+  MenuItem,
   Paper,
   Stack,
   TableBody,
@@ -29,10 +30,11 @@ import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { Reference } from '../components/reference';
+import { SelectField } from '../components/select-field';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import type { OrderDirection } from '../lib/api-names';
+import type { OrderDirection, OrderFulfillment } from '../lib/api-names';
 import { withDays } from '../lib/date-range';
 import { daysUntil } from '../lib/expiry';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
@@ -43,7 +45,7 @@ import { useListSearch, withSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
-import { orderStatusLabel } from './status';
+import { fulfillmentLabel, orderStatusLabel } from './status';
 
 /**
  * `status` is the document's lifecycle and says nothing about how much has
@@ -89,12 +91,16 @@ const FILTER_VALUES: readonly Filter[] = [
   'confirmed',
 ];
 
+/** Orders' filter by how much has come or gone (#605), in its order. */
+const FULFILLMENTS: readonly OrderFulfillment[] = ['none', 'part', 'all'];
+
 /**
  * The list's filters, in the address (ADR-091): Home's tiles open it
  * narrowed, `?direction=sale&outstanding=1`, and what is pressed here is
  * kept there. `outstanding` is something still to ship or to come (ADR-058,
  * #163); `late` is that and expected before the organization's today,
- * which the server decides; `from` and `to` are the expected days.
+ * which the server decides; `from` and `to` are the expected days;
+ * `fulfillment` is how much of a confirmed order has come or gone (#605).
  *
  * `order=asc` with no sort is oldest first, by when each order was made
  * (ADR-057's amendment), as Home's drafts tile opens the list, the draft
@@ -106,6 +112,7 @@ const ADDRESS_FILTERS = {
   direction: oneOf<OrderDirection | ''>(['', 'sale', 'purchase'], ''),
   outstanding: flag,
   late: flag,
+  fulfillment: oneOf<OrderFulfillment | ''>(['', ...FULFILLMENTS], ''),
   from: day,
   to: day,
   order: oneOf<'asc' | ''>(['', 'asc'], ''),
@@ -122,7 +129,7 @@ export function OrdersPage() {
   const can = useCan();
 
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  const { status: filter, direction, outstanding, late } = filters;
+  const { status: filter, direction, outstanding, late, fulfillment } = filters;
   const range = { from: filters.from, to: filters.to };
   const { text, setText, search } = useListSearch();
   // By expected date, and sortable by it (ADR-057); the export takes the
@@ -143,6 +150,7 @@ export function OrdersPage() {
           ...(direction ? { direction } : {}),
           ...(outstanding ? { outstanding: 'true' } : {}),
           ...(late ? { late: 'true' } : {}),
+          ...(fulfillment ? { fulfillment } : {}),
           ...(oldestFirst ? { order: 'asc' } : {}),
         }).toString()}`,
         search,
@@ -229,6 +237,37 @@ export function OrdersPage() {
           value={range}
           onChange={(next) => setFilters({ from: next.from, to: next.to })}
         />
+        {/* How much has come or gone (#605), in the words of the
+            direction listed, or of both. */}
+        <SelectField
+          id="orders-fulfillment"
+          size="small"
+          label={intl.formatMessage(
+            {
+              id: 'orders.fulfillment.filter',
+              defaultMessage:
+                '{direction, select, purchase {Receiving} sale {Shipping} other {Receiving or shipping}}',
+            },
+            { direction: direction || 'both' },
+          )}
+          emptyLabel={intl.formatMessage({
+            id: 'orders.fulfillment.any',
+            defaultMessage: 'Any',
+          })}
+          value={fulfillment}
+          onChange={(event) =>
+            setFilters({
+              fulfillment: event.target.value as OrderFulfillment | '',
+            })
+          }
+          sx={{ minWidth: rem(200) }}
+        >
+          {FULFILLMENTS.map((value) => (
+            <MenuItem key={value} value={value}>
+              {fulfillmentLabel(value, direction)}
+            </MenuItem>
+          ))}
+        </SelectField>
       </FilterRow>
 
       {/* What a link narrowed or ordered that no button shows, each
@@ -422,6 +461,24 @@ export function OrdersPage() {
                         tone={STATUS_TONES.order[order.status]}
                         label={orderStatusLabel(order.status, order.direction)}
                       />
+                      {/* And, while confirmed, how much has come or gone
+                          (#605): beside the status, never in its place. */}
+                      {order.fulfillment && (
+                        <Box
+                          component="span"
+                          sx={{ display: 'inline-flex', ml: 1 }}
+                        >
+                          <StatusChip
+                            tone={
+                              STATUS_TONES.orderFulfillment[order.fulfillment]
+                            }
+                            label={fulfillmentLabel(
+                              order.fulfillment,
+                              order.direction,
+                            )}
+                          />
+                        </Box>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -436,7 +493,7 @@ export function OrdersPage() {
                     id: 'inventory.noMatch',
                     defaultMessage: 'Nothing matches that search.',
                   })
-                : filter === 'open'
+                : filter === 'open' && !fulfillment
                   ? intl.formatMessage({
                       id: 'orders.empty.open',
                       defaultMessage:

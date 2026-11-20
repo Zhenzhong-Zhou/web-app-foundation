@@ -2946,6 +2946,7 @@ export type OrderSummary = {
   lineCount: number;
   quantityOrdered: string;
   quantityFulfilled: string;
+  fulfillment: 'none' | 'all' | 'part' | null;
 };
 
 export type OrderPage = {
@@ -3066,6 +3067,7 @@ export type OrderDetail = {
   direction: 'sale' | 'purchase';
   isSample: boolean;
   fullyFulfilled: boolean;
+  fulfillment: 'none' | 'all' | 'part' | null;
   duplicatedFromId: string | null;
   status: 'draft' | 'cancelled' | 'confirmed' | 'fulfilled';
   reference: string | null;
@@ -7384,6 +7386,7 @@ export type OrdersControllerListV1Data = {
     direction?: 'purchase' | 'sale';
     outstanding?: string;
     late?: string;
+    fulfillment?: 'none' | 'part' | 'all';
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;
@@ -7431,6 +7434,7 @@ export type OrdersControllerExportOrdersV1Data = {
     direction?: 'purchase' | 'sale';
     outstanding?: string;
     late?: string;
+    fulfillment?: 'none' | 'part' | 'all';
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;

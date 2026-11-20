@@ -96,6 +96,12 @@ export type PaperSize = NonNullable<OrganizationProfile['paperSize']>;
 export type OrderStatus = OrderSummary['status'];
 
 /**
+ * How much of a confirmed order has come or gone (#605): read from its
+ * lines by the server, beside the status a person decides (ADR-027).
+ */
+export type OrderFulfillment = NonNullable<OrderSummary['fulfillment']>;
+
+/**
  * The name kept on a row of the list that choosing the items' language
  * shows (ADR-054, amended for #531): the item's own, or the one kept in
  * that language, which becomes the own.

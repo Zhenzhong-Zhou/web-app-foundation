@@ -4,6 +4,7 @@ import type {
   OrderStatus,
 } from '../../../database/schema';
 import type { ChosenSite } from '../../locations/dto/location-response.dto';
+import type { OrderFulfillment } from '../order-fulfillment';
 
 /**
  * Orders as the API returns them (ADR-068): the fields the client reads,
@@ -29,6 +30,12 @@ export class OrderSummary {
   /** numeric(18,4) as a string, never parsed into a number (ADR-025). */
   quantityOrdered!: string;
   quantityFulfilled!: string;
+  /**
+   * How much has come or gone while the order is confirmed (#605): none,
+   * part or all, a line closed short counting as done. Null on any other
+   * status. Beside Status, never instead of it (ADR-027).
+   */
+  fulfillment!: OrderFulfillment | null;
 }
 
 /** GET /orders: one page, newest first or sorted (ADR-057). */
@@ -157,6 +164,8 @@ export class OrderDetail {
   isSample!: boolean;
   /** Every line received or shipped, or closed short. */
   fullyFulfilled!: boolean;
+  /** As the list's row has it (#605): null unless confirmed. */
+  fulfillment!: OrderFulfillment | null;
   /** Set when this order was raised by duplicating another (ADR-031). */
   duplicatedFromId!: string | null;
   status!: OrderStatus;

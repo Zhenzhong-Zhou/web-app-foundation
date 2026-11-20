@@ -1,7 +1,11 @@
-import { defineMessages } from 'react-intl';
+import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import { intl } from '../i18n/intl';
-import type { OrderDirection, OrderStatus } from '../lib/api-names';
+import type {
+  OrderDirection,
+  OrderFulfillment,
+  OrderStatus,
+} from '../lib/api-names';
 
 const WORDS = defineMessages({
   draft: { id: 'orders.status.draft', defaultMessage: 'Draft' },
@@ -36,6 +40,44 @@ export function orderStatusLabel(
 ): string {
   if (status === 'fulfilled') return doneLabel(direction);
   return intl().formatMessage(WORDS[status]);
+}
+
+/**
+ * How much of a confirmed order has come or gone (#605), in its
+ * direction's words: received on a purchase, shipped on a sale, and both
+ * where a list holds the two, as Orders' filter does with neither chosen.
+ */
+const FULFILLMENT_WORDS: Record<OrderFulfillment, MessageDescriptor> =
+  defineMessages({
+    none: {
+      id: 'orders.fulfillment.none',
+      defaultMessage:
+        '{direction, select, purchase {Not received} sale {Not shipped} other {Not received or shipped}}',
+    },
+    part: {
+      id: 'orders.fulfillment.part',
+      defaultMessage:
+        '{direction, select, purchase {Partly received} sale {Partly shipped} other {Partly received or shipped}}',
+    },
+    all: {
+      id: 'orders.fulfillment.all',
+      defaultMessage:
+        '{direction, select, purchase {All received} sale {All shipped} other {All received or shipped}}',
+    },
+  });
+
+/**
+ * The label beside a confirmed order's status (#605): "Partly received",
+ * "All shipped". Never in place of the status, which stays a person's
+ * decision (ADR-027). `direction` empty for a list of both.
+ */
+export function fulfillmentLabel(
+  fulfillment: OrderFulfillment,
+  direction: OrderDirection | '',
+): string {
+  return intl().formatMessage(FULFILLMENT_WORDS[fulfillment], {
+    direction: direction || 'both',
+  });
 }
 
 /**

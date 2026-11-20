@@ -53,7 +53,7 @@ import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-import { orderStatusLabel } from './status';
+import { fulfillmentLabel, orderStatusLabel, transitionLabel } from './status';
 
 /**
  * The order's sections, in the order they happen (ADR-055). Receipts are
@@ -332,7 +332,18 @@ export function OrderDetailPage() {
   // A tab this order lacks (a purchase's ?tab=shipments) opens Items.
   const open: OrderTab = tabs.includes(tab) ? tab : 'items';
 
-  /** Ship, when anything can: the page's main act (ADR-055). */
+  /**
+   * Everything in and the order still confirmed (#605): closing it stays a
+   * person's decision (ADR-027), offered as the page's main act once
+   * nothing is due. Nothing is outstanding, so it closes at once, with no
+   * question about what is still to come.
+   */
+  const closeOffered = canUpdate && order.fulfillment === 'all';
+
+  /**
+   * The page's main act (ADR-055): Ship, when anything can, or Close
+   * order, once everything is in.
+   */
   const primary = shippable ? (
     <Button
       fullWidth
@@ -344,6 +355,27 @@ export function OrderDetailPage() {
         defaultMessage: 'Ship',
       })}
     </Button>
+  ) : closeOffered ? (
+    <Stack spacing={1}>
+      <Typography id="order-close-line" variant="body2">
+        {intl.formatMessage(
+          {
+            id: 'orders.fulfillment.close',
+            defaultMessage:
+              '{direction, select, sale {Everything has shipped. Close the order?} other {Everything has arrived. Close the order?}}',
+          },
+          { direction: order.direction },
+        )}
+      </Typography>
+      <Button
+        fullWidth
+        disabled={working}
+        aria-describedby="order-close-line"
+        onClick={() => void moveTo('fulfilled')}
+      >
+        {transitionLabel('fulfilled')}
+      </Button>
+    </Stack>
   ) : undefined;
 
   /**
@@ -423,6 +455,7 @@ export function OrderDetailPage() {
           order={order}
           working={working}
           quiet={!!primary}
+          withoutClose={closeOffered}
           stacked
           onMove={moveTo}
           onCloseOrder={() => setClosing(true)}
@@ -445,13 +478,27 @@ export function OrderDetailPage() {
         ]}
         // Ours, which every order has and people quote (ADR-071).
         title={order.number}
-        status={{
+        status={[
           // What the order is, by name, rather than relying on CSS
           // capitalisation of the stored status; its tone from the one
           // table (ADR-055).
-          label: orderStatusLabel(order.status, order.direction),
-          color: COLOR_OF_TONE[STATUS_TONES.order[order.status]],
-        }}
+          {
+            label: orderStatusLabel(order.status, order.direction),
+            color: COLOR_OF_TONE[STATUS_TONES.order[order.status]],
+          },
+          // And, while confirmed, how much has come or gone (#605).
+          ...(order.fulfillment
+            ? [
+                {
+                  label: fulfillmentLabel(order.fulfillment, order.direction),
+                  color:
+                    COLOR_OF_TONE[
+                      STATUS_TONES.orderFulfillment[order.fulfillment]
+                    ],
+                },
+              ]
+            : []),
+        ]}
         subtitle={
           <>
             {[

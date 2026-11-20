@@ -40,6 +40,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     duplicatedFromId: null,
     deliverTo: null,
     fullyFulfilled: false,
+    fulfillment: null,
     isSample: false,
     totals: [],
     totalsComplete: false,
@@ -842,6 +843,84 @@ describe('OrderDetailPage header', () => {
  * totals or tax (ADR-080): the page leaves their columns, the totals and
  * the order's documents out, rather than showing a dash where each was.
  */
+/**
+ * How much has come or gone (#605; ADR-093's R25): beside Confirmed, never
+ * in its place, and once everything is in, Close order offered as the
+ * page's main act, the status staying a person's decision (ADR-027).
+ */
+describe('OrderDetailPage, how much has come', () => {
+  const allIn = order({
+    status: 'confirmed',
+    fulfillment: 'all',
+    fullyFulfilled: true,
+    lines: [
+      orderLine({
+        quantityFulfilled: '40.0000',
+        quantityOutstanding: '0.0000',
+        isComplete: true,
+      }),
+    ],
+  });
+
+  it('says Partly received beside Confirmed, with no offer to close', async () => {
+    serve(order({ status: 'confirmed', fulfillment: 'part' }));
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'PO-000001' });
+    expect(screen.getByText('Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Partly received')).toBeInTheDocument();
+    expect(screen.queryByText(/Close the order\?/)).not.toBeInTheDocument();
+  });
+
+  it('offers to close a purchase all received, once, closing it at once', async () => {
+    const sent: unknown[] = [];
+    serve(allIn);
+    server.use(
+      http.patch('/api/v1/orders/:id', async ({ request }) => {
+        sent.push(await request.json());
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderPage();
+
+    await screen.findByText('Everything has arrived. Close the order?');
+    expect(screen.getByText('All received')).toBeInTheDocument();
+    // One Close order, the main act, said by the line above it.
+    const [close, ...more] = screen.getAllByRole('button', {
+      name: 'Close order',
+    });
+    expect(more).toEqual([]);
+    expect(close).toHaveAccessibleDescription(
+      'Everything has arrived. Close the order?',
+    );
+    // Filled by the theme's default variant, which this render lacks.
+    expect(close).not.toHaveClass('MuiButton-outlined');
+
+    // Nothing is outstanding, so no question about what is still to come.
+    await userEvent.click(close);
+    await expect.poll(() => sent).toEqual([{ status: 'fulfilled' }]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('says a sale all shipped in its own words', async () => {
+    serve({ ...allIn, direction: 'sale', number: 'SO-000001' });
+    renderPage([...ALL, 'orders.ship']);
+
+    expect(
+      await screen.findByText('Everything has shipped. Close the order?'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('All shipped')).toBeInTheDocument();
+  });
+
+  it('shows a reader who cannot close it the label alone', async () => {
+    serve(allIn);
+    renderPage(['orders.view']);
+
+    expect(await screen.findByText('All received')).toBeInTheDocument();
+    expect(screen.queryByText(/Close the order\?/)).not.toBeInTheDocument();
+  });
+});
+
 describe('OrderDetailPage without prices', () => {
   const WAREHOUSE = ['orders.view', 'orders.receive', 'orders.ship'];
 

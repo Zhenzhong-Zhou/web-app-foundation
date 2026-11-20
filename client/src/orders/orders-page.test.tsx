@@ -33,6 +33,7 @@ function toShip(number: string, expectedAt: string) {
     lineCount: 1,
     quantityOrdered: '5.0000',
     quantityFulfilled: '0.0000',
+    fulfillment: 'none',
   };
 }
 
@@ -105,6 +106,7 @@ describe('OrdersPage', () => {
               lineCount: 1,
               quantityOrdered: '5.0000',
               quantityFulfilled: '0.0000',
+              fulfillment: 'none',
             },
           ],
           nextCursor: null,
@@ -350,6 +352,122 @@ describe('OrdersPage', () => {
 
     expect(await screen.findByText('SO-1')).toBeVisible();
     expect(screen.queryByText(/days? late$/)).toBeNull();
+  });
+
+  /**
+   * How much has come or gone (#605; ADR-093's R25): beside Status on a
+   * confirmed row, in its direction's words, never in place of the status
+   * a person decides; nothing beside a draft.
+   */
+  it('says beside Status how much of each confirmed order has come or gone', async () => {
+    server.use(
+      http.get('/api/v1/orders', () =>
+        HttpResponse.json({
+          entries: [
+            { ...toShip('SO-1', dayFromToday(3)), fulfillment: 'all' },
+            {
+              ...toShip('PO-2', dayFromToday(3)),
+              direction: 'purchase',
+              fulfillment: 'part',
+            },
+            {
+              ...toShip('SO-3', dayFromToday(3)),
+              status: 'draft',
+              fulfillment: null,
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/orders']}>
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    const shipped = await screen.findByText('All shipped');
+    expect(shipped.closest('td')).toHaveTextContent('ConfirmedAll shipped');
+    expect(shipped.closest('tr')).toHaveTextContent('SO-1');
+    expect(screen.getByText('Partly received').closest('tr')).toHaveTextContent(
+      'PO-2',
+    );
+    const draft = screen.getByText('SO-3').closest('tr')!;
+    expect(draft).toHaveTextContent('Draft');
+    expect(draft).not.toHaveTextContent(/received|shipped/i);
+  });
+
+  /**
+   * Its filter, kept in the address as the list's others are, named in
+   * the words of the direction listed; a list it leaves empty says no
+   * order matches, not that nothing is open.
+   */
+  it('filters by how much has come, in the address', async () => {
+    const user = userEvent.setup();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/orders', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [], nextCursor: null });
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter
+        initialEntries={['/orders?direction=purchase&fulfillment=part']}
+      >
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    const select = await screen.findByRole('combobox', { name: /^Receiving/ });
+    expect(select).toHaveTextContent('Partly received');
+    await expect.poll(() => asked.at(-1)?.get('fulfillment')).toBe('part');
+    expect(
+      await screen.findByText('No orders match that filter.'),
+    ).toBeVisible();
+
+    await user.click(select);
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent),
+    ).toEqual(['Any', 'Not received', 'Partly received', 'All received']);
+    await user.click(screen.getByRole('option', { name: 'All received' }));
+    await expect.poll(() => asked.at(-1)?.get('fulfillment')).toBe('all');
+    expect(asked.at(-1)?.get('direction')).toBe('purchase');
+  });
+
+  // Sales and purchases listed together: the filter speaks of both.
+  it('names the filter for both directions while neither is chosen', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v1/orders', () =>
+        HttpResponse.json({ entries: [], nextCursor: null }),
+      ),
+    );
+
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/orders']}>
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    const select = await screen.findByRole('combobox', {
+      name: /^Receiving or shipping/,
+    });
+    expect(select).toHaveTextContent('Any');
+    await user.click(select);
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent),
+    ).toEqual([
+      'Any',
+      'Not received or shipped',
+      'Partly received or shipped',
+      'All received or shipped',
+    ]);
   });
 
   /**

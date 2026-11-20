@@ -1,12 +1,14 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { ORDER_FULFILLMENTS } from '../modules/orders/order-fulfillment';
+import { OrdersService } from '../modules/orders/orders.service';
 import { StockGroupedService } from '../modules/stock/stock-grouped.service';
 import { StockReadsService } from '../modules/stock/stock-reads.service';
 import { WhereItStandsService } from '../modules/stock/where-it-stands.service';
 import type { Database } from './database.module';
 import {
-  orderLines,
+  ORDER_DIRECTIONS,
   orders,
   productVariants,
   reorderPoints,
@@ -52,8 +54,8 @@ import { daysFromNow } from './seed-demo-variety';
  * - **A confirmed order in each state of what has come or gone:** a
  *   purchase order not received, partly received and all received (a line
  *   closed short counting as done, as `outstandingOrder` counts it), and a
- *   sale not shipped, partly shipped and all shipped, which #605's label
- *   tells apart.
+ *   sale not shipped, partly shipped and all shipped, read through Orders'
+ *   filter by #605's label.
  */
 export async function readBackStock(
   app: INestApplicationContext,
@@ -61,6 +63,7 @@ export async function readBackStock(
   organizationId: string,
 ): Promise<string> {
   const grouped = app.get(StockGroupedService);
+  const ordersRead = app.get(OrdersService);
   const today = daysFromNow(0);
 
   const codes = await grouped.byCode({ limit: 100 }, 'en');
@@ -196,43 +199,18 @@ export async function readBackStock(
     await grouped.byLot({ limit: 100, needsCost: 'true' }, 'en', true)
   ).entries.filter((row) => row.lotCode === 'THE-0915');
 
-  // Confirmed orders by what has come or gone, a line closed short counted
-  // as done, as #605's label will tell them apart.
-  const confirmedLines = await db
-    .select({
-      orderId: orders.id,
-      direction: orders.direction,
-      ordered: orderLines.quantityOrdered,
-      done: orderLines.quantityFulfilled,
-      closedShort: orderLines.isClosedShort,
-    })
-    .from(orders)
-    .innerJoin(
-      orderLines,
-      and(
-        eq(orderLines.orderId, orders.id),
-        eq(orderLines.organizationId, orders.organizationId),
-      ),
-    )
-    .where(
-      and(
-        eq(orders.organizationId, organizationId),
-        eq(orders.status, 'confirmed'),
-      ),
-    );
-  const linesOf = new Map<string, typeof confirmedLines>();
-  for (const line of confirmedLines) {
-    linesOf.set(line.orderId, [...(linesOf.get(line.orderId) ?? []), line]);
-  }
+  // Confirmed orders in each state of what has come or gone, through
+  // Orders' own filter by #605's label, a line closed short counted as done.
   const orderStates = new Set<string>();
-  for (const lines of linesOf.values()) {
-    const allDone = lines.every(
-      (line) => line.closedShort || Number(line.done) >= Number(line.ordered),
-    );
-    const someDone = lines.some((line) => Number(line.done) > 0);
-    orderStates.add(
-      `${lines[0].direction} ${allDone ? 'all' : someDone ? 'partly' : 'none'}`,
-    );
+  for (const direction of ORDER_DIRECTIONS) {
+    for (const fulfillment of ORDER_FULFILLMENTS) {
+      const { entries } = await ordersRead.list({
+        direction,
+        fulfillment,
+        limit: 1,
+      });
+      if (entries.length > 0) orderStates.add(`${direction} ${fulfillment}`);
+    }
   }
 
   const missing: string[] = [];
@@ -272,10 +250,10 @@ export async function readBackStock(
   if (noCost.length === 0) missing.push('a lot waiting for a cost, THE-0915');
   for (const [state, words] of [
     ['purchase none', 'a confirmed purchase order not received'],
-    ['purchase partly', 'a confirmed purchase order partly received'],
+    ['purchase part', 'a confirmed purchase order partly received'],
     ['purchase all', 'a confirmed purchase order all received'],
     ['sale none', 'a confirmed sale not shipped'],
-    ['sale partly', 'a confirmed sale partly shipped'],
+    ['sale part', 'a confirmed sale partly shipped'],
     ['sale all', 'a confirmed sale all shipped'],
   ]) {
     if (!orderStates.has(state)) missing.push(words);

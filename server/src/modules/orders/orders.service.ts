@@ -46,6 +46,7 @@ import type {
   OrderPage,
   OrderQuantities,
 } from './dto/order-response.dto';
+import type { OrderFulfillment } from './order-fulfillment';
 
 const DEFAULT_LIMIT = 25;
 
@@ -84,9 +85,47 @@ export function outstandingOrder(): SQL {
     select 1 from ${orderLines}
     where ${orderLines.orderId} = ${orders.id}
       and ${orderLines.organizationId} = ${orders.organizationId}
-      and not ${orderLines.isClosedShort}
-      and ${orderLines.quantityOrdered} > ${orderLines.quantityFulfilled}
+      and ${lineStillDue()}
   ))`;
+}
+
+/**
+ * A line not closed short whose quantity is above what has shipped or
+ * been received: what outstandingOrder() and fulfillmentOf() both ask of
+ * a line, so Still to receive and the label beside Status cannot disagree.
+ */
+function lineStillDue(): SQL {
+  return sql`(not ${orderLines.isClosedShort}
+    and ${orderLines.quantityOrdered} > ${orderLines.quantityFulfilled})`;
+}
+
+/**
+ * How much of a confirmed order has come or gone (#605; ADR-093's R25):
+ * `all` once no line is still due, a line closed short counting as done,
+ * as outstandingOrder() counts it; else `part` once anything has, a
+ * voided shipment's taken back; else `none`. Null on any other status: a
+ * draft expects nothing yet, and a closed or cancelled order's status says
+ * it all. Status stays a person's decision (ADR-027): this is the
+ * arithmetic beside it, the label beside Status on the list and the page,
+ * and the list's filter by it.
+ *
+ * One aggregate over the order's lines, read through its order's index,
+ * as the list's sums are: an `exists` here let the planner hash every
+ * line of the organization once instead, a full scan of order_lines.
+ */
+export function fulfillmentOf(): SQL<OrderFulfillment | null> {
+  return sql<OrderFulfillment | null>`(case when ${orders.status} = 'confirmed'
+    then (
+      select case
+        when not bool_or(${lineStillDue()}) then 'all'
+        when bool_or(${orderLines.quantityFulfilled} > 0) then 'part'
+        else 'none'
+      end
+      from ${orderLines}
+      where ${orderLines.orderId} = ${orders.id}
+        and ${orderLines.organizationId} = ${orders.organizationId}
+    )
+  end)`;
 }
 
 /**
@@ -212,6 +251,10 @@ export class OrdersService {
       if (query.late === 'true') {
         scope.push(lateOrder(await todayOf(tx, organizationId)));
       }
+      // How much has come or gone, as each row's label reads (#605).
+      if (query.fulfillment) {
+        scope.push(sql`${fulfillmentOf()} = ${query.fulfillment}`);
+      }
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
       // Its number, its reference or its partner's name (ADR-056, ADR-071).
@@ -256,6 +299,7 @@ export class OrdersService {
             select coalesce(sum(${orderLines.quantityFulfilled}), 0)::text
             from ${orderLines} where ${orderLines.orderId} = ${orders.id}
           )`,
+          fulfillment: fulfillmentOf(),
         })
         .from(orders)
         // Inner, not left: partner_id is not null and the foreign key
@@ -320,6 +364,7 @@ export class OrdersService {
             )
             from ${orderLines} where ${orderLines.orderId} = ${orders.id}
           ), false)`,
+          fulfillment: fulfillmentOf(),
 
           /**
            * One row per currency on the order, not a single total. With a

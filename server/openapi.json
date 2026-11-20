@@ -7567,6 +7567,19 @@
             }
           },
           {
+            "name": "fulfillment",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none",
+                "part",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -7744,6 +7757,19 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "fulfillment",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none",
+                "part",
+                "all"
+              ]
             }
           },
           {
@@ -20920,6 +20946,18 @@
           },
           "quantityFulfilled": {
             "type": "string"
+          },
+          "fulfillment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "all",
+              "part",
+              null
+            ]
           }
         },
         "required": [
@@ -20935,7 +20973,8 @@
           "createdAt",
           "lineCount",
           "quantityOrdered",
-          "quantityFulfilled"
+          "quantityFulfilled",
+          "fulfillment"
         ]
       },
       "OrderPage": {
@@ -21400,6 +21439,18 @@
           "fullyFulfilled": {
             "type": "boolean"
           },
+          "fulfillment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "all",
+              "part",
+              null
+            ]
+          },
           "duplicatedFromId": {
             "type": [
               "string",
@@ -21503,6 +21554,7 @@
           "direction",
           "isSample",
           "fullyFulfilled",
+          "fulfillment",
           "duplicatedFromId",
           "status",
           "reference",

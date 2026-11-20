@@ -285,6 +285,9 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /orders, page 21',
       (org) => `/orders?status=all&before=${org.deepOrders}`,
     ),
+    // Orders by what has come or gone (#605): partly received or shipped,
+    // the fewest at either scale, so the page reads furthest for its rows.
+    read('GET /orders?fulfillment=part', () => '/orders?fulfillment=part'),
     read(
       'GET /orders/:id',
       (org, n) => `/orders/${org.orderIds[n % org.orderIds.length]}`,

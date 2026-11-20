@@ -704,6 +704,25 @@ a second organization.
   链接带来的筛选), names each chip as the list shows it, Sales only and
   Purchases only, Draft and Confirmed, Still to ship, Still to receive,
   Late and Oldest first, and says its × removes it.
+- **MC-409** *(ADR-093, R25; #605)* How much of an order has come. As
+  the demo Owner, on Orders, beside Confirmed: PO-DEMO-11 reads Not
+  received in grey, PO-DEMO-4 Partly received in blue, PO-DEMO-5 and
+  PO-DEMO-6 All received in green (PO-DEMO-6's short line counting as
+  done), SO-DEMO-9 Not shipped, SO-DEMO-1 Partly shipped and SO-DEMO-6 All
+  shipped; a draft reads Draft alone, and the Fulfilled column stays.
+  Choose Receiving or shipping › Partly received or shipped: PO-DEMO-4 and
+  SO-DEMO-1 among the rows, none of another state, `fulfillment=part` in
+  the address; open one and press Back: still chosen. Open
+  `/orders?direction=purchase`: the filter reads Receiving, its choices
+  Not received, Partly received and All received. On PO-DEMO-4, Partly
+  received beside Confirmed and no line about closing; receive the rest
+  on its Items tab: All received beside Confirmed, and a green line
+  "Everything has arrived. Close the order?" with Close order, which
+  closes it at once: Received, the label and the line gone. SO-DEMO-6's
+  line reads "Everything has shipped. Close the order?". A role made with
+  only Orders' view sees the labels and no line. In Français: Reçue en
+  partie, Entièrement reçue, « Tout est arrivé. Clore la commande? »; in
+  中文: 部分收货, 已全部收货, 未发货, and 货物已全部到达。关闭订单？
 - **MC-321** *(ADR-093, R25)* An order's movements. As the demo Owner,
   PO-DEMO-4, received in part: its Receipts tab lists what was received,
   newest first, When, Item, Received with its unit, Where by its path,
@@ -7085,3 +7104,8 @@ first.
   returning Stock with a place's opened lots; Where it stands' Latest
   movements; an order's Receipts and All movements: MC-305 rewritten,
   MC-219 and MC-1516 extended, MC-321 added.
+- 2026-11-20: ADR-093's Movements branch, step 13 (#605): a confirmed
+  order's label beside its status, Not received, Partly received and All
+  received, on a sale shipped, on Orders and the order's page, a filter
+  by it in the address, and the line offering to close it once
+  everything is in: MC-409 added.

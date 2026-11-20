@@ -297,6 +297,17 @@ async function buildProbes(
       name: 'orders: page 21',
       run: () => orders.list({ status: 'all', before: deepOrders }),
     },
+    // By what has come or gone (#605), each row's label worked out from its
+    // lines: partly is the fewest, so its page reads the most orders, and a
+    // purchase partly received reads every order where there is none.
+    {
+      name: 'orders: partly received or shipped',
+      run: () => orders.list({ fulfillment: 'part' }),
+    },
+    {
+      name: 'orders: purchases partly received',
+      run: () => orders.list({ direction: 'purchase', fulfillment: 'part' }),
+    },
     {
       name: 'order detail',
       // As the Owner reads it, every figure on it.

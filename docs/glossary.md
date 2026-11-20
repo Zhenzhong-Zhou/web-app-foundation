@@ -95,6 +95,8 @@ as the catalogues word it.
 | Orders · Draft | Commandes · Brouillon | 订单 · 草稿 | Home's drafts tile, its page's name first and Orders' Draft filter after it; hidden until a person shows it in Customise Home, never late (ADR-091, amended November 2026). |
 | Confirmed | Confirmée | 已确认 | Agreed with the partner. |
 | Received / Shipped | Reçue / Expédiée | 已收货 / 已发货 | Closed: the one status, in its direction's word (ADR-041). |
+| Not received / Partly received / All received | Non reçue / Reçue en partie / Entièrement reçue | 未收货 / 部分收货 / 已全部收货 | How much of a confirmed purchase has come, beside its status on Orders and the order's page (#605, ADR-093): worked out from its lines, a line closed short counting as done, and gone once the order is closed. All received is not Received, the status a person gives it by closing it. Orders' filter by it is Receiving / Réception / 收货进度, its empty choice Any / Toutes / 不限. |
+| Not shipped / Partly shipped / All shipped | Non expédiée / Expédiée en partie / Entièrement expédiée | 未发货 / 部分发货 / 已全部发货 | The same for a sale, its filter Shipping / Expédition / 发货进度. With sales and purchases listed together the filter names both: Receiving or shipping, Réception ou expédition, 收发货进度; Partly received or shipped, Reçue ou expédiée en partie, 部分收货或发货. |
 | Cancelled | Annulée | 已取消 | |
 | Open / Fulfilled | Ouvertes / Exécutées | 未完成 / 已完成 | The list's filters. |
 | Late | En retard | 逾期 | An outstanding order past its expected day, in the organization's day: Orders' filter, and its chip "2 days late" / « 2 jours de retard » / 逾期 2 天. Home's panel of what is late counts these with the items out and the lots and licences expired (ADR-091). Never "overdue". |
