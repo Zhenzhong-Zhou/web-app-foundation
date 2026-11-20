@@ -28,7 +28,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { categoryPaths } from '../products/category-tree';
+import { inCategoryOrBelow } from '../products/category-tree';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
 import { comingOf, openSaleLines } from './availability';
@@ -128,10 +128,7 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
       : undefined,
     query.type ? sql`${products.type} = ${query.type}` : undefined,
     query.categoryId
-      ? sql`${products.categoryId} in (
-          select cp.id from ${categoryPaths(organizationId)} cp
-          where ${query.categoryId}::uuid = any(cp.ids)
-        )`
+      ? inCategoryOrBelow(query.categoryId, organizationId)
       : undefined,
     terms
       ? or(
@@ -1101,10 +1098,7 @@ function lotFilters(
       sql`${stockLevels.lotId} is not null`,
       query.type ? sql`${products.type} = ${query.type}` : undefined,
       query.categoryId
-        ? sql`${products.categoryId} in (
-            select cp.id from ${categoryPaths(organizationId)} cp
-            where ${query.categoryId}::uuid = any(cp.ids)
-          )`
+        ? inCategoryOrBelow(query.categoryId, organizationId)
         : undefined,
       query.out === 'true' ? statusIn(sql`'out'`) : undefined,
     )}`,

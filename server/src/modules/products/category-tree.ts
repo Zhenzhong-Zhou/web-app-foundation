@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
-import { productCategories } from '../../database/schema';
+import { productCategories, products } from '../../database/schema';
 import { t, type Translatable } from '../../i18n/translate';
 import { nameSortKey } from '../stock/item-name';
 
@@ -96,6 +96,21 @@ export function categoryPaths(organizationId: string): SQL {
       where c.organization_id = ${org}
     )
     select id, ids, names, sort_key from paths
+  )`;
+}
+
+/**
+ * An item in a category or any category below it (ADR-092): Items',
+ * Stock's and the Lot view's Category filter, each written once here
+ * (#624).
+ */
+export function inCategoryOrBelow(
+  categoryId: string,
+  organizationId: string,
+): SQL {
+  return sql`${products.categoryId} in (
+    select cp.id from ${categoryPaths(organizationId)} cp
+    where ${categoryId}::uuid = any(cp.ids)
   )`;
 }
 

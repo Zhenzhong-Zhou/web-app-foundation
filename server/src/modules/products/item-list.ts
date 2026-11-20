@@ -5,7 +5,7 @@ import type { KeyPart } from '../../common/sorted-page';
 import { PRODUCT_TYPES, products } from '../../database/schema';
 import { productNameOrder } from '../stock/item-name';
 import { itemStock, lowItemsOf } from '../stock/item-stock';
-import { categoryPaths } from './category-tree';
+import { categoryPaths, inCategoryOrBelow } from './category-tree';
 import {
   type ItemFiltersDto,
   type ItemSort,
@@ -121,10 +121,7 @@ export function matchedBy(
     query.category === UNCATEGORISED
       ? isNull(products.categoryId)
       : query.category
-        ? sql`${products.categoryId} in (
-            select cp.id from ${categoryPaths(organizationId)} cp
-            where ${query.category}::uuid = any(cp.ids)
-          )`
+        ? inCategoryOrBelow(query.category, organizationId)
         : undefined;
 
   return and(search?.found, category);
