@@ -378,7 +378,8 @@ export function MovementsPage() {
   );
 
   // What no result names: each filter on, by its name (ADR-093's
-  // states), the days as they are.
+  // states), the days in words, an open range by its one end (review
+  // 49).
   const filtersOn = [
     variant && itemName(variant.productName, variant.variantName),
     place && nameAndCode(place.name, place.code),
@@ -386,9 +387,17 @@ export function MovementsPage() {
     orderId && orderNumber,
     reason && reasonLabel(reason, intl),
     (filters.from || filters.until) &&
-      `${filters.from ? formatDay(filters.from) : ''}–${
-        filters.until ? formatDay(filters.until) : ''
-      }`,
+      intl.formatMessage(
+        {
+          id: 'inventory.movements.days',
+          defaultMessage:
+            '{from, select, none {until {until}} other {{until, select, none {from {from}} other {{from} – {until}}}}}',
+        },
+        {
+          from: filters.from ? formatDay(filters.from) : 'none',
+          until: filters.until ? formatDay(filters.until) : 'none',
+        },
+      ),
   ].filter((name): name is string => !!name);
 
   return (

@@ -443,11 +443,25 @@ describe('MovementsPage', () => {
     renderAt('/movements?reason=sample&from=2026-10-01');
 
     expect(await screen.findByText(/^No movements match/)).toHaveTextContent(
-      'No movements match: sampled and Oct 1, 2026–.',
+      'No movements match: sampled and from Oct 1, 2026.',
     );
     expect(
       screen.getAllByRole('button', { name: 'Show all movements' }),
     ).toHaveLength(2);
+  });
+
+  // Review 49: the days in words from the catalogue, never a typed
+  // dash, an open range by its one end.
+  it.each([
+    ['until=2026-10-31', 'until Oct 31, 2026'],
+    ['from=2026-10-01&until=2026-10-31', 'Oct 1, 2026 – Oct 31, 2026'],
+  ])('names the days on when nothing matches, as %s', async (days, said) => {
+    answer([]);
+    renderAt(`/movements?reason=sample&${days}`);
+
+    expect(await screen.findByText(/^No movements match/)).toHaveTextContent(
+      `No movements match: sampled and ${said}.`,
+    );
   });
 
   // Review 31: a lot with no movements in range keeps its code, read
@@ -467,7 +481,7 @@ describe('MovementsPage', () => {
       }),
     ).toBeVisible();
     expect(screen.getByText(/^No movements match/)).toHaveTextContent(
-      'No movements match: VC-0302 and Oct 1, 2026–.',
+      'No movements match: VC-0302 and from Oct 1, 2026.',
     );
   });
 

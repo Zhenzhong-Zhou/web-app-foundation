@@ -657,7 +657,9 @@ a second organization.
   counts every reason. Clear Reason to see it." with Clear Reason, which
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves
-  Movements. With nothing matching, the line names the filters on: a
+  Movements. With nothing matching, the line names the filters on, the
+  days in words: a When with From alone reads "from" and its day, To
+  alone "until" and its day, never a dash at either end; a
   lot's Movements with a When range it has no movement in keeps "Lot:"
   and its code on the chip and names the code in the line. An archived
   code's Movements, opened from its item's Where it stands, names it in

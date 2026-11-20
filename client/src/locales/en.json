@@ -688,6 +688,7 @@
   "inventory.movements.chooseItem": "Choose one item to see In, Out and Balance.",
   "inventory.movements.clearReason": "Clear Reason",
   "inventory.movements.closingOn": "Closing, {day}",
+  "inventory.movements.days": "{from, select, none {until {until}} other {{until, select, none {from {from}} other {{from} – {until}}}}}",
   "inventory.movements.deletedUser": "Deleted user",
   "inventory.movements.empty": "Nothing has moved yet. Receiving stock is what puts the first row here.",
   "inventory.movements.end.countedIn": "counted in",

@@ -688,6 +688,7 @@
   "inventory.movements.chooseItem": "Choisissez un article pour voir Entrée, Sortie et Solde.",
   "inventory.movements.clearReason": "Effacer le motif",
   "inventory.movements.closingOn": "Clôture, {day}",
+  "inventory.movements.days": "{from, select, none {jusqu’au {until}} other {{until, select, none {à partir du {from}} other {du {from} au {until}}}}}",
   "inventory.movements.deletedUser": "Utilisateur supprimé",
   "inventory.movements.empty": "Aucun mouvement pour l’instant. Le premier apparaîtra lors de la réception du stock.",
   "inventory.movements.end.countedIn": "compté en plus",

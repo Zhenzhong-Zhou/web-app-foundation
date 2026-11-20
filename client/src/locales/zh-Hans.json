@@ -688,6 +688,7 @@
   "inventory.movements.chooseItem": "选择一个物品，即可查看收入、发出和结存。",
   "inventory.movements.clearReason": "清除原因",
   "inventory.movements.closingOn": "期末（{day}）",
+  "inventory.movements.days": "{from, select, none {截至 {until}} other {{until, select, none {自 {from} 起} other {{from} 至 {until}}}}}",
   "inventory.movements.deletedUser": "已删除的用户",
   "inventory.movements.empty": "尚无库存变动。收货后这里会出现第一条记录。",
   "inventory.movements.end.countedIn": "盘点计入",
