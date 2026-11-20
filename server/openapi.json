@@ -15302,9 +15302,9 @@
               "null"
             ],
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               null
             ]
@@ -15581,9 +15581,9 @@
           },
           "licenceStatusAtRelease": {
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               null
             ],
@@ -15795,9 +15795,9 @@
           "status": {
             "type": "string",
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               "withdrawn"
             ]
@@ -16390,8 +16390,8 @@
           "kind": {
             "type": "string",
             "enum": [
-              "order",
-              "run"
+              "run",
+              "order"
             ]
           },
           "id": {
@@ -17460,9 +17460,9 @@
               "null"
             ],
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               null
             ]
@@ -17692,8 +17692,8 @@
           "kind": {
             "type": "string",
             "enum": [
-              "purchase",
-              "run"
+              "run",
+              "purchase"
             ]
           },
           "id": {
@@ -17981,8 +17981,8 @@
           "kind": {
             "type": "string",
             "enum": [
-              "purchase",
-              "run"
+              "run",
+              "purchase"
             ]
           },
           "id": {
@@ -18715,13 +18715,13 @@
           "kind": {
             "type": "string",
             "enum": [
+              "run",
               "email",
               "jobTitle",
               "invoice",
               "order",
               "lot",
               "product",
-              "run",
               "photo"
             ]
           },
@@ -19023,12 +19023,12 @@
           "kind": {
             "type": "string",
             "enum": [
+              "run",
               "invoice",
               "order",
               "lot",
               "product",
               "partner",
-              "run",
               "return",
               "priceList"
             ]

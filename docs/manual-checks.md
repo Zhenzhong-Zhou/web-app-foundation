@@ -616,16 +616,22 @@ a second organization.
   line Opening balance with the balance at the range's start, its last
   Closing balance with the range's In and Out and Stock's On hand for
   VITC-100; each When a day, year-month-day; each place by its whole
-  path. A move between two places has neither In nor Out. With no item
-  chosen, Change stands for In, Out and Balance, a shipment's with its
-  minus. In 中文 the first and last lines read 期初结存 and 期末结存. As
+  path. A move between two places has neither In nor Out. Reason reads
+  as on the screen: Received, Shipped, Moved. With no item chosen,
+  Change stands for In, Out and Balance, a shipment's with its minus;
+  OMEGA3-90's correction reads Corrected: miscount, its To counted out,
+  and no From or To outside the warehouse is blank: a receipt's From
+  supplier, a shipment's To customer. In 中文 the first and last lines
+  read 期初结存 and 期末结存, and that correction 调整：计数错误. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
 - **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a and 96a)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
-  changed, the change with its unit, the reason, From → to on two lines,
+  changed, the change with its unit, the reason in words (Received,
+  Shipped, Moved, Corrected: miscount, Made, Used in a run, Sampled,
+  Returned, the Reason filter offering the same), From → to on two lines,
   each place by its path and an end outside the warehouse in grey words
   (supplier, customer, run, counted in, counted out), the lot linked with
   its expiry under it, For linked to its order or run, and By.
@@ -637,7 +643,7 @@ a second organization.
   Change, the newest row's Balance is Stock's On hand for it, and the
   address reads `?variantId=` with an id. Choose a When range: Opening,
   In, Out and Closing above the table, Closing the Opening plus In less
-  Out. Choose Reason › shipment: Balance, Opening and Closing go, "Balance
+  Out. Choose Reason › Shipped: Balance, Opening and Closing go, "Balance
   counts every reason. Clear Reason to see it." with Clear Reason, which
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves
@@ -7201,3 +7207,8 @@ first.
   chosen, a move off it reads with its minus on the screen, as its
   export already wrote it, both from the server's one sign: MC-320
   extended.
+- 2026-11-20: ADR-093's Movements branch, review 26 (100a): a
+  movement's reason in the boards' words, Received to Returned, the same
+  in the row, the Reason filter and the export, a correction's detail
+  after a colon in the export too, and the export's From or To outside
+  the warehouse in the screen's words: MC-319 and MC-320 extended.

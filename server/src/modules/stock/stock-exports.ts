@@ -148,26 +148,85 @@ export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   unitInWords(),
 ];
 
-/** Why stock moved, as the movements filter names it, in the reader's words. */
+/**
+ * Why stock moved, in the words Movements' Reason column and its filter
+ * use, in the reader's language (ADR-093, 100a). The audit log keeps its
+ * own (#649).
+ */
 const REASON_WORDS: Record<MovementReason, Translatable> = {
-  receipt: t({ id: 'stock.reason.receipt', defaultMessage: 'Receipt' }),
-  shipment: t({ id: 'stock.reason.shipment', defaultMessage: 'Shipment' }),
-  transfer: t({ id: 'stock.reason.transfer', defaultMessage: 'Transfer' }),
+  receipt: t({ id: 'stock.reason.receipt', defaultMessage: 'Received' }),
+  shipment: t({ id: 'stock.reason.shipment', defaultMessage: 'Shipped' }),
+  transfer: t({ id: 'stock.reason.transfer', defaultMessage: 'Moved' }),
   adjustment: t({
     id: 'stock.reason.adjustment',
-    defaultMessage: 'Adjustment',
+    defaultMessage: 'Corrected',
   }),
-  production: t({
-    id: 'stock.reason.production',
-    defaultMessage: 'Production',
-  }),
+  production: t({ id: 'stock.reason.production', defaultMessage: 'Made' }),
   consumption: t({
     id: 'stock.reason.consumption',
-    defaultMessage: 'Consumption',
+    defaultMessage: 'Used in a run',
   }),
-  sample: t({ id: 'stock.reason.sample', defaultMessage: 'Sample' }),
-  return: t({ id: 'stock.reason.return', defaultMessage: 'Return' }),
+  sample: t({ id: 'stock.reason.sample', defaultMessage: 'Sampled' }),
+  return: t({ id: 'stock.reason.return', defaultMessage: 'Returned' }),
 };
+
+/**
+ * What a correction says it was, chosen when the count is corrected, as
+ * the screen says it after the reason; any other detail is written as
+ * recorded, free text under its reason (ADR-023).
+ */
+const DETAIL_WORDS: Record<string, Translatable> = {
+  miscount: t({ id: 'stock.detail.miscount', defaultMessage: 'miscount' }),
+  damaged: t({ id: 'stock.detail.damaged', defaultMessage: 'damaged' }),
+  expired: t({ id: 'stock.detail.expired', defaultMessage: 'expired' }),
+  lost: t({ id: 'stock.detail.lost', defaultMessage: 'lost' }),
+  found: t({ id: 'stock.detail.found', defaultMessage: 'found' }),
+};
+
+/**
+ * An end outside the warehouse, as the screen's From → to says it in grey
+ * (ADR-093, 82a), so an export's From or To is never blank there.
+ */
+const OUTSIDE_WORDS = {
+  supplier: t({ id: 'stock.end.supplier', defaultMessage: 'supplier' }),
+  customer: t({ id: 'stock.end.customer', defaultMessage: 'customer' }),
+  run: t({ id: 'stock.end.run', defaultMessage: 'run' }),
+  countedIn: t({ id: 'stock.end.countedIn', defaultMessage: 'counted in' }),
+  countedOut: t({
+    id: 'stock.end.countedOut',
+    defaultMessage: 'counted out',
+  }),
+};
+
+/**
+ * Where a movement with no place at one end came from or went to, by its
+ * reason, as the screen's `outsideEnd` reads it (ADR-023): a receipt from
+ * a supplier, a return or a voided shipment from a customer, a run's
+ * output from the run, a correction counted in; a shipment to a customer,
+ * a run's use to the run, a correction counted out. A sample names none.
+ */
+function outsideEnd(
+  movement: Movement,
+  side: 'from' | 'to',
+): keyof typeof OUTSIDE_WORDS | null {
+  if (side === 'from' ? movement.fromLocationId : movement.toLocationId) {
+    return null;
+  }
+  switch (movement.reason) {
+    case 'receipt':
+      return 'supplier';
+    case 'shipment':
+    case 'return':
+      return 'customer';
+    case 'production':
+    case 'consumption':
+      return 'run';
+    case 'adjustment':
+      return side === 'from' ? 'countedIn' : 'countedOut';
+    default:
+      return null;
+  }
+}
 
 /** A stock card's first and last lines (88a), in its Reason column. */
 const BALANCE_WORDS = {
@@ -249,6 +308,36 @@ export function movementColumns(options: {
       'movement' in line ? value(line.movement) : null;
   const IN = t({ id: 'exports.column.in', defaultMessage: 'In' });
   const OUT = t({ id: 'exports.column.out', defaultMessage: 'Out' });
+  const REASON = t({ id: 'exports.column.reason', defaultMessage: 'Reason' });
+  // The reason and a correction's detail in the screen's words, a code
+  // with no word written as recorded (inWords).
+  const reasonOf = inWords(
+    REASON,
+    REASON_WORDS,
+    of((movement) => movement.reason),
+  );
+  const detailOf = inWords(
+    REASON,
+    DETAIL_WORDS,
+    of((movement) => movement.reasonDetail),
+  );
+  // From or To: the place by its whole path, or an end outside the
+  // warehouse in the screen's words, never blank there (82a).
+  const endColumn = (
+    header: Translatable,
+    side: 'from' | 'to',
+  ): ExportColumn<MovementLine> => {
+    const outside = inWords(
+      header,
+      OUTSIDE_WORDS,
+      of((movement) => outsideEnd(movement, side)),
+    );
+    const place = of((movement) => placeInWords(movement, side));
+    return {
+      header,
+      value: (line, locale) => place(line) ?? outside.value(line, locale),
+    };
+  };
 
   const quantities: ExportColumn<MovementLine>[] = card.inOut
     ? [
@@ -313,39 +402,35 @@ export function movementColumns(options: {
       of((movement) => movement.unitOfMeasure),
     ),
     {
-      header: t({ id: 'exports.column.reason', defaultMessage: 'Reason' }),
-      value: (line, locale) =>
-        'movement' in line
-          ? Object.hasOwn(REASON_WORDS, line.movement.reason)
-            ? translate(
-                REASON_WORDS[line.movement.reason as MovementReason],
-                locale,
-              )
-            : line.movement.reason
-          : translate(BALANCE_WORDS[line.total], locale),
+      header: REASON,
+      value: (line, locale) => {
+        if (!('movement' in line)) {
+          return translate(BALANCE_WORDS[line.total], locale);
+        }
+        const reason = reasonOf.value(line, locale);
+        const detail = detailOf.value(line, locale);
+        // As the screen writes it, "Corrected: found" (100a).
+        return detail
+          ? translate(
+              t(
+                {
+                  id: 'stock.reasonDetail',
+                  defaultMessage: '{reason}: {detail}',
+                },
+                { reason: String(reason), detail: String(detail) },
+              ),
+              locale,
+            )
+          : reason;
+      },
     },
     ...(places
       ? [
-          {
-            header: t({ id: 'exports.column.from', defaultMessage: 'From' }),
-            value: of((movement) =>
-              placeInWords(
-                movement.fromLocationPath,
-                movement.fromLocationName,
-                movement.fromLocationCode,
-              ),
-            ),
-          },
-          {
-            header: t({ id: 'exports.column.to', defaultMessage: 'To' }),
-            value: of((movement) =>
-              placeInWords(
-                movement.toLocationPath,
-                movement.toLocationName,
-                movement.toLocationCode,
-              ),
-            ),
-          },
+          endColumn(
+            t({ id: 'exports.column.from', defaultMessage: 'From' }),
+            'from',
+          ),
+          endColumn(t({ id: 'exports.column.to', defaultMessage: 'To' }), 'to'),
         ]
       : []),
     { header: HEADERS.lot, value: of((movement) => movement.lotCode) },
@@ -362,15 +447,23 @@ export function movementColumns(options: {
 }
 
 /**
- * A place as the screen names it (57a): the places above it, its
- * warehouse first, then its own name with its code, "Main warehouse ›
- * Zone A › Shelf A2 (A2)"; null for no place.
+ * A movement's end as the screen names its place (57a): the places above
+ * it, its warehouse first, then its own name with its code, "Main
+ * warehouse › Zone A › Shelf A2 (A2)"; null for no place.
  */
-function placeInWords(
-  path: string[],
-  name: string | null,
-  code: string | null,
-): string | null {
+function placeInWords(movement: Movement, side: 'from' | 'to'): string | null {
+  const [path, name, code] =
+    side === 'from'
+      ? [
+          movement.fromLocationPath,
+          movement.fromLocationName,
+          movement.fromLocationCode,
+        ]
+      : [
+          movement.toLocationPath,
+          movement.toLocationName,
+          movement.toLocationCode,
+        ];
   if (name === null) return null;
   return [...path, code ? `${name} (${code})` : name].join(' › ');
 }

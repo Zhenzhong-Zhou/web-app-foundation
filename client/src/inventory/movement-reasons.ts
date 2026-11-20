@@ -2,9 +2,9 @@ import { defineMessages, type IntlShape } from 'react-intl';
 
 /**
  * Why stock moved, as the server records it (ADR-023), in the order the
- * movements filter offers them. The English names are the keys themselves,
- * as these always read; other languages name them in their own words
- * (ADR-054).
+ * movements filter offers them. Each reads in the boards' words, received,
+ * corrected, used in a run, as the export writes them (ADR-093, 100a);
+ * the cell and the filter capitalize the first letter.
  */
 export const MOVEMENT_REASONS = [
   'receipt',
@@ -27,23 +27,20 @@ export const REASON_DETAILS = [
 ] as const;
 
 const REASONS = defineMessages({
-  receipt: { id: 'inventory.reason.receipt', defaultMessage: 'receipt' },
-  shipment: { id: 'inventory.reason.shipment', defaultMessage: 'shipment' },
-  transfer: { id: 'inventory.reason.transfer', defaultMessage: 'transfer' },
+  receipt: { id: 'inventory.reason.receipt', defaultMessage: 'received' },
+  shipment: { id: 'inventory.reason.shipment', defaultMessage: 'shipped' },
+  transfer: { id: 'inventory.reason.transfer', defaultMessage: 'moved' },
   adjustment: {
     id: 'inventory.reason.adjustment',
-    defaultMessage: 'adjustment',
+    defaultMessage: 'corrected',
   },
-  production: {
-    id: 'inventory.reason.production',
-    defaultMessage: 'production',
-  },
+  production: { id: 'inventory.reason.production', defaultMessage: 'made' },
   consumption: {
     id: 'inventory.reason.consumption',
-    defaultMessage: 'consumption',
+    defaultMessage: 'used in a run',
   },
-  sample: { id: 'inventory.reason.sample', defaultMessage: 'sample' },
-  return: { id: 'inventory.reason.return', defaultMessage: 'return' },
+  sample: { id: 'inventory.reason.sample', defaultMessage: 'sampled' },
+  return: { id: 'inventory.reason.return', defaultMessage: 'returned' },
 });
 
 const DETAILS = defineMessages({

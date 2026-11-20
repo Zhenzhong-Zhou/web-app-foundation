@@ -43,13 +43,13 @@ A movement cannot be changed. To put a quantity right, use **Correct the count**
 
 ## Words you’ll meet {#words}
 
-- **receipt**: stock arriving, on an order or without one.
-- **shipment**: stock leaving, for a customer or with no order.
-- **transfer**: stock moved between locations.
-- **adjustment**: a corrected count, or stock found where it had never been.
-- **production** and **consumption**: what a run made, and what it used.
-- **sample**: stock given away.
-- **return**: stock a customer sent back.
+- **received**: stock arriving, on an order or without one.
+- **shipped**: stock leaving, for a customer or with no order.
+- **moved**: stock taken from one location to another.
+- **corrected**: a count put right, or stock found where it had never been, its cause after a colon, as in “Corrected: found”.
+- **made** and **used in a run**: what a run made, and what it used.
+- **sampled**: stock given away.
+- **returned**: stock a customer sent back.
 - **Deleted user**: someone whose account was deleted. Their movements stay.
 
 See also [Inventory](/inventory) and [Trace a lot](/lots).

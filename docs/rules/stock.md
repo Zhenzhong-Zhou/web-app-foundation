@@ -207,11 +207,18 @@ file is kept is in the [README](README.md).
   name with today's code and type, "was" the code it was recorded under
   where that differs, the change with its unit, the reason, the lot with
   its expiry, the document it was for and who did it, the same cells on
-  Movements, the item's Latest movements and an order's Receipts.
+  Movements, the item's Latest movements and an order's Receipts. The
+  reason reads in the same words in the row, the Reason filter and the
+  export: Received, Shipped, Moved, Corrected, Made, Used in a run,
+  Sampled and Returned, a correction's detail after a colon, "Corrected:
+  found".
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names the item first, its code and type grey under it, and reads the change with its unit" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "keeps a changed code’s old one under today’s" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a reason in the boards’ words, a correction’s detail after it" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers each reason in the boards’ words" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
   MC-320
 - **Show 25 more adds the next movements below, and failing keeps the
@@ -235,7 +242,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
-  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipment: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
 - **Several items read each row's Change, signed as the list counts
@@ -264,10 +271,14 @@ file is kept is in the [README](README.md).
   Balance where the list has them, else Change, Unit, Reason, From, To,
   Lot, Expiry, For and By. One code's range starts with its opening
   balance and ends with its closing, beside the range's In and Out.
-  From and To, each place by its whole path, only for a reader who may
-  see places, else no such columns; For as the reader may see it.
+  Reason in the screen's words with its detail, "Corrected: found". From
+  and To, each place by its whole path, or an end outside the warehouse
+  in the screen's words, supplier, customer, run, counted in or counted
+  out, only for a reader who may see places, else no such columns; For
+  as the reader may see it.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·

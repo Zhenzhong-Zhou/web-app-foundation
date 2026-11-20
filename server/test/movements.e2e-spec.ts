@@ -876,7 +876,8 @@ describe('Movements (e2e)', () => {
         ...moved,
         In: '12',
         Balance: '32',
-        Reason: 'Receipt',
+        Reason: 'Received',
+        From: 'supplier',
         To: 'SHELF (SHELF)',
         For: bought.number,
       }),
@@ -884,21 +885,22 @@ describe('Movements (e2e)', () => {
         ...moved,
         Out: '5',
         Balance: '27',
-        Reason: 'Shipment',
+        Reason: 'Shipped',
         From: 'SHELF (SHELF)',
+        To: 'customer',
         For: sold.number,
       }),
       line('2026-11-10', {
         ...moved,
         Balance: '27',
-        Reason: 'Transfer',
+        Reason: 'Moved',
         From: 'SHELF (SHELF)',
         To: 'QUAR (QUAR)',
       }),
       line('2026-11-12', {
         ...moved,
         Balance: '27',
-        Reason: 'Transfer',
+        Reason: 'Moved',
         From: 'SHELF (SHELF)',
         To: 'LINE (LINE)',
         For: 'RUN-7',
@@ -922,10 +924,10 @@ describe('Movements (e2e)', () => {
     );
     expect(every.header.slice(3, 5)).toEqual(['Change', 'Unit']);
     expect(every.rows.map((row) => [row[3], row[5]])).toEqual([
-      ['12', 'Receipt'],
-      ['-5', 'Shipment'],
-      ['3', 'Transfer'],
-      ['4', 'Transfer'],
+      ['12', 'Received'],
+      ['-5', 'Shipped'],
+      ['3', 'Moved'],
+      ['4', 'Moved'],
     ]);
   });
 
@@ -965,10 +967,10 @@ describe('Movements (e2e)', () => {
       rows.map((row) => row[header.indexOf(name)]);
     expect(column('Reason')).toEqual([
       'Opening balance',
-      'Receipt',
-      'Shipment',
-      'Transfer',
-      'Transfer',
+      'Received',
+      'Shipped',
+      'Moved',
+      'Moved',
       'Closing balance',
     ]);
     // The shipment's sale by orders.view; the run's, not without
@@ -977,6 +979,59 @@ describe('Movements (e2e)', () => {
     for (const name of ['SHELF', 'QUAR', 'LINE', 'RUN-7']) {
       expect(response.text).not.toContain(name);
     }
+  });
+
+  // ADR-093, 100a; review 26: the export's Reason in the screen's words,
+  // a correction's detail after a colon, and an end outside the warehouse
+  // in the screen's grey words, never blank; in the reader's language.
+  it('exports each reason in the screen’s words with its detail, and an end outside the warehouse in words', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const focus = await item(agent, 'FOCUS');
+    await receive(agent, focus, shelf, '20');
+    for (const [reasonDetail, end] of [
+      ['found', { toLocationId: shelf }],
+      ['damaged', { fromLocationId: shelf }],
+    ] as const) {
+      await agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: focus,
+          ...end,
+          quantity: '2',
+          reason: 'adjustment',
+          reasonDetail,
+          note: 'Counted on Monday',
+        })
+        .expect(201);
+    }
+
+    const columns = async (language: string) => {
+      const { header, rows } = csvOf(
+        (
+          await agent
+            .get('/v1/stock/movements/export')
+            .set('Accept-Language', language)
+            .expect(200)
+        ).text,
+      );
+      return [3, 5, 6, 7].map((at) => [
+        header[at],
+        ...rows.map((row) => row[at]),
+      ]);
+    };
+    expect(await columns('en')).toEqual([
+      ['Change', '20', '2', '-2'],
+      ['Reason', 'Received', 'Corrected: found', 'Corrected: damaged'],
+      ['From', 'supplier', 'counted in', 'SHELF (SHELF)'],
+      ['To', 'SHELF (SHELF)', 'SHELF (SHELF)', 'counted out'],
+    ]);
+    expect((await columns('zh-Hans')).slice(1)).toEqual([
+      ['原因', '收货', '调整：盘盈', '调整：损坏'],
+      ['从', '供应商', '盘点计入', 'SHELF (SHELF)'],
+      ['到', 'SHELF (SHELF)', 'SHELF (SHELF)', '盘点扣除'],
+    ]);
   });
 
   // ADR-093, 11a and 85a; review 24: each row's change, signed by the

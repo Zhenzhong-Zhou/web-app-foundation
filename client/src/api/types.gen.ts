@@ -1574,7 +1574,7 @@ export type ProductionRun = {
   licenceNumber: string | null;
   licenceAuthority: string | null;
   licenceStatusAtRelease:
-    'none' | 'current' | 'expired' | 'not_in_force' | null;
+    'expired' | 'none' | 'current' | 'not_in_force' | null;
   licenceOverriddenBy: string | null;
   licenceOverrideReason: string | null;
   notes: string | null;
@@ -1635,7 +1635,7 @@ export type RunDetail = {
   licenceNumber: string | null;
   licenceAuthority: string | null;
   licenceStatusAtRelease:
-    'none' | 'current' | 'expired' | 'not_in_force' | null;
+    'expired' | 'none' | 'current' | 'not_in_force' | null;
   licenceOverriddenBy: string | null;
   licenceOverrideReason: string | null;
   notes: string | null;
@@ -1676,7 +1676,7 @@ export type CheckedLicence = {
 
 export type LicenceCheck = {
   licence: CheckedLicence | null;
-  status: 'none' | 'current' | 'expired' | 'not_in_force' | 'withdrawn';
+  status: 'expired' | 'none' | 'current' | 'not_in_force' | 'withdrawn';
   outcome: 'block' | 'override' | 'allow';
 };
 
@@ -1841,7 +1841,7 @@ export type RecordedMovementEnvelope = {
 };
 
 export type MovementDocument = {
-  kind: 'order' | 'run';
+  kind: 'run' | 'order';
   id: string;
   number: string | null;
 };
@@ -2065,7 +2065,7 @@ export type LotSource = {
   licenceNumber: string | null;
   licenceAuthority: string | null;
   licenceStatusAtRelease:
-    'none' | 'current' | 'expired' | 'not_in_force' | null;
+    'expired' | 'none' | 'current' | 'not_in_force' | null;
   licenceOverrideReason: string | null;
   licenceOverriddenByName: string | null;
 };
@@ -2114,7 +2114,7 @@ export type LineHold = {
 };
 
 export type ReorderPointDraft = {
-  kind: 'purchase' | 'run';
+  kind: 'run' | 'purchase';
   id: string;
   number: string | null;
   quantity: string;
@@ -2177,7 +2177,7 @@ export type UsableStock = {
 };
 
 export type ComingSupply = {
-  kind: 'purchase' | 'run';
+  kind: 'run' | 'purchase';
   id: string;
   number: string | null;
   partnerName: string | null;
@@ -2352,13 +2352,13 @@ export type Inviter = {
 
 export type WelcomeDone = {
   kind:
+    | 'run'
     | 'email'
     | 'jobTitle'
     | 'invoice'
     | 'order'
     | 'lot'
     | 'product'
-    | 'run'
     | 'photo';
   id: string | null;
   words: string | null;
@@ -2474,12 +2474,12 @@ export type HomeLayoutDto = {
 
 export type RecentEntry = {
   kind:
+    | 'run'
     | 'invoice'
     | 'order'
     | 'lot'
     | 'product'
     | 'partner'
-    | 'run'
     | 'return'
     | 'priceList';
   id: string;

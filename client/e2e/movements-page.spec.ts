@@ -190,7 +190,7 @@ test('Movements, one item, Location › Shelf A2: In, Out and Balance count A2 a
   // A2's own four: VC-SOON in, 5 moved out to B1, VC-LATE in, 4 shipped.
   await expect(rows(page)).toHaveCount(4);
   await expect(cellOf(rows(page).first(), '41 each')).toBeVisible();
-  const moved = rows(page).filter({ hasText: 'transfer' });
+  const moved = rows(page).filter({ hasText: 'moved' });
   await expect(cellOf(moved, '5 each')).toBeVisible();
   await expect(cellOf(moved, '15 each')).toBeVisible();
   // Out, its In empty: the third cell after When is Out.
@@ -222,7 +222,7 @@ test('Movements, every filter in the address: a reload keeps each, and the rows'
     scene.shelfA.name,
   );
   await expect(page.getByRole('combobox', { name: 'Reason' })).toHaveText(
-    'receipt',
+    'received',
   );
   await expect(page.getByLabel('When from')).toHaveValue(from);
   await expect(page.getByLabel('When to')).toHaveValue(until);
@@ -308,7 +308,7 @@ test('Movements, one item, When › This month: ?from= and ?until= in the organi
   await expect(page).toHaveURL(/\/locations$/);
 });
 
-test('Movements, one item, Reason › shipment: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason', async ({
+test('Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason', async ({
   page,
   freshOrg,
 }) => {
@@ -321,7 +321,7 @@ test('Movements, one item, Reason › shipment: Balance, Opening and Closing go;
   await expect(head(page, 'Balance')).toBeVisible();
 
   await page.getByRole('combobox', { name: 'Reason' }).click();
-  await page.getByRole('option', { name: 'shipment' }).click();
+  await page.getByRole('option', { name: 'shipped' }).click();
 
   await expect(page).toHaveURL(/[?&]reason=shipment(&|$)/);
   await expect(rows(page)).toHaveCount(1);
@@ -517,7 +517,7 @@ test('Movements, too wide beside Help at 1366 px: the name pinned, When under it
 // The log read whole: a reason, and a move found from either end
 // ---------------------------------------------------------------------------
 
-test('Movements, Reason › transfer: the move alone, From → to naming each end on a line of its own, its change as its whole cell', async ({
+test('Movements, Reason › moved: the move alone, From → to naming each end on a line of its own, its change as its whole cell', async ({
   page,
   freshOrg,
 }) => {
@@ -528,7 +528,7 @@ test('Movements, Reason › transfer: the move alone, From → to naming each en
   await expect(rows(page)).toHaveCount(7);
 
   await page.getByRole('combobox', { name: 'Reason' }).click();
-  await page.getByRole('option', { name: 'transfer' }).click();
+  await page.getByRole('option', { name: 'moved' }).click();
 
   /**
    * Direction is which location is set, not a column (ADR-023): a
@@ -560,7 +560,7 @@ test('Movements, Location › Shelf B1, every item: a move found from the end it
   await placeOption(page, scene.shelfB.name).click();
 
   await expect(rows(page)).toHaveCount(3);
-  await expect(rows(page).filter({ hasText: 'transfer' })).toHaveCount(1);
+  await expect(rows(page).filter({ hasText: 'moved' })).toHaveCount(1);
 });
 
 // ---------------------------------------------------------------------------
@@ -756,7 +756,7 @@ test('no results: the filters on named, with Show all movements', async ({
   );
 
   await expect(
-    page.getByText('No movements match: E2E Magnesium and sample.'),
+    page.getByText('No movements match: E2E Magnesium and sampled.'),
   ).toBeVisible();
   await page
     .getByRole('main')
@@ -832,7 +832,7 @@ test('a Sales reader: no From → to and no place named; a link with ?locationId
   await expect(page.getByRole('combobox', { name: 'Location' })).toHaveCount(0);
   await expect(page.getByRole('main')).not.toContainText('E2E Shelf');
   // A move between places still listed, its reason saying so.
-  await expect(rows(page).filter({ hasText: 'transfer' })).toHaveCount(1);
+  await expect(rows(page).filter({ hasText: 'moved' })).toHaveCount(1);
 
   const saved = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export' }).click();

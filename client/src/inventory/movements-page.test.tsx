@@ -132,6 +132,46 @@ describe('MovementsPage', () => {
     expect(row).toHaveTextContent('customer');
   });
 
+  // 100a; review 26: a reason in the boards' words, a correction's
+  // detail after a colon, as the export writes it; the cell capitalizes
+  // its first letter, "Corrected: found".
+  it('says a reason in the boards’ words, a correction’s detail after it', async () => {
+    const row = await rowFor(
+      movement({
+        reason: 'adjustment',
+        reasonDetail: 'found',
+        note: 'Behind the pallet',
+      }),
+    );
+
+    expect(within(row).getByText('corrected: found')).toBeVisible();
+  });
+
+  it('offers each reason in the boards’ words', async () => {
+    answer([MOVEMENT]);
+    renderAt('/movements');
+
+    await userEvent.click(
+      await screen.findByRole('combobox', { name: 'Reason' }),
+    );
+
+    expect(
+      within(screen.getByRole('listbox'))
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual([
+      'Any reason',
+      'received',
+      'shipped',
+      'moved',
+      'corrected',
+      'made',
+      'used in a run',
+      'sampled',
+      'returned',
+    ]);
+  });
+
   it('links the document it was for', async () => {
     const row = await rowFor(
       movement({
@@ -366,7 +406,7 @@ describe('MovementsPage', () => {
     renderAt('/movements?reason=sample&from=2026-10-01');
 
     expect(await screen.findByText(/^No movements match/)).toHaveTextContent(
-      'No movements match: sample and Oct 1, 2026–.',
+      'No movements match: sampled and Oct 1, 2026–.',
     );
     expect(
       screen.getAllByRole('button', { name: 'Show all movements' }),
