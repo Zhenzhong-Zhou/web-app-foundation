@@ -71,6 +71,53 @@ export function presetRange(
   }
 }
 
+/** Movements' When menu, in its order (ADR-093, review 1). */
+export type WhenPeriod =
+  'today' | 'thisWeek' | 'thisMonth' | 'last30Days' | 'lastMonth' | 'thisYear';
+
+export const WHEN_PERIODS: readonly WhenPeriod[] = [
+  'today',
+  'thisWeek',
+  'thisMonth',
+  'last30Days',
+  'lastMonth',
+  'thisYear',
+];
+
+/**
+ * The days a When period covers, both included, counted from the
+ * organization's `today` (ADR-072): one that holds today ends today, as
+ * nothing has moved after it, so "This week" on Friday the 20th is Monday
+ * the 16th to the 20th; Last month is the whole of it.
+ */
+export function whenRange(
+  period: WhenPeriod,
+  today: CalendarDay = organizationToday(),
+): Required<DayRange> {
+  const [year, calendarMonth, date] = today.split('-').map(Number);
+  const month = calendarMonth - 1;
+  const weekday = new Date(Date.UTC(year, month, date)).getUTCDay();
+
+  switch (period) {
+    case 'today':
+      return { from: today, to: today };
+    case 'thisWeek':
+      // From Monday.
+      return {
+        from: calendarDay(year, month, date - ((weekday + 6) % 7)),
+        to: today,
+      };
+    case 'thisMonth':
+      return { from: calendarDay(year, month, 1), to: today };
+    case 'last30Days':
+      return { from: calendarDay(year, month, date - 29), to: today };
+    case 'lastMonth':
+      return presetRange('lastMonth', today) as Required<DayRange>;
+    case 'thisYear':
+      return { from: calendarDay(year, 0, 1), to: today };
+  }
+}
+
 /** A list of calendar days: the days as they are. */
 export function withDays(path: string, range: DayRange): string {
   return withQuery(path, { from: range.from, to: range.to });

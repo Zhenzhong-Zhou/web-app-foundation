@@ -298,6 +298,17 @@ file is kept is in the [README](README.md).
   [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, When › This month: ?from= and ?until= in the organization’s days; the period line, Opening, In, Out and Closing; Back leaves Movements" ·
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
+- **When's periods are the organization's days, both included:** Today;
+  This week from Monday, This month, Last 30 days and This year, each
+  ending today; Last month whole. Choose dates… takes either end alone.
+  A code's All movements of…, under Where it stands, opens on this
+  month, so its four figures show at once.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../client/src/inventory/when-menu.test.tsx) "offers each period with its own days, a period that holds today ending today, then Choose dates… and Any time at its foot" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
+  [test](../../client/e2e/movements-page.spec.ts) "The item’s page, Latest movements, All movements of E2E-VITC: ?variantId=, Movements, one item; Back, the item’s page" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
 - **Movements' export is the screen's columns, oldest first, one value
   to each, then what a row keeps beyond them:** When to the second on
   the organization's clocks, its header naming the place its time zone

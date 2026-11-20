@@ -24,7 +24,6 @@ import type {
   VariantOption,
 } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
-import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterChips } from '../components/filter-chips';
@@ -84,6 +83,8 @@ import {
   reasonLabel,
 } from './movement-reasons';
 import { PlaceFilter } from './place-filter';
+import { WhenMenu } from './when-menu';
+import { rangeWords } from './when-words';
 
 const PAGE_SIZE = 25;
 
@@ -347,7 +348,18 @@ export function MovementsPage() {
     </SelectField>
   );
 
-  const whenFilter = <DateRangeFilter label={words.when} {...range} />;
+  // One menu, its days in the field and on a chip (review 1); on a
+  // phone, the two dates full width in the sheet.
+  const whenFilter = (
+    <WhenMenu
+      id="movements-when"
+      label={words.when}
+      inline={phone}
+      {...range}
+    />
+  );
+  const days =
+    filters.from || filters.until ? rangeWords(range.value, intl) : null;
 
   // The sort a phone has no header for, in the sheet (#481).
   const sortField = (
@@ -386,18 +398,7 @@ export function MovementsPage() {
     lotId && lotCode,
     orderId && orderNumber,
     reason && reasonLabel(reason, intl),
-    (filters.from || filters.until) &&
-      intl.formatMessage(
-        {
-          id: 'inventory.movements.days',
-          defaultMessage:
-            '{from, select, none {until {until}} other {{until, select, none {from {from}} other {{from} – {until}}}}}',
-        },
-        {
-          from: filters.from ? formatDay(filters.from) : 'none',
-          until: filters.until ? formatDay(filters.until) : 'none',
-        },
-      ),
+    days,
   ].filter((name): name is string => !!name);
 
   return (
@@ -463,9 +464,21 @@ export function MovementsPage() {
       </FilterRow>
 
       {/* What a way in narrowed that no field shows, each removable:
-          a lot's, an order's (R24). */}
+          a lot's, an order's (R24); and the days When chose, which a
+          phone's sheet hides (review 1). */}
       <FilterChips
         chips={[
+          days !== null && {
+            id: 'when',
+            label: intl.formatMessage(
+              {
+                id: 'inventory.movements.whenChip',
+                defaultMessage: 'When: {days}',
+              },
+              { days },
+            ),
+            onRemove: () => setFilters({ from: undefined, until: undefined }),
+          },
           lotId !== '' && {
             id: 'lot',
             label: intl.formatMessage(

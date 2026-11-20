@@ -433,6 +433,27 @@ describe('MovementsPage', () => {
     expect(line).toHaveTextContent('Closing, Nov 18, 2026');
   });
 
+  // Review 1: the days When chose, in its field and on a chip, whose ×
+  // clears them.
+  it('shows the days chosen in When and on a chip, whose × clears them', async () => {
+    answer([MOVEMENT]);
+    renderAt('/movements?from=2026-10-01&until=2026-10-31');
+
+    expect(
+      await screen.findByRole('combobox', { name: /^When/ }),
+    ).toHaveTextContent('Oct 1, 2026 – Oct 31, 2026');
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Remove filter: When: Oct 1, 2026 – Oct 31, 2026',
+      }),
+    );
+
+    expect(addressOf().textContent).toBe('');
+    expect(screen.getByRole('combobox', { name: /^When/ })).toHaveTextContent(
+      'Any time',
+    );
+  });
+
   it('runs oldest first once When is pressed', async () => {
     const asked = answer([MOVEMENT]);
     renderAt('/movements');

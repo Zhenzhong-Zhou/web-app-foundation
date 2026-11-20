@@ -52,6 +52,7 @@ import {
 import { fieldQuantity } from '../inventory/reorder-points';
 import { LeftLine, ReorderStatusChip } from '../inventory/reorder-status';
 import { StockActions } from '../inventory/stock-actions';
+import { whenRange } from '../lib/date-range';
 import { isZero } from '../lib/decimal';
 import { displayQuantity, formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
@@ -1005,6 +1006,7 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
  */
 function LatestMovements({ code }: { code: CodeStanding }) {
   const intl = useIntl();
+  const month = whenRange('thisMonth');
   const can = useCan();
   const movements = code.latestMovements;
   if (movements.length === 0) return null;
@@ -1062,7 +1064,12 @@ function LatestMovements({ code }: { code: CodeStanding }) {
       />
       <Link
         component={RouterLink}
-        to={movementsPath({ variantId: code.variantId })}
+        // On this month, so its stock card shows at once (review 1).
+        to={movementsPath({
+          variantId: code.variantId,
+          from: month.from,
+          until: month.to,
+        })}
         state={OFFER_BACK}
         sx={{ alignSelf: 'flex-start' }}
       >

@@ -5,7 +5,7 @@ Movements are every change to a quantity, newest first: receipts, shipments, tra
 ## Find a movement {#find}
 
 1. Choose an item under **Item** to read one code’s movements, or leave it to read them all.
-2. Narrow the list by **Location**, by **Reason**, and by the days under **When**: a day to start, a day to end, or a **Period** such as **This month**.
+2. Narrow the list by **Location**, by **Reason**, and by the days under **When**, one menu: **Today**, **This week**, **This month**, **Last 30 days**, **Last month** or **This year**, each with its days beside it, a period that holds today ending today; or **Choose dates…**, which opens **From** and **To**, typed or picked, with **Clear** and **Apply**, for a day to start, a day to end, or both. Both days are included, in your organization’s days. **When** and a chip above the list show the days chosen, From alone as “From 1 Nov 2026” and To alone as “Until 15 Nov 2026”; **Any time**, at the menu’s foot, or the chip’s ×, takes them off. Escape closes the menu.
 3. Press **Show 25 more** to see older rows. If the next 25 cannot be loaded, the rows stay, with **Try again**.
 
 Press **When** at the head of the first column to put the oldest first, and again for the newest. Every filter is in the address, so a reload, a link and Back keep them; **Show all movements** takes every one off.
@@ -26,7 +26,7 @@ With one item chosen, **In** and **Out** replace the change, and **Balance** say
 Movements opens already narrowed from other screens, and **Back** returns to where you were, as you left it.
 
 - On [Inventory](/inventory), an item’s **Actions** › **Movements** opens that code, a place’s **Movements** that code at that place, and a lot’s **Actions** › **Movements** that lot.
-- On an item’s page, each code under **Where it stands** has its **Latest movements**, the five newest, ending with **All movements of** the code.
+- On an item’s page, each code under **Where it stands** has its **Latest movements**, the five newest, ending with **All movements of** the code, which opens on this month, its opening balance, In, Out and closing balance above the list.
 - A purchase’s **Receipts** and a sale’s **Shipments** end with **All movements of** the order’s number.
 
 A lot or an order a link names shows as a chip above the list, “Lot: VC-0302” or “Order: PO-000009”; press its × to remove it. An order’s movements are what was received, shipped and returned on it.

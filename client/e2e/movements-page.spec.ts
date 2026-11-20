@@ -224,8 +224,13 @@ test('Movements, every filter in the address: a reload keeps each, and the rows'
   await expect(page.getByRole('combobox', { name: 'Reason' })).toHaveText(
     'received',
   );
+  // When's days, in Choose dates…'s two fields (review 1).
+  await page.getByRole('combobox', { name: 'When' }).click();
+  await page.getByRole('option', { name: 'Choose dates…' }).click();
   await expect(page.getByLabel('When from')).toHaveValue(from);
   await expect(page.getByLabel('When to')).toHaveValue(until);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('combobox', { name: 'When' })).toBeFocused();
   await expect(rows(page)).toHaveCount(2);
 });
 
@@ -284,11 +289,15 @@ test('Movements, one item, When › This month: ?from= and ?until= in the organi
   await movementsFrom(page, `/movements?variantId=${scene.vitamin.variantId}`);
   await expect(period(page).values).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Period' }).click();
-  await page.getByRole('menuitem', { name: 'This month' }).click();
+  // When is one menu, each period with its days (review 1).
+  await page.getByRole('combobox', { name: 'When' }).click();
+  await page.getByRole('option', { name: /^This month · / }).click();
 
   await expect(page).toHaveURL(/[?&]from=\d{4}-\d{2}-01(&|$)/);
   await expect(page).toHaveURL(/[?&]until=\d{4}-\d{2}-\d{2}(&|$)/);
+  await expect(
+    page.getByRole('button', { name: /^Remove filter: When: / }),
+  ).toBeVisible();
   // Everything moved today: nothing before the month, In and Out across
   // every place, a move between them neither; Closing today's on hand.
   await expect(period(page).terms).toHaveText([
@@ -475,10 +484,10 @@ test('Movements, too wide beside Help at 1366 px: the name pinned, When under it
   expect(Math.abs(name!.x - frame!.x)).toBeLessThanOrEqual(1);
   expect(under!.x).toBeLessThan(name!.x);
 
-  // When by the keyboard, from Period before the table, past the box,
-  // which scrolls by the keys: brought whole beside the name, not left
-  // under it.
-  await page.getByRole('button', { name: 'Period' }).focus();
+  // When by the keyboard, from the When filter before the table, past
+  // the box, which scrolls by the keys: brought whole beside the name,
+  // not left under it.
+  await page.getByRole('combobox', { name: 'When' }).focus();
   await page.keyboard.press('Tab');
   await expect(box).toBeFocused();
   await page.keyboard.press('Tab');
@@ -653,11 +662,20 @@ test('The item’s page, Latest movements, All movements of E2E-VITC: ?variantId
   ).toBeVisible();
   await latest.getByRole('link', { name: 'All movements of E2E-VITC' }).click();
 
+  // On this month, so its stock card shows at once (review 1).
   await expect(page).toHaveURL(
-    new RegExp(`/movements\\?variantId=${scene.vitamin.variantId}$`),
+    new RegExp(
+      `/movements\\?variantId=${scene.vitamin.variantId}&from=\\d{4}-\\d{2}-01&until=\\d{4}-\\d{2}-\\d{2}$`,
+    ),
   );
   await expect(head(page, 'Balance')).toBeVisible();
   await expect(rows(page)).toHaveCount(6);
+  await expect(period(page).terms).toHaveText([
+    /^Opening, /,
+    'In',
+    'Out',
+    /^Closing, /,
+  ]);
 
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page).toHaveURL(new RegExp(`/items/${scene.vitamin.id}$`));

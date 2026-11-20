@@ -630,7 +630,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a and 125)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a and 125; review 1)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -653,9 +653,18 @@ a second organization.
   of PO-… reads In and Out with no such line, a Location chosen too. Choose
   VITC-100 under Item: the Item column goes, In, Out and Balance replace
   Change, the newest row's Balance is Stock's On hand for it, and the
-  address reads `?variantId=` with an id. Choose a When range: Opening,
-  In, Out and Closing above the table, Closing the Opening plus In less
-  Out. Choose Reason › Shipped: Balance, Opening and Closing go, "Balance
+  address reads `?variantId=` with an id. When is one menu: Today, This
+  week, This month, Last 30 days, Last month and This year, each with
+  its days beside it ("This week · 16 – 20 Nov" on Friday 20 November, a
+  period that holds today ending today), then Choose dates…, and Any
+  time at its foot; Escape closes it, focus back on When. Choose This
+  month: Opening, In, Out and Closing above the table, Closing the
+  Opening plus In less Out, and the field and a chip, "When: 1 Nov 2026
+  – 20 Nov 2026", show the days, the chip's × clearing them. Choose
+  dates… opens From and To, typed or picked, with Clear and Apply; From
+  alone reads "From 1 Nov 2026" in the field, To alone "Until 15 Nov
+  2026". On the item's page, Where it stands' All movements of VITC-100
+  opens on this month, its four figures at once. Choose Reason › Shipped: Balance, Opening and Closing go, "Balance
   counts every reason. Clear Reason to see it." with Clear Reason, which
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves
@@ -668,7 +677,8 @@ a second organization.
   the Item field, and with Reason › Sampled leaving none, in the line
   too. At
   390 px each movement is a card, the filters behind one Filters button
-  with the sort; a lot's Movements with Reason and a When range chosen
+  with the sort, When the same list there, Choose dates… opening the two
+  dates full width; a lot's Movements with Reason and a When range chosen
   there: the sheet's Clear empties Reason and When and keeps the Lot
   chip. As Fatima Haddad (Sales), there is no From → to column
   and no Location filter, and a link with `?locationId=` reads every

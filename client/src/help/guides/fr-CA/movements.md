@@ -5,7 +5,7 @@ Les mouvements sont toutes les variations de quantité, de la plus récente à l
 ## Trouver un mouvement {#find}
 
 1. Choisissez un article sous **Article** pour lire les mouvements d’un seul code, ou laissez vide pour les lire tous.
-2. Limitez la liste par **Emplacement**, par **Motif** et par les jours sous **Quand** : un jour de début, un jour de fin, ou une **Période** comme **Ce mois-ci**.
+2. Limitez la liste par **Emplacement**, par **Motif** et par les jours sous **Quand**, un seul menu : **Aujourd’hui**, **Cette semaine**, **Ce mois-ci**, **Les 30 derniers jours**, **Le mois dernier** ou **Cette année**, chacun avec ses jours à côté, une période qui comprend aujourd’hui se terminant aujourd’hui; ou **Choisir les dates…**, qui ouvre le début et la fin, à taper ou à choisir, avec **Effacer** et **Appliquer**, pour un jour de début, un jour de fin, ou les deux. Les deux jours sont compris, selon les jours de votre organisation. **Quand** et une puce au-dessus de la liste montrent les jours choisis, un début seul « À partir du 1 nov. 2026 », une fin seule « Jusqu’au 15 nov. 2026 »; **N’importe quand**, au pied du menu, ou le × de la puce les retire. Échap ferme le menu.
 3. Appuyez sur **Afficher 25 de plus** pour voir les lignes plus anciennes. Si les 25 suivants ne peuvent pas être chargés, les lignes restent, avec **Réessayer**.
 
 Appuyez sur **Quand**, en tête de la première colonne, pour mettre les plus anciens d’abord, et encore pour les plus récents. Chaque filtre est dans l’adresse : un rechargement, un lien et Retour les conservent; **Afficher tous les mouvements** les retire tous.
@@ -26,7 +26,7 @@ Avec un seul article choisi, **Entrée** et **Sortie** remplacent la variation, 
 Mouvements s’ouvre déjà restreint depuis d’autres écrans, et **Retour** vous ramène là où vous étiez, tel que vous l’aviez laissé.
 
 - Dans [Inventaire](/inventory), **Actions** › **Mouvements** d’un article ouvre ce code, **Mouvements** d’un emplacement ce code à cet endroit, et **Actions** › **Mouvements** d’un lot ce lot.
-- Sur la page d’un article, chaque code sous **État du stock** a ses **Derniers mouvements**, les cinq plus récents, qui se terminent par **Tous les mouvements de** ce code.
+- Sur la page d’un article, chaque code sous **État du stock** a ses **Derniers mouvements**, les cinq plus récents, qui se terminent par **Tous les mouvements de** ce code, qui s’ouvre sur ce mois-ci, le solde d’ouverture, les entrées, les sorties et le solde de clôture au-dessus de la liste.
 - Les **Réceptions** d’un achat et les **Expéditions** d’une vente se terminent par **Tous les mouvements de** et le numéro de la commande.
 
 Un lot ou une commande qu’un lien nomme apparaît en puce au-dessus de la liste, « Lot : VC-0302 » ou « Commande : PO-000009 »; appuyez sur son × pour la retirer. Les mouvements d’une commande sont ce qui a été reçu, expédié et retourné sur elle.

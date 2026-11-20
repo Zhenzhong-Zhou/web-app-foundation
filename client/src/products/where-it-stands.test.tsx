@@ -9,6 +9,7 @@ import type {
   ProductDetail,
   ReorderPointDetail,
 } from '../api/types.gen';
+import { organizationToday } from '../lib/time-zone';
 import { movement } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -491,11 +492,15 @@ describe('Where it stands (ADR-093, R8)', () => {
     expect(within(newest).getAllByRole('cell')[3]).toHaveTextContent('82 each');
     expect(within(oldest).getAllByRole('cell')[1]).toHaveTextContent('86 each');
 
+    // On this month, to today, so its stock card shows at once (review 1).
+    const today = organizationToday();
     await userEvent.click(
       screen.getByRole('link', { name: 'All movements of ELDER-250' }),
     );
     expect(
-      await screen.findByText('/movements?variantId=variant-1 with Back'),
+      await screen.findByText(
+        `/movements?variantId=variant-1&from=${today.slice(0, 8)}01&until=${today} with Back`,
+      ),
     ).toBeInTheDocument();
   });
 

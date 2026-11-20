@@ -188,6 +188,27 @@ export function formatDayShort(
 }
 
 /**
+ * Two calendar days without their year, "16 – 20 Nov", or one, "20 Nov",
+ * where they are the same: a When period's days beside its name (ADR-093,
+ * review 1). In UTC, as formatDay.
+ */
+export function formatDaysShort(
+  from: string,
+  to: string,
+  locale: string | undefined = current,
+): string {
+  return cached(
+    `daysShort:${locale}`,
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }),
+  ).formatRange(new Date(from), new Date(to));
+}
+
+/**
  * A calendar day without its year, in words, "3 November", in a sentence
  * whose year goes without saying: the welcome's first and last days, two
  * weeks apart (ADR-079). In UTC.
