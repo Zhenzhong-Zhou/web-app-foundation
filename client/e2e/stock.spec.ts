@@ -23,7 +23,7 @@ import {
 /**
  * Inventory's Stock tab (ADR-093), row by row: each row of the ADR's
  * Stock table is one test here, named by its words, "where, what you do:
- * what happens; Back", but Actions › Movements, Movements' branch's. Then
+ * what happens; Back", Actions › Movements among them. Then
  * the five states where the ADR says they differ, and the button that
  * opens a row. Where it stands' own rows are in where-it-stands.spec.ts,
  * Reorder's in reorder.spec.ts, axe on each in accessibility.spec.ts.
@@ -407,17 +407,64 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
     'Movements',
   ]);
 
-  // A place's: a plain Movements link, its Movements there.
+  // A place's: a plain Movements link, Movements of the code there (R11).
   await page
-    .getByRole('button', {
+    .getByRole('link', {
       name: `Movements of E2E Vitamin C at ${scene.shelfB.name}`,
     })
     .click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/movements\\?variantId=${scene.vitamin.variantId}&locationId=${scene.shelfB.id}$`,
+    ),
+  );
   await expect(
-    page.getByRole('dialog', {
-      name: new RegExp(`at ${scene.shelfB.name}$`),
-    }),
+    page.getByText(`In, Out and Balance count ${scene.shelfB.name} alone.`),
   ).toBeVisible();
+});
+
+test('Stock, a lot’s Actions › Movements: Movements, one lot, a chip; Back, Stock as it was, the rows open and the place’s lots with them', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page, '/inventory?search=E2E-VITC');
+
+  await placesOf(page, 'E2E Vitamin C').click();
+  await lotsAt(page, scene.shelfA.name).click();
+  await page
+    .getByRole('button', {
+      name: `Actions for lot VC-LATE at ${scene.shelfA.name}`,
+    })
+    .click();
+  await page.getByRole('menuitem', { name: 'Movements' }).click();
+
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/movements\\?variantId=${scene.vitamin.variantId}&lotId=[0-9a-f-]+$`,
+    ),
+  );
+  await expect(page.getByText('Lot: VC-LATE')).toBeVisible();
+  await expect(
+    page.getByRole('columnheader', { name: 'Balance' }),
+  ).toBeVisible();
+
+  // Stock as it was: the code's row open, the place's lots with it, as
+  // `?open=` keeps both, focus on the code's name.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/inventory\\?search=E2E-VITC&open=${scene.vitamin.variantId}%2C${scene.vitamin.variantId}\\.${scene.shelfA.id}$`,
+    ),
+  );
+  await expect(lotsAt(page, scene.shelfA.name)).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(page.getByRole('link', { name: 'VC-LATE' })).toBeVisible();
+  await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
+  await expect(itemLinks(page).first()).toBeFocused();
 });
 
 test('Stock, an item with nothing on hand, Actions: what needs stock greyed with why, Correct the count opening its emptied place; never stocked, greyed too', async ({

@@ -6,9 +6,10 @@ import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { isZero } from '../lib/decimal';
 import { itemName } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
-import type { HistoryOf } from './movement-history-dialog';
+import { movementsPath } from './movements-path';
 
 /**
  * One pile: a code at one place, in one lot when it tracks lots (ADR-093),
@@ -33,7 +34,7 @@ export function StockActions({
   canMove,
   canAdjust,
   onSelect,
-  onHistory,
+  onLeave,
   onEditLot,
   buttonRef,
 }: {
@@ -42,7 +43,8 @@ export function StockActions({
   canMove: boolean;
   canAdjust: boolean;
   onSelect: (mode: MoveMode, row: Pile) => void;
-  onHistory: (of: HistoryOf) => void;
+  /** Leaving for its Movements: Stock keeps the code's row for Back. */
+  onLeave?: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
   /** For a row that moves focus to it: "Choose the lot". */
   buttonRef?: Ref<HTMLButtonElement>;
@@ -116,20 +118,24 @@ export function StockActions({
       ]
     : [];
 
-  // Movements, as a code's row says it (ADR-093): the lot's, or, for a
-  // code not tracked by lot, its place's; the history dialog until
-  // Movements' branch.
+  // Movements, filtered as a code's row says it (ADR-093, R11): the
+  // lot's, or, for a code not tracked by lot, its place's, which a reader
+  // without places is not given (96a).
   const reads: Action[] = [
     {
       label: words.movements,
-      onSelect: () =>
-        onHistory({
-          ...row,
-          at:
-            !row.lotId && row.locationName !== null
-              ? { locationId: row.locationId, locationName: row.locationName }
-              : null,
-        }),
+      onSelect: () => {
+        onLeave?.(row.variantId);
+        void navigate(
+          movementsPath({
+            variantId: row.variantId,
+            lotId: row.lotId,
+            locationId:
+              !row.lotId && row.locationName !== null ? row.locationId : null,
+          }),
+          { state: OFFER_BACK },
+        );
+      },
     },
   ];
 

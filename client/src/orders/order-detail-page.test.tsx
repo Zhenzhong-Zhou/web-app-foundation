@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { OrderDetail } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
-import { orderLine } from '../test/factories';
+import { movement, orderLine } from '../test/factories';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -921,5 +921,127 @@ describe('OrderDetailPage without prices', () => {
       screen.getByRole('combobox', { name: 'Deliver to' }),
     ).toHaveAttribute('aria-disabled', 'true');
     expect(askedForLocations).toBe(false);
+  });
+});
+
+// The order's movements (ADR-093, R25): a purchase's receipts, read as
+// Movements lists the order, with All movements of the order; a sale's
+// link on its Shipments tab; neither for a reader without stock.view.
+describe('OrderDetailPage receipts', () => {
+  const RECEIPT = movement({
+    id: 'movement-9',
+    reason: 'receipt',
+    quantity: '60.0000',
+    quantityIn: '60.0000',
+    quantityOut: null,
+    fromLocationId: null,
+    fromLocationName: null,
+    fromLocationCode: null,
+    fromLocationPath: [],
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    document: { kind: 'order', id: 'order-1', number: 'PO-000001' },
+  });
+
+  it('lists a purchase’s receipts by its order, with All movements of it', async () => {
+    serve(order({ status: 'confirmed' }));
+    let asked: URLSearchParams | null = null;
+    server.use(
+      http.get('/api/v1/stock/movements', ({ request }) => {
+        asked = new URL(request.url).searchParams;
+        return HttpResponse.json({
+          entries: [RECEIPT],
+          nextCursor: null,
+          period: null,
+        });
+      }),
+    );
+    renderPage(
+      [...ALL, 'stock.view', 'locations.view'],
+      '/orders/order-1?tab=receipts',
+    );
+
+    // The row, once read: the table stands while its first page loads.
+    const cell = await screen.findByText('60 each');
+    const table = cell.closest('table')!;
+    expect(asked!.get('orderId')).toBe('order-1');
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['When', 'Item', 'Received', 'Where', 'Lot', 'By']);
+    const [, row] = within(table).getAllByRole('row');
+    expect(within(row).getAllByRole('cell')[2]).toHaveTextContent('60 each');
+    expect(
+      within(row).getByText('Main warehouse › Shelf A (A)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'All movements of PO-000001' }),
+    ).toHaveAttribute('href', '/movements?orderId=order-1');
+  });
+
+  it('says when nothing has been received', async () => {
+    serve(order({ status: 'confirmed' }));
+    server.use(
+      http.get('/api/v1/stock/movements', () =>
+        HttpResponse.json({ entries: [], nextCursor: null, period: null }),
+      ),
+    );
+    renderPage([...ALL, 'stock.view'], '/orders/order-1?tab=receipts');
+
+    expect(
+      await screen.findByText('Nothing has been received on this order yet.'),
+    ).toBeVisible();
+  });
+
+  it('gives a sale’s Shipments tab All movements of it', async () => {
+    serve(
+      order({ direction: 'sale', number: 'SO-000001', status: 'confirmed' }),
+    );
+    server.use(
+      http.get('/api/v1/orders/:id/shipments', () => HttpResponse.json([])),
+    );
+    renderPage([...ALL, 'stock.view'], SHIPMENTS_TAB);
+
+    expect(
+      await screen.findByRole('link', { name: 'All movements of SO-000001' }),
+    ).toHaveAttribute('href', '/movements?orderId=order-1');
+    expect(screen.queryByRole('tab', { name: 'Receipts' })).toBeNull();
+  });
+
+  it('offers neither without stock.view', async () => {
+    let read = false;
+    serve(order({ status: 'confirmed' }));
+    server.use(
+      http.get('/api/v1/stock/movements', () => {
+        read = true;
+        return HttpResponse.json({ entries: [], nextCursor: null });
+      }),
+    );
+    renderPage(ALL, '/orders/order-1?tab=receipts');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /PO-000001/ }),
+    ).toBeVisible();
+    expect(screen.queryByRole('tab', { name: 'Receipts' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^All movements/ })).toBeNull();
+    expect(read).toBe(false);
+  });
+
+  it('gives a sale no All movements without stock.view', async () => {
+    serve(
+      order({ direction: 'sale', number: 'SO-000001', status: 'confirmed' }),
+    );
+    server.use(
+      http.get('/api/v1/orders/:id/shipments', () => HttpResponse.json([])),
+    );
+    renderPage(ALL, SHIPMENTS_TAB);
+
+    expect(
+      await screen.findByRole('tab', { name: /Shipments/, selected: true }),
+    ).toBeVisible();
+    expect(screen.queryByRole('link', { name: /^All movements/ })).toBeNull();
   });
 });

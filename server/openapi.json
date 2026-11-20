@@ -18425,6 +18425,12 @@
             "items": {
               "$ref": "#/components/schemas/UsableLot"
             }
+          },
+          "latestMovements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Movement"
+            }
           }
         },
         "required": [
@@ -18456,7 +18462,8 @@
           "purchases",
           "runs",
           "places",
-          "lots"
+          "lots",
+          "latestMovements"
         ]
       },
       "ProductStock": {

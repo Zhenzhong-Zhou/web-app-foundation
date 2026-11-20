@@ -9,8 +9,9 @@ import { LotLink } from '../components/lot-link';
 import { NUMBER_COLUMN } from '../components/number-column';
 import { Reference } from '../components/reference';
 import { NameAndEmail } from '../components/who-and-when';
-import { NO_VALUE } from '../lib/format';
+import { itemName, NO_VALUE } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
+import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import {
   describeMovement,
@@ -266,16 +267,23 @@ function reasonWords(movement: Movement, intl: IntlShape): string {
 export function MovementEnds({ movement }: { movement: Movement }) {
   return (
     <Stack sx={{ minWidth: 0 }}>
-      <End movement={movement} side="from" />
+      <MovementEnd movement={movement} side="from" />
       <Stack direction="row" spacing={0.5} sx={{ minWidth: 0 }}>
         <span aria-hidden="true">{ARROW}</span>
-        <End movement={movement} side="to" />
+        <MovementEnd movement={movement} side="to" />
       </Stack>
     </Stack>
   );
 }
 
-function End({ movement, side }: { movement: Movement; side: 'from' | 'to' }) {
+/** One end of a movement: a place by its path, or outside in grey words. */
+export function MovementEnd({
+  movement,
+  side,
+}: {
+  movement: Movement;
+  side: 'from' | 'to';
+}) {
   const intl = useIntl();
   const id = side === 'from' ? movement.fromLocationId : movement.toLocationId;
   const name =
@@ -394,5 +402,109 @@ export function CardLine({
       </Typography>
       <Box sx={{ textAlign: 'right', minWidth: 0 }}>{children}</Box>
     </Stack>
+  );
+}
+
+/**
+ * The item: its name, today's code and its type's word grey under it,
+ * the code it was recorded under when that has changed (ADR-023; 7a),
+ * the name its one link (the design language's Rows).
+ */
+export function MovementItem({ movement }: { movement: Movement }) {
+  const intl = useIntl();
+
+  return (
+    <NameAndCode
+      name={itemName(movement.productName, movement.variantName)}
+      code={movement.currentSku}
+      withType
+      type={movement.type}
+      coverFileId={null}
+      to={`/items/${movement.productId}`}
+      under={
+        movement.sku !== movement.currentSku &&
+        intl.formatMessage(
+          { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
+          { code: movement.sku },
+        )
+      }
+    />
+  );
+}
+
+/**
+ * A movement as a card below 600 px (R14; v2's phone board): the item,
+ * unless one code is chosen, then each column's value by its head, In
+ * or Out alone where the other is empty.
+ */
+export function MovementCard({
+  movement,
+  columns,
+  oneCode,
+}: {
+  movement: Movement;
+  columns: MovementColumns;
+  oneCode: boolean;
+}) {
+  const intl = useIntl();
+  const head = (key: keyof typeof MOVEMENT_HEADINGS) =>
+    intl.formatMessage(MOVEMENT_HEADINGS[key]);
+
+  return (
+    <Box
+      component="li"
+      sx={{
+        listStyle: 'none',
+        p: 2,
+        '& + &': { borderTop: 1, borderColor: 'divider' },
+      }}
+    >
+      <Stack spacing={1}>
+        {!oneCode && <MovementItem movement={movement} />}
+        <CardLine label={head('when')}>
+          <MovementWhen movement={movement} />
+        </CardLine>
+        {columns.figures === 'change' ? (
+          <CardLine label={head('change')}>
+            <MovementChange movement={movement} />
+          </CardLine>
+        ) : (
+          <>
+            {movement.quantityIn !== null && (
+              <CardLine label={head('in')}>
+                <Figure quantity={movement.quantityIn} movement={movement} />
+              </CardLine>
+            )}
+            {movement.quantityOut !== null && (
+              <CardLine label={head('out')}>
+                <Figure quantity={movement.quantityOut} movement={movement} />
+              </CardLine>
+            )}
+            {columns.figures === 'balance' && (
+              <CardLine label={head('balance')}>
+                <Figure quantity={movement.balance} movement={movement} />
+              </CardLine>
+            )}
+          </>
+        )}
+        <CardLine label={head('reason')}>
+          <MovementReason movement={movement} />
+        </CardLine>
+        {columns.places && (
+          <CardLine label={head('fromTo')}>
+            <MovementEnds movement={movement} />
+          </CardLine>
+        )}
+        <CardLine label={head('lot')}>
+          <MovementLot movement={movement} />
+        </CardLine>
+        <CardLine label={head('for')}>
+          <MovementFor movement={movement} />
+        </CardLine>
+        <CardLine label={head('by')}>
+          <MovementBy movement={movement} />
+        </CardLine>
+      </Stack>
+    </Box>
   );
 }

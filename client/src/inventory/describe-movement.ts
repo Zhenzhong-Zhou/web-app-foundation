@@ -1,30 +1,18 @@
 import type { Movement } from '../api/types.gen';
 
 /**
- * How a movement reads in a table: a sign for the quantity, and where.
+ * How a movement's quantity is signed in a table.
  *
  * Direction is which location is set, not a column (ADR-023), so it is
  * reconstructed here the same way the service validates it — a transfer has
  * both ends and no sign, stock arriving has only a destination (+), stock
  * leaving only a source (−). Read from the ends' ids, which every reader
  * gets: a reader without locations.view gets no place's name (ADR-093,
- * 96a), and a dash where it would be. One copy, so the movements page and
- * the history dialog cannot show the same row two ways.
+ * 96a). One copy, so no two lists sign the same row two ways.
  */
-export function describeMovement(movement: Movement): {
-  sign: string;
-  where: string;
-} {
-  const from = movement.fromLocationName;
-  const to = movement.toLocationName;
-
-  if (movement.fromLocationId && movement.toLocationId) {
-    return { sign: '', where: from && to ? `${from} → ${to}` : '—' };
-  }
-
-  return movement.toLocationId
-    ? { sign: '+', where: to ?? '—' }
-    : { sign: '−', where: from ?? '—' };
+export function describeMovement(movement: Movement): { sign: string } {
+  if (movement.fromLocationId && movement.toLocationId) return { sign: '' };
+  return { sign: movement.toLocationId ? '+' : '−' };
 }
 
 /**

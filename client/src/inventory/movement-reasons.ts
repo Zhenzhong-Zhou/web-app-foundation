@@ -85,7 +85,6 @@ export const MOVEMENT_HEADINGS = defineMessages({
   lot: { id: 'inventory.lot', defaultMessage: 'Lot' },
   for: { id: 'inventory.movements.for', defaultMessage: 'For' },
   where: { id: 'inventory.movements.where', defaultMessage: 'Where' },
-  why: { id: 'inventory.why', defaultMessage: 'Why' },
   by: { id: 'inventory.movements.by', defaultMessage: 'By' },
   /** Who, once the person who made the movement was anonymised (ADR-012). */
   deletedUser: {

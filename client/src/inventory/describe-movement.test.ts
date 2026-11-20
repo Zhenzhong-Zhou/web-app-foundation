@@ -18,23 +18,21 @@ function between(
 }
 
 describe('describeMovement', () => {
-  it('shows a transfer as both ends, unsigned', () => {
+  it('leaves a transfer unsigned', () => {
     expect(
       describeMovement(between(['a', 'Shelf A'], ['b', 'Shelf B'])),
-    ).toEqual({ sign: '', where: 'Shelf A → Shelf B' });
+    ).toEqual({ sign: '' });
   });
 
   it('signs stock arriving with a plus', () => {
     expect(describeMovement(between(null, ['a', 'Shelf A']))).toEqual({
       sign: '+',
-      where: 'Shelf A',
     });
   });
 
   it('signs stock leaving with a minus', () => {
     expect(describeMovement(between(['a', 'Shelf A'], null))).toEqual({
       sign: '−',
-      where: 'Shelf A',
     });
   });
 
@@ -43,15 +41,12 @@ describe('describeMovement', () => {
   it('signs by the ends’ ids for a reader who sees no place’s name', () => {
     expect(describeMovement(between(['a', null], ['b', null]))).toEqual({
       sign: '',
-      where: '—',
     });
     expect(describeMovement(between(null, ['a', null]))).toEqual({
       sign: '+',
-      where: '—',
     });
     expect(describeMovement(between(['a', null], null))).toEqual({
       sign: '−',
-      where: '—',
     });
   });
 });

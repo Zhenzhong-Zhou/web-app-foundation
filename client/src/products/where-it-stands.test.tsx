@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type {
@@ -9,6 +9,7 @@ import type {
   ProductDetail,
   ReorderPointDetail,
 } from '../api/types.gen';
+import { movement } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { WhereItStands } from './where-it-stands';
@@ -69,8 +70,16 @@ function standing(over: Partial<CodeStanding> = {}): CodeStanding {
     runs: [],
     places: [],
     lots: null,
+    latestMovements: [],
     ...over,
   };
+}
+
+/** Where a link landed, and whether it offered Back. */
+function Landed() {
+  const { pathname, search, state } = useLocation();
+  const back = (state as { offerBack?: boolean } | null)?.offerBack === true;
+  return <p>{`${pathname}${search}${back ? ' with Back' : ''}`}</p>;
 }
 
 function renderStanding(
@@ -95,6 +104,7 @@ function renderStanding(
           path="/items/:id"
           element={<WhereItStands product={PRODUCT} />}
         />
+        <Route path="/movements" element={<Landed />} />
       </Routes>
     </MemoryRouter>,
     { permissions },
@@ -390,6 +400,110 @@ describe('Where it stands (ADR-093, R8)', () => {
     expect(
       await screen.findByRole('option', { name: 'Shelf B' }),
     ).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Cancel',
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    // Movements, the lot's, in place of the history dialog (R11).
+    await userEvent.click(actions);
+    await userEvent.click(
+      within(await screen.findByRole('menu')).getByRole('menuitem', {
+        name: 'Movements',
+      }),
+    );
+    expect(
+      await screen.findByText(
+        '/movements?variantId=variant-1&lotId=lot-1 with Back',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  // v2's board: the code's five newest as a stock card, In, Out and
+  // Balance, each lot with its expiry, and All movements of the code
+  // (R12).
+  it('lists the code’s latest movements as a stock card, with All movements of the code', async () => {
+    renderStanding(
+      [
+        standing({
+          latestMovements: [
+            movement({
+              id: 'movement-2',
+              variantId: 'variant-1',
+              sku: 'ELDER-250',
+              currentSku: 'ELDER-250',
+              quantity: '4.0000',
+              quantityIn: null,
+              quantityOut: '4.0000',
+              balance: '82.0000',
+            }),
+            movement({
+              id: 'movement-1',
+              variantId: 'variant-1',
+              sku: 'ELDER-250',
+              currentSku: 'ELDER-250',
+              reason: 'receipt',
+              quantity: '86.0000',
+              fromLocationId: null,
+              fromLocationName: null,
+              fromLocationCode: null,
+              fromLocationPath: [],
+              toLocationId: 'location-shelf-a',
+              toLocationName: 'Shelf A',
+              toLocationCode: 'A',
+              toLocationPath: ['Main warehouse'],
+              quantityIn: '86.0000',
+              quantityOut: null,
+              balance: '86.0000',
+            }),
+          ],
+        }),
+      ],
+      ['stock.view', 'locations.view'],
+    );
+
+    const heading = await screen.findByRole('heading', {
+      name: 'Latest movements',
+    });
+    const table = heading.parentElement!.querySelector('table')!;
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      'When',
+      'In',
+      'Out',
+      'Balance',
+      'Reason',
+      'From → to',
+      'Lot',
+      'For',
+      'By',
+    ]);
+    const [, newest, oldest] = within(table).getAllByRole('row');
+    expect(within(newest).getAllByRole('cell')[3]).toHaveTextContent('82 each');
+    expect(within(oldest).getAllByRole('cell')[1]).toHaveTextContent('86 each');
+
+    await userEvent.click(
+      screen.getByRole('link', { name: 'All movements of ELDER-250' }),
+    );
+    expect(
+      await screen.findByText('/movements?variantId=variant-1 with Back'),
+    ).toBeInTheDocument();
+  });
+
+  it('lists no latest movements before anything has moved', async () => {
+    renderStanding([standing()], ['stock.view']);
+
+    await screen.findByRole('heading', { name: 'Where it stands' });
+    expect(
+      screen.queryByRole('heading', { name: 'Latest movements' }),
+    ).toBeNull();
+    expect(screen.queryByRole('link', { name: /^All movements/ })).toBeNull();
   });
 
   // v2's board (Bob's fourth message): one code, the title inside its

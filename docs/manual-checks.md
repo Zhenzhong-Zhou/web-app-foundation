@@ -388,7 +388,13 @@ a second organization.
   its expiry as Stock's chip, each lot's Actions the lot's menu as on
   Stock (Move…, Ship out…, Send sample…, Correct the count…, Edit lot
   details…, Trace lot, Movements), whose Move… lists every other place
-  under To (the places are read as Move… first opens, not on arrival). Change reorder point opens the point's dialog filled in,
+  under To (the places are read as Move… first opens, not on arrival),
+  and whose Movements opens Movements for that lot, Back returning to the
+  page. Under it, Latest movements: the code's five newest, When, In,
+  Out, Balance, Reason, From → to, Lot, For and By, the newest's Balance
+  its On hand, and All movements of ELDER-250, which opens Movements for
+  the code, Back returning to the page; CALM-SAMPLE, never received, has
+  none. Change reorder point opens the point's dialog filled in,
   and Escape returns focus to it; Save closes it, and Low with its "left
   · reorder at" line shows the point saved; Buy 134 opens New order, a purchase,
   with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
@@ -540,11 +546,16 @@ a second organization.
   appears under Movements with who, when and why.
 - **MC-303** A lot-tracked move asks for the lot; an untracked one does not.
 - **MC-304** An adjustment out cannot take more than is on the shelf.
-- **MC-305** A movement's history dialog reads in the direction it happened
-  (in, out, between). Its Why names the document each movement was for,
-  linked: ELDER-250's receipt "receipt · PO-DEMO-…", a shipment "shipment ·
-  SO-DEMO-…", a run by its reference; a receipt with no order names none.
-  A role made with `stock.view` alone sees the movements, no order named.
+- **MC-305** *(ADR-093, R11)* Stock's ways into Movements, as the demo
+  Owner; there is no history dialog. VITC-100's Actions › Movements
+  opens Movements for it, `?variantId=` with an id, In, Out and Balance;
+  open D3-1000-120's places, then a place's Movements link: that code at
+  that place, `&locationId=`, "In, Out and Balance count … alone."; open
+  a place's lots, then a lot's Actions › Movements: that lot, `&lotId=`,
+  the chip "Lot: D3-…". Each offers Back, which returns Stock as it was:
+  the item's row open, the place's lots open with it, focus on the
+  item's name. A role made with `stock.view` alone sees the same rows,
+  no order or run named under For.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
 - **MC-319** *(ADR-093, 87a and 88a)* As the demo Owner, export Movements
@@ -693,6 +704,17 @@ a second organization.
   链接带来的筛选), names each chip as the list shows it, Sales only and
   Purchases only, Draft and Confirmed, Still to ship, Still to receive,
   Late and Oldest first, and says its × removes it.
+- **MC-321** *(ADR-093, R25)* An order's movements. As the demo Owner,
+  PO-DEMO-4, received in part: its Receipts tab lists what was received,
+  newest first, When, Item, Received with its unit, Where by its path,
+  Lot with its expiry, and By; receive more on the Items tab and open
+  Receipts again: the new receipt first. All movements of PO-DEMO-4
+  opens Movements with the chip "Order: PO-DEMO-4", `?orderId=` with an
+  id, In and Out with no Balance; Back returns to the order. SO-DEMO-1's
+  Shipments tab ends with All movements of SO-DEMO-1, its shipments and
+  returns there. PO-DEMO-11, nothing received, says so on Receipts. A
+  role made with `orders.view` and no `stock.view` sees no Receipts tab
+  and no All movements link. In 中文 the tab reads 收货记录.
 
 ## 5. Making
 
@@ -1496,8 +1518,9 @@ Paper is checked first because it must not change at all.
   Shipments again. Press Back once more: the page before the order, not the
   Items tab. Type ?tab=nonsense on the address: Items opens and the address
   loses it.
-- **MC-1516** A purchase (PO-DEMO-4) has no tab bar, only its items, and no
-  money group. Below 900px the summary sits above the tabs.
+- **MC-1516** A purchase (PO-DEMO-4) has no Shipments, Returns or
+  documents tab and no money group: Items, Receipts (MC-321) and History.
+  Below 900px the summary sits above the tabs.
 - **MC-1517** On SO-DEMO-1's Items tab, quantities read without padding zeros
   (600, 400, 7, 200), and Credited shows 2 in amber, since 5 of the 7 returned
   are not settled. In Français, 1 234,5 reads with the French separators.
@@ -7057,3 +7080,8 @@ first.
   in the address that reads as a stock card for one code, its rows the
   name first, From → to by path, the lot and For linked, cards on a
   phone: MC-320 added, MC-3319 and MC-R70 reworded.
+- 2026-11-20: ADR-093's Movements branch, step 12: the history dialog
+  gone, Stock's item, place and lot open Movements filtered, Back
+  returning Stock with a place's opened lots; Where it stands' Latest
+  movements; an order's Receipts and All movements: MC-305 rewritten,
+  MC-219 and MC-1516 extended, MC-321 added.

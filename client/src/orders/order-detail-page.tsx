@@ -43,6 +43,7 @@ import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
 import { OrderDocuments } from './order-documents';
 import { OrderLinesSection } from './order-lines-section';
+import { AllMovementsOf, OrderReceipts } from './order-receipts';
 import { OrderStatusActions } from './order-status-actions';
 import { OrderSummary } from './order-summary';
 import { showsPrices } from './prices';
@@ -55,11 +56,13 @@ import { ShipmentsList } from './shipments-list';
 import { orderStatusLabel } from './status';
 
 /**
- * The order's sections, in the order they happen (ADR-055). Shipments,
- * returns and documents are a sale's; History needs audit.view. The page
- * passes the ones this order and member have.
+ * The order's sections, in the order they happen (ADR-055). Receipts are
+ * a purchase's, read from Movements, so for a reader with stock.view
+ * (ADR-093, R25); shipments, returns and documents are a sale's; History
+ * needs audit.view. The page passes the ones this order and member have.
  */
-type OrderTab = 'items' | 'shipments' | 'returns' | 'documents' | 'history';
+type OrderTab =
+  'items' | 'receipts' | 'shipments' | 'returns' | 'documents' | 'history';
 
 export function OrderDetailPage() {
   const intl = useIntl();
@@ -111,8 +114,10 @@ export function OrderDetailPage() {
    * settled once it arrives, below.
    */
   const canHistory = can('audit.view');
+  const canSeeStock = can('stock.view');
   const possibleTabs: OrderTab[] = [
     'items',
+    ...(canSeeStock ? (['receipts'] as const) : []),
     'shipments',
     'returns',
     'documents',
@@ -319,6 +324,7 @@ export function OrderDetailPage() {
   const hasDocuments = sale && !!order.documents && canViewInvoices;
   const tabs: OrderTab[] = [
     'items',
+    ...(!sale && canSeeStock ? (['receipts'] as const) : []),
     ...(sale ? (['shipments', 'returns'] as const) : []),
     ...(hasDocuments ? (['documents'] as const) : []),
     ...(canHistory ? (['history'] as const) : []),
@@ -583,6 +589,24 @@ export function OrderDetailPage() {
               </Box>
             ),
           },
+          ...(!sale && canSeeStock
+            ? [
+                {
+                  id: 'receipts' as const,
+                  label: intl.formatMessage({
+                    id: 'orders.receipts.title',
+                    defaultMessage: 'Receipts',
+                  }),
+                  // Mounted only while open, so it reads what was received
+                  // since.
+                  content: (
+                    <Box sx={{ p: 2 }}>
+                      <OrderReceipts orderId={order.id} number={order.number} />
+                    </Box>
+                  ),
+                },
+              ]
+            : []),
           ...(sale
             ? [
                 {
@@ -594,7 +618,7 @@ export function OrderDetailPage() {
                   // None reads better as no number than as a 0.
                   count: order.counts.shipments || undefined,
                   content: (
-                    <Box sx={{ p: 2 }}>
+                    <Stack spacing={2} sx={{ p: 2 }}>
                       <ShipmentsList
                         orderId={order.id}
                         refreshKey={shipments}
@@ -615,7 +639,13 @@ export function OrderDetailPage() {
                           setShipments((count) => count + 1);
                         }}
                       />
-                    </Box>
+                      {/* Its shipments, voids and returns on Movements
+                          (ADR-093, R25). */}
+                      <AllMovementsOf
+                        orderId={order.id}
+                        number={order.number}
+                      />
+                    </Stack>
                   ),
                 },
                 {

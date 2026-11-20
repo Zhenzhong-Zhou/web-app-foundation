@@ -122,6 +122,7 @@ interface Standing {
         places: number;
       }[]
     | null;
+  latestMovements: { id: string; balance: string | null }[];
 }
 
 interface ReorderDetail {
@@ -613,6 +614,24 @@ describe('A code’s figures (e2e)', () => {
     await beta.agent.get(`/v1/products/${productId}/stock`).expect(404);
   });
 
+  it('lists each code’s five newest movements as Movements lists the code, the newest’s balance on hand', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { bottle } = await world(alpha);
+    const productId = await productOf(alpha, 'BOTTLE');
+
+    const [stands] = await standing(alpha.agent, productId);
+    const listed = body<{ entries: unknown[] }>(
+      await alpha.agent
+        .get(`/v1/stock/movements?variantId=${bottle}&limit=5`)
+        .expect(200),
+    ).entries;
+    // Four receipts and the run's two issues: the five newest, the one
+    // movement row, a stock card's.
+    expect(stands.latestMovements).toHaveLength(5);
+    expect(stands.latestMovements).toEqual(listed);
+    expect(stands.latestMovements[0].balance).toBe(stands.onHand);
+  });
+
   it('sends Where it stands only to a reader with stock.view, refused in their words', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await world(alpha);
@@ -646,6 +665,8 @@ describe('A code’s figures (e2e)', () => {
       .expect(200);
     const [stands] = body<{ codes: Standing[] }>(response).codes;
     expect(stands.places).toBeNull();
+    // Nor in its latest movements, which keep their places' ids (96a).
+    expect(stands.latestMovements).toHaveLength(5);
     for (const place of ['SHELF', 'KITCHEN', 'QUARANTINE']) {
       expect(response.text).not.toContain(place);
     }

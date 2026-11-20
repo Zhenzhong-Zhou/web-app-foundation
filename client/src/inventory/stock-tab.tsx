@@ -76,10 +76,6 @@ import { NO_RECEIVE } from '../products/receive-line';
 import { rem } from '../theme/rem';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
-import {
-  type HistoryOf,
-  MovementHistoryDialog,
-} from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
 import { ShowingLine } from './showing-line';
@@ -313,7 +309,6 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [moving, setMoving] = useState<{ mode: MoveMode; row: Pile } | null>(
     null,
   );
-  const [viewing, setViewing] = useState<HistoryOf | null>(null);
   const [editingLot, setEditingLot] = useState<Pile | null>(null);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
 
@@ -328,7 +323,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     canAdjust: can('stock.adjust'),
     canReorder: can('stock.reorder'),
     onMove: (mode, row) => setMoving({ mode, row }),
-    onHistory: setViewing,
+    onLeave: (variantId) => leftFrom(routed.key, variantId),
     onEditLot: setEditingLot,
     onReorder: setReordering,
     onReceive: (variantId) => {
@@ -840,14 +835,16 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   handlers={handlers}
                   changes={changes}
                   opens={opens}
-                  onOpen={(variantId, open) => {
-                    // Codes in the address, not a list a person reads.
-                    const next = opens.filter((each) => each !== variantId);
-                    if (open) next.push(variantId);
+                  onOpen={(key, open) => {
+                    // Codes and places in the address, not a list a person
+                    // reads; a code closed closes its places too.
+                    const next = opens.filter(
+                      (each) => each !== key && !each.startsWith(`${key}.`),
+                    );
+                    if (open) next.push(key);
                     writeAddress({ open: next.length ? String(next) : null });
                   }}
                   focusRow={newCode ?? focusRow}
-                  onLeave={(variantId) => leftFrom(routed.key, variantId)}
                 />
               )
             ) : (
@@ -993,10 +990,6 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           onClose={() => setMoving(null)}
           onMoved={refresh}
         />
-      )}
-
-      {viewing && (
-        <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
       )}
 
       <EditLotDialog

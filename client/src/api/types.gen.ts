@@ -2282,6 +2282,7 @@ export type CodeStanding = {
   runs: Array<ComingRun> | null;
   places: Array<StockPlace> | null;
   lots: Array<UsableLot> | null;
+  latestMovements: Array<Movement>;
 };
 
 export type ProductStock = {

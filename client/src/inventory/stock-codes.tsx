@@ -19,7 +19,7 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type {
   Location,
@@ -52,7 +52,7 @@ import { WIDE_ONLY } from '../theme/media';
 import { EmptiedLine } from './emptied-line';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
-import type { HistoryOf } from './movement-history-dialog';
+import { movementsPath } from './movements-path';
 import { PlacePath } from './place-path';
 import type { ReorderItem } from './reorder-point-dialog';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
@@ -72,7 +72,11 @@ export interface StockHandlers {
   canAdjust: boolean;
   canReorder: boolean;
   onMove: (mode: MoveMode, row: Pile) => void;
-  onHistory: (of: HistoryOf) => void;
+  /**
+   * Left for the item's page, or for Movements from the code's row, a
+   * place or a lot: Back returns focus to the code's row.
+   */
+  onLeave: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
   onReorder: (item: ReorderItem) => void;
   /** Receive stock, the dialog with this item filled in (ADR-093 v3). */
@@ -155,7 +159,6 @@ export function StockCodes({
   opens,
   onOpen,
   focusRow,
-  onLeave,
 }: {
   rows: StockCodeRow[] | null;
   loading: boolean;
@@ -177,7 +180,6 @@ export function StockCodes({
     opens,
     onOpen,
     focusRow,
-    onLeave,
   };
 
   return (
@@ -264,16 +266,23 @@ export function StockCodes({
 /**
  * The rows the address names open, `?open=`, and the row Back returns
  * focus to (ADR-093's Stock table: Back, Stock as it was, focus on that
- * row).
+ * row, the rows open).
  */
 interface Returning {
-  /** The codes whose rows are open. */
+  /** The codes whose rows are open, and the places whose lots are (openKey). */
   opens: string[];
-  onOpen: (variantId: string, open: boolean) => void;
+  onOpen: (key: string, open: boolean) => void;
   /** The code whose name takes focus once its row is drawn. */
   focusRow: string | null;
-  /** Left for the item's page from this code's row. */
-  onLeave: (variantId: string) => void;
+}
+
+/**
+ * A row's key in `?open=`: a code's id, or a place's under it as
+ * `code.place`, since a place opens to its lots under each code apart
+ * (ADR-093, R11: Back from a lot's Movements finds its lots open).
+ */
+function openKey(variantId: string, locationId?: string): string {
+  return locationId ? `${variantId}.${locationId}` : variantId;
 }
 
 interface Opened extends Returning {
@@ -312,7 +321,7 @@ function usePlaces(row: StockCodeRow, opened: Opened, emptied = false) {
  * The row's name, focused when Back returns to the row it was left from;
  * and what keeps that row as left from: a click on a link to its item.
  */
-function useReturn(row: StockCodeRow, { focusRow, onLeave }: Opened) {
+function useReturn(row: StockCodeRow, { focusRow, handlers }: Opened) {
   const name = useRef<HTMLAnchorElement>(null);
   const returned = focusRow === row.variantId;
   useEffect(() => {
@@ -322,7 +331,7 @@ function useReturn(row: StockCodeRow, { focusRow, onLeave }: Opened) {
   const leaving = (event: MouseEvent) => {
     const link = (event.target as HTMLElement).closest('a');
     if (link?.getAttribute('href')?.startsWith('/items/')) {
-      onLeave(row.variantId);
+      handlers.onLeave(row.variantId);
     }
   };
 
@@ -657,9 +666,9 @@ function Status({ row }: { row: StockCodeRow }) {
 }
 
 /**
- * A code's one Actions button: its movements, the history dialog for the
- * code alone until Movements' branch, and its reorder point by
- * permission. A lot's own actions are on its row.
+ * A code's one Actions button: its Movements, filtered to the code
+ * (ADR-093, R11), and its reorder point by permission. A lot's own
+ * actions are on its row.
  */
 function CodeActions({
   row,
@@ -672,6 +681,7 @@ function CodeActions({
   onPile: (mode: MoveMode) => void;
 }) {
   const intl = useIntl();
+  const navigate = useNavigate();
   const words = useMenuWords();
   const { handlers } = opened;
   const nothing = isZero(onHandOf(row, opened));
@@ -735,8 +745,12 @@ function CodeActions({
   const reads: Action[] = [
     {
       label: words.movements,
-      onSelect: () =>
-        handlers.onHistory({ ...row, lotId: null, lotCode: null, at: null }),
+      onSelect: () => {
+        handlers.onLeave(row.variantId);
+        void navigate(movementsPath({ variantId: row.variantId }), {
+          state: OFFER_BACK,
+        });
+      },
     },
     // The item's, not a lot's: one point across every place (ADR-085).
     ...(handlers.canReorder
@@ -862,6 +876,8 @@ function PlacesRows({
   seesPlaces,
   place,
   handlers,
+  opens,
+  onOpen,
 }: {
   id: string;
   row: StockCodeRow;
@@ -945,6 +961,10 @@ function PlacesRows({
           place={each}
           handlers={handlers}
           lotsOpen={!!choosing}
+          opened={opens.includes(openKey(row.variantId, each.locationId))}
+          onOpen={(open) =>
+            onOpen(openKey(row.variantId, each.locationId), open)
+          }
           actionsRef={index === 0 ? first : undefined}
         />
       ))}
@@ -952,13 +972,18 @@ function PlacesRows({
   );
 }
 
-/** A place's row: its name, why it is not usable, its lots behind a button. */
+/**
+ * A place's row: its name, why it is not usable, its lots behind a
+ * button, open as the address says, so Back finds them open (R11).
+ */
 function PlaceTableRow({
   id,
   row,
   place,
   handlers,
   lotsOpen,
+  opened,
+  onOpen,
   actionsRef,
 }: {
   id?: string;
@@ -967,13 +992,16 @@ function PlaceTableRow({
   handlers: StockHandlers;
   /** Its lots shown from the start: a lot is being chosen. */
   lotsOpen: boolean;
+  /** Its lots open in the address, `?open=`. */
+  opened: boolean;
+  onOpen: (open: boolean) => void;
   /** Its first lot's Actions, or its own for a code not tracked by lot. */
   actionsRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const intl = useIntl();
   const lotsId = useId();
   // Its lots came with it, so opening reads nothing.
-  const [open, setOpen] = useState(lotsOpen);
+  const [open, setOpen] = useState(lotsOpen || opened);
   // A lot asked for opens them, as React adjusts state to a prop.
   const [asked, setAsked] = useState(lotsOpen);
   if (lotsOpen !== asked) {
@@ -1022,7 +1050,10 @@ function PlaceTableRow({
               open={open}
               busy={false}
               controls={lotsId}
-              onClick={() => setOpen(!open)}
+              onClick={() => {
+                setOpen(!open);
+                onOpen(!open);
+              }}
             />
           )}
         </TableCell>
@@ -1080,7 +1111,8 @@ function NotUsableHere() {
 
 /**
  * A place's own link, its Movements there: a plain link in words, not a
- * menu of one (ADR-093 v3); the history dialog until Movements' branch.
+ * menu of one (ADR-093 v3), opening Movements filtered to the code at
+ * that place (R11).
  */
 function PlaceMovements({
   row,
@@ -1096,8 +1128,12 @@ function PlaceMovements({
 
   return (
     <Link
-      component="button"
-      type="button"
+      component={RouterLink}
+      to={movementsPath({
+        variantId: row.variantId,
+        locationId: place.locationId,
+      })}
+      state={OFFER_BACK}
       variant="body2"
       underline="always"
       aria-label={intl.formatMessage(
@@ -1107,14 +1143,7 @@ function PlaceMovements({
         },
         { item: itemName(row.productName, row.variantName), place: where },
       )}
-      onClick={() =>
-        handlers.onHistory({
-          ...row,
-          lotId: null,
-          lotCode: null,
-          at: { locationId: place.locationId, locationName: where },
-        })
-      }
+      onClick={() => handlers.onLeave(row.variantId)}
       sx={{ whiteSpace: 'nowrap', px: 1 }}
     >
       {intl.formatMessage({
@@ -1201,7 +1230,7 @@ export function PileActions({
       canMove={handlers.canMove}
       canAdjust={handlers.canAdjust}
       onSelect={handlers.onMove}
-      onHistory={handlers.onHistory}
+      onLeave={handlers.onLeave}
       onEditLot={handlers.onEditLot}
       buttonRef={buttonRef}
     />

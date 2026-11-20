@@ -7,6 +7,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -179,6 +180,34 @@ function renderAt(address: string, permissions: string[]) {
   return renderWithAuth(
     <MemoryRouter initialEntries={[address]}>
       <InventoryPage />
+    </MemoryRouter>,
+    { permissions },
+  );
+}
+
+/** Where a way into Movements landed, whether it offered Back, and Back. */
+function Landed() {
+  const { pathname, search, state } = useLocation();
+  const navigate = useNavigate();
+  const back = (state as { offerBack?: boolean } | null)?.offerBack === true;
+  return (
+    <>
+      <p>{`${pathname}${search}${back ? ' with Back' : ''}`}</p>
+      <button type="button" onClick={() => void navigate(-1)}>
+        Back
+      </button>
+    </>
+  );
+}
+
+/** Stock, and Movements as a way in lands there (ADR-093, R11). */
+function renderRouted(address: string, permissions: string[]) {
+  return renderWithAuth(
+    <MemoryRouter initialEntries={[address]}>
+      <Routes>
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/movements" element={<Landed />} />
+      </Routes>
     </MemoryRouter>,
     { permissions },
   );
@@ -617,18 +646,12 @@ describe('InventoryPage', () => {
       ).not.toBeInTheDocument();
     });
 
-    // A place's Movements link: the code's Movements there alone.
+    // A place's Movements link: Movements of the code there alone, by
+    // the address's ids (R11, 95a), offering Back.
     it('gives a place its Movements there', async () => {
       const user = userEvent.setup();
       answer();
-      let asked: URLSearchParams | null = null;
-      server.use(
-        http.get('/api/v1/stock/movements', ({ request }) => {
-          asked = new URL(request.url).searchParams;
-          return HttpResponse.json({ entries: [], nextCursor: null });
-        }),
-      );
-      renderAt('/inventory', ['stock.view', 'locations.view']);
+      renderRouted('/inventory', ['stock.view', 'locations.view']);
       await user.click(
         await screen.findByRole('button', {
           name: '2 places: show where Vitamin D (60ct) is',
@@ -636,17 +659,37 @@ describe('InventoryPage', () => {
       );
       // A plain link, not a menu of one (ADR-093 v3).
       await user.click(
-        await screen.findByRole('button', {
+        await screen.findByRole('link', {
           name: 'Movements of Vitamin D (60ct) at Main warehouse › Zone A › Shelf A',
         }),
       );
 
       expect(
-        await screen.findByRole('dialog', {
-          name: /at Main warehouse › Zone A › Shelf A/,
-        }),
+        await screen.findByText(
+          '/movements?variantId=variant-1&locationId=loc-1 with Back',
+        ),
       ).toBeVisible();
-      await vi.waitFor(() => expect(asked?.get('locationId')).toBe('loc-1'));
+    });
+
+    // An item's Actions › Movements: the code's (R11).
+    it('gives an item its Movements', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderRouted('/inventory', ['stock.view', 'locations.view']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'Actions for Vitamin D (60ct)',
+        }),
+      );
+      await user.click(
+        within(await screen.findByRole('menu')).getByRole('menuitem', {
+          name: 'Movements',
+        }),
+      );
+
+      expect(
+        await screen.findByText('/movements?variantId=variant-1 with Back'),
+      ).toBeVisible();
     });
 
     // Not tracked by lot, at the place chosen: its one pile, never "None
@@ -713,6 +756,53 @@ describe('InventoryPage', () => {
       );
       return screen.findByRole('menu');
     }
+
+    // A lot's Actions › Movements: the lot's (R11, R24); Back finds the
+    // code's row open and its place's lots with it, as `?open=` keeps
+    // them, focus on the code's name.
+    it('gives a lot its Movements, and Back finds its place’s lots open', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderRouted('/inventory', ['stock.view', 'locations.view']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 lots: show the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      );
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      );
+      await user.click(
+        within(await screen.findByRole('menu')).getByRole('menuitem', {
+          name: 'Movements',
+        }),
+      );
+      expect(
+        await screen.findByText(
+          '/movements?variantId=variant-1&lotId=lot-1 with Back',
+        ),
+      ).toBeVisible();
+
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(
+        await screen.findByRole('button', {
+          name: '2 lots: hide the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      ).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      ).toBeVisible();
+      expect(screen.getByRole('link', { name: /^Vitamin D/ })).toHaveFocus();
+    });
 
     // A Viewer's first week asks them to look a lot up (ADR-079).
     it('gives someone who may only see stock the actions that read', async () => {

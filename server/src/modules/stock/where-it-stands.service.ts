@@ -15,6 +15,7 @@ import {
   quantity,
 } from './code-figures';
 import { comingLinesOf, holdLinesOf, usableLotsOf } from './code-lines';
+import type { Movement } from './dto/stock-response.dto';
 import type {
   CodeStanding,
   ComingPurchase,
@@ -24,8 +25,12 @@ import type {
   UsableLot,
 } from './dto/where-it-stands-response.dto';
 import { namesIn } from './item-name';
+import { movementPage } from './movement-view';
 import { positionsOf } from './reorder-position';
 import { placesOf } from './stock-grouped.service';
+
+/** Latest movements: a code's newest, as many as the board draws (R12). */
+const LATEST_MOVEMENTS = 5;
 
 /** What the reader may see beyond the figures (ADR-080; ADR-093). */
 export interface StandingSight {
@@ -64,8 +69,8 @@ function byCode<T, R>(
  * Where it stands (ADR-093, R8): an item's codes, the low first, each
  * with its figures from the one read (code-figures.ts) and the lines
  * behind them (code-lines.ts): Held's sales, Coming's purchases and
- * runs, and By place and lot; and Reorder's suggestion, Buy or Make's
- * quantity. Gated inside: the caller has `stock.view`,
+ * runs, and By place and lot; Reorder's suggestion, Buy or Make's
+ * quantity; and its latest movements (movement-view.ts). Gated inside: the caller has `stock.view`,
  * and each part beyond the figures is read only for a reader who may see
  * it (StandingSight), the number kept where the documents are not
  * ("Held 20 · for 2 orders").
@@ -268,6 +273,21 @@ export class WhereItStandsService {
             }),
           );
 
+      // Latest movements, each code's newest as Movements lists that code,
+      // a stock card, by the same sight (ADR-093, R12): one page per code,
+      // read from the code's own index.
+      const latest = new Map<string, Movement[]>();
+      for (const row of codes) {
+        const page = await movementPage(
+          tx,
+          organizationId,
+          { variantId: row.variant_id, limit: LATEST_MOVEMENTS },
+          locale,
+          sight,
+        );
+        latest.set(row.variant_id, page.entries);
+      }
+
       return {
         codes: codes.map((row): CodeStanding => ({
           variantId: row.variant_id,
@@ -287,6 +307,7 @@ export class WhereItStandsService {
           runs: sight.runs ? (runs.get(row.variant_id) ?? []) : null,
           places: places ? (places.get(row.variant_id) ?? []) : null,
           lots: lots ? (lots.get(row.variant_id) ?? []) : null,
+          latestMovements: latest.get(row.variant_id) ?? [],
         })),
       };
     });

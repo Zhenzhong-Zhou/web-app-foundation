@@ -32,12 +32,17 @@ import { ListError } from '../components/list-error';
 import { LotLink } from '../components/lot-link';
 import { Reference } from '../components/reference';
 import { TableOrCards } from '../components/table-or-cards';
+import type { MovementColumns } from '../inventory/describe-movement';
 import { EditLotDialog } from '../inventory/edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from '../inventory/move-stock-dialog';
 import {
-  type HistoryOf,
-  MovementHistoryDialog,
-} from '../inventory/movement-history-dialog';
+  MovementCard,
+  MovementCells,
+  MovementHeads,
+  MovementWhen,
+} from '../inventory/movement-cells';
+import { MOVEMENT_HEADINGS } from '../inventory/movement-reasons';
+import { movementsPath } from '../inventory/movements-path';
 import { PlacePath } from '../inventory/place-path';
 import {
   type ReorderOpening,
@@ -121,9 +126,10 @@ const WORDS = defineMessages({
  * its title, for a reader with stock.view. Per code, the low first, as
  * the server orders them: its status and "10 left · reorder at 36"; On
  * hand with what is not usable and why; Free; Held with its orders; Coming
- * with its purchases and runs; Left with its sum in words; and By place
- * and lot. Each part is drawn only when the answer has it, since the
- * server leaves out what the reader may not see (ADR-080); each action
+ * with its purchases and runs; Left with its sum in words; By place and
+ * lot; and its latest movements, with All movements of it. Each part is
+ * drawn only when the answer has it, since the server leaves out what
+ * the reader may not see (ADR-080); each action
  * by its own permission, a main action the role cannot use naming whom to
  * ask. `#stock` and `#held` in the address put focus on the section, or
  * on Held, as Stock's "10 left" and "20 short" open it.
@@ -149,7 +155,6 @@ function Standing({ product }: { product: ProductDetail }) {
     mode: MoveMode;
     row: StockPile;
   } | null>(null);
-  const [viewing, setViewing] = useState<HistoryOf | null>(null);
   const [editingLot, setEditingLot] = useState<StockPile | null>(null);
   // The places read once a lot's Move, Ship out, Send sample or Correct
   // the count first opens, then kept, never on a visit that moves nothing
@@ -215,7 +220,6 @@ function Standing({ product }: { product: ProductDetail }) {
         setMovedOnce(true);
         setMoving({ mode, row });
       },
-      onHistory: setViewing,
       onEditLot: setEditingLot,
     },
   };
@@ -280,10 +284,6 @@ function Standing({ product }: { product: ProductDetail }) {
         />
       )}
 
-      {viewing && (
-        <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
-      )}
-
       <EditLotDialog
         key={editingLot?.lotId ?? 'closed'}
         row={editingLot}
@@ -303,7 +303,6 @@ interface Handlers {
     canMove: boolean;
     canAdjust: boolean;
     onMove: (mode: MoveMode, row: StockPile) => void;
-    onHistory: (of: HistoryOf) => void;
     onEditLot: (row: StockPile) => void;
   };
 }
@@ -454,6 +453,8 @@ function CodeBlock({
             {code.lots && <UsableLots code={code} />}
           </>
         )}
+
+        <LatestMovements code={code} />
       </Stack>
     </Paper>
   );
@@ -924,7 +925,6 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
       canMove={lot.canMove}
       canAdjust={lot.canAdjust}
       onSelect={lot.onMove}
-      onHistory={lot.onHistory}
       onEditLot={lot.onEditLot}
     />
   );
@@ -1020,6 +1020,87 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
           </Stack>
         }
       />
+    </Stack>
+  );
+}
+
+/**
+ * Latest movements (ADR-093, R12; v2's board): the code's five newest,
+ * a stock card's In, Out and Balance in the one movement row's cells,
+ * From → to for a reader who may see places (96a), and All movements of
+ * the code, Movements filtered to it. None until something has moved.
+ */
+function LatestMovements({ code }: { code: CodeStanding }) {
+  const intl = useIntl();
+  const can = useCan();
+  const movements = code.latestMovements;
+  if (movements.length === 0) return null;
+  const columns: MovementColumns = {
+    figures: 'balance',
+    places: can('locations.view'),
+  };
+
+  return (
+    <Stack spacing={1}>
+      <Typography component="h3" sx={{ fontWeight: 600 }}>
+        {intl.formatMessage({
+          id: 'products.stock.latestMovements',
+          defaultMessage: 'Latest movements',
+        })}
+      </Typography>
+      <TableOrCards
+        loading={false}
+        table={
+          <TableContainer onFocus={wholeOnFocus}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.when)}
+                  </TableCell>
+                  <MovementHeads columns={columns} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {movements.map((movement) => (
+                  <TableRow key={movement.id}>
+                    <TableCell>
+                      <MovementWhen movement={movement} />
+                    </TableCell>
+                    <MovementCells movement={movement} columns={columns} />
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        }
+        cards={
+          <Stack component="ul" sx={{ m: 0, p: 0 }}>
+            {movements.map((movement) => (
+              <MovementCard
+                key={movement.id}
+                movement={movement}
+                columns={columns}
+                oneCode
+              />
+            ))}
+          </Stack>
+        }
+      />
+      <Link
+        component={RouterLink}
+        to={movementsPath({ variantId: code.variantId })}
+        state={OFFER_BACK}
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        {intl.formatMessage(
+          {
+            id: 'products.stock.allMovements',
+            defaultMessage: 'All movements of {code}',
+          },
+          { code: code.sku },
+        )}
+      </Link>
     </Stack>
   );
 }

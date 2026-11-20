@@ -224,7 +224,16 @@ file is kept is in the [README](README.md).
   belong to it.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists an order’s movements alone: a purchase’s receipts, a sale’s shipments, their voids and its returns" ·
-  [test](../../server/test/movements.e2e-spec.ts) "refuses an order’s movements to a reader without orders.view, on the list and its export"
+  [test](../../server/test/movements.e2e-spec.ts) "refuses an order’s movements to a reader without orders.view, on the list and its export" ·
+  MC-321
+- **An order's page lists its movements only to a reader who may see
+  stock,** as Movements needs: a purchase's Receipts, read as Movements
+  lists the order, and All movements of the order; a reader without
+  stock.view gets neither.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/orders/order-detail-page.test.tsx) "lists a purchase’s receipts by its order, with All movements of it" ·
+  [test](../../client/src/orders/order-detail-page.test.tsx) "offers neither without stock.view" ·
+  MC-321
 - **A link's place or order that its reader may not use is ignored on
   Movements,** as Stock's address is: a place without locations.view,
   or one no stock can sit at, reads every place; an order without
@@ -296,6 +305,13 @@ file is kept is in the [README](README.md).
   [test](../../client/src/products/where-it-stands.test.tsx) "names whom to ask for Buy, and lists the usable lots without places" ·
   [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
   MC-219 · MC-220
+- **Latest movements are each code's five newest, as Movements lists the
+  code:** the same rows, In, Out and the balance after each, the newest's
+  balance its on hand, each part by the reader's sight as there.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "lists each code’s five newest movements as Movements lists the code, the newest’s balance on hand" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
+  MC-219
 - **Items counts items, Reorder and Home count codes:** Items' Low stock
   is the items among Reorder's low and out codes, and Home's Low stock is
   Reorder's count.

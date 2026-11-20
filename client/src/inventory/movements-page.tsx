@@ -59,23 +59,16 @@ import { useLocations } from '../lib/use-locations';
 import { useResource } from '../lib/use-resource';
 import { useVariants } from '../lib/use-variants';
 import { leavesOf } from '../locations/tree';
-import { NameAndCode } from '../products/name-and-code';
 import { NO_RECEIVE } from '../products/receive-line';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { TYPE } from '../theme/tokens';
 import { type MovementColumns, movementHeadCount } from './describe-movement';
 import {
-  CardLine,
-  Figure,
-  MovementBy,
+  MovementCard,
   MovementCells,
-  MovementChange,
-  MovementEnds,
-  MovementFor,
   MovementHeads,
-  MovementLot,
-  MovementReason,
+  MovementItem,
   MovementWhen,
 } from './movement-cells';
 import {
@@ -750,109 +743,5 @@ function Period({
         </Box>
       ))}
     </Stack>
-  );
-}
-
-/**
- * The item: its name, today's code and its type's word grey under it,
- * the code it was recorded under when that has changed (ADR-023; 7a),
- * the name its one link (the design language's Rows).
- */
-function MovementItem({ movement }: { movement: Movement }) {
-  const intl = useIntl();
-
-  return (
-    <NameAndCode
-      name={itemName(movement.productName, movement.variantName)}
-      code={movement.currentSku}
-      withType
-      type={movement.type}
-      coverFileId={null}
-      to={`/items/${movement.productId}`}
-      under={
-        movement.sku !== movement.currentSku &&
-        intl.formatMessage(
-          { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
-          { code: movement.sku },
-        )
-      }
-    />
-  );
-}
-
-/**
- * A movement as a card below 600 px (R14; v2's phone board): the item,
- * unless one code is chosen, then each column's value by its head, In
- * or Out alone where the other is empty.
- */
-function MovementCard({
-  movement,
-  columns,
-  oneCode,
-}: {
-  movement: Movement;
-  columns: MovementColumns;
-  oneCode: boolean;
-}) {
-  const intl = useIntl();
-  const head = (key: keyof typeof MOVEMENT_HEADINGS) =>
-    intl.formatMessage(MOVEMENT_HEADINGS[key]);
-
-  return (
-    <Box
-      component="li"
-      sx={{
-        listStyle: 'none',
-        p: 2,
-        '& + &': { borderTop: 1, borderColor: 'divider' },
-      }}
-    >
-      <Stack spacing={1}>
-        {!oneCode && <MovementItem movement={movement} />}
-        <CardLine label={head('when')}>
-          <MovementWhen movement={movement} />
-        </CardLine>
-        {columns.figures === 'change' ? (
-          <CardLine label={head('change')}>
-            <MovementChange movement={movement} />
-          </CardLine>
-        ) : (
-          <>
-            {movement.quantityIn !== null && (
-              <CardLine label={head('in')}>
-                <Figure quantity={movement.quantityIn} movement={movement} />
-              </CardLine>
-            )}
-            {movement.quantityOut !== null && (
-              <CardLine label={head('out')}>
-                <Figure quantity={movement.quantityOut} movement={movement} />
-              </CardLine>
-            )}
-            {columns.figures === 'balance' && (
-              <CardLine label={head('balance')}>
-                <Figure quantity={movement.balance} movement={movement} />
-              </CardLine>
-            )}
-          </>
-        )}
-        <CardLine label={head('reason')}>
-          <MovementReason movement={movement} />
-        </CardLine>
-        {columns.places && (
-          <CardLine label={head('fromTo')}>
-            <MovementEnds movement={movement} />
-          </CardLine>
-        )}
-        <CardLine label={head('lot')}>
-          <MovementLot movement={movement} />
-        </CardLine>
-        <CardLine label={head('for')}>
-          <MovementFor movement={movement} />
-        </CardLine>
-        <CardLine label={head('by')}>
-          <MovementBy movement={movement} />
-        </CardLine>
-      </Stack>
-    </Box>
   );
 }
