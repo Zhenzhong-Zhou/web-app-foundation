@@ -70,6 +70,12 @@ export function placeName(place: Placed): string {
  * its code, as `placeName` writes a row's. For a dialog's list of places
  * and the place it names, which have the tree, not a read's path. Null
  * for a place not in the tree.
+ *
+ * It walks up from the place asked, as `byWarehouse` finds a leaf's top,
+ * rather than down from the top with `treeOf`, as `categoryPlaces` does
+ * (review 51): that one is typed to a category and gives names, not the
+ * top's record `byWarehouse` groups by, and a walk down never reaches a
+ * place whose parents loop, which this still names.
  */
 export function placePaths(
   all: readonly Location[],

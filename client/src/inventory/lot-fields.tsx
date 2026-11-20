@@ -4,7 +4,8 @@ import { useIntl } from 'react-intl';
 
 import type { Lot } from '../api/types.gen';
 import { api } from '../lib/api';
-import { formatDay, SEPARATOR } from '../lib/format';
+import { SEPARATOR } from '../lib/format';
+import { lotExpiry } from './lot-expiry';
 
 /** The lot as the form holds it: expiry as the date input gives it. */
 export type LotInput = { code: string; expiresAt: string };
@@ -84,18 +85,7 @@ export function LotFields({
               {/* The expiry is how someone spots the other mistake: a code
                   that exists but belongs to another delivery. */}
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {option.expiresAt
-                  ? intl.formatMessage(
-                      {
-                        id: 'inventory.lot.expiresOn',
-                        defaultMessage: 'Expires {day}',
-                      },
-                      { day: formatDay(option.expiresAt) },
-                    )
-                  : intl.formatMessage({
-                      id: 'inventory.lot.noExpiry',
-                      defaultMessage: 'No expiry',
-                    })}
+                {lotExpiry(option, intl)}
                 {option.isAssigned && (
                   <>
                     {SEPARATOR}

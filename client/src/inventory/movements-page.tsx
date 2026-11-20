@@ -68,8 +68,8 @@ import { useVariants } from '../lib/use-variants';
 import { leavesOf } from '../locations/tree';
 import { NO_RECEIVE } from '../products/receive-line';
 import { displayWithUnit } from '../products/units';
+import { BIG_FIGURE } from '../theme/figure';
 import { rem } from '../theme/rem';
-import { TYPE } from '../theme/tokens';
 import { type MovementColumns, movementHeadCount } from './describe-movement';
 import {
   MovementCard,
@@ -773,15 +773,7 @@ function Period({
           <Typography component="dt" sx={{ color: 'text.secondary' }}>
             {figure.label}
           </Typography>
-          <Box
-            component="dd"
-            sx={{
-              m: 0,
-              fontSize: rem(TYPE.figure),
-              lineHeight: 40 / TYPE.figure,
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
+          <Box component="dd" sx={{ m: 0, ...BIG_FIGURE }}>
             {displayWithUnit(figure.value, unit, intl)}
           </Box>
         </Box>

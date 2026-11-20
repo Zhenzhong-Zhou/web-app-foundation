@@ -1,9 +1,9 @@
 import { Box, Link, Stack, TableCell, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
 import { defineMessages, type IntlShape, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { Movement } from '../api/types.gen';
+import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
 import { LotLink } from '../components/lot-link';
 import { NUMBER_COLUMN } from '../components/number-column';
@@ -396,28 +396,6 @@ export function MovementBy({ movement }: { movement: Movement }) {
         intl.formatMessage(MOVEMENT_HEADINGS.deletedUser),
       )}
     />
-  );
-}
-
-/** A label and its value on a phone's card. */
-export function CardLine({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
-    >
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {label}
-      </Typography>
-      <Box sx={{ textAlign: 'right', minWidth: 0 }}>{children}</Box>
-    </Stack>
   );
 }
 

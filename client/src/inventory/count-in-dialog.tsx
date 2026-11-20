@@ -30,15 +30,12 @@ import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { useToast } from '../components/use-toast';
 import { api, hasCode } from '../lib/api';
-import {
-  formatDay,
-  groupedNumberMessage,
-  SEPARATOR,
-  toApiDecimal,
-} from '../lib/format';
+import { groupedNumberMessage, SEPARATOR, toApiDecimal } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
+import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit, unitLabel } from '../products/units';
+import { lotExpiry } from './lot-expiry';
 import { movementsPath } from './movements-path';
 import { placePaths } from './stock-places';
 
@@ -98,7 +95,6 @@ export function CountInDialog({
   const toast = useToast();
   const whichId = useId();
   const [form, setForm] = useState(EMPTY);
-  const [lots, setLots] = useState<Lot[]>([]);
   // Said at its field: Which lot unchosen, a quantity with a separator.
   const [whichError, setWhichError] = useState<string | null>(null);
   const [quantityError, setQuantityError] = useState<string | null>(null);
@@ -107,18 +103,10 @@ export function CountInDialog({
 
   // Its lots, for One of its lots. Silent if they fail: a new lot still
   // can be made.
-  useEffect(() => {
-    if (!item.tracksLots) return;
-    let ignore = false;
-    void api<Lot[]>(`/stock/lots?variantId=${item.variantId}`)
-      .then((rows) => {
-        if (!ignore) setLots(rows);
-      })
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [item.variantId, item.tracksLots]);
+  const lots =
+    useResource<Lot[]>(
+      item.tracksLots ? `/stock/lots?variantId=${item.variantId}` : null,
+    ).data ?? [];
 
   const unit = unitLabel(item.unitOfMeasure, intl);
   const place = locations.find((each) => each.id === form.locationId);
@@ -371,18 +359,7 @@ export function CountInDialog({
                   <MenuItem key={lot.id} value={lot.id}>
                     {lot.code}
                     {SEPARATOR}
-                    {lot.expiresAt
-                      ? intl.formatMessage(
-                          {
-                            id: 'inventory.lot.expiresOn',
-                            defaultMessage: 'Expires {day}',
-                          },
-                          { day: formatDay(lot.expiresAt) },
-                        )
-                      : intl.formatMessage({
-                          id: 'inventory.lot.noExpiry',
-                          defaultMessage: 'No expiry',
-                        })}
+                    {lotExpiry(lot, intl)}
                   </MenuItem>
                 ))}
               </TextField>

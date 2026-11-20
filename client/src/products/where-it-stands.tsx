@@ -64,8 +64,8 @@ import { wholeOnFocus } from '../lib/whole-on-focus';
 import { leavesOf } from '../locations/tree';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
+import { BIG_FIGURE } from '../theme/figure';
 import { rem } from '../theme/rem';
-import { TYPE } from '../theme/tokens';
 import { NO_RECEIVE } from './receive-line';
 import { displayWithUnit } from './units';
 
@@ -507,9 +507,7 @@ function Figure({
         component="dd"
         sx={{
           m: 0,
-          fontSize: rem(TYPE.figure),
-          lineHeight: 40 / TYPE.figure,
-          fontVariantNumeric: 'tabular-nums',
+          ...BIG_FIGURE,
           ...(short && { color: 'error.main' }),
         }}
       >

@@ -51,9 +51,10 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { useSubmit } from '../lib/use-submit';
+import { BIG_FIGURE } from '../theme/figure';
 import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
-import { RADIUS, TYPE } from '../theme/tokens';
+import { RADIUS } from '../theme/tokens';
 import {
   type Arrangement,
   arrangementOf,
@@ -934,10 +935,7 @@ function Tile({ card, returned }: { card: KnownCard; returned: boolean }) {
             component="span"
             sx={{
               order: 0,
-              // In rem, so it grows with the text size (ADR-075): the
-              // figure read across a room, on the 4 px grid.
-              fontSize: rem(TYPE.figure),
-              lineHeight: 40 / TYPE.figure,
+              ...BIG_FIGURE,
               fontWeight: 700,
             }}
           >

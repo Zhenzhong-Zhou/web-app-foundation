@@ -15,13 +15,13 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { Movement } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { CardLine } from '../components/card-line';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { NUMBER_COLUMN } from '../components/number-column';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { TableOrCards } from '../components/table-or-cards';
 import {
-  CardLine,
   Figure,
   MovementBy,
   MovementEnd,

@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import {
   type MouseEvent,
-  type ReactNode,
   type RefObject,
   useEffect,
   useId,
@@ -29,6 +28,7 @@ import type {
 } from '../api/types.gen';
 import { ActionsHeader } from '../components/actions-header';
 import { type Action, ActionsMenu } from '../components/actions-menu';
+import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ListTable } from '../components/list-table';
 import { LotLink } from '../components/lot-link';
@@ -1400,15 +1400,15 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
           linkRef={back.name}
         />
         <Status row={row} />
-        <Figure label={intl.formatMessage(HEADS.onHand)}>
+        <CardLine label={intl.formatMessage(HEADS.onHand)}>
           <OnHand row={row} here={!!opened.place} why />
-        </Figure>
-        <Figure label={intl.formatMessage(HEADS.free)}>
+        </CardLine>
+        <CardLine label={intl.formatMessage(HEADS.free)}>
           <Free row={row} held />
-        </Figure>
-        <Figure label={intl.formatMessage(HEADS.expiresFirst)}>
+        </CardLine>
+        <CardLine label={intl.formatMessage(HEADS.expiresFirst)}>
           <ExpiresFirst row={row} here={!!opened.place} />
-        </Figure>
+        </CardLine>
         <Stack
           direction="row"
           spacing={1}
@@ -1432,12 +1432,12 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
         </Stack>
         {places.open && (
           <Stack id={controls} spacing={1}>
-            <Figure label={intl.formatMessage(HEADS.held)}>
+            <CardLine label={intl.formatMessage(HEADS.held)}>
               {displayWithUnit(row.held, row.unitOfMeasure, intl)}
-            </Figure>
-            <Figure label={intl.formatMessage(HEADS.coming)}>
+            </CardLine>
+            <CardLine label={intl.formatMessage(HEADS.coming)}>
               <Coming row={row} />
-            </Figure>
+            </CardLine>
             {choice.choosing && places.rows && (
               <ChooseLine places={places.rows} mode={choice.choosing} />
             )}
@@ -1465,22 +1465,6 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
         )}
       </Stack>
     </Box>
-  );
-}
-
-/** A figure on a card: its name, then its value. */
-function Figure({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
-    >
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {label}
-      </Typography>
-      <Box sx={{ textAlign: 'right' }}>{children}</Box>
-    </Stack>
   );
 }
 

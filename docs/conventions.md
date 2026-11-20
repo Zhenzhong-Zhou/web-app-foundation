@@ -1113,7 +1113,10 @@ Use these rather than writing the thing again on a page:
   chevron alone.
 - **`TableOrCards`** for a list's rows as a table from 600 px and as cards
   below, two grey cards while the cards are read; `useCards` asks the same
-  width for the rest of the page (ADR-090's width switch).
+  width for the rest of the page (ADR-090's width switch). On a card,
+  **`CardLine`** for a label and its value at the right.
+- **`BIG_FIGURE`** (`theme/figure.ts`) for a figure read across a room:
+  Home's tiles, Where it stands' figures, Movements' period.
 - **`useLocations`** for the locations a filter or a form offers, read when
   it opens and only for a reader with `locations.view`, on `useResource`,
   with `retry` for Try again.
