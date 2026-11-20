@@ -225,7 +225,9 @@ export class LotTraceService {
           loc.is_available,
           sl.quantity::text as quantity
         from stock_levels sl
-        join locations loc on loc.id = sl.location_id
+        join locations loc
+          on loc.id = sl.location_id
+          and loc.organization_id = ${organizationId}::uuid
         where sl.organization_id = ${organizationId}::uuid
           and sl.lot_id = ${lotId}::uuid
           and sl.quantity <> 0

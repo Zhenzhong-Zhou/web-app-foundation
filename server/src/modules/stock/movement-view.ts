@@ -285,9 +285,26 @@ export async function movementPage(
         then ${quantity(sql`${movement.change}`)} end`,
     })
     .from(movement)
-    .leftJoin(from, eq(from.id, movement.fromLocationId))
-    .leftJoin(to, eq(to.id, movement.toLocationId))
-    .leftJoin(lots, eq(lots.id, movement.lotId))
+    // The organization in each ON clause, though the page is already
+    // scoped (ADR-058); users are global, every organization's accounts.
+    .leftJoin(
+      from,
+      and(
+        eq(from.id, movement.fromLocationId),
+        eq(from.organizationId, organizationId),
+      ),
+    )
+    .leftJoin(
+      to,
+      and(
+        eq(to.id, movement.toLocationId),
+        eq(to.organizationId, organizationId),
+      ),
+    )
+    .leftJoin(
+      lots,
+      and(eq(lots.id, movement.lotId), eq(lots.organizationId, organizationId)),
+    )
     .leftJoin(users, eq(users.id, movement.actorId))
     .orderBy(...inOrder(movement.createdAt, movement.id, order));
 
