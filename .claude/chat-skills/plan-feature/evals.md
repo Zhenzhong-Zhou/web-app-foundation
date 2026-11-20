@@ -101,9 +101,11 @@ finding for the as-built and one question for him.*
 - Every Claude Code step has a model in the steps table's Model column.
 - Opus has new logic, design, the reviews and their fixes, and every
   browser test.
-- Sonnet has dependencies, seeds, guides, docs and tests copied from one
-  beside them.
-- Haiku has only a step that runs commands and reports.
+- Sonnet has dependencies, seeds, guides, docs, tests copied from one
+  beside them, and every timed step or one that starts a server or
+  waits on a long command.
+- Haiku has only a step that runs short commands and reports, never one
+  that writes code or waits on a server or a long command.
 - The reviews are the row `Claude Code, main session`, run by
   `/review-step`.
 - The time-and-cost table names each step's model.
