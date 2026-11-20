@@ -28,6 +28,8 @@ interface Trace {
     isAvailable: boolean;
     quantity: string;
   }[];
+  usable: string;
+  notUsable: string;
   sources: {
     kind: 'receipt' | 'production';
     supplierName: string | null;
@@ -468,6 +470,28 @@ describe('Lot trace (e2e)', () => {
     // The sums, and the rest of the story, theirs as they are the owner's.
     expect(theirs).toMatchObject({ usable: '60.0000', notUsable: '7.0000' });
     expect(theirs.recipients).toEqual(owners.recipients);
+
+    // Moved back, Shelf A2 has nothing left: no longer where it is, and
+    // its row, read with the rest, adds nothing to either sum (review 27).
+    await alpha.agent
+      .post('/v1/stock/movements')
+      .send({
+        lotId: await lotId('FOC-1'),
+        variantId: (
+          await db.select().from(lots).where(eq(lots.code, 'FOC-1'))
+        )[0].variantId,
+        fromLocationId: shelfA2,
+        toLocationId: shelf,
+        quantity: '7',
+        reason: 'transfer',
+      })
+      .expect(201);
+    const emptied = await trace(alpha, 'FOC-1');
+    expect(emptied.balances).toEqual([
+      { ...owners.balances[0], quantity: '67.0000' },
+    ]);
+    expect(emptied.usable).toBe('67.0000');
+    expect(Number(emptied.notUsable)).toBe(0);
 
     // Expired, none of it is usable, wherever it is.
     await db

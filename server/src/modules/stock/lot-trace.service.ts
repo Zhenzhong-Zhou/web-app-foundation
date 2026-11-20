@@ -11,6 +11,7 @@ import { t } from '../../i18n/translate';
 import { itemName, namesIn } from './item-name';
 import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
+import { usableInLot } from './usable-stock';
 
 /**
  * How far genealogy is followed. Real recipes are two or three levels deep —
@@ -60,16 +61,11 @@ export class LotTraceService {
       // One after another: a transaction is one connection, and queries on
       // it run in turn whatever the code says, so Promise.all would only
       // pretend to be parallel.
-      const balances = await this.balances(
+      const { balances, usable, notUsable } = await this.whereItIsNow(
         tx,
         organizationId,
         lotId,
         seesPlaces,
-      );
-      const { usable, notUsable } = await this.standing(
-        tx,
-        organizationId,
-        lotId,
       );
       const sources = await this.sources(tx, organizationId, lotId);
       const madeFrom = await this.related(tx, organizationId, lotId, 'up');
@@ -205,33 +201,35 @@ export class LotTraceService {
   }
 
   /**
-   * Where it is now, including bins marked unavailable (ADR-042): each
-   * place by its path, its warehouse first (#639), for a reader who may
-   * see places; its id and figures alone for the rest (ADR-093, 96a), as
-   * Stock leaves them out.
+   * Where it is now, including bins marked unavailable (ADR-042), each
+   * place with something left: by its path, its warehouse first (#639),
+   * for a reader who may see places; its id and figures alone for the
+   * rest (ADR-093, 96a), as Stock leaves them out. Beside them, the lot in
+   * two sums by the usable rule's reading for one lot, usableInLot
+   * (ADR-093, 10a): usable, and not. Summed here, never in the browser
+   * (ADR-055), for a reader who may not see the places (96a); read once
+   * with the places, never a copy of the rule (review 27).
    */
-  private async balances(
+  private async whereItIsNow(
     tx: Tx,
     organizationId: string,
     lotId: string,
     seesPlaces: boolean,
   ) {
+    const today = todayIn(requestTimeZone());
     const rows = (
       await tx.execute(sql`
         select
-          sl.location_id,
-          loc.name as location_name,
-          loc.code as location_code,
-          loc.is_available,
-          sl.quantity::text as quantity
-        from stock_levels sl
-        join locations loc
-          on loc.id = sl.location_id
-          and loc.organization_id = ${organizationId}::uuid
-        where sl.organization_id = ${organizationId}::uuid
-          and sl.lot_id = ${lotId}::uuid
-          and sl.quantity <> 0
-        order by loc.name
+          u.location_id,
+          u.location_name,
+          u.location_code,
+          u.is_available,
+          u.quantity::text as quantity,
+          u.quantity <> 0 as is_here,
+          coalesce(sum(u.usable) over (), 0)::text as usable,
+          coalesce(sum(u.not_usable) over (), 0)::text as not_usable
+        from (${usableInLot(organizationId, today, lotId)}) u
+        order by u.location_name
       `)
     ).rows as {
       location_id: string;
@@ -239,58 +237,33 @@ export class LotTraceService {
       location_code: string | null;
       is_available: boolean;
       quantity: string;
+      is_here: boolean;
+      usable: string;
+      not_usable: string;
     }[];
+    const here = rows.filter((row) => row.is_here);
 
     const pathOf = seesPlaces
       ? await pathsOf(
           tx,
           organizationId,
-          rows.map((row) => row.location_id),
+          here.map((row) => row.location_id),
         )
       : new Map<string, string[]>();
 
-    return rows.map((row) => ({
-      locationId: row.location_id,
-      locationName: seesPlaces ? row.location_name : null,
-      locationCode: seesPlaces ? row.location_code : null,
-      locationPath: pathOf.get(row.location_id) ?? [],
-      isAvailable: row.is_available,
-      quantity: row.quantity,
-    }));
-  }
-
-  /**
-   * Where it is now in two sums, by the usable rule's part for one lot
-   * (ADR-093, 10a): at a place marked available and not expired by the
-   * organization's today, and the rest. What released runs were issued is
-   * counted by item and place, never by lot, so it is not here. Summed
-   * here, never in the browser (ADR-055), for a reader who may not see
-   * the places (96a).
-   */
-  private async standing(tx: Tx, organizationId: string, lotId: string) {
-    const today = todayIn(requestTimeZone());
-    const [row] = (
-      await tx.execute(sql`
-        select
-          coalesce(sum(sl.quantity) filter (
-            where loc.is_available
-              and (l.expires_at is null or l.expires_at >= ${today}::date)
-          ), 0)::text as usable,
-          coalesce(sum(sl.quantity) filter (
-            where not loc.is_available or l.expires_at < ${today}::date
-          ), 0)::text as not_usable
-        from stock_levels sl
-        join lots l
-          on l.id = sl.lot_id and l.organization_id = ${organizationId}::uuid
-        join locations loc
-          on loc.id = sl.location_id
-          and loc.organization_id = ${organizationId}::uuid
-        where sl.organization_id = ${organizationId}::uuid
-          and sl.lot_id = ${lotId}::uuid
-      `)
-    ).rows as { usable: string; not_usable: string }[];
-
-    return { usable: row.usable, notUsable: row.not_usable };
+    return {
+      balances: here.map((row) => ({
+        locationId: row.location_id,
+        locationName: seesPlaces ? row.location_name : null,
+        locationCode: seesPlaces ? row.location_code : null,
+        locationPath: pathOf.get(row.location_id) ?? [],
+        isAvailable: row.is_available,
+        quantity: row.quantity,
+      })),
+      // The same on every row; nothing anywhere, none.
+      usable: rows[0]?.usable ?? '0',
+      notUsable: rows[0]?.not_usable ?? '0',
+    };
   }
 
   /**

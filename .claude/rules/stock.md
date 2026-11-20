@@ -30,9 +30,9 @@ updated with the rule it states (ADR-087).
 - **Holds are computed, never stored.** What spends unheld stock takes
   `lockProduct`, several in `inVariantOrder`; adjustments and transfers
   are not checked (ADR-045).
-- **Usable stock is one rule,** `usable-stock.ts`: the holds, the guard
-  and Reorder's position read `usableByLocation`, `usableByItem` or
-  `onHandByUse`, never a copy of their sums (ADR-045, ADR-085,
+- **Usable stock is one rule,** `usable-stock.ts`: holds, the guard,
+  Reorder and a lot's trace read `usableByLocation`, `usableByItem`,
+  `onHandByUse` or `usableInLot`, never a copy (ADR-045, ADR-085,
   ADR-093).
 - **A code's figures are one read,** `codeFigures` (`code-figures.ts`):
   on hand and its not-usable parts, held, free, short, coming, Left,
