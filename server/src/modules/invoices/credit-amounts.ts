@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
+import { minorUnits } from '../../common/money';
 import type { Transaction } from '../../database/database.module';
 import { invoices } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import type { CreditLineDto } from './dto/credit-invoice.dto';
-import { minorUnits } from './invoice-amounts';
 
 type Invoice = typeof invoices.$inferSelect;
 

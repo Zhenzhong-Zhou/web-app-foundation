@@ -1,20 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
+import { minorUnits } from '../../common/money';
 import type { Transaction } from '../../database/database.module';
-
-/**
- * Digits after the point in a currency's minor unit: 2 for CAD, 0 for JPY,
- * 3 for KWD. From Intl, the same source the client formats with, so there
- * is no table of currencies to keep current (ADR-046).
- */
-export function minorUnits(currency: string): number {
-  return (
-    new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency,
-    }).resolvedOptions().maximumFractionDigits ?? 2
-  );
-}
 
 export interface InvoiceAmounts {
   lines: { id: string; netAmount: string }[];

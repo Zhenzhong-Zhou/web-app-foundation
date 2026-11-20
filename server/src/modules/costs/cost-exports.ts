@@ -1,4 +1,4 @@
-import { asQuantity, type ExportColumn } from '../../common/export';
+import { asMoney, asQuantity, type ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
 import type { CostsService } from './costs.service';
@@ -30,20 +30,23 @@ export function poolsOf(
 
 /**
  * Stock value (ADR-057): each pool as the costs page shows it, as at the
- * moment of export, in the organization's base currency.
+ * moment of export, in the organization's base currency, its cost and value
+ * at that currency's places (99a).
  */
 export const VALUATION_COLUMNS: ExportColumn<Pool>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
   { header: HEADERS.lot, value: (row) => row.lotCode },
   asQuantity(HEADERS.quantity, (row) => row.quantity),
-  {
-    header: t({ id: 'exports.column.unitCost', defaultMessage: 'Unit cost' }),
-    value: (row) => row.unitCost,
-  },
-  {
-    header: t({ id: 'exports.column.value', defaultMessage: 'Value' }),
-    value: (row) => row.value,
-  },
+  asMoney(
+    t({ id: 'exports.column.unitCost', defaultMessage: 'Unit cost' }),
+    (row) => row.unitCost,
+    (row) => row.currency,
+  ),
+  asMoney(
+    t({ id: 'exports.column.value', defaultMessage: 'Value' }),
+    (row) => row.value,
+    (row) => row.currency,
+  ),
   { header: HEADERS.currency, value: (row) => row.currency },
   {
     header: t({

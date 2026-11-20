@@ -268,8 +268,10 @@ Use these rather than writing the thing again. The client's are under
   a row's id; `orderOf`, `afterKeys`, `cursorOf` and `readKeys` for a
   worked-out figure, the cursor its values; `notInThisList`, every list's
   refusal of a cursor. An export through `export.ts`: `everyRow`,
-  `csvFile`, `inWords` for a code it writes as the screen's word, and
-  `asQuantity` for a quantity, written without its padding zeros.
+  `csvFile`, `inWords` for a code it writes as the screen's word,
+  `asQuantity` for a quantity, written without its padding zeros, and
+  `asMoney` for money, at its currency's places, never fewer
+  (`money.ts`'s `readableMoney`, beside `minorUnits`).
 - **`core/documents/`:** `sheet.ts` (`masthead`, `party`, `linesTable`,
   `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
   for who and where it names, and `DocumentsService.send` with a

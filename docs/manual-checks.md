@@ -1829,8 +1829,12 @@ Paper is checked first because it must not change at all.
   Stock, the Lot view, Reorder, Movements, Orders, Stock value and a
   lot's recall list, every quantity reads as the screen's figure without
   its padding zeros, `600` and `12.5`, never `600.0000`, with a point
-  and no grouping, and sums as a number; money, Stock value's and a
-  price list's, keeps the places it is stored with.
+  and no grouping, and sums as a number. Money, in the exports of
+  Invoices, Credit notes, a price list and Stock value, reads at its
+  currency's places, never fewer and never rounded: a CAD price of 12.50
+  as `12.50`, not `12.5000`, one of 0.0125 as `0.0125`, an invoice's
+  total `144.38`, nothing credited `0.00`, and a price list in JPY with
+  1250 as `1250`.
 - **MC-1559** *(ADR-058; ADR-091)* Sign in as the demo owner: Home opens,
   greeting by the time of day on the organization's clock, Vancouver's
   for the demo, then the organization's day and time to
@@ -7224,3 +7228,6 @@ first.
   the organization's clocks with its place in the header, "When
   (Vancouver time)", Recorded as beside Code, Email beside By, and the
   note last: MC-319 extended, MC-1558 reworded.
+- 2026-11-20: ADR-093's Movements branch, 99a: every export writes money
+  at its currency's places, never fewer and never rounded, `12.50` and
+  not `12.5000`, `0.0125` as it is, yen's `1250`: MC-1558 reworded.

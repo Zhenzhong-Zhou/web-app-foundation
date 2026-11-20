@@ -499,27 +499,37 @@ describe('Exports (e2e)', () => {
   });
 
   // ADR-093's R30 (77a, #473's 29): a quantity as data without its padding
-  // zeros in every export, no grouping; quantities only, money as stored.
-  it('writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money as stored', async () => {
+  // zeros in every export, no grouping; money at its currency's places,
+  // never fewer and never rounded (99a).
+  it('writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money at its currency’s places', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { agent } = alpha;
     const shelf = await site(agent, 'SHELF');
     const supplier = await partner(agent, 'Harbour Supply');
-    const wholesale = body<{ priceList: { id: string } }>(
-      await agent
-        .post('/v1/price-lists')
-        .send({ name: 'Wholesale', direction: 'sale', currency: 'CAD' })
-        .expect(201),
-    ).priceList.id;
+    const priceList = async (name: string, currency: string) =>
+      body<{ priceList: { id: string } }>(
+        await agent
+          .post('/v1/price-lists')
+          .send({ name, direction: 'sale', currency })
+          .expect(201),
+      ).priceList.id;
+    const wholesale = await priceList('Wholesale', 'CAD');
+    const tokyo = await priceList('Tokyo', 'JPY');
     const figures = { BULK: '600', HALF: '12.5', DUST: '0.0001' };
+    const prices = { BULK: '12.5', HALF: '0.0125', DUST: '7' };
     for (const [sku, quantity] of Object.entries(figures)) {
       const variantId = await item(agent, sku, true);
       await receive(agent, variantId, shelf, quantity, { code: `${sku}-1` });
       await order(agent, 'purchase', supplier, variantId, quantity);
-      await agent
-        .put(`/v1/price-lists/${wholesale}/items/${variantId}`)
-        .send({ unitPrice: '12.50' })
-        .expect(200);
+      for (const [list, unitPrice] of [
+        [wholesale, prices[sku as keyof typeof prices]],
+        [tokyo, '1250'],
+      ]) {
+        await agent
+          .put(`/v1/price-lists/${list}/items/${variantId}`)
+          .send({ unitPrice })
+          .expect(200);
+      }
     }
 
     /** Each code's value in one column of an export, by its header. */
@@ -558,10 +568,16 @@ describe('Exports (e2e)', () => {
         ),
       ),
     ).toEqual(['0', '0', '0']);
-    // Money keeps its places.
+    // Money at its currency's places, stored 12.5000, 0.0125, 7.0000 and
+    // 1250.0000: cents for CAD, never fewer and never rounded; none for yen.
     expect(
       await column(`/v1/price-lists/${wholesale}/export`, 'Price'),
-    ).toEqual({ BULK: '12.5000', HALF: '12.5000', DUST: '12.5000' });
+    ).toEqual({ BULK: '12.50', HALF: '0.0125', DUST: '7.00' });
+    expect(await column(`/v1/price-lists/${tokyo}/export`, 'Price')).toEqual({
+      BULK: '1250',
+      HALF: '1250',
+      DUST: '1250',
+    });
   });
 
   it("writes one price list's items, and audits which list left", async () => {

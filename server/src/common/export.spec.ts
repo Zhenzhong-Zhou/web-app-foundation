@@ -5,7 +5,13 @@ import type { Response } from 'express';
 
 import { t } from '../i18n/translate';
 import { BOM } from './csv';
-import { asQuantity, csvFile, type ExportColumn, inWords } from './export';
+import {
+  asMoney,
+  asQuantity,
+  csvFile,
+  type ExportColumn,
+  inWords,
+} from './export';
 import { HEADERS } from './export-headers';
 import { PRODUCT_TYPE_WORDS } from './product-types';
 
@@ -83,30 +89,41 @@ describe('inWords', () => {
 
 /**
  * An export writes a quantity as data without its padding zeros (ADR-093's
- * R30, #473's 29): `600`, not `600.0000`, a minus kept as a number's, and
- * money beside it as stored.
+ * R30, #473's 29): `600`, not `600.0000`, a minus kept as a number's; and
+ * money beside it at its currency's places, never fewer, never rounded
+ * (99a): `12.50`, `0.0123`, yen's `1250`; with no currency, as stored.
  */
-describe('asQuantity', () => {
-  type Line = { quantity: string | null; price: string };
+describe('asQuantity and asMoney', () => {
+  type Line = {
+    quantity: string | null;
+    price: string | null;
+    currency: string | null;
+  };
 
   const LINE_COLUMNS: ExportColumn<Line>[] = [
     asQuantity(HEADERS.quantity, (row) => row.quantity),
-    { header: HEADERS.price, value: (row) => row.price },
+    asMoney(
+      HEADERS.price,
+      (row) => row.price,
+      (row) => row.currency,
+    ),
   ];
 
-  it('drops the padding zeros of a quantity, and only of a quantity', async () => {
+  it('drops the padding zeros of a quantity, and money’s down to its currency’s places', async () => {
     const res = { setHeader: () => undefined } as unknown as Response;
     const sent = csvFile(
       res,
       'lines',
       LINE_COLUMNS,
       [
-        { quantity: '600.0000', price: '12.5000' },
-        { quantity: '12.5000', price: '12.5000' },
-        { quantity: '0.0001', price: '0.0123' },
-        { quantity: '-5.0000', price: '3.0000' },
-        { quantity: '1234567.0000', price: '1234567.0000' },
-        { quantity: null, price: '0.0000' },
+        { quantity: '600.0000', price: '12.5000', currency: 'CAD' },
+        { quantity: '12.5000', price: '1250.0000', currency: 'JPY' },
+        { quantity: '0.0001', price: '0.0123', currency: 'CAD' },
+        { quantity: '-5.0000', price: '-3.0000', currency: 'CAD' },
+        { quantity: '1234567.0000', price: '1234567.0000', currency: 'CAD' },
+        { quantity: null, price: '0.0000', currency: 'CAD' },
+        { quantity: '1.0000', price: '2.500000', currency: null },
+        { quantity: '1.0000', price: null, currency: 'CAD' },
       ],
       'fr-CA',
     );
@@ -119,13 +136,15 @@ describe('asQuantity', () => {
         .filter(Boolean),
     ).toEqual([
       'Quantité,Prix',
-      '600,12.5000',
-      '12.5,12.5000',
+      '600,12.50',
+      '12.5,1250',
       '0.0001,0.0123',
-      '-5,3.0000',
+      '-5,-3.00',
       // No grouping, and a point in every language.
-      '1234567,1234567.0000',
-      ',0.0000',
+      '1234567,1234567.00',
+      ',0.00',
+      '1,2.500000',
+      '1,',
     ]);
   });
 });

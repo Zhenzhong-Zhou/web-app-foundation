@@ -165,6 +165,13 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
   MC-317
+- **Stock value's export writes each unit cost and value at the base
+  currency's places, never fewer and never rounded:** a value stored
+  `20.000000` as `20.00`, a unit cost of `0.012345` as it is.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/costs.e2e-spec.ts) "leaves equipment out of stock value and of what waits for a cost, though Inventory holds it" ·
+  [test](../../server/src/common/export.spec.ts) "drops the padding zeros of a quantity, and money’s down to its currency’s places" ·
+  MC-1558
 - **Receiving an item still to come on a confirmed purchase asks which
   delivery it is first,** each order with what is still to come and when,
   and Not on an order; an order is received on its own line, so the order

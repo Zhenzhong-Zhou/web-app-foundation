@@ -6,6 +6,7 @@ import { t, type Translatable, translate } from '../i18n/translate';
 import { type CsvValue, toCsv } from './csv';
 import type { KeysetPage } from './keyset';
 import type { Locale } from './locales';
+import { readableMoney } from './money';
 import { readableQuantity } from './readable-quantity';
 import { todayIn } from './today';
 
@@ -58,7 +59,7 @@ export function inWords<T>(
  * grouping, so a spreadsheet reads a number as the screens show it
  * (ADR-057, amended for ADR-093's R30; #473's 29). Trimmed as text by
  * readableQuantity, never through a Number (ADR-025), a minus kept.
- * Quantities only: money is written as stored, never trimmed.
+ * Quantities only: money is asMoney's.
  */
 export function asQuantity<T>(
   header: Translatable,
@@ -71,6 +72,29 @@ export function asQuantity<T>(
       return kept === null || kept === undefined
         ? null
         : readableQuantity(kept);
+    },
+  };
+}
+
+/**
+ * A money column, its figures as data at their currency's places, never
+ * fewer and never rounded: `12.50` for `12.5000` CAD, `0.0125` as it is,
+ * `1250` for yen (ADR-057, amended for ADR-093's 99a). Trimmed as text by
+ * readableMoney (ADR-025), a minus kept. With no currency, as stored, since
+ * nothing says how many places it holds.
+ */
+export function asMoney<T>(
+  header: Translatable,
+  amount: (row: T) => string | null | undefined,
+  currency: (row: T) => string | null,
+): ExportColumn<T> {
+  return {
+    header,
+    value: (row) => {
+      const kept = amount(row);
+      if (kept === null || kept === undefined) return null;
+      const code = currency(row);
+      return code ? readableMoney(kept, code) : kept;
     },
   };
 }

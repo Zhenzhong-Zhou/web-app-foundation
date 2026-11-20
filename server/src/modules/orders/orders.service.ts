@@ -14,6 +14,7 @@ import {
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
+import { minorUnits } from '../../common/money';
 import { codeMatches, searchTerms } from '../../common/search';
 import { pagedBy } from '../../common/sorted-page';
 import type { Permission } from '../../core/authorization/permissions';
@@ -36,7 +37,6 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { minorUnits } from '../invoices/invoice-amounts';
 import { partnerMatches } from '../partners/partner-search';
 import { itemName, namesIn } from '../stock/item-name';
 import type { Tx } from '../stock/stock.service';
