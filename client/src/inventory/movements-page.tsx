@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  ListSubheader,
   MenuItem,
   Paper,
   Stack,
@@ -77,7 +76,7 @@ import {
   MOVEMENT_REASONS,
   reasonLabel,
 } from './movement-reasons';
-import { byWarehouse } from './stock-places';
+import { PlaceFilter } from './place-filter';
 
 const PAGE_SIZE = 25;
 
@@ -267,30 +266,13 @@ export function MovementsPage() {
   // Only places stock can sit in, grouped by their warehouse (20a), as
   // Stock's Location; hidden without locations.view (ADR-080).
   const placeFilter = seesPlaces && (
-    <SelectField
+    <PlaceFilter
       id="movements-place"
-      size="small"
-      label={intl.formatMessage({
-        id: 'inventory.location',
-        defaultMessage: 'Location',
-      })}
-      emptyLabel={intl.formatMessage({
-        id: 'inventory.everywhere',
-        defaultMessage: 'Everywhere',
-      })}
+      locations={locations}
+      leaves={leaves}
       value={answered ? locationId : ''}
-      onChange={(event) => setFilters({ locationId: event.target.value })}
-      sx={{ minWidth: rem(200) }}
-    >
-      {byWarehouse(locations, leaves).flatMap(([top, inIt]) => [
-        <ListSubheader key={`top-${top.id}`}>{top.name}</ListSubheader>,
-        ...inIt.map((location) => (
-          <MenuItem key={location.id} value={location.id} sx={{ pl: 4 }}>
-            {nameAndCode(location.name, location.code)}
-          </MenuItem>
-        )),
-      ])}
-    </SelectField>
+      onChange={(next) => setFilters({ locationId: next })}
+    />
   );
 
   const reasonFilter = (

@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  ListSubheader,
   MenuItem,
   Paper,
   Stack,
@@ -79,12 +78,13 @@ import { rem } from '../theme/rem';
 import { CountInDialog, type CountInItem } from './count-in-dialog';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
+import { PlaceFilter } from './place-filter';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
 import type { Pile } from './stock-actions';
 import { StockCodes, type StockHandlers } from './stock-codes';
 import { StockLots } from './stock-lots';
-import { byWarehouse, openKey } from './stock-places';
+import { openKey } from './stock-places';
 
 /** A page of Inventory, fifty codes or lots (ADR-093, R16). */
 const PAGE_SIZE = 50;
@@ -480,30 +480,13 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
 
   // Only places stock can sit in, grouped by their warehouse (20a).
   const locationFilter = seesPlaces && (
-    <SelectField
+    <PlaceFilter
       id="stock-location"
-      size="small"
-      label={intl.formatMessage({
-        id: 'inventory.location',
-        defaultMessage: 'Location',
-      })}
-      emptyLabel={intl.formatMessage({
-        id: 'inventory.everywhere',
-        defaultMessage: 'Everywhere',
-      })}
+      locations={locations}
+      leaves={leaves}
       value={answered ? locationId : ''}
-      onChange={(event) => setFilters({ locationId: event.target.value })}
-      sx={{ minWidth: rem(200) }}
-    >
-      {byWarehouse(locations, leaves).flatMap(([top, inIt]) => [
-        <ListSubheader key={`top-${top.id}`}>{top.name}</ListSubheader>,
-        ...inIt.map((location) => (
-          <MenuItem key={location.id} value={location.id} sx={{ pl: 4 }}>
-            {nameAndCode(location.name, location.code)}
-          </MenuItem>
-        )),
-      ])}
-    </SelectField>
+      onChange={(next) => setFilters({ locationId: next })}
+    />
   );
 
   const groupBy = (
