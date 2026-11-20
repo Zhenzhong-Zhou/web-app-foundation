@@ -54,6 +54,7 @@ import { EmptiedLine } from './emptied-line';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import { movementsPath } from './movements-path';
+import { notUsableWhy } from './not-usable';
 import { PlacePath } from './place-path';
 import type { ReorderItem } from './reorder-point-dialog';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
@@ -578,8 +579,19 @@ function openName(
   };
 }
 
-/** On hand, and its not-usable part under it (R1). */
-function OnHand({ row, here }: { row: StockCodeRow; here: boolean }) {
+/**
+ * On hand, and its not-usable part under it (R1); on a phone's card, with
+ * why, since the card has no other column to say it (#612).
+ */
+function OnHand({
+  row,
+  here,
+  why = false,
+}: {
+  row: StockCodeRow;
+  here: boolean;
+  why?: boolean;
+}) {
   const intl = useIntl();
   const onHand = here ? (row.here?.onHand ?? '0') : row.onHand;
 
@@ -588,26 +600,43 @@ function OnHand({ row, here }: { row: StockCodeRow; here: boolean }) {
       <span>{displayWithUnit(onHand, row.unitOfMeasure, intl)}</span>
       {!here && !isZero(row.notUsable) && (
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage(
-            {
-              id: 'inventory.stock.notUsable',
-              defaultMessage: '{quantity} not usable',
-            },
-            { quantity: displayQuantity(row.notUsable) },
-          )}
+          {why
+            ? notUsableWhy(row, intl)
+            : intl.formatMessage(
+                {
+                  id: 'inventory.stock.notUsable',
+                  defaultMessage: '{quantity} not usable',
+                },
+                { quantity: displayQuantity(row.notUsable) },
+              )}
         </Typography>
       )}
     </Stack>
   );
 }
 
-/** Free, and what confirmed orders want beyond it, a link to Held (16a). */
-function Free({ row }: { row: StockCodeRow }) {
+/**
+ * Free, and what confirmed orders want beyond it, a link to Held (16a); on
+ * a phone's card, what is held under it too, the rest of why Free is less
+ * than On hand (#612).
+ */
+function Free({ row, held = false }: { row: StockCodeRow; held?: boolean }) {
   const intl = useIntl();
 
   return (
     <Stack sx={{ alignItems: 'flex-end' }}>
       <span>{displayWithUnit(row.free, row.unitOfMeasure, intl)}</span>
+      {held && !isZero(row.held) && (
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {intl.formatMessage(
+            {
+              id: 'inventory.stock.heldUnder',
+              defaultMessage: '{quantity} held',
+            },
+            { quantity: displayQuantity(row.held) },
+          )}
+        </Typography>
+      )}
       {!isZero(row.short) && (
         <Link
           component={RouterLink}
@@ -1353,10 +1382,10 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
         />
         <Status row={row} />
         <Figure label={intl.formatMessage(HEADS.onHand)}>
-          <OnHand row={row} here={!!opened.place} />
+          <OnHand row={row} here={!!opened.place} why />
         </Figure>
         <Figure label={intl.formatMessage(HEADS.free)}>
-          <Free row={row} />
+          <Free row={row} held />
         </Figure>
         <Figure label={intl.formatMessage(HEADS.expiresFirst)}>
           <ExpiryChip

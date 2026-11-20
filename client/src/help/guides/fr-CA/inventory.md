@@ -16,7 +16,7 @@ Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une varian
 - **Expire en premier** : la première date de péremption du stock utilisable.
 - **Actions** : les actions de la ligne, plus bas.
 
-Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, et **Filtres** contient ce que l’écran n’a pas la place d’afficher. De 600 à 899 px, **Réservé** et **À venir** quittent le tableau.
+Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, qui disent dessous pourquoi Libre est moindre, comme « Inutilisable : 12, périmé » et « réservé : 30 », et **Filtres** contient ce que l’écran n’a pas la place d’afficher. De 600 à 899 px, **Réservé** et **À venir** quittent le tableau.
 
 > Une personne qui ne peut pas voir les emplacements lit « 3 lots » à la place des emplacements, ouvre directement les lots, et n’a pas la liste **Emplacement**.
 

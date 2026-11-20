@@ -855,6 +855,7 @@
   "inventory.stock.freeEverywhere": "Free, every place",
   "inventory.stock.held": "Held",
   "inventory.stock.heldEverywhere": "Held, every place",
+  "inventory.stock.heldUnder": "{quantity} held",
   "inventory.stock.hideLots": "{words}: hide the lots at {place}",
   "inventory.stock.hideWhere": "{words}: hide where {name} is",
   "inventory.stock.left": "{left} left · reorder at {point}",

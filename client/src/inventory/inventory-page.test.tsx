@@ -1162,6 +1162,20 @@ describe('InventoryPage', () => {
         }),
       ).toBeVisible();
     });
+
+    // #612: a card has no Held column, so it says why Free is less than
+    // On hand: what is not usable and why, and what is held.
+    it('says on a card why Free is less than On hand', async () => {
+      answer();
+      renderAt('/inventory', ['stock.view']);
+
+      const why = await screen.findByText(
+        '12 not usable: expired and at a place not available',
+      );
+      expect(why).toBeVisible();
+      const card = why.closest('li') as HTMLElement;
+      expect(within(card).getByText('30 held')).toBeVisible();
+    });
   });
 
   // Bob's third message (5): as Items says it, the rows read of every row

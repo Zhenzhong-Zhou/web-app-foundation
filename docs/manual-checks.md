@@ -511,7 +511,9 @@ a second organization.
   by a second press, Free's header words
   alone (35a); a code with nothing to expire last either way; each kept
   in the address and after a reload.
-  At 390 px, Stock is cards, each with On hand and Free, Filters holding
+  At 390 px, Stock is cards, each with On hand and Free, and under them
+  why Free is less: VITC-100's "… not usable: expired", and "… held" on a
+  code a confirmed sale holds (#612); Filters holding
   Type, Category, Location, the sort and the quick filters; from 600 to 899 px Held and
   Coming leave the table.
 - **MC-316** *(ADR-093, R19)* Help's Inventory, Items and Trace a lot
@@ -7147,3 +7149,6 @@ first.
   可分配 in Chinese, and the projected figure one name, Left, Il en reste
   and 预计剩余, where Position, 剩 and 预计可用 stood: MC-219, MC-4204,
   MC-4206, MC-4207, MC-4212 and MC-4215 reworded.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#612): Stock's phone
+  card says why Free is less than On hand, what is not usable and why,
+  and what is held: MC-315's 390 px line reworded.

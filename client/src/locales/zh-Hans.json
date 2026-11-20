@@ -855,6 +855,7 @@
   "inventory.stock.freeEverywhere": "可分配（所有库位）",
   "inventory.stock.held": "已预留",
   "inventory.stock.heldEverywhere": "已预留（所有库位）",
+  "inventory.stock.heldUnder": "已预留 {quantity}",
   "inventory.stock.hideLots": "{words}：收起{place}的批次",
   "inventory.stock.hideWhere": "{words}：收起{name}所在库位",
   "inventory.stock.left": "预计剩余 {left} · 下限 {point}",

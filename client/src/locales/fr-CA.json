@@ -855,6 +855,7 @@
   "inventory.stock.freeEverywhere": "Libre, tous les emplacements",
   "inventory.stock.held": "Réservé",
   "inventory.stock.heldEverywhere": "Réservé, tous les emplacements",
+  "inventory.stock.heldUnder": "réservé : {quantity}",
   "inventory.stock.hideLots": "{words} : masquer les lots à {place}",
   "inventory.stock.hideWhere": "{words} : masquer où se trouve {name}",
   "inventory.stock.left": "Il en reste {left} · point de commande {point}",

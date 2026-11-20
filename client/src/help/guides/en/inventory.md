@@ -16,7 +16,7 @@ On **Stock**, each row is a code, the code on a variant’s label, so an item th
 - **Expires first**: the soonest expiry of the usable stock.
 - **Actions**: the row’s actions, below.
 
-Below 600 px each code is a card with **On hand** and **Free**, and **Filters** holds what the screen has no room for. From 600 to 899 px **Held** and **Coming** leave the table.
+Below 600 px each code is a card with **On hand** and **Free**, saying under them why Free is less, such as “12 not usable: expired” and “30 held”, and **Filters** holds what the screen has no room for. From 600 to 899 px **Held** and **Coming** leave the table.
 
 > Someone who may not see locations reads “3 lots” in place of the places, opens the lots alone, and has no **Location** list.
 

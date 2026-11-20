@@ -43,6 +43,7 @@ import {
 } from '../inventory/movement-cells';
 import { MOVEMENT_HEADINGS } from '../inventory/movement-reasons';
 import { movementsPath } from '../inventory/movements-path';
+import { notUsableWhy } from '../inventory/not-usable';
 import { PlacePath } from '../inventory/place-path';
 import {
   type ReorderOpening,
@@ -692,38 +693,7 @@ function NotUsableLine({ code }: { code: CodeStanding }) {
       </Line>
     );
   }
-  const reasons = [
-    !isZero(code.expired) &&
-      intl.formatMessage({
-        id: 'products.stock.reason.expired',
-        defaultMessage: 'expired',
-      }),
-    !isZero(code.issued) &&
-      intl.formatMessage({
-        id: 'products.stock.reason.issued',
-        defaultMessage: 'issued to a run',
-      }),
-    !isZero(code.unavailable) &&
-      intl.formatMessage({
-        id: 'products.stock.reason.unavailable',
-        defaultMessage: 'at a place not available',
-      }),
-  ].filter((reason): reason is string => !!reason);
-
-  return (
-    <Line tone="error">
-      {intl.formatMessage(
-        {
-          id: 'products.stock.notUsableWhy',
-          defaultMessage: '{quantity} not usable: {reasons}',
-        },
-        {
-          quantity: displayQuantity(code.notUsable),
-          reasons: intl.formatList(reasons, { type: 'conjunction' }),
-        },
-      )}
-    </Line>
-  );
+  return <Line tone="error">{notUsableWhy(code, intl)}</Line>;
 }
 
 /** What can still be promised, or what the orders want beyond it. */
