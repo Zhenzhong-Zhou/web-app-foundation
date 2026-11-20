@@ -530,7 +530,7 @@
   "exports.column.order": "Commande",
   "exports.column.out": "Sortie",
   "exports.column.partner": "Partenaire",
-  "exports.column.position": "Position",
+  "exports.column.position": "Il en reste",
   "exports.column.price": "Prix",
   "exports.column.provisional": "Provisoire",
   "exports.column.quantity": "Quantité",

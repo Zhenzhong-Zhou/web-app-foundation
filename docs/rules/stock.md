@@ -17,7 +17,7 @@ file is kept is in the [README](README.md).
 - **Usable stock is what is at places marked available, less lots
   expired by the organization's today and what released runs were
   issued and have not used.** One rule, read by what confirmed sales
-  hold and by Reorder's position alike, so an item's Free and its status
+  hold and by Reorder's Left alike, so an item's Free and its status
   cannot disagree.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
   [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
@@ -58,7 +58,8 @@ file is kept is in the [README](README.md).
 - **Coming is what confirmed purchases still have to receive and what
   released runs still have to make,** its day the soonest a purchase is
   expected; a run has no day. **Left is usable, plus coming, less what
-  confirmed sales still want,** Reorder's position.
+  confirmed sales still want,** one name wherever it shows, Reorder's
+  once Position (94a).
   [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding" ·

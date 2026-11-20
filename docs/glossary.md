@@ -116,9 +116,9 @@ as the catalogues word it.
 | --- | --- | --- | --- |
 | On hand | En stock | 现有 | Every unit at every place, usable or not: 现有 is 现有可用 and 现有不可用 together (ADR-093). |
 | Held | Réservé | 已预留 | Kept for a confirmed sale (ADR-045). |
-| Free | Libre | 可用 | What can still be promised: usable stock less what is held, never below 0 (ADR-093). |
+| Free | Libre | 可分配 | What can still be promised: usable stock less what is held, never below 0 (ADR-093). Chinese says 可分配, the word warehouse systems use for stock still to be committed (94a): never 可用 alone, which also reads as Usable's 现有可用, nor 可售, wrong for a raw material. |
 | Short | manquant(s) | 缺 | Backordered said in a line: what confirmed orders want beyond what they hold, "20 short", « 20 manquants », 缺 20 (ADR-093). |
-| Not usable | Inutilisable | 现有不可用 | On hand that is not usable, its reason beside it in the words the app already uses: expired, 已过期; issued to a run, 已领用; at a place not available, 不可发货 (ADR-093). The pair of Usable's 现有可用; never bare 不可用, which reads as Free's opposite. |
+| Not usable | Inutilisable | 现有不可用 | On hand that is not usable, its reason beside it in the words the app already uses: expired, 已过期; issued to a run, 已领用; at a place not available, 不可发货 (ADR-093). The pair of Usable's 现有可用; never bare 不可用, which reads as the opposite of a usable place or lot. |
 | Where it stands | État du stock | 库存情况 | The item's page's first section: its stock, what is held and coming, and its position (ADR-093). |
 | Group by / Item / Lot | Regrouper par / Article / Lot | 分组 / 按物品 / 按批次 | Inventory's grouping, by item or by lot (ADR-093). |
 | Expires first | Expire en premier | 最早到期 | A row's lot that expires soonest. |
@@ -126,7 +126,7 @@ as the catalogues word it.
 | Opening balance | Solde d’ouverture | 期初结存 | A stock card's balance at its date range's start. |
 | Closing balance | Solde de clôture | 期末结存 | A stock card's balance at its date range's end: the opening, plus In, less Out. |
 | Backordered | En rupture | 缺货待发 | |
-| Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as the opposite of Free's 可用. |
+| Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as Usable's opposite. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
 | Count it in… | Ajouter au compte… | 盘盈入库… | Correct the count for stock found where the item has never been, at a place or in a lot it never had; its reason found, 盘盈 (ADR-093, #628). |
 | Which lot / One of its lots / A new lot | Quel lot / Un de ses lots / Un nouveau lot | 哪个批次 / 已有批次 / 新批次 | Count it in's choice of lot, neither chosen at first: one the item has, or one made with the count. |
@@ -148,8 +148,7 @@ as the catalogues word it.
 | Reorder | Réapprovisionner | 补货 | Inventory's tab for what is low, named for what is done there (ADR-093); once Reorder points. |
 | Low stock | Stock bas | 库存不足 | Home's tile, Reorder's filter it opens, which holds the out too, and the bell's notice (ADR-091). |
 | Low / Out / Enough | Bas / Épuisé / Suffisant | 不足 / 缺货 / 充足 | Where an item stands: below its point, at zero or less, or at or above it. The filter for the low is Low stock. |
-| Position | Position | 预计可用 | Usable + coming − still needed: what the point is compared with. |
-| Left | Il en reste | 剩 | Position said in a line: "10 left · reorder at 36", « Il en reste 10 · point de commande 36 », 剩 10 · 下限 36 (#459, ADR-093). Its sum keeps Position. |
+| Left | Il en reste | 预计剩余 | Usable + coming − still needed: what the point is compared with, one name wherever it shows, Reorder's box and Today, Stock's line, Where it stands and the export (94a). In a line: "10 left · reorder at 36", « Il en reste 10 · point de commande 36 », 预计剩余 10 · 下限 36 (#459, ADR-093). Once Position and 预计可用, and 剩 in a line; Chinese never says 预计可用, which reads as Free. |
 | Usable | Utilisable | 现有可用 | Stock at locations marked available, less expired lots and what runs were issued. |
 | Coming | À venir | 在途 | Confirmed purchases still to receive, and released runs' output still to come. |
 | Still needed | Encore requis | 待发 | Confirmed sales still to ship. |
@@ -261,6 +260,7 @@ fails on each word a translation uses where its row holds.
 | 简体中文 | 税务登记号 | 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names | Everywhere |
 | 简体中文 | 退出该组织 | 离开该组织: a member's own Leave is 离开, as the Account page's button says; 退出 is Sign out's word, 退出登录, where it stays right | Everywhere |
 | 简体中文 | 退出组织 | 离开组织, as 退出该组织 says | Everywhere |
+| 简体中文 | 预计可用 | 预计剩余, as Left says: one name for the projected figure, which 预计可用 made read as Free (94a) | Everywhere |
 
 ## Settled messages
 

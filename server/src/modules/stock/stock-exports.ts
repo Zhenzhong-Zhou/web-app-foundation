@@ -27,11 +27,11 @@ import { REORDER_STATUS_WORDS } from './reorder-status';
  */
 const VARIANT = t({ id: 'exports.column.variant', defaultMessage: 'Variant' });
 
-/** Coming, Position and the reorder point: Reorder's and Inventory's. */
+/** Coming, Left and the reorder point: Reorder's and Inventory's. */
 const COMING = t({ id: 'exports.column.coming', defaultMessage: 'Coming' });
 const POSITION = t({
   id: 'exports.column.position',
-  defaultMessage: 'Position',
+  defaultMessage: 'Left',
 });
 const REORDER_POINT = t({
   id: 'exports.column.reorderPoint',

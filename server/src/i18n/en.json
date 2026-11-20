@@ -530,7 +530,7 @@
   "exports.column.order": "Order",
   "exports.column.out": "Out",
   "exports.column.partner": "Partner",
-  "exports.column.position": "Position",
+  "exports.column.position": "Left",
   "exports.column.price": "Price",
   "exports.column.provisional": "Provisional",
   "exports.column.quantity": "Quantity",

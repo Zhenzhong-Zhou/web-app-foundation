@@ -408,7 +408,9 @@ a second organization.
   with nothing on hand and no point, such as CALM-SAMPLE, says "None on
   hand, nothing coming." with Set a reorder point and Receive stock. In
   French the section is État du stock, in 中文 库存情况, and 现有不可用
-  names its reasons 已过期, 已领用 and 不可发货.
+  names its reasons 已过期, 已领用 and 不可发货; Free reads 可分配, never
+  可用 alone, and the line and its sum 预计剩余, where Reorder's box and
+  Today read 预计剩余 too, never 剩 or 预计可用.
 - **MC-220** *(ADR-093, ADR-080)* Where it stands by permission. As
   Fatima Haddad (Sales), with no `locations.view`: ELDER-250's page
   lists "Usable lots", each with how many places hold it, and any not
@@ -4532,7 +4534,7 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
   boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
   Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
-  = Position, 58 against its point of 96, "Up to 192 · suggested order"
+  = Left, 58 against its point of 96, "Up to 192 · suggested order"
   and its quantity. Each number opens its order. VITC-100's Usable says
   how much was left out as expired; BOTTLE-90's, how much was left out as
   issued to a run. The chevron again closes it. On a fast connection no
@@ -4564,7 +4566,7 @@ site, after a deploy that changes the setting, the route or the relay.
   and no bar, the line above it "Buy or make what is short." alone; the
   chevron still opens a row. In 中文: the tab reads 补货, the
   statuses 缺货, 不足 and 充足, the line 缺什么就采购或生产。, a row's
-  "剩 … · 下限 …", the legend's 库存下限，永远在中间, and an Owner's
+  "预计剩余 … · 下限 …", the legend's 库存下限，永远在中间, and an Owner's
   buttons 采购 96 and 生产 24; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
 - **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
@@ -4582,9 +4584,9 @@ site, after a deploy that changes the setting, the route or the relay.
   the chosen one drawn as Invite's roles are, a thicker accent border and
   a light tint, in both modes; choosing the fixed or the maximum card
   shows its field inside it. Once
-  the typing pauses, Today shows Position now, and a second bar only when
-  something would change it: Position after the suggested order, "with …
-  in draft" where a draft adds to it, or Position with … in draft where
+  the typing pauses, Today shows Left now, and a second bar only when
+  something would change it: Left after the suggested order, "with …
+  in draft" where a draft adds to it, or Left with … in draft where
   only a draft does; each number on one line with its unit, and one
   sentence, such as "Below 500 now, so
   it would suggest 600, 3 of 200.". Typing on changes it once more, never
@@ -4647,9 +4649,9 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
   the button reads 添加库存下限, the switch 采购 and 自制 under its name
   采购或自制, FOCUS-60CT's 已选自制，因为它有配方。, the cards
-  补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
-  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订货
-  600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
+  补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计剩余
+  and 按建议订货后的预计剩余, and its sentence reads naturally, such as "目前低于 500，因此建议订货
+  600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计剩余,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
   the Owner: the tile after To receive reads 8, Low stock and "2 out",
@@ -4693,7 +4695,7 @@ site, after a deploy that changes the setting, the route or the relay.
   draft: the order opens as a draft, and Back returns to Reorder,
   not to New order filled in again; there, both rows' In draft reads Drafted in
   the order's number with its quantity, and neither has a box to choose. Edit D3-1000-120:
-  Today says what is in draft covers it, and its second bar, "Position
+  Today says what is in draft covers it, and its second bar, "Left
   with 96 in draft", reads 276, above its point of 240.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
@@ -7141,3 +7143,7 @@ first.
   Stock and Reorder show their count always, "31 codes" once every row
   is shown; Back after Show more on Items, Stock, Reorder and Movements
   reads the rows shown again, focus on the row left from: MC-323 added.
+- 2026-11-20: ADR-093's Movements branch, step 16 (94a, R32): Free is
+  可分配 in Chinese, and the projected figure one name, Left, Il en reste
+  and 预计剩余, where Position, 剩 and 预计可用 stood: MC-219, MC-4204,
+  MC-4206, MC-4207, MC-4212 and MC-4215 reworded.

@@ -70,6 +70,23 @@ test("再订货点 is refused everywhere", () => {
   }
 });
 
+test("预计可用 is refused everywhere, for Left's 预计剩余, and 现有可用 is not", () => {
+  for (const id of ["inventory.reorder.box.position", "inventory#position"]) {
+    assert.deepEqual(problemsOf("现在的预计可用", id, "zh-Hans"), [
+      "预计可用, for 预计剩余, as Left says: one name for the projected figure, which 预计可用 made read as Free (94a) (Words not to use)",
+    ]);
+  }
+  // Usable keeps 现有可用, and Free is 可分配.
+  assert.deepEqual(
+    problemsOf(
+      "现有可用 30 + 在途 0 − 待发 20",
+      "products.stock.leftSum",
+      "zh-Hans",
+    ),
+    [],
+  );
+});
+
 test("账单地址 and 税务登记号 are refused everywhere, for the words settled", () => {
   for (const id of ["invoices.billToMissing", "partners#addresses"]) {
     assert.deepEqual(problemsOf("请添加账单地址", id, "zh-Hans"), [
