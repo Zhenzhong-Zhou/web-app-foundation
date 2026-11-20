@@ -1992,6 +1992,42 @@ describe('Orders (e2e)', () => {
       expect(outstanding.entries).toHaveLength(0);
     });
 
+    // 113a: every line closed short with nothing in is nothing received,
+    // never All received; nothing is still due, so it may be closed.
+    it('reads an order whose every line was closed short with nothing in as Not received', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      await closeShort(ctx, order.id, order.lines[0].id);
+
+      expect(await fulfillmentOf(ctx, order.id)).toBe('none');
+      const detail = body<{ fullyFulfilled: boolean }>(
+        await ctx.agent.get(`/v1/orders/${order.id}`).expect(200),
+      );
+      expect(detail.fullyFulfilled).toBe(true);
+      const notReceived = body<OrderPage>(
+        await ctx.agent
+          .get('/v1/orders?status=all&fulfillment=none')
+          .expect(200),
+      );
+      expect(notReceived.entries.map((entry) => entry.id)).toEqual([order.id]);
+      const allReceived = body<OrderPage>(
+        await ctx.agent
+          .get('/v1/orders?status=all&fulfillment=all')
+          .expect(200),
+      );
+      expect(allReceived.entries).toEqual([]);
+    });
+
     it('reads a sale by what has shipped', async () => {
       const ctx = await setup('alpha');
       const sale = await shippedSale(ctx.agent);

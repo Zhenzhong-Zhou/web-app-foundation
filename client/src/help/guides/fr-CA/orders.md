@@ -24,7 +24,7 @@ Une vente confirmée réserve le stock dont elle a besoin, pour que personne ne 
 
 Si le reste d’une ligne ne viendra jamais, choisissez **Clore incomplète** sur la ligne : l’écart reste visible.
 
-À côté de son statut, une commande confirmée dit combien est arrivé : **Non reçue**, **Reçue en partie** ou **Entièrement reçue**, et pour une vente **Non expédiée**, **Expédiée en partie** ou **Entièrement expédiée**. Une ligne close incomplète compte comme terminée, et une quantité supérieure à la commande se lit tout de même **Entièrement reçue**. L’étiquette est calculée à partir des lignes, donc personne ne la fixe, et le filtre **Réception** de la liste (**Expédition** sur une liste de ventes, **Réception ou expédition** pour les deux) la limite à l’une d’elles, conservé dans l’adresse.
+À côté de son statut, une commande confirmée dit combien est arrivé : **Non reçue**, **Reçue en partie** ou **Entièrement reçue**, et pour une vente **Non expédiée**, **Expédiée en partie** ou **Entièrement expédiée**. Une ligne close incomplète compte comme terminée, mais une commande dont chaque ligne a été close incomplète sans rien recevoir se lit **Non reçue**, et une quantité supérieure à la commande se lit tout de même **Entièrement reçue**. L’étiquette est calculée à partir des lignes, donc personne ne la fixe, et le filtre **Réception** de la liste (**Expédition** sur une liste de ventes, **Réception ou expédition** pour les deux) la limite à l’une d’elles, conservé dans l’adresse.
 
 Sur un achat, **Réceptions** liste chaque livraison avec son lot et la personne qui l’a reçue, et se termine par **Tous les mouvements de** et le numéro de la commande, qui ouvre [Mouvements](/movements) pour elle; les **Expéditions** d’une vente se terminent de la même façon. Quiconque peut voir la commande voit les Réceptions, l’emplacement seulement s’il peut voir les emplacements; le lien, seulement s’il peut voir le stock.
 
@@ -40,7 +40,7 @@ Tout ce qui est listé part ensemble, ou rien ne part : mettez une ligne à 0 p
 
 ## Terminer une commande {#finish}
 
-Quand plus rien n’est attendu, appuyez sur **Clore la commande**, que tout soit arrivé ou non. Une fois tout reçu, la commande demande « Tout est arrivé. Clore la commande? » (sur une vente, « Tout a été expédié. Clore la commande? »), et **Clore la commande** la ferme. **Annuler la commande** n’est offert que tant que rien n’a bougé.
+Quand plus rien n’est attendu, appuyez sur **Clore la commande**, que tout soit arrivé ou non. Une fois tout reçu, la commande demande « Tout est arrivé. Clore la commande? » (sur une vente, « Tout a été expédié. Clore la commande? »; quand une ligne a été close incomplète, « Plus rien n’est attendu. Clore la commande? »), et **Clore la commande** la ferme. **Annuler la commande** n’est offert que tant que rien n’a bougé.
 
 ## Ce qu’un lien a choisi {#chips}
 

@@ -345,12 +345,16 @@ export function OrderDetailPage() {
   const open: OrderTab = tabs.includes(tab) ? tab : 'items';
 
   /**
-   * Everything in and the order still confirmed (#605): closing it stays a
-   * person's decision (ADR-027), offered as the page's main act once
-   * nothing is due. Nothing is outstanding, so it closes at once, with no
-   * question about what is still to come.
+   * Nothing still due and the order still confirmed (#605): closing it
+   * stays a person's decision (ADR-027), offered as the page's main act
+   * once nothing is due, every line closed short with nothing in too,
+   * which reads Not received (113a). Nothing is outstanding, so it closes
+   * at once, with no question about what is still to come.
    */
-  const closeOffered = canUpdate && order.fulfillment === 'all';
+  const closeOffered =
+    canUpdate && order.status === 'confirmed' && order.fullyFulfilled;
+  /** A line closed short: nothing more is expected, not everything came. */
+  const closedShort = order.lines.some((line) => line.isClosedShort);
 
   /**
    * The page's main act (ADR-055): Ship, when anything can, or Close
@@ -370,14 +374,19 @@ export function OrderDetailPage() {
   ) : closeOffered ? (
     <Stack spacing={1}>
       <Typography id="order-close-line" variant="body2">
-        {intl.formatMessage(
-          {
-            id: 'orders.fulfillment.close',
-            defaultMessage:
-              '{direction, select, sale {Everything has shipped. Close the order?} other {Everything has arrived. Close the order?}}',
-          },
-          { direction: order.direction },
-        )}
+        {closedShort
+          ? intl.formatMessage({
+              id: 'orders.fulfillment.closeShort',
+              defaultMessage: 'Nothing more is expected. Close the order?',
+            })
+          : intl.formatMessage(
+              {
+                id: 'orders.fulfillment.close',
+                defaultMessage:
+                  '{direction, select, sale {Everything has shipped. Close the order?} other {Everything has arrived. Close the order?}}',
+              },
+              { direction: order.direction },
+            )}
       </Typography>
       <Button
         fullWidth

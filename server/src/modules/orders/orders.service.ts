@@ -102,8 +102,10 @@ function lineStillDue(): SQL {
 /**
  * How much of a confirmed order has come or gone (#605; ADR-093's R25):
  * `all` once no line is still due, a line closed short counting as done,
- * as outstandingOrder() counts it; else `part` once anything has, a
- * voided shipment's taken back; else `none`. Null on any other status: a
+ * as outstandingOrder() counts it, and something has come or gone; else
+ * `part` once anything has, a voided shipment's taken back; else `none`,
+ * an order whose every line was closed short with nothing in too, never
+ * All received (113a). Null on any other status: a
  * draft expects nothing yet, and a closed or cancelled order's status says
  * it all. Status stays a person's decision (ADR-027): this is the
  * arithmetic beside it, the label beside Status on the list and the page,
@@ -117,8 +119,8 @@ export function fulfillmentOf(): SQL<OrderFulfillment | null> {
   return sql<OrderFulfillment | null>`(case when ${orders.status} = 'confirmed'
     then (
       select case
-        when not bool_or(${lineStillDue()}) then 'all'
-        when bool_or(${orderLines.quantityFulfilled} > 0) then 'part'
+        when bool_or(${orderLines.quantityFulfilled} > 0)
+          then case when bool_or(${lineStillDue()}) then 'part' else 'all' end
         else 'none'
       end
       from ${orderLines}

@@ -1380,6 +1380,7 @@
   "orders.fulfillment.all": "{direction, select, purchase {All received} sale {All shipped} other {All received or shipped}}",
   "orders.fulfillment.any": "Any",
   "orders.fulfillment.close": "{direction, select, sale {Everything has shipped. Close the order?} other {Everything has arrived. Close the order?}}",
+  "orders.fulfillment.closeShort": "Nothing more is expected. Close the order?",
   "orders.fulfillment.filter": "{direction, select, purchase {Receiving} sale {Shipping} other {Receiving or shipping}}",
   "orders.fulfillment.none": "{direction, select, purchase {Not received} sale {Not shipped} other {Not received or shipped}}",
   "orders.fulfillment.part": "{direction, select, purchase {Partly received} sale {Partly shipped} other {Partly received or shipped}}",

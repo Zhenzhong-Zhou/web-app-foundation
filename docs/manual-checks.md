@@ -852,7 +852,11 @@ a second organization.
   on its Items tab: All received beside Confirmed, and a green line
   "Everything has arrived. Close the order?" with Close order, which
   closes it at once: Received, the label and the line gone, and focus
-  on the title PO-DEMO-4 (103a). SO-DEMO-6's line reads "Everything has shipped. Close the order?". A role made with
+  on the title PO-DEMO-4 (103a). SO-DEMO-6's line reads "Everything
+  has shipped. Close the order?"; PO-DEMO-6's, with its short line,
+  "Nothing more is expected. Close the order?" (113a). Close every
+  line of a confirmed purchase short with nothing received: Not
+  received, and the same line with Close order. A role made with
   only Orders' view sees the labels and no line. In Français: Reçue en
   partie, Entièrement reçue, « Tout est arrivé. Clore la commande? »; in
   中文: 部分收货, 已全部收货, 未发货, and 货物已全部到达。关闭订单？

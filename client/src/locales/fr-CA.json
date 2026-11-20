@@ -1380,6 +1380,7 @@
   "orders.fulfillment.all": "{direction, select, purchase {Entièrement reçue} sale {Entièrement expédiée} other {Entièrement reçue ou expédiée}}",
   "orders.fulfillment.any": "Toutes",
   "orders.fulfillment.close": "{direction, select, sale {Tout a été expédié. Clore la commande?} other {Tout est arrivé. Clore la commande?}}",
+  "orders.fulfillment.closeShort": "Plus rien n’est attendu. Clore la commande?",
   "orders.fulfillment.filter": "{direction, select, purchase {Réception} sale {Expédition} other {Réception ou expédition}}",
   "orders.fulfillment.none": "{direction, select, purchase {Non reçue} sale {Non expédiée} other {Ni reçue ni expédiée}}",
   "orders.fulfillment.part": "{direction, select, purchase {Reçue en partie} sale {Expédiée en partie} other {Reçue ou expédiée en partie}}",

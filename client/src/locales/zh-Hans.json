@@ -1380,6 +1380,7 @@
   "orders.fulfillment.all": "{direction, select, purchase {已全部收货} sale {已全部发货} other {已全部收货或发货}}",
   "orders.fulfillment.any": "不限",
   "orders.fulfillment.close": "{direction, select, sale {货物已全部发出。关闭订单？} other {货物已全部到达。关闭订单？}}",
+  "orders.fulfillment.closeShort": "不再有货要来或要发。关闭订单？",
   "orders.fulfillment.filter": "{direction, select, purchase {收货进度} sale {发货进度} other {收发货进度}}",
   "orders.fulfillment.none": "{direction, select, purchase {未收货} sale {未发货} other {未收货或未发货}}",
   "orders.fulfillment.part": "{direction, select, purchase {部分收货} sale {部分发货} other {部分收货或发货}}",

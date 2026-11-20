@@ -24,7 +24,7 @@ A confirmed sale holds the stock it needs, so nobody promises the same units twi
 
 If the rest of a line is never coming, choose **Close short** on the line: the shortfall stays in sight.
 
-Beside its status, a confirmed order says how much has come: **Not received**, **Partly received** or **All received**, and on a sale **Not shipped**, **Partly shipped** or **All shipped**. A line closed short counts as done, and more than was ordered still reads **All received**. The label is worked out from the lines, so nobody sets it, and the list’s **Receiving** filter (**Shipping** on a sales list, **Receiving or shipping** on both) narrows it to one of them, kept in the address.
+Beside its status, a confirmed order says how much has come: **Not received**, **Partly received** or **All received**, and on a sale **Not shipped**, **Partly shipped** or **All shipped**. A line closed short counts as done, though an order whose every line was closed short with nothing in reads **Not received**, and more than was ordered still reads **All received**. The label is worked out from the lines, so nobody sets it, and the list’s **Receiving** filter (**Shipping** on a sales list, **Receiving or shipping** on both) narrows it to one of them, kept in the address.
 
 On a purchase, **Receipts** lists each delivery with its lot and who received it, and ends with **All movements of** the order’s number, which opens [Movements](/movements) for it; a sale’s **Shipments** ends the same way. Whoever may see the order sees Receipts, where it went only if they may see locations; the link only if they may see stock.
 
@@ -40,7 +40,7 @@ Everything listed ships together, or nothing does: set a line to 0 to leave it f
 
 ## Finish an order {#finish}
 
-When nothing more is coming, press **Close order**, whether everything arrived or not. Once everything is in, the order asks “Everything has arrived. Close the order?” (on a sale, “Everything has shipped. Close the order?”), and **Close order** closes it. **Cancel order** is offered only until something has moved.
+When nothing more is coming, press **Close order**, whether everything arrived or not. Once everything is in, the order asks “Everything has arrived. Close the order?” (on a sale, “Everything has shipped. Close the order?”; where a line was closed short, “Nothing more is expected. Close the order?”), and **Close order** closes it. **Cancel order** is offered only until something has moved.
 
 ## What a link chose {#chips}
 

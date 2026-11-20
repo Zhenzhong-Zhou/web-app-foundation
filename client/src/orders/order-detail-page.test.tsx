@@ -470,7 +470,9 @@ describe('OrderDetailPage lines', () => {
         serve(order(done));
         renderPage();
 
-        expect(await closeOrder()).toHaveClass('MuiButton-contained');
+        // The close line's, the page's main act once nothing is due (113a),
+        // filled by the theme's default variant, which this render lacks.
+        expect(await closeOrder()).not.toHaveClass('MuiButton-outlined');
       });
 
       it('is outlined on a sale still to ship, under a filled Ship', async () => {
@@ -488,7 +490,9 @@ describe('OrderDetailPage lines', () => {
         serveSale([], done);
         renderPage(SALE_PERMISSIONS);
 
-        expect(await closeOrder()).toHaveClass('MuiButton-contained');
+        // The close line's, the page's main act once nothing is due (113a),
+        // filled by the theme's default variant, which this render lacks.
+        expect(await closeOrder()).not.toHaveClass('MuiButton-outlined');
         expect(
           screen.queryByRole('button', { name: 'Ship' }),
         ).not.toBeInTheDocument();
@@ -909,6 +913,55 @@ describe('OrderDetailPage, how much has come', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'PO-000001' }),
     ).toHaveFocus();
+  });
+
+  // 113a: every line closed short with nothing in reads Not received;
+  // nothing is due, so Close order is offered, its line in words that
+  // never say everything came.
+  it('offers to close an order every line of which was closed short, Not received, nothing more expected', async () => {
+    serve(
+      order({
+        status: 'confirmed',
+        fulfillment: 'none',
+        fullyFulfilled: true,
+        lines: [
+          orderLine({
+            quantityFulfilled: '0.0000',
+            quantityOutstanding: '0.0000',
+            isClosedShort: true,
+            isComplete: true,
+          }),
+        ],
+      }),
+    );
+    renderPage();
+
+    const close = await screen.findByRole('button', { name: 'Close order' });
+    expect(close).toHaveAccessibleDescription(
+      'Nothing more is expected. Close the order?',
+    );
+    expect(screen.getByText('Not received')).toBeInTheDocument();
+    expect(screen.queryByText(/^Everything has/)).not.toBeInTheDocument();
+  });
+
+  it('says a line closed short after some came: nothing more is expected', async () => {
+    serve({
+      ...allIn,
+      lines: [
+        orderLine({
+          quantityFulfilled: '10.0000',
+          quantityOutstanding: '0.0000',
+          isClosedShort: true,
+          isComplete: true,
+        }),
+      ],
+    });
+    renderPage();
+
+    expect(
+      await screen.findByText('Nothing more is expected. Close the order?'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('All received')).toBeInTheDocument();
   });
 
   it('says a sale all shipped in its own words', async () => {
