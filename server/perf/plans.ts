@@ -600,7 +600,11 @@ async function buildProbes(
 
   if (org.traceLotId) {
     const lotId = org.traceLotId;
-    probes.push({ name: 'lot trace', run: () => traces.trace(lotId, 'en') });
+    // As a reader who sees places, its places' paths read too (#639).
+    probes.push({
+      name: 'lot trace',
+      run: () => traces.trace(lotId, 'en', true),
+    });
   }
 
   // A newcomer's Home (ADR-079): the same, with their welcome, its first

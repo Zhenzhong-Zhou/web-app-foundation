@@ -2018,7 +2018,9 @@ export type TracedLot = {
 
 export type LotBalance = {
   locationId: string;
-  locationName: string;
+  locationName: string | null;
+  locationCode: string | null;
+  locationPath: Array<string>;
   isAvailable: boolean;
   quantity: string;
 };
@@ -2070,6 +2072,8 @@ export type LotRecipient = {
 export type LotTrace = {
   lot: TracedLot;
   balances: Array<LotBalance>;
+  usable: string;
+  notUsable: string;
   sources: Array<LotSource>;
   madeFrom: Array<RelatedLot>;
   wentInto: Array<RelatedLot>;

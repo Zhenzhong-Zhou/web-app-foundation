@@ -3,12 +3,13 @@ import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
-import { dayIn } from '../../common/today';
+import { dayIn, todayIn } from '../../common/today';
 import type { ReleaseLicenceStatus } from '../../database/schema';
 import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemName, namesIn } from './item-name';
+import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
 
 /**
@@ -48,15 +49,28 @@ export interface RelatedLot {
 export class LotTraceService {
   constructor(private readonly tenantDb: TenantDb) {}
 
-  /** Its item named in the reader's language (ADR-056). */
-  async trace(lotId: string, locale: Locale) {
+  /**
+   * Its item named in the reader's language (ADR-056); where it is now
+   * named by place only for a reader who may see places (ADR-093, 96a).
+   */
+  async trace(lotId: string, locale: Locale, seesPlaces: boolean) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const lot = await this.header(tx, organizationId, lotId, locale);
 
       // One after another: a transaction is one connection, and queries on
       // it run in turn whatever the code says, so Promise.all would only
       // pretend to be parallel.
-      const balances = await this.balances(tx, organizationId, lotId);
+      const balances = await this.balances(
+        tx,
+        organizationId,
+        lotId,
+        seesPlaces,
+      );
+      const { usable, notUsable } = await this.standing(
+        tx,
+        organizationId,
+        lotId,
+      );
       const sources = await this.sources(tx, organizationId, lotId);
       const madeFrom = await this.related(tx, organizationId, lotId, 'up');
       const wentInto = await this.related(tx, organizationId, lotId, 'down');
@@ -72,7 +86,16 @@ export class LotTraceService {
         ...wentInto.map((related) => related.lotId),
       ]);
 
-      return { lot, balances, sources, madeFrom, wentInto, recipients };
+      return {
+        lot,
+        balances,
+        usable,
+        notUsable,
+        sources,
+        madeFrom,
+        wentInto,
+        recipients,
+      };
     });
   }
 
@@ -181,13 +204,24 @@ export class LotTraceService {
     };
   }
 
-  /** Where it is now, including bins marked unavailable (ADR-042). */
-  private async balances(tx: Tx, organizationId: string, lotId: string) {
+  /**
+   * Where it is now, including bins marked unavailable (ADR-042): each
+   * place by its path, its warehouse first (#639), for a reader who may
+   * see places; its id and figures alone for the rest (ADR-093, 96a), as
+   * Stock leaves them out.
+   */
+  private async balances(
+    tx: Tx,
+    organizationId: string,
+    lotId: string,
+    seesPlaces: boolean,
+  ) {
     const rows = (
       await tx.execute(sql`
         select
           sl.location_id,
           loc.name as location_name,
+          loc.code as location_code,
           loc.is_available,
           sl.quantity::text as quantity
         from stock_levels sl
@@ -200,16 +234,61 @@ export class LotTraceService {
     ).rows as {
       location_id: string;
       location_name: string;
+      location_code: string | null;
       is_available: boolean;
       quantity: string;
     }[];
 
+    const pathOf = seesPlaces
+      ? await pathsOf(
+          tx,
+          organizationId,
+          rows.map((row) => row.location_id),
+        )
+      : new Map<string, string[]>();
+
     return rows.map((row) => ({
       locationId: row.location_id,
-      locationName: row.location_name,
+      locationName: seesPlaces ? row.location_name : null,
+      locationCode: seesPlaces ? row.location_code : null,
+      locationPath: pathOf.get(row.location_id) ?? [],
       isAvailable: row.is_available,
       quantity: row.quantity,
     }));
+  }
+
+  /**
+   * Where it is now in two sums, by the usable rule's part for one lot
+   * (ADR-093, 10a): at a place marked available and not expired by the
+   * organization's today, and the rest. What released runs were issued is
+   * counted by item and place, never by lot, so it is not here. Summed
+   * here, never in the browser (ADR-055), for a reader who may not see
+   * the places (96a).
+   */
+  private async standing(tx: Tx, organizationId: string, lotId: string) {
+    const today = todayIn(requestTimeZone());
+    const [row] = (
+      await tx.execute(sql`
+        select
+          coalesce(sum(sl.quantity) filter (
+            where loc.is_available
+              and (l.expires_at is null or l.expires_at >= ${today}::date)
+          ), 0)::text as usable,
+          coalesce(sum(sl.quantity) filter (
+            where not loc.is_available or l.expires_at < ${today}::date
+          ), 0)::text as not_usable
+        from stock_levels sl
+        join lots l
+          on l.id = sl.lot_id and l.organization_id = ${organizationId}::uuid
+        join locations loc
+          on loc.id = sl.location_id
+          and loc.organization_id = ${organizationId}::uuid
+        where sl.organization_id = ${organizationId}::uuid
+          and sl.lot_id = ${lotId}::uuid
+      `)
+    ).rows as { usable: string; not_usable: string }[];
+
+    return { usable: row.usable, notUsable: row.not_usable };
   }
 
   /**

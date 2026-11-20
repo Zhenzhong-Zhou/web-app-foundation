@@ -177,6 +177,16 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
   MC-906
+- **Where it is now names each place by its whole path, its warehouse
+  first, only to a reader with locations.view;** the rest read the
+  lot's usable and not usable, two sums from the server, and no place's
+  name, code or path. Usable is at a place available while the lot has
+  not expired by the organization's today; what runs were issued is
+  counted by item, never by lot.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "names each place where it is now by its path, only to a reader with locations.view" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each place where it is now by its whole path, or sums it for a reader without places" ·
+  MC-904
 
 ## Where it stands
 

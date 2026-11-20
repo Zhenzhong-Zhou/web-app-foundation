@@ -47,7 +47,8 @@ updated with the rule it states (ADR-087).
   code from `codeFigures`, a figure sort `sortedFigure` unioned with
   the codes, never joined; the Lot view from `stockRowsOf`'s rows,
   as Home counts them; a place's name only with `locations.view`
-  (ADR-093).
+  (ADR-093), there and on a lot's trace (96a), its path by
+  `place-paths.ts`.
 - **The lines behind a code's figures are `code-lines.ts`:** Coming's
   documents, Held's sales and the usable lots without places, each read
   by the rule its figure is, so they add up. Where it stands

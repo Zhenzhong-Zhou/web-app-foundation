@@ -793,7 +793,14 @@ search to having the list of customers; the target is **under two minutes**.
   samples and returns.
 - **MC-903** Trace FOC-2609-01 back: the run, and the ingredient lots it was
   made from.
-- **MC-904** Balances: where every unit of the batch is now.
+- **MC-904** *(ADR-093, amended; #639)* Balances: where every unit of
+  the batch is now, each place by its whole path, its warehouse first,
+  "Main warehouse › Zone A › Shelf A2 (A2)", where it said "Shelf A2"
+  alone. Signed in with the Sales template, which has no
+  `locations.view`: Where it is now has no Location column and names no
+  place, reading Usable and Not usable, the two adding up to every unit
+  of the lot, its quantity at a place not available, or all of it once
+  the lot has expired, under Not usable.
 - **MC-905** Record the time here and in the release notes.
 - **MC-906** *(ADR-044, amended)* On BF-2609's trace, Who received it's
   Export saves the recall list: each row as the table shows it, who, the
@@ -6964,3 +6971,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, #636: a list's address written
   from the address as it is when the write runs, so a search a moment
   after a filter keeps the filter's change: MC-R104 added.
+- 2026-11-20: ADR-093's Movements branch, #639 and 96a: a lot's Where it
+  is now names each place by its whole path, and for a reader without
+  `locations.view` no place, its Usable and Not usable instead: MC-904.

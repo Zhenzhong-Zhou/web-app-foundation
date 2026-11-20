@@ -45,10 +45,22 @@ const TRACE: LotTrace = {
     {
       locationId: 'loc-1',
       locationName: 'Shelf A',
+      locationCode: 'A',
+      locationPath: ['Main warehouse', 'Zone A'],
       isAvailable: true,
       quantity: '48.0000',
     },
+    {
+      locationId: 'loc-2',
+      locationName: 'Quarantine',
+      locationCode: null,
+      locationPath: ['Main warehouse'],
+      isAvailable: false,
+      quantity: '2.0000',
+    },
   ],
+  usable: '48.0000',
+  notUsable: '2.0000',
   sources: [
     SOURCE,
     {
@@ -187,6 +199,39 @@ describe('LotTracePage', () => {
       '10 kg',
     );
     expect(screen.queryByText(/\.0000/)).not.toBeInTheDocument();
+  });
+
+  // Where it is now (#639; ADR-093, 96a): each place by its whole path,
+  // its warehouse first, for a reader who may see places; for one who may
+  // not, the two sums the server sends and no Location column.
+  it('names each place where it is now by its whole path, or sums it for a reader without places', async () => {
+    const { unmount } = renderTrace(['stock.view', 'locations.view']);
+
+    expect(
+      await screen.findByRole('cell', {
+        name: 'Main warehouse › Zone A › Shelf A (A)',
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('cell', {
+        name: 'Main warehouse › Quarantine Not available',
+      }),
+    ).toBeVisible();
+    unmount();
+
+    renderTrace(['stock.view']);
+
+    const heads = await screen.findAllByRole('columnheader');
+    expect(heads.slice(0, 2).map((head) => head.textContent)).toEqual([
+      'Usable',
+      'Not usable',
+    ]);
+    expect(screen.getByRole('cell', { name: '48 kg' })).toBeVisible();
+    expect(screen.getByRole('cell', { name: '2 kg' })).toBeVisible();
+    expect(
+      screen.queryByRole('columnheader', { name: 'Location' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Shelf A|Quarantine/)).not.toBeInTheDocument();
   });
 
   // Stock look-up's reader (ADR-080): stock, but none of the three.

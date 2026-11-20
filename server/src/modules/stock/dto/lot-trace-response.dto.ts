@@ -16,10 +16,23 @@ export class TracedLot {
   description!: string;
 }
 
-/** Where it is now, including bins marked unavailable (ADR-042). */
+/**
+ * Where it is now, including bins marked unavailable (ADR-042). A place's
+ * name, code and path go only to a reader with `locations.view`, as on
+ * Stock (ADR-093, 96a); its id stays.
+ */
 export class LotBalance {
   locationId!: string;
-  locationName!: string;
+  /** Null for a reader without `locations.view`. */
+  locationName!: string | null;
+  /** Null for a reader without `locations.view`. */
+  locationCode!: string | null;
+  /**
+   * The places above it, its warehouse or site first, by name, as Stock
+   * sends them (57a; #639). Empty for a place at the top, and for a
+   * reader without `locations.view`.
+   */
+  locationPath!: string[];
   isAvailable!: boolean;
   quantity!: string;
 }
@@ -85,6 +98,15 @@ export class LotRecipient {
 export class LotTrace {
   lot!: TracedLot;
   balances!: LotBalance[];
+  /**
+   * On hand where it can be used: at places marked available, the lot not
+   * expired by the organization's today (ADR-093, 10a). With `notUsable`,
+   * what a reader without `locations.view` reads in place of its places
+   * (96a).
+   */
+  usable!: string;
+  /** On hand at a place not available, or all of it once the lot expired. */
+  notUsable!: string;
   sources!: LotSource[];
   madeFrom!: RelatedLot[];
   wentInto!: RelatedLot[];

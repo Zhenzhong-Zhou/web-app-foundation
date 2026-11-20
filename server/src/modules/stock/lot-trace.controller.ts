@@ -12,7 +12,10 @@ import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
+import { CurrentUser } from '../../core/auth/current-user.decorator';
+import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
+import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
@@ -25,10 +28,15 @@ import { RECALL_COLUMNS } from './stock-exports';
 /**
  * One lot's whole story (ADR-044). A read over what the ledger already holds,
  * under stock.view: whoever can see a lot's balance can ask where it went.
+ * Where it is now names its places only to a reader with `locations.view`
+ * (ADR-080; ADR-093, 96a), as Stock does.
  */
 @Controller({ path: 'stock/lots', version: '1' })
 export class LotTraceController {
-  constructor(private readonly traces: LotTraceService) {}
+  constructor(
+    private readonly traces: LotTraceService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   /** Find a lot by the start of its code: how a recall usually begins. */
   @Get('search')
@@ -39,11 +47,17 @@ export class LotTraceController {
 
   @Get(':id/trace')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  trace(
+  async trace(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestContext,
     @AcceptLanguage() acceptLanguage?: string,
   ): Promise<LotTrace> {
-    return this.traces.trace(id, localeOf(acceptLanguage));
+    const held = await this.permissions.heldBy(user.membershipId);
+    return this.traces.trace(
+      id,
+      localeOf(acceptLanguage),
+      held.has(PERMISSIONS.LOCATIONS_VIEW),
+    );
   }
 
   /**
@@ -63,7 +77,10 @@ export class LotTraceController {
     @AcceptLanguage() acceptLanguage?: string,
   ) {
     const locale = localeOf(acceptLanguage);
-    const rows = withinLimit((await this.traces.trace(id, locale)).recipients);
+    // Who received it alone: no place's name is read for the recall list.
+    const rows = withinLimit(
+      (await this.traces.trace(id, locale, false)).recipients,
+    );
     recordContext({ list: 'recall', filters: { id }, rows: rows.length });
     return csvFile(res, 'recall-list', RECALL_COLUMNS, rows, locale);
   }

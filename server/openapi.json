@@ -17126,7 +17126,22 @@
             "type": "string"
           },
           "locationName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "isAvailable": {
             "type": "boolean"
@@ -17138,6 +17153,8 @@
         "required": [
           "locationId",
           "locationName",
+          "locationCode",
+          "locationPath",
           "isAvailable",
           "quantity"
         ]
@@ -17380,6 +17397,12 @@
               "$ref": "#/components/schemas/LotBalance"
             }
           },
+          "usable": {
+            "type": "string"
+          },
+          "notUsable": {
+            "type": "string"
+          },
           "sources": {
             "type": "array",
             "items": {
@@ -17408,6 +17431,8 @@
         "required": [
           "lot",
           "balances",
+          "usable",
+          "notUsable",
           "sources",
           "madeFrom",
           "wentInto",
