@@ -11,6 +11,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Location, Movement, MovementPage } from '../api/types.gen';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { movement } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -431,6 +432,31 @@ describe('MovementsPage', () => {
     expect(line).toHaveTextContent('In72 each');
     expect(line).toHaveTextContent('Out78 each');
     expect(line).toHaveTextContent('Closing, Nov 18, 2026');
+  });
+
+  // Review 11: a range that runs past today closes at today's on hand,
+  // so Closing is dated today, never the range's end, as a forecast.
+  it('dates Closing today while the range runs past it, Opening as it was', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-20T21:00:00.000Z'));
+    setOrganizationTimeZone('America/Vancouver');
+    try {
+      answer([movement({ balance: '70.0000' })], {
+        opening: '30.0000',
+        quantityIn: '72.0000',
+        quantityOut: '32.0000',
+        closing: '70.0000',
+      });
+      renderAt(`/movements?variantId=${ITEM}&from=2026-11-01&until=2026-11-30`);
+
+      const opening = await screen.findByText('Opening, Nov 1, 2026');
+      const line = opening.closest('dl') as HTMLElement;
+      expect(line).toHaveTextContent('Closing, Nov 20, 2026');
+      expect(line).not.toHaveTextContent('Nov 30');
+    } finally {
+      setOrganizationTimeZone(null);
+      vi.useRealTimers();
+    }
   });
 
   // Review 1: the days When chose, in its field and on a chip, whose ×

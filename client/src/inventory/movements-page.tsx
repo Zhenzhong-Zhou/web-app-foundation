@@ -204,6 +204,12 @@ export function MovementsPage() {
   const { rowReturn } = useRowReturn();
   const rows = list.entries;
   const period = list.first?.period ?? null;
+  // A range that runs past today closes at today's on hand, so Closing
+  // is dated today, never the range's end, which reads as a forecast
+  // (review 11).
+  const today = organizationToday();
+  const closingDay =
+    filters.until && filters.until < today ? filters.until : today;
 
   // The chips' names, from the rows; the lot's and the order's own read
   // when none is listed, as Stock names its item (ADR-093, R24; review
@@ -521,7 +527,7 @@ export function MovementsPage() {
           quantityIn={period.quantityIn}
           quantityOut={period.quantityOut}
           closing={period.closing}
-          until={filters.until ?? organizationToday()}
+          until={closingDay}
           unit={unit}
         />
       )}

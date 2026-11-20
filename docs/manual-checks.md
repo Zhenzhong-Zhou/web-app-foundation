@@ -630,7 +630,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a and 125; review 1)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a and 125; reviews 1 and 11)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -663,8 +663,11 @@ a second organization.
   – 20 Nov 2026", show the days, the chip's × clearing them. Choose
   dates… opens From and To, typed or picked, with Clear and Apply; From
   alone reads "From 1 Nov 2026" in the field, To alone "Until 15 Nov
-  2026". On the item's page, Where it stands' All movements of VITC-100
-  opens on this month, its four figures at once. Choose Reason › Shipped: Balance, Opening and Closing go, "Balance
+  2026". Dates to 30 November, on the 20th: "Closing, 20 Nov 2026",
+  today's, never the range's end, Opening still its first day, as the
+  export's closing row. On the item's page, Where it stands' All
+  movements of VITC-100 opens on this month, its four figures at once.
+  Choose Reason › Shipped: Balance, Opening and Closing go, "Balance
   counts every reason. Clear Reason to see it." with Clear Reason, which
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves

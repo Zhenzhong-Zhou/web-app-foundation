@@ -291,11 +291,13 @@ file is kept is in the [README](README.md).
   MC-320
 - **A date range for one code opens and closes: Opening, In, Out,
   Closing,** Closing the Opening plus In less Out, and a range ending
-  today closing at today's on hand. With a reason chosen, In and Out
+  today, or after it, closing at today's on hand, dated today, on the
+  screen as in the export. With a reason chosen, In and Out
   alone. Never for several items, whose units differ.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, When › This month: ?from= and ?until= in the organization’s days; the period line, Opening, In, Out and Closing; Back leaves Movements" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "dates Closing today while the range runs past it, Opening as it was" ·
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
 - **When's periods are the organization's days, both included:** Today;
