@@ -5,6 +5,7 @@ import {
   byWarehouse,
   cutsOf,
   placeName,
+  placePaths,
   withPlaceNumbers,
 } from './stock-places';
 
@@ -94,6 +95,23 @@ describe('placeName', () => {
     expect(
       placeName({ locationName: 'BACK', locationCode: null, locationPath: [] }),
     ).toBe('BACK');
+  });
+});
+
+describe('placePaths', () => {
+  // #631: a dialog's places are written as their paths, from the tree.
+  it('writes each place by the tree above it, and none for a place not in it', () => {
+    const shelf = { ...place('Shelf A2', 'Zone A'), code: 'A2' };
+    const pathOf = placePaths([
+      place('Main warehouse'),
+      place('Zone A', 'Main warehouse'),
+      shelf,
+      place('Back room'),
+    ]);
+
+    expect(pathOf('Shelf A2')).toBe('Main warehouse › Zone A › Shelf A2 (A2)');
+    expect(pathOf('Back room')).toBe('Back room');
+    expect(pathOf('elsewhere')).toBeNull();
   });
 });
 

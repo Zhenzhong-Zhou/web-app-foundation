@@ -64,6 +64,36 @@ export function placeName(place: Placed): string {
   ]);
 }
 
+/**
+ * Each place of a tree as its path, by its id (57a, #631): the names
+ * above it, from the whole tree the server sends flat, then its own with
+ * its code, as `placeName` writes a row's. For a dialog's list of places
+ * and the place it names, which have the tree, not a read's path. Null
+ * for a place not in the tree.
+ */
+export function placePaths(
+  all: readonly Location[],
+): (id: string) => string | null {
+  const byId = new Map(all.map((location) => [location.id, location]));
+  return (id) => {
+    const place = byId.get(id);
+    if (!place) return null;
+    const above: string[] = [];
+    const seen = new Set([place.id]);
+    let at = place.parentId ? byId.get(place.parentId) : undefined;
+    while (at && !seen.has(at.id)) {
+      above.unshift(at.name);
+      seen.add(at.id);
+      at = at.parentId ? byId.get(at.parentId) : undefined;
+    }
+    return placeName({
+      locationName: place.name,
+      locationCode: place.code,
+      locationPath: above,
+    });
+  };
+}
+
 /** What stands for the places cut from the middle of a path. */
 const CUT = '…';
 

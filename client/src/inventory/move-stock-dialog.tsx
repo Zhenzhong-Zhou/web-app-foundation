@@ -17,11 +17,12 @@ import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
-import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
+import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { unitLabel, withUnit } from '../products/units';
 import { REASON_DETAILS, reasonDetailLabel } from './movement-reasons';
+import { placePaths } from './stock-places';
 
 export type MoveMode = 'ship' | 'sample' | 'transfer' | 'adjust';
 
@@ -115,6 +116,7 @@ export function MoveStockDialog({
   mode,
   row,
   locations,
+  tree,
   canSeePartners,
   onClose,
   onMoved,
@@ -123,6 +125,11 @@ export function MoveStockDialog({
   row: StockPile | null;
   locations: Location[];
   /**
+   * Every location, the places' parents among them, so each place is
+   * listed by its path (#631); the places alone when not given.
+   */
+  tree?: Location[];
+  /**
    * partners.view, from the page: a sample's Given to lists partners, which
    * the dock may not see (ADR-080), and then says why it lists none.
    */
@@ -130,6 +137,7 @@ export function MoveStockDialog({
   onClose: () => void;
   onMoved: () => Promise<void>;
 }) {
+  const pathOf = placePaths(tree ?? locations);
   const intl = useIntl();
   const config = MODES[mode];
   // Set when the quantity is typed with a thousands separator (ADR-054).
@@ -276,7 +284,8 @@ export function MoveStockDialog({
                       {
                         sku: <Reference>{row.sku}</Reference>,
                         lot: <Reference>{row.lotCode}</Reference>,
-                        location: row.locationName ?? '',
+                        location:
+                          pathOf(row.locationId) ?? row.locationName ?? '',
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
                     )
@@ -288,7 +297,8 @@ export function MoveStockDialog({
                       },
                       {
                         sku: <Reference>{row.sku}</Reference>,
-                        location: row.locationName ?? '',
+                        location:
+                          pathOf(row.locationId) ?? row.locationName ?? '',
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
                     )}
@@ -303,7 +313,11 @@ export function MoveStockDialog({
                     defaultMessage:
                       '{location} is marked not available, so nothing can be sent from it. Move the stock to an available location first.',
                   },
-                  { location: row?.locationName ?? '' },
+                  {
+                    location: row
+                      ? (pathOf(row.locationId) ?? row.locationName ?? '')
+                      : '',
+                  },
                 )}
               </Alert>
             )}
@@ -384,7 +398,7 @@ export function MoveStockDialog({
               >
                 {elsewhere.map((location) => (
                   <MenuItem key={location.id} value={location.id}>
-                    {nameAndCode(location.name, location.code)}
+                    {pathOf(location.id)}
                   </MenuItem>
                 ))}
               </TextField>

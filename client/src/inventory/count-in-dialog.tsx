@@ -26,7 +26,6 @@ import { api, hasCode } from '../lib/api';
 import {
   formatDay,
   groupedNumberMessage,
-  nameAndCode,
   SEPARATOR,
   toApiDecimal,
 } from '../lib/format';
@@ -34,6 +33,7 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit, unitLabel } from '../products/units';
 import { movementsPath } from './movements-path';
+import { placePaths } from './stock-places';
 
 /** The code whose found stock is counted in. */
 export interface CountInItem {
@@ -66,6 +66,7 @@ const EMPTY = {
 export function CountInDialog({
   item,
   locations,
+  tree,
   canSeeCosts,
   onClose,
   onCounted,
@@ -73,12 +74,18 @@ export function CountInDialog({
   item: CountInItem;
   /** The places stock can sit in, as the other dialogs list them. */
   locations: Location[];
+  /**
+   * Every location, the places' parents among them, so each place is
+   * listed by its path (#631); the places alone when not given.
+   */
+  tree?: Location[];
   /** costs.view: the message links to Waiting for a cost, else Movements. */
   canSeeCosts: boolean;
   onClose: () => void;
   /** Saved: the page reads again, the place counted into opened. */
   onCounted: (locationId: string) => void | Promise<void>;
 }) {
+  const pathOf = placePaths(tree ?? locations);
   const intl = useIntl();
   const navigate = useNavigate();
   const toast = useToast();
@@ -293,7 +300,7 @@ export function CountInDialog({
             >
               {locations.map((location) => (
                 <MenuItem key={location.id} value={location.id}>
-                  {nameAndCode(location.name, location.code)}
+                  {pathOf(location.id)}
                 </MenuItem>
               ))}
             </TextField>

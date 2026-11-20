@@ -16,13 +16,14 @@ import { FormError } from '../components/form-error';
 import { useToast } from '../components/use-toast';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
-import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
+import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { displayWithUnit, unitLabel } from '../products/units';
 import { DeliveryQuestion } from './delivery-question';
 import { NOT_ON_AN_ORDER } from './delivery-words';
 import { LotFields } from './lot-fields';
+import { placePaths } from './stock-places';
 import { useDeliveries } from './use-deliveries';
 
 const EMPTY = {
@@ -46,6 +47,7 @@ type Checked = (typeof CHECKED)[number];
 export function ReceiveStockDialog({
   open,
   locations,
+  tree,
   defaultLocationId,
   defaultVariantId = '',
   onClose,
@@ -54,6 +56,11 @@ export function ReceiveStockDialog({
 }: {
   open: boolean;
   locations: Location[];
+  /**
+   * Every location, the places' parents among them, so each place is
+   * listed by its path (#631); the places alone when not given.
+   */
+  tree?: Location[];
   defaultLocationId: string;
   /** The item filled in, from an item's Receive stock… (ADR-093 v3). */
   defaultVariantId?: string;
@@ -68,6 +75,7 @@ export function ReceiveStockDialog({
    */
   onDelivery?: (delivery: Delivery) => void;
 }) {
+  const pathOf = placePaths(tree ?? locations);
   const intl = useIntl();
   const [form, setForm] = useState({
     ...EMPTY,
@@ -367,7 +375,7 @@ export function ReceiveStockDialog({
                 >
                   {locations.map((location) => (
                     <MenuItem key={location.id} value={location.id}>
-                      {nameAndCode(location.name, location.code)}
+                      {pathOf(location.id)}
                     </MenuItem>
                   ))}
                 </TextField>

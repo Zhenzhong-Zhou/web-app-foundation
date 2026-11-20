@@ -485,7 +485,10 @@ a second organization.
   the place's own name and code always whole, the places nearest the
   shelf kept while they fit; the pointer on it, Tab to it, or a tap on a
   tablet or phone shows the whole path. "Richmond warehouse › Quarantine
-  (QUAR)", with nothing between, is never cut (#639).
+  (QUAR)", with nothing between, is never cut (#639). Receive stock's
+  Into, Move's To, Count it in's Location and an order's Receive list
+  each place by its path too, and Move, Ship out and Send a sample name
+  the place they take from by it (#631).
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, Expires' arrow solid and "Soonest
   first, the expired on top." above the list; Item, Location and
@@ -7152,3 +7155,7 @@ first.
 - 2026-11-20: ADR-093's Movements branch, step 16 (#612): Stock's phone
   card says why Free is less than On hand, what is not usable and why,
   and what is held: MC-315's 390 px line reworded.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#631): the receive,
+  move and count-in dialogs list each place by its path, and Move, Ship
+  out and Send a sample name the place they take from by it: MC-312
+  extended.

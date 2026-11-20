@@ -952,6 +952,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         key={receivingItem ?? 'any'}
         open={receiving || (asked && leaves.length > 0)}
         locations={leaves}
+        tree={locations}
         defaultLocationId={locationId}
         defaultVariantId={receivingItem ?? ''}
         onClose={() => {
@@ -986,6 +987,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           line={delivery.line}
           delivery={delivery}
           locations={leaves}
+          tree={locations}
           canSeeLots
           onClose={() => setDelivery(null)}
           onReceived={refresh}
@@ -1000,6 +1002,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           mode={moving.mode}
           row={moving.row}
           locations={leaves}
+          tree={locations}
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={refresh}
@@ -1013,6 +1016,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           key={countingIn.variantId}
           item={countingIn}
           locations={leaves}
+          tree={locations}
           canSeeCosts={can('costs.view')}
           onClose={() => setCountingIn(null)}
           onCounted={async (locationId) => {

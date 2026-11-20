@@ -279,6 +279,7 @@ function Standing({ product }: { product: ProductDetail }) {
           mode={moving.mode}
           row={moving.row}
           locations={leavesOf(locations).filter((each) => each.isActive)}
+          tree={locations}
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={reload}
