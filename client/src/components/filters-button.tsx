@@ -9,7 +9,8 @@ import { useIntl } from 'react-intl';
  * rises from the bottom, the button saying how many filters are on,
  * "Filters · 2".
  *
- * The sheet scrolls inside, so its buttons stay in reach (ADR-090), and is
+ * The sheet scrolls inside, its Clear and Done in a footer that stays at
+ * its foot, so they stay in reach at any text size (ADR-090), and is
  * a dialog named by its heading, as Help's sheet is (WCAG 4.1.2). Its
  * fields change the list as they are chosen; Clear clears them, the
  * caller's one write; Show 12 closes it on the list they made, or Done
@@ -59,7 +60,10 @@ export function FiltersButton({
           },
         }}
       >
-        <Stack spacing={2} sx={{ p: 2 }}>
+        {/* Each field its own height: a field that grows across a row
+            (flex: 1 1 …) would take that basis as its height here, a
+            blank band in a column (review 9). */}
+        <Stack spacing={2} sx={{ p: 2, '&& > *': { flex: 'none' } }}>
           <Typography variant="h6" component="h2" id={titleId}>
             {intl.formatMessage({
               id: 'filters.sheet.title',
@@ -67,32 +71,43 @@ export function FiltersButton({
             })}
           </Typography>
           {children}
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ justifyContent: 'flex-end' }}
-          >
-            <Button variant="text" onClick={onClear}>
-              {intl.formatMessage({
-                id: 'filters.sheet.clear',
-                defaultMessage: 'Clear',
-              })}
-            </Button>
-            <Button onClick={() => setOpen(false)}>
-              {shown === null
-                ? intl.formatMessage({
-                    id: 'filters.sheet.done',
-                    defaultMessage: 'Done',
-                  })
-                : intl.formatMessage(
-                    {
-                      id: 'filters.sheet.show',
-                      defaultMessage: 'Show {count}',
-                    },
-                    { count: shown },
-                  )}
-            </Button>
-          </Stack>
+        </Stack>
+        {/* Clear and Done stay at the sheet's foot as its fields scroll,
+            so Done is in reach at Larger text too (review 9). */}
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            justifyContent: 'flex-end',
+            position: 'sticky',
+            bottom: 0,
+            px: 2,
+            py: 1.5,
+            bgcolor: 'background.paper',
+            borderTop: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Button variant="text" onClick={onClear}>
+            {intl.formatMessage({
+              id: 'filters.sheet.clear',
+              defaultMessage: 'Clear',
+            })}
+          </Button>
+          <Button onClick={() => setOpen(false)}>
+            {shown === null
+              ? intl.formatMessage({
+                  id: 'filters.sheet.done',
+                  defaultMessage: 'Done',
+                })
+              : intl.formatMessage(
+                  {
+                    id: 'filters.sheet.show',
+                    defaultMessage: 'Show {count}',
+                  },
+                  { count: shown },
+                )}
+          </Button>
         </Stack>
       </Drawer>
     </>

@@ -238,7 +238,11 @@ a second organization.
   sheet from the bottom, which a screen reader names Filters and sort,
   with the category, Sort (On hand, least first;
   Last changed, newest first; Date added, newest first) and Discontinued
-  with its count; Clear resets them and Show closes it.
+  with its count; Clear resets them and Show closes it. Clear and Show
+  sit in a footer, a line above it, that stays at the sheet's foot as
+  its fields scroll; at Larger text, in 中文 too, on Movements' sheet,
+  Done is whole on the screen, and Location follows the find box with
+  the sheet's usual gap, no blank band (review 9).
 - **MC-210** Items' category filter reads All categories, then the tree
   with each category's count on the open tab, Uncategorised with its own
   count (BOTTLE-60 among them on Packaging), and Manage
@@ -7318,3 +7322,7 @@ first.
   its item's name to the item's page with `products.view`, and All
   movements of this lot to Movements on its item and that lot: MC-902
   extended.
+- 2026-11-20: ADR-093's Movements branch, review 9: a phone's Filters
+  sheet keeps Clear and Done in a footer that stays as its fields
+  scroll, and a field that grows across a row no longer leaves a blank
+  band in the sheet: MC-209 extended.

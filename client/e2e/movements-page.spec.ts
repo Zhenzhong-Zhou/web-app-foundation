@@ -937,6 +937,44 @@ test('on a phone: a card per movement, the filters and the sort behind one Filte
   ).toBeVisible();
 });
 
+// Review 9: the sheet at 390 × 844 and Larger text, in Chinese as the
+// panel walked it: no blank band between the find box and Location, and
+// Clear and Done in view, in a footer that stays as the fields scroll.
+test('on a phone at Larger text: the Filters sheet with no blank band under the find box, Done in view as its fields scroll', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await movementsScene(freshOrg.api);
+  await page.addInitScript(() => {
+    localStorage.setItem('language', 'zh-Hans');
+    localStorage.setItem('textSize', 'larger');
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/movements?variantId=${scene.vitamin.variantId}`);
+
+  await page.getByRole('button', { name: /^筛选/ }).click();
+  const sheet = page.getByRole('dialog', { name: '筛选和排序' });
+  const find = sheet.getByRole('combobox', { name: '查找物品、批次或订单' });
+  const place = sheet.getByRole('combobox', { name: '库位' });
+  await expect(find).toBeVisible();
+  const findBox = (await find.boundingBox())!;
+  const placeBox = (await place.boundingBox())!;
+  // The sheet's own gap between two fields, not a band.
+  expect(placeBox.y - (findBox.y + findBox.height)).toBeLessThan(48);
+
+  const done = sheet.getByRole('button', { name: '完成' });
+  await expect(done).toBeInViewport({ ratio: 1 });
+  await expect(sheet.getByRole('button', { name: '清除' })).toBeInViewport({
+    ratio: 1,
+  });
+  // Scrolled to its foot, Done stays where it was.
+  await sheet.getByRole('combobox', { name: '排序' }).scrollIntoViewIfNeeded();
+  await expect(done).toBeInViewport({ ratio: 1 });
+  await done.click();
+  await expect(sheet).toHaveCount(0);
+});
+
 // ---------------------------------------------------------------------------
 // Readers with less: no place (96a), no order (the brief's rule)
 // ---------------------------------------------------------------------------
