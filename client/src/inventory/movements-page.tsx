@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -204,6 +204,27 @@ export function MovementsPage() {
   );
   const { rowReturn } = useRowReturn();
   const rows = list.entries;
+  // Show 25 more: focus on the first new row once it is there, its first
+  // link, or the row itself where it has none (106a), as Items does.
+  const tableRows = useRef<HTMLTableSectionElement>(null);
+  const cardRows = useRef<HTMLUListElement>(null);
+  const [firstNew, setFirstNew] = useState<number | null>(null);
+  useEffect(() => {
+    if (firstNew === null || (rows?.length ?? 0) <= firstNew) return;
+    const row = (tableRows.current ?? cardRows.current)?.children[firstNew];
+    if (!(row instanceof HTMLElement)) return;
+    const link = row.querySelector<HTMLElement>('a[href]');
+    if (link) {
+      link.focus();
+    } else {
+      row.tabIndex = -1;
+      row.focus();
+    }
+  }, [firstNew, rows?.length]);
+  const showMore = () => {
+    setFirstNew(rows?.length ?? 0);
+    void list.loadMore();
+  };
   const period = list.first?.period ?? null;
   // A range that runs past today closes at today's on hand, so Closing
   // is dated today, never the range's end, which reads as a forecast
@@ -600,7 +621,7 @@ export function MovementsPage() {
                       <MovementHeads columns={columns} />
                     </TableRow>
                   </TableHead>
-                  <TableBody>
+                  <TableBody ref={tableRows}>
                     {list.loading && (
                       <PlaceholderRows
                         columns={movementHeadCount(columns) + (oneCode ? 1 : 2)}
@@ -627,7 +648,7 @@ export function MovementsPage() {
                 </ListTable>
               }
               cards={
-                <Stack component="ul" sx={{ m: 0, p: 0 }}>
+                <Stack ref={cardRows} component="ul" sx={{ m: 0, p: 0 }}>
                   {rows?.map((movement) => (
                     <MovementCard
                       key={movement.id}
@@ -693,7 +714,7 @@ export function MovementsPage() {
           loading={list.loadingMore}
           failed={!!list.error}
           pageSize={PAGE_SIZE}
-          onLoadMore={list.loadMore}
+          onLoadMore={showMore}
         />
       )}
     </Stack>

@@ -911,6 +911,36 @@ describe('MovementsPage', () => {
     await waitFor(() => expect(left).toHaveFocus());
   });
 
+  // 106a: Show 25 more puts focus on the first new row, its first link,
+  // as Items does, so the keyboard goes on where the new rows begin.
+  it('puts focus on the first new row after Show 25 more', async () => {
+    const user = userEvent.setup();
+    answer([]);
+    const later = movement({
+      id: 'movement-2',
+      productId: 'product-vitc',
+      productName: 'Vitamin C',
+      variantName: null,
+    });
+    server.use(
+      http.get('/api/v1/stock/movements', ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.has('before')
+            ? { entries: [later], nextCursor: null, period: null }
+            : { entries: [MOVEMENT], nextCursor: 'next', period: null },
+        ),
+      ),
+    );
+    renderAt('/movements');
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Show 25 more' }),
+    );
+
+    const added = await screen.findByRole('link', { name: 'Vitamin C' });
+    await waitFor(() => expect(added).toHaveFocus());
+  });
+
   it('offers Receive stock while nothing has moved', async () => {
     answer([]);
     renderAt('/movements');

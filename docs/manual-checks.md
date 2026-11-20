@@ -600,7 +600,9 @@ a second organization.
   of a code in the second fifty, and Back: the hundred rows are there
   without pressing it again, focus on that name. The same on Items and
   Reorder, and on Movements after Show 25 more, focus on the link
-  followed from its row, its lot or its For.
+  followed from its row, its lot or its For. On Movements, Show 25 more
+  itself puts focus on the 26th row's first link, as Items' Show 50
+  more does on the 51st (106a).
 - **MC-324** *(ADR-093, R19; #605, #628)* Help's Movements and Orders
   guides. As the demo Owner, on Movements, Help opens its guide with Find
   a movement, Read one code like a stock card, Where a link leads, Export
