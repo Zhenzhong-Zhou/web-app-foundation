@@ -28,11 +28,13 @@ function room(width: number) {
   );
 }
 
+/** The path's box, which shows it. */
+const pathBox = (container: HTMLElement) =>
+  container.querySelector(':scope > div > span:not([aria-hidden])')!;
+
 /** What the path draws: its cut where it is cut, else its whole. */
 const drawn = (container: HTMLElement) => {
-  const box = container.querySelector(
-    ':scope > div > span:not([aria-hidden])',
-  )!;
+  const box = pathBox(container);
   return (box.querySelector('[aria-hidden="true"]') ?? box).textContent;
 };
 
@@ -41,12 +43,14 @@ describe('PlacePath (ADR-090, amended November 2026; 93a, #639)', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows the whole path where it fits, taking no focus', () => {
+  it('shows the whole path where it fits, taking no focus and no name of its own', () => {
     room(WHOLE.length * 8);
     const { container } = render(<PlacePath place={DEEP} />);
 
     expect(drawn(container)).toBe(WHOLE);
     expect(container.querySelector('[tabindex]')).toBeNull();
+    // Its words are its name: an empty aria-label would hide them.
+    expect(container.querySelector('[aria-label]')).toBeNull();
   });
 
   it('cuts its middle where it does not fit, the warehouse and the place whole', () => {
@@ -56,6 +60,8 @@ describe('PlacePath (ADR-090, amended November 2026; 93a, #639)', () => {
     expect(drawn(container)).toBe(
       'Main warehouse › … › Aisle 1 › Shelf 1-B (1B)',
     );
+    // On one line, as it was cut to fit.
+    expect(pathBox(container)).toHaveStyle({ whiteSpace: 'nowrap' });
     unmount();
 
     room(100);
@@ -83,6 +89,39 @@ describe('PlacePath (ADR-090, amended November 2026; 93a, #639)', () => {
     expect(
       container.querySelector('[data-least]')!.getAttribute('data-least'),
     ).toBe('Richmond warehouse › Quarantine (QUAR)');
+  });
+
+  it('wraps where even its least is wider than its box, as a long unbroken name on a phone (step 17, Found 1)', () => {
+    room(100);
+    const { container, unmount } = render(
+      <PlacePath
+        place={{
+          locationName: 'SHELF-MWP05O6T-ERT9E1',
+          locationCode: null,
+          locationPath: [],
+        }}
+      />,
+    );
+
+    // Whole, nothing to cut, and inside its word where it must, rather
+    // than widening the card past the screen.
+    expect(drawn(container)).toBe('SHELF-MWP05O6T-ERT9E1');
+    expect(pathBox(container)).toHaveStyle({
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+    });
+    expect(container.querySelector('[aria-label]')).toBeNull();
+    expect(container.querySelector('[tabindex]')).toBeNull();
+    unmount();
+
+    // A path with places between still shows its shortest cut, wrapped.
+    const view = render(<PlacePath place={DEEP} />);
+    expect(drawn(view.container)).toBe('Main warehouse › … › Shelf 1-B (1B)');
+    expect(pathBox(view.container)).toHaveStyle({
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+    });
+    expect(screen.getByLabelText(WHOLE)).toHaveAttribute('tabindex', '0');
   });
 
   it('cut, reads whole to a screen reader, and shows it whole on hover, on focus and on a tap', async () => {
