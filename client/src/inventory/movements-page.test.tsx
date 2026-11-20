@@ -471,6 +471,44 @@ describe('MovementsPage', () => {
     );
   });
 
+  // Review 32: an archived code, which the picker does not list, opened
+  // from Where it stands: named in the Item field from its rows, and in
+  // what no result names once a reason leaves none.
+  it('names a code the picker does not list from its rows, and keeps it when none match', async () => {
+    const archived = movement({
+      variantId: ITEM,
+      productName: 'Vitamin C',
+      variantName: null,
+      sku: 'VITC-90',
+      currentSku: 'VITC-90',
+    });
+    server.use(
+      http.get('/api/v1/stock/movements', ({ request }) =>
+        HttpResponse.json({
+          entries: new URL(request.url).searchParams.get('reason')
+            ? []
+            : [archived],
+          nextCursor: null,
+          period: null,
+        }),
+      ),
+      http.get('/api/v1/locations', () => HttpResponse.json([MAIN, SHELF_A2])),
+    );
+    renderAt(`/movements?variantId=${ITEM}`);
+
+    expect(
+      await screen.findByDisplayValue('Vitamin C · VITC-90'),
+    ).toBeVisible();
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Reason' }));
+    await userEvent.click(screen.getByRole('option', { name: 'sampled' }));
+
+    expect(await screen.findByText(/^No movements match/)).toHaveTextContent(
+      'No movements match: Vitamin C and sampled.',
+    );
+    expect(screen.getByDisplayValue('Vitamin C · VITC-90')).toBeVisible();
+  });
+
   // #473's last line (P2a): Back after Show 25 more reads the pages shown
   // again, focus on the link followed from its row.
   it('finds the rows shown and the link left by on Back after Show 25 more', async () => {

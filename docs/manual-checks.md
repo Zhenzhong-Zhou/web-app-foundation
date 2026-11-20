@@ -659,7 +659,10 @@ a second organization.
   Show all movements clears every filter at once, and Back then leaves
   Movements. With nothing matching, the line names the filters on: a
   lot's Movements with a When range it has no movement in keeps "Lot:"
-  and its code on the chip and names the code in the line. At
+  and its code on the chip and names the code in the line. An archived
+  code's Movements, opened from its item's Where it stands, names it in
+  the Item field, and with Reason › Sampled leaving none, in the line
+  too. At
   390 px each movement is a card, the filters behind one Filters button
   with the sort. As Fatima Haddad (Sales), there is no From → to column
   and no Location filter, and a link with `?locationId=` reads every
@@ -7249,3 +7252,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, review 31: a lot chosen with
   no movement listed keeps its code on its chip and in the no-result
   line: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, review 32: an archived code
+  opened from Where it stands is named in the Item field from its
+  movements, and in the no-result line: MC-320 extended.

@@ -215,11 +215,14 @@ file is kept is in the [README](README.md).
   and the days from and until, `until` the last day included, in the
   organization's days. A reload, a link and Back keep them; a lot and an
   order show as chips, each removable, each by its code or number though
-  no movement listed carries it; Show all movements clears every one in a
-  single write and keeps the sort.
+  no movement listed carries it; an item the Item field does not list,
+  an archived code, is named there from its movements, and kept once a
+  filter leaves none; Show all movements clears every one in a single
+  write and keeps the sort.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/inventory/movements-page.test.tsx) "asks the list by the address’s keys, the lot and the order as chips" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a lot no row carries, on its chip and in what no result names" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a code the picker does not list from its rows, and keeps it when none match" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "clears every filter and chip in one write with Show all movements, the sort kept" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, every filter in the address: a reload keeps each, and the rows" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, a filter on, Show all movements: every filter and chip cleared in one address write; Back leaves Movements" ·

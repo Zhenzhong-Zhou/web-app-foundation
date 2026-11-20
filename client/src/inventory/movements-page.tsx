@@ -11,6 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -20,6 +21,7 @@ import type {
   Movement,
   MovementPage,
   OrderDetail,
+  VariantOption,
 } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
@@ -219,7 +221,27 @@ export function MovementsPage() {
       orderId && rows?.length === 0 ? `/orders/${orderId}` : null,
     ).data?.number ?? null;
   const orderNumber = listedOrder ?? readOrder;
-  const variant = variants.find((each) => each.id === variantId) ?? null;
+  // A code the picker does not list, an archived one opened from Where
+  // it stands, named from its rows (review 32), and kept while a filter
+  // added after leaves none to name it.
+  const fromRows = variants.some((each) => each.id === variantId)
+    ? undefined
+    : rows?.find((row) => row.variantId === variantId);
+  const [named, setNamed] = useState<VariantOption | null>(null);
+  if (fromRows && named?.id !== fromRows.variantId) {
+    setNamed({
+      id: fromRows.variantId,
+      sku: fromRows.currentSku,
+      productName: fromRows.productName,
+      variantName: fromRows.variantName,
+      type: fromRows.type,
+      unitOfMeasure: fromRows.unitOfMeasure,
+      tracksLots: fromRows.lotId !== null,
+    });
+  }
+  const unlisted = variantId && named?.id === variantId ? named : null;
+  const variant =
+    variants.find((each) => each.id === variantId) ?? unlisted ?? null;
   const unit = variant?.unitOfMeasure ?? rows?.[0]?.unitOfMeasure ?? null;
 
   const anyFilter =
@@ -264,7 +286,7 @@ export function MovementsPage() {
       <VariantPicker
         id="movements-item"
         label={words.item}
-        options={variants}
+        options={unlisted ? [...variants, unlisted] : variants}
         loading={!variantsAnswered}
         value={variantId}
         onChange={(next) =>
