@@ -59,6 +59,7 @@ describe('a dialog’s save refused', () => {
         <ReceiveStockDialog
           open
           locations={LOCATIONS}
+          tree={LOCATIONS}
           defaultLocationId="location-a"
           onClose={vi.fn()}
           onReceived={vi.fn()}

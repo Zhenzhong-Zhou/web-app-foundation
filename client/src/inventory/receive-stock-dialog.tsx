@@ -7,7 +7,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Delivery, Location } from '../api/types.gen';
@@ -58,9 +58,9 @@ export function ReceiveStockDialog({
   locations: Location[];
   /**
    * Every location, the places' parents among them, so each place is
-   * listed by its path (#631); the places alone when not given.
+   * listed by its path (#631).
    */
-  tree?: Location[];
+  tree: Location[];
   defaultLocationId: string;
   /** The item filled in, from an item's Receive stock… (ADR-093 v3). */
   defaultVariantId?: string;
@@ -75,7 +75,7 @@ export function ReceiveStockDialog({
    */
   onDelivery?: (delivery: Delivery) => void;
 }) {
-  const pathOf = placePaths(tree ?? locations);
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
   const intl = useIntl();
   const [form, setForm] = useState({
     ...EMPTY,

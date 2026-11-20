@@ -45,6 +45,7 @@ describe('MoveStockDialog, refused', () => {
         mode="ship"
         row={ROW}
         locations={[]}
+        tree={[]}
         canSeePartners
         onClose={vi.fn()}
         onMoved={vi.fn()}

@@ -40,6 +40,7 @@ function open(onReceived = vi.fn(), defaultLocationId = 'location-a') {
     <ReceiveStockDialog
       open
       locations={LOCATIONS}
+      tree={LOCATIONS}
       defaultLocationId={defaultLocationId}
       onClose={vi.fn()}
       onReceived={onReceived}
@@ -231,6 +232,7 @@ describe('ReceiveStockDialog', () => {
         <ReceiveStockDialog
           open
           locations={LOCATIONS}
+          tree={LOCATIONS}
           defaultLocationId="location-a"
           onClose={vi.fn()}
           onReceived={vi.fn()}
@@ -365,6 +367,7 @@ describe('ReceiveStockDialog', () => {
         <ReceiveStockDialog
           open
           locations={LOCATIONS}
+          tree={LOCATIONS}
           defaultLocationId="location-a"
           defaultVariantId={defaultVariantId}
           onClose={vi.fn()}

@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Delivery, Location, OrderLine } from '../api/types.gen';
@@ -76,9 +76,9 @@ export function ReceiveLineDialog({
   locations: Location[];
   /**
    * Every location, the places' parents among them, so each place is
-   * listed by its path (#631); the places alone when not given.
+   * listed by its path (#631).
    */
-  tree?: Location[];
+  tree: Location[];
   /** stock.view, from the page: the item's lots already known. */
   canSeeLots: boolean;
   onClose: () => void;
@@ -86,7 +86,7 @@ export function ReceiveLineDialog({
   /** Over Stock: the confirmation offers Open the order (55a). */
   onOpenOrder?: () => void;
 }) {
-  const pathOf = placePaths(tree ?? locations);
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
   const intl = useIntl();
   const toast = useToast();
   // What the confirmation says, worked out as the receipt is sent.

@@ -57,6 +57,7 @@ function Opened({
     <CountInDialog
       item={item}
       locations={[SHELF]}
+      tree={[SHELF]}
       canSeeCosts={canSeeCosts}
       onClose={() => setOpen(false)}
       onCounted={onCounted}

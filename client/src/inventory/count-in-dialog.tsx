@@ -13,7 +13,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useId, useRef, useState } from 'react';
+import {
+  type SubmitEvent,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -76,16 +83,16 @@ export function CountInDialog({
   locations: Location[];
   /**
    * Every location, the places' parents among them, so each place is
-   * listed by its path (#631); the places alone when not given.
+   * listed by its path (#631).
    */
-  tree?: Location[];
+  tree: Location[];
   /** costs.view: the message links to Waiting for a cost, else Movements. */
   canSeeCosts: boolean;
   onClose: () => void;
   /** Saved: the page reads again, the place counted into opened. */
   onCounted: (locationId: string) => void | Promise<void>;
 }) {
-  const pathOf = placePaths(tree ?? locations);
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
   const intl = useIntl();
   const navigate = useNavigate();
   const toast = useToast();

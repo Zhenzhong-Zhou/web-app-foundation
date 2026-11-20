@@ -8,7 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useMemo, useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
 import type { Location, StockPile } from '../api/types.gen';
@@ -126,9 +126,9 @@ export function MoveStockDialog({
   locations: Location[];
   /**
    * Every location, the places' parents among them, so each place is
-   * listed by its path (#631); the places alone when not given.
+   * listed by its path (#631).
    */
-  tree?: Location[];
+  tree: Location[];
   /**
    * partners.view, from the page: a sample's Given to lists partners, which
    * the dock may not see (ADR-080), and then says why it lists none.
@@ -137,7 +137,7 @@ export function MoveStockDialog({
   onClose: () => void;
   onMoved: () => Promise<void>;
 }) {
-  const pathOf = placePaths(tree ?? locations);
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
   const intl = useIntl();
   const config = MODES[mode];
   // Set when the quantity is typed with a thousands separator (ADR-054).
@@ -247,6 +247,9 @@ export function MoveStockDialog({
    * marked unavailable — a retention bin, a quarantine shelf — holds stock
    * that can be moved but never sent (ADR-042).
    */
+  // The pile's place by its path, else the name its row was read with.
+  const pileAt = row ? (pathOf(row.locationId) ?? row.locationName ?? '') : '';
+
   const heldBack =
     config.leaves &&
     locations.some(
@@ -284,8 +287,7 @@ export function MoveStockDialog({
                       {
                         sku: <Reference>{row.sku}</Reference>,
                         lot: <Reference>{row.lotCode}</Reference>,
-                        location:
-                          pathOf(row.locationId) ?? row.locationName ?? '',
+                        location: pileAt,
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
                     )
@@ -297,8 +299,7 @@ export function MoveStockDialog({
                       },
                       {
                         sku: <Reference>{row.sku}</Reference>,
-                        location:
-                          pathOf(row.locationId) ?? row.locationName ?? '',
+                        location: pileAt,
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
                     )}
@@ -314,9 +315,7 @@ export function MoveStockDialog({
                       '{location} is marked not available, so nothing can be sent from it. Move the stock to an available location first.',
                   },
                   {
-                    location: row
-                      ? (pathOf(row.locationId) ?? row.locationName ?? '')
-                      : '',
+                    location: pileAt,
                   },
                 )}
               </Alert>
