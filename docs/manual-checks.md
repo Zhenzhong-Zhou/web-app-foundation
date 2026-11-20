@@ -1952,7 +1952,13 @@ Paper is checked first because it must not change at all.
   it, with a line and a fade where the other columns pass under. The
   name keeps its width: Ashwagandha root extract, standardised to 5%
   withanolides takes two lines, not five, and Actions still stays at the
-  right on Stock (MC-1575); a row
+  right on Stock (MC-1575). Give an item a name of three lines or more
+  at that width: pinned, it stops at two, ending in "…"; the pointer on
+  it, or Tab to it, shows the whole name in a tooltip, the pointer can
+  move onto the tooltip without it closing, and Escape closes it. A
+  screen reader reads the whole name. At Larger text the name's column
+  grows with the text and still takes two lines; with the table fitting,
+  as at 1920, the name wraps whole with no "…" (83a). A row
   tinted under the pointer is tinted under the name too. Close Help on
   Reorder: the table fits again, and its header stays as the page
   scrolls (MC-1567). In French and Chinese the box's name is in that
@@ -6979,3 +6985,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, 93a and #639: a place's path
   that does not fit is cut in its middle, its warehouse and the place
   whole, the whole path on a tap too: MC-312.
+- 2026-11-20: ADR-093's Movements branch, 83a: a name pinned in a table
+  too wide stops at two lines with "…", the whole name in a tooltip on
+  hover and on focus: MC-1568.

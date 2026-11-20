@@ -359,10 +359,23 @@ const SENTINEL = {
  * The least width of a name pinned in a table too wide, its picture and
  * padding included. Left to the table it took its narrowest, and the
  * demo's longest item name, 57 letters, ran to five lines at 1366; at
- * this width it takes two (ADR-090, amended November 2026). In rem, so it
- * grows with the text.
+ * this width it takes two (ADR-090, amended November 2026). 20 of the
+ * root's em, 320 px at Standard text: in rem, so it grows with the
+ * person's text size, which sets the root's (ADR-075; 83a). The cells'
+ * own em, 14 px, would make it 280.
  */
 const NAME_LEAST = rem(320);
+
+/**
+ * A pinned name at most two lines (83a): a longer one ends in "…", its
+ * whole in `CutName`'s tooltip. Drawn by CSS, so its text stays whole.
+ */
+const TWO_LINES = {
+  display: '-webkit-box',
+  WebkitBoxOrient: 'vertical',
+  WebkitLineClamp: 2,
+  overflow: 'hidden',
+} as const;
 
 /** The header row's cells. */
 const HEAD = '& > table > thead > tr > th';
@@ -412,12 +425,19 @@ const pinned = (
   };
 };
 
-/** The name's column pinned, its header keeping the least width. */
+/**
+ * The name's column pinned, its header keeping the least width and the
+ * name itself (`CUT_NAME`) at most two lines.
+ */
 const withLeast = (styles: ReturnType<typeof pinned>, name: number) => ({
   ...styles,
   [cells('thead', name)]: {
     ...styles[cells('thead', name)],
     minWidth: NAME_LEAST,
+  },
+  [cells('tbody', name)]: {
+    ...styles[cells('tbody', name)],
+    '& [data-cut-name]': TWO_LINES,
   },
 });
 
@@ -500,8 +520,8 @@ const frame = (theme: Theme, name: number) => {
       },
     },
     '&:not([data-fits])': {
-      // The name pinned past the tick box's width, 0 without one, and
-      // keeping a least width (NAME_LEAST).
+      // The name pinned past the tick box's width, 0 without one, keeping
+      // a least width (NAME_LEAST), and at most two lines (TWO_LINES).
       ...withLeast(
         pinned(theme, name, { insetInlineStart: 'var(--pin-start)' }),
         name,

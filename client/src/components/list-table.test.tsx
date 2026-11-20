@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { themeFor } from '../theme';
 import { ACTIONS_COLUMN } from './actions-column';
 import { ListTable } from './list-table';
-import { NAME_COLUMN } from './name-column';
+import { CUT_NAME, NAME_COLUMN } from './name-column';
 import { NUMBER_COLUMN } from './number-column';
 import { SortHeader } from './sort-header';
 import { SPANNING_ROW } from './spanning-row';
@@ -91,8 +91,17 @@ function Stock({
   );
 }
 
-/** Movements' shape: When first, the item's name marked second (81a). */
-function Movements({ marked = true }: { marked?: boolean }) {
+/**
+ * Movements' shape: When first, the item's name marked second (81a), and
+ * `named`, the name a link marked `CUT_NAME` (83a).
+ */
+function Movements({
+  marked = true,
+  named = false,
+}: {
+  marked?: boolean;
+  named?: boolean;
+}) {
   return (
     <ThemeProvider theme={themeFor('en')}>
       <ListTable label="Movements" size="small">
@@ -107,7 +116,15 @@ function Movements({ marked = true }: { marked?: boolean }) {
         <TableBody>
           <TableRow>
             <TableCell>2 hours ago</TableCell>
-            <TableCell>Vitamin C 500 mg</TableCell>
+            <TableCell>
+              {named ? (
+                <a {...CUT_NAME} href="/items/1">
+                  Vitamin C 500 mg
+                </a>
+              ) : (
+                'Vitamin C 500 mg'
+              )}
+            </TableCell>
             <TableCell align="right">+48</TableCell>
             <TableCell>Received</TableCell>
           </TableRow>
@@ -267,6 +284,28 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
       scrollLeft.mockReturnValue(100);
       fireEvent.scroll(region);
       expect(getComputedStyle(name).boxShadow.startsWith('inset')).toBe(true);
+    });
+
+    // 83a: at most two lines, a longer name ending in "…"; unpinned, as
+    // the table fits, it wraps as before.
+    it('cuts the name pinned at two lines, and only while pinned', () => {
+      const clamp = () =>
+        getComputedStyle(
+          screen.getByRole('link', { name: 'Vitamin C 500 mg' }),
+        ).getPropertyValue('-webkit-line-clamp');
+
+      widths(1000, 1000);
+      const { unmount } = render(<Movements named />);
+      expect(clamp()).not.toBe('2');
+      unmount();
+
+      widths(800, 1100);
+      render(<Movements named />);
+      expect(clamp()).toBe('2');
+      expect(
+        getComputedStyle(screen.getByRole('link', { name: 'Vitamin C 500 mg' }))
+          .overflow,
+      ).toBe('hidden');
     });
 
     it('with none marked, pins the first column, as before', () => {

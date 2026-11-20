@@ -9,3 +9,10 @@
  * the other.
  */
 export const NAME_COLUMN = { 'data-name': '' } as const;
+
+/**
+ * A list's name itself, its link or its text, in the name column
+ * (`CutName`): pinned in a table too wide for its box, `ListTable` cuts
+ * it at two lines with "…" (ADR-090, amended November 2026; 83a).
+ */
+export const CUT_NAME = { 'data-cut-name': '' } as const;
