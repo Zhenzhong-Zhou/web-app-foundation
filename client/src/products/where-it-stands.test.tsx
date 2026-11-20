@@ -144,7 +144,7 @@ describe('Where it stands (ADR-093, R8)', () => {
       screen.getByText('70 usable + 0 coming − 90 for orders'),
     ).toBeVisible();
     expect(screen.getByText('-20 left · reorder at 96')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Buy 30' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Buy 30 each' })).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Change reorder point' }),
     ).toBeVisible();
@@ -520,7 +520,9 @@ describe('Where it stands (ADR-093, R8)', () => {
     });
     const card = title.closest<HTMLElement>('.MuiPaper-root')!;
     expect(card).not.toBeNull();
-    expect(within(card).getByRole('button', { name: 'Buy 30' })).toBeVisible();
+    expect(
+      within(card).getByRole('button', { name: 'Buy 30 each' }),
+    ).toBeVisible();
     expect(
       within(card).getByRole('button', { name: 'Change reorder point' }),
     ).toBeVisible();

@@ -546,9 +546,11 @@ function StatusLine({ code }: { code: CodeStanding }) {
 }
 
 /**
- * Change reorder point by stock.reorder; Buy 30 or Make 1,000, as its
- * point says, by orders.create or production.create, the main action's
- * line naming whom to ask for a role without it; and what a draft covers.
+ * Change reorder point by stock.reorder; Buy 30 each or Make 1,000
+ * bottles, as its point says, the number with its unit, since alone on a
+ * button it said nothing of what it counts (#640); by orders.create or
+ * production.create, the main action's line naming whom to ask for a role
+ * without it; and what a draft covers.
  */
 function Actions({
   code,
@@ -560,7 +562,9 @@ function Actions({
   const intl = useIntl();
   const can = useCan();
   const low = code.status === 'low' || code.status === 'out';
-  const quantity = code.suggestion && displayQuantity(code.suggestion);
+  const quantity =
+    code.suggestion &&
+    displayWithUnit(code.suggestion, code.unitOfMeasure, intl);
 
   let main: ReactNode = null;
   if (low && code.suggestion !== null && isZero(code.suggestion)) {

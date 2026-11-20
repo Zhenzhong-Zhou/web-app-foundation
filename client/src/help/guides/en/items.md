@@ -50,7 +50,7 @@ First under an item’s title, **Where it stands** shows each of its codes, the 
 - **Left**, with its sum in plain words: “30 usable + 0 coming − 20 for orders”.
 - **By place and lot**, each place written from its warehouse down, with its lots, soonest first, each lot’s code a link to its trace, and each lot’s **Actions**, as on Stock.
 
-The actions, on the code’s card beside its title, are **Change reorder point**, and **Buy 30** or **Make 1,000**, each shown by what your role may do; where it may not, a line says whom to ask. **Buy** and **Make** open their form filled in with the suggested order and save nothing until you create it. A code with nothing on hand or coming reads “None on hand, nothing coming.” with **Set a reorder point** and **Receive stock**.
+The actions, on the code’s card beside its title, are **Change reorder point**, and **Buy** or **Make** with how many in its unit, such as “Buy 30 each” or “Make 1,000 bottles”, each shown by what your role may do; where it may not, a line says whom to ask. **Buy** and **Make** open their form filled in with the suggested order and save nothing until you create it. A code with nothing on hand or coming reads “None on hand, nothing coming.” with **Set a reorder point** and **Receive stock**.
 
 > Only someone who may see stock sees **Where it stands**. Without permission to see locations, **Usable lots** and one “not usable” line replace the places; without permission to see orders, a number says how many orders wait; the runs need permission to see production.
 

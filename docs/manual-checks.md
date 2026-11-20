@@ -396,9 +396,10 @@ a second organization.
   the code, Back returning to the page; CALM-SAMPLE, never received, has
   none. Change reorder point opens the point's dialog filled in,
   and Escape returns focus to it; Save closes it, and Low with its "left
-  · reorder at" line shows the point saved; Buy 134 opens New order, a purchase,
+  · reorder at" line shows the point saved; Buy 134 each, its number with
+  its unit (#640), opens New order, a purchase,
   with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
-  has Make 230 instead, which opens Plan a run filled in. OMEGA3-90 says
+  has Make 230 each instead, which opens Plan a run filled in. OMEGA3-90 says
   it is in a draft already. MAGCAP's page lists MAGCAP-240 first, out,
   "48 not usable: at a place not available", its lot in Quarantine
   marked "Not usable: a place not available", then MAGCAP-120, low, Buy
@@ -415,7 +416,7 @@ a second organization.
   Fatima Haddad (Sales), with no `locations.view`: ELDER-250's page
   lists "Usable lots", each with how many places hold it, and any not
   usable as one line, no place named, with no Actions and no Change
-  reorder point; Held's orders are listed, and Buy 134 is there.
+  reorder point; Held's orders are listed, and Buy 134 each is there.
   SLEEP-60CT's page lists no run under Coming, and in Make's place a
   line says her role does not include planning runs, and whom to ask. As
   Tom Becker (Warehouse): By place and lot with each lot's Actions, and in Buy's place
@@ -7159,3 +7160,6 @@ first.
   move and count-in dialogs list each place by its path, and Move, Ship
   out and Send a sample name the place they take from by it: MC-312
   extended.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#640): Where it
+  stands' Buy and Make say their number with its unit, Buy 134 each:
+  MC-219 and MC-220 reworded.

@@ -154,7 +154,7 @@ as the catalogues word it.
 | Still needed | Encore requis | 待发 | Confirmed sales still to ship. |
 | In draft / Drafted | En brouillon / Brouillon fait | 草稿中 / 已下草稿 | Draft purchases and runs: shown, never counted as coming. Drafted: what is in draft leaves nothing to suggest. |
 | Suggested order | Commande suggérée | 建议订货 | For a made item, 建议生产. |
-| Buy / Make | Acheter / Fabriquer | 采购 / 生产 | Reorder's buttons, each with how many: Buy 30, Acheter 30, 采购 30; Make 1,000, Fabriquer 1 000, 生产 1,000 (ADR-093). |
+| Buy / Make | Acheter / Fabriquer | 采购 / 生产 | Reorder's buttons, each with how many: Buy 30, Acheter 30, 采购 30; Make 1,000, Fabriquer 1 000, 生产 1,000 (ADR-093). On Where it stands, alone on its card, the number takes its unit: Buy 30 each, Acheter 30 unités, 采购 30 个 (#640). |
 | Bought / Made | Acheté / Fabriqué | 采购 / 自制 | How an item with a point is replenished. |
 | Just enough / A fixed quantity / Up to a maximum | Juste assez / Quantité fixe / Jusqu’à un maximum | 补足到库存下限 / 固定订货量 / 补到最高库存 | The three rules for how much to order. |
 
