@@ -16,8 +16,8 @@ upload.
   the clone.
 - A date in the handoff that is due is raised once.
 - Five parts, every bullet with its status, Decisions needed present.
-- It starts the check before the ADR and asks for the issue lists by
-  area, rather than drafting anything.
+- It plays the request back first, as prompt 8 says, and waits for
+  Bob's confirmation: no check started and nothing drafted.
 
 ## 2. The check before an ADR
 
