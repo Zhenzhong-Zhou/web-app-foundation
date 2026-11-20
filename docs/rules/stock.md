@@ -351,6 +351,24 @@ file is kept is in the [README](README.md).
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/movements.md#correct-a-mistake-correct) ·
   MC-3319
+- **A reader without locations.view is told why no place is named,
+  once a page, where the places would be:** "Warehouses, zones and bins
+  are hidden: your role can't see them. An Owner or Admin can change
+  that.", in the role editor's words for the permission. On Movements
+  above the list; on a lot's page under Where it is now; on the item's
+  page in Where it stands' first card with stock; on Stock, where a
+  code not tracked by lot opens to it in place of a row of "—" for each
+  place.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says once why places are hidden for a reader without locations.view, never for one with it" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each place where it is now by its whole path, or sums it for a reader without places" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "says once why places are hidden, for a reader without locations.view" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "opens a code not tracked by lot to why its places are hidden, for a reader without places" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  MC-220 ·
+  MC-312 ·
+  MC-320 ·
+  MC-904
 - **A movement names the document it was for only to a reader who may
   see it:** the order it was received, shipped or returned on with
   orders.view, the run with production.view (55a).

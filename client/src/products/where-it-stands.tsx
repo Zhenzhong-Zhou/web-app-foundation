@@ -45,6 +45,7 @@ import { MOVEMENT_HEADINGS } from '../inventory/movement-reasons';
 import { movementsPath } from '../inventory/movements-path';
 import { notUsableWhy } from '../inventory/not-usable';
 import { PlacePath } from '../inventory/place-path';
+import { PlacesHidden } from '../inventory/places-hidden';
 import {
   type ReorderOpening,
   ReorderPointDialog,
@@ -229,6 +230,14 @@ function Standing({ product }: { product: ProductDetail }) {
   // (v2's board); several, the section's title above them, each card
   // titled by its code.
   const single = codes.length === 1;
+  // Without locations.view, why no place is named, once, in the first
+  // card with stock, where its places would be (review 3, 115).
+  const hiddenAt = can('locations.view')
+    ? undefined
+    : codes.find(
+        (code) =>
+          code.lots && (code.lots.length > 0 || !isZero(code.notUsable)),
+      )?.variantId;
 
   return (
     <Box component="section" aria-labelledby="stock">
@@ -242,6 +251,7 @@ function Standing({ product }: { product: ProductDetail }) {
             single={single}
             heldId={code === heldAt ? 'held' : undefined}
             handlers={handlers}
+            placesHidden={code.variantId === hiddenAt}
           />
         ))}
       </Stack>
@@ -332,12 +342,15 @@ function CodeBlock({
   single,
   heldId,
   handlers,
+  placesHidden = false,
 }: {
   code: CodeStanding;
   /** The item's one code: its card holds the section's title. */
   single: boolean;
   heldId?: string;
   handlers: Handlers;
+  /** Says why no place is named, under its lots (review 3, 115). */
+  placesHidden?: boolean;
 }) {
   const intl = useIntl();
   const qty = (value: string) =>
@@ -454,6 +467,7 @@ function CodeBlock({
 
             {code.places && <ByPlace code={code} lot={handlers.lot} />}
             {code.lots && <UsableLots code={code} />}
+            {placesHidden && <PlacesHidden />}
           </>
         )}
 

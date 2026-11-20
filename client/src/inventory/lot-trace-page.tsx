@@ -50,6 +50,7 @@ import { LicenceAtRelease } from '../licences/licence-at-release';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { COLOR_OF_TONE } from '../theme/status';
+import { PlacesHidden } from './places-hidden';
 import { placeName } from './stock-places';
 
 /**
@@ -326,25 +327,29 @@ export function LotTracePage() {
           </Empty>
         ) : !can('locations.view') ? (
           // No place named without locations.view (ADR-093, 96a): the two
-          // sums the server sends, with no Location column.
-          <Grid
-            head={[
-              intl.formatMessage({
-                id: 'inventory.trace.usable',
-                defaultMessage: 'Usable',
-              }),
-              intl.formatMessage({
-                id: 'inventory.trace.notUsable',
-                defaultMessage: 'Not usable',
-              }),
-            ]}
-            rows={[
-              [trace.usable, trace.notUsable].map((quantity) =>
-                displayWithUnit(quantity, trace.lot.unitOfMeasure, intl),
-              ),
-            ]}
-            alignRight={[0, 1]}
-          />
+          // sums the server sends, with no Location column, and why
+          // (review 3, 115).
+          <Stack spacing={1}>
+            <Grid
+              head={[
+                intl.formatMessage({
+                  id: 'inventory.trace.usable',
+                  defaultMessage: 'Usable',
+                }),
+                intl.formatMessage({
+                  id: 'inventory.trace.notUsable',
+                  defaultMessage: 'Not usable',
+                }),
+              ]}
+              rows={[
+                [trace.usable, trace.notUsable].map((quantity) =>
+                  displayWithUnit(quantity, trace.lot.unitOfMeasure, intl),
+                ),
+              ]}
+              alignRight={[0, 1]}
+            />
+            <PlacesHidden />
+          </Stack>
         ) : (
           <Grid
             head={[

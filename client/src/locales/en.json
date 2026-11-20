@@ -728,6 +728,7 @@
   "inventory.needsLocation": "Add a location before receiving stock. Stock sits in the places that contain nothing else — a bin, a shelf, or a whole warehouse if you have not divided it up yet.",
   "inventory.noMatch": "Nothing matches that search.",
   "inventory.note": "Note",
+  "inventory.placesHidden": "Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.",
   "inventory.quantity": "Quantity",
   "inventory.quantity.help": "Up to 4 decimal places.",
   "inventory.quantity.inUnit": "In {unit}. Up to 4 decimal places.",

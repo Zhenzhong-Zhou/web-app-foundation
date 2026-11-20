@@ -83,6 +83,7 @@ import {
   reasonLabel,
 } from './movement-reasons';
 import { PlaceFilter } from './place-filter';
+import { PlacesHidden } from './places-hidden';
 import { WhenMenu } from './when-menu';
 import { rangeWords } from './when-words';
 
@@ -519,6 +520,9 @@ export function MovementsPage() {
         hint={!oneCode && !!locationId && !orderId}
         onClearReason={() => setFilters({ reason: '' })}
       />
+
+      {/* Where From → to would be, why it is not (review 3, 115). */}
+      {!seesPlaces && <PlacesHidden />}
 
       {period && unit && (
         <Period

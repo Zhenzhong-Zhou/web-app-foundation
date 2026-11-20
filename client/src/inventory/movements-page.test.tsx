@@ -54,6 +54,8 @@ const EVERYONE = [
 ];
 /** The Sales template's: stock and orders, no places (ADR-080). */
 const SALES = ['stock.view', 'orders.view'];
+const PLACES_HIDDEN =
+  'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.';
 
 /** The list's answer, and every query it was asked with. */
 function answer(
@@ -254,6 +256,18 @@ describe('MovementsPage', () => {
       screen.queryByRole('columnheader', { name: 'From → to' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Location')).not.toBeInTheDocument();
+  });
+
+  // Review 3, 115: where From → to would be, why it is not, once.
+  it('says once why places are hidden for a reader without locations.view, never for one with it', async () => {
+    answer([MOVEMENT]);
+    const { unmount } = renderAt('/movements', SALES);
+    await screen.findByRole('link', { name: '维生素 D (60 粒)' });
+    expect(screen.getAllByText(PLACES_HIDDEN)).toHaveLength(1);
+    unmount();
+
+    await rowFor(MOVEMENT);
+    expect(screen.queryByText(PLACES_HIDDEN)).not.toBeInTheDocument();
   });
 
   it('asks the list by the address’s keys, the lot and the order as chips', async () => {

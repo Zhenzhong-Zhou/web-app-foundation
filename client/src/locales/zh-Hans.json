@@ -728,6 +728,7 @@
   "inventory.needsLocation": "收货前请先添加库位。库存只能存放在最末级库位，例如货位、货架，或尚未划分的整个仓库。",
   "inventory.noMatch": "没有符合搜索条件的结果。",
   "inventory.note": "备注",
+  "inventory.placesHidden": "仓库、区域和货位已隐藏：您的角色无权查看。所有者或管理员可以更改此设置。",
   "inventory.quantity": "数量",
   "inventory.quantity.help": "最多 4 位小数。",
   "inventory.quantity.inUnit": "单位：{unit}。最多 4 位小数。",

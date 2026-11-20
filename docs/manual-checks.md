@@ -412,10 +412,12 @@ a second organization.
   names its reasons 已过期, 已领用 and 不可发货; Free reads 可分配, never
   可用 alone, and the line and its sum 预计剩余, where Reorder's box and
   Today read 预计剩余 too, never 剩 or 预计可用.
-- **MC-220** *(ADR-093, ADR-080)* Where it stands by permission. As
+- **MC-220** *(ADR-093, ADR-080; review 3, 115)* Where it stands by permission. As
   Fatima Haddad (Sales), with no `locations.view`: ELDER-250's page
   lists "Usable lots", each with how many places hold it, and any not
-  usable as one line, no place named, with no Actions and no Change
+  usable as one line, no place named, then, once a page, "Warehouses,
+  zones and bins are hidden: your role can't see them. An Owner or
+  Admin can change that."; with no Actions and no Change
   reorder point; Held's orders are listed, and Buy 134 each is there.
   SLEEP-60CT's page lists no run under Coming, and in Make's place a
   line says her role does not include planning runs, and whom to ask. As
@@ -465,13 +467,16 @@ a second organization.
   else on the row does: the row tints under the pointer, an arrow. There
   is no
   "Promised to customers" table below the list.
-- **MC-312** *(ADR-093)* D3-1000-120's "2 places" button opens its places
+- **MC-312** *(ADR-093; review 3, 115)* D3-1000-120's "2 places" button opens its places
   under the row, the button pressed in the accent and read as "Hide where
   … is"; Main's Shelf's "3 lots" opens D3-A11, D3-B02 and D3-C07, the
   undated D3-C07 last, each lot's code a link to its trace. VITC-100's
   Quarantine reads "Not usable: a place not available" in red. As Fatima
   Haddad (Sales), with no `locations.view`, the button reads "… lots" and
-  opens the lots alone, no place named. Opened, the address gains
+  opens the lots alone, no place named; a code not tracked by lot in
+  several places reads "… places" and opens to one line, "Warehouses,
+  zones and bins are hidden: your role can't see them. An Owner or
+  Admin can change that.", never a row of "—" for each place. Opened, the address gains
   `open=` with its code; follow the item's name and come Back: the row is
   still open and focus is on its name. Show 50 more puts focus on the
   first new row; on the volume database it reads "Showing 50 of …
@@ -630,7 +635,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 118a and 125; reviews 1, 2 and 11)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3 and 11)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -690,7 +695,10 @@ a second organization.
   dates full width; a lot's Movements with Reason and a When range chosen
   there: the sheet's Clear empties Reason and When and keeps the Lot
   chip. As Fatima Haddad (Sales), there is no From → to column
-  and no Location filter, and a link with `?locationId=` reads every
+  and no Location filter, one line above the list saying "Warehouses,
+  zones and bins are hidden: your role can't see them. An Owner or
+  Admin can change that.", in Français and 中文 too
+  (仓库、区域和货位已隐藏), and a link with `?locationId=` reads every
   place; as a role without `orders.view`, a link with `?orderId=` lists
   every movement with no chip.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
@@ -984,14 +992,16 @@ search to having the list of customers; the target is **under two minutes**.
   samples and returns.
 - **MC-903** Trace FOC-2609-01 back: the run, and the ingredient lots it was
   made from.
-- **MC-904** *(ADR-093, amended; #639)* Balances: where every unit of
+- **MC-904** *(ADR-093, amended; #639; review 3, 115)* Balances: where every unit of
   the batch is now, each place by its whole path, its warehouse first,
   "Main warehouse › Zone A › Shelf A2 (A2)", where it said "Shelf A2"
   alone. Signed in with the Sales template, which has no
   `locations.view`: Where it is now has no Location column and names no
   place, reading Usable and Not usable, the two adding up to every unit
   of the lot, its quantity at a place not available, or all of it once
-  the lot has expired, under Not usable.
+  the lot has expired, under Not usable, and under them, once,
+  "Warehouses, zones and bins are hidden: your role can't see them. An
+  Owner or Admin can change that." (review 3, 115).
 - **MC-905** Record the time here and in the release notes.
 - **MC-906** *(ADR-044, amended)* On BF-2609's trace, Who received it's
   Export saves the recall list: each row as the table shows it, who, the

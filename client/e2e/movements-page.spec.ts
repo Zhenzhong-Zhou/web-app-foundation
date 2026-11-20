@@ -126,6 +126,10 @@ async function movementsFrom(page: Page, address = '/movements') {
   ).toBeVisible();
 }
 
+/** Where places would be, for a reader without locations.view. */
+const PLACES_HIDDEN =
+  'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.';
+
 /** The period line's figures, as its terms and their values. */
 const period = (page: Page) => ({
   terms: page.getByRole('main').locator('dl > div > dt'),
@@ -864,6 +868,9 @@ test('a Sales reader: no From → to and no place named; a link with ?locationId
   await expect(page.getByRole('main')).not.toContainText('E2E Shelf');
   // A move between places still listed, its reason saying so.
   await expect(rows(page).filter({ hasText: 'moved' })).toHaveCount(1);
+  // Why no place is named, once, in the role editor's words (review 3,
+  // 115).
+  await expect(page.getByText(PLACES_HIDDEN)).toHaveCount(1);
 
   const saved = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export' }).click();
@@ -890,6 +897,7 @@ test('a Sales reader: no From → to and no place named; a link with ?locationId
   await expect(page.getByText('Not usable', { exact: true })).toBeVisible();
   await expect(page.getByText('Location', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('main')).not.toContainText('E2E Shelf');
+  await expect(page.getByText(PLACES_HIDDEN)).toHaveCount(1);
   await sales.dispose();
 });
 

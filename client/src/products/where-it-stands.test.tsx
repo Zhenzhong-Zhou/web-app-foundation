@@ -21,6 +21,9 @@ const PRODUCT = {
 } as ProductDetail;
 
 /** A code of Where it stands, as the server sends it to an Owner. */
+const PLACES_HIDDEN =
+  'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.';
+
 function standing(over: Partial<CodeStanding> = {}): CodeStanding {
   return {
     variantId: 'variant-1',
@@ -99,7 +102,7 @@ function renderStanding(
       }),
     ),
   );
-  renderWithAuth(
+  return renderWithAuth(
     <MemoryRouter initialEntries={[at]}>
       <Routes>
         <Route
@@ -191,6 +194,41 @@ describe('Where it stands (ADR-093, R8)', () => {
     );
     expect(screen.getByText('in 2 places')).toBeVisible();
     expect(screen.getByText('12 not usable')).toBeVisible();
+  });
+
+  // Review 3, 115: why no place is named, once a page, in the first card
+  // with stock, never for a reader who may see places.
+  it('says once why places are hidden, for a reader without locations.view', async () => {
+    const lots = [
+      {
+        lotId: 'lot-1',
+        lotCode: 'ELD-25A',
+        expiresAt: null,
+        quantity: '70.0000',
+        places: 2,
+      },
+    ];
+    const { unmount } = renderStanding(
+      [
+        standing({ places: null, lots }),
+        standing({
+          variantId: 'variant-2',
+          sku: 'ELDER-500',
+          places: null,
+          lots,
+        }),
+      ],
+      ['stock.view'],
+    );
+
+    expect(await screen.findAllByText(PLACES_HIDDEN)).toHaveLength(1);
+    unmount();
+
+    renderStanding([standing()], ['stock.view', 'locations.view']);
+    expect(
+      await screen.findByRole('heading', { name: 'Where it stands' }),
+    ).toBeVisible();
+    expect(screen.queryByText(PLACES_HIDDEN)).not.toBeInTheDocument();
   });
 
   // None on hand and no point: the next step by role (ADR-093's states).

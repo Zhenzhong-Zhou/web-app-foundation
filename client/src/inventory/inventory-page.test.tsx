@@ -343,6 +343,46 @@ describe('InventoryPage', () => {
       ).not.toBeInTheDocument();
     });
 
+    // Review 3, 115: a code not tracked by lot opens to why its places
+    // are hidden, not a row of "—" for each.
+    it('opens a code not tracked by lot to why its places are hidden, for a reader without places', async () => {
+      const user = userEvent.setup();
+      answer([{ ...CODE, lots: 0 }]);
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({
+            places: PLACES.map((place) => ({
+              ...place,
+              locationName: null,
+              locationPath: [],
+              lots: [
+                {
+                  ...place.lots[0]!,
+                  locationName: null,
+                  lotId: null,
+                  lotCode: null,
+                  lotExpiresAt: null,
+                },
+              ],
+            })),
+          }),
+        ),
+      );
+      renderAt('/inventory', ['stock.view']);
+
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      expect(
+        await screen.findByText(
+          'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.',
+        ),
+      ).toBeVisible();
+      expect(screen.queryByText('10 each')).not.toBeInTheDocument();
+    });
+
     // A screen reader hears a menu button, not a plain one (#358).
     it('says a row’s Actions open a menu, its Movements for everyone and nothing that changes stock', async () => {
       const user = userEvent.setup();

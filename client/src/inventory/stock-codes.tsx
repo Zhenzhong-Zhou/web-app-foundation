@@ -56,6 +56,7 @@ import type { MoveMode } from './move-stock-dialog';
 import { movementsPath } from './movements-path';
 import { notUsableWhy } from './not-usable';
 import { PlacePath } from './place-path';
+import { PlacesHidden } from './places-hidden';
 import type { ReorderItem } from './reorder-point-dialog';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { type Pile, StockActions } from './stock-actions';
@@ -985,6 +986,19 @@ function PlacesRows({
     const lots = places.flatMap((each) =>
       each.lots.map((lot) => ({ lot, usable: each.isAvailable })),
     );
+    // A code not tracked by lot, in places the reader may not name: why,
+    // not a row of "—" for each (review 3, 115); a pile's action still
+    // opens them to choose from.
+    if (!place && !choosing && lots.every(({ lot }) => lot.lotId === null)) {
+      return (
+        <TableRow id={id} {...SPANNING_ROW}>
+          <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
+            <PlacesHidden />
+          </TableCell>
+          <WideOnlyCells />
+        </TableRow>
+      );
+    }
     return (
       <>
         {line}

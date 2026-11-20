@@ -728,6 +728,7 @@
   "inventory.needsLocation": "Ajoutez un emplacement avant de recevoir du stock. Le stock est placé dans les emplacements qui ne sont pas subdivisés : un casier, une tablette ou même un entrepôt entier si vous ne l’avez pas encore divisé.",
   "inventory.noMatch": "Rien ne correspond à cette recherche.",
   "inventory.note": "Note",
+  "inventory.placesHidden": "Les entrepôts, les zones et les casiers sont masqués : votre rôle ne peut pas les voir. Un Propriétaire ou un Administrateur peut changer cela.",
   "inventory.quantity": "Quantité",
   "inventory.quantity.help": "Jusqu’à 4 décimales.",
   "inventory.quantity.inUnit": "En {unit}. Jusqu’à 4 décimales.",

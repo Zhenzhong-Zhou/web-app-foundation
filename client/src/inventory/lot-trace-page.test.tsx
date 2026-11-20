@@ -127,6 +127,8 @@ const ONWARD = [
   'MO-000009',
 ];
 
+const PLACES_HIDDEN =
+  'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.';
 describe('LotTracePage', () => {
   it('links each partner, order and run for whoever may open it', async () => {
     renderTrace([
@@ -212,6 +214,7 @@ describe('LotTracePage', () => {
         name: 'Main warehouse › Zone A › Shelf A (A)',
       }),
     ).toBeVisible();
+    expect(screen.queryByText(PLACES_HIDDEN)).not.toBeInTheDocument();
     expect(
       screen.getByRole('cell', {
         name: 'Main warehouse › Quarantine Not available',
@@ -232,6 +235,8 @@ describe('LotTracePage', () => {
       screen.queryByRole('columnheader', { name: 'Location' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/Shelf A|Quarantine/)).not.toBeInTheDocument();
+    // Why, once, where the places would be (review 3, 115).
+    expect(screen.getAllByText(PLACES_HIDDEN)).toHaveLength(1);
   });
 
   // Stock look-up's reader (ADR-080): stock, but none of the three.
