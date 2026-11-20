@@ -36,7 +36,7 @@ import type {
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
-import { movementOf } from './movement-view';
+import { movementOf, type MovementSight } from './movement-view';
 import { StockService } from './stock.service';
 import { MOVEMENT_COLUMNS } from './stock-exports';
 import { StockReadsService } from './stock-reads.service';
@@ -93,12 +93,11 @@ export class StockController {
     @CurrentUser() user: RequestContext,
     @AcceptLanguage() acceptLanguage?: string,
   ): Promise<MovementPage> {
-    // Each movement's document only for a reader who may see it (55a).
-    const held = await this.permissions.heldBy(user.membershipId);
-    return this.reads.listMovements(query, localeOf(acceptLanguage), {
-      orders: held.has(PERMISSIONS.ORDERS_VIEW),
-      runs: held.has(PERMISSIONS.PRODUCTION_VIEW),
-    });
+    return this.reads.listMovements(
+      query,
+      localeOf(acceptLanguage),
+      await this.sightOf(user, query),
+    );
   }
 
   /** Every movement the filters match, as CSV (ADR-057): the list's own query, every page. */
@@ -107,12 +106,20 @@ export class StockController {
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'movements' })
   async exportMovements(
     @Query() query: ListMovementsDto,
+    @CurrentUser() user: RequestContext,
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
+    // An order's movements refused as the list refuses them. The file
+    // names no document, and both places, as it always has.
+    await this.sightOf(user, query);
     // The base names, as every CSV keeps them (ADR-056).
     const rows = await everyRow((before, limit) =>
-      this.reads.listMovements({ ...query, before, limit }, null),
+      this.reads.listMovements({ ...query, before, limit }, null, {
+        places: true,
+        orders: false,
+        runs: false,
+      }),
     );
     recordContext({
       list: 'movements',
@@ -147,5 +154,29 @@ export class StockController {
     @Body() dto: UpdateLotDto,
   ): Promise<void> {
     await this.lots.updateLot(id, dto);
+  }
+
+  /**
+   * What the reader may see of each movement, by their permissions, read
+   * once a request (ADR-080; 55a; ADR-093, 96a). An order's movements are
+   * refused, 403, before any read, to a reader without orders.view, in
+   * their words and naming whom to ask (#148): the answer alone would tell
+   * which movements belong to an order they may not see (ADR-093).
+   */
+  private async sightOf(
+    user: RequestContext,
+    query: ListMovementsDto,
+  ): Promise<MovementSight> {
+    const held = await this.permissions.heldBy(user.membershipId);
+    if (query.orderId && !held.has(PERMISSIONS.ORDERS_VIEW)) {
+      throw await this.permissions.refusal(user, held, [
+        PERMISSIONS.ORDERS_VIEW,
+      ]);
+    }
+    return {
+      places: held.has(PERMISSIONS.LOCATIONS_VIEW),
+      orders: held.has(PERMISSIONS.ORDERS_VIEW),
+      runs: held.has(PERMISSIONS.PRODUCTION_VIEW),
+    };
   }
 }

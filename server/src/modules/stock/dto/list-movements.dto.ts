@@ -27,6 +27,16 @@ export class ListMovementsDto extends KeysetQueryDto {
   @IsUUID()
   locationId?: string;
 
+  /**
+   * An order's movements (ADR-093, R24): what was received on it, shipped
+   * on it and returned on it, by each movement's document. A reader
+   * without orders.view is refused it, 403: the answer alone would tell
+   * which movements belong to an order they may not see.
+   */
+  @IsOptional()
+  @IsUUID()
+  orderId?: string;
+
   @IsOptional()
   @IsIn([...MOVEMENT_REASONS])
   reason?: (typeof MOVEMENT_REASONS)[number];

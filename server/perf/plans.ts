@@ -76,6 +76,9 @@ const MONTH_INSTANTS = {
 const EVERY_PERMISSION = new Set(ALL_PERMISSIONS);
 const EVERYTHING = sightOf(EVERY_PERMISSION);
 
+/** Movements as an Owner reads them: each end's path and each document. */
+const EVERY_PART = { places: true, orders: true, runs: true };
+
 /**
  * Sequential scans that are the decision, not an accident. Each says why,
  * so the next person can tell whether the reason still holds.
@@ -237,7 +240,7 @@ async function buildProbes(
     20,
   );
   const deepMovements = await cursorAfter(
-    (before) => stock.listMovements({ before }, 'en'),
+    (before) => stock.listMovements({ before }, 'en', EVERY_PART),
     20,
   );
 
@@ -376,24 +379,37 @@ async function buildProbes(
           runs: false,
         }),
     },
-    { name: 'movements', run: () => stock.listMovements({}, 'en') },
+    {
+      name: 'movements',
+      run: () => stock.listMovements({}, 'en', EVERY_PART),
+    },
     {
       name: 'movements: page 21',
-      run: () => stock.listMovements({ before: deepMovements }, 'en'),
+      run: () =>
+        stock.listMovements({ before: deepMovements }, 'en', EVERY_PART),
     },
     {
       name: 'movements: one product',
-      run: () => stock.listMovements({ variantId: shelf.variantId }, 'en'),
+      run: () =>
+        stock.listMovements({ variantId: shelf.variantId }, 'en', EVERY_PART),
     },
     {
       name: 'movements: one lot',
-      run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en'),
+      run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en', EVERY_PART),
     },
     // Through the from and the to place's indexes, in one bitmap OR
     // (ADR-051's watch, taken in ADR-093), where it walked the primary key.
     {
       name: 'movements: one shelf',
-      run: () => stock.listMovements({ locationId: shelf.locationId }, 'en'),
+      run: () =>
+        stock.listMovements({ locationId: shelf.locationId }, 'en', EVERY_PART),
+    },
+    // An order's movements (ADR-093, R24): a sale's shipments and its
+    // return, each arm by the reference index, in one bitmap OR.
+    {
+      name: 'movements: one order',
+      run: () =>
+        stock.listMovements({ orderId: rma.orderId }, 'en', EVERY_PART),
     },
     { name: 'invoices', run: () => invoices.list({}) },
     {
@@ -496,7 +512,7 @@ async function buildProbes(
     },
     {
       name: 'movements: a month',
-      run: () => stock.listMovements({ ...MONTH_INSTANTS }, 'en'),
+      run: () => stock.listMovements({ ...MONTH_INSTANTS }, 'en', EVERY_PART),
     },
     // Reorder points (ADR-085): the low list, every point's position
     // worked out, read only from the items that have one.

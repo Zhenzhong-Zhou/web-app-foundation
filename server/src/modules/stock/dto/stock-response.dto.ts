@@ -1,3 +1,5 @@
+import type { ProductType } from '../../../database/schema';
+
 /**
  * Stock as the API returns it (ADR-068): levels, movements, lots and the
  * counts behind the inventory page's filters, described for the OpenAPI
@@ -53,21 +55,63 @@ export class MovementDocument {
   number!: string | null;
 }
 
-/** A movement as the ledger lists it. */
+/**
+ * A movement as the ledger lists it, the one row Movements, the item's
+ * page and the export read (ADR-093, R9 and R20): the item by today's
+ * name and code, the lot, each end, who, when, and the document it was
+ * for, each part only for a reader who may see it.
+ */
 export class Movement {
   id!: string;
-  /** Snapshotted at the time (ADR-023), not joined from the variant. */
+  /** The code that moved. */
+  variantId!: string;
+  /** Its item, whose page the row's name opens. */
+  productId!: string;
+  /** The code it was recorded under, snapshotted at the time (ADR-023). */
   sku!: string;
+  /**
+   * The code today, joined from the variant (7a), which the row shows:
+   * "was VITC-90" under it when `sku` differs.
+   */
+  currentSku!: string;
   /** From the catalogue, in the reader's language (ADR-056). */
   productName!: string;
   variantName!: string | null;
+  type!: ProductType;
+  unitOfMeasure!: string;
   quantity!: string;
   reason!: string;
   reasonDetail!: string | null;
   note!: string | null;
+  /**
+   * Where it came from; null for stock arriving, from a supplier, a run
+   * or a count. The direction is which end is set (ADR-023).
+   */
+  fromLocationId!: string | null;
+  /**
+   * Null with no place, and for a reader without `locations.view`, as the
+   * code is and the path empty, the id kept (ADR-080; ADR-093, 96a), as
+   * Stock's rows send them.
+   */
   fromLocationName!: string | null;
+  fromLocationCode!: string | null;
+  /**
+   * The places above it, its warehouse or site first, by name (57a), for
+   * the page's rows alone. Empty for a place at the top, for no place,
+   * and for a reader without `locations.view`.
+   */
+  fromLocationPath!: string[];
+  /** Where it went; null for stock leaving, to a customer, a run or a count. */
+  toLocationId!: string | null;
+  /** As `fromLocationName`. */
   toLocationName!: string | null;
+  toLocationCode!: string | null;
+  /** As `fromLocationPath`. */
+  toLocationPath!: string[];
+  lotId!: string | null;
   lotCode!: string | null;
+  /** The lot's expiry day, `YYYY-MM-DD` (ADR-052); null with none. */
+  lotExpiresAt!: string | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */

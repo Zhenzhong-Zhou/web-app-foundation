@@ -1847,16 +1847,29 @@ export type MovementDocument = {
 
 export type Movement = {
   id: string;
+  variantId: string;
+  productId: string;
   sku: string;
+  currentSku: string;
   productName: string;
   variantName: string | null;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  unitOfMeasure: string;
   quantity: string;
   reason: string;
   reasonDetail: string | null;
   note: string | null;
+  fromLocationId: string | null;
   fromLocationName: string | null;
+  fromLocationCode: string | null;
+  fromLocationPath: Array<string>;
+  toLocationId: string | null;
   toLocationName: string | null;
+  toLocationCode: string | null;
+  toLocationPath: Array<string>;
+  lotId: string | null;
   lotCode: string | null;
+  lotExpiresAt: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
@@ -6044,6 +6057,7 @@ export type StockControllerListMovementsV1Data = {
     variantId?: string;
     lotId?: string;
     locationId?: string;
+    orderId?: string;
     reason?:
       | 'receipt'
       | 'shipment'
@@ -6092,6 +6106,7 @@ export type StockControllerExportMovementsV1Data = {
     variantId?: string;
     lotId?: string;
     locationId?: string;
+    orderId?: string;
     reason?:
       | 'receipt'
       | 'shipment'

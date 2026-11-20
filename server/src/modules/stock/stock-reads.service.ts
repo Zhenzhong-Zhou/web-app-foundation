@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, gt, inArray, lt, or, type SQL, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { and, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 
-import { instantRange } from '../../common/date-range';
-import { pageOf } from '../../common/keyset';
+import type { KeysetPage } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import {
@@ -12,17 +10,14 @@ import {
   products,
   productVariants,
   stockLevels,
-  stockMovements,
-  users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { itemMatches } from '../products/item-search';
-import { ListMovementsDto } from './dto/list-movements.dto';
-import type { MovementDocument } from './dto/stock-response.dto';
-import { namesIn } from './item-name';
-import type { Tx } from './stock.service';
+import type { ListMovementsDto } from './dto/list-movements.dto';
+import type { Movement } from './dto/stock-response.dto';
+import { movementPage, type MovementSight } from './movement-view';
 
 /**
  * What stock rows are read by (stockRowsOf): Inventory's filters that a
@@ -228,246 +223,16 @@ export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /**
-   * The ledger, read. Newest first, keyset cursor on the UUIDv7 id — the same
-   * shape as the audit log, for the same reason: the table is append-only, so
-   * offset paging would shift every page down as rows arrive at the head.
-   *
-   * Four left joins, so this drops to a raw handle. Two are
-   * the same table aliased, because a transfer names both a source and a
-   * destination. Left throughout: a movement with no source is inbound, a lot
-   * is null for untracked variants, and an actor may be a tombstone (ADR-012)
-   * — an inner join would drop exactly the rows the RESTRICT constraints exist
-   * to preserve.
-   *
-   * The SKU is not joined. It is snapshotted on the row (ADR-023) so a rename
-   * does not rewrite history. The item's names beside it are the catalogue's,
-   * in the locale given, or the base names for null, as the CSV export reads
-   * them (ADR-056): read for the page alone, once it is taken. Joined here,
-   * they were worked out for every movement a filter matched before the
-   * newest were kept, a scan of every variant for one shelf at ADR-051's
-   * large scale. The places, the lot and the actor are joined the same way,
-   * to the page's rows once it is taken: one shelf's movements come from the
-   * from and the to place's indexes in no order, so joined first, every one
-   * of them was joined, each organization's lots read whole, before the
-   * newest were kept (ADR-051's watch, ADR-093).
+   * The ledger, read: a page of the one movement row (movement-view.ts),
+   * each part for a reader who may see it.
    */
   listMovements(
     query: ListMovementsDto,
     locale: Locale | null,
-    /** Who may see each document (55a); none for the export. */
-    sight: { orders: boolean; runs: boolean } = { orders: false, runs: false },
-  ) {
-    const limit = query.limit ?? 50;
-
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const from = alias(locations, 'from_location');
-      const to = alias(locations, 'to_location');
-
-      const filters = [
-        eq(stockMovements.organizationId, organizationId),
-        query.before ? lt(stockMovements.id, query.before) : undefined,
-        query.variantId
-          ? eq(stockMovements.variantId, query.variantId)
-          : undefined,
-        query.lotId ? eq(stockMovements.lotId, query.lotId) : undefined,
-        query.locationId
-          ? or(
-              eq(stockMovements.fromLocationId, query.locationId),
-              eq(stockMovements.toLocationId, query.locationId),
-            )
-          : undefined,
-        query.reason ? eq(stockMovements.reason, query.reason) : undefined,
-        ...instantRange(stockMovements.createdAt, query),
-      ].filter((f): f is SQL => f !== undefined);
-
-      // One more than asked for, so the presence of a next page is known
-      // without a second count query.
-      const movement = tx
-        .select({
-          id: stockMovements.id,
-          variantId: stockMovements.variantId,
-          sku: stockMovements.sku,
-          quantity: stockMovements.quantity,
-          reason: stockMovements.reason,
-          reasonDetail: stockMovements.reasonDetail,
-          note: stockMovements.note,
-          fromLocationId: stockMovements.fromLocationId,
-          toLocationId: stockMovements.toLocationId,
-          lotId: stockMovements.lotId,
-          actorId: stockMovements.actorId,
-          createdAt: stockMovements.createdAt,
-        })
-        .from(stockMovements)
-        .where(and(...filters))
-        .orderBy(desc(stockMovements.id))
-        .limit(limit + 1)
-        .as('movement');
-
-      const rows = await tx
-        .select({
-          id: movement.id,
-          variantId: movement.variantId,
-          sku: movement.sku,
-          quantity: movement.quantity,
-          reason: movement.reason,
-          reasonDetail: movement.reasonDetail,
-          note: movement.note,
-          fromLocationName: from.name,
-          toLocationName: to.name,
-          lotCode: lots.code,
-          // Who, by name with their email (ADR-063). An anonymised account
-          // keeps its row and its name, Deleted User, and its address is a
-          // placeholder, which no one should read as theirs (ADR-012).
-          actorName: users.name,
-          actorEmail: sql<
-            string | null
-          >`case when ${users.deletedAt} is null then ${users.email} end`,
-          createdAt: movement.createdAt,
-        })
-        .from(movement)
-        .leftJoin(from, eq(from.id, movement.fromLocationId))
-        .leftJoin(to, eq(to.id, movement.toLocationId))
-        .leftJoin(lots, eq(lots.id, movement.lotId))
-        .leftJoin(users, eq(users.id, movement.actorId))
-        .orderBy(desc(movement.id));
-
-      const page = pageOf(rows, limit);
-      const names = await namesOfItems(
-        tx,
-        organizationId,
-        page.entries.map((row) => row.variantId),
-        locale,
-      );
-      const documents = await documentsOf(
-        tx,
-        organizationId,
-        page.entries.map((row) => row.id),
-        sight,
-      );
-
-      return {
-        ...page,
-        entries: page.entries.map(({ variantId, ...movement }) => ({
-          ...movement,
-          ...names.get(variantId)!,
-          document: documents.get(movement.id) ?? null,
-        })),
-      };
-    });
-  }
-}
-
-/**
- * The document each movement was for, by the movement's id (55a), for the
- * page's alone: a purchase order received on, a sale shipped on (by its
- * shipment) or returned on (by its return), or a run. An order only for
- * a reader with orders.view, a run with production.view. Every join names
- * the organization (ADR-003).
- */
-async function documentsOf(
-  tx: Tx,
-  organizationId: string,
-  movementIds: string[],
-  sight: { orders: boolean; runs: boolean },
-): Promise<Map<string, MovementDocument>> {
-  if (movementIds.length === 0 || (!sight.orders && !sight.runs)) {
-    return new Map();
-  }
-  const org = sql`${organizationId}::uuid`;
-  const { rows } = await tx.execute<{
-    id: string;
-    order_id: string | null;
-    order_number: string | null;
-    run_id: string | null;
-    run_reference: string | null;
-  }>(sql`
-    select m.id,
-      coalesce(po.id, so.id, ro.id) as order_id,
-      coalesce(po.number, so.number, ro.number) as order_number,
-      run.id as run_id,
-      run.reference as run_reference
-    from stock_movements m
-    left join orders po
-      on m.reference_type = 'purchase_order'
-      and po.id = m.reference_id
-      and po.organization_id = ${org}
-    left join shipments sh
-      on m.reference_type = 'shipment'
-      and sh.id = m.reference_id
-      and sh.organization_id = ${org}
-    left join orders so
-      on so.id = sh.order_id
-      and so.organization_id = ${org}
-    left join order_returns rt
-      on m.reference_type = 'order_return'
-      and rt.id = m.reference_id
-      and rt.organization_id = ${org}
-    left join orders ro
-      on ro.id = rt.order_id
-      and ro.organization_id = ${org}
-    left join production_orders run
-      on m.reference_type = 'production_order'
-      and run.id = m.reference_id
-      and run.organization_id = ${org}
-    where m.organization_id = ${org}
-      and m.id in (${sql.join(
-        movementIds.map((id) => sql`${id}::uuid`),
-        sql`, `,
-      )})
-  `);
-
-  const documents = new Map<string, MovementDocument>();
-  for (const row of rows) {
-    if (sight.orders && row.order_id) {
-      documents.set(row.id, {
-        kind: 'order',
-        id: row.order_id,
-        number: row.order_number,
-      });
-    } else if (sight.runs && row.run_id) {
-      documents.set(row.id, {
-        kind: 'run',
-        id: row.run_id,
-        number: row.run_reference,
-      });
-    }
-  }
-  return documents;
-}
-
-/**
- * Items' names by the item's id, in the locale given or the base names for
- * null (ADR-056), for the few a page shows.
- */
-async function namesOfItems(
-  tx: Tx,
-  organizationId: string,
-  variantIds: string[],
-  locale: Locale | null,
-): Promise<Map<string, { productName: string; variantName: string | null }>> {
-  if (variantIds.length === 0) return new Map();
-
-  const shown = namesIn(locale, organizationId);
-  const rows = await tx
-    .select({
-      id: productVariants.id,
-      productName: shown.productName,
-      variantName: shown.variantName,
-    })
-    .from(productVariants)
-    .innerJoin(
-      products,
-      and(
-        eq(products.id, productVariants.productId),
-        eq(products.organizationId, organizationId),
-      ),
-    )
-    .where(
-      and(
-        eq(productVariants.organizationId, organizationId),
-        inArray(productVariants.id, [...new Set(variantIds)]),
-      ),
+    sight: MovementSight,
+  ): Promise<KeysetPage<Movement>> {
+    return this.tenantDb.transaction((tx, organizationId) =>
+      movementPage(tx, organizationId, query, locale, sight),
     );
-
-  return new Map(rows.map(({ id, ...names }) => [id, names]));
+  }
 }

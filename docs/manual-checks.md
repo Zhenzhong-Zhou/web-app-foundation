@@ -3339,7 +3339,9 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3319** *(ADR-080)* A screen asks only for what its reader may
   read, and says why where a field cannot be filled. With the Network tab
   open, as Fatima Haddad (Sales): Inventory and Movements open without a
-  refused request and with no Location filter; PO-DEMO-1 opens, and its
+  refused request and with no Location filter, and Movements names no
+  place, a dash where each row's places were, a receipt still signed +
+  and a move between two places unsigned; PO-DEMO-1 opens, and its
   Edit's Deliver to keeps its site, greyed, with You can’t see the
   organization’s locations, so you can’t choose one here.; Authorize a
   return on SO-DEMO-2 says the same under Send back to, with where the
@@ -6988,3 +6990,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, 83a: a name pinned in a table
   too wide stops at two lines with "…", the whole name in a tooltip on
   hover and on focus: MC-1568.
+- 2026-11-20: ADR-093's Movements branch, 96a: Movements names a place
+  only to a reader with `locations.view`, each row still signed by its
+  places' ids: MC-3319.

@@ -48,23 +48,37 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
 
 /**
  * A movement as GET /v1/stock/movements lists it (#282): 王建国 shipping 24
- * of 维生素 D (60 粒), VITD-60, from Shelf A, lot NN-2410-07, with whatever
- * the case is about overridden. One builder for every spec that lists a
- * movement, so a field the API adds to a movement is added here once.
+ * of 维生素 D (60 粒), VITD-60, from Shelf A in the Main warehouse, lot
+ * NN-2410-07, with whatever the case is about overridden. One builder for
+ * every spec that lists a movement, so a field the API adds to a movement
+ * is added here once.
  */
 export function movement(over: Partial<Movement> = {}): Movement {
   return {
     id: 'movement-1',
+    variantId: 'variant-vitd-60',
+    productId: 'product-vitd',
     sku: 'VITD-60',
+    currentSku: 'VITD-60',
     productName: '维生素 D',
     variantName: '60 粒',
+    type: 'good',
+    unitOfMeasure: 'each',
     quantity: '24.0000',
     reason: 'shipment',
     reasonDetail: null,
     note: null,
+    fromLocationId: 'location-shelf-a',
     fromLocationName: 'Shelf A',
+    fromLocationCode: 'A',
+    fromLocationPath: ['Main warehouse'],
+    toLocationId: null,
     toLocationName: null,
+    toLocationCode: null,
+    toLocationPath: [],
+    lotId: 'lot-nn-2410-07',
     lotCode: 'NN-2410-07',
+    lotExpiresAt: '2027-10-31',
     actorName: '王建国',
     actorEmail: 'wang@example.com',
     createdAt: '2026-10-30T17:00:00.000Z',

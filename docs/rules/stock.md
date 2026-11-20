@@ -2,8 +2,9 @@
 
 What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
-a lot's trace, Where it stands, Reorder, what confirmed sales hold and
-what may be taken, as ADR-093's Inventory branch completed it. Each
+Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
+hold and what may be taken, as ADR-093's Inventory branch completed it
+and its Movements branch grows it. Each
 rule links the ADR that decided it, the test that proves it, the Help
 section where a person meets it, and the manual check that walks it by
 hand. Why a rule is so is in its ADR; how to do a task is in the
@@ -138,12 +139,6 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "sends the places above each place, its warehouse first, on Stock and Where it stands" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-312
-- **A movement names the document it was for only to a reader who may
-  see it:** the order it was received, shipped or returned on with
-  orders.view, the run with production.view (55a).
-  [ADR-093](../adr/0093-inventory-and-movements.md) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "names the order each movement was received or shipped on, for a reader who may see orders" ·
-  MC-305
 - **An export is the rows its list shows, with its filters, in the
   screen's words and the reader's language:** a status as Low, Out or
   Enough, a unit as "each", never a stored code; quantities and days
@@ -165,6 +160,39 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/inventory-page.test.tsx) "asks which delivery it is from the page’s Receive stock, once such an item is chosen" ·
   [Help](../../client/src/help/guides/en/inventory.md#receive-stock-receive) ·
   MC-310
+
+## Movements
+
+- **Movements list newest first by when each was recorded, then by
+  id,** each page following on with no gap and no repeat; movements
+  recorded together, as a shipment from two lots, keep one order on
+  every page.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--movements-a-log-filtered-in-the-address-a-stock-card-for-one-code) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists newest first by when each was recorded, then by id, and pages without repeating or skipping a row" ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists one order’s two movements of one quantity from two lots, each with its own lot, in one order on every page" ·
+  MC-306
+- **A movement names its places only to a reader who may see places,**
+  each by its path, its warehouse first; the rest get each place's id
+  alone, so a row still reads as in, out or between.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
+  [test](../../server/test/movements.e2e-spec.ts) "names no place to a reader without locations.view, each place’s id kept" ·
+  [test](../../client/src/inventory/describe-movement.test.ts) "signs by the ends’ ids for a reader who sees no place’s name" ·
+  MC-3319
+- **A movement names the document it was for only to a reader who may
+  see it:** the order it was received, shipped or returned on with
+  orders.view, the run with production.view (55a).
+  [ADR-093](../adr/0093-inventory-and-movements.md) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "names the order each movement was received or shipped on, for a reader who may see orders" ·
+  MC-305
+- **An order's movements are what was received, shipped and returned on
+  it,** a voided shipment's reversal among them, and only for a reader
+  who may see orders: the rest are refused, in their words, before
+  anything is read, since the answer alone would say which movements
+  belong to it.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists an order’s movements alone: a purchase’s receipts, a sale’s shipments, their voids and its returns" ·
+  [test](../../server/test/movements.e2e-spec.ts) "refuses an order’s movements to a reader without orders.view, on the list and its export"
 
 ## A lot's trace
 
