@@ -28,6 +28,9 @@ import { productTypeIcon, typeAfter } from './product-types';
  * its icon: on Items' All, where rows of every type sit together, an icon
  * that tells a kind is never alone (#548; the design language's Rows). On
  * a type's tab every row is that type, so nothing.
+ *
+ * `under`, a line under the grey one, as Movements' "was VITC-90" under a
+ * code changed since the row was recorded (ADR-093, R9).
  */
 export function NameAndCode({
   name,
@@ -37,6 +40,7 @@ export function NameAndCode({
   to,
   linkRef,
   withType,
+  under,
 }: {
   name: string;
   /** The grey line under the name: the code, or what the list says there. */
@@ -47,6 +51,7 @@ export function NameAndCode({
   /** The name's link, for a list that moves focus to it. */
   linkRef?: Ref<HTMLAnchorElement>;
   withType?: boolean;
+  under?: ReactNode;
 }) {
   const intl = useIntl();
 
@@ -92,6 +97,11 @@ export function NameAndCode({
           {code}
           {withType && typeAfter(type, intl)}
         </Typography>
+        {under && (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {under}
+          </Typography>
+        )}
       </Stack>
     </Stack>
   );

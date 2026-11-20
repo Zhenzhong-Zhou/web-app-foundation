@@ -259,7 +259,7 @@ test('narrows the ledger by reason', async ({ page, freshOrg }) => {
   // Unfiltered is recent-everything, not an empty screen asking for a filter.
   await expect(page.getByRole('row')).toHaveCount(3);
 
-  await page.getByLabel('Why').click();
+  await page.getByLabel('Reason').click();
   await page.getByRole('option', { name: 'transfer' }).click();
 
   const rows = page.getByRole('row');
@@ -267,12 +267,15 @@ test('narrows the ledger by reason', async ({ page, freshOrg }) => {
 
   /**
    * Direction is which location is set, not a column (ADR-023) — a transfer
-   * is the only movement with both, and the arrow is how the page says so.
+   * is the only movement with both, its From → to naming each on a line
+   * of its own (ADR-093, 82a).
    */
-  await expect(rows.nth(1)).toContainText('E2E Dock → E2E Shelf');
-  // Read without padding zeros (displayQuantity, #256), as its whole cell.
+  await expect(rows.nth(1)).toContainText('E2E Dock');
+  await expect(rows.nth(1)).toContainText('E2E Shelf');
+  // Read without padding zeros, with its unit (displayQuantity, #256), as
+  // its whole cell.
   await expect(
-    rows.nth(1).getByRole('cell', { name: '15', exact: true }),
+    rows.nth(1).getByRole('cell', { name: '15 each', exact: true }),
   ).toBeVisible();
 });
 
@@ -293,7 +296,9 @@ test('finds a transfer from either end', async ({ page, freshOrg }) => {
    * only one end would hide half of every transfer.
    */
   await page.getByLabel('Location').click();
-  await page.getByRole('option', { name: 'E2E To' }).click();
+  // Grouped by warehouse, as Stock's Location is (20a): a place at the
+  // top heads its own group, so its name reads twice, the choice last.
+  await page.getByRole('option', { name: 'E2E To' }).last().click();
 
   await expect(page.getByRole('row')).toHaveCount(2);
   await expect(page.getByRole('row').nth(1)).toContainText('transfer');

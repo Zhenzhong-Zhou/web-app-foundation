@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { type Location, useLocation, useSearchParams } from 'react-router-dom';
 
+import type { DayRange } from './date-range';
+
 /**
  * How one of a list's filters is kept in the address: read from it, and
  * written to it, `null` at the filter's default, which is left out.
@@ -45,6 +47,26 @@ export const day: AddressFilter<string | undefined> = {
       : undefined,
   write: (value) => value ?? null,
 };
+
+/**
+ * A list's date range as `DateRangeFilter` takes it (#505's 59): its two
+ * days read from the list's filters, by the keys the list keeps them
+ * under, and a range chosen written back as one address write, so the
+ * second day never starts from the address before the first.
+ */
+export function dayRangeProps<K extends string>(
+  values: { [key in K]?: string },
+  set: (changes: { [key in K]?: string }) => void,
+  keys: { from: K; to: K },
+): { value: DayRange; onChange: (range: DayRange) => void } {
+  return {
+    value: { from: values[keys.from], to: values[keys.to] },
+    onChange: (range) =>
+      set({ [keys.from]: range.from, [keys.to]: range.to } as {
+        [key in K]?: string;
+      }),
+  };
+}
 
 /** A record's id, such as a location's; whether the list has it is its own. */
 export const id: AddressFilter<string> = {

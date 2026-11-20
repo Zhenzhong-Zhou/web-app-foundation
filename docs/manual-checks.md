@@ -559,6 +559,29 @@ a second organization.
   minus. In 中文 the first and last lines read 期初结存 and 期末结存. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a and 96a)* Movements,
+  as the demo Owner at 1920. Every row reads When to the minute, the
+  item's name first with its code and type grey under it ("VITC-100 ·
+  Product"), "was VITC-90" under VITC-100's rows recorded before its code
+  changed, the change with its unit, the reason, From → to on two lines,
+  each place by its path and an end outside the warehouse in grey words
+  (supplier, customer, run, counted in, counted out), the lot linked with
+  its expiry under it, For linked to its order or run, and By.
+  SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. Choose
+  VITC-100 under Item: the Item column goes, In, Out and Balance replace
+  Change, the newest row's Balance is Stock's On hand for it, and the
+  address reads `?variantId=` with an id. Choose a When range: Opening,
+  In, Out and Closing above the table, Closing the Opening plus In less
+  Out. Choose Reason › shipment: Balance, Opening and Closing go, "Balance
+  counts every reason. Clear Reason to see it." with Clear Reason, which
+  brings them back. Press When: oldest first, `?sort=when&order=asc`.
+  Show all movements clears every filter at once, and Back then leaves
+  Movements. With nothing matching, the line names the filters on. At
+  390 px each movement is a card, the filters behind one Filters button
+  with the sort. As Fatima Haddad (Sales), there is no From → to column
+  and no Location filter, and a link with `?locationId=` reads every
+  place; as a role without `orders.view`, a link with `?orderId=` lists
+  every movement with no chip.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
@@ -3369,9 +3392,9 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3319** *(ADR-080)* A screen asks only for what its reader may
   read, and says why where a field cannot be filled. With the Network tab
   open, as Fatima Haddad (Sales): Inventory and Movements open without a
-  refused request and with no Location filter, and Movements names no
-  place, a dash where each row's places were, a receipt still signed +
-  and a move between two places unsigned; PO-DEMO-1 opens, and its
+  refused request and with no Location filter, and Movements has no
+  From → to column, a receipt still signed + and a move between two
+  places unsigned; PO-DEMO-1 opens, and its
   Edit's Deliver to keeps its site, greyed, with You can’t see the
   organization’s locations, so you can’t choose one here.; Authorize a
   return on SO-DEMO-2 says the same under Send back to, with where the
@@ -4920,9 +4943,9 @@ first.
 
 - **MC-R70** *(Movements naming an item by its SKU alone, with padding
   zeros, and who by email alone, #256)* As the demo Owner in 中文, on
-  库存变动: D3-1000-120's move of 40 to Richmond reads D3-1000-120 in
-  bold, then 维生素 D3 1000 IU，120 粒软胶囊, then its lot; its change
-  reads 40, not 40.0000; 操作人 reads 王建国 with their email beneath,
+  库存变动: D3-1000-120's move of 40 to Richmond reads 维生素 D3 1000
+  IU，120 粒软胶囊 in bold, D3-1000-120 grey under it, and its lot; its
+  change reads 40 个, not 40.0000; 操作人 reads 王建国 with their email beneath,
   whole on hover. Open D3-1000-120's Movements on an Inventory row: its
   title names the item beside the code (and the lot, for a lot's row),
   and its rows read their changes and who the same way. A member who has
@@ -7030,3 +7053,7 @@ first.
 - 2026-11-20: ADR-093's Movements branch, R30 (77a): every export writes
   a quantity without its padding zeros, `600` and not `600.0000`, money
   as stored: MC-1558 extended.
+- 2026-11-20: ADR-093's Movements branch, step 11: Movements as a log
+  in the address that reads as a stock card for one code, its rows the
+  name first, From → to by path, the lot and For linked, cards on a
+  phone: MC-320 added, MC-3319 and MC-R70 reworded.

@@ -46,3 +46,21 @@ export function movementActor(
     ? { name: movement.actorName, email: movement.actorEmail }
     : { name: movement.actorEmail, email: null };
 }
+
+/**
+ * Which of a movement's columns a list shows (ADR-093, 11a, 85a and 91a),
+ * as the server's `cardOf` reads the same filters: one code is a stock
+ * card, In, Out and the balance after each row; a reason or an order
+ * keeps In and Out alone; several items, the change. `places` is
+ * `locations.view`: without it no row has a place to name (96a).
+ */
+export interface MovementColumns {
+  figures: 'change' | 'inOut' | 'balance';
+  places: boolean;
+}
+
+/** How many heads `MovementHeads` draws, for a list's placeholder rows. */
+export function movementHeadCount(columns: MovementColumns): number {
+  const figures = { change: 1, inOut: 2, balance: 3 }[columns.figures];
+  return figures + (columns.places ? 5 : 4);
+}

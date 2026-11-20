@@ -225,6 +225,14 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists an order’s movements alone: a purchase’s receipts, a sale’s shipments, their voids and its returns" ·
   [test](../../server/test/movements.e2e-spec.ts) "refuses an order’s movements to a reader without orders.view, on the list and its export"
+- **A link's place or order that its reader may not use is ignored on
+  Movements,** as Stock's address is: a place without locations.view,
+  or one no stock can sit at, reads every place; an order without
+  orders.view, every movement, with no chip, so it is never asked.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "reads a place a reader may not see as Everywhere, never asking it" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "reads an order a reader may not see as every movement, with no chip" ·
+  MC-320
 
 ## A lot's trace
 

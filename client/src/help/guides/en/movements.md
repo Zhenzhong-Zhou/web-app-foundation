@@ -4,8 +4,8 @@ Movements are every change to a quantity, newest first: receipts, shipments, tra
 
 ## Find a movement {#find}
 
-1. Choose a period under **Recorded**, such as **This month**.
-2. Narrow it to one location, or to one reason under **Why**.
+1. Choose a period under **Period**, such as **This month**.
+2. Narrow it to one location, or to one reason under **Reason**.
 3. Press **Load more** to see older rows.
 
 Each row says when, the item and its lot, the change, where, why and by whom.

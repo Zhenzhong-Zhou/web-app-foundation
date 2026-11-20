@@ -4,7 +4,7 @@ Les mouvements sont toutes les variations de quantité, de la plus récente à l
 
 ## Trouver un mouvement {#find}
 
-1. Choisissez une période sous **Enregistré**, comme **Ce mois-ci**.
+1. Choisissez une période sous **Période**, comme **Ce mois-ci**.
 2. Limitez-la à un emplacement, ou à un motif sous **Motif**.
 3. Appuyez sur **Afficher plus** pour voir les lignes plus anciennes.
 

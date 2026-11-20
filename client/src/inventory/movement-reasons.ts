@@ -70,12 +70,20 @@ export function reasonDetailLabel(detail: string, intl: IntlShape): string {
 
 /**
  * The columns a list of movements shows, shared by the movements page and
- * a pile's history so the two read the same.
+ * a pile's history so the two read the same; In, Out and Balance a stock
+ * card's (ADR-093, the glossary's).
  */
 export const MOVEMENT_HEADINGS = defineMessages({
   when: { id: 'inventory.movements.when', defaultMessage: 'When' },
   item: { id: 'inventory.item', defaultMessage: 'Item' },
   change: { id: 'inventory.movements.change', defaultMessage: 'Change' },
+  in: { id: 'inventory.movements.in', defaultMessage: 'In' },
+  out: { id: 'inventory.movements.out', defaultMessage: 'Out' },
+  balance: { id: 'inventory.movements.balance', defaultMessage: 'Balance' },
+  reason: { id: 'inventory.movements.reason', defaultMessage: 'Reason' },
+  fromTo: { id: 'inventory.movements.fromTo', defaultMessage: 'From → to' },
+  lot: { id: 'inventory.lot', defaultMessage: 'Lot' },
+  for: { id: 'inventory.movements.for', defaultMessage: 'For' },
   where: { id: 'inventory.movements.where', defaultMessage: 'Where' },
   why: { id: 'inventory.why', defaultMessage: 'Why' },
   by: { id: 'inventory.movements.by', defaultMessage: 'By' },

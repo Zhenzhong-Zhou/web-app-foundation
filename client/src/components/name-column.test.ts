@@ -21,8 +21,6 @@ const NO_NAME: Record<string, string> = {
   '../settings/exchange-rates-page.tsx': 'a rate a day, by its day',
   '../production/production-orders-page.tsx':
     'runs by the day planned, the row’s Open its way in',
-  '../inventory/movements-page.tsx':
-    'a log by when, until Movements marks its item (ADR-093, 81a)',
 };
 
 /** Each header cell of a table's head, to the next cell. */
