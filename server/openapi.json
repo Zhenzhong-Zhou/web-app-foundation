@@ -16861,6 +16861,9 @@
               "null"
             ]
           },
+          "allExpired": {
+            "type": "boolean"
+          },
           "reorderPoint": {
             "type": [
               "string",
@@ -16921,6 +16924,7 @@
           "comingOn",
           "position",
           "expiresFirst",
+          "allExpired",
           "reorderPoint",
           "status",
           "needsCost",
@@ -18405,6 +18409,9 @@
               "null"
             ]
           },
+          "allExpired": {
+            "type": "boolean"
+          },
           "reorderPoint": {
             "type": [
               "string",
@@ -18516,6 +18523,7 @@
           "comingOn",
           "position",
           "expiresFirst",
+          "allExpired",
           "reorderPoint",
           "status",
           "source",

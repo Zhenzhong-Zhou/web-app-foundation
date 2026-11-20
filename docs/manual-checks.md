@@ -1669,8 +1669,9 @@ Paper is checked first because it must not change at all.
   within 30 days red (ELD-24A: "20 days left"), the date beside each; a
   lot two years off shows only its date. Quantities read "400 each".
   A code whose every unit on hand has expired reads "all expired" in
-  red, 全部已过期 in 中文, never "—"; one with nothing to expire keeps
-  "—" (#611).
+  red, 全部已过期 in 中文, never "—", though some of it sits at a place
+  not available, as Vitamin C's 48 in Quarantine; one with nothing to
+  expire keeps "—" (#611).
 - **MC-1530** Receive stock, Ship out or Correct the count on a lot within
   90 days: the list, its opened row and the counts all update without a
   reload. With Expiring soon pressed and none due, the list says no items
@@ -7240,3 +7241,6 @@ first.
   "→ sample" in grey and For names its recipient, a link with
   `partners.view` and "—" without; the export's To and For the same:
   MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, review 13: Expires first's
+  "all expired" counts an expired lot at a place not available too, as
+  the server says it: MC-1529 extended.

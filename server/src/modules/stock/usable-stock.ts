@@ -186,6 +186,35 @@ export function onHandByUse(
 }
 
 /**
+ * What has expired per item wherever it sits, places not available
+ * among them (#611; review 13), by the rule's own expiry test: Stock's
+ * Expires first says "all expired" when it is every unit on hand, though
+ * `expired` above counts the places available alone, which leaves a lot
+ * on a shelf held back out. Rows `variant_id, expired`, for the items in
+ * `variants` with any.
+ */
+export function expiredByItem(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select sl.variant_id, sum(sl.quantity) as expired
+    from stock_levels sl
+    join lots lt
+      on lt.id = sl.lot_id
+      and lt.organization_id = ${org}
+    where sl.organization_id = ${org}
+      and sl.variant_id in ${variants}
+      and sl.quantity > 0
+      and not ${notExpired(today)}
+    group by sl.variant_id
+  `;
+}
+
+/**
  * On hand per item at every place, usable or not, and the part of it at
  * places not available (ADR-042): onHandByUse's first half, and alone
  * what a list sorted by On hand reads (ADR-093, 29a) and what Movements'

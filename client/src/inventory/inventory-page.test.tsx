@@ -76,6 +76,7 @@ const CODE: StockCodeRow = {
   comingOn: null,
   position: '10.0000',
   expiresFirst: '2027-10-01',
+  allExpired: false,
   reorderPoint: '36.0000',
   status: 'low',
   needsCost: false,
@@ -1211,6 +1212,7 @@ describe('InventoryPage', () => {
         held: '0.0000',
         short: '0.0000',
         expiresFirst: null,
+        allExpired: true,
       },
       {
         ...CODE,
@@ -1232,6 +1234,30 @@ describe('InventoryPage', () => {
     expect(
       within(never.closest('tr') as HTMLElement).queryByText('all expired'),
     ).not.toBeInTheDocument();
+  });
+
+  // Review 13: every unit expired though some sit at a place not
+  // available, Vitamin C's 24 on the shelf and 48 in quarantine, where
+  // expired counts the shelf's 24 alone; the server says it.
+  it('says all expired where an expired lot sits at a place not available too', async () => {
+    answer([
+      {
+        ...CODE,
+        onHand: '72.0000',
+        usable: '0.0000',
+        notUsable: '72.0000',
+        expired: '24.0000',
+        unavailable: '48.0000',
+        held: '0.0000',
+        short: '0.0000',
+        expiresFirst: null,
+        allExpired: true,
+      },
+    ]);
+    renderAt('/inventory', ['stock.view']);
+
+    const row = (await screen.findByText('VITD-60 · Product')).closest('tr');
+    expect(within(row as HTMLElement).getByText('all expired')).toBeVisible();
   });
 
   // #638 (P1a): the count always, so a person can tell the list is whole.

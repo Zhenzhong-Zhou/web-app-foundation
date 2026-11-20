@@ -41,6 +41,7 @@ function standing(over: Partial<CodeStanding> = {}): CodeStanding {
     comingOn: null,
     position: '-20.0000',
     expiresFirst: null,
+    allExpired: false,
     reorderPoint: '96.0000',
     status: 'out',
     source: 'bought',

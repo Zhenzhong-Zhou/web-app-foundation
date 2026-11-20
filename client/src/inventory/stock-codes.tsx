@@ -40,7 +40,7 @@ import { SPANNING_ROW } from '../components/spanning-row';
 import { TableOrCards } from '../components/table-or-cards';
 import { api, withQuery } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
-import { isZero, toScaled } from '../lib/decimal';
+import { isZero } from '../lib/decimal';
 import { displayQuantity, formatDay, itemName, NO_VALUE } from '../lib/format';
 import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -654,18 +654,14 @@ function Free({ row, held = false }: { row: StockCodeRow; held?: boolean }) {
 /**
  * The soonest expiry of the usable stock, at a place that place's; where
  * every unit on hand has expired, "all expired", since "—" read as nothing
- * to expire (#611).
+ * to expire (#611): as the server says it, an expired lot at a place not
+ * available counted too, which `expired` leaves out (review 13).
  */
 function ExpiresFirst({ row, here }: { row: StockCodeRow; here: boolean }) {
   const intl = useIntl();
   const expiresAt = here ? (row.here?.expiresFirst ?? null) : row.expiresFirst;
-  const allExpired =
-    !here &&
-    !expiresAt &&
-    !isZero(row.expired) &&
-    toScaled(row.expired) === toScaled(row.onHand);
 
-  if (allExpired) {
+  if (!here && row.allExpired) {
     return (
       <Typography variant="body2" sx={{ color: 'error.main' }}>
         {intl.formatMessage({

@@ -67,9 +67,13 @@ file is kept is in the [README](README.md).
   MC-219 · MC-4204
 - **What expires first is the usable stock's soonest expiry:** a lot
   already expired, or at a place not available, is not it, and a code
-  with no lots has none.
+  with no lots has none. Where every unit on hand has expired, wherever
+  it sits, a place not available too, it reads "all expired", never "—".
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--a-row-per-code-opening-to-its-places-and-lots) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding" ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "says every unit on hand has expired, an expired lot at a place not available among them" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says all expired where every unit on hand has, and — where nothing expires" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says all expired where an expired lot sits at a place not available too" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-309 · MC-315
 

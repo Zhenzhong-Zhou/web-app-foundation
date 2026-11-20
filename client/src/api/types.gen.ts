@@ -1942,6 +1942,7 @@ export type StockCodeRow = {
   comingOn: string | null;
   position: string;
   expiresFirst: string | null;
+  allExpired: boolean;
   reorderPoint: string | null;
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   needsCost: boolean;
@@ -2280,6 +2281,7 @@ export type CodeStanding = {
   comingOn: string | null;
   position: string;
   expiresFirst: string | null;
+  allExpired: boolean;
   reorderPoint: string | null;
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   source: 'bought' | 'made' | null;
