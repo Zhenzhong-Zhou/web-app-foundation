@@ -52,7 +52,8 @@ expiry chips), **THE-0915** waiting for a cost (PO-DEMO-5), **PO-DEMO-4**
 partly received and mixing kilograms with bottles, run **CALM-RUN-01**
 released and **CALM-RUN-02** planned, **SO-DEMO-3** a draft started six
 days ago, **SO-DEMO-4** cancelled, **SO-DEMO-5** shipped with its invoice
-in draft and a closed RMA, **SO-DEMO-6** with a voided invoice and its full
+in draft and a closed RMA, its vitamin D 30 from each of two lots,
+**SO-DEMO-6** with a voided invoice and its full
 credit note, **PO-DEMO-6** with a line closed short, a discontinued product
 and a retired partner. Every state the redesigned screens draw (ADR-055) has
 one example among them.
@@ -123,10 +124,22 @@ holds 60 of its 70, Free 10, not short. Coming reads **ELDER-250**'s 48
 **VITC-90**: its first order, **PO-DEMO-8**, and its two receipts say
 VITC-90, and the rest of its ledger VITC-100, since 王建国 corrected the
 code once its first lots arrived. **D3-1000-120**'s **D3-C07**, 20 on Main's
-**Shelf**, has no expiry, so it lists after **D3-A11** (100) and **D3-B02**
-there. **MAGCAP**'s page lists **MAGCAP-240** first, out with 48 not usable
-at a place not available, then **MAGCAP-120**, low; the seed reads both
-back.
+**Shelf**, has no expiry, so it lists after **D3-A11** (70 received) and
+**D3-B02** there. **MAGCAP**'s page lists **MAGCAP-240** first, out with 48
+not usable at a place not available, then **MAGCAP-120**, low; the seed reads
+both back.
+
+For Movements' screens (ADR-093), the same: the seed reads each back and
+stops if one is gone. **SO-DEMO-5**'s 60 vitamin D left as 30 from
+**D3-A11** and 30 from **D3-B02**, two movements of one order and one
+quantity that only their lot tells apart (R13); the 48 of **VC-0301** and
+the 48 of **MAGCAP-240** were moved into Richmond's **Quarantine**;
+**THE-0915** is the lot waiting for a cost; and a confirmed order stands in
+each state of what has come or gone, #605's label: purchase orders
+**PO-DEMO-11** not received, **PO-DEMO-4** partly received, and
+**PO-DEMO-5** all received (**PO-DEMO-6** too, its short line counting as
+done), and sales **SO-DEMO-9** not shipped, **SO-DEMO-1** partly shipped and
+**SO-DEMO-6** all shipped.
 
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.

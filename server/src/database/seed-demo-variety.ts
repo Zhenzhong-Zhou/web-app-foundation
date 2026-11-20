@@ -149,11 +149,18 @@ export async function addVariety(
           : daysFromNow(lot.expiresInDays),
     };
 
-    await ordering.receive(order.id, lineOf(order, variantId), {
-      toLocationId,
-      quantity,
-      lot: expiring,
-    });
+    const movement = await ordering.receive(
+      order.id,
+      lineOf(order, variantId),
+      { toLocationId, quantity, lot: expiring },
+    );
+    return movement.lotId;
+  }
+
+  /** A lot a shipment takes by hand, from a receipt that made one. */
+  function picked(lotId: string | null, quantity: string) {
+    if (!lotId) throw new Error('The receipt made no lot to pick from');
+    return { lotId, quantity };
   }
 
   // Probiotics are kept cold, so the location tree has a third bin in use.
@@ -353,14 +360,23 @@ export async function addVariety(
   });
   await ordering.setStatus(stocking.id, 'confirmed');
 
-  await receive(stocking, vitaminD.variantId, '100', anchors.shelfId, {
-    code: 'D3-A11',
-    expiresInDays: 540,
-  });
-  await receive(stocking, vitaminD.variantId, '120', anchors.shelfId, {
-    code: 'D3-B02',
-    expiresInDays: 700,
-  });
+  // Received as 70 and 150, so SO-DEMO-5 below, taking 30 from each by hand,
+  // leaves D3-A11 at 40 and D3-B02 at 120 as they have always stood: an order
+  // shipped from two lots, two movements alike but for their lot (ADR-093, R13).
+  const vitaminDEarlier = await receive(
+    stocking,
+    vitaminD.variantId,
+    '70',
+    anchors.shelfId,
+    { code: 'D3-A11', expiresInDays: 540 },
+  );
+  const vitaminDLater = await receive(
+    stocking,
+    vitaminD.variantId,
+    '150',
+    anchors.shelfId,
+    { code: 'D3-B02', expiresInDays: 700 },
+  );
   // A lot with no expiry beside the two dated ones: its place lists it
   // after them (ADR-093, R2). The line's 240 are received all the same.
   await receive(stocking, vitaminD.variantId, '20', anchors.shelfId, {
@@ -523,7 +539,9 @@ export async function addVariety(
    * Shipped in full and closed, with its invoice drafted and not yet issued:
    * a draft has no number, so the numbered series the manual checks count
    * on is untouched. The elderberry comes from the lot that expires first,
-   * which leaves half of it on the shelf with 20 days to go.
+   * which leaves half of it on the shelf with 20 days to go. The vitamin D
+   * is picked by hand, 30 from each of its two lots, so Movements lists
+   * two movements of one order and one quantity told apart by their lot.
    */
   const shipped = await ordering.create({
     partnerId: anchors.secondCustomerId,
@@ -541,7 +559,11 @@ export async function addVariety(
     fromLocationId: anchors.shelfId,
     carrier: 'Purolator',
     lines: [
-      { lineId: lineOf(shipped, vitaminD.variantId), quantity: '60' },
+      {
+        lineId: lineOf(shipped, vitaminD.variantId),
+        quantity: '60',
+        lots: [picked(vitaminDEarlier, '30'), picked(vitaminDLater, '30')],
+      },
       { lineId: lineOf(shipped, omega.variantId), quantity: '36' },
       { lineId: lineOf(shipped, elderberry.variantId), quantity: '24' },
     ],
@@ -637,7 +659,7 @@ export async function addVariety(
     'CALM-RUN-01 released and CALM-RUN-02 planned, ' +
     `SO-DEMO-3 a draft started ${DRAFT_STARTED_DAYS_AGO} days ago, ` +
     'SO-DEMO-4 cancelled, SO-DEMO-5 shipped with a draft invoice and a ' +
-    'closed RMA, SO-DEMO-6 with a voided invoice, PO-DEMO-6 closed short; ' +
+    'closed RMA, its vitamin D from two lots, SO-DEMO-6 with a voided invoice, PO-DEMO-6 closed short; ' +
     'ZINC-60 discontinued, Old Mill Herbs retired; ' +
     (notSet
       ? 'English names kept on D3-1000-120 (a copy) and CALM-90CT (it differs), for choosing the language items are named in'
