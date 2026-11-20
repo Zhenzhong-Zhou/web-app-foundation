@@ -36,6 +36,11 @@ import { SortPressed } from './sort-pressed';
 interface Shape {
   /** The table as wide as its box, or narrower. */
   fits: boolean;
+  /**
+   * The name's column, counted from 1: the one marked `NAME_COLUMN`, else
+   * the first, or the one after a tick box (81a).
+   */
+  name: number;
   /** The tick box's width, where it comes before the name; else null. */
   tick: number | null;
   /** The columns pinned at the start: the name, with a tick box before it. */
@@ -50,10 +55,18 @@ interface Shape {
   head: number;
 }
 
-const AT_REST: Shape = { fits: true, tick: null, start: 0, end: 0, head: 0 };
+const AT_REST: Shape = {
+  fits: true,
+  name: 1,
+  tick: null,
+  start: 0,
+  end: 0,
+  head: 0,
+};
 
 const same = (a: Shape, b: Shape) =>
   a.fits === b.fits &&
+  a.name === b.name &&
   a.tick === b.tick &&
   a.start === b.start &&
   a.end === b.end &&
@@ -85,10 +98,13 @@ const NOTHING_UNDER: Under = { start: false, end: false };
  * - **Too wide for its box,** at any width, the box scrolls sideways and
  *   the header goes with the page: a header kept in step by script would
  *   be a copy (E3). The box takes focus, a region named "{table}, scrolls
- *   sideways", and the name column stays pinned at the start (E10b): the
- *   first column, or the tick box and the name after it. A list's row
- *   actions, its last column marked `ACTIONS_COLUMN`, stay pinned at the
- *   end while the two sides take no more than half the box (E12a). Each
+ *   sideways", and the name column stays pinned at the start (E10b),
+ *   wherever it stands: the column marked `NAME_COLUMN`, a column before
+ *   it passing under it as the box scrolls, as Movements' When (81a); with
+ *   none marked, the first column; a tick box just before the name pinned
+ *   with it. A list's row actions, its last column marked
+ *   `ACTIONS_COLUMN`, stay pinned at the end while the two sides take no
+ *   more than half the box (E12a). Each
  *   side's edge shows only while columns lie under it, and the box's
  *   scroll padding is the pinned sides' widths, so a control reached by
  *   Tab or Shift+Tab is scrolled wholly clear of them.
@@ -141,13 +157,15 @@ export function ListTable({
     let narrowest = 0;
     const measure = () => {
       const head = element.tHead;
-      const cells = head?.rows[0]?.cells;
-      const first = cells?.[0];
-      const tick = first?.classList.contains(tableCellClasses.paddingCheckbox)
-        ? first
-        : undefined;
-      const name = cells?.[tick ? 1 : 0];
-      const last = cells?.[cells.length - 1];
+      const cells = [...(head?.rows[0]?.cells ?? [])];
+      const ticks = (cell?: Element) =>
+        !!cell?.classList.contains(tableCellClasses.paddingCheckbox);
+      // The name marked, else the first column or the one after a tick box.
+      const marked = cells.findIndex((cell) => cell.hasAttribute('data-name'));
+      const at = marked >= 0 ? marked : ticks(cells[0]) ? 1 : 0;
+      const name = cells[at];
+      const tick = ticks(cells[at - 1]) ? cells[at - 1] : undefined;
+      const last = cells.at(-1);
       const width = (cell?: Element) =>
         cell?.getBoundingClientRect().width ?? 0;
       const start = width(tick) + width(name);
@@ -169,6 +187,7 @@ export function ListTable({
         : element.offsetWidth;
       const next: Shape = {
         fits: own <= frame.clientWidth + 1,
+        name: at + 1,
         // Guard 1 (E12a): the actions pinned while the two sides take no
         // more than half the box, as it is wide now, never as it scrolls.
         end: actions && start + actions <= frame.clientWidth / 2 ? actions : 0,
@@ -297,7 +316,7 @@ export function ListTable({
           }),
         } as CSSProperties
       }
-      sx={(theme) => frame(theme, sideways, stuck)}
+      sx={(theme) => frame(theme, shape.name, sideways, stuck)}
     >
       {shape.fits && <Box ref={top} aria-hidden sx={SENTINEL.top} />}
       <Table ref={tableRef} aria-label={label} {...table}>
@@ -349,8 +368,8 @@ const NAME_LEAST = rem(320);
 /** The header row's cells. */
 const HEAD = '& > table > thead > tr > th';
 
-/** A row's first or second cell from the start, or its last. */
-type Column = 1 | 2 | 'last';
+/** A row's cell, counted from 1 from the start, or its last. */
+type Column = number | 'last';
 
 /**
  * A column's cells in the head or the body; a cell spanning more is none,
@@ -394,6 +413,15 @@ const pinned = (
   };
 };
 
+/** The name's column pinned, its header keeping the least width. */
+const withLeast = (styles: ReturnType<typeof pinned>, name: number) => ({
+  ...styles,
+  [cells('thead', name)]: {
+    ...styles[cells('thead', name)],
+    minWidth: NAME_LEAST,
+  },
+});
+
 /**
  * A pinned column's edge, on its head and body cells, on the side columns
  * pass under: the name's right, the row's actions' left.
@@ -421,11 +449,17 @@ const edge = (theme: Theme, column: Column, side: 'left' | 'right') => {
 };
 
 /**
- * The box's styles. The stuck header's and the pinned columns' are built
- * only while they apply, as an order's held Total is: a component test's
- * default theme has none of the app's surface tokens.
+ * The box's styles, the name pinned in its column, `name`. The stuck
+ * header's and the pinned columns' are built only while they apply, as an
+ * order's held Total is: a component test's default theme has none of the
+ * app's surface tokens.
  */
-const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
+const frame = (
+  theme: Theme,
+  name: number,
+  sideways: boolean,
+  stuck: boolean,
+) => {
   const palette = paletteOf(theme);
   return {
     position: 'relative',
@@ -470,21 +504,15 @@ const frame = (theme: Theme, sideways: boolean, stuck: boolean) => {
     },
     ...(sideways && {
       '&:not([data-fits])': {
-        ...pinned(theme, 1, { insetInlineStart: '0px' }),
-        // The name pinned keeps a least width (NAME_LEAST).
-        '&:not([data-tick])': { [cells('thead', 1)]: { minWidth: NAME_LEAST } },
-        '&[data-tick]': {
-          ...pinned(theme, 2, { insetInlineStart: 'var(--pin-start)' }),
-          [cells('thead', 2)]: {
-            ...pinned(theme, 2, { insetInlineStart: 'var(--pin-start)' })[
-              cells('thead', 2)
-            ],
-            minWidth: NAME_LEAST,
-          },
-        },
+        // The name pinned past the tick box's width, 0 without one, and
+        // keeping a least width (NAME_LEAST).
+        ...withLeast(
+          pinned(theme, name, { insetInlineStart: 'var(--pin-start)' }),
+          name,
+        ),
+        '&[data-tick]': pinned(theme, name - 1, { insetInlineStart: '0px' }),
         '&[data-end]': pinned(theme, 'last', { insetInlineEnd: '0px' }),
-        '&[data-under-start]:not([data-tick])': edge(theme, 1, 'right'),
-        '&[data-under-start][data-tick]': edge(theme, 2, 'right'),
+        '&[data-under-start]': edge(theme, name, 'right'),
         '&[data-under-end]': edge(theme, 'last', 'left'),
       },
     }),

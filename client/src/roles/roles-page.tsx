@@ -23,6 +23,7 @@ import type { Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -255,7 +256,7 @@ function RoleSection({
       <ListTable label={title} aria-labelledby={headingId}>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ width: '30%' }}>
+            <TableCell {...NAME_COLUMN} sx={{ width: '30%' }}>
               {intl.formatMessage({
                 id: 'roles.column.role',
                 defaultMessage: 'Role',

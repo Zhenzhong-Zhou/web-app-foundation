@@ -18,6 +18,7 @@ import type { PriceList } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -109,7 +110,7 @@ export function PriceListsPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell {...NAME_COLUMN}>
                   {intl.formatMessage({
                     id: 'common.name',
                     defaultMessage: 'Name',

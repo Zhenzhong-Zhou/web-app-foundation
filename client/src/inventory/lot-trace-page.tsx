@@ -29,6 +29,7 @@ import type { LotMatch, LotTrace } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { LotCostPanel } from '../costs/lot-cost-panel';
@@ -165,7 +166,7 @@ export function LotSearchPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell {...NAME_COLUMN}>
                   {intl.formatMessage({
                     id: 'inventory.lot',
                     defaultMessage: 'Lot',

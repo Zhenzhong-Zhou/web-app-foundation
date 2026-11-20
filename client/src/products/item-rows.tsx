@@ -326,6 +326,7 @@ export function ItemTable({
             </TableCell>
           )}
           <SortHeader
+            name
             label={intl.formatMessage({
               id: 'common.name',
               defaultMessage: 'Name',

@@ -196,6 +196,7 @@ export function StockCodes({
           <TableHead>
             <TableRow>
               <SortHeader
+                name
                 label={intl.formatMessage(HEADS.item)}
                 {...header('name')}
                 atRest

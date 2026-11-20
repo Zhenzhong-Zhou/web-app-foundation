@@ -22,6 +22,7 @@ import { EmptyState } from '../components/empty-state';
 import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -181,7 +182,7 @@ export function LicencesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell {...NAME_COLUMN}>
                   {intl.formatMessage({
                     id: 'invoices.number',
                     defaultMessage: 'Number',

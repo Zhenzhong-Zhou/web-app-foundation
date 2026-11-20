@@ -38,6 +38,7 @@ import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
 import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
@@ -1162,7 +1163,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                           />
                         </TableCell>
                       )}
-                      <TableCell>
+                      <TableCell {...NAME_COLUMN}>
                         {intl.formatMessage({
                           id: 'inventory.item',
                           defaultMessage: 'Item',

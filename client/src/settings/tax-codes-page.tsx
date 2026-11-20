@@ -18,6 +18,7 @@ import { useCan } from '../auth/permissions';
 import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -108,7 +109,7 @@ export function TaxCodesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell {...NAME_COLUMN}>
                   {intl.formatMessage({
                     id: 'common.name',
                     defaultMessage: 'Name',

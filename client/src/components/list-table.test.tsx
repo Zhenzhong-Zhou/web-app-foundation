@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { themeFor } from '../theme';
 import { ACTIONS_COLUMN } from './actions-column';
 import { ListTable } from './list-table';
+import { NAME_COLUMN } from './name-column';
 import { NUMBER_COLUMN } from './number-column';
 import { SortHeader } from './sort-header';
 import { SPANNING_ROW } from './spanning-row';
@@ -83,6 +84,32 @@ function Stock({
               10 left · reorder at 36
             </TableCell>
             <TableCell data-testid="under-actions" />
+          </TableRow>
+        </TableBody>
+      </ListTable>
+    </ThemeProvider>
+  );
+}
+
+/** Movements' shape: When first, the item's name marked second (81a). */
+function Movements({ marked = true }: { marked?: boolean }) {
+  return (
+    <ThemeProvider theme={themeFor('en')}>
+      <ListTable label="Movements" size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>When</TableCell>
+            <TableCell {...(marked && NAME_COLUMN)}>Item</TableCell>
+            <TableCell {...NUMBER_COLUMN}>Change</TableCell>
+            <TableCell>Reason</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableCell>2 hours ago</TableCell>
+            <TableCell>Vitamin C 500 mg</TableCell>
+            <TableCell align="right">+48</TableCell>
+            <TableCell>Received</TableCell>
           </TableRow>
         </TableBody>
       </ListTable>
@@ -169,6 +196,45 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
     );
     expect(positionOf(screen.getByText('Vitamin C 500 mg'))).toBe('sticky');
     expect(positionOf(screen.getByText('Shelf A2'))).not.toBe('sticky');
+  });
+
+  describe('too wide, the name marked pinned wherever it stands (81a)', () => {
+    it('pins the name, the column before it passing under it', () => {
+      widths(800, 1100);
+      cellWidths(150);
+      const scrollLeft = vi.spyOn(Element.prototype, 'scrollLeft', 'get');
+      render(<Movements />);
+      const region = screen.getByRole('region', {
+        name: 'Movements, scrolls sideways',
+      });
+
+      const item = screen.getByRole('columnheader', { name: 'Item' });
+      const name = screen.getByText('Vitamin C 500 mg');
+      expect(positionOf(item)).toBe('sticky');
+      expect(positionOf(name)).toBe('sticky');
+      expect(getComputedStyle(item).minWidth).toBe('320px');
+      expect(
+        positionOf(screen.getByRole('columnheader', { name: 'When' })),
+      ).not.toBe('sticky');
+      expect(positionOf(screen.getByText('2 hours ago'))).not.toBe('sticky');
+      expect(positionOf(screen.getByText('Received'))).not.toBe('sticky');
+      expect(region).toHaveStyle({ scrollPaddingInlineStart: '150px' });
+
+      // Scrolled, When under it: the name's edge shows.
+      scrollLeft.mockReturnValue(100);
+      fireEvent.scroll(region);
+      expect(getComputedStyle(name).boxShadow.startsWith('inset')).toBe(true);
+    });
+
+    it('with none marked, pins the first column, as before', () => {
+      widths(800, 1100);
+      render(<Movements marked={false} />);
+
+      expect(positionOf(screen.getByText('2 hours ago'))).toBe('sticky');
+      expect(positionOf(screen.getByText('Vitamin C 500 mg'))).not.toBe(
+        'sticky',
+      );
+    });
   });
 
   describe('too wide, its row actions pinned at the end (E12a)', () => {

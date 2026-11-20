@@ -22,6 +22,7 @@ import type { Invitation, Role } from '../api/types.gen';
 import { ActionsHeader } from '../components/actions-header';
 import { DialogFooter } from '../components/dialog-footer';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -171,7 +172,7 @@ export function InvitedSection({
           >
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell {...NAME_COLUMN}>
                   {intl.formatMessage({
                     id: 'members.invited.person',
                     defaultMessage: 'Person',

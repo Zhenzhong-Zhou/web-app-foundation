@@ -80,6 +80,7 @@ export function StockLots({
           <TableHead>
             <TableRow>
               <SortHeader
+                name
                 label={intl.formatMessage(HEADS.item)}
                 {...header('item')}
                 atRest

@@ -21,6 +21,7 @@ import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -173,7 +174,7 @@ export function PartnersPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell {...NAME_COLUMN}>
                   {intl.formatMessage({
                     id: 'common.name',
                     defaultMessage: 'Name',
