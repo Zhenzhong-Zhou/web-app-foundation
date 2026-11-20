@@ -15,7 +15,12 @@ import { useIntl } from 'react-intl';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { WhomToAskRead } from '../account/whom-to-ask';
-import type { Movement, MovementPage, OrderDetail } from '../api/types.gen';
+import type {
+  LotTrace,
+  Movement,
+  MovementPage,
+  OrderDetail,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
@@ -197,10 +202,16 @@ export function MovementsPage() {
   const rows = list.entries;
   const period = list.first?.period ?? null;
 
-  // The chips' names, from the rows; the order's own read when none is
-  // listed, as Stock names its item (ADR-093, R24).
-  const lotCode =
+  // The chips' names, from the rows; the lot's and the order's own read
+  // when none is listed, as Stock names its item (ADR-093, R24; review
+  // 31): the lot's from its trace, which stock.view reads as Movements.
+  const listedLot =
     rows?.find((row) => row.lotId === lotId && row.lotCode)?.lotCode ?? null;
+  const readLot =
+    useResource<LotTrace>(
+      lotId && rows?.length === 0 ? `/stock/lots/${lotId}/trace` : null,
+    ).data?.lot.code ?? null;
+  const lotCode = listedLot ?? readLot;
   const listedOrder =
     rows?.find((row) => row.document?.id === orderId)?.document?.number ?? null;
   const readOrder =

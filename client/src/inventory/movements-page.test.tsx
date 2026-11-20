@@ -450,6 +450,27 @@ describe('MovementsPage', () => {
     ).toHaveLength(2);
   });
 
+  // Review 31: a lot with no movements in range keeps its code, read
+  // from its trace, as an order's number is read from the order.
+  it('names a lot no row carries, on its chip and in what no result names', async () => {
+    answer([]);
+    server.use(
+      http.get(`/api/v1/stock/lots/${LOT}/trace`, () =>
+        HttpResponse.json({ lot: { id: LOT, code: 'VC-0302' } }),
+      ),
+    );
+    renderAt(`/movements?lotId=${LOT}&from=2026-10-01`);
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Remove filter: Lot: VC-0302',
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/^No movements match/)).toHaveTextContent(
+      'No movements match: VC-0302 and Oct 1, 2026–.',
+    );
+  });
+
   // #473's last line (P2a): Back after Show 25 more reads the pages shown
   // again, focus on the link followed from its row.
   it('finds the rows shown and the link left by on Back after Show 25 more', async () => {

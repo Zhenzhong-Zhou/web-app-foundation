@@ -657,7 +657,9 @@ a second organization.
   counts every reason. Clear Reason to see it." with Clear Reason, which
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves
-  Movements. With nothing matching, the line names the filters on. At
+  Movements. With nothing matching, the line names the filters on: a
+  lot's Movements with a When range it has no movement in keeps "Lot:"
+  and its code on the chip and names the code in the line. At
   390 px each movement is a card, the filters behind one Filters button
   with the sort. As Fatima Haddad (Sales), there is no From → to column
   and no Location filter, and a link with `?locationId=` reads every
@@ -7244,3 +7246,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, review 13: Expires first's
   "all expired" counts an expired lot at a place not available too, as
   the server says it: MC-1529 extended.
+- 2026-11-20: ADR-093's Movements branch, review 31: a lot chosen with
+  no movement listed keeps its code on its chip and in the no-result
+  line: MC-320 extended.
