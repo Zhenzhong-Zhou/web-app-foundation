@@ -1947,7 +1947,9 @@ Paper is checked first because it must not change at all.
   tinted under the pointer is tinted under the name too. Close Help on
   Reorder: the table fits again, and its header stays as the page
   scrolls (MC-1567). In French and Chinese the box's name is in that
-  language.
+  language. On any list too wide, Orders or Members on a tablet among
+  them, Tab along a row: a link or button left half past the box's edge
+  scrolls wholly into view, clear of the pinned name and Actions (#642).
 - **MC-1569** *(ADR-090, amended November 2026, #632)* Sorting from a
   header that stays. In a window 1920 × 1080, on Inventory's Stock,
   scroll down until the header stays under the top bar, then press On
@@ -6950,3 +6952,6 @@ first.
   the end of a table too wide while it and the name take no more than
   half the box, an edge on each side only while columns lie under it:
   MC-1575 added.
+- 2026-11-20: ADR-093's Movements branch, #642: every list too wide for
+  its box brings a control focused wholly into view, as Stock and Reorder
+  did: MC-1568.

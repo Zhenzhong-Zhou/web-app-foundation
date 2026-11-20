@@ -20,7 +20,6 @@ import { TableOrCards } from '../components/table-or-cards';
 import type { StockLotSort } from '../lib/api-names';
 import { itemName, NO_VALUE } from '../lib/format';
 import type { SortOrder } from '../lib/use-list-sort';
-import { wholeOnFocus } from '../lib/whole-on-focus';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { EmptiedLine } from './emptied-line';
@@ -74,7 +73,6 @@ export function StockLots({
             id: 'inventory.tab.stock',
             defaultMessage: 'Stock',
           })}
-          onFocus={wholeOnFocus}
           size="small"
         >
           <TableHead>

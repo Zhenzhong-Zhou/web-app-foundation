@@ -55,7 +55,6 @@ import { oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { useListSort, withSort } from '../lib/use-list-sort';
 import { useResource } from '../lib/use-resource';
-import { wholeOnFocus } from '../lib/whole-on-focus';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
 import { NameAndCode } from '../products/name-and-code';
@@ -1132,7 +1131,6 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                     id: 'inventory.tab.reorder',
                     defaultMessage: 'Reorder',
                   })}
-                  onFocus={wholeOnFocus}
                   size="small"
                 >
                   <TableHead>

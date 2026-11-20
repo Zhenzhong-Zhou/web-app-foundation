@@ -8,7 +8,7 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { themeFor } from '../theme';
 import { ACTIONS_COLUMN } from './actions-column';
@@ -149,6 +149,49 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
     expect(table.parentElement).not.toHaveAttribute('tabindex');
     expect(positionOf(screen.getByText('Vitamin C 500 mg'))).not.toBe('sticky');
+  });
+
+  // Built once, the data attributes deciding (#642): the class does not
+  // change as the box turns sideways or the header sticks.
+  it('keeps one class whether it fits or is too wide', () => {
+    widths(1000, 1000);
+    const { unmount } = render(<Stock />);
+    const fitting = screen.getByRole('table', { name: 'Stock' }).parentElement!
+      .className;
+    unmount();
+
+    widths(800, 1100);
+    render(<Stock />);
+
+    expect(screen.getByRole('region').className).toBe(fitting);
+  });
+
+  // A browser scrolls a focused control into its box only when it is
+  // wholly out of it; too wide, the box brings one half past its edge in
+  // whole, for every list (#642).
+  it('too wide, brings a control focused wholly into its box', () => {
+    // jsdom has none.
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    onTestFinished(() => {
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    });
+    const button = () =>
+      screen.getByRole('button', { name: 'Actions for Vitamin C 500 mg' });
+
+    widths(1000, 1000);
+    const { unmount } = render(<Stock />);
+    fireEvent.focus(button());
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    unmount();
+
+    widths(800, 1100);
+    render(<Stock />);
+    fireEvent.focus(button());
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+    });
   });
 
   it('too wide, is a named region with a tab stop, its name pinned', () => {

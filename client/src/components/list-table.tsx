@@ -8,7 +8,6 @@ import {
 import type { Theme } from '@mui/material/styles';
 import {
   type CSSProperties,
-  type FocusEventHandler,
   type ReactNode,
   useCallback,
   useEffect,
@@ -23,6 +22,7 @@ import {
   STUCK_HEADER,
   STUCK_HEADER_VAR,
 } from '../layout/use-bar-height';
+import { wholeOnFocus } from '../lib/whole-on-focus';
 import { CUT_FADE, cutEdge } from '../theme/cut-edge';
 import { HEADER_STAYS, HEADER_STAYS_QUERY } from '../theme/media';
 import { paletteOf } from '../theme/palette-of';
@@ -107,7 +107,9 @@ const NOTHING_UNDER: Under = { start: false, end: false };
  *   more than half the box (E12a). Each
  *   side's edge shows only while columns lie under it, and the box's
  *   scroll padding is the pinned sides' widths, so a control reached by
- *   Tab or Shift+Tab is scrolled wholly clear of them.
+ *   Tab or Shift+Tab is scrolled wholly clear of them, and wholly into
+ *   the box where a browser left it half past an edge (`wholeOnFocus`,
+ *   #642).
  *
  * Whether it fits is measured (a `ResizeObserver` on the box and the
  * table); when the header sticks is CSS media queries (#567), and once
@@ -117,13 +119,10 @@ const NOTHING_UNDER: Under = { start: false, end: false };
  */
 export function ListTable({
   label,
-  onFocus,
   children,
   ...table
 }: {
   label: string;
-  /** On the box, as Stock's and Reorder's `wholeOnFocus`. */
-  onFocus?: FocusEventHandler<HTMLDivElement>;
   children: ReactNode;
 } & Omit<TableProps, 'aria-label' | 'children'>) {
   const intl = useIntl();
@@ -287,7 +286,7 @@ export function ListTable({
   return (
     <TableContainer
       ref={box}
-      onFocus={onFocus}
+      onFocus={sideways ? wholeOnFocus : undefined}
       data-fits={shape.fits || undefined}
       data-stuck={stuck || undefined}
       data-tick={(sideways && shape.tick !== null) || undefined}
@@ -316,7 +315,7 @@ export function ListTable({
           }),
         } as CSSProperties
       }
-      sx={(theme) => frame(theme, shape.name, sideways, stuck)}
+      sx={(theme) => frame(theme, shape.name)}
     >
       {shape.fits && <Box ref={top} aria-hidden sx={SENTINEL.top} />}
       <Table ref={tableRef} aria-label={label} {...table}>
@@ -449,18 +448,16 @@ const edge = (theme: Theme, column: Column, side: 'left' | 'right') => {
 };
 
 /**
- * The box's styles, the name pinned in its column, `name`. The stuck
- * header's and the pinned columns' are built only while they apply, as an
- * order's held Total is: a component test's default theme has none of the
- * app's surface tokens.
+ * The box's styles, the name pinned in its column, `name`: built once for
+ * a theme, the box's data attributes deciding which apply (#642), so its
+ * class stays as the header sticks or the box turns sideways. The stuck
+ * header's line and shadow and the pinned columns' edges are the app's
+ * surface tokens; MUI's own theme, which a page's component test renders
+ * with, has none, and draws the box without them.
  */
-const frame = (
-  theme: Theme,
-  name: number,
-  sideways: boolean,
-  stuck: boolean,
-) => {
+const frame = (theme: Theme, name: number) => {
   const palette = paletteOf(theme);
+  const surfaces = 'surface' in palette;
   return {
     position: 'relative',
     // A number column (NUMBER_COLUMN) as wide as its figures need.
@@ -473,7 +470,7 @@ const frame = (
           top: BAR_HEIGHT_VAR,
           zIndex: 2,
         },
-        ...(stuck && {
+        ...(surfaces && {
           '&[data-stuck]': {
             [HEAD]: {
               // Its own controls give the stuck header's share of the one
@@ -502,19 +499,19 @@ const frame = (
         }),
       },
     },
-    ...(sideways && {
-      '&:not([data-fits])': {
-        // The name pinned past the tick box's width, 0 without one, and
-        // keeping a least width (NAME_LEAST).
-        ...withLeast(
-          pinned(theme, name, { insetInlineStart: 'var(--pin-start)' }),
-          name,
-        ),
-        '&[data-tick]': pinned(theme, name - 1, { insetInlineStart: '0px' }),
-        '&[data-end]': pinned(theme, 'last', { insetInlineEnd: '0px' }),
+    '&:not([data-fits])': {
+      // The name pinned past the tick box's width, 0 without one, and
+      // keeping a least width (NAME_LEAST).
+      ...withLeast(
+        pinned(theme, name, { insetInlineStart: 'var(--pin-start)' }),
+        name,
+      ),
+      '&[data-tick]': pinned(theme, name - 1, { insetInlineStart: '0px' }),
+      '&[data-end]': pinned(theme, 'last', { insetInlineEnd: '0px' }),
+      ...(surfaces && {
         '&[data-under-start]': edge(theme, name, 'right'),
         '&[data-under-end]': edge(theme, 'last', 'left'),
-      },
-    }),
+      }),
+    },
   } as const;
 };

@@ -46,7 +46,6 @@ import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { useOpenRows } from '../lib/use-open-rows';
-import { wholeOnFocus } from '../lib/whole-on-focus';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { WIDE_ONLY } from '../theme/media';
@@ -190,7 +189,6 @@ export function StockCodes({
             id: 'inventory.tab.stock',
             defaultMessage: 'Stock',
           })}
-          onFocus={wholeOnFocus}
           size="small"
         >
           <TableHead>
