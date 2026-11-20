@@ -639,7 +639,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4 and 11; 126)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4, 11 and 22; 126)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -682,7 +682,8 @@ a second organization.
   Out and Closing above the table, Closing the Opening plus In less Out,
   and the field and a chip, "When: Nov 1 – 20, 2026", the year once,
   show the days, the chip's × clearing them; in Français « 1–20 nov.
-  2026 », in 中文 Intl's "2026/11/1 – 2026/11/20". Choose Last month:
+  2026 », in 中文 Intl's "2026/11/1 – 2026/11/20", and Choose dates…'s
+  two fields 起始日 and 结束日, never 自 … 起. Choose Last month:
   no row, "No movements match: …" with Show all movements. Choose
   dates… opens a panel titled Choose dates: From and To, typed or
   picked, "Both days are included. Leave From empty for from the start,
@@ -711,7 +712,9 @@ a second organization.
   390 px each movement is a card, a move counted in neither in its row's
   words, the filters behind one Filters button
   with the sort, When the same list there, Choose dates… opening the two
-  dates full width; a lot's Movements with Reason and a When range chosen
+  dates full width; on the item's page at 390 px, Latest movements'
+  "Richmond warehouse › Quarantine (QUAR)" wraps on its card, never
+  clipped at its edge; a lot's Movements with Reason and a When range chosen
   there: the sheet's Clear empties Reason and When and keeps the Lot
   chip. As Fatima Haddad (Sales), there is no From → to column
   and no Location filter, one line above the list saying "Warehouses,
@@ -7326,3 +7329,7 @@ first.
   sheet keeps Clear and Done in a footer that stays as its fields
   scroll, and a field that grows across a row no longer leaves a blank
   band in the sheet: MC-209 extended.
+- 2026-11-20: ADR-093's Movements branch, review 22 (S16, S19): a
+  long path in the item's Latest movements wraps on a phone's card,
+  and Choose dates…'s fields read 起始日 and 结束日 in 中文, each now
+  held by a test: MC-320 extended.

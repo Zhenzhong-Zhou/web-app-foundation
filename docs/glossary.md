@@ -127,6 +127,7 @@ as the catalogues word it.
 | Opening balance | Solde d’ouverture | 期初结存 | A stock card's balance at its date range's start. |
 | Closing balance | Solde de clôture | 期末结存 | A stock card's balance at its date range's end: the opening, plus In, less Out. |
 | When: Today / This week / Last 30 days / Choose dates… / Any time | Quand : Aujourd’hui / Cette semaine / Les 30 derniers jours / Choisir les dates… / N’importe quand | 时间：今天 / 本周 / 最近 30 天 / 选择日期… / 不限时间 | Movements' When, one menu, with This month, Last month and This year as the other lists' Period says them; each period with its days beside it, one that holds today ending today; Choose dates… opens From and To with Clear and Apply (ADR-093, review 1). Any time, where the other lists' Period keeps Any date. |
+| From / To (Choose dates…) | Du / Au | 起始日 / 结束日 | Choose dates…'s two fields, each a day, both included (ADR-093, review 1). A field's name, never a sentence around it: not 自 … 起 or 截至 … (review 22, S19). |
 | was / Recorded as | anciennement / Enregistré sous | 原编码 | The code a movement was recorded under, where it differs from today's: a row's "was VITC-90", « anciennement VITC-90 », 原编码 VITC-90, and its export's column beside Code (ADR-093, review 54). |
 | Backordered | En rupture | 缺货待发 | |
 | Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as Usable's opposite. |

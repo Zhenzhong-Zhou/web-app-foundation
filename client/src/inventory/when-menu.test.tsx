@@ -123,6 +123,30 @@ describe('WhenMenu', () => {
     expect(when()).toHaveTextContent(said);
   });
 
+  // Review 22, S19: in Chinese the two fields are the glossary's From and
+  // To, 起始日 and 结束日, never a sentence around the field's name, as
+  // "自 时间 起" and "截至 时间" read.
+  it('names From and To in the glossary’s words in Chinese', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      render(<Harness />, { wrapper: TestProviders });
+
+      // The catalogue arrives after the first render.
+      await user.click(await screen.findByRole('combobox', { name: /^When/ }));
+      await user.click(
+        await screen.findByRole('option', { name: '选择日期…' }),
+      );
+
+      const panel = await screen.findByRole('dialog', { name: '选择日期' });
+      expect(within(panel).getByLabelText('起始日')).toHaveValue('');
+      expect(within(panel).getByLabelText('结束日')).toHaveValue('');
+      expect(panel).not.toHaveTextContent(/自 .* 起|截至 时间/);
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
   it('opens From and To with Choose dates…, Apply writing both days, Clear emptying them', async () => {
     const user = userEvent.setup();
     render(<Harness start={{ from: '2026-10-01', to: '2026-10-31' }} />, {

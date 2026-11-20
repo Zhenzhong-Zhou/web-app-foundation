@@ -407,3 +407,61 @@ test('Where it stands, By place and lot: a place’s whole path where it fits, c
     .poll(drawn)
     .toBe('E2E Main warehouse on the river › … › E2E Shelf A2');
 });
+
+// Review 22, S16: on a phone, a place's path in Latest movements stays on
+// its card: cut in its middle as PlacePath cuts, whole on a tap, or
+// wrapped; never clipped at the card's edge with no sign.
+test('Latest movements on a phone: a long path stays on its card, never clipped with no sign', async ({
+  page,
+  freshOrg,
+}) => {
+  const site = (await (
+    await freshOrg.api.post('/v1/locations', {
+      data: { type: 'site', name: 'Richmond warehouse' },
+    })
+  ).json()) as { location: { id: string } };
+  const quarantine = (await (
+    await freshOrg.api.post('/v1/locations', {
+      data: {
+        type: 'zone',
+        name: 'Quarantine',
+        code: 'QUAR',
+        parentId: site.location.id,
+      },
+    })
+  ).json()) as { location: { id: string } };
+  const product = await createProduct(freshOrg.api, {
+    name: 'E2E Vitamin C 500 mg',
+  });
+  await receive(
+    freshOrg.api,
+    product,
+    { id: quarantine.location.id, name: 'Quarantine' },
+    '12',
+  );
+  // As the panel's senior walked it: Larger text.
+  await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInAs(page, freshOrg.api);
+  await itemFrom(page, product.id);
+
+  const latest = standing(page)
+    .getByRole('listitem')
+    .filter({ hasText: 'Richmond' })
+    .first();
+  await expect(latest).toBeVisible();
+  const path = latest.locator('[data-whole]');
+  await expect(path).toHaveAttribute(
+    'data-whole',
+    'Richmond warehouse › Quarantine (QUAR)',
+  );
+  // Its box within its card and the screen, and no text run past it.
+  const card = (await latest.boundingBox())!;
+  const box = (await path.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 0.5);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  const shown = path.locator('> span').first();
+  expect(
+    await shown.evaluate((span) => span.scrollWidth <= span.clientWidth + 1),
+  ).toBe(true);
+});
