@@ -6,6 +6,7 @@ import { t, type Translatable, translate } from '../i18n/translate';
 import { type CsvValue, toCsv } from './csv';
 import type { KeysetPage } from './keyset';
 import type { Locale } from './locales';
+import { readableQuantity } from './readable-quantity';
 import { todayIn } from './today';
 
 /**
@@ -47,6 +48,29 @@ export function inWords<T>(
       return kept !== null && Object.hasOwn(words, kept)
         ? translate(words[kept], locale)
         : kept;
+    },
+  };
+}
+
+/**
+ * A quantity column, its figures as data without their padding zeros:
+ * `600`, not `600.0000`, then `12.5` and `0.0001`, a point and no
+ * grouping, so a spreadsheet reads a number as the screens show it
+ * (ADR-057, amended for ADR-093's R30; #473's 29). Trimmed as text by
+ * readableQuantity, never through a Number (ADR-025), a minus kept.
+ * Quantities only: money is written as stored, never trimmed.
+ */
+export function asQuantity<T>(
+  header: Translatable,
+  quantity: (row: T) => string | null | undefined,
+): ExportColumn<T> {
+  return {
+    header,
+    value: (row) => {
+      const kept = quantity(row);
+      return kept === null || kept === undefined
+        ? null
+        : readableQuantity(kept);
     },
   };
 }

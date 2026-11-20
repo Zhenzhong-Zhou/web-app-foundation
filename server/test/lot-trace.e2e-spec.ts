@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { readableQuantity } from '../src/common/readable-quantity';
 import { ROLE_TEMPLATES } from '../src/core/authorization/permissions';
 import {
   type Database,
@@ -349,15 +350,16 @@ describe('Lot trace (e2e)', () => {
       '已退回',
       '日期',
     ]);
-    // The trace's rows, in its order; nobody on record said so in words.
+    // The trace's rows, in its order, each quantity without its padding
+    // zeros (R30); nobody on record said so in words.
     const found = await trace(alpha, 'BF-1');
     expect(chinese.slice(1).map((row) => row.slice(2, 7))).toEqual(
       found.recipients.map((row) => [
         row.lotCode,
         'FOCUS',
-        row.shipped,
-        row.sampled,
-        row.returned,
+        readableQuantity(row.shipped),
+        readableQuantity(row.sampled),
+        readableQuantity(row.returned),
       ]),
     );
     expect(chinese.slice(1).map((row) => row[0])).toEqual([

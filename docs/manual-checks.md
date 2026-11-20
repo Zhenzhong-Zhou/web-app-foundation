@@ -1677,7 +1677,12 @@ Paper is checked first because it must not change at all.
   their own names; and so does Partners with `mill` and Retired; the Audit
   log's entry names the filter in words, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
-  `2026-10-15 18:54:11`, in UTC, and open as dates.
+  `2026-10-15 18:54:11`, in UTC, and open as dates. In the exports of
+  Stock, the Lot view, Reorder, Movements, Orders, Stock value and a
+  lot's recall list, every quantity reads as the screen's figure without
+  its padding zeros, `600` and `12.5`, never `600.0000`, with a point
+  and no grouping, and sums as a number; money, Stock value's and a
+  price list's, keeps the places it is stored with.
 - **MC-1559** *(ADR-058; ADR-091)* Sign in as the demo owner: Home opens,
   greeting by the time of day on the organization's clock, Vancouver's
   for the demo, then the organization's day and time to
@@ -7009,3 +7014,6 @@ first.
   as a stock card, oldest first in the screen's columns, one code's
   range opening and closing it, From and To only for a reader who may
   see places: MC-319 added.
+- 2026-11-20: ADR-093's Movements branch, R30 (77a): every export writes
+  a quantity without its padding zeros, `600` and not `600.0000`, money
+  as stored: MC-1558 extended.

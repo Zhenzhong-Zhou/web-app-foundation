@@ -5,7 +5,8 @@ import type { Response } from 'express';
 
 import { t } from '../i18n/translate';
 import { BOM } from './csv';
-import { csvFile, type ExportColumn, inWords } from './export';
+import { asQuantity, csvFile, type ExportColumn, inWords } from './export';
+import { HEADERS } from './export-headers';
 import { PRODUCT_TYPE_WORDS } from './product-types';
 
 type Row = { sku: string; type: string | null };
@@ -76,6 +77,55 @@ describe('inWords', () => {
       'OLD-1,kit',
       'PROTO-1,constructor',
       'NONE-1,',
+    ]);
+  });
+});
+
+/**
+ * An export writes a quantity as data without its padding zeros (ADR-093's
+ * R30, #473's 29): `600`, not `600.0000`, a minus kept as a number's, and
+ * money beside it as stored.
+ */
+describe('asQuantity', () => {
+  type Line = { quantity: string | null; price: string };
+
+  const LINE_COLUMNS: ExportColumn<Line>[] = [
+    asQuantity(HEADERS.quantity, (row) => row.quantity),
+    { header: HEADERS.price, value: (row) => row.price },
+  ];
+
+  it('drops the padding zeros of a quantity, and only of a quantity', async () => {
+    const res = { setHeader: () => undefined } as unknown as Response;
+    const sent = csvFile(
+      res,
+      'lines',
+      LINE_COLUMNS,
+      [
+        { quantity: '600.0000', price: '12.5000' },
+        { quantity: '12.5000', price: '12.5000' },
+        { quantity: '0.0001', price: '0.0123' },
+        { quantity: '-5.0000', price: '3.0000' },
+        { quantity: '1234567.0000', price: '1234567.0000' },
+        { quantity: null, price: '0.0000' },
+      ],
+      'fr-CA',
+    );
+
+    expect(
+      (await buffer(sent.getStream()))
+        .toString('utf8')
+        .replace(BOM, '')
+        .split('\r\n')
+        .filter(Boolean),
+    ).toEqual([
+      'Quantité,Prix',
+      '600,12.5000',
+      '12.5,12.5000',
+      '0.0001,0.0123',
+      '-5,3.0000',
+      // No grouping, and a point in every language.
+      '1234567,1234567.0000',
+      ',0.0000',
     ]);
   });
 });

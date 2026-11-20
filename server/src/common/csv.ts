@@ -7,10 +7,11 @@
  * - RFC 4180: comma-separated, CRLF between rows, a field quoted when it
  *   holds a comma, a quote, a line break or space at either end, quotes
  *   inside doubled.
- * - Values as data: callers pass decimals as their database strings
- *   ("1234.5000"), days as YYYY-MM-DD and instants through csvMoment, so a
- *   spreadsheet reads a number as a number and a time as a time, in any
- *   locale.
+ * - Values as data: callers pass quantities without their padding zeros
+ *   ("1234.5", through export.ts's asQuantity), money as its database
+ *   string ("1234.5000"), days as YYYY-MM-DD and instants through
+ *   csvMoment, so a spreadsheet reads a number as a number and a time as a
+ *   time, in any locale.
  * - Formula injection neutralized (OWASP): a text field beginning with =,
  *   +, -, @, a tab or a carriage return gets a leading apostrophe, so a
  *   partner named =HYPERLINK(...) stays text. A plain number keeps its

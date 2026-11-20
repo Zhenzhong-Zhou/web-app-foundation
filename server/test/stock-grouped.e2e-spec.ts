@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 
+import { readableQuantity } from '../src/common/readable-quantity';
 import {
   addMember,
   body,
@@ -935,7 +936,8 @@ describe('Inventory, grouped (e2e)', () => {
     ]);
 
     // At one place chosen, that place's On hand and Expires first, as
-    // the list's own rows say them, and no Not usable (review 56).
+    // the list's own rows say them, the quantity without its padding
+    // zeros (R30), and no Not usable (review 56).
     const atShelf = await csv(
       `/v1/stock/by-code/export?locationId=${shelf}`,
       'en',
@@ -959,7 +961,7 @@ describe('Inventory, grouped (e2e)', () => {
     ).toEqual(
       listed.map((row) => [
         row.sku,
-        here(row).onHand,
+        readableQuantity(here(row).onHand),
         here(row).expiresFirst ?? '',
       ]),
     );

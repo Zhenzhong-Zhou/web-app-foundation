@@ -1,4 +1,4 @@
-import { type ExportColumn, inWords } from '../../common/export';
+import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { dayIn, todayIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
@@ -58,51 +58,51 @@ export function stockCodeColumns(here: boolean): ExportColumn<StockCodeRow>[] {
     // (20a): On hand and Expires first here, Free and Held every place's,
     // and no Not usable, which the screen leaves out there.
     here
-      ? {
-          header: t({
+      ? asQuantity(
+          t({
             id: 'exports.column.onHandHere',
             defaultMessage: 'On hand here',
           }),
-          value: (row) => row.here?.onHand ?? null,
-        }
-      : {
-          header: t({ id: 'exports.column.onHand', defaultMessage: 'On hand' }),
-          value: (row) => row.onHand,
-        },
+          (row) => row.here?.onHand,
+        )
+      : asQuantity(
+          t({ id: 'exports.column.onHand', defaultMessage: 'On hand' }),
+          (row) => row.onHand,
+        ),
     ...(here
       ? []
       : [
-          {
-            header: t({
+          asQuantity(
+            t({
               id: 'exports.column.notUsable',
               defaultMessage: 'Not usable',
             }),
-            value: (row: StockCodeRow) => row.notUsable,
-          },
+            (row: StockCodeRow) => row.notUsable,
+          ),
         ]),
-    {
-      header: here
+    asQuantity(
+      here
         ? t({
             id: 'exports.column.freeEverywhere',
             defaultMessage: 'Free, every place',
           })
         : t({ id: 'exports.column.free', defaultMessage: 'Free' }),
-      value: (row) => row.free,
-    },
-    {
-      header: here
+      (row) => row.free,
+    ),
+    asQuantity(
+      here
         ? t({
             id: 'exports.column.heldEverywhere',
             defaultMessage: 'Held, every place',
           })
         : t({ id: 'exports.column.held', defaultMessage: 'Held' }),
-      value: (row) => row.held,
-    },
-    {
-      header: t({ id: 'exports.column.short', defaultMessage: 'Short' }),
-      value: (row) => row.short,
-    },
-    { header: COMING, value: (row) => row.coming },
+      (row) => row.held,
+    ),
+    asQuantity(
+      t({ id: 'exports.column.short', defaultMessage: 'Short' }),
+      (row) => row.short,
+    ),
+    asQuantity(COMING, (row) => row.coming),
     {
       header: t({
         id: 'exports.column.expectedDate',
@@ -110,8 +110,8 @@ export function stockCodeColumns(here: boolean): ExportColumn<StockCodeRow>[] {
       }),
       value: (row) => row.comingOn,
     },
-    { header: POSITION, value: (row) => row.position },
-    { header: REORDER_POINT, value: (row) => row.reorderPoint },
+    asQuantity(POSITION, (row) => row.position),
+    asQuantity(REORDER_POINT, (row) => row.reorderPoint),
     inWords(HEADERS.status, REORDER_STATUS_WORDS, (row) => row.status),
     here
       ? {
@@ -144,7 +144,7 @@ export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   { header: HEADERS.lot, value: (row) => row.lotCode },
   { header: HEADERS.expiry, value: (row) => row.lotExpiresAt },
   { header: HEADERS.location, value: (row) => row.locationName },
-  { header: HEADERS.quantity, value: (row) => row.quantity },
+  asQuantity(HEADERS.quantity, (row) => row.quantity),
   unitInWords(),
 ];
 
@@ -252,52 +252,48 @@ export function movementColumns(options: {
 
   const quantities: ExportColumn<MovementLine>[] = card.inOut
     ? [
-        {
-          header: IN,
-          value: (line) =>
-            'movement' in line
-              ? line.movement.quantityIn
-              : line.total === 'closing'
-                ? line.period.quantityIn
-                : null,
-        },
-        {
-          header: OUT,
-          value: (line) =>
-            'movement' in line
-              ? line.movement.quantityOut
-              : line.total === 'closing'
-                ? line.period.quantityOut
-                : null,
-        },
+        asQuantity(IN, (line) =>
+          'movement' in line
+            ? line.movement.quantityIn
+            : line.total === 'closing'
+              ? line.period.quantityIn
+              : null,
+        ),
+        asQuantity(OUT, (line) =>
+          'movement' in line
+            ? line.movement.quantityOut
+            : line.total === 'closing'
+              ? line.period.quantityOut
+              : null,
+        ),
         ...(card.balance
           ? [
-              {
-                header: t({
+              asQuantity(
+                t({
                   id: 'exports.column.balance',
                   defaultMessage: 'Balance',
                 }),
-                value: (line: MovementLine) =>
+                (line: MovementLine) =>
                   'movement' in line
                     ? line.movement.balance
                     : line.period[line.total],
-              },
+              ),
             ]
           : []),
       ]
     : [
-        {
-          // As the list's Change reads: what came in, what went out with
-          // its minus, a move within neither, its quantity alone.
-          header: t({ id: 'exports.column.change', defaultMessage: 'Change' }),
-          value: of(
+        // As the list's Change reads: what came in, what went out with
+        // its minus, a move within neither, its quantity alone.
+        asQuantity(
+          t({ id: 'exports.column.change', defaultMessage: 'Change' }),
+          of(
             (movement) =>
               movement.quantityIn ??
               (movement.quantityOut === null
                 ? movement.quantity
                 : `-${movement.quantityOut}`),
           ),
-        },
+        ),
       ];
 
   return [
@@ -418,20 +414,20 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
     SOURCE_WORDS,
     (row) => row.source,
   ),
-  {
-    header: t({ id: 'exports.column.usable', defaultMessage: 'Usable' }),
-    value: (row) => row.usable,
-  },
-  { header: COMING, value: (row) => row.coming },
-  {
-    header: t({
+  asQuantity(
+    t({ id: 'exports.column.usable', defaultMessage: 'Usable' }),
+    (row) => row.usable,
+  ),
+  asQuantity(COMING, (row) => row.coming),
+  asQuantity(
+    t({
       id: 'exports.column.stillNeeded',
       defaultMessage: 'Still needed',
     }),
-    value: (row) => row.stillNeeded,
-  },
-  { header: POSITION, value: (row) => row.position },
-  { header: REORDER_POINT, value: (row) => row.reorderPoint },
+    (row) => row.stillNeeded,
+  ),
+  asQuantity(POSITION, (row) => row.position),
+  asQuantity(REORDER_POINT, (row) => row.reorderPoint),
   inWords(
     t({
       id: 'exports.column.rule',
@@ -440,28 +436,28 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
     RULE_WORDS,
     (row) => row.rule,
   ),
-  {
-    header: t({
+  asQuantity(
+    t({
       id: 'exports.column.fixedQuantity',
       defaultMessage: 'Fixed quantity',
     }),
-    value: (row) => row.fixedQuantity,
-  },
-  {
-    header: t({ id: 'exports.column.maximum', defaultMessage: 'Maximum' }),
-    value: (row) => row.maximumQuantity,
-  },
-  {
-    header: t({ id: 'exports.column.inDraft', defaultMessage: 'In draft' }),
-    value: (row) => row.inDraft,
-  },
-  {
-    header: t({
+    (row) => row.fixedQuantity,
+  ),
+  asQuantity(
+    t({ id: 'exports.column.maximum', defaultMessage: 'Maximum' }),
+    (row) => row.maximumQuantity,
+  ),
+  asQuantity(
+    t({ id: 'exports.column.inDraft', defaultMessage: 'In draft' }),
+    (row) => row.inDraft,
+  ),
+  asQuantity(
+    t({
       id: 'exports.column.suggestedOrder',
       defaultMessage: 'Suggested order',
     }),
-    value: (row) => row.suggestion,
-  },
+    (row) => row.suggestion,
+  ),
   unitInWords(),
 ];
 
@@ -503,17 +499,17 @@ export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
   },
   { header: HEADERS.lot, value: (row) => row.lotCode },
   { header: HEADERS.sku, value: (row) => row.sku },
-  {
-    header: t({ id: 'exports.column.shipped', defaultMessage: 'Shipped' }),
-    value: (row) => row.shipped,
-  },
-  {
-    header: t({ id: 'exports.column.sampled', defaultMessage: 'Sampled' }),
-    value: (row) => row.sampled,
-  },
-  {
-    header: t({ id: 'exports.column.returned', defaultMessage: 'Returned' }),
-    value: (row) => row.returned,
-  },
+  asQuantity(
+    t({ id: 'exports.column.shipped', defaultMessage: 'Shipped' }),
+    (row) => row.shipped,
+  ),
+  asQuantity(
+    t({ id: 'exports.column.sampled', defaultMessage: 'Sampled' }),
+    (row) => row.sampled,
+  ),
+  asQuantity(
+    t({ id: 'exports.column.returned', defaultMessage: 'Returned' }),
+    (row) => row.returned,
+  ),
   { header: HEADERS.date, value: (row) => row.leftOn },
 ];

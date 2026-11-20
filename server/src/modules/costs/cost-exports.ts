@@ -1,4 +1,4 @@
-import type { ExportColumn } from '../../common/export';
+import { asQuantity, type ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
 import type { CostsService } from './costs.service';
@@ -35,7 +35,7 @@ export function poolsOf(
 export const VALUATION_COLUMNS: ExportColumn<Pool>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
   { header: HEADERS.lot, value: (row) => row.lotCode },
-  { header: HEADERS.quantity, value: (row) => row.quantity },
+  asQuantity(HEADERS.quantity, (row) => row.quantity),
   {
     header: t({ id: 'exports.column.unitCost', defaultMessage: 'Unit cost' }),
     value: (row) => row.unitCost,

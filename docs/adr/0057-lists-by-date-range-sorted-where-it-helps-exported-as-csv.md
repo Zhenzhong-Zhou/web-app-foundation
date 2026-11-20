@@ -249,6 +249,12 @@ sorts were asked for (#473's 16):
   merge or its figure kept in a column, a decision then.
 - **Each export writes the screen's words,** its headers and values in
   the reader's language (#473's 29).
+- **Each export writes a quantity without its padding zeros** (77a,
+  ADR-093's R30; #473's 29): `600`, not `600.0000`, then `12.5` and
+  `0.0001`, still data, a point and no grouping, trimmed as text by
+  `asQuantity` through `readableQuantity` (ADR-025). Quantities only:
+  money is written as stored, never trimmed. The organization's full
+  export (ADR-071) keeps every value as stored, as its README says.
 
 As built on Inventory's branch (#635, 17 November 2026):
 

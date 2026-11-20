@@ -14,6 +14,7 @@ import {
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
+import { item, order, partner, receive, site } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
 import { said } from './utils/said';
 
@@ -495,6 +496,72 @@ describe('Exports (e2e)', () => {
     expect(await names('')).toEqual(['Northside Pharmacy', 'Old Mill Herbs']);
     expect(await names('?search=north')).toEqual(['Northside Pharmacy']);
     expect(await names('?retired=true')).toEqual(['Old Mill Herbs']);
+  });
+
+  // ADR-093's R30 (77a, #473's 29): a quantity as data without its padding
+  // zeros in every export, no grouping; quantities only, money as stored.
+  it('writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money as stored', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const supplier = await partner(agent, 'Harbour Supply');
+    const wholesale = body<{ priceList: { id: string } }>(
+      await agent
+        .post('/v1/price-lists')
+        .send({ name: 'Wholesale', direction: 'sale', currency: 'CAD' })
+        .expect(201),
+    ).priceList.id;
+    const figures = { BULK: '600', HALF: '12.5', DUST: '0.0001' };
+    for (const [sku, quantity] of Object.entries(figures)) {
+      const variantId = await item(agent, sku, true);
+      await receive(agent, variantId, shelf, quantity, { code: `${sku}-1` });
+      await order(agent, 'purchase', supplier, variantId, quantity);
+      await agent
+        .put(`/v1/price-lists/${wholesale}/items/${variantId}`)
+        .send({ unitPrice: '12.50' })
+        .expect(200);
+    }
+
+    /** Each code's value in one column of an export, by its header. */
+    const column = async (path: string, header: string, code = 'Code') => {
+      const [names, ...rows] = linesOf(
+        (await agent.get(path).expect(200)).text,
+      ).map((line) => line.split(','));
+      return Object.fromEntries(
+        rows.map((row) => [
+          row[names.indexOf(code)],
+          row[names.indexOf(header)],
+        ]),
+      );
+    };
+
+    expect(await column('/v1/stock/by-code/export', 'On hand')).toEqual(
+      figures,
+    );
+    expect(await column('/v1/stock/by-lot/export', 'Quantity')).toEqual(
+      figures,
+    );
+    expect(await column('/v1/stock/movements/export', 'Change')).toEqual(
+      figures,
+    );
+    expect(
+      Object.values(
+        await column('/v1/orders/export', 'Quantity ordered', 'Number'),
+      ).sort(),
+    ).toEqual(['0.0001', '12.5', '600']);
+    expect(
+      Object.values(
+        await column(
+          '/v1/orders/export',
+          'Quantity received or shipped',
+          'Number',
+        ),
+      ),
+    ).toEqual(['0', '0', '0']);
+    // Money keeps its places.
+    expect(
+      await column(`/v1/price-lists/${wholesale}/export`, 'Price'),
+    ).toEqual({ BULK: '12.5000', HALF: '12.5000', DUST: '12.5000' });
   });
 
   it("writes one price list's items, and audits which list left", async () => {

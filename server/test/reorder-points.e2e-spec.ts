@@ -1224,23 +1224,24 @@ describe('Reorder points (e2e)', () => {
           .map((id) => said('zh-Hans', id))
           .join(','),
         // Status, bought or made, the rule and the unit in the reader's
-        // words, as the screen says them (ADR-093; #473's 29).
+        // words, as the screen says them (ADR-093; #473's 29); each
+        // quantity without its padding zeros (R30).
         [
           'C-OUT',
           'C-OUT',
           '',
           said('zh-Hans', 'stock.status.out'),
           said('zh-Hans', 'stock.source.bought'),
-          '0.0000',
-          '0.0000',
-          '0.0000',
-          '0.0000',
-          '10.0000',
+          '0',
+          '0',
+          '0',
+          '0',
+          '10',
           said('zh-Hans', 'stock.rule.justEnough'),
           '',
           '',
-          '0.0000',
-          '10.0000',
+          '0',
+          '10',
           said('zh-Hans', 'products.unit.each'),
         ].join(','),
       ]);

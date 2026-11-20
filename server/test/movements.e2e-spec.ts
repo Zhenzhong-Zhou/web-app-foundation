@@ -870,47 +870,48 @@ describe('Movements (e2e)', () => {
       header.map((name) => (name === 'When' ? when : (rest[name] ?? '')));
     const moved = { Code: 'FOCUS', Item: 'FOCUS', Unit: 'each', By: 'Owner' };
     expect(rows).toEqual([
-      line('2026-11-04', { Balance: '20.0000', Reason: 'Opening balance' }),
+      line('2026-11-04', { Balance: '20', Reason: 'Opening balance' }),
       line('2026-11-05', {
         ...moved,
-        In: '12.0000',
-        Balance: '32.0000',
+        In: '12',
+        Balance: '32',
         Reason: 'Receipt',
         To: 'SHELF (SHELF)',
         For: bought.number,
       }),
       line('2026-11-10', {
         ...moved,
-        Out: '5.0000',
-        Balance: '27.0000',
+        Out: '5',
+        Balance: '27',
         Reason: 'Shipment',
         From: 'SHELF (SHELF)',
         For: sold.number,
       }),
       line('2026-11-10', {
         ...moved,
-        Balance: '27.0000',
+        Balance: '27',
         Reason: 'Transfer',
         From: 'SHELF (SHELF)',
         To: 'QUAR (QUAR)',
       }),
       line('2026-11-12', {
         ...moved,
-        Balance: '27.0000',
+        Balance: '27',
         Reason: 'Transfer',
         From: 'SHELF (SHELF)',
         To: 'LINE (LINE)',
         For: 'RUN-7',
       }),
       line('2026-11-13', {
-        In: '12.0000',
-        Out: '5.0000',
-        Balance: '27.0000',
+        In: '12',
+        Out: '5',
+        Balance: '27',
         Reason: 'Closing balance',
       }),
     ]);
 
-    // Several items: each row's change, a move within its quantity alone.
+    // Several items: each row's change, a move within its quantity alone;
+    // every quantity without its padding zeros, a minus kept (R30).
     const every = csvOf(
       (
         await agent
@@ -920,10 +921,10 @@ describe('Movements (e2e)', () => {
     );
     expect(every.header.slice(3, 5)).toEqual(['Change', 'Unit']);
     expect(every.rows.map((row) => [row[3], row[5]])).toEqual([
-      ['12.0000', 'Receipt'],
-      ['-5.0000', 'Shipment'],
-      ['3.0000', 'Transfer'],
-      ['4.0000', 'Transfer'],
+      ['12', 'Receipt'],
+      ['-5', 'Shipment'],
+      ['3', 'Transfer'],
+      ['4', 'Transfer'],
     ]);
   });
 
