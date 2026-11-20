@@ -1073,6 +1073,7 @@
   "stock.giveEitherExistingLot": "请选择已有批次或新建一个批次，不要同时选择两者。",
   "stock.heldForConfirmedOrders": "已确认的订单",
   "stock.heldForOtherOrders": "其他订单",
+  "stock.lotCodeInUse": "{sku} 已有批次 {lot}。请在其已有批次中选择它，或为新批次填写其他批号。",
   "stock.lots.locationShort": "该库位各批次中的 {sku} 库存不足：需要 {quantity}，还差 {shortBy}。",
   "stock.lots.runShort": "已为此生产订单领用的 {sku} 不足，无法消耗 {quantity}：还差 {shortBy}。请先将缺少的物料移至该生产订单所在库位。",
   "stock.lotsChosenSkuAdd": "为 {sku} 选择的各批次合计数量为 {total}，但需要 {expected}。",

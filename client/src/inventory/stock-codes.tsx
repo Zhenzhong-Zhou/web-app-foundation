@@ -49,6 +49,7 @@ import { useOpenRows } from '../lib/use-open-rows';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { WIDE_ONLY } from '../theme/media';
+import type { CountInItem } from './count-in-dialog';
 import { EmptiedLine } from './emptied-line';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
@@ -57,7 +58,7 @@ import { PlacePath } from './place-path';
 import type { ReorderItem } from './reorder-point-dialog';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { type Pile, StockActions } from './stock-actions';
-import { placeName } from './stock-places';
+import { openKey, placeName } from './stock-places';
 
 /**
  * Where the item's name starts in its cell: the cell's 16 px, the cover's
@@ -81,6 +82,11 @@ export interface StockHandlers {
   onReorder: (item: ReorderItem) => void;
   /** Receive stock, the dialog with this item filled in (ADR-093 v3). */
   onReceive: (variantId: string) => void;
+  /**
+   * Count it in…: Correct the count for stock found where the item has
+   * never been, a place and a lot to choose (ADR-093, R26).
+   */
+  onCountIn: (item: CountInItem) => void;
 }
 
 type Header = (column: StockCodeSort) => {
@@ -274,15 +280,6 @@ interface Returning {
   onOpen: (key: string, open: boolean) => void;
   /** The code whose name takes focus once its row is drawn. */
   focusRow: string | null;
-}
-
-/**
- * A row's key in `?open=`: a code's id, or a place's under it as
- * `code.place`, since a place opens to its lots under each code apart
- * (ADR-093, R11: Back from a lot's Movements finds its lots open).
- */
-function openKey(variantId: string, locationId?: string): string {
-  return locationId ? `${variantId}.${locationId}` : variantId;
 }
 
 interface Opened extends Returning {
@@ -925,6 +922,15 @@ function PlacesRows({
     </TableRow>
   );
 
+  const found = offersFound(handlers, seesPlaces, choosing) && (
+    <TableRow sx={{ bgcolor: 'action.hover' }} {...SPANNING_ROW}>
+      <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
+        <FoundLine row={row} places={places} handlers={handlers} />
+      </TableCell>
+      <WideOnlyCells />
+    </TableRow>
+  );
+
   // Without places, or at the one chosen: the lots alone, each at a place
   // not available saying so, never which place (A6).
   if (!seesPlaces || place) {
@@ -946,6 +952,7 @@ function PlacesRows({
             actionsRef={index === 0 ? first : undefined}
           />
         ))}
+        {found}
       </>
     );
   }
@@ -968,7 +975,78 @@ function PlacesRows({
           actionsRef={index === 0 ? first : undefined}
         />
       ))}
+      {found}
     </>
+  );
+}
+
+/**
+ * Whether a code's opened places end with Count it in…: for whoever may
+ * correct counts and see places, and not while a lot is chosen to move,
+ * ship or send.
+ */
+function offersFound(
+  handlers: StockHandlers,
+  seesPlaces: boolean,
+  choosing: MoveMode | null,
+): boolean {
+  return (
+    handlers.canMove &&
+    handlers.canAdjust &&
+    seesPlaces &&
+    (choosing === null || choosing === 'adjust')
+  );
+}
+
+/**
+ * "Found some where it has never been?" and Count it in…, ending a
+ * code's opened places and lots (ADR-093, R26, 84a): Correct the count
+ * with a place and, for an item tracked by lot, a lot to choose.
+ */
+function FoundLine({
+  row,
+  places,
+  handlers,
+}: {
+  row: StockCodeRow;
+  places: StockPlace[];
+  handlers: StockHandlers;
+}) {
+  const intl = useIntl();
+  const tracksLots = places.some((each) =>
+    each.lots.some((lot) => lot.lotId !== null),
+  );
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      useFlexGap
+      sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+    >
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {intl.formatMessage({
+          id: 'inventory.stock.foundElsewhere',
+          defaultMessage: 'Found some where it has never been?',
+        })}
+      </Typography>
+      <Button
+        variant="text"
+        onClick={() =>
+          handlers.onCountIn({
+            variantId: row.variantId,
+            sku: row.sku,
+            unitOfMeasure: row.unitOfMeasure,
+            tracksLots,
+          })
+        }
+      >
+        {intl.formatMessage({
+          id: 'inventory.stock.countIn',
+          defaultMessage: 'Count it in…',
+        })}
+      </Button>
+    </Stack>
   );
 }
 
@@ -1327,6 +1405,18 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
               first={choice.first}
               {...opened}
             />
+            {places.rows &&
+              offersFound(
+                opened.handlers,
+                opened.seesPlaces,
+                choice.choosing,
+              ) && (
+                <FoundLine
+                  row={row}
+                  places={places.rows}
+                  handlers={opened.handlers}
+                />
+              )}
           </Stack>
         )}
       </Stack>

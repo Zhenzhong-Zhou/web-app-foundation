@@ -733,6 +733,72 @@ describe('InventoryPage', () => {
     });
   });
 
+  // Found stock (ADR-093, R26, 84a): a code's opened places end with
+  // Count it in…, Correct the count with a place and Which lot, neither
+  // lot chosen; Escape returns focus to it.
+  describe('stock found where it has never been', () => {
+    it('ends a code’s opened places with Count it in…, and Escape returns to it', async () => {
+      const user = userEvent.setup();
+      answer();
+      server.use(http.get('/api/v1/stock/lots', () => HttpResponse.json([])));
+      renderAt('/inventory', [
+        'stock.view',
+        'locations.view',
+        'stock.move',
+        'stock.adjust',
+      ]);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+
+      expect(
+        await screen.findByText('Found some where it has never been?'),
+      ).toBeVisible();
+      const countIn = screen.getByRole('button', { name: 'Count it in…' });
+      await user.click(countIn);
+
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Correct the count',
+      });
+      expect(
+        within(dialog).getByRole('combobox', { name: /^Location/ }),
+      ).toBeVisible();
+      for (const radio of within(
+        within(dialog).getByRole('radiogroup', { name: /^Which lot/ }),
+      ).getAllByRole('radio')) {
+        expect(radio).not.toBeChecked();
+      }
+
+      await user.keyboard('{Escape}');
+      expect(dialog).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Count it in…' }),
+      ).toHaveFocus();
+    });
+
+    it('offers it only to whoever may correct counts', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory', ['stock.view', 'locations.view', 'stock.move']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+
+      expect(
+        await screen.findByRole('button', {
+          name: '2 lots: show the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole('button', { name: 'Count it in…' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('a lot’s own actions', () => {
     /** The page, the code's row opened to its Shelf A lots, and a lot's ⋯. */
     async function lotActions(permissions: string[]) {

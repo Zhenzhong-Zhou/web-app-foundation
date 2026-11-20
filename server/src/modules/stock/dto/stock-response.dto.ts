@@ -189,6 +189,11 @@ export class RecordedMovement {
 /** POST /stock/movements. */
 export class RecordedMovementEnvelope {
   movement!: RecordedMovement;
+  /**
+   * The movement waits for a cost (ADR-048): found stock in a new lot, or
+   * in an item with no cost yet, which its message says (ADR-093, 90a).
+   */
+  needsCost!: boolean;
 }
 
 /** A lot of one item, as the receive dialogs offer it. */

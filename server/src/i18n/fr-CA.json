@@ -1073,6 +1073,7 @@
   "stock.giveEitherExistingLot": "Indiquez un lot existant ou un nouveau lot, mais pas les deux",
   "stock.heldForConfirmedOrders": "des commandes confirmées",
   "stock.heldForOtherOrders": "d’autres commandes",
+  "stock.lotCodeInUse": "{sku} a déjà le lot {lot}. Choisissez-le parmi ses lots, ou donnez un autre numéro au nouveau lot.",
   "stock.lots.locationShort": "Pas assez de {sku} dans les lots à cet emplacement : quantité requise, {quantity}; quantité manquante, {shortBy}.",
   "stock.lots.runShort": "La quantité de {sku} prélevée pour cet ordre de fabrication ne suffit pas pour en consommer {quantity} : il manque {shortBy}. Déplacez d’abord les unités manquantes à l’emplacement de l’ordre de fabrication.",
   "stock.lotsChosenSkuAdd": "Les lots choisis pour {sku} totalisent {total}, mais il en faut {expected}",

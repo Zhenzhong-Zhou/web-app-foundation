@@ -85,7 +85,8 @@ export class StockController {
      * attached is precisely the row someone will ask about, and the audit log
      * answers a different question with a different retention.
      */
-    return { movement: movementOf(await this.stock.record(dto, user.userId)) };
+    const recorded = await this.stock.record(dto, user.userId);
+    return { movement: movementOf(recorded), needsCost: recorded.needsCost };
   }
 
   @Get('movements')

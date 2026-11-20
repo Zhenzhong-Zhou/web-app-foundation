@@ -80,3 +80,12 @@ export function cutsOf(above: readonly string[], own: string): string[] {
     pathName([warehouse, CUT, ...between.slice(dropped + 1), own]),
   );
 }
+
+/**
+ * A row's key in `?open=`: a code's id, or a place's under it as
+ * `code.place`, since a place opens to its lots under each code apart
+ * (ADR-093, R11: Back from a lot's Movements finds its lots open).
+ */
+export function openKey(variantId: string, locationId?: string): string {
+  return locationId ? `${variantId}.${locationId}` : variantId;
+}

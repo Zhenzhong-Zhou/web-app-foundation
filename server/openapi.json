@@ -16374,10 +16374,14 @@
         "properties": {
           "movement": {
             "$ref": "#/components/schemas/RecordedMovement"
+          },
+          "needsCost": {
+            "type": "boolean"
           }
         },
         "required": [
-          "movement"
+          "movement",
+          "needsCost"
         ]
       },
       "MovementDocument": {
@@ -24465,7 +24469,8 @@
           "code_in_use",
           "item_name_missing",
           "product_names_changed",
-          "stock_not_usable"
+          "stock_not_usable",
+          "lot_code_in_use"
         ]
       },
       "ApiVocabulary": {

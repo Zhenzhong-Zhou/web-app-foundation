@@ -128,6 +128,8 @@ as the catalogues word it.
 | Backordered | En rupture | 缺货待发 | |
 | Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as the opposite of Free's 可用. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
+| Count it in… | Ajouter au compte… | 盘盈入库… | Correct the count for stock found where the item has never been, at a place or in a lot it never had; its reason found, 盘盈 (ADR-093, #628). |
+| Which lot / One of its lots / A new lot | Quel lot / Un de ses lots / Un nouveau lot | 哪个批次 / 已有批次 / 新批次 | Count it in's choice of lot, neither chosen at first: one the item has, or one made with the count. |
 | Ship out | Sortie de stock | 出库 | Inventory's action that sends stock out with no order; an order's Ship stays Expédier / 发货. |
 | Adjustment | Ajustement | 调整 | A movement's reason, as are the four below. |
 | Transfer | Transfert | 移库 | |

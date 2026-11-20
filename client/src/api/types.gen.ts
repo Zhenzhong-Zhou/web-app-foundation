@@ -1837,6 +1837,7 @@ export type RecordMovementDto = {
 
 export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
+  needsCost: boolean;
 };
 
 export type MovementDocument = {
@@ -3910,6 +3911,7 @@ export const ErrorCode = {
   ITEM_NAME_MISSING: 'item_name_missing',
   PRODUCT_NAMES_CHANGED: 'product_names_changed',
   STOCK_NOT_USABLE: 'stock_not_usable',
+  LOT_CODE_IN_USE: 'lot_code_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

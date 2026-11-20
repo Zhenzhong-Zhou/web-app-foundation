@@ -556,6 +556,20 @@ a second organization.
   the item's row open, the place's lots open with it, focus on the
   item's name. A role made with `stock.view` alone sees the same rows,
   no order or run named under For.
+- **MC-322** *(ADR-093, R26; #628)* Stock found where it has never been,
+  as the demo Owner. Open VITC-100's places: they end with "Found some
+  where it has never been?" and Count it in…, which opens Correct the
+  count with Location and Which lot, neither lot chosen; Escape returns
+  focus to Count it in…. Choose a place VITC-100 has never been, Main's
+  Shelf, and Save with no lot: "Choose one of its lots, or a new lot."
+  at Which lot, focus on it. Choose A new lot and type VC-0301, a code
+  it has: refused at Lot number, naming VC-0301, nothing saved. Type
+  VC-0310 with an expiry, 12 and a note: "Counted in 12 each of
+  VITC-100 at Shelf, new lot VC-0310. It waits for a cost." with Waiting
+  for a cost, which opens Stock value's list holding it; Stock shows the
+  shelf open under VITC-100 with its lot VC-0310. Count one of its lots,
+  VC-0402, into the same shelf: "…, lot VC-0402." with Movements. A
+  role without `stock.adjust` sees no Count it in….
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
 - **MC-319** *(ADR-093, 87a and 88a)* As the demo Owner, export Movements
@@ -7109,3 +7123,7 @@ first.
   received, on a sale shipped, on Orders and the order's page, a filter
   by it in the address, and the line offering to close it once
   everything is in: MC-409 added.
+- 2026-11-20: ADR-093's Movements branch, step 14 (#628): stock found
+  where an item has never been, counted in from the end of its opened
+  places into any place and one of its lots or a new one, the new lot
+  waiting for a cost: MC-322 added.

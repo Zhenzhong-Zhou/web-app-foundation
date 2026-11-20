@@ -3,7 +3,8 @@
 What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
 Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
-hold and what may be taken, as ADR-093's Inventory branch completed it
+hold, what may be taken and stock found where it never was, as ADR-093's
+Inventory branch completed it
 and its Movements branch grows it. Each
 rule links the ADR that decided it, the test that proves it, the Help
 section where a person meets it, and the manual check that walks it by
@@ -429,3 +430,35 @@ file is kept is in the [README](README.md).
   [ADR-054](../adr/0054-languages.md) ·
   [test](../../server/test/reservations.e2e-spec.ts) "says who holds the stock in the reader’s language" ·
   MC-609
+
+## Counting in found stock
+
+- **Stock found where an item has never been is counted in by Correct
+  the count,** its reason found: into any place that holds stock
+  directly, and for an item tracked by lot, one of its lots or a new lot
+  made with the count, in the same write. It needs stock.adjust, as
+  every correction does, and a note. A place with places inside it is
+  refused, as for every movement, and nothing is written.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/stock.e2e-spec.ts) "makes a new lot with the count, at a place the item never was, and says it waits for a cost" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a place that is not a leaf, as every movement, and makes no lot" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "ends a code’s opened places with Count it in…, and Escape returns to it" ·
+  [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
+  MC-322
+- **A new lot's code must be one the item does not have yet:** a code
+  it has is refused, naming that lot, at the new lot's code (the code
+  `lot_code_in_use`), before anything is written; one of its lots is
+  chosen as such. Receiving the same code again still adds to that lot.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a new lot whose code the item has, naming it at its field, and writes nothing" ·
+  [test](../../client/src/inventory/count-in-dialog.test.tsx) "says a code the item has at the lot number, focused there" ·
+  MC-322
+- **Found stock in a new lot, or of an item with no cost yet, waits for
+  a cost,** and its message says so, linked to Stock value's Waiting for
+  a cost for a reader who may see costs; found stock in a lot the item
+  has rides at that lot's average.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/stock.e2e-spec.ts) "makes a new lot with the count, at a place the item never was, and says it waits for a cost" ·
+  [test](../../server/test/stock.e2e-spec.ts) "counts into a lot the item has at its average, not waiting for a cost" ·
+  [test](../../client/src/inventory/count-in-dialog.test.tsx) "makes a new lot with the count, saying it waits for a cost, linked to Waiting for a cost" ·
+  MC-322

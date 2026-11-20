@@ -1073,6 +1073,7 @@
   "stock.giveEitherExistingLot": "Give either an existing lot or a new one, not both",
   "stock.heldForConfirmedOrders": "confirmed orders",
   "stock.heldForOtherOrders": "other orders",
+  "stock.lotCodeInUse": "{sku} already has lot {lot}. Choose it among its lots, or give the new lot another code.",
   "stock.lots.locationShort": "Not enough {sku} in lots at that location: {quantity} needed, {shortBy} short.",
   "stock.lots.runShort": "Not enough {sku} was issued to this run to consume {quantity}: {shortBy} short. Move the missing units to the run’s location first.",
   "stock.lotsChosenSkuAdd": "The lots chosen for {sku} add up to {total}, but {expected} is needed",

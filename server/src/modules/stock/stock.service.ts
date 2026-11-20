@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import { MovementReason } from '../../database/schema';
@@ -280,14 +281,20 @@ export class StockService {
       .returning();
 
     // Every movement is valued here, so value and quantity have one write
-    // path between them (ADR-048).
-    await valueMovement(tx, organizationId, movement, input.cost ?? null);
+    // path between them (ADR-048). Whether it waits for a cost goes back
+    // with it, for the write to say (ADR-093, 90a).
+    const needsCost = await valueMovement(
+      tx,
+      organizationId,
+      movement,
+      input.cost ?? null,
+    );
 
     this.logger.log(
       `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,
     );
 
-    return movement;
+    return { ...movement, needsCost };
   }
 
   /**
@@ -449,6 +456,47 @@ export class StockService {
     }
 
     const incoming = input.lot!;
+
+    /**
+     * Found stock counted into a new lot (ADR-093, 84a): the lot is made
+     * with the count, and a code the item already has is refused, since
+     * one of its lots is chosen by its id. Never reused, as a second
+     * delivery is: a count that merged into a lot nobody chose would put
+     * found units under another run's expiry. DO NOTHING writes nothing
+     * when the code is taken, so the refusal comes before any write.
+     */
+    if (input.reason === 'adjustment') {
+      const [made] = await tx
+        .insert(lots)
+        .values({
+          organizationId,
+          variantId: variant.id,
+          code: incoming.code,
+          expiresAt: incoming.expiresAt ?? null,
+          isAssigned: incoming.isAssigned ?? false,
+        })
+        .onConflictDoNothing({
+          target: [lots.organizationId, lots.variantId, lots.code],
+        })
+        .returning({ id: lots.id });
+
+      if (!made) {
+        throw new ConflictException(
+          withCode(
+            t(
+              {
+                id: 'stock.lotCodeInUse',
+                defaultMessage:
+                  '{sku} already has lot {lot}. Choose it among its lots, or give the new lot another code.',
+              },
+              { sku: variant.sku, lot: incoming.code },
+            ),
+            ERROR_CODES.lotCodeInUse,
+          ),
+        );
+      }
+      return made.id;
+    }
 
     /**
      * Create or reuse, by code. A second delivery of lot L2024-A is the same

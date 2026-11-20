@@ -74,6 +74,7 @@ import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 import { NO_RECEIVE } from '../products/receive-line';
 import { rem } from '../theme/rem';
+import { CountInDialog, type CountInItem } from './count-in-dialog';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
@@ -82,7 +83,7 @@ import { ShowingLine } from './showing-line';
 import type { Pile } from './stock-actions';
 import { StockCodes, type StockHandlers } from './stock-codes';
 import { StockLots } from './stock-lots';
-import { byWarehouse } from './stock-places';
+import { byWarehouse, openKey } from './stock-places';
 
 /** A page of Inventory, fifty codes or lots (ADR-093, R16). */
 const PAGE_SIZE = 50;
@@ -310,6 +311,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     null,
   );
   const [editingLot, setEditingLot] = useState<Pile | null>(null);
+  const [countingIn, setCountingIn] = useState<CountInItem | null>(null);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
 
   const refresh = async () => {
@@ -330,6 +332,17 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       setReceivingItem(variantId);
       setReceiving(true);
     },
+    onCountIn: setCountingIn,
+  };
+
+  // Codes and places in the address, not a list a person reads; a code
+  // closed closes its places too.
+  const openRow = (key: string, open: boolean) => {
+    const next = opens.filter(
+      (each) => each !== key && !each.startsWith(`${key}.`),
+    );
+    if (open) next.push(key);
+    writeAddress({ open: next.length ? String(next) : null });
   };
 
   if (list.refused) {
@@ -835,15 +848,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   handlers={handlers}
                   changes={changes}
                   opens={opens}
-                  onOpen={(key, open) => {
-                    // Codes and places in the address, not a list a person
-                    // reads; a code closed closes its places too.
-                    const next = opens.filter(
-                      (each) => each !== key && !each.startsWith(`${key}.`),
-                    );
-                    if (open) next.push(key);
-                    writeAddress({ open: next.length ? String(next) : null });
-                  }}
+                  onOpen={openRow}
                   focusRow={newCode ?? focusRow}
                 />
               )
@@ -989,6 +994,22 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={refresh}
+        />
+      )}
+
+      {/* Found stock counted in (ADR-093, R26): Stock reads again, the
+          code's row open at the place it was counted into, its lots too. */}
+      {countingIn && (
+        <CountInDialog
+          key={countingIn.variantId}
+          item={countingIn}
+          locations={leaves}
+          canSeeCosts={can('costs.view')}
+          onClose={() => setCountingIn(null)}
+          onCounted={async (locationId) => {
+            openRow(openKey(countingIn.variantId, locationId), true);
+            await refresh();
+          }}
         />
       )}
 
