@@ -260,7 +260,9 @@ file is kept is in the [README](README.md).
 - **One code reads as a stock card: In, Out and the balance after each
   movement.** Across every place, what arrived is In and what left is
   Out, and a move between two of its places is neither, so the balance
-  holds; with a place chosen, that place alone, a move out of it Out;
+  holds: its row says how many moved once, across In and Out, in grey,
+  "moved 20 each, counted in neither", on a phone's card too, and the
+  sums leave it out; with a place chosen, that place alone, a move out of it Out;
   with a lot chosen, that lot alone, and with a place too, that lot
   there. The balance is today's on hand, less what moved after the
   row. With a reason or an order chosen, rows keep In and Out but no
@@ -273,6 +275,8 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither once across In and Out, Balance as it was" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither on its card in its row’s words" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says to choose one item while every item is listed at a place" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says nothing of Balance with an order chosen, at a place or not" ·
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
@@ -280,13 +284,14 @@ file is kept is in the [README](README.md).
 - **Several items read each row's Change, signed as the list counts
   it:** what came in with its plus, what went out with its minus; with a
   place chosen, a move onto it In and a move off it Out; across every
-  place, a move between two places neither, its quantity unsigned. The
-  screen and the export read the one sign the server works out, so they
-  never differ.
+  place, a move between two places neither, which the screen says in
+  words, "moved 20 each", never a bare number, and the export writes
+  unsigned. The screen and the export read the one sign the server works
+  out, so they never differ.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "signs a move off the place chosen with its minus, the same on the list and in its export" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "signs a move off the place chosen with its minus, as its export does" ·
-  [test](../../client/src/inventory/movements-page.test.tsx) "leaves a move between two places unsigned across every place" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says how many a move between two places moved across every place, never a bare number" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
   MC-320
 - **A date range for one code opens and closes: Opening, In, Out,
@@ -316,7 +321,9 @@ file is kept is in the [README](README.md).
   the organization's clocks, its header naming the place its time zone
   is named for, "When (Vancouver time)"; Code; Recorded as, the code a
   row was recorded under where it differs from today's; Item; In, Out
-  and Balance where the list has them, else Change; Unit, Reason, From,
+  and Balance where the list has them, else Change, and the stock card's
+  Moved between Out and Balance, filled on a move counted in neither
+  alone; Unit, Reason, From,
   To, Lot, Expiry, For and By; Email, the person's; and the note last,
   as typed. One code's range starts with its opening balance and ends
   with its closing, each by its day, beside the range's In and Out.

@@ -630,7 +630,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a and 125; reviews 1 and 11)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 118a and 125; reviews 1, 2 and 11)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -646,13 +646,18 @@ a second organization.
   (Warehouse), without `partners.view`, the same row's For reads "—" and
   the export's For is empty.
   SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. With
-  no Location chosen, a move between two places reads unsigned; choose a
+  no Location chosen, a move between two places reads "moved" and its
+  quantity in grey, never a bare number; choose a
   Location: a move off it reads with its minus and one onto it with its
   plus, and the export's Change writes the same; "Choose one item to see
   In, Out and Balance." shows above the list. An order's All movements
   of PO-… reads In and Out with no such line, a Location chosen too. Choose
   VITC-100 under Item: the Item column goes, In, Out and Balance replace
-  Change, the newest row's Balance is Stock's On hand for it, and the
+  Change, the newest row's Balance is Stock's On hand for it, a move
+  between two places reads "moved 20 each, counted in neither" once
+  across In and Out, in grey, its Balance unchanged and the period's In
+  and Out without it, the export's Moved column, between Out and
+  Balance, filled on that row alone, and the
   address reads `?variantId=` with an id. When is one menu: Today, This
   week, This month, Last 30 days, Last month and This year, each with
   its days beside it ("This week · 16 – 20 Nov" on Friday 20 November, a
@@ -679,7 +684,8 @@ a second organization.
   code's Movements, opened from its item's Where it stands, names it in
   the Item field, and with Reason › Sampled leaving none, in the line
   too. At
-  390 px each movement is a card, the filters behind one Filters button
+  390 px each movement is a card, a move counted in neither in its row's
+  words, the filters behind one Filters button
   with the sort, When the same list there, Choose dates… opening the two
   dates full width; a lot's Movements with Reason and a When range chosen
   there: the sheet's Clear empties Reason and When and keeps the Lot

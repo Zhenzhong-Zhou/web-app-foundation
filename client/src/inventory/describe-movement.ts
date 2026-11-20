@@ -37,3 +37,16 @@ export function movementHeadCount(columns: MovementColumns): number {
   const figures = { change: 1, inOut: 2, balance: 3 }[columns.figures];
   return figures + (columns.places ? 5 : 4);
 }
+
+/**
+ * A move between two places counted in neither In nor Out, as one code
+ * across every place reads it (85a): its row says how many moved, once,
+ * across both columns, which the sums leave out (118a).
+ */
+export function movedInNeither(movement: Movement): boolean {
+  return (
+    movement.reason === 'transfer' &&
+    movement.quantityIn === null &&
+    movement.quantityOut === null
+  );
+}

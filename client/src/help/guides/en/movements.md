@@ -16,7 +16,7 @@ Each row says when; the item’s name, with its code and type under it, and “w
 
 With one item chosen, **In** and **Out** replace the change, and **Balance** says what was on hand after each row, worked back from today’s on hand.
 
-- Across every place, a move between two of the code’s places is neither In nor Out, so the balance holds. With a **Location** chosen, the figures count that place alone, and a line says so; with a lot chosen, that lot alone, and with a place too, that lot there.
+- Across every place, a move between two of the code’s places is neither In nor Out, so the balance holds: its row says how many moved once, across both, in grey, as in “moved 20 each, counted in neither”, and the period’s In and Out leave it out. With several items, the change reads “moved 20 each”. With a **Location** chosen, the figures count that place alone, and a line says so; with a lot chosen, that lot alone, and with a place too, that lot there.
 - With days chosen, a line above the list gives the opening balance, **In**, **Out** and the closing balance for them: the closing is the opening plus In less Out, and for days that end today, or run past it, it is today’s on hand, dated today. Several items have no such line, since their units differ.
 - With a **Reason** chosen, **Balance** goes, since it counts every reason: “Balance counts every reason. Clear Reason to see it.” In and Out stay.
 - With several items listed at a place, a line asks you to choose one item to see In, Out and Balance. An order’s movements show In and Out, never Balance, so with an order chosen there is no such line.
@@ -33,7 +33,7 @@ A lot or an order a link names shows as a chip above the list, “Lot: VC-0302�
 
 ## Export the list {#export}
 
-Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, the email of whoever did it, and the note last. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item and days chosen, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
+Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, the email of whoever did it, and the note last. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item chosen, a Moved column between Out and Balance gives how many a move counted in neither moved; with days chosen too, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
 
 ## Correct a mistake {#correct}
 

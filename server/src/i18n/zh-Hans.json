@@ -518,6 +518,7 @@
   "exports.column.location": "库位",
   "exports.column.lot": "批次",
   "exports.column.maximum": "最高库存",
+  "exports.column.moved": "移库",
   "exports.column.name": "名称",
   "exports.column.nameChinese": "中文名称",
   "exports.column.nameEnglish": "英文名称",

@@ -14,7 +14,11 @@ import { OFFER_BACK } from '../lib/offer-back';
 import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
-import { movementActor, type MovementColumns } from './describe-movement';
+import {
+  movedInNeither,
+  movementActor,
+  type MovementColumns,
+} from './describe-movement';
 import {
   MOVEMENT_HEADINGS,
   reasonDetailLabel,
@@ -133,12 +137,20 @@ export function MovementCells({
         </TableCell>
       ) : (
         <>
-          <TableCell align="right">
-            <Figure quantity={movement.quantityIn} movement={movement} />
-          </TableCell>
-          <TableCell align="right">
-            <Figure quantity={movement.quantityOut} movement={movement} />
-          </TableCell>
+          {movedInNeither(movement) ? (
+            <TableCell colSpan={2} align="center">
+              <MovedInNeither movement={movement} />
+            </TableCell>
+          ) : (
+            <>
+              <TableCell align="right">
+                <Figure quantity={movement.quantityIn} movement={movement} />
+              </TableCell>
+              <TableCell align="right">
+                <Figure quantity={movement.quantityOut} movement={movement} />
+              </TableCell>
+            </>
+          )}
           {columns.figures === 'balance' && (
             <TableCell align="right">
               <Figure quantity={movement.balance} movement={movement} />
@@ -194,21 +206,60 @@ export function MovementWhen({ movement }: { movement: Movement }) {
  * The change with its unit, "−4 each", "+24 each": the server's signed
  * change, which the export writes too, so the two never differ (review
  * 24); a move counted as neither, between two places across every place,
- * its quantity unsigned. Read without padding zeros, never parsed, since
- * a numeric through a JavaScript number is the loss ADR-025 exists to
+ * in grey words, "moved 20 each", never a bare number, which reads as
+ * stock added (118a). Read without padding zeros, never parsed, since a
+ * numeric through a JavaScript number is the loss ADR-025 exists to
  * avoid.
  */
 export function MovementChange({ movement }: { movement: Movement }) {
   const intl = useIntl();
   const { change, quantity, unitOfMeasure } = movement;
 
-  if (change === null) return displayWithUnit(quantity, unitOfMeasure, intl);
+  if (change === null) {
+    return (
+      <Box component="span" sx={{ color: 'text.secondary' }}>
+        {intl.formatMessage(
+          {
+            id: 'inventory.movements.moved',
+            defaultMessage: 'moved {quantity}',
+          },
+          { quantity: displayWithUnit(quantity, unitOfMeasure, intl) },
+        )}
+      </Box>
+    );
+  }
   const out = change.startsWith('-');
   return (
     <>
       {out ? '−' : '+'}
       {displayWithUnit(out ? change.slice(1) : change, unitOfMeasure, intl)}
     </>
+  );
+}
+
+/**
+ * How many a move counted in neither In nor Out moved, once, in grey
+ * across both columns: "moved 20 each, counted in neither" (118a).
+ */
+export function MovedInNeither({ movement }: { movement: Movement }) {
+  const intl = useIntl();
+
+  return (
+    <Box component="span" sx={{ color: 'text.secondary' }}>
+      {intl.formatMessage(
+        {
+          id: 'inventory.movements.movedNeither',
+          defaultMessage: 'moved {quantity}, counted in neither',
+        },
+        {
+          quantity: displayWithUnit(
+            movement.quantity,
+            movement.unitOfMeasure,
+            intl,
+          ),
+        },
+      )}
+    </Box>
   );
 }
 
@@ -469,6 +520,12 @@ export function MovementCard({
           </CardLine>
         ) : (
           <>
+            {/* The same words as its row, on a line of their own. */}
+            {movedInNeither(movement) && (
+              <Typography variant="body2">
+                <MovedInNeither movement={movement} />
+              </Typography>
+            )}
             {movement.quantityIn !== null && (
               <CardLine label={head('in')}>
                 <Figure quantity={movement.quantityIn} movement={movement} />

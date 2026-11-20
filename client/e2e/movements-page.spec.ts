@@ -162,6 +162,14 @@ test('Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?v
   await expect(head(page, 'Item')).toHaveCount(0);
   // Newest first: the receipt on the purchase, its balance today's 62.
   await expect(cellOf(rows(page).first(), '62 each')).toBeVisible();
+  // The 5 moved from A2 to B1, counted in neither, said once across In
+  // and Out in words (118a).
+  await expect(
+    cellOf(
+      rows(page).filter({ hasText: 'moved 5 each' }),
+      'moved 5 each, counted in neither',
+    ),
+  ).toBeVisible();
 
   // A filter replaces the address (#341): Back leaves Movements.
   await page.goBack();
@@ -547,8 +555,9 @@ test('Movements, Reason › moved: the move alone, From → to naming each end o
   await expect(rows(page)).toHaveCount(1);
   await expect(rows(page).first()).toContainText(scene.shelfA.name);
   await expect(rows(page).first()).toContainText(scene.shelfB.name);
-  // Without padding zeros, with its unit (displayQuantity, #256).
-  await expect(cellOf(rows(page).first(), '5 each')).toBeVisible();
+  // Without padding zeros, with its unit (displayQuantity, #256), in
+  // words, never a bare number, which reads as stock added (118a).
+  await expect(cellOf(rows(page).first(), 'moved 5 each')).toBeVisible();
 });
 
 test('Movements, Location › Shelf B1, every item: a move found from the end it went to', async ({
@@ -823,6 +832,10 @@ test('on a phone: a card per movement, the filters and the sort behind one Filte
   await expect(cards).toHaveCount(6);
   await expect(cards.first()).toContainText('Balance');
   await expect(cards.first()).toContainText('62 each');
+  // A move counted in neither, in its row's words (118a).
+  await expect(
+    cards.filter({ hasText: 'moved 5 each, counted in neither' }),
+  ).toHaveCount(1);
   await expect(page.getByRole('combobox', { name: 'Reason' })).toBeHidden();
 
   await page.getByRole('button', { name: /^Filters/ }).click();

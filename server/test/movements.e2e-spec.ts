@@ -860,6 +860,7 @@ describe('Movements (e2e)', () => {
       'Item',
       'In',
       'Out',
+      'Moved',
       'Balance',
       'Unit',
       'Reason',
@@ -902,8 +903,11 @@ describe('Movements (e2e)', () => {
         To: 'customer',
         For: sold.number,
       }),
+      // A move across every place, counted in neither In nor Out: how
+      // many moved in Moved alone (118a, 114).
       line('2026-11-10 09:30:00', {
         ...moved,
+        Moved: '3',
         Balance: '27',
         Reason: 'Moved',
         From: 'SHELF (SHELF)',
@@ -911,6 +915,7 @@ describe('Movements (e2e)', () => {
       }),
       line('2026-11-12 14:00:00', {
         ...moved,
+        Moved: '4',
         Balance: '27',
         Reason: 'Moved',
         From: 'SHELF (SHELF)',
@@ -968,6 +973,7 @@ describe('Movements (e2e)', () => {
       'Item',
       'In',
       'Out',
+      'Moved',
       'Balance',
       'Unit',
       'Reason',
@@ -1166,6 +1172,7 @@ describe('Movements (e2e)', () => {
       'Item',
       'In',
       'Out',
+      'Moved',
       'Balance',
       'Unit',
       'Reason',

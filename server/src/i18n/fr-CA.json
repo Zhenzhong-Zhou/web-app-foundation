@@ -518,6 +518,7 @@
   "exports.column.location": "Emplacement",
   "exports.column.lot": "Lot",
   "exports.column.maximum": "Maximum",
+  "exports.column.moved": "Déplacé",
   "exports.column.name": "Nom",
   "exports.column.nameChinese": "Nom en chinois",
   "exports.column.nameEnglish": "Nom en anglais",

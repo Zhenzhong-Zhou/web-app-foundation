@@ -384,10 +384,31 @@ describe('MovementsPage', () => {
     expect(await screen.findByRole('cell', { name: '−12 each' })).toBeVisible();
   });
 
-  it('leaves a move between two places unsigned across every place', async () => {
+  // 118a: a move across every place says how many moved, in words,
+  // never a bare number, which reads as stock added.
+  it('says how many a move between two places moved across every place, never a bare number', async () => {
     const row = await rowFor(TRANSFER);
 
-    expect(within(row).getByRole('cell', { name: '12 each' })).toBeVisible();
+    expect(
+      within(row).getByRole('cell', { name: 'moved 12 each' }),
+    ).toBeVisible();
+    expect(
+      within(row).queryByRole('cell', { name: '12 each' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('says a move counted in neither once across In and Out, Balance as it was', async () => {
+    answer([{ ...TRANSFER, balance: '24.0000' }]);
+    renderAt(`/movements?variantId=${ITEM}`);
+
+    const moved = await screen.findByRole('cell', {
+      name: 'moved 12 each, counted in neither',
+    });
+    expect(moved).toHaveAttribute('colspan', '2');
+    const row = moved.closest('tr') as HTMLElement;
+    expect(cellUnder(row, 'In')).toBe(moved);
+    // Spanning In and Out, so Balance is the cell after it.
+    expect(moved.nextElementSibling).toHaveTextContent('24 each');
   });
 
   it('says to choose one item while every item is listed at a place', async () => {
@@ -674,6 +695,19 @@ describe('MovementsPage', () => {
         };
       });
       return () => vi.unstubAllGlobals();
+    });
+
+    // 118a: a card says a move counted in neither in its row's words.
+    it('says a move counted in neither on its card in its row’s words', async () => {
+      answer([{ ...TRANSFER, balance: '24.0000' }]);
+      renderAt(`/movements?variantId=${ITEM}`);
+
+      const card = (
+        await screen.findByText('moved 12 each, counted in neither')
+      ).closest('li') as HTMLElement;
+      expect(within(card).queryByText('In')).not.toBeInTheDocument();
+      expect(within(card).queryByText('Out')).not.toBeInTheDocument();
+      expect(within(card).getByText('Balance')).toBeVisible();
     });
 
     // Review 48: the sheet's Clear clears the sheet's own fields; the

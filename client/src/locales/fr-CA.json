@@ -709,6 +709,8 @@
   "inventory.movements.in": "Entrée",
   "inventory.movements.intro": "Chaque variation de quantité, de la plus récente à la plus ancienne. Les mouvements ne sont jamais modifiés ni supprimés — une erreur se corrige par un autre mouvement.",
   "inventory.movements.lotChip": "Lot : {code}",
+  "inventory.movements.moved": "déplacé {quantity}",
+  "inventory.movements.movedNeither": "déplacé {quantity}, ni en entrée ni en sortie",
   "inventory.movements.noneMatch": "Aucun mouvement ne correspond à : {filters}.",
   "inventory.movements.openingOn": "Ouverture, {day}",
   "inventory.movements.orderChip": "Commande : {number}",

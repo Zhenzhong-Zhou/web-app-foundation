@@ -245,6 +245,19 @@ const BALANCE_WORDS = {
 };
 
 /**
+ * A move between two places counted in neither In nor Out, as one code
+ * across every place reads it (85a): its quantity is the Moved column's
+ * (118a, 114).
+ */
+function movedInNeither(movement: Movement): boolean {
+  return (
+    movement.reason === 'transfer' &&
+    movement.quantityIn === null &&
+    movement.quantityOut === null
+  );
+}
+
+/**
  * A line of Movements' export (ADR-093, 87a and 88a): a movement, or a
  * date range's opening or closing balance, its first line and its last.
  */
@@ -299,7 +312,9 @@ export function movementLines(
  * and closing their days; beside Code, the code a row was recorded under
  * where it differs from today's, as the row's "was" (116); In, Out and
  * Balance for one code, In and Out for one code with a reason or for an
- * order, else Change, as the list reads (cardOf); From and To, each place
+ * order, else Change, as the list reads (cardOf), the stock card's
+ * Moved between Out and Balance, a move counted in neither's quantity
+ * (118a, 114); From and To, each place
  * by its whole path, only for a reader who may see places, else no such
  * columns (ADR-080; 96a); For, the document, or a sample's recipient by
  * name, only as the reader may see it (55a; 125); By with the person's email (ADR-063); the note last, as
@@ -366,6 +381,14 @@ export function movementColumns(options: {
         ),
         ...(card.balance
           ? [
+              // A move across every place, counted in neither In nor
+              // Out, says how many moved here alone (118a, 114).
+              asQuantity(
+                t({ id: 'exports.column.moved', defaultMessage: 'Moved' }),
+                of((movement) =>
+                  movedInNeither(movement) ? movement.quantity : null,
+                ),
+              ),
               asQuantity(
                 t({
                   id: 'exports.column.balance',

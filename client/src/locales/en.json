@@ -709,6 +709,8 @@
   "inventory.movements.in": "In",
   "inventory.movements.intro": "Every quantity change, newest first. Movements are never edited or removed — a mistake is corrected by another movement.",
   "inventory.movements.lotChip": "Lot: {code}",
+  "inventory.movements.moved": "moved {quantity}",
+  "inventory.movements.movedNeither": "moved {quantity}, counted in neither",
   "inventory.movements.noneMatch": "No movements match: {filters}.",
   "inventory.movements.openingOn": "Opening, {day}",
   "inventory.movements.orderChip": "Order: {number}",

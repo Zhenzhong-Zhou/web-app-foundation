@@ -709,6 +709,8 @@
   "inventory.movements.in": "收入",
   "inventory.movements.intro": "所有数量变动，按时间由新到旧排列。库存变动记录永不编辑或删除——错误通过另一条库存变动来更正。",
   "inventory.movements.lotChip": "批次：{code}",
+  "inventory.movements.moved": "移库 {quantity}",
+  "inventory.movements.movedNeither": "移库 {quantity}，不计入收入和发出",
   "inventory.movements.noneMatch": "没有符合筛选条件的库存变动：{filters}。",
   "inventory.movements.openingOn": "期初（{day}）",
   "inventory.movements.orderChip": "订单：{number}",
