@@ -1307,3 +1307,38 @@ The maintainer's answers, each by its letter:
   pictures in #644's table.
 - After it: `/triage`, the comments the amendment's Consequences name;
   Movements' boards at 1920 (E7) at its branch's first step.
+
+## Amendment (November 2026) — a list's name pinned wherever it stands, two lines at most, and a path cut in its middle (ADR-093)
+
+Planned on 19 November 2026 on `adr-093-movements`, with ADR-093's
+amendment for Movements' branch, whose check and requirements (R29)
+hold the reasons. Drawn on the canvas rows "库存与库存变动 第四版 ·
+Inventory and Movements v4" and "第五版 · v5". The design language's
+lines change in the branch's docs step, once the code holds them.
+
+- **The name pinned wherever it stands (81a):** a table too wide for
+  its box pins its name column, marked as the row's Actions are, not
+  whichever column comes first; a column before it, as Movements' When,
+  passes under it as the box scrolls. A list with no name column, as
+  Movements for one item, pins its first. Each side's edge, the half
+  of the box both may take, and the scroll padding stay as built
+  (E12a).
+- **Two lines at most (83a, #640):** a pinned name keeps a least width
+  of 20em, 320 px at Standard text and growing with it, and takes at
+  most two lines; a longer name ends in "…", the whole name in a
+  tooltip on hover and on focus, which Escape closes and the pointer
+  can rest on (WCAG 1.4.13), never a `title`. A screen reader hears the
+  whole name, since the cut is drawn, not written. Unpinned, a name
+  wraps as before. 16em is tried in the branch's walk.
+- **A path cut in its middle (93a, #639):** a place's path that does
+  not fit keeps the warehouse and the place's own name, "Main
+  warehouse › … › Shelf A2", replacing the cut from the left; the whole
+  path on hover, on focus and on a tap, and for a screen reader.
+- **`wholeOnFocus` for every list that scrolls sideways (#642):** the
+  shared table brings a focused control wholly into view itself, and
+  builds its stuck and sideways styles once.
+- **#644's panel, for this amendment:** finding 8 is ADR-093's R32;
+  findings 1 (a table too wide says so with a line and a fade alone),
+  4 (targets under 44 px on touch), 10 (nothing leads to Larger text)
+  and 11 (secondary text at 14 px) stay with their issues, #637, #170
+  and #606, #622 and #482, and #610 and #566.

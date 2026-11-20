@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 18 November 2026
+# web-app-foundation — handoff, 19 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,26 +13,44 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 18 November 2026:
+On 19 November 2026:
 
+- **Movements, ADR-093's second branch,** `adr-093-movements`, from
+  `main` at 0ebaac68: planned on 18 and 19 November, its requirements
+  (R24 to R35) confirmed before drafting and every decision chosen as
+  recommended (81a to 94a), in [ADR-093's amendment](adr/0093-inventory-and-movements.md)
+  and ADR-090's, the branch's first commit; the canvas's rows "库存与库存变动
+  第四版 · v4", Movements in the 1,600 px frame at 1920 and 1366, and
+  "第五版 · v5". Its brief, v6, is in the ignored
+  `tmp/adr-093-movements/`, with #644's panel reports in its
+  `from-632/`. With it: [#605] as its 56a decided, [#628], [#636],
+  [#638] with [#473]'s Back after Show more, [#639], [#640], [#642],
+  #644's finding 8 (Free 可分配, Left 预计剩余), the triage's riders and
+  the dependencies by the Dates.
 - **[#632], one 1,600 px page frame and table headers that stay,**
   [ADR-090's amendment](adr/0090-the-design-language.md) of 18
   November, with its as-built: planned and built on 18 November on
-  `fix-632-page-frame`, 39 commits with the as-built, pull request
-  [#644], open, closing #632 and [#516]; the canvas's rows "页面宽度和表头
-  第二版 · v2" to "第四版 · v4"; its brief in the ignored
-  `tmp/fix-632-page-frame/`. Every page in one 1,600 px frame, Home,
-  Your account and Organization at 1,200, centred; one shared list
-  table on 22 lists, its header staying under the top bar; a table too
-  wide for its box scrolling sideways with its name pinned and, while
-  the two take no more than half the box, its row's Actions; one height
-  for what stays under the bar. With it: #516's burn-in scaled to a run
-  budget, and the planning skill packed as a `.skill` file. The reviews
-  found 54 and fixed 18; their issues are [#639] to [#642]; filed with
-  them, [#637] (Stock and Reorder at 1366, columns under the row,
-  `later`), [#638] (a list's count shown always, for Movements) and
-  [#643] (Linux WebKit's one flaky test, `fix-now`). Then the merge
-  (Still to do, by hand), then Movements' branch.
+  `fix-632-page-frame`, 39 commits with the as-built, merged the same
+  night as [#644] (0ebaac68), a merge commit, closing #632 and [#516];
+  `main`'s CI passed and it was deployed at 23:57. Every page in one
+  1,600 px frame, Home, Your account and Organization at 1,200,
+  centred; one shared list table on 22 lists, its header staying under
+  the top bar; a table too wide for its box scrolling sideways with its
+  name pinned and, while the two take no more than half the box, its
+  row's Actions; one height for what stays under the bar. With it:
+  #516's burn-in scaled to a run budget, and the planning skill packed
+  as a `.skill` file. The reviews found 54 and fixed 18; their issues
+  are [#639] to [#642]; filed with them, [#637] (Stock and Reorder at
+  1366, columns under the row, `later`), [#638] (a list's count shown
+  always, for Movements) and [#643] (Linux WebKit's one flaky test,
+  `fix-now`). Its live checks are still owed (Still to do, by hand).
+- **The triage after [#644]'s merge,** 18 November, applied: no close
+  and no new issue; comments on [#159], [#507], [#561], [#565] and
+  [#616], each done in part by #644; [#507]'s 41 ticked; [#530], the
+  CI web server's Node abort, its fix still to choose (vite preview,
+  Node 24, or a report to Node), and [#643] in the Fix-ups milestone,
+  `fix-now`; nothing moved to Movements. 186 open: 23 `fix-now`, 109
+  `when-touched` and 54 `later`.
 - **The triage of 18 November,** after [#635]'s merge, applied as
   proposed (its choices M and 77a to 80a): [#550] and [#602] closed, 26
   comments, [#607] and [#608] in the Fix-ups milestone, [#604] given its
@@ -496,19 +514,16 @@ On 18 November 2026:
 
 ## Still to do, by hand
 
-- **Before and after [#644]'s merge** ([#632]): every browser by
-  `gh workflow run ci.yml --ref fix-632-page-frame`, until "CI — every
-  browser, by hand" passes, its one known miss [#643]; Stock scrolled
-  until its header sticks, then narrowed until it scrolls sideways, on
-  an Android phone in WeChat, in 360 or QQ in 极速模式 on Windows and on
-  an iPhone on iOS 16.4 or later; MC-1565 to MC-1575 walked; the
-  pictures in the pull request's table; #644's burn-in summary read
-  for #516; code scanning, none open. Then the merge, as a merge commit;
-  the deploy's checks, `/api/health`, and Stock and Home at 1920 on the
-  live site; `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`,
-  then `--yes`; Project knowledge re-synced; and `/triage` over `ui`,
-  `ops` and `docs`: comments on [#159], [#565] and [#616], and [#507]'s
-  41 ticked.
+- **After [#644]'s merge** ([#632]), on the live site: MC-1565 to
+  MC-1575 walked, and Stock scrolled until its header sticks, then
+  narrowed until it scrolls sideways, on an Android phone in WeChat, in
+  360 or QQ in 极速模式 on Windows and on an iPhone on iOS 16.4 or
+  later; each finding a `fix-now` issue. Done on 18 November: every
+  browser by hand, the pictures in the pull request's table, #644's
+  burn-in summary read for #516, code scanning with none open, the
+  merge as a merge commit, the deploy and its checks, the prune and the
+  clean-up, Project knowledge re-synced, and `/triage` (Where things
+  stand).
 - **After [#635]'s merge,** done on 18 November, ADR-093's step 24:
   the every-browser run and the budgets at small on the branch, passing;
   MC-310, MC-316 and MC-317 by hand; the eight pictures in the pull
@@ -1036,6 +1051,7 @@ Not repeated here; each list has one home:
 [#523]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/523
 [#526]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/526
 [#529]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/529
+[#530]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/530
 [#531]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/531
 [#532]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/532
 [#533]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/533
@@ -1089,6 +1105,7 @@ Not repeated here; each list has one home:
 [#607]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/607
 [#608]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/608
 [#616]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/616
+[#628]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/628
 [#631]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/631
 [#632]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/632
 [#633]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/633
