@@ -5,6 +5,7 @@ import {
   Popover,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material';
 import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
@@ -31,6 +32,12 @@ const PERIODS = defineMessages<WhenPeriod>({
   },
   lastMonth: { id: 'filters.range.lastMonth', defaultMessage: 'Last month' },
   thisYear: { id: 'filters.range.thisYear', defaultMessage: 'This year' },
+});
+
+/** Choose dates…' two fields. */
+const ENDS = defineMessages({
+  from: { id: 'filters.when.from', defaultMessage: 'From' },
+  to: { id: 'filters.when.to', defaultMessage: 'To' },
 });
 
 /** The menu's two choices beside its periods: the panel, and none. */
@@ -96,33 +103,40 @@ export function WhenMenu({
     close();
   };
 
+  // Its title, From and To, what the two days mean, then Clear and
+  // Apply on a row of their own (review 1's polish).
   const dates = (
-    <Stack
-      direction={inline ? 'column' : 'row'}
-      useFlexGap
-      spacing={1}
-      sx={inline ? undefined : { p: 2 }}
-    >
-      {(['from', 'to'] as const).map((end) => (
-        <TextField
-          key={end}
-          type="date"
-          size="small"
-          fullWidth={inline}
-          label={intl.formatMessage(
-            end === 'from'
-              ? { id: 'filters.range.from', defaultMessage: '{date} from' }
-              : { id: 'filters.range.to', defaultMessage: '{date} to' },
-            { date: label },
-          )}
-          value={draft[end] ?? ''}
-          onChange={(event) =>
-            setDraft({ ...draft, [end]: event.target.value || undefined })
-          }
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={inline ? undefined : { width: rem(170) }}
-        />
-      ))}
+    <Stack spacing={1.5} sx={inline ? undefined : { p: 2, maxWidth: rem(400) }}>
+      <Typography id={`${id}-dates`} variant="h6" component="h2">
+        {intl.formatMessage({
+          id: 'filters.when.datesTitle',
+          defaultMessage: 'Choose dates',
+        })}
+      </Typography>
+      <Stack direction={inline ? 'column' : 'row'} useFlexGap spacing={1}>
+        {(['from', 'to'] as const).map((end) => (
+          <TextField
+            key={end}
+            type="date"
+            size="small"
+            fullWidth={inline}
+            label={intl.formatMessage(ENDS[end])}
+            value={draft[end] ?? ''}
+            onChange={(event) =>
+              setDraft({ ...draft, [end]: event.target.value || undefined })
+            }
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={inline ? undefined : { width: rem(170) }}
+          />
+        ))}
+      </Stack>
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {intl.formatMessage({
+          id: 'filters.when.datesHint',
+          defaultMessage:
+            'Both days are included. Leave From empty for from the start, To empty for until today.',
+        })}
+      </Typography>
       <Stack
         direction="row"
         useFlexGap
@@ -174,15 +188,24 @@ export function WhenMenu({
           inputLabel: { shrink: true },
         }}
       >
-        {WHEN_PERIODS.map((each) => {
+        {WHEN_PERIODS.map((each, index) => {
           const days = whenRange(each, today);
           return (
-            <MenuItem key={each} value={each}>
-              {intl.formatMessage(PERIODS[each])}
-              <Box component="span" sx={{ color: 'text.secondary' }}>
-                {SEPARATOR}
-                {formatDaysShort(days.from, days.to)}
-              </Box>
+            // The last period's divider sets them apart from Choose
+            // dates…; one span, as a flex item of its own would drop the
+            // space before the dot.
+            <MenuItem
+              key={each}
+              value={each}
+              divider={index === WHEN_PERIODS.length - 1}
+            >
+              <span>
+                {intl.formatMessage(PERIODS[each])}
+                <Box component="span" sx={{ color: 'text.secondary' }}>
+                  {SEPARATOR}
+                  {formatDaysShort(days.from, days.to)}
+                </Box>
+              </span>
             </MenuItem>
           );
         })}
@@ -209,6 +232,9 @@ export function WhenMenu({
               onClose={close}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
               disableRestoreFocus
+              slotProps={{
+                paper: { role: 'dialog', 'aria-labelledby': `${id}-dates` },
+              }}
             >
               {dates}
             </Popover>

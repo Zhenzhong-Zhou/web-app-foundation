@@ -74,6 +74,23 @@ describe('WhenMenu', () => {
     ]);
   });
 
+  // Review 1's polish: a thin line under the periods and under Choose
+  // dates…; each period's name and days in one span, as a flex item of
+  // their own would drop the space before the dot.
+  it('sets the periods apart from Choose dates… and Any time, each period’s days beside its name', async () => {
+    const user = userEvent.setup();
+    render(<Harness />, { wrapper: TestProviders });
+
+    await user.click(when());
+    const options = within(screen.getByRole('listbox')).getAllByRole('option');
+
+    expect(
+      options.map((option) => option.classList.contains('MuiMenuItem-divider')),
+    ).toEqual([false, false, false, false, false, true, true, false]);
+    expect(options[0]!.children).toHaveLength(1);
+    expect(options[0]!.children[0]!.textContent).toBe('Today · Nov 20');
+  });
+
   it('writes a period’s days and shows them in the field; Any time clears them', async () => {
     const user = userEvent.setup();
     render(<Harness />, { wrapper: TestProviders });
@@ -82,7 +99,8 @@ describe('WhenMenu', () => {
     await user.click(screen.getByRole('option', { name: /^This week/ }));
 
     expect(rangeOf()).toEqual({ from: '2026-11-16', to: '2026-11-20' });
-    expect(when()).toHaveTextContent('Nov 16, 2026 – Nov 20, 2026');
+    // Intl's range, the year once (review 1's polish).
+    expect(when()).toHaveTextContent('Nov 16 – 20, 2026');
 
     await user.click(when());
     expect(screen.getByRole('option', { name: /^This week/ })).toHaveAttribute(
@@ -114,8 +132,15 @@ describe('WhenMenu', () => {
     await user.click(when());
     await user.click(screen.getByRole('option', { name: 'Choose dates…' }));
 
-    const from = await screen.findByLabelText('When from');
-    const to = screen.getByLabelText('When to');
+    // A panel titled for what it does, saying what the two days mean.
+    const panel = await screen.findByRole('dialog', { name: 'Choose dates' });
+    expect(
+      within(panel).getByText(
+        'Both days are included. Leave From empty for from the start, To empty for until today.',
+      ),
+    ).toBeVisible();
+    const from = within(panel).getByLabelText('From');
+    const to = within(panel).getByLabelText('To');
     expect(from).toHaveValue('2026-10-01');
     expect(to).toHaveValue('2026-10-31');
 
@@ -124,14 +149,14 @@ describe('WhenMenu', () => {
     await user.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(rangeOf()).toEqual({ from: '2026-10-01', to: '2026-11-15' });
-    expect(screen.queryByLabelText('When from')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('From')).not.toBeInTheDocument();
     expect(when()).toHaveFocus();
 
     await user.click(when());
     await user.click(screen.getByRole('option', { name: 'Choose dates…' }));
     await user.click(await screen.findByRole('button', { name: 'Clear' }));
-    expect(screen.getByLabelText('When from')).toHaveValue('');
-    expect(screen.getByLabelText('When to')).toHaveValue('');
+    expect(screen.getByLabelText('From')).toHaveValue('');
+    expect(screen.getByLabelText('To')).toHaveValue('');
     await user.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(rangeOf()).toEqual({});
@@ -161,11 +186,11 @@ describe('WhenMenu', () => {
 
     await user.click(when());
     await user.click(screen.getByRole('option', { name: 'Choose dates…' }));
-    await user.type(await screen.findByLabelText('When from'), '2026-11-01');
+    await user.type(await screen.findByLabelText('From'), '2026-11-01');
     await user.keyboard('{Escape}');
 
     await vi.waitFor(() =>
-      expect(screen.queryByLabelText('When from')).not.toBeInTheDocument(),
+      expect(screen.queryByLabelText('From')).not.toBeInTheDocument(),
     );
     expect(when()).toHaveFocus();
     expect(rangeOf()).toEqual({});
@@ -178,9 +203,9 @@ describe('WhenMenu', () => {
     await user.click(when());
     await user.click(screen.getByRole('option', { name: 'Choose dates…' }));
 
-    expect(await screen.findByLabelText('When from')).toBeVisible();
+    expect(await screen.findByLabelText('From')).toBeVisible();
     expect(screen.queryByRole('presentation')).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('When from'), '2026-11-01');
+    await user.type(screen.getByLabelText('From'), '2026-11-01');
     await user.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(rangeOf()).toEqual({ from: '2026-11-01' });

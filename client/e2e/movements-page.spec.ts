@@ -239,8 +239,9 @@ test('Movements, every filter in the address: a reload keeps each, and the rows'
   // When's days, in Choose dates…'s two fields (review 1).
   await page.getByRole('combobox', { name: 'When' }).click();
   await page.getByRole('option', { name: 'Choose dates…' }).click();
-  await expect(page.getByLabel('When from')).toHaveValue(from);
-  await expect(page.getByLabel('When to')).toHaveValue(until);
+  const dates = page.getByRole('dialog', { name: 'Choose dates' });
+  await expect(dates.getByLabel('From', { exact: true })).toHaveValue(from);
+  await expect(dates.getByLabel('To', { exact: true })).toHaveValue(until);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('combobox', { name: 'When' })).toBeFocused();
   await expect(rows(page)).toHaveCount(2);
@@ -327,6 +328,28 @@ test('Movements, one item, When › This month: ?from= and ?until= in the organi
 
   await page.goBack();
   await expect(page).toHaveURL(/\/locations$/);
+});
+
+// Review 1's polish: a period nothing moved in lists nothing from
+// outside it, but says so, with Show all movements.
+test('Movements, When › Last month, nothing moved then: the no-result line with Show all movements, no row from outside it', async ({
+  page,
+  freshOrg,
+}) => {
+  await movementsScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await movementsFrom(page);
+  await expect(rows(page)).toHaveCount(7);
+
+  await page.getByRole('combobox', { name: 'When' }).click();
+  await page.getByRole('option', { name: /^Last month · / }).click();
+
+  await expect(page).toHaveURL(/[?&]from=\d{4}-\d{2}-01(&|$)/);
+  await expect(page.getByText(/^No movements match: /)).toBeVisible();
+  await expect(page.getByRole('table')).toHaveCount(0);
+  await expect(
+    page.getByRole('main').getByRole('button', { name: 'Show all movements' }),
+  ).toHaveCount(2);
 });
 
 test('Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason', async ({

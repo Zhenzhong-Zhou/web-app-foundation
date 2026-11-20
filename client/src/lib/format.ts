@@ -188,6 +188,29 @@ export function formatDayShort(
 }
 
 /**
+ * Two calendar days with their year, by Intl's range in the reader's
+ * language: "Nov 1 – 20, 2026", the year once when it is one, "Dec 28,
+ * 2026 – Jan 3, 2027" when not; a chosen range of days (ADR-093, review
+ * 1's polish). In UTC, as formatDay.
+ */
+export function formatDayRange(
+  from: string,
+  to: string,
+  locale: string | undefined = current,
+): string {
+  return cached(
+    `day:${locale}`,
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }),
+  ).formatRange(new Date(from), new Date(to));
+}
+
+/**
  * Two calendar days without their year, "16 – 20 Nov", or one, "20 Nov",
  * where they are the same: a When period's days beside its name (ADR-093,
  * review 1). In UTC, as formatDay.

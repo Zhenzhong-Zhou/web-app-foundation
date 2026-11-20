@@ -666,14 +666,19 @@ a second organization.
   address reads `?variantId=` with an id. When is one menu: Today, This
   week, This month, Last 30 days, Last month and This year, each with
   its days beside it ("This week · 16 – 20 Nov" on Friday 20 November, a
-  period that holds today ending today), then Choose dates…, and Any
-  time at its foot; Escape closes it, focus back on When. Choose This
-  month: Opening, In, Out and Closing above the table, Closing the
-  Opening plus In less Out, and the field and a chip, "When: 1 Nov 2026
-  – 20 Nov 2026", show the days, the chip's × clearing them. Choose
-  dates… opens From and To, typed or picked, with Clear and Apply; From
-  alone reads "From 1 Nov 2026" in the field, To alone "Until 15 Nov
-  2026". Dates to 30 November, on the 20th: "Closing, 20 Nov 2026",
+  period that holds today ending today, a space either side of the
+  dot), a thin line, Choose dates…, another, and Any time at its foot;
+  Escape closes it, focus back on When. Choose This month: Opening, In,
+  Out and Closing above the table, Closing the Opening plus In less Out,
+  and the field and a chip, "When: Nov 1 – 20, 2026", the year once,
+  show the days, the chip's × clearing them; in Français « 1–20 nov.
+  2026 », in 中文 Intl's "2026/11/1 – 2026/11/20". Choose Last month:
+  no row, "No movements match: …" with Show all movements. Choose
+  dates… opens a panel titled Choose dates: From and To, typed or
+  picked, "Both days are included. Leave From empty for from the start,
+  To empty for until today." under them, and Clear and Apply on a row
+  below; From alone reads "From 1 Nov 2026" in the field, To alone
+  "Until 15 Nov 2026". Dates to 30 November, on the 20th: "Closing, 20 Nov 2026",
   today's, never the range's end, Opening still its first day, as the
   export's closing row. On the item's page, Where it stands' All
   movements of VITC-100 opens on this month, its four figures at once.

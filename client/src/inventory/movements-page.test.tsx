@@ -502,10 +502,11 @@ describe('MovementsPage', () => {
 
     expect(
       await screen.findByRole('combobox', { name: /^When/ }),
-    ).toHaveTextContent('Oct 1, 2026 – Oct 31, 2026');
+    ).toHaveTextContent('Oct 1 – 31, 2026');
     await userEvent.click(
       screen.getByRole('button', {
-        name: 'Remove filter: When: Oct 1, 2026 – Oct 31, 2026',
+        // Intl's thin spaces around the dash.
+        name: /^Remove filter: When: Oct 1\s–\s31, 2026$/,
       }),
     );
 
@@ -554,7 +555,7 @@ describe('MovementsPage', () => {
   // dash, an open range by its one end.
   it.each([
     ['until=2026-10-31', 'until Oct 31, 2026'],
-    ['from=2026-10-01&until=2026-10-31', 'Oct 1, 2026 – Oct 31, 2026'],
+    ['from=2026-10-01&until=2026-10-31', 'Oct 1 – 31, 2026'],
   ])('names the days on when nothing matches, as %s', async (days, said) => {
     answer([]);
     renderAt(`/movements?reason=sample&${days}`);
