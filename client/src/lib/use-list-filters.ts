@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { type Location, useLocation, useSearchParams } from 'react-router-dom';
 
 /**
  * How one of a list's filters is kept in the address: read from it, and
@@ -59,6 +59,13 @@ export const id: AddressFilter<string> = {
 };
 
 /**
+ * The last address a list wrote, and the address the page showed as it
+ * did: while the page still shows that one, the next write starts from
+ * what was written (#636).
+ */
+let written: { shown: Location; search: string } | null = null;
+
+/**
  * Writes to the address in place, replacing the history entry, so Back
  * leaves the list rather than stepping back through each filter pressed;
  * `null` removes a key. The link's state is kept, so a page a link inside
@@ -68,27 +75,36 @@ export const id: AddressFilter<string> = {
  * its search (useListSearch) and its tab (useTab), so the rule lives here
  * alone (#505's 58). The same function until the address or its state
  * changes, so an effect may depend on it.
+ *
+ * Each write starts from the address as it is when it runs, not as the
+ * page last showed it (#636): react-router 7 shows an address in a
+ * transition, which on a slow device ends after a search's wait, and a
+ * search written then from the address shown put back a filter just
+ * cleared. Two writes in a row each keep the other's.
  */
 export function useAddressWrite(): (
   changes: Record<string, string | null>,
 ) => void {
   const [, setParams] = useSearchParams();
-  const { state } = useLocation();
+  const location = useLocation();
 
   return useCallback(
     (changes) =>
       setParams(
         (previous) => {
-          const next = new URLSearchParams(previous);
+          const next = new URLSearchParams(
+            written?.shown === location ? written.search : previous,
+          );
           for (const [key, value] of Object.entries(changes)) {
             if (value === null) next.delete(key);
             else next.set(key, value);
           }
+          written = { shown: location, search: next.toString() };
           return next;
         },
-        { replace: true, state },
+        { replace: true, state: location.state },
       ),
-    [setParams, state],
+    [setParams, location],
   );
 }
 

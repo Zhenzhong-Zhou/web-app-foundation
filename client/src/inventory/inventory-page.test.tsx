@@ -1,16 +1,11 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { type ReactNode, useState } from 'react';
 import {
-  createPath,
   Link,
   MemoryRouter,
-  type Navigator,
   Route,
-  Router,
   Routes,
-  type To,
   useLocation,
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +14,7 @@ import type { Delivery, StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
 import { SEARCH_WAIT_MS } from '../lib/use-list-search';
 import { apiError } from '../test/handlers';
+import { heldRouter } from '../test/held-router';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
@@ -186,42 +182,6 @@ function renderAt(address: string, permissions: string[]) {
     </MemoryRouter>,
     { permissions },
   );
-}
-
-/**
- * A router as react-router 7 is on a slow runner: a write reaches the
- * address at once, and the page shows it only when `show` is called, as
- * the transition react-router renders it in can finish after a search's
- * wait has ended.
- */
-function heldRouter(start: string) {
-  let address = start;
-  let show = () => {};
-  const write = (to: To) => {
-    address = typeof to === 'string' ? to : createPath(to);
-  };
-  const navigator: Navigator = {
-    createHref: (to) => (typeof to === 'string' ? to : createPath(to)),
-    go: () => {},
-    push: write,
-    replace: write,
-  };
-
-  function HeldRouter({ children }: { children: ReactNode }) {
-    const [shown, setShown] = useState(start);
-    show = () => setShown(address);
-    return (
-      <Router location={shown} navigator={navigator}>
-        {children}
-      </Router>
-    );
-  }
-
-  return {
-    HeldRouter,
-    address: () => address,
-    show: () => act(() => show()),
-  };
 }
 
 const CHANGES = ['Move…', 'Ship out…', 'Send sample…', 'Edit lot details…'];

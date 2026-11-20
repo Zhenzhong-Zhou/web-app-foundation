@@ -4595,6 +4595,12 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R104** *(A search written a moment after a filter put the filter
+  back, #636)* In Chrome's DevTools, Performance, slow the CPU 20 times.
+  On Orders with Fulfilled chosen, type "acme" in the search and at once
+  press All: once the list settles, the address reads
+  `?status=all&search=acme` and All stays chosen, never Fulfilled again.
+
 - **MC-R103** *(A main button under the pointer fell to about 3.7 : 1 in
   dark mode, #557)* In dark mode, on Items, rest the pointer on Add item
   without pressing: the button turns lighter, not darker, and its dark
@@ -6955,3 +6961,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, #642: every list too wide for
   its box brings a control focused wholly into view, as Stock and Reorder
   did: MC-1568.
+- 2026-11-20: ADR-093's Movements branch, #636: a list's address written
+  from the address as it is when the write runs, so a search a moment
+  after a filter keeps the filter's change: MC-R104 added.
