@@ -92,7 +92,7 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 What an item has **Left** = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another. Said in a line it is “10 left · reorder at 36”, and a press on it opens the item’s page at [Where it stands](/items#stands), which lists what makes each figure up.
 
-An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. A line under the list says how many codes it shows, such as “4 codes”. The list opens with the most to order first; press **Status** to put the furthest below their point first instead, or on a phone choose **Low first** under **Sort**. **Low stock** shows the out ones too. Open a row to see what makes up what is left, late orders marked; on a phone, where each item is a card, press the line saying how many are left, which opens the item’s stock.
+An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. A line under the list says how many codes it shows, such as “4 codes”. The list opens with the most to order first; press **Status** to put the furthest below their point first instead, or on a phone choose **Low first** under **Sort**. **Low stock** shows the out ones too. Open a row with “Who waits · 2 orders”, which says how many orders wait for it, to see what makes up what is left, late orders marked; on a phone, where each item is a card, press the line saying how many are left, which opens the item’s stock.
 
 ## How much to order {#how-much}
 

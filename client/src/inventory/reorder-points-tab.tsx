@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Checkbox,
-  IconButton,
   MenuItem,
   Paper,
   Stack,
@@ -479,21 +478,34 @@ function PointRow({
           >
             <MainAction row={row} onBuy={onBuy} onPlan={onPlan} />
             {!grey && (
-              <IconButton
+              // Words, not an icon alone (107a): how many orders wait,
+              // its name ending with the code, as every row has one.
+              <Button
+                variant="text"
                 size="small"
                 aria-expanded={open}
                 aria-controls={open ? detailId : undefined}
                 aria-label={intl.formatMessage(
                   {
-                    id: 'inventory.reorder.details',
-                    defaultMessage: 'Where {sku} stands',
+                    id: 'inventory.reorder.whoWaitsFor',
+                    defaultMessage:
+                      '{count, plural, =0 {Who waits · no orders} one {Who waits · # order} other {Who waits · # orders}} for {sku}',
                   },
-                  { sku: row.sku },
+                  { count: row.waitingOrders, sku: row.sku },
                 )}
+                endIcon={open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                 onClick={() => setOpen((was) => !was)}
+                sx={{ whiteSpace: 'nowrap' }}
               >
-                {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-              </IconButton>
+                {intl.formatMessage(
+                  {
+                    id: 'inventory.reorder.whoWaits',
+                    defaultMessage:
+                      '{count, plural, =0 {Who waits · no orders} one {Who waits · # order} other {Who waits · # orders}}',
+                  },
+                  { count: row.waitingOrders },
+                )}
+              </Button>
             )}
             {actions}
           </Stack>

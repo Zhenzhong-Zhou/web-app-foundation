@@ -17894,6 +17894,9 @@
           "stillNeeded": {
             "type": "string"
           },
+          "waitingOrders": {
+            "type": "number"
+          },
           "inDraft": {
             "type": "string"
           },
@@ -17946,6 +17949,7 @@
           "usable",
           "coming",
           "stillNeeded",
+          "waitingOrders",
           "inDraft",
           "position",
           "status",

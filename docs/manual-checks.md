@@ -4656,13 +4656,15 @@ site, after a deploy that changes the setting, the route or the relay.
   order, Export writes the rows in that order. In French the three read
   Tous, Stock bas and Épuisé; in 中文
   全部, 库存不足 and 缺货.
-- **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
-  boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
+- **MC-4204** *(ADR-085; 107a)* An opened row. ELDER-250's "Who waits ·
+  2 orders", in words beside its arrow, never an icon alone (« Qui attend
+  · 2 commandes », 谁在等 · 2 个订单; a row no sale waits for, "Who waits ·
+  no orders"), opens four boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
   Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
   = Left, 58 against its point of 96, "Up to 192 · suggested order"
   and its quantity. Each number opens its order. VITC-100's Usable says
   how much was left out as expired; BOTTLE-90's, how much was left out as
-  issued to a run. The chevron again closes it. On a fast connection no
+  issued to a run. Who waits again closes it. On a fast connection no
   grey placeholder flashes before the boxes, nor before Edit's fields;
   with the network throttled to Slow 4G, one shows while it reads. As
   Fatima Haddad (Sales), with no `locations.view`, ELDER-250's Usable

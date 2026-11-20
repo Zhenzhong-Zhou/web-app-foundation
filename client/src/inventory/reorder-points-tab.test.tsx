@@ -45,6 +45,7 @@ function point(over: Partial<ReorderPointRow>): ReorderPointRow {
     suggestedMultiples: '2',
     drafted: false,
     drafts: [],
+    waitingOrders: 0,
     ...over,
   };
 }
@@ -252,7 +253,9 @@ describe('Reorder', () => {
     open(['stock.view']);
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     );
     await userEvent.click(
       within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getByText('Low'),
@@ -394,12 +397,38 @@ describe('Reorder', () => {
     ).toBeInTheDocument();
   });
 
+  // 107a: the control that opens who waits says it in words, how many
+  // orders by the language's plural, never an icon alone; its name ends
+  // with the row's code.
+  it('says on each row who waits, in words, by the plural', async () => {
+    open(['stock.view'], undefined, {
+      rows: [
+        point({ sku: 'D3-1000', waitingOrders: 2 }),
+        point({ sku: 'OMEGA3-90', productName: 'Omega 3', waitingOrders: 1 }),
+      ],
+    });
+
+    const two = await screen.findByRole('button', {
+      name: 'Who waits · 2 orders for D3-1000',
+    });
+    expect(two).toHaveTextContent(/^Who waits · 2 orders$/);
+    expect(two).toHaveAttribute('aria-expanded', 'false');
+    expect(
+      screen.getByRole('button', { name: 'Who waits · 1 order for OMEGA3-90' }),
+    ).toHaveTextContent(/^Who waits · 1 order$/);
+
+    await userEvent.click(two);
+    expect(two).toHaveAttribute('aria-expanded', 'true');
+  });
+
   // What is in draft is the row's own: the opened row shows it from there.
   it('shows an opened row’s drafts from the row', async () => {
     open(['stock.view', 'orders.view']);
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where OMEGA3-90 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for OMEGA3-90',
+      }),
     );
 
     // The column's header, and the opened row's own part.
@@ -420,7 +449,9 @@ describe('Reorder', () => {
     );
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     );
 
     expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
@@ -433,7 +464,9 @@ describe('Reorder', () => {
     open(['stock.view']);
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     );
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(await screen.findByText('Shelf A')).toBeInTheDocument();
@@ -470,7 +503,9 @@ describe('Reorder', () => {
     open(['stock.view']);
 
     expect(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Add reorder point' }),

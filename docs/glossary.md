@@ -157,6 +157,7 @@ as the catalogues word it.
 | Usable | Utilisable | 现有可用 | Stock at locations marked available, less expired lots and what runs were issued. |
 | Coming | À venir | 在途 | Confirmed purchases still to receive, and released runs' output still to come. |
 | Still needed | Encore requis | 待发 | Confirmed sales still to ship. |
+| Who waits · 2 orders | Qui attend · 2 commandes | 谁在等 · 2 个订单 | Reorder's control that opens a row's Where it stands, saying how many confirmed sales Still needed counts; Still needed and Held keep their names (107a). |
 | In draft / Drafted | En brouillon / Brouillon fait | 草稿中 / 已下草稿 | Draft purchases and runs: shown, never counted as coming. Drafted: what is in draft leaves nothing to suggest. |
 | Suggested order | Commande suggérée | 建议订货 | For a made item, 建议生产. |
 | Buy / Make | Acheter / Fabriquer | 采购 / 生产 | Reorder's buttons, each with how many: Buy 30, Acheter 30, 采购 30; Make 1,000, Fabriquer 1 000, 生产 1,000 (ADR-093). On Where it stands, alone on its card, the number takes its unit: Buy 30 each, Acheter 30 unités, 采购 30 个 (#640). |

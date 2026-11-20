@@ -320,7 +320,7 @@ const SCREENS: Screen[] = [
     name: 'reorder points, a row opened and chosen',
     path: () => '/inventory?tab=reorder',
     open: async (page) => {
-      await page.getByRole('button', { name: /^Where .* stands$/ }).click();
+      await page.getByRole('button', { name: /^Who waits · .+ for / }).click();
       await page
         .getByRole('checkbox', { name: /^Choose / })
         .first()

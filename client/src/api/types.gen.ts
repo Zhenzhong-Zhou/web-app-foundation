@@ -2147,6 +2147,7 @@ export type ReorderPointRow = {
   usable: string;
   coming: string;
   stillNeeded: string;
+  waitingOrders: number;
   inDraft: string;
   position: string;
   status: 'out' | 'low' | 'discontinued' | 'enough';

@@ -552,6 +552,15 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/reorder-points-tab.test.tsx) "counts its codes once every one is shown, and Back after Show 50 more finds them" ·
   [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
   MC-323
+- **A row opens by Who waits, which counts the orders waiting:** the
+  confirmed sales whose lines its Still needed sums, "Who waits · 2
+  orders", by each language's plural; a sale shipped in full or closed
+  short waits no more. Still needed and Held keep their names (107a).
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "counts on each row the confirmed sales still needing it" ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "says on each row who waits, in words, by the plural" ·
+  [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
+  MC-4204
 - **An opened row names its places only to a reader who may see
   places;** the rest read its usable as one total, with what was left
   out as expired or issued in all.
