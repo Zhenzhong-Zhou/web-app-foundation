@@ -14,7 +14,7 @@ import {
   type SortOrder,
 } from '../../common/sorted-page';
 import { dayIn, todayIn } from '../../common/today';
-import { timeZoneOf, todayOf } from '../../core/organizations/time-zone';
+import { timeZoneOf } from '../../core/organizations/time-zone';
 import type { Transaction } from '../../database/database.module';
 import { assertOwnIds } from '../../database/own-ids';
 import {
@@ -437,14 +437,7 @@ export class StockGroupedService {
     const way = query.order ?? 'asc';
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
+      const { today } = await openingOf(tx, organizationId, query);
       const org = sql`${organizationId}::uuid`;
       const here =
         query.locationId && (sort === 'onHand' || sort === 'expires')
@@ -699,14 +692,7 @@ export class StockGroupedService {
    */
   counts(query: StockFiltersDto): Promise<StockCodeCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
+      const { today } = await openingOf(tx, organizationId, query);
       const days =
         query.expiringWithin ?? (await warningDays(tx, organizationId));
       const rows = rowFilters(query, organizationId, today, days);
@@ -817,15 +803,7 @@ export class StockGroupedService {
     const limit = query.limit ?? PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const timeZone = await timeZoneOf(tx, organizationId);
-      const today = todayIn(timeZone);
+      const { timeZone, today } = await openingOf(tx, organizationId, query);
       const org = sql`${organizationId}::uuid`;
       const parts = lotKeys(
         query.sort ?? 'expires',
@@ -936,14 +914,7 @@ export class StockGroupedService {
    */
   lotCounts(query: StockFiltersDto): Promise<StockLotCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
+      const { today } = await openingOf(tx, organizationId, query);
       const days =
         query.expiringWithin ?? (await warningDays(tx, organizationId));
       const {
@@ -1266,4 +1237,26 @@ function pileOf(row: PileRow, seesPlaces: boolean, timeZone: string) {
     quantity: row.quantity,
     emptiedOn: row.emptied_at ? dayIn(timeZone, row.emptied_at) : null,
   };
+}
+
+/**
+ * Each of Stock's reads opens the same way (#624): the address's item the
+ * organization's own, else refused as unknown before anything is read,
+ * then the organization's time zone and its today, in the read's own
+ * transaction.
+ */
+async function openingOf(
+  tx: Transaction,
+  organizationId: string,
+  query: { productId?: string },
+): Promise<{ timeZone: string; today: string }> {
+  await assertOwnIds(
+    tx,
+    products,
+    organizationId,
+    [query.productId],
+    UNKNOWN_ITEM,
+  );
+  const timeZone = await timeZoneOf(tx, organizationId);
+  return { timeZone, today: todayIn(timeZone) };
 }
