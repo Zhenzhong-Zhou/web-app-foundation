@@ -123,7 +123,8 @@ export function withinLimit<T>(rows: T[], refusal?: Translatable): T[] {
  * The file: headers and words in the reader's language, then a row per
  * record, sent as an attachment named for the list and today,
  * `invoices-2026-10-07.csv`: the organization's today (ADR-072). Times
- * inside stay UTC and say so (ADR-057, amended).
+ * inside stay UTC and say so (ADR-057, amended), but for Movements' When,
+ * on the organization's clocks, its header naming the place (review 54).
  *
  * The text leaves as bytes TextEncoder writes, never as a string for Express
  * to encode: Node 26 can abort the process while Buffer measures a large

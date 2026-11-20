@@ -844,7 +844,9 @@ test('a Sales reader: no From → to and no place named; a link with ?locationId
   const columns = header!.split(',');
   expect(columns).not.toContain('From');
   expect(columns).not.toContain('To');
-  expect(columns).toEqual(expect.arrayContaining(['When', 'Reason', 'Lot']));
+  // When names the organization's zone by its place, "When (UTC time)".
+  expect(columns[0]).toMatch(/^When \(.+ time\)$/);
+  expect(columns).toEqual(expect.arrayContaining(['Reason', 'Lot']));
   expect(lines).toHaveLength(7);
   expect(text).not.toContain('E2E Shelf');
 

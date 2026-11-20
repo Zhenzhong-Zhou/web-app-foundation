@@ -33,7 +33,7 @@ Un lot ou une commande qu’un lien nomme apparaît en puce au-dessus de la list
 
 ## Exporter la liste {#export}
 
-Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filtres, dans un fichier CSV que vous pourrez ouvrir dans un tableur. Il a les colonnes de l’écran, une valeur dans chacune, du plus ancien au plus récent, et les jours écrits année-mois-jour. Avec un article et des jours choisis, sa première ligne est le solde d’ouverture et sa dernière le solde de clôture, avec les entrées et les sorties de la période.
+Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filtres, dans un fichier CSV que vous pourrez ouvrir dans un tableur. Il a les colonnes de l’écran, une valeur dans chacune, du plus ancien au plus récent, puis le code sous lequel un mouvement a été enregistré s’il a changé depuis, le courriel de la personne qui l’a fait, et la note en dernier. **Quand** donne le jour et l’heure à l’horloge de votre organisation, le jour écrit année-mois-jour, et son en-tête nomme le lieu, comme dans « Quand (fuseau horaire : Vancouver) ». Avec un article et des jours choisis, sa première ligne est le solde d’ouverture et sa dernière le solde de clôture, avec les entrées et les sorties de la période.
 
 ## Corriger une erreur {#correct}
 

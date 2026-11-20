@@ -121,8 +121,8 @@ describe('Movements (e2e)', () => {
 
   /**
    * Vitamin C, a material tracked by lot, received as VITC-90 into Shelf
-   * A2, its code then corrected to VITC-100, and 4 moved to Shelf B1, both
-   * shelves in Zone A of the Main warehouse.
+   * A2, its code then corrected to VITC-100, and 4 moved to Shelf B1 with
+   * a note, both shelves in Zone A of the Main warehouse.
    */
   async function story(org: Org) {
     const { agent } = org;
@@ -181,6 +181,7 @@ describe('Movements (e2e)', () => {
         toLocationId: shelfB1,
         quantity: '4',
         reason: 'transfer',
+        note: 'Moved for the count',
       })
       .expect(201);
 
@@ -852,8 +853,9 @@ describe('Movements (e2e)', () => {
       ).text,
     );
     expect(header).toEqual([
-      'When',
+      'When (UTC time)',
       'Code',
+      'Recorded as',
       'Item',
       'In',
       'Out',
@@ -866,13 +868,22 @@ describe('Movements (e2e)', () => {
       'Expiry',
       'For',
       'By',
+      'Email',
+      'Note',
     ]);
     const line = (when: string, rest: Record<string, string>) =>
-      header.map((name) => (name === 'When' ? when : (rest[name] ?? '')));
-    const moved = { Code: 'FOCUS', Item: 'FOCUS', Unit: 'each', By: 'Owner' };
+      header.map((name, at) => (at === 0 ? when : (rest[name] ?? '')));
+    const moved = {
+      Code: 'FOCUS',
+      Item: 'FOCUS',
+      Unit: 'each',
+      By: 'Owner',
+      Email: alpha.email,
+    };
+    // A movement's moment to the second, the range's ends its days.
     expect(rows).toEqual([
       line('2026-11-04', { Balance: '20', Reason: 'Opening balance' }),
-      line('2026-11-05', {
+      line('2026-11-05 10:00:00', {
         ...moved,
         In: '12',
         Balance: '32',
@@ -881,7 +892,7 @@ describe('Movements (e2e)', () => {
         To: 'SHELF (SHELF)',
         For: bought.number,
       }),
-      line('2026-11-10', {
+      line('2026-11-10 09:30:00', {
         ...moved,
         Out: '5',
         Balance: '27',
@@ -890,14 +901,14 @@ describe('Movements (e2e)', () => {
         To: 'customer',
         For: sold.number,
       }),
-      line('2026-11-10', {
+      line('2026-11-10 09:30:00', {
         ...moved,
         Balance: '27',
         Reason: 'Moved',
         From: 'SHELF (SHELF)',
         To: 'QUAR (QUAR)',
       }),
-      line('2026-11-12', {
+      line('2026-11-12 14:00:00', {
         ...moved,
         Balance: '27',
         Reason: 'Moved',
@@ -922,8 +933,8 @@ describe('Movements (e2e)', () => {
           .expect(200)
       ).text,
     );
-    expect(every.header.slice(3, 5)).toEqual(['Change', 'Unit']);
-    expect(every.rows.map((row) => [row[3], row[5]])).toEqual([
+    expect(every.header.slice(4, 6)).toEqual(['Change', 'Unit']);
+    expect(every.rows.map((row) => [row[4], row[6]])).toEqual([
       ['12', 'Received'],
       ['-5', 'Shipped'],
       ['3', 'Moved'],
@@ -950,8 +961,9 @@ describe('Movements (e2e)', () => {
       .expect(200);
     const { header, rows } = csvOf(response.text);
     expect(header).toEqual([
-      'When',
+      'When (UTC time)',
       'Code',
+      'Recorded as',
       'Item',
       'In',
       'Out',
@@ -962,6 +974,8 @@ describe('Movements (e2e)', () => {
       'Expiry',
       'For',
       'By',
+      'Email',
+      'Note',
     ]);
     const column = (name: string) =>
       rows.map((row) => row[header.indexOf(name)]);
@@ -1016,7 +1030,7 @@ describe('Movements (e2e)', () => {
             .expect(200)
         ).text,
       );
-      return [3, 5, 6, 7].map((at) => [
+      return [4, 6, 7, 8].map((at) => [
         header[at],
         ...rows.map((row) => row[at]),
       ]);
@@ -1032,6 +1046,85 @@ describe('Movements (e2e)', () => {
       ['从', '供应商', '盘点计入', 'SHELF (SHELF)'],
       ['到', 'SHELF (SHELF)', 'SHELF (SHELF)', '盘点扣除'],
     ]);
+  });
+
+  // ADR-093, 98a and 116; review 54: what main's export had, back. When
+  // to the second on the organization's clock, its header naming the
+  // place its zone is named for, not ICU's seasonal name; beside Code,
+  // the code a row was recorded under where it differs from today's;
+  // By's email (ADR-063); the note last, as typed.
+  it('exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    await agent
+      .patch('/v1/organization')
+      .send({ timeZone: 'America/Vancouver' })
+      .expect(204);
+    const { variantId } = await story(alpha);
+    // Vancouver stays on UTC−7: the receipt at 02:30 there, the move just
+    // after its midnight.
+    const ids = await db
+      .select({ id: stockMovements.id })
+      .from(stockMovements)
+      .where(eq(stockMovements.variantId, variantId))
+      .orderBy(stockMovements.id);
+    for (const [index, at] of [
+      '2026-11-10T09:30:00Z',
+      '2026-11-11T07:00:09Z',
+    ].entries()) {
+      await db
+        .update(stockMovements)
+        .set({ createdAt: new Date(at) })
+        .where(eq(stockMovements.id, ids[index].id));
+    }
+
+    const exported = async (language: string) =>
+      csvOf(
+        (
+          await agent
+            .get(`/v1/stock/movements/export?variantId=${variantId}`)
+            .set('Accept-Language', language)
+            .expect(200)
+        ).text,
+      );
+    const { header, rows } = await exported('en');
+    expect(header).toEqual([
+      'When (Vancouver time)',
+      'Code',
+      'Recorded as',
+      'Item',
+      'In',
+      'Out',
+      'Balance',
+      'Unit',
+      'Reason',
+      'From',
+      'To',
+      'Lot',
+      'Expiry',
+      'For',
+      'By',
+      'Email',
+      'Note',
+    ]);
+    const column = (name: string) =>
+      rows.map((row) => row[header.indexOf(name)]);
+    expect(column('When (Vancouver time)')).toEqual([
+      '2026-11-10 02:30:00',
+      '2026-11-11 00:00:09',
+    ]);
+    expect(column('Code')).toEqual(['VITC-100', 'VITC-100']);
+    expect(column('Recorded as')).toEqual(['VITC-90', '']);
+    expect(column('By')).toEqual(['Owner', 'Owner']);
+    expect(column('Email')).toEqual([alpha.email, alpha.email]);
+    expect(column('Note')).toEqual(['', 'Moved for the count']);
+
+    expect((await exported('fr-CA')).header[0]).toBe(
+      'Quand (fuseau horaire\u00A0: Vancouver)',
+    );
+    expect((await exported('zh-Hans')).header[0]).toBe(
+      '时间（Vancouver 时间）',
+    );
   });
 
   // ADR-093, 11a and 85a; review 24: each row's change, signed by the

@@ -1,6 +1,6 @@
 import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
-import { dayIn, todayIn } from '../../common/today';
+import { cityOf, dayIn, momentIn, todayIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
 import type {
   MovementReason,
@@ -289,12 +289,17 @@ export function movementLines(
 
 /**
  * Movements' export (ADR-057, amended by ADR-093's 87a and 88a): the
- * screen's columns and words, one value to a column. In, Out and Balance
- * for one code, In and Out for one code with a reason or for an order,
- * else Change, as the list reads (cardOf); each day the organization's,
- * year-month-day (ADR-072); From and To, each place by its whole path,
- * only for a reader who may see places, else no such columns (ADR-080;
- * 96a); For, the document, only as the reader may see it (55a).
+ * screen's columns and words, one value to a column. When to the second
+ * on the organization's clocks, its header naming the place its zone is
+ * named for, "When (Vancouver time)" (98a; ADR-072), a range's opening
+ * and closing their days; beside Code, the code a row was recorded under
+ * where it differs from today's, as the row's "was" (116); In, Out and
+ * Balance for one code, In and Out for one code with a reason or for an
+ * order, else Change, as the list reads (cardOf); From and To, each place
+ * by its whole path, only for a reader who may see places, else no such
+ * columns (ADR-080; 96a); For, the document, only as the reader may see
+ * it (55a); By with the person's email (ADR-063); the note last, as
+ * typed (review 54).
  */
 export function movementColumns(options: {
   card: MovementCard;
@@ -382,13 +387,25 @@ export function movementColumns(options: {
 
   return [
     {
-      header: t({ id: 'exports.column.when', defaultMessage: 'When' }),
+      header: t(
+        { id: 'exports.column.whenIn', defaultMessage: 'When ({city} time)' },
+        { city: cityOf(timeZone) },
+      ),
       value: (line) =>
         'movement' in line
-          ? dayIn(timeZone, line.movement.createdAt)
+          ? momentIn(timeZone, line.movement.createdAt)
           : line.day,
     },
     { header: HEADERS.sku, value: of((movement) => movement.currentSku) },
+    {
+      header: t({
+        id: 'exports.column.recordedAs',
+        defaultMessage: 'Recorded as',
+      }),
+      value: of((movement) =>
+        movement.sku === movement.currentSku ? null : movement.sku,
+      ),
+    },
     {
       header: HEADERS.item,
       value: of((movement) =>
@@ -442,6 +459,14 @@ export function movementColumns(options: {
     {
       header: t({ id: 'exports.column.by', defaultMessage: 'By' }),
       value: of((movement) => movement.actorName),
+    },
+    {
+      header: t({ id: 'exports.column.email', defaultMessage: 'Email' }),
+      value: of((movement) => movement.actorEmail),
+    },
+    {
+      header: t({ id: 'exports.column.note', defaultMessage: 'Note' }),
+      value: of((movement) => movement.note),
     },
   ];
 }

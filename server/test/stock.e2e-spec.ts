@@ -1358,8 +1358,9 @@ describe('Stock (e2e)', () => {
       // The screen's columns, one value to each, oldest first (ADR-093,
       // 87a): several items, so each row's Change.
       expect(header).toEqual([
-        'When',
+        'When (UTC time)',
         'Code',
+        'Recorded as',
         'Item',
         'Change',
         'Unit',
@@ -1370,9 +1371,14 @@ describe('Stock (e2e)', () => {
         'Expiry',
         'For',
         'By',
+        'Email',
+        'Note',
       ]);
       expect(column('Item')).toEqual(['Product WIDGET', 'Product WIDGET']);
       expect(column('By')).toEqual(['Owner', 'Deleted User']);
+      // By's email as the audit log's export has it (ADR-063), none once
+      // the account is deleted (ADR-012).
+      expect(column('Email')).toEqual(['owner@alpha.example.com', '']);
     });
   });
 

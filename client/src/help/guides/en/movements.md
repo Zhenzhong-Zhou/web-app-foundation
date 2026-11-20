@@ -33,7 +33,7 @@ A lot or an order a link names shows as a chip above the list, “Lot: VC-0302�
 
 ## Export the list {#export}
 
-Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, and the days written year-month-day. With one item and days chosen, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
+Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, the email of whoever did it, and the note last. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item and days chosen, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
 
 ## Correct a mistake {#correct}
 

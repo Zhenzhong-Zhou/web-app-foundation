@@ -260,7 +260,8 @@ Use these rather than writing the thing again. The client's are under
   `isCurrencyCode` in `database/schema/columns.ts` for checks),
   `dto/decimal.ts` (`IsPositiveDecimal`, `IsNonNegativeDecimal`),
   `dto/calendar-day.ts` (`IsCalendarDay`, which reads
-  `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`),
+  `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`, `momentIn`
+  for a moment on a zone's clocks, `cityOf` for the place it is named for),
   `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`). A DTO never
   restates a rule's message; `$property` names the field. A list sorted
   pages through `sorted-page.ts`: `pagedBy` for a kept column, the cursor

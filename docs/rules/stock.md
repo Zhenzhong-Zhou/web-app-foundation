@@ -267,10 +267,14 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
 - **Movements' export is the screen's columns, oldest first, one value
-  to each:** When as the organization's day, Code, Item, In, Out and
-  Balance where the list has them, else Change, Unit, Reason, From, To,
-  Lot, Expiry, For and By. One code's range starts with its opening
-  balance and ends with its closing, beside the range's In and Out.
+  to each, then what a row keeps beyond them:** When to the second on
+  the organization's clocks, its header naming the place its time zone
+  is named for, "When (Vancouver time)"; Code; Recorded as, the code a
+  row was recorded under where it differs from today's; Item; In, Out
+  and Balance where the list has them, else Change; Unit, Reason, From,
+  To, Lot, Expiry, For and By; Email, the person's; and the note last,
+  as typed. One code's range starts with its opening balance and ends
+  with its closing, each by its day, beside the range's In and Out.
   Reason in the screen's words with its detail, "Corrected: found". From
   and To, each place by its whole path, or an end outside the warehouse
   in the screen's words, supplier, customer, run, counted in or counted
@@ -278,6 +282,7 @@ file is kept is in the [README](README.md).
   as the reader may see it.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·

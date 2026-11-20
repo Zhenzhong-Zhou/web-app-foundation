@@ -609,20 +609,25 @@ a second organization.
   Inventory and Movements: each opens its page.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
-- **MC-319** *(ADR-093, 87a and 88a)* As the demo Owner, export Movements
-  with VITC-100 chosen and a date range that ends today: the file runs
-  oldest first, its columns When, Code, Item, In, Out, Balance, Unit,
-  Reason, From, To, Lot, Expiry, For and By, one value to each; its first
+- **MC-319** *(ADR-093, 87a, 88a, 98a and 116; review 54)* As the demo
+  Owner, export Movements with VITC-100 chosen and a date range that
+  ends today: the file runs oldest first, its columns When (Vancouver
+  time), Code, Recorded as, Item, In, Out, Balance, Unit, Reason, From,
+  To, Lot, Expiry, For, By, Email and Note, one value to each; its first
   line Opening balance with the balance at the range's start, its last
   Closing balance with the range's In and Out and Stock's On hand for
-  VITC-100; each When a day, year-month-day; each place by its whole
-  path. A move between two places has neither In nor Out. Reason reads
+  VITC-100, each of the two by its day; each movement's When its day and
+  time to the second on Vancouver's clocks, as the screen shows it to
+  the minute; Recorded as VITC-90 on the rows recorded before the code
+  changed, as the screen's "was VITC-90", and empty on the rest; By's
+  email beside By; each place by its whole path. A move between two places has neither In nor Out. Reason reads
   as on the screen: Received, Shipped, Moved. With no item chosen,
   Change stands for In, Out and Balance, a shipment's with its minus;
   OMEGA3-90's correction reads Corrected: miscount, its To counted out,
-  and no From or To outside the warehouse is blank: a receipt's From
-  supplier, a shipment's To customer. In 中文 the first and last lines
-  read 期初结存 and 期末结存, and that correction 调整：计数错误. As
+  its Note the note as typed, and no From or To outside the warehouse is
+  blank: a receipt's From supplier, a shipment's To customer. In 中文 the
+  first and last lines read 期初结存 and 期末结存, that correction
+  调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
 - **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a and 96a)* Movements,
@@ -1817,8 +1822,10 @@ Paper is checked first because it must not change at all.
   has them, the columns of the language its items are named in holding
   their own names; and so does Partners with `mill` and Retired; the Audit
   log's entry names the filter in words, not what was typed.
-  Orders' Created, Movements' When and the Audit log's When read like
-  `2026-10-15 18:54:11`, in UTC, and open as dates. In the exports of
+  Orders' Created and the Audit log's When read like
+  `2026-10-15 18:54:11`, in UTC, and Movements' When the same on the
+  organization's clocks, its header When (Vancouver time); each opens as
+  a date. In the exports of
   Stock, the Lot view, Reorder, Movements, Orders, Stock value and a
   lot's recall list, every quantity reads as the screen's figure without
   its padding zeros, `600` and `12.5`, never `600.0000`, with a point
@@ -7212,3 +7219,8 @@ first.
   in the row, the Reason filter and the export, a correction's detail
   after a colon in the export too, and the export's From or To outside
   the warehouse in the screen's words: MC-319 and MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, review 54 (98a, 116):
+  Movements' export gains back what main's had, When to the second on
+  the organization's clocks with its place in the header, "When
+  (Vancouver time)", Recorded as beside Code, Email beside By, and the
+  note last: MC-319 extended, MC-1558 reworded.

@@ -616,7 +616,7 @@ describe('Exports (e2e)', () => {
     ['/v1/credit-notes/export', 'Number'],
     ['/v1/stock/by-code/export', 'Code'],
     ['/v1/stock/by-lot/export', 'Code'],
-    ['/v1/stock/movements/export', 'When'],
+    ['/v1/stock/movements/export', 'When (UTC time)'],
     ['/v1/stock/reorder-points/export', 'Code'],
     ['/v1/orders/export', 'Number'],
     ['/v1/products/export', 'Code'],

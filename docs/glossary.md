@@ -125,6 +125,7 @@ as the catalogues word it.
 | In / Out / Balance | Entrée / Sortie / Solde | 收入 / 发出 / 结存 | Movements for one code, as a stock card reads (ADR-093). |
 | Opening balance | Solde d’ouverture | 期初结存 | A stock card's balance at its date range's start. |
 | Closing balance | Solde de clôture | 期末结存 | A stock card's balance at its date range's end: the opening, plus In, less Out. |
+| was / Recorded as | anciennement / Enregistré sous | 原编码 | The code a movement was recorded under, where it differs from today's: a row's "was VITC-90", « anciennement VITC-90 », 原编码 VITC-90, and its export's column beside Code (ADR-093, review 54). |
 | Backordered | En rupture | 缺货待发 | |
 | Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as Usable's opposite. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
