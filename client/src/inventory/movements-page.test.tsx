@@ -398,6 +398,24 @@ describe('MovementsPage', () => {
     ).toBeVisible();
   });
 
+  // Review 30 by 101a: an order keeps In and Out alone, with no Balance
+  // to see (R24), so the hint is for a place alone.
+  it('says nothing of Balance with an order chosen, at a place or not', async () => {
+    answer([MOVEMENT]);
+    for (const filters of [
+      `orderId=${ORDER}`,
+      `orderId=${ORDER}&locationId=${SHELF}`,
+    ]) {
+      const { unmount } = renderAt(`/movements?${filters}`);
+
+      await screen.findByRole('link', { name: '维生素 D (60 粒)' });
+      expect(
+        screen.queryByText('Choose one item to see In, Out and Balance.'),
+      ).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
   it('opens a date range with the period’s Opening, In, Out and Closing', async () => {
     answer([movement({ balance: '24.0000' })], {
       opening: '30.0000',

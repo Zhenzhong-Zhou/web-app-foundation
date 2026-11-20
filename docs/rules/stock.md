@@ -264,13 +264,17 @@ file is kept is in the [README](README.md).
   with a lot chosen, that lot alone, and with a place too, that lot
   there. The balance is today's on hand, less what moved after the
   row. With a reason or an order chosen, rows keep In and Out but no
-  balance, since they leave movements out.
+  balance, since they leave movements out. Several items at a place
+  alone ask for one item to see the balance; with an order chosen they
+  never do, since one item would bring no balance.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
   [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says to choose one item while every item is listed at a place" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says nothing of Balance with an order chosen, at a place or not" ·
   [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
 - **Several items read each row's Change, signed as the list counts

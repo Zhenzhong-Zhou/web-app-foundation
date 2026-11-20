@@ -630,7 +630,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a and 125)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a and 125)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -648,7 +648,9 @@ a second organization.
   SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. With
   no Location chosen, a move between two places reads unsigned; choose a
   Location: a move off it reads with its minus and one onto it with its
-  plus, and the export's Change writes the same. Choose
+  plus, and the export's Change writes the same; "Choose one item to see
+  In, Out and Balance." shows above the list. An order's All movements
+  of PO-… reads In and Out with no such line, a Location chosen too. Choose
   VITC-100 under Item: the Item column goes, In, Out and Balance replace
   Change, the newest row's Balance is Stock's On hand for it, and the
   address reads `?variantId=` with an id. Choose a When range: Opening,

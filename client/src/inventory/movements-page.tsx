@@ -495,7 +495,9 @@ export function MovementsPage() {
         oneCode={oneCode}
         place={place ? nameAndCode(place.name, place.code) : null}
         reason={!!reason}
-        hint={!oneCode && (!!locationId || !!orderId)}
+        // An order keeps In and Out alone, so only a place asks for one
+        // item (R24; review 30, 101a).
+        hint={!oneCode && !!locationId && !orderId}
         onClearReason={() => setFilters({ reason: '' })}
       />
 

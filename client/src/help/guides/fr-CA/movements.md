@@ -19,7 +19,7 @@ Avec un seul article choisi, **Entrée** et **Sortie** remplacent la variation, 
 - Sur tous les emplacements, un déplacement entre deux emplacements du code n’est ni une Entrée ni une Sortie, de sorte que le solde tient. Avec un **Emplacement** choisi, les chiffres ne comptent que cet emplacement, et une ligne le dit; avec un lot choisi, que ce lot, et avec un emplacement aussi, ce lot à cet endroit.
 - Avec des jours choisis, une ligne au-dessus de la liste donne l’ouverture, **Entrée**, **Sortie** et la clôture pour ces jours : la clôture est l’ouverture plus les entrées moins les sorties, et pour des jours qui finissent aujourd’hui, c’est le stock en main d’aujourd’hui. Plusieurs articles n’ont pas cette ligne, leurs unités différant.
 - Avec un **Motif** choisi, **Solde** disparaît, puisqu’il compte tous les motifs : « Le solde compte tous les motifs. Effacez Motif pour le voir. » Entrée et Sortie restent.
-- Avec plusieurs articles listés et un emplacement ou une commande choisi, une ligne vous invite à choisir un article pour voir Entrée, Sortie et Solde.
+- Avec plusieurs articles listés à un emplacement, une ligne vous invite à choisir un article pour voir Entrée, Sortie et Solde. Les mouvements d’une commande montrent Entrée et Sortie, jamais Solde : avec une commande choisie, cette ligne n’apparaît pas.
 
 ## Où mène un lien {#links}
 

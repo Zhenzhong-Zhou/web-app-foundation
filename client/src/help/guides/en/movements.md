@@ -19,7 +19,7 @@ With one item chosen, **In** and **Out** replace the change, and **Balance** say
 - Across every place, a move between two of the code’s places is neither In nor Out, so the balance holds. With a **Location** chosen, the figures count that place alone, and a line says so; with a lot chosen, that lot alone, and with a place too, that lot there.
 - With days chosen, a line above the list gives the opening balance, **In**, **Out** and the closing balance for them: the closing is the opening plus In less Out, and for days that end today it is today’s on hand. Several items have no such line, since their units differ.
 - With a **Reason** chosen, **Balance** goes, since it counts every reason: “Balance counts every reason. Clear Reason to see it.” In and Out stay.
-- With several items listed and a place or an order chosen, a line asks you to choose one item to see In, Out and Balance.
+- With several items listed at a place, a line asks you to choose one item to see In, Out and Balance. An order’s movements show In and Out, never Balance, so with an order chosen there is no such line.
 
 ## Where a link leads {#links}
 
