@@ -223,6 +223,7 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/inventory/movements-page.test.tsx) "asks the list by the address’s keys, the lot and the order as chips" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a lot no row carries, on its chip and in what no result names" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names an order no row carries, on its chip and in what no result names" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a code the picker does not list from its rows, and keeps it when none match" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "clears every filter and chip in one write with Show all movements, the sort kept" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "clears the sheet’s own fields with its Clear, the lot and order chips kept" ·

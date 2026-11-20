@@ -485,6 +485,27 @@ describe('MovementsPage', () => {
     );
   });
 
+  // Review 50: an order with no movements in range keeps its number,
+  // read from the order, as a lot's code is read from its trace.
+  it('names an order no row carries, on its chip and in what no result names', async () => {
+    answer([]);
+    server.use(
+      http.get(`/api/v1/orders/${ORDER}`, () =>
+        HttpResponse.json({ id: ORDER, number: 'PO-000009' }),
+      ),
+    );
+    renderAt(`/movements?orderId=${ORDER}&from=2026-10-01`);
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Remove filter: Order: PO-000009',
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/^No movements match/)).toHaveTextContent(
+      'No movements match: PO-000009 and from Oct 1, 2026.',
+    );
+  });
+
   // Review 32: an archived code, which the picker does not list, opened
   // from Where it stands: named in the Item field from its rows, and in
   // what no result names once a reason leaves none.
