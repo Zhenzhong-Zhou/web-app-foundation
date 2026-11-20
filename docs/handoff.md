@@ -21,9 +21,17 @@ On 19 November 2026:
   recommended (81a to 94a), in [ADR-093's amendment](adr/0093-inventory-and-movements.md)
   and ADR-090's, the branch's first commit; the canvas's rows "库存与库存变动
   第四版 · v4", Movements in the 1,600 px frame at 1920 and 1366, and
-  "第五版 · v5". Its brief, v6, is in the ignored
+  "第五版 · v5". Its brief, v7 (v6 for steps 1 to 3), is in the ignored
   `tmp/adr-093-movements/`, with #644's panel reports in its
-  `from-632/`. With it: [#605] as its 56a decided, [#628], [#636],
+  `from-632/`. **Built by 20 November, through step 18:** the indexes,
+  the pinned name and the cut path, one address write, the movement row
+  and the stock card, Movements and its export, every export's plain
+  quantities, the ways in with the history dialog gone, #605's label,
+  #628's found stock, the count always with Back after Show more, the
+  words (94a) and the riders, the browser tests, then Help, the rules
+  file, the design language and the manual checks. **Left:** the figures
+  after (19), the dependencies again (20), the reviews (21), the as-built
+  (22) and the merge (23). With it: [#605] as its 56a decided, [#628], [#636],
   [#638] with [#473]'s Back after Show more, [#639], [#640], [#642],
   #644's finding 8 (Free 可分配, Left 预计剩余), the triage's riders and
   the dependencies by the Dates.

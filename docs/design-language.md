@@ -116,9 +116,13 @@ Each with what holds it in the code today, or the issue that will.
   `aria-disabled` and still reached by the keyboard; one the role cannot
   use is not shown; a menu of one is a plain link.
 - A place reads as its path, the warehouse first: "Main warehouse › Zone
-  A › Shelf A2". Where it does not fit it is cut from the left, "…"
-  first and the place's own name whole, the whole path on hover and on
-  focus; it starts where the row's name starts (`PlacePath`, ADR-093).
+  A › Shelf A2". Where it does not fit it is cut in its middle, "Main
+  warehouse › … › Shelf A2": the warehouse and the place's own name
+  whole, the shelves nearest the place kept while they fit, a path with
+  nothing between them never cut. The whole path is on hover, on focus
+  and on a tap, and in its accessible name. It starts where the row's
+  name starts, and a lot's page names its place by the whole path
+  (`PlacePath`, ADR-093, 93a; #639).
 - A kind is a word: an item's type in a mixed list is a word on the
   row's second line beside its icon, and on the record the line under
   its title (#548, which gives each type its singular).
@@ -149,13 +153,23 @@ Each with what holds it in the code today, or the issue that will.
   Show 50 more is counted as well.
   - Its box takes keyboard focus, a region named "Stock, scrolls
     sideways" in the reader's language.
-  - The name stays pinned at the start, after a tick box where a list
-    has one, and the row's Actions at the end, the last column a list
-    heads with `ActionsHeader` (E12a), so each row's Actions shows without
-    scrolling.
+  - The name stays pinned, wherever it stands in the row, and the row's
+    Actions at the end, the last column a list heads with `ActionsHeader`
+    (E12a), so each row's Actions shows without scrolling. The name is
+    the column a list marks, `NAME_COLUMN` or `name` on `SortHeader`, as
+    `ACTIONS_COLUMN` marks the Actions: a column before it, Movements'
+    When, passes under it as the box scrolls, and a list with none marked
+    pins its first column, after a tick box where it has one.
+    `name-column.test.ts` holds every list to one or the other, so a list
+    too wide with neither fails (81a).
   - The pinned name keeps a least width, 320 px in rem with its picture,
     so the demo's longest name takes two lines at 1366, not the five its
     narrowest gave; the other columns pass under it.
+  - A pinned name stops at two lines, a longer one ending in "…", and its
+    whole name shows in a tooltip on hover and on focus; Escape closes it
+    and the pointer can rest on it (WCAG 1.4.13). The cut is CSS's, so
+    the link's text stays the whole name for a screen reader
+    (`CutName`, 83a).
   - Both are pinned only while together they take no more than half the
     box; past that, the name alone. It follows the box's width, never
     how far the table has scrolled, so the pins do not change sides.
@@ -336,10 +350,18 @@ Each with what holds it in the code today, or the issue that will.
 - A breadcrumb shows the way the person came, not a page they never
   visited.
 - Back returns a list as it was: its loaded rows, its scroll, and focus
-  on the row the person opened (#473, #509); today its filters and sort
-  come back from the address, and Stock's opened rows (`?open=`) with
-  focus on the row left by (`return-focus.ts`, ADR-093); the rest does
-  not.
+  on the row the person opened (#473, #509). Its filters and sort come
+  back from the address, and Stock's opened rows, a place's opened lots
+  with them (`?open=`).
+  - After Show more, the rows shown are read again, page by page, before
+    they show, and focus is on the link the person followed from its row,
+    or the row's first link if that is gone: on Items, Stock, Reorder and
+    Movements (`useKeysetList`'s `keep`, `useRowReturn`, `return-focus.ts`;
+    P2a, #473). A page failing on the way keeps the pages before it, with
+    Try again.
+  - One record is kept for each history entry, the last twenty, so Back
+    twice finds each list's row.
+  - #509's scroll on a change of page stays its own.
 - Back to Home focuses the tile the person left from (`return-focus.ts`,
   ADR-093).
 - A page reached by a link puts focus on its title, so a screen reader
@@ -364,8 +386,10 @@ Each with what holds it in the code today, or the issue that will.
     ([Height counts](#screen-sizes),
     [Actions that cannot be undone](#actions-that-cannot-be-undone)).
 - A control that takes focus inside a table's scrolling box is brought
-  wholly into view, never left half past the box's edge (`wholeOnFocus`;
-  Inventory's tables, ADR-093, the others as each is next changed).
+  wholly into view, never left half past the box's edge. `ListTable`
+  does it itself for every list too wide, so no list passes `wholeOnFocus`
+  by hand; its stuck and sideways styles are built once for each theme
+  (#642).
 
 ### One Settings page
 
@@ -448,8 +472,11 @@ the issue that will.
 Every screen, and each part of one that reads on its own, is in one of
 five; Items drew them first (ADR-092), and its words are the examples.
 
-- **As it should be:** what it read, whole: Items' rows, with "Showing
-  50 of 312" under them while there are more.
+- **As it should be:** what it read, whole: Items' rows, with how many
+  under them, always (P1a, #638). "Showing 50 of 312 items" while there
+  are more, beside Show 50 more; "31 items" once every one is shown, and
+  the same for codes on Stock and Reorder, and lots on the Lot view. No
+  column numbers the rows.
 - **Empty,** in one of three kinds, each in its own words:
   - **First use** says what to add first, with the action: "No items
     yet. Add what you sell first, or the raw materials you make it
@@ -496,7 +523,7 @@ refused.
 | A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
 | A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
 | The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
-| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: each list but Items, Stock and Reorder passes its failed page |
+| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: each list but Items, Stock, Reorder and Movements passes its failed page |
 | The opening row, a row's places or a place's lots (`aria-expanded`) | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | — |
 | A row's Actions (`ActionsMenu`), selected while open, a choice greyed with its reason | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
 | A header that sorts (`SortHeader`), selected while it sorts | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | Items, Orders, Invoices and Credit notes: `atRest` as each is next changed |

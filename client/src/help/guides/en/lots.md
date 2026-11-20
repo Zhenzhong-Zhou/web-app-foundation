@@ -12,7 +12,7 @@ You can also find a lot by its code in **Search everything**, or press a lot’s
 
 ## Read a trace {#read}
 
-- **Where it is now**: each location holding some, and how much.
+- **Where it is now**: each location holding some, written by its whole path from its warehouse, and how much. Someone who may not see locations reads how much is **Usable** and **Not usable** instead, with no place named.
 - **Where it came from**: its receipt and the supplier’s order, or the run that made it and its licence.
 - **Made from**: the component lots a run used, however many steps back.
 - **Went into**: the runs that used it, and the lots they made.
@@ -20,7 +20,7 @@ You can also find a lot by its code in **Search everything**, or press a lot’s
 
 Some may have left with no recipient on record: shipped without an order, or sampled without a name. They are listed with no partner.
 
-Beside **Who received it**, **Export** writes the recall list: the same rows, in your language, with how much was shipped, sampled and returned and the day it first left. Quantities and dates are in your language’s format, money shows its currency, and an expiry already past says how long ago: “Expired 4 days ago”.
+Beside **Who received it**, **Export** writes the recall list: the same rows, in your language, with how much was shipped, sampled and returned and the day it first left. Its headings and words are in your language, the day is written year-month-day, and quantities are written plainly, 600 and not 600.0000. On the page, an expiry already past says how long ago: “Expired 4 days ago”.
 
 > Only someone who may see costs sees the lot’s cost and how its value changed.
 

@@ -533,9 +533,12 @@ a second organization.
   Home's Expiring soon counts lots at each place, and Items counts items;
   the demo's MAGCAP, with three codes, shows it: Items' Low stock counts
   it once, "Low · 1 of 3 codes" in the row. On an item's page, Help
-  has Where it stands after What a row shows, and on Trace a lot's page it
-  says the recall list's Export is in your language, with money showing
-  its currency. In Français the title is Inventaire and the guide reads
+  has Where it stands after What a row shows, ending with Latest movements,
+  and on Trace a lot's page it says Where it is now names each place by
+  its whole path, and the recall list's Export has its headings in your
+  language, its day year-month-day and its quantities plain, 600 and not
+  600.0000. On Stock, Help's Read the stock says how many rows the list
+  shows, "31 codes" or "Showing 50 of 312 codes". In Français the title is Inventaire and the guide reads
   Lire le stock, Trouver du stock and Regrouper par lot; in 中文,
   读懂库存, 查找库存 and 按批次分组.
 - **MC-317** *(ADR-093, R15)* Stock's Export. As the demo Owner, with Low
@@ -588,6 +591,22 @@ a second organization.
   without pressing it again, focus on that name. The same on Items and
   Reorder, and on Movements after Show 25 more, focus on the link
   followed from its row, its lot or its For.
+- **MC-324** *(ADR-093, R19; #605, #628)* Help's Movements and Orders
+  guides. As the demo Owner, on Movements, Help opens its guide with Find
+  a movement, Read one code like a stock card, Where a link leads, Export
+  the list, Correct a mistake and Words you'll meet. Every word in bold is
+  on the screen under that name: Item, Location, Reason, When, Period,
+  Show 25 more, Try again, Show all movements, From → to, In, Out,
+  Balance, Filters, Everywhere, For. It says "Show 25 more", not Load
+  more, and that a lot or an order a link names is a chip with its ×. On
+  Orders, Help's Receive a purchase says a confirmed order says how much
+  has come, Not received, Partly received or All received (on a sale Not
+  shipped, Partly shipped, All shipped), names the Receiving filter and
+  Receipts, and Finish an order quotes "Everything has arrived. Close the
+  order?". In Français the guides are Mouvements and Commandes, with a
+  no-break space inside « » and before a colon; in 中文 库存变动 and 订单,
+  naming 未收货, 部分收货 and 已全部收货. Press a link in the guide to
+  Inventory and Movements: each opens its page.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
 - **MC-319** *(ADR-093, 87a and 88a)* As the demo Owner, export Movements
@@ -7169,3 +7188,9 @@ first.
 - 2026-11-20: ADR-093's Movements branch, step 16 (#611): Stock's Expires
   first says "all expired" where every unit on hand has expired:
   MC-1529 extended.
+- 2026-11-20: ADR-093's Movements branch, step 18 (R19): Help's Movements
+  guide rewritten for the stock card, its period line, the links in and
+  the export by the reader's sight, and Orders', Items', Inventory's and
+  Trace a lot's guides gain the order's label and Receipts, Latest
+  movements, the count and Back after Show more, and the recall list's
+  true export: MC-324 added, MC-316 extended.

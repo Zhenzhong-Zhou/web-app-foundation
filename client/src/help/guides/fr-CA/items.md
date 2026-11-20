@@ -24,7 +24,7 @@ La page Articles s’ouvre sur Produits, ou sur le premier type qui a des articl
 - **Stock bas** montre les articles dont un code est sous son point de commande, ou épuisé, avec leur total; il se place à côté de **Abandonné** et est conservé dans l’adresse. Il compte des articles, pas des codes : un article dont trois codes sont sous leur point compte une fois.
 - **Abandonné** montre seuls les articles abandonnés, avec leur total. Autrement, ils sont masqués. **Tout afficher dans Articles**, dans la barre du haut, ouvre Tous avec la recherche et les articles abandonnés inclus, et une pastille qui le dit.
 - Appuyez sur **Nom**, **Catégorie**, **En stock** ou la date en tête d’une colonne pour trier selon elle; appuyez de nouveau pour inverser. La colonne de date montre la date selon laquelle la liste est triée, et son menu permet de passer de **Dernière modification** à **Date d’ajout**.
-- La liste charge cinquante articles à la fois. **Afficher 50 de plus** ajoute les cinquante suivants.
+- La liste charge cinquante articles à la fois. **Afficher 50 de plus** ajoute les cinquante suivants, et une ligne dit combien : « 31 articles », ou « 50 sur 312 articles affichés » tant qu’il y en a d’autres. Retour depuis un article ramène la liste avec toutes les lignes que vous aviez affichées.
 - **Exporter** télécharge dans un fichier CSV tous les résultats de la liste, pas seulement les lignes déjà chargées.
 
 Sur un téléphone, chaque article est une carte, et **Filtres** ouvre la catégorie, le tri et Abandonné depuis le bas de l’écran.
@@ -49,6 +49,7 @@ Premier sous le titre d’un article, **État du stock** montre chacun de ses co
 - **À venir**, les bons de commande et les ordres de fabrication qui doivent encore apporter du stock, chacun avec son jour.
 - **Il en reste**, avec son calcul en mots simples : « 30 utilisables + 0 à venir − 20 pour les commandes ».
 - **Par emplacement et lot**, chaque emplacement écrit depuis son entrepôt, avec ses lots, les plus proches d’abord, le code de chaque lot un lien vers son suivi, et les **Actions** de chaque lot, comme dans Stock.
+- **Derniers mouvements**, les cinq plus récents du code, comme une fiche de stock avec **Entrée**, **Sortie** et **Solde**, qui se terminent par **Tous les mouvements de** ce code, ce qui ouvre [Mouvements](/movements) pour lui. Un code que rien n’a touché n’en a pas.
 
 Les actions, sur la carte du code à côté de son titre, sont **Modifier le point de commande**, et **Acheter** ou **Fabriquer** avec la quantité dans son unité, comme « Acheter 30 unités » ou « Fabriquer 1 000 bouteilles », chacune montrée selon ce que votre rôle permet; sinon, une ligne dit à qui demander. **Acheter** et **Fabriquer** ouvrent leur formulaire rempli avec la commande suggérée et n’enregistrent rien avant que vous ne le créiez. Un code sans stock ni arrivage dit « Rien en stock, rien à venir. » avec **Fixer un point de commande** et **Recevoir du stock**.
 

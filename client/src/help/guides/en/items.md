@@ -24,7 +24,7 @@ Items opens on Products, or on the first type that has items. **All** shows ever
 - **Low stock** shows the items with a code below its reorder point, or out, with their count; it sits beside **Discontinued** and is kept in the address. It counts items, not codes: an item with three codes under their points counts once.
 - **Discontinued** shows the discontinued items alone, with their count. Otherwise they are hidden. **Show all in Items** in the top bar opens All with the search and the discontinued items included, and a chip saying so.
 - Press **Name**, **Category**, **On hand** or the date at the head of a column to sort by it; press it again to reverse. The date column shows the date the list is sorted by, and its menu switches between **Last changed** and **Date added**.
-- The list reads fifty items at a time. **Show 50 more** adds the next fifty.
+- The list reads fifty items at a time. **Show 50 more** adds the next fifty, and a line says how many: “31 items”, or “Showing 50 of 312 items” while there are more. Back from an item returns the list with every row you had shown.
 - **Export** writes what the list shows, not only the rows loaded, as a CSV file.
 
 On a phone, each item is a card, and **Filters** opens the category, the sort and Discontinued from the bottom of the screen.
@@ -49,6 +49,7 @@ First under an item’s title, **Where it stands** shows each of its codes, the 
 - **Coming**, the purchase orders and runs still to bring stock, each with its day.
 - **Left**, with its sum in plain words: “30 usable + 0 coming − 20 for orders”.
 - **By place and lot**, each place written from its warehouse down, with its lots, soonest first, each lot’s code a link to its trace, and each lot’s **Actions**, as on Stock.
+- **Latest movements**, the code’s five newest, as a stock card with **In**, **Out** and **Balance**, ending with **All movements of** the code, which opens [Movements](/movements) for it. A code that nothing has moved has none.
 
 The actions, on the code’s card beside its title, are **Change reorder point**, and **Buy** or **Make** with how many in its unit, such as “Buy 30 each” or “Make 1,000 bottles”, each shown by what your role may do; where it may not, a line says whom to ask. **Buy** and **Make** open their form filled in with the suggested order and save nothing until you create it. A code with nothing on hand or coming reads “None on hand, nothing coming.” with **Set a reorder point** and **Receive stock**.
 

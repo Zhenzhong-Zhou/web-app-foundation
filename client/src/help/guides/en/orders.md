@@ -24,6 +24,10 @@ A confirmed sale holds the stock it needs, so nobody promises the same units twi
 
 If the rest of a line is never coming, choose **Close short** on the line: the shortfall stays in sight.
 
+Beside its status, a confirmed order says how much has come: **Not received**, **Partly received** or **All received**, and on a sale **Not shipped**, **Partly shipped** or **All shipped**. A line closed short counts as done, and more than was ordered still reads **All received**. The label is worked out from the lines, so nobody sets it, and the list’s **Receiving** filter (**Shipping** on a sales list, **Receiving or shipping** on both) narrows it to one of them, kept in the address.
+
+On a purchase, **Receipts** lists each delivery with its lot and who received it, and ends with **All movements of** the order’s number, which opens [Movements](/movements) for it; a sale’s **Shipments** ends the same way. Only someone who may see stock sees them.
+
 ## Ship a sale {#ship}
 
 1. Open the confirmed sale and press **Ship**.
@@ -36,7 +40,7 @@ Everything listed ships together, or nothing does: set a line to 0 to leave it f
 
 ## Finish an order {#finish}
 
-When nothing more is coming, press **Close order**, whether everything arrived or not. **Cancel order** is offered only until something has moved.
+When nothing more is coming, press **Close order**, whether everything arrived or not. Once everything is in, the order asks “Everything has arrived. Close the order?” (on a sale, “Everything has shipped. Close the order?”), and **Close order** closes it. **Cancel order** is offered only until something has moved.
 
 ## What a link chose {#chips}
 
@@ -51,7 +55,7 @@ Home’s tiles and its late buttons open Orders with the list already narrowed o
 ## Words you’ll meet {#words}
 
 - **Draft**: written, not yet agreed.
-- **Confirmed**: agreed with the partner.
+- **Confirmed**: agreed with the partner. Its label says how much has come, as above.
 - **Received** or **Shipped**: closed. The list’s filter calls both **Fulfilled**.
 - **Cancelled**: called off before anything moved.
 - **Closed short**: a line that expects no more, its shortfall kept.

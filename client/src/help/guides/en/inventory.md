@@ -4,7 +4,7 @@ Inventory shows what you have and where: a row for each code, opening to the pla
 
 ## Read the stock {#stock}
 
-On **Stock**, each row is a code, the code on a variant’s label, so an item that comes in three sizes has three rows. It lists every code with stock on hand, wanted by a confirmed sale, coming, or watched by a reorder point; **Show emptied** adds the rest. It reads fifty rows at a time, and **Show 50 more** adds the next fifty.
+On **Stock**, each row is a code, the code on a variant’s label, so an item that comes in three sizes has three rows. It lists every code with stock on hand, wanted by a confirmed sale, coming, or watched by a reorder point; **Show emptied** adds the rest. It reads fifty rows at a time, and **Show 50 more** adds the next fifty. A line says how many it shows: “31 codes”, or “Showing 50 of 312 codes” while there are more. Back from an item, a place or a lot returns the list as you left it, with every row you had shown, its opened places and lots, and the row you left from in focus.
 
 - The name first, its code under it in grey, and its type. Press the name, or the row, to open the item’s page.
 - **Where**: how many places hold it, such as “2 places”. Press it to open the places, and a place’s lots to open them: the lots that expire first on top, the expired above them, a lot with no expiry last. A lot’s code opens its trace.
@@ -92,7 +92,7 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 What an item has **Left** = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another. Said in a line it is “10 left · reorder at 36”, and a press on it opens the item’s page at [Where it stands](/items#stands), which lists what makes each figure up.
 
-An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The list opens with the most to order first; press **Status** to put the furthest below their point first instead, or on a phone choose **Low first** under **Sort**. **Low stock** shows the out ones too. Open a row to see what makes up what is left, late orders marked; on a phone, where each item is a card, press the line saying how many are left, which opens the item’s stock.
+An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. A line under the list says how many codes it shows, such as “4 codes”. The list opens with the most to order first; press **Status** to put the furthest below their point first instead, or on a phone choose **Low first** under **Sort**. **Low stock** shows the out ones too. Open a row to see what makes up what is left, late orders marked; on a phone, where each item is a card, press the line saying how many are left, which opens the item’s stock.
 
 ## How much to order {#how-much}
 

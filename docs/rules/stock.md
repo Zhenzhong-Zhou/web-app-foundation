@@ -112,7 +112,21 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "says how many codes it shows once every one is shown" ·
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, its count always: “2 codes” when everything fits; Low stock, “1 code”" ·
   MC-1528 · MC-311 · MC-323
+- **Back to Stock returns it as it was:** the rows shown after Show 50
+  more are read again, page by page, before they show; the codes opened,
+  with the places and lots opened in them, stay open in the address; and
+  focus returns to the row the person left from. A page failing on the
+  way keeps the pages before it, with Try again.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "finds the codes shown and the one left from on Back after Show 50 more" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "gives a lot its Movements, and Back finds its place’s lots open" ·
+  [test](../../client/src/lib/use-keyset-list.test.ts) "reads as many rows again as were shown, before they show" ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, Back after Show 50 more: the codes shown read again, focus on the row left from" ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements: Movements, one lot, a chip; Back, Stock as it was, the rows open and the place’s lots with them" ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-323
 - **The Lot view is a row per lot at each place, soonest first, the
   expired on top,** a lot's places together, each saying how many there
   are: the rows Home's Expiring soon counts. Its headers sort it by the
@@ -176,6 +190,38 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "lists one order’s two movements of one quantity from two lots, each with its own lot, in one order on every page" ·
   [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
   MC-306
+- **Movements' filters are in the address, each by its id,** never a
+  code, which can change: the item, place, lot and order, the reason,
+  and the days from and until, `until` the last day included, in the
+  organization's days. A reload, a link and Back keep them; a lot and an
+  order show as chips, each removable; Show all movements clears every
+  one in a single write and keeps the sort.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "asks the list by the address’s keys, the lot and the order as chips" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "clears every filter and chip in one write with Show all movements, the sort kept" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, every filter in the address: a reload keeps each, and the rows" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, a filter on, Show all movements: every filter and chip cleared in one address write; Back leaves Movements" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
+- **A movement is one row on every screen that lists one:** the item's
+  name with today's code and type, "was" the code it was recorded under
+  where that differs, the change with its unit, the reason, the lot with
+  its expiry, the document it was for and who did it, the same cells on
+  Movements, the item's Latest movements and an order's Receipts.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names the item first, its code and type grey under it, and reads the change with its unit" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "keeps a changed code’s old one under today’s" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
+- **Show 25 more adds the next movements below, and failing keeps the
+  rows, with Try again;** Back from a row past the first page reads those
+  pages again before they show, its row in focus.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "finds the rows shown and the link left by on Back after Show 25 more" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, Show 25 more: the next movements below; failing, the rows kept with Try again; Back from a row past the first page, those pages read again, focus on its row" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-323
 - **One code reads as a stock card: In, Out and the balance after each
   movement.** Across every place, what arrived is In and what left is
   Out, and a move between two of its places is neither, so the balance
@@ -188,6 +234,9 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
   [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipment: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
+  [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
 - **A date range for one code opens and closes: Opening, In, Out,
   Closing,** Closing the Opening plus In less Out, and a range ending
@@ -195,6 +244,8 @@ file is kept is in the [README](README.md).
   alone. Never for several items, whose units differ.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, When › This month: ?from= and ?until= in the organization’s days; the period line, Opening, In, Out and Closing; Back leaves Movements" ·
+  [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
   MC-319
 - **Movements' export is the screen's columns, oldest first, one value
   to each:** When as the organization's day, Code, Item, In, Out and
@@ -206,6 +257,8 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
   MC-319
 - **A movement names its places only to a reader who may see places,**
   each by its path, its warehouse first; the rest get each place's id
@@ -214,6 +267,9 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
   [test](../../server/test/movements.e2e-spec.ts) "names no place to a reader without locations.view, each place’s id kept" ·
   [test](../../client/src/inventory/describe-movement.test.ts) "signs by the ends’ ids for a reader who sees no place’s name" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "has no From → to for a reader without locations.view (96a)" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/movements.md#correct-a-mistake-correct) ·
   MC-3319
 - **A movement names the document it was for only to a reader who may
   see it:** the order it was received, shipped or returned on with
@@ -237,6 +293,8 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/orders/order-detail-page.test.tsx) "lists a purchase’s receipts by its order, with All movements of it" ·
   [test](../../client/src/orders/order-detail-page.test.tsx) "offers neither without stock.view" ·
+  [test](../../client/e2e/movements-page.spec.ts) "The order’s page, Receipts, All movements of PO-…: ?orderId=, a chip; In and Out, no balance; Back, the order’s page" ·
+  [Help](../../client/src/help/guides/en/orders.md#receive-a-purchase-receive) ·
   MC-321
 - **A link's place or order that its reader may not use is ignored on
   Movements,** as Stock's address is: a place without locations.view,
@@ -245,6 +303,9 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/inventory/movements-page.test.tsx) "reads a place a reader may not see as Everywhere, never asking it" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "reads an order a reader may not see as every movement, with no chip" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a reader without orders.view: a link with ?orderId= reads every movement, with no chip" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/movements.md#correct-a-mistake-correct) ·
   MC-320
 
 ## A lot's trace
@@ -267,6 +328,8 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "names each place where it is now by its path, only to a reader with locations.view" ·
   [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each place where it is now by its whole path, or sums it for a reader without places" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
   MC-904
 
 ## Where it stands
@@ -315,6 +378,8 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "lists each code’s five newest movements as Movements lists the code, the newest’s balance on hand" ·
   [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
+  [test](../../client/e2e/movements-page.spec.ts) "The item’s page, Latest movements, All movements of E2E-VITC: ?variantId=, Movements, one item; Back, the item’s page" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
   MC-219
 - **Items counts items, Reorder and Home count codes:** Items' Low stock
   is the items among Reorder's low and out codes, and Home's Low stock is
@@ -343,6 +408,14 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/reorder-points-tab.test.tsx) "opens sorted by the suggested order, most first; its header turns it, and Status puts Low first" ·
   [Help](../../client/src/help/guides/en/inventory.md#order-or-make-what-is-low-order) ·
   MC-4202 · MC-4203
+- **Reorder says how many codes it lists, always:** "4 codes" once every
+  one is shown, and beside Show 50 more how many of how many; no row
+  number; Back after Show 50 more reads the codes shown again, focus on
+  the row left from.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "counts its codes once every one is shown, and Back after Show 50 more finds them" ·
+  [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
+  MC-323
 - **An opened row names its places only to a reader who may see
   places;** the rest read its usable as one total, with what was left
   out as expired or issued in all.
@@ -447,6 +520,8 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock.e2e-spec.ts) "refuses a place that is not a leaf, as every movement, and makes no lot" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "ends a code’s opened places with Count it in…, and Escape returns to it" ·
   [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
+  [test](../../client/e2e/stock.spec.ts) "Count it in…, Save correction: a found correction into the place, a new lot made, “Counted in 12 each of E2E-VITC at E2E Shelf C3, new lot VC-0310. It waits for a cost.”; Stock, the row open at its new place" ·
+  [test](../../client/e2e/stock.spec.ts) "Count it in…, Save correction, no lot chosen: “Choose one of its lots, or a new lot.” at its field, focus on it" ·
   MC-322
 - **A new lot's code must be one the item does not have yet:** a code
   it has is refused, naming that lot, at the new lot's code (the code

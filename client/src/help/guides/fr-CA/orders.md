@@ -24,6 +24,10 @@ Une vente confirmée réserve le stock dont elle a besoin, pour que personne ne 
 
 Si le reste d’une ligne ne viendra jamais, choisissez **Clore incomplète** sur la ligne : l’écart reste visible.
 
+À côté de son statut, une commande confirmée dit combien est arrivé : **Non reçue**, **Reçue en partie** ou **Entièrement reçue**, et pour une vente **Non expédiée**, **Expédiée en partie** ou **Entièrement expédiée**. Une ligne close incomplète compte comme terminée, et une quantité supérieure à la commande se lit tout de même **Entièrement reçue**. L’étiquette est calculée à partir des lignes, donc personne ne la fixe, et le filtre **Réception** de la liste (**Expédition** sur une liste de ventes, **Réception ou expédition** pour les deux) la limite à l’une d’elles, conservé dans l’adresse.
+
+Sur un achat, **Réceptions** liste chaque livraison avec son lot et la personne qui l’a reçue, et se termine par **Tous les mouvements de** et le numéro de la commande, qui ouvre [Mouvements](/movements) pour elle; les **Expéditions** d’une vente se terminent de la même façon. Seule une personne qui peut voir le stock les voit.
+
 ## Expédier une vente {#ship}
 
 1. Ouvrez la vente confirmée et appuyez sur **Expédier**.
@@ -36,7 +40,7 @@ Tout ce qui est listé part ensemble, ou rien ne part : mettez une ligne à 0 p
 
 ## Terminer une commande {#finish}
 
-Quand plus rien n’est attendu, appuyez sur **Clore la commande**, que tout soit arrivé ou non. **Annuler la commande** n’est offert que tant que rien n’a bougé.
+Quand plus rien n’est attendu, appuyez sur **Clore la commande**, que tout soit arrivé ou non. Une fois tout reçu, la commande demande « Tout est arrivé. Clore la commande? » (sur une vente, « Tout a été expédié. Clore la commande? »), et **Clore la commande** la ferme. **Annuler la commande** n’est offert que tant que rien n’a bougé.
 
 ## Ce qu’un lien a choisi {#chips}
 
@@ -51,7 +55,7 @@ Les tuiles de l’accueil et ses boutons des retards ouvrent Commandes avec la l
 ## Les mots que vous verrez {#words}
 
 - **Brouillon** : rédigée, pas encore convenue.
-- **Confirmée** : convenue avec le partenaire.
+- **Confirmée** : convenue avec le partenaire. Son étiquette dit combien est arrivé, comme plus haut.
 - **Reçue** ou **Expédiée** : close. Le filtre de la liste appelle les deux **Exécutées**.
 - **Annulée** : commande annulée avant tout déplacement de marchandises.
 - **Close incomplète** : une ligne qui n’attend plus rien, son écart conservé.
