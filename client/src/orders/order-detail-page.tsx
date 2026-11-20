@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
@@ -92,6 +92,8 @@ export function OrderDetailPage() {
   const [shipping, setShipping] = useState(false);
 
   const [returning, setReturning] = useState(false);
+  /** The order's title, focused once Close order closes it (103a). */
+  const title = useRef<HTMLHeadingElement>(null);
 
   /** Bumped after a shipment so the list below refetches alongside the order. */
   const [shipments, setShipments] = useState(0);
@@ -206,7 +208,7 @@ export function OrderDetailPage() {
     };
   }, [order]);
 
-  async function moveTo(status: OrderStatus) {
+  async function moveTo(status: OrderStatus): Promise<boolean> {
     setWorking(true);
     try {
       await api(`/orders/${id}`, {
@@ -214,14 +216,25 @@ export function OrderDetailPage() {
         body: JSON.stringify({ status }),
       });
       await load();
+      return true;
     } catch (caught: unknown) {
       // At the page, not in a dialog: these come from buttons with no form
       // behind them, and the refusal is about the document rather than a
       // field somebody typed.
       setError(messageFor(caught));
+      return false;
     } finally {
       setWorking(false);
     }
+  }
+
+  /**
+   * Close order at All received, at once (#605), then focus on the
+   * order's title, where the page begins, since the button that had it
+   * is gone (103a).
+   */
+  async function closeNow() {
+    if (await moveTo('fulfilled')) title.current?.focus();
   }
 
   /**
@@ -370,7 +383,7 @@ export function OrderDetailPage() {
         fullWidth
         disabled={working}
         aria-describedby="order-close-line"
-        onClick={() => void moveTo('fulfilled')}
+        onClick={() => void closeNow()}
       >
         {transitionLabel('fulfilled')}
       </Button>
@@ -456,7 +469,9 @@ export function OrderDetailPage() {
           quiet={!!primary}
           withoutClose={closeOffered}
           stacked
-          onMove={moveTo}
+          onMove={async (next) => {
+            await moveTo(next);
+          }}
           onCloseOrder={() => setClosing(true)}
         />
       )}
@@ -477,6 +492,7 @@ export function OrderDetailPage() {
         ]}
         // Ours, which every order has and people quote (ADR-071).
         title={order.number}
+        headingRef={title}
         status={[
           // What the order is, by name, rather than relying on CSS
           // capitalisation of the stored status; its tone from the one

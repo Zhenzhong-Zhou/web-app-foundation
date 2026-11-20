@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -897,9 +897,18 @@ describe('OrderDetailPage, how much has come', () => {
     expect(close).not.toHaveClass('MuiButton-outlined');
 
     // Nothing is outstanding, so no question about what is still to come.
+    serve({ ...allIn, status: 'fulfilled', fulfillment: null });
     await userEvent.click(close);
     await expect.poll(() => sent).toEqual([{ status: 'fulfilled' }]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Close order gone, focus goes to the order's title, where the page
+    // begins, never to the page's foot (103a).
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Close order' })).toBeNull(),
+    );
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'PO-000001' }),
+    ).toHaveFocus();
   });
 
   it('says a sale all shipped in its own words', async () => {
