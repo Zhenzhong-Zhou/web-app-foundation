@@ -165,6 +165,15 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
   MC-317
+- **Every stock export writes a quantity as data without its padding
+  zeros, never rounded:** `600`, not `600.0000`; `12.5` and `0.0001` as
+  they are; a minus kept, `-5`; no grouping. Stock's, the Lot view's,
+  Movements', Reorder's, Stock value's and the recall list's; the
+  organization's full export keeps each as stored.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money at its currency’s places" ·
+  [test](../../server/src/common/export.spec.ts) "drops the padding zeros of a quantity, and money’s down to its currency’s places" ·
+  MC-1558
 - **Stock value's export writes each unit cost and value at the base
   currency's places, never fewer and never rounded:** a value stored
   `20.000000` as `20.00`, a unit cost of `0.012345` as it is.
