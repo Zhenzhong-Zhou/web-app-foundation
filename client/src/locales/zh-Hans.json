@@ -694,6 +694,7 @@
   "inventory.movements.end.countedOut": "盘点扣除",
   "inventory.movements.end.customer": "客户",
   "inventory.movements.end.run": "生产订单",
+  "inventory.movements.end.sample": "样品",
   "inventory.movements.end.supplier": "供应商",
   "inventory.movements.for": "单据",
   "inventory.movements.fromTo": "从 → 到",

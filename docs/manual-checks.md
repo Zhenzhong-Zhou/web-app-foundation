@@ -630,7 +630,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a and 96a)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a and 125)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -638,8 +638,13 @@ a second organization.
   Shipped, Moved, Corrected: miscount, Made, Used in a run, Sampled,
   Returned, the Reason filter offering the same), From → to on two lines,
   each place by its path and an end outside the warehouse in grey words
-  (supplier, customer, run, counted in, counted out), the lot linked with
-  its expiry under it, For linked to its order or run, and By.
+  (supplier, customer, run, sample, counted in, counted out), the lot
+  linked with its expiry under it, For linked to its order or run, and
+  By. Choose Reason › Sampled: MCS-001's 12 end "→ sample" in grey,
+  never "—", and For reads Northside Pharmacy, a link to its page; the
+  export writes To sample and For Northside Pharmacy. As Tom Becker
+  (Warehouse), without `partners.view`, the same row's For reads "—" and
+  the export's For is empty.
   SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. With
   no Location chosen, a move between two places reads unsigned; choose a
   Location: a move off it reads with its minus and one onto it with its
@@ -7231,3 +7236,7 @@ first.
 - 2026-11-20: ADR-093's Movements branch, 99a: every export writes money
   at its currency's places, never fewer and never rounded, `12.50` and
   not `12.5000`, `0.0125` as it is, yen's `1250`: MC-1558 reworded.
+- 2026-11-20: ADR-093's Movements branch, 125: a sample's row ends
+  "→ sample" in grey and For names its recipient, a link with
+  `partners.view` and "—" without; the export's To and For the same:
+  MC-320 extended.

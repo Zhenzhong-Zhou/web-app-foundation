@@ -55,6 +55,12 @@ export class MovementDocument {
   number!: string | null;
 }
 
+/** A sample's recipient (ADR-042; 125): the partner, whose page opens. */
+export class MovementRecipient {
+  id!: string;
+  name!: string;
+}
+
 /**
  * A movement as the ledger lists it, the one row Movements, the item's
  * page and the export read (ADR-093, R9 and R20): the item by today's
@@ -122,6 +128,13 @@ export class Movement {
    * reader who may not see orders, or runs, in the list and its export.
    */
   document!: MovementDocument | null;
+  /**
+   * Whom a sample went to, as Send sample recorded it (125), which For
+   * names where a sale's names its order; null for any other movement, a
+   * sample with no recipient recorded, and a reader without
+   * `partners.view`, in the list and its export.
+   */
+  recipient!: MovementRecipient | null;
   /**
    * What came into the stock the list counts, as a stock card's In
    * (ADR-093, 11a): at the place chosen, what came to it; across every

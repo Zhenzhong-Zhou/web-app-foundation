@@ -58,6 +58,7 @@ interface Row {
   lotExpiresAt: string | null;
   actorName: string | null;
   document: { kind: string; id: string; number: string | null } | null;
+  recipient: { id: string; name: string } | null;
   quantityIn: string | null;
   quantityOut: string | null;
   change: string | null;
@@ -993,6 +994,76 @@ describe('Movements (e2e)', () => {
     for (const name of ['SHELF', 'QUAR', 'LINE', 'RUN-7']) {
       expect(response.text).not.toContain(name);
     }
+  });
+
+  // 125: a sample reads like a shipment. Its To is "sample", never blank,
+  // and its For the recipient Send sample recorded, by partners.view,
+  // on the list and in its export; none recorded, none named.
+  it('ends a sample at “sample” and names its recipient for a reader who may see partners, on the list and in its export', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const focus = await item(agent, 'FOCUS');
+    const northside = await partner(agent, 'Northside Pharmacy');
+    await receive(agent, focus, shelf, '20');
+    for (const recipient of [{ recipientPartnerId: northside }, {}]) {
+      await agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: focus,
+          fromLocationId: shelf,
+          quantity: '2',
+          reason: 'sample',
+          ...recipient,
+        })
+        .expect(201);
+    }
+    await customRole(
+      app,
+      alpha.organizationId,
+      'Warehouse',
+      ROLE_TEMPLATES.warehouse.permissions,
+    );
+    const warehouse = await addMember(
+      app,
+      alpha,
+      'warehouse@example.com',
+      'Warehouse',
+    );
+
+    const recipients = async (reader: Agent) =>
+      (await list(reader, '?order=asc')).entries.map((row) => [
+        row.reason,
+        row.recipient,
+      ]);
+    expect(await recipients(agent)).toEqual([
+      ['receipt', null],
+      ['sample', { id: northside, name: 'Northside Pharmacy' }],
+      ['sample', null],
+    ]);
+    expect(await recipients(warehouse)).toEqual([
+      ['receipt', null],
+      ['sample', null],
+      ['sample', null],
+    ]);
+
+    const columns = async (reader: Agent) => {
+      const { header, rows } = csvOf(
+        (await reader.get('/v1/stock/movements/export').expect(200)).text,
+      );
+      return ['To', 'For'].map((name) => [
+        name,
+        ...rows.map((row) => row[header.indexOf(name)]),
+      ]);
+    };
+    expect(await columns(agent)).toEqual([
+      ['To', 'SHELF (SHELF)', 'sample', 'sample'],
+      ['For', '', 'Northside Pharmacy', ''],
+    ]);
+    expect(await columns(warehouse)).toEqual([
+      ['To', 'SHELF (SHELF)', 'sample', 'sample'],
+      ['For', '', '', ''],
+    ]);
   });
 
   // ADR-093, 100a; review 26: the export's Reason in the screen's words,

@@ -10,7 +10,7 @@ Les mouvements sont toutes les variations de quantité, de la plus récente à l
 
 Appuyez sur **Quand**, en tête de la première colonne, pour mettre les plus anciens d’abord, et encore pour les plus récents. Chaque filtre est dans l’adresse : un rechargement, un lien et Retour les conservent; **Afficher tous les mouvements** les retire tous.
 
-Chaque ligne dit quand; le nom de l’article, avec son code et son type dessous, et « anciennement VITC-90 » lorsque le code a changé depuis; la variation, avec son unité; le motif; de → à, chaque emplacement par son chemin, une extrémité hors de l’entrepôt dite en gris : fournisseur, client, fabrication, compté en plus ou compté en moins; le lot avec sa date de péremption; le document concerné, un lien vers la commande ou l’ordre de fabrication; et qui l’a fait. Sous 600 px, chaque mouvement est une carte, et les filtres et le tri sont derrière un seul bouton **Filtres**.
+Chaque ligne dit quand; le nom de l’article, avec son code et son type dessous, et « anciennement VITC-90 » lorsque le code a changé depuis; la variation, avec son unité; le motif; de → à, chaque emplacement par son chemin, une extrémité hors de l’entrepôt dite en gris : fournisseur, client, fabrication, échantillon, compté en plus ou compté en moins; le lot avec sa date de péremption; le document concerné, un lien vers la commande ou l’ordre de fabrication, ou vers le partenaire à qui un échantillon est allé; et qui l’a fait. Sous 600 px, chaque mouvement est une carte, et les filtres et le tri sont derrière un seul bouton **Filtres**.
 
 ## Lire un code comme une fiche de stock {#card}
 
@@ -39,7 +39,7 @@ Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filt
 
 Un mouvement ne peut pas être modifié. Pour rétablir une quantité, utilisez **Corriger le compte** ou **Déplacer** dans [Inventaire](/inventory). Chacun ajoute son propre mouvement, pour que l’historique dise ce qui s’est passé et qui l’a fait.
 
-> Qui ne peut pas voir les emplacements n’a ni la liste **Emplacement** ni la colonne **De → à**, et un lien qui nomme un emplacement lit **Partout**; son export n’a ni De ni À. Qui ne peut pas voir les commandes ne voit aucune commande sous **Document**, ni un ordre de fabrication sans la permission de voir la production, et un lien qui nomme une commande liste tous les mouvements, sans puce. Qui ne peut pas voir le stock ne voit pas Mouvements du tout.
+> Qui ne peut pas voir les emplacements n’a ni la liste **Emplacement** ni la colonne **De → à**, et un lien qui nomme un emplacement lit **Partout**; son export n’a ni De ni À. Qui ne peut pas voir les commandes ne voit aucune commande sous **Document**, ni un ordre de fabrication sans la permission de voir la production, ni le partenaire d’un échantillon sans la permission de voir les partenaires, et un lien qui nomme une commande liste tous les mouvements, sans puce. Qui ne peut pas voir le stock ne voit pas Mouvements du tout.
 
 ## Les mots que vous verrez {#words}
 

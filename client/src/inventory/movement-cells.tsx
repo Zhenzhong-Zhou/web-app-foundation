@@ -36,6 +36,7 @@ const OUTSIDE = defineMessages({
     defaultMessage: 'customer',
   },
   run: { id: 'inventory.movements.end.run', defaultMessage: 'run' },
+  sample: { id: 'inventory.movements.end.sample', defaultMessage: 'sample' },
   countedIn: {
     id: 'inventory.movements.end.countedIn',
     defaultMessage: 'counted in',
@@ -50,8 +51,8 @@ const OUTSIDE = defineMessages({
  * Where a movement with no place at one end came from or went to, by its
  * reason (ADR-023): a receipt from a supplier, a return or a voided
  * shipment from a customer, a run's output from the run, a correction
- * counted in; a shipment to a customer, a run's use to the run, a
- * correction counted out. A sample names none.
+ * counted in; a shipment to a customer, a run's use to the run, a sample
+ * to "sample", read as a shipment is (125), a correction counted out.
  */
 function outsideEnd(
   movement: Movement,
@@ -67,6 +68,8 @@ function outsideEnd(
     case 'production':
     case 'consumption':
       return 'run';
+    case 'sample':
+      return 'sample';
     case 'adjustment':
       return coming ? 'countedIn' : 'countedOut';
     default:
@@ -336,12 +339,24 @@ export function MovementLot({ movement }: { movement: Movement }) {
 
 /**
  * The document it was for (55a): the order received, shipped or returned
- * on, or the run, a link to its page; only what the reader may see comes.
+ * on, or the run, a link to its page; a sample's recipient, a link to the
+ * partner (125); only what the reader may see comes.
  */
 export function MovementFor({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const document = movement.document;
+  const { document, recipient } = movement;
 
+  if (recipient) {
+    return (
+      <Link
+        component={RouterLink}
+        to={`/partners/${recipient.id}`}
+        state={OFFER_BACK}
+      >
+        {recipient.name}
+      </Link>
+    );
+  }
   if (!document) return NO_VALUE;
 
   return (

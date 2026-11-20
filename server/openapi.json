@@ -13019,10 +13019,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -13165,10 +13165,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -13269,10 +13269,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -16410,6 +16410,21 @@
           "number"
         ]
       },
+      "MovementRecipient": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "Movement": {
         "type": "object",
         "properties": {
@@ -16440,10 +16455,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -16561,6 +16576,16 @@
               }
             ]
           },
+          "recipient": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementRecipient"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "quantityIn": {
             "type": [
               "string",
@@ -16615,6 +16640,7 @@
           "actorEmail",
           "createdAt",
           "document",
+          "recipient",
           "quantityIn",
           "quantityOut",
           "change",
@@ -16755,10 +16781,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -17184,10 +17210,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -17731,10 +17757,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -18562,10 +18588,10 @@
               "null"
             ],
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment",
               null
@@ -19891,10 +19917,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]

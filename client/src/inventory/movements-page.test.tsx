@@ -23,6 +23,7 @@ const ITEM = '11111111-1111-4111-8111-111111111111';
 const SHELF = '22222222-2222-4222-8222-222222222222';
 const LOT = '33333333-3333-4333-8333-333333333333';
 const ORDER = '44444444-4444-4444-8444-444444444444';
+const PARTNER = '55555555-5555-4555-8555-555555555555';
 
 const SHELF_A2: Location = {
   id: SHELF,
@@ -89,6 +90,14 @@ async function rowFor(entry: Movement, permissions = EVERYONE) {
   renderAt('/movements', permissions);
   const name = await screen.findByRole('link', { name: '维生素 D (60 粒)' });
   return name.closest('tr') as HTMLElement;
+}
+
+/** A row's cell under the column headed `head`. */
+function cellUnder(row: HTMLElement, head: string) {
+  const heads = screen
+    .getAllByRole('columnheader')
+    .map((cell) => cell.textContent);
+  return (row as HTMLTableRowElement).cells[heads.indexOf(head)];
 }
 
 const addressOf = () => screen.getByRole('status', { name: 'address' });
@@ -182,6 +191,34 @@ describe('MovementsPage', () => {
     expect(
       within(row).getByRole('link', { name: 'SO-000013' }),
     ).toHaveAttribute('href', `/orders/${ORDER}`);
+  });
+
+  // 125: a sample reads like a shipment, "→ sample" in grey words and
+  // For the recipient Send sample recorded, which the server sends only
+  // to a reader with partners.view.
+  it('ends a sample at “sample” and links the recipient it was for (125)', async () => {
+    const row = await rowFor(
+      movement({
+        reason: 'sample',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      }),
+    );
+
+    expect(cellUnder(row, 'From → to')).toHaveTextContent(
+      'Main warehouse › Shelf A (A)→sample',
+    );
+    expect(
+      within(cellUnder(row, 'For')).getByRole('link', {
+        name: 'Northside Pharmacy',
+      }),
+    ).toHaveAttribute('href', `/partners/${PARTNER}`);
+  });
+
+  it('says — for a sample whose recipient was not recorded, or is not the reader’s to see (125)', async () => {
+    const row = await rowFor(movement({ reason: 'sample' }));
+
+    expect(cellUnder(row, 'From → to')).toHaveTextContent('→sample');
+    expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
   });
 
   it('names who by name, their email beneath', async () => {

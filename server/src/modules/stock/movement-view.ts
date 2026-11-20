@@ -19,6 +19,7 @@ import { notInThisList, type SortOrder } from '../../common/sorted-page';
 import {
   locations,
   lots,
+  partners,
   products,
   type ProductType,
   productVariants,
@@ -31,6 +32,7 @@ import type {
   MovementDocument,
   MovementPage,
   MovementPeriod,
+  MovementRecipient,
   RecordedMovement,
 } from './dto/stock-response.dto';
 import { namesIn } from './item-name';
@@ -77,6 +79,8 @@ export interface MovementSight {
   orders: boolean;
   /** `production.view`: the run it was issued to or made by (55a). */
   runs: boolean;
+  /** `partners.view`: a sample's recipient (125). */
+  partners: boolean;
 }
 
 /**
@@ -231,6 +235,8 @@ export async function movementPage(
       reason: stockMovements.reason,
       reasonDetail: stockMovements.reasonDetail,
       note: stockMovements.note,
+      referenceType: stockMovements.referenceType,
+      referenceId: stockMovements.referenceId,
       fromLocationId: stockMovements.fromLocationId,
       toLocationId: stockMovements.toLocationId,
       lotId: stockMovements.lotId,
@@ -260,6 +266,8 @@ export async function movementPage(
       reason: movement.reason,
       reasonDetail: movement.reasonDetail,
       note: movement.note,
+      referenceType: movement.referenceType,
+      referenceId: movement.referenceId,
       fromLocationId: movement.fromLocationId,
       fromLocationName: from.name,
       fromLocationCode: from.code,
@@ -336,6 +344,12 @@ export async function movementPage(
     page.entries.map((row) => row.id),
     sight,
   );
+  const recipients = await recipientsOf(
+    tx,
+    organizationId,
+    page.entries,
+    sight,
+  );
   const balances = card.balance
     ? await balancesOf(
         tx,
@@ -379,6 +393,7 @@ export async function movementPage(
         actorEmail: row.actorEmail,
         createdAt: row.createdAt,
         document: documents.get(row.id) ?? null,
+        recipient: recipients.get(row.id) ?? null,
         quantityIn: row.quantityIn,
         quantityOut: row.quantityOut,
         change: row.change,
@@ -704,6 +719,49 @@ async function documentsOf(
     }
   }
   return documents;
+}
+
+/**
+ * Each sample's recipient, by the movement's id (125): the partner Send
+ * sample recorded as its reference, which only a sample may carry,
+ * checked against this organization when it was (ADR-042;
+ * `referenceFor`), for the page's rows alone, and only for a reader with
+ * partners.view. A sample with no recipient has none here.
+ */
+async function recipientsOf(
+  tx: Tx,
+  organizationId: string,
+  rows: {
+    id: string;
+    referenceType: string | null;
+    referenceId: string | null;
+  }[],
+  sight: MovementSight,
+): Promise<Map<string, MovementRecipient>> {
+  const samples = rows.filter(
+    (row) => row.referenceType === 'partner' && row.referenceId !== null,
+  );
+  if (!sight.partners || samples.length === 0) return new Map();
+
+  const found = await tx
+    .select({ id: partners.id, name: partners.name })
+    .from(partners)
+    .where(
+      and(
+        eq(partners.organizationId, organizationId),
+        inArray(partners.id, [
+          ...new Set(samples.map((row) => row.referenceId!)),
+        ]),
+      ),
+    );
+  const names = new Map(found.map((partner) => [partner.id, partner.name]));
+
+  return new Map(
+    samples.flatMap((row) => {
+      const name = names.get(row.referenceId!);
+      return name ? [[row.id, { id: row.referenceId!, name }] as const] : [];
+    }),
+  );
 }
 
 /** An item as a movement's row names it, today. */

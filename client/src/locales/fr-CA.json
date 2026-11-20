@@ -694,6 +694,7 @@
   "inventory.movements.end.countedOut": "compté en moins",
   "inventory.movements.end.customer": "client",
   "inventory.movements.end.run": "fabrication",
+  "inventory.movements.end.sample": "échantillon",
   "inventory.movements.end.supplier": "fournisseur",
   "inventory.movements.for": "Document",
   "inventory.movements.fromTo": "De → à",

@@ -40,6 +40,8 @@ export interface StandingSight {
   orders: boolean;
   /** `production.view`: Coming's runs. */
   runs: boolean;
+  /** `partners.view`: a sample's recipient in Latest movements (125). */
+  partners: boolean;
 }
 
 /** A code's row as the statement reads it: its own columns and figures. */

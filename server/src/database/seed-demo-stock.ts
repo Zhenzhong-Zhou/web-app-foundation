@@ -156,12 +156,13 @@ export async function readBackStock(
       places: true,
       orders: true,
       runs: true,
+      partners: true,
     })
   ).codes.map((code) => `${code.sku} ${code.status ?? 'none'}`);
 
   // What Movements lists, read as its own list reads it, as the Owner.
   const movements = app.get(StockReadsService);
-  const sight = { places: true, orders: true, runs: true };
+  const sight = { places: true, orders: true, runs: true, partners: true };
   const [shippedOrder] = await db
     .select({ id: orders.id })
     .from(orders)

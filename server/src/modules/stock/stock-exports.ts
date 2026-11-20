@@ -191,6 +191,7 @@ const OUTSIDE_WORDS = {
   supplier: t({ id: 'stock.end.supplier', defaultMessage: 'supplier' }),
   customer: t({ id: 'stock.end.customer', defaultMessage: 'customer' }),
   run: t({ id: 'stock.end.run', defaultMessage: 'run' }),
+  sample: t({ id: 'stock.end.sample', defaultMessage: 'sample' }),
   countedIn: t({ id: 'stock.end.countedIn', defaultMessage: 'counted in' }),
   countedOut: t({
     id: 'stock.end.countedOut',
@@ -203,7 +204,8 @@ const OUTSIDE_WORDS = {
  * reason, as the screen's `outsideEnd` reads it (ADR-023): a receipt from
  * a supplier, a return or a voided shipment from a customer, a run's
  * output from the run, a correction counted in; a shipment to a customer,
- * a run's use to the run, a correction counted out. A sample names none.
+ * a run's use to the run, a sample to "sample" (125), a correction
+ * counted out.
  */
 function outsideEnd(
   movement: Movement,
@@ -221,6 +223,8 @@ function outsideEnd(
     case 'production':
     case 'consumption':
       return 'run';
+    case 'sample':
+      return 'sample';
     case 'adjustment':
       return side === 'from' ? 'countedIn' : 'countedOut';
     default:
@@ -297,8 +301,8 @@ export function movementLines(
  * Balance for one code, In and Out for one code with a reason or for an
  * order, else Change, as the list reads (cardOf); From and To, each place
  * by its whole path, only for a reader who may see places, else no such
- * columns (ADR-080; 96a); For, the document, only as the reader may see
- * it (55a); By with the person's email (ADR-063); the note last, as
+ * columns (ADR-080; 96a); For, the document, or a sample's recipient by
+ * name, only as the reader may see it (55a; 125); By with the person's email (ADR-063); the note last, as
  * typed (review 54).
  */
 export function movementColumns(options: {
@@ -454,7 +458,10 @@ export function movementColumns(options: {
     { header: HEADERS.expiry, value: of((movement) => movement.lotExpiresAt) },
     {
       header: t({ id: 'exports.column.for', defaultMessage: 'For' }),
-      value: of((movement) => movement.document?.number ?? null),
+      value: of(
+        (movement) =>
+          movement.document?.number ?? movement.recipient?.name ?? null,
+      ),
     },
     {
       header: t({ id: 'exports.column.by', defaultMessage: 'By' }),

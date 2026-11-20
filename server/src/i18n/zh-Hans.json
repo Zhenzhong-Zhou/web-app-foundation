@@ -1081,6 +1081,7 @@
   "stock.end.countedOut": "盘点扣除",
   "stock.end.customer": "客户",
   "stock.end.run": "生产订单",
+  "stock.end.sample": "样品",
   "stock.end.supplier": "供应商",
   "stock.enoughStockLocationMovement": "该库位的库存不足以完成此次变动",
   "stock.giveEitherExistingLot": "请选择已有批次或新建一个批次，不要同时选择两者。",

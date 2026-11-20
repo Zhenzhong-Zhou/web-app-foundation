@@ -10,7 +10,7 @@ Movements are every change to a quantity, newest first: receipts, shipments, tra
 
 Press **When** at the head of the first column to put the oldest first, and again for the newest. Every filter is in the address, so a reload, a link and Back keep them; **Show all movements** takes every one off.
 
-Each row says when; the item’s name, with its code and type under it, and “was VITC-90” where the code has changed since; the change, with its unit; the reason; from → to, each place by its path, an end outside the warehouse said in grey as supplier, customer, run, counted in or counted out; the lot with its expiry; what it was for, a link to the order or run; and who did it. Below 600 px each movement is a card, and the filters and the sort are behind one **Filters** button.
+Each row says when; the item’s name, with its code and type under it, and “was VITC-90” where the code has changed since; the change, with its unit; the reason; from → to, each place by its path, an end outside the warehouse said in grey as supplier, customer, run, sample, counted in or counted out; the lot with its expiry; what it was for, a link to the order or run, or to the partner a sample went to; and who did it. Below 600 px each movement is a card, and the filters and the sort are behind one **Filters** button.
 
 ## Read one code like a stock card {#card}
 
@@ -39,7 +39,7 @@ Press **Export** to download the movements your filters show as a CSV file, for 
 
 A movement cannot be changed. To put a quantity right, use **Correct the count** or **Move** on [Inventory](/inventory). Each adds a movement of its own, so the history says what happened and who did it.
 
-> Someone who may not see locations has no **Location** list and no **From → to** column, and a link that names a place reads **Everywhere**; their export has no From or To. Someone who may not see orders sees no order in **For**, nor a run without permission to see production, and a link that names an order lists every movement, with no chip. Someone who may not see stock does not see Movements at all.
+> Someone who may not see locations has no **Location** list and no **From → to** column, and a link that names a place reads **Everywhere**; their export has no From or To. Someone who may not see orders sees no order in **For**, nor a run without permission to see production, nor a sample’s partner without permission to see partners, and a link that names an order lists every movement, with no chip. Someone who may not see stock does not see Movements at all.
 
 ## Words you’ll meet {#words}
 

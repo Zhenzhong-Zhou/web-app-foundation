@@ -1056,7 +1056,7 @@ export type AcceptInvitationDto = {
 };
 
 export type CategoryItemCount = {
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   active: number;
   discontinued: number;
 };
@@ -1094,7 +1094,7 @@ export type ProductSummaryCategory = {
 
 export type ProductSummary = {
   id: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   displayName: string;
   sku: string;
   variantCount: number;
@@ -1111,7 +1111,7 @@ export type ProductSummary = {
 };
 
 export type ProductTypeCount = {
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   count: number;
 };
 
@@ -1846,6 +1846,11 @@ export type MovementDocument = {
   number: string | null;
 };
 
+export type MovementRecipient = {
+  id: string;
+  name: string;
+};
+
 export type Movement = {
   id: string;
   variantId: string;
@@ -1854,7 +1859,7 @@ export type Movement = {
   currentSku: string;
   productName: string;
   variantName: string | null;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   unitOfMeasure: string;
   quantity: string;
   reason: string;
@@ -1875,6 +1880,7 @@ export type Movement = {
   actorEmail: string | null;
   createdAt: string;
   document: MovementDocument | null;
+  recipient: MovementRecipient | null;
   quantityIn: string | null;
   quantityOut: string | null;
   change: string | null;
@@ -1915,7 +1921,7 @@ export type StockHere = {
 export type StockCodeRow = {
   variantId: string;
   productId: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   sku: string;
   productName: string;
@@ -2006,7 +2012,7 @@ export type StockLotRow = {
   quantity: string;
   emptiedOn: string | null;
   productId: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   locationPath: Array<string>;
   isAvailable: boolean;
@@ -2124,7 +2130,7 @@ export type ReorderPointRow = {
   id: string;
   variantId: string;
   productId: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   sku: string;
   productName: string;
@@ -2300,10 +2306,10 @@ export type LookupResult = {
   productId: string | null;
   coverFileId: string | null;
   type:
+    | 'sample'
     | 'good'
     | 'material'
     | 'packaging'
-    | 'sample'
     | 'supply'
     | 'equipment'
     | null;
@@ -2692,7 +2698,7 @@ export type NeedsCostEntry = {
   productId: string;
   productName: string;
   variantName: string | null;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;

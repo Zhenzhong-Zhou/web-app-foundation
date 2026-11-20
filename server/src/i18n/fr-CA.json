@@ -1081,6 +1081,7 @@
   "stock.end.countedOut": "compté en moins",
   "stock.end.customer": "client",
   "stock.end.run": "fabrication",
+  "stock.end.sample": "échantillon",
   "stock.end.supplier": "fournisseur",
   "stock.enoughStockLocationMovement": "Pas assez de stock à cet emplacement pour ce mouvement",
   "stock.giveEitherExistingLot": "Indiquez un lot existant ou un nouveau lot, mais pas les deux",

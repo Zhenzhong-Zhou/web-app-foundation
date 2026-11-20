@@ -694,6 +694,7 @@
   "inventory.movements.end.countedOut": "counted out",
   "inventory.movements.end.customer": "customer",
   "inventory.movements.end.run": "run",
+  "inventory.movements.end.sample": "sample",
   "inventory.movements.end.supplier": "supplier",
   "inventory.movements.for": "For",
   "inventory.movements.fromTo": "From → to",

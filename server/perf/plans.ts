@@ -76,8 +76,8 @@ const MONTH_INSTANTS = {
 const EVERY_PERMISSION = new Set(ALL_PERMISSIONS);
 const EVERYTHING = sightOf(EVERY_PERMISSION);
 
-/** Movements as an Owner reads them: each end's path and each document. */
-const EVERY_PART = { places: true, orders: true, runs: true };
+/** Movements as an Owner reads them: each end's path, document and recipient. */
+const EVERY_PART = { places: true, orders: true, runs: true, partners: true };
 
 /**
  * Sequential scans that are the decision, not an accident. Each says why,
@@ -379,6 +379,7 @@ async function buildProbes(
           places: true,
           orders: true,
           runs: true,
+          partners: true,
         }),
     },
     {
@@ -388,6 +389,7 @@ async function buildProbes(
           places: false,
           orders: false,
           runs: false,
+          partners: false,
         }),
     },
     {

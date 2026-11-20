@@ -433,6 +433,7 @@ export {
   type MovementLotDto,
   type MovementPage,
   type MovementPeriod,
+  type MovementRecipient,
   type MoveRoleDto,
   type NeedsCostEntry,
   type NeedsCostPage,

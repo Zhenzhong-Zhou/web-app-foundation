@@ -1081,6 +1081,7 @@
   "stock.end.countedOut": "counted out",
   "stock.end.customer": "customer",
   "stock.end.run": "run",
+  "stock.end.sample": "sample",
   "stock.end.supplier": "supplier",
   "stock.enoughStockLocationMovement": "Not enough stock at that location for this movement",
   "stock.giveEitherExistingLot": "Give either an existing lot or a new one, not both",

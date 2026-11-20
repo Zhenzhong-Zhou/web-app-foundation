@@ -284,9 +284,10 @@ file is kept is in the [README](README.md).
   with its closing, each by its day, beside the range's In and Out.
   Reason in the screen's words with its detail, "Corrected: found". From
   and To, each place by its whole path, or an end outside the warehouse
-  in the screen's words, supplier, customer, run, counted in or counted
-  out, only for a reader who may see places, else no such columns; For
-  as the reader may see it.
+  in the screen's words, supplier, customer, run, sample, counted in or
+  counted out, only for a reader who may see places, else no such
+  columns; For, the document or a sample's recipient, as the reader may
+  see it.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note" ·
@@ -311,6 +312,17 @@ file is kept is in the [README](README.md).
   [ADR-093](../adr/0093-inventory-and-movements.md) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "names the order each movement was received or shipped on, for a reader who may see orders" ·
   MC-305
+- **A sample reads like a shipment:** its From → to ends "sample" in
+  grey, never "—", and its For names the recipient Send sample
+  recorded, a link to the partner, only to a reader who may see
+  partners; "—" for anyone else, and when none was recorded. Its
+  export's To writes "sample", and its For the recipient's name by the
+  same permission.
+  [ADR-093](../adr/0093-inventory-and-movements.md) ·
+  [test](../../server/test/movements.e2e-spec.ts) "ends a sample at “sample” and names its recipient for a reader who may see partners, on the list and in its export" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "ends a sample at “sample” and links the recipient it was for (125)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says — for a sample whose recipient was not recorded, or is not the reader’s to see (125)" ·
+  MC-320
 - **An order's movements are what was received, shipped and returned on
   it,** a voided shipment's reversal among them, and only for a reader
   who may see orders: the rest are refused, in their words, before
