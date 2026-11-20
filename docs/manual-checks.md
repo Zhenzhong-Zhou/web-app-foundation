@@ -1630,6 +1630,9 @@ Paper is checked first because it must not change at all.
 - **MC-1529** Expires first shows days left within 90 days, amber, and
   within 30 days red (ELD-24A: "20 days left"), the date beside each; a
   lot two years off shows only its date. Quantities read "400 each".
+  A code whose every unit on hand has expired reads "all expired" in
+  red, 全部已过期 in 中文, never "—"; one with nothing to expire keeps
+  "—" (#611).
 - **MC-1530** Receive stock, Ship out or Correct the count on a lot within
   90 days: the list, its opened row and the counts all update without a
   reload. With Expiring soon pressed and none due, the list says no items
@@ -7163,3 +7166,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, step 16 (#640): Where it
   stands' Buy and Make say their number with its unit, Buy 134 each:
   MC-219 and MC-220 reworded.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#611): Stock's Expires
+  first says "all expired" where every unit on hand has expired:
+  MC-1529 extended.

@@ -841,6 +841,7 @@
   "inventory.search": "Rechercher",
   "inventory.showEmptied": "Afficher le stock vidé",
   "inventory.stock.allCategories": "Toutes les catégories",
+  "inventory.stock.allExpired": "tout est périmé",
   "inventory.stock.allTypes": "Tous les types",
   "inventory.stock.chooseLotTo": "{mode, select, transfer {Choisissez le lot à déplacer} ship {Choisissez le lot à sortir} sample {Choisissez le lot à envoyer} other {Choisissez le lot à corriger}}",
   "inventory.stock.choosePlaceTo": "{mode, select, transfer {Choisissez l’emplacement d’où déplacer} ship {Choisissez l’emplacement d’où sortir} sample {Choisissez l’emplacement d’où envoyer} other {Choisissez l’emplacement à corriger}}",

@@ -1197,6 +1197,43 @@ describe('InventoryPage', () => {
     expect(counted.at(-1)?.get('low')).toBe('true');
   });
 
+  // #611: a code whose every unit has expired says so, where "—" read as
+  // nothing to expire; one with nothing to expire keeps "—".
+  it('says all expired where every unit on hand has, and — where nothing expires', async () => {
+    answer([
+      {
+        ...CODE,
+        onHand: '12.0000',
+        usable: '0.0000',
+        notUsable: '12.0000',
+        expired: '12.0000',
+        unavailable: '0.0000',
+        held: '0.0000',
+        short: '0.0000',
+        expiresFirst: null,
+      },
+      {
+        ...CODE,
+        variantId: 'variant-2',
+        sku: 'VITD-120',
+        variantName: '120ct',
+        expired: '0.0000',
+        notUsable: '12.0000',
+        expiresFirst: null,
+      },
+    ]);
+    renderAt('/inventory', ['stock.view']);
+
+    const expired = await screen.findByText('VITD-60 · Product');
+    const never = await screen.findByText('VITD-120 · Product');
+    expect(
+      within(expired.closest('tr') as HTMLElement).getByText('all expired'),
+    ).toBeVisible();
+    expect(
+      within(never.closest('tr') as HTMLElement).queryByText('all expired'),
+    ).not.toBeInTheDocument();
+  });
+
   // #638 (P1a): the count always, so a person can tell the list is whole.
   it('says how many codes it shows once every one is shown', async () => {
     answer();

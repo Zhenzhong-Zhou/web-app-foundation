@@ -40,7 +40,7 @@ import { SPANNING_ROW } from '../components/spanning-row';
 import { TableOrCards } from '../components/table-or-cards';
 import { api, withQuery } from '../lib/api';
 import type { StockCodeSort } from '../lib/api-names';
-import { isZero } from '../lib/decimal';
+import { isZero, toScaled } from '../lib/decimal';
 import { displayQuantity, formatDay, itemName, NO_VALUE } from '../lib/format';
 import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -525,11 +525,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
           <Status row={row} />
         </TableCell>
         <TableCell>
-          <ExpiryChip
-            expiresAt={
-              opened.place ? (row.here?.expiresFirst ?? null) : row.expiresFirst
-            }
-          />
+          <ExpiresFirst row={row} here={!!opened.place} />
         </TableCell>
         <TableCell padding="checkbox">
           <CodeActions row={row} opened={opened} onPile={choice.act} />
@@ -653,6 +649,33 @@ function Free({ row, held = false }: { row: StockCodeRow; held?: boolean }) {
       )}
     </Stack>
   );
+}
+
+/**
+ * The soonest expiry of the usable stock, at a place that place's; where
+ * every unit on hand has expired, "all expired", since "—" read as nothing
+ * to expire (#611).
+ */
+function ExpiresFirst({ row, here }: { row: StockCodeRow; here: boolean }) {
+  const intl = useIntl();
+  const expiresAt = here ? (row.here?.expiresFirst ?? null) : row.expiresFirst;
+  const allExpired =
+    !here &&
+    !expiresAt &&
+    !isZero(row.expired) &&
+    toScaled(row.expired) === toScaled(row.onHand);
+
+  if (allExpired) {
+    return (
+      <Typography variant="body2" sx={{ color: 'error.main' }}>
+        {intl.formatMessage({
+          id: 'inventory.stock.allExpired',
+          defaultMessage: 'all expired',
+        })}
+      </Typography>
+    );
+  }
+  return <ExpiryChip expiresAt={expiresAt} />;
 }
 
 /** Coming, with its soonest day; a run has none. */
@@ -1388,11 +1411,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
           <Free row={row} held />
         </Figure>
         <Figure label={intl.formatMessage(HEADS.expiresFirst)}>
-          <ExpiryChip
-            expiresAt={
-              opened.place ? (row.here?.expiresFirst ?? null) : row.expiresFirst
-            }
-          />
+          <ExpiresFirst row={row} here={!!opened.place} />
         </Figure>
         <Stack
           direction="row"

@@ -13,7 +13,7 @@ Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une varian
 - **Réservé** : gardé pour les ventes confirmées, la plus ancienne d’abord.
 - **À venir** : ce que les achats confirmés et les ordres lancés doivent encore apporter, avec le premier jour prévu.
 - **Statut** : **Bas**, **Épuisé** ou **Suffisant**, avec « Il en reste 10 · point de commande 36 » dessous pour un code qui a un point de commande. Appuyez sur la ligne pour voir où en est le code.
-- **Expire en premier** : la première date de péremption du stock utilisable.
+- **Expire en premier** : la première date de péremption du stock utilisable, ou « tout est périmé » quand toutes les unités en stock sont périmées; « — » quand rien n’expire.
 - **Actions** : les actions de la ligne, plus bas.
 
 Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, qui disent dessous pourquoi Libre est moindre, comme « Inutilisable : 12, périmé » et « réservé : 30 », et **Filtres** contient ce que l’écran n’a pas la place d’afficher. De 600 à 899 px, **Réservé** et **À venir** quittent le tableau.

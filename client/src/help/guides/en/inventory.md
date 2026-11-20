@@ -13,7 +13,7 @@ On **Stock**, each row is a code, the code on a variant’s label, so an item th
 - **Held**: kept for confirmed sales, the earliest confirmed first.
 - **Coming**: what confirmed purchases and released runs still have to bring, with the soonest day.
 - **Status**: **Low**, **Out** or **Enough**, with “10 left · reorder at 36” under it for a code with a reorder point. Press the line to see where the code stands.
-- **Expires first**: the soonest expiry of the usable stock.
+- **Expires first**: the soonest expiry of the usable stock, or “all expired” where every unit on hand has expired; “—” where nothing expires.
 - **Actions**: the row’s actions, below.
 
 Below 600 px each code is a card with **On hand** and **Free**, saying under them why Free is less, such as “12 not usable: expired” and “30 held”, and **Filters** holds what the screen has no room for. From 600 to 899 px **Held** and **Coming** leave the table.

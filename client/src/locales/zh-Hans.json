@@ -841,6 +841,7 @@
   "inventory.search": "搜索",
   "inventory.showEmptied": "显示已清空的库存",
   "inventory.stock.allCategories": "全部分类",
+  "inventory.stock.allExpired": "全部已过期",
   "inventory.stock.allTypes": "全部类型",
   "inventory.stock.chooseLotTo": "{mode, select, transfer {请选择要移库的批次} ship {请选择要出库的批次} sample {请选择要寄送的批次} other {请选择要更正的批次}}",
   "inventory.stock.choosePlaceTo": "{mode, select, transfer {请选择要移库的库位} ship {请选择要出库的库位} sample {请选择要寄送的库位} other {请选择要更正的库位}}",
