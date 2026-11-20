@@ -262,6 +262,13 @@ so the timing is the evidence for the name lookup.
   turn it on for its own transaction alone.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
+- **Orders by how much has come** (#605; review 57, 109a): Receiving's
+  filter works out each confirmed order's label from its lines, so
+  `orders: purchases partly received`, the rarest, sums every confirmed
+  purchase's lines, and only the confirmed's, to fill its page: 87 to
+  128 ms at large on the Mac, the partners walked in full (15,000, under
+  1 ms), allowed in the plan check with its reason. Trigger: past 150 ms at large. Then the label
+  stored on the order, kept with its lines, an ADR of its own.
 - **Migrations on large live tables.** 0036 builds its index inside the
   migration's transaction, which blocks writes to `order_lines` briefly:
   fine at today's sizes. On a production table with millions of rows and

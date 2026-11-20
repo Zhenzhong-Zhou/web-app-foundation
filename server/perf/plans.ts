@@ -93,6 +93,18 @@ const ALLOWED: { probe: string; table: string; reason: string }[] = [
       'database reads no other tenant; an export, not a page, is the answer ' +
       'if one organization outgrows a screen.',
   })),
+  {
+    probe: 'orders: purchases partly received',
+    table: 'partners',
+    reason:
+      'Partly received is the rarest label, none at large, so the page ' +
+      'sums the lines of every confirmed purchase to fill none, the ' +
+      'confirmed alone, as fulfillmentOf reads them (review 57); the ' +
+      'planner walks the partners, under 1 ms of 87 to 128, and each ' +
+      'one’s orders by orders_org_partner_idx. The time is the lines ' +
+      'summed, not the partners: ADR-051 watches it, the label stored ' +
+      'once it passes 150 ms at large.',
+  },
 ];
 
 interface Probe {
