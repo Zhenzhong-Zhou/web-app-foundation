@@ -38,15 +38,20 @@ function keptAll(): [string, Kept][] {
   }
 }
 
+/** The entry's record among those kept, or an empty one. */
+function recordOf(all: [string, Kept][], entry: string): Kept {
+  return all.find(([each]) => each === entry)?.[1] ?? {};
+}
+
 function keptOn(entry: string): Kept {
-  return keptAll().find(([each]) => each === entry)?.[1] ?? {};
+  return recordOf(keptAll(), entry);
 }
 
 /** The entry's record changed, and moved to the newest. */
 function keep(entry: string, change: (was: Kept) => Kept): void {
   try {
     const all = keptAll();
-    const was = all.find(([each]) => each === entry)?.[1] ?? {};
+    const was = recordOf(all, entry);
     const next = [
       ...all.filter(([each]) => each !== entry),
       [entry, change(was)],

@@ -289,28 +289,29 @@ export function MovementEnd({
   side: 'from' | 'to';
 }) {
   const intl = useIntl();
-  const id = side === 'from' ? movement.fromLocationId : movement.toLocationId;
-  const name =
-    side === 'from' ? movement.fromLocationName : movement.toLocationName;
+  const [id, place] =
+    side === 'from'
+      ? [
+          movement.fromLocationId,
+          {
+            locationName: movement.fromLocationName,
+            locationCode: movement.fromLocationCode,
+            locationPath: movement.fromLocationPath,
+          },
+        ]
+      : [
+          movement.toLocationId,
+          {
+            locationName: movement.toLocationName,
+            locationCode: movement.toLocationCode,
+            locationPath: movement.toLocationPath,
+          },
+        ];
 
-  if (id && name) {
+  if (id && place.locationName) {
     return (
       <Box sx={{ minWidth: 0 }}>
-        <PlacePath
-          place={
-            side === 'from'
-              ? {
-                  locationName: name,
-                  locationCode: movement.fromLocationCode,
-                  locationPath: movement.fromLocationPath,
-                }
-              : {
-                  locationName: name,
-                  locationCode: movement.toLocationCode,
-                  locationPath: movement.toLocationPath,
-                }
-          }
-        />
+        <PlacePath place={place} />
       </Box>
     );
   }

@@ -501,7 +501,7 @@ export function MovementsPage() {
 
       {period && unit && (
         <Period
-          opening={filters.from ? period.opening : null}
+          opening={period.opening}
           from={filters.from ?? null}
           quantityIn={period.quantityIn}
           quantityOut={period.quantityOut}
