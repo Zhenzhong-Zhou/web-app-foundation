@@ -971,7 +971,7 @@ async function deepPlace(api: APIRequestContext, names: string[]) {
   return product;
 }
 
-/** A path as drawn: the "…" and what follows it where cut, else whole. */
+/** A path as drawn: its cut, "…" in its middle, where cut, else whole. */
 const drawn = (page: Page, whole: string) =>
   page
     .locator(`[data-whole="${whole}"]`)
@@ -1019,7 +1019,7 @@ test('Stock, a place within its warehouse, 1920 px: its whole path, starting und
   ).toEqual({ inside: true, scrolled: 0, cut: false });
 });
 
-test('Stock, on a phone, a place deep in its warehouse: its path cut from the left with “…”, the place whole; whole on hover and on focus', async ({
+test('Stock, on a phone, a place deep in its warehouse: its path cut in its middle, the warehouse and the place whole; whole on hover and on focus', async ({
   page,
   freshOrg,
 }) => {
@@ -1036,7 +1036,9 @@ test('Stock, on a phone, a place deep in its warehouse: its path cut from the le
   await page.goto('/inventory');
   await placesOf(page, 'E2E Rosehip').click();
 
-  await expect.poll(() => drawn(page, whole)).toMatch(/^….* › E2E Shelf A2$/);
+  await expect
+    .poll(() => drawn(page, whole))
+    .toBe('E2E Main warehouse on the river › … › E2E Shelf A2');
 
   const box = page.locator(`[data-whole="${whole}"] [tabindex="0"]`);
   await box.hover();

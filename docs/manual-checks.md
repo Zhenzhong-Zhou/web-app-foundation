@@ -460,9 +460,11 @@ a second organization.
   its row, on the Lot view and on its page's By place and lot. At 1920
   and 1366 px it shows whole, starting under the item's name, and the
   Item header is whole. Where it does not fit, as at 390 px, it is cut
-  from the left with "…" at its start, "…Aisle 1 › Shelf 1-B", the place's
-  own name and code always whole; the pointer on it, or Tab to it, shows
-  the whole path.
+  in its middle, "Richmond warehouse › … › Shelf 1-B", the warehouse and
+  the place's own name and code always whole, the places nearest the
+  shelf kept while they fit; the pointer on it, Tab to it, or a tap on a
+  tablet or phone shows the whole path. "Richmond warehouse › Quarantine
+  (QUAR)", with nothing between, is never cut (#639).
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, Expires' arrow solid and "Soonest
   first, the expired on top." above the list; Item, Location and
@@ -6974,3 +6976,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, #639 and 96a: a lot's Where it
   is now names each place by its whole path, and for a reader without
   `locations.view` no place, its Usable and Not usable instead: MC-904.
+- 2026-11-20: ADR-093's Movements branch, 93a and #639: a place's path
+  that does not fit is cut in its middle, its warehouse and the place
+  whole, the whole path on a tap too: MC-312.

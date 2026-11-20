@@ -63,3 +63,20 @@ export function placeName(place: Placed): string {
     nameAndCode(place.locationName ?? '', place.locationCode),
   ]);
 }
+
+/** What stands for the places cut from the middle of a path. */
+const CUT = '…';
+
+/**
+ * A path's cuts in its middle, the longest first: its warehouse, "…",
+ * the places nearest the place itself while they fit, then the place,
+ * "Main warehouse › … › Aisle 1 › Shelf A2 (A2)" before "Main warehouse
+ * › … › Shelf A2 (A2)". None for a path with nothing between its
+ * warehouse and the place.
+ */
+export function cutsOf(above: readonly string[], own: string): string[] {
+  const [warehouse, ...between] = above;
+  return between.map((_, dropped) =>
+    pathName([warehouse, CUT, ...between.slice(dropped + 1), own]),
+  );
+}

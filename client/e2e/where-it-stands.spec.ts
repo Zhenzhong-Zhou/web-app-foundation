@@ -356,8 +356,9 @@ test('Where it stands, its figures: five tiles in a row at 1366 px, fewer at 820
 });
 
 // A place written as its path (57a), as on Stock: whole where it fits;
-// cut from the left with "…" where it does not, the place whole.
-test('Where it stands, By place and lot: a place’s whole path where it fits, cut from the left with “…” on a phone, the place whole', async ({
+// cut in its middle where it does not, the warehouse and the place whole
+// (93a, #639).
+test('Where it stands, By place and lot: a place’s whole path where it fits, cut in its middle on a phone, the warehouse and the place whole', async ({
   page,
   freshOrg,
 }) => {
@@ -396,5 +397,7 @@ test('Where it stands, By place and lot: a place’s whole path where it fits, c
   await expect.poll(drawn).toBe(whole);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect.poll(drawn).toMatch(/^….* › E2E Shelf A2$/);
+  await expect
+    .poll(drawn)
+    .toBe('E2E Main warehouse on the river › … › E2E Shelf A2');
 });

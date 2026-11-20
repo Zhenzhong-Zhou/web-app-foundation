@@ -3,26 +3,28 @@ import { useLayoutEffect, useRef, useState } from 'react';
 
 import { nameAndCode } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
-import { pathName } from '../products/item-list';
-import { type Placed, placeName } from './stock-places';
+import { cutsOf, type Placed, placeName } from './stock-places';
 
 /**
  * A place's path on one line (57a): whole where it fits; where it does
- * not, cut from the left with "…" at its start, the place's own name and
- * code always whole, "…Zone A › Shelf A2 (A2)". The whole path on hover,
- * and on focus, which it takes only while it is cut; a screen reader
- * reads it whole.
+ * not, cut in its middle, its warehouse and the place's own name and code
+ * always whole, "Main warehouse › … › Shelf A2 (A2)", since the part a
+ * cut from the left took away is the one that tells two warehouses apart
+ * (ADR-090, amended November 2026; 93a, #639). The whole path on hover,
+ * on focus, which it takes only while it is cut, and on a tap; a screen
+ * reader reads it whole.
  *
- * It asks its column for the whole path's width and needs none of it (a
- * grid track from 0 to the path's own width), so a table with the room
- * shows it whole, and one without cuts it rather than scrolling. Cut in
- * the code, not by CSS, so the "…" is drawn at the start in every
- * browser.
+ * It asks its column for the whole path's width and needs none of it but
+ * its warehouse, "…" and the place (a grid track from that to the path's
+ * own width), so a table with the room shows it whole, and one without
+ * cuts it rather than scrolling. Cut in the code, not by CSS, so the "…"
+ * stands where the places are left out in every browser.
  */
 export function PlacePath({ place }: { place: Placed }) {
   const whole = placeName(place);
   const own = nameAndCode(place.locationName ?? '', place.locationCode);
-  const above = pathName(place.locationPath);
+  // Joined, so the effect below runs again only when the path changes.
+  const cuts = cutsOf(place.locationPath, own).join('\n');
   const box = useRef<HTMLElement>(null);
   const ruler = useRef<HTMLElement>(null);
   const [shown, setShown] = useState(whole);
@@ -37,23 +39,16 @@ export function PlacePath({ place }: { place: Placed }) {
     };
     const fit = () => {
       const room = element.getBoundingClientRect().width;
-      // No layout (a unit test), nothing above, or it fits: whole.
-      if (room === 0 || !above || widthOf(whole) <= room + 0.5) {
-        measure.textContent = '';
-        setShown(whole);
-        return;
-      }
-      // The longest end of the places above that fits before the place.
-      const tail = ` › ${own}`;
-      let low = 0;
-      let high = above.length;
-      while (low < high) {
-        const middle = Math.floor((low + high) / 2);
-        const kept = above.slice(middle).trimStart();
-        if (widthOf(`…${kept}${tail}`) <= room + 0.5) high = middle;
-        else low = middle + 1;
-      }
-      setShown(`…${above.slice(low).trimStart()}${tail}`);
+      const fits = (text: string) => widthOf(text) <= room + 0.5;
+      const candidates = cuts ? cuts.split('\n') : [];
+      // No layout (a unit test), nothing to cut, or it fits: whole. Else
+      // the longest cut that fits, or the shortest, which the column's
+      // least width leaves room for.
+      setShown(
+        room === 0 || !candidates.length || fits(whole)
+          ? whole
+          : (candidates.find(fits) ?? candidates[candidates.length - 1]),
+      );
       measure.textContent = '';
     };
     fit();
@@ -61,14 +56,14 @@ export function PlacePath({ place }: { place: Placed }) {
     const observer = new ResizeObserver(fit);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [whole, own, above]);
+  }, [whole, cuts]);
 
   const cut = shown !== whole;
 
   return (
     <Box
       data-whole={whole}
-      data-least={above ? `… › ${own}` : own}
+      data-least={cuts ? cuts.slice(cuts.lastIndexOf('\n') + 1) : whole}
       sx={{
         // Its track between the least it can show and the whole path:
         // drawn by CSS, so neither is text a reader or a search finds.
@@ -86,7 +81,8 @@ export function PlacePath({ place }: { place: Placed }) {
           visibility: 'hidden',
           whiteSpace: 'nowrap',
         },
-        // The least: "…", and the place's own name whole.
+        // The least: the warehouse, "…" and the place, or the whole path
+        // with nothing between them to cut.
         '&::after': {
           content: 'attr(data-least)',
           gridArea: '1 / 1',
@@ -96,7 +92,12 @@ export function PlacePath({ place }: { place: Placed }) {
         },
       }}
     >
-      <Tooltip title={cut ? whole : ''} placement="top-start">
+      {/* On a tap too: a tablet has no hover (#639). */}
+      <Tooltip
+        title={cut ? whole : ''}
+        placement="top-start"
+        enterTouchDelay={0}
+      >
         <Box
           ref={box}
           component="span"

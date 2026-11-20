@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Location, StockLotRow } from '../api/types.gen';
-import { byWarehouse, placeName, withPlaceNumbers } from './stock-places';
+import {
+  byWarehouse,
+  cutsOf,
+  placeName,
+  withPlaceNumbers,
+} from './stock-places';
 
 function place(id: string, parentId: string | null = null): Location {
   return {
@@ -89,5 +94,23 @@ describe('placeName', () => {
     expect(
       placeName({ locationName: 'BACK', locationCode: null, locationPath: [] }),
     ).toBe('BACK');
+  });
+});
+
+describe('cutsOf', () => {
+  // Cut in its middle (93a, #639): the warehouse and the place kept, the
+  // places nearest the place before those nearer the warehouse.
+  it('keeps the warehouse and the place, the nearest places first', () => {
+    expect(
+      cutsOf(['Main warehouse', 'Ambient', 'Aisle 1'], 'Shelf 1-B (1B)'),
+    ).toEqual([
+      'Main warehouse › … › Aisle 1 › Shelf 1-B (1B)',
+      'Main warehouse › … › Shelf 1-B (1B)',
+    ]);
+  });
+
+  it('has none with nothing between the warehouse and the place', () => {
+    expect(cutsOf(['Richmond warehouse'], 'Quarantine (QUAR)')).toEqual([]);
+    expect(cutsOf([], 'Main warehouse')).toEqual([]);
   });
 });
