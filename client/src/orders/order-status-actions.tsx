@@ -2,6 +2,7 @@ import { Button, Stack } from '@mui/material';
 
 import type { OrderDetail } from '../api/types.gen';
 import type { OrderStatus } from '../lib/api-names';
+import { isZero } from '../lib/decimal';
 import { openDialog } from '../lib/open-dialog';
 import { NEXT_STATUSES, transitionLabel } from './status';
 
@@ -42,10 +43,11 @@ export function OrderStatusActions({
    */
   stacked?: boolean;
 }) {
-  // Cancel only while nothing has come or gone; Close order not where it
-  // is offered above.
+  // Cancel only while nothing has come or gone, a quantity read as a
+  // decimal, never a number (ADR-025); Close order not where it is
+  // offered above.
   const cancellable = !order.lines.some(
-    (line) => Number(line.quantityFulfilled) > 0,
+    (line) => !isZero(line.quantityFulfilled),
   );
   const moves = NEXT_STATUSES[order.status].filter((next) =>
     next === 'cancelled'
