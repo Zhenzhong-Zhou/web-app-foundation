@@ -43,6 +43,7 @@ import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SelectField } from '../components/select-field';
+import { ShowingLine } from '../components/showing-line';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { messageFor, withQuery } from '../lib/api';
 import type {
@@ -53,7 +54,7 @@ import type {
 import { nameAndCode } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { leftFrom, returnedTo } from '../lib/return-focus';
+import { leftFrom } from '../lib/return-focus';
 import { useCards } from '../lib/use-cards';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -68,6 +69,7 @@ import { useListSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { useLocations } from '../lib/use-locations';
 import { useResource } from '../lib/use-resource';
+import { useRowReturn } from '../lib/use-row-return';
 import { leavesOf } from '../locations/tree';
 import { ReceiveLineDialog } from '../orders/receive-line-dialog';
 import { categoryPlaces } from '../products/item-list';
@@ -79,7 +81,6 @@ import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
-import { ShowingLine } from './showing-line';
 import type { Pile } from './stock-actions';
 import { StockCodes, type StockHandlers } from './stock-codes';
 import { StockLots } from './stock-lots';
@@ -237,12 +238,18 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     withQuery('/stock/by-code', { limit, ...query }),
     served,
   );
-  const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath);
+  // The rows shown kept for Back, which reads them again (#473).
+  const routed = useLocation();
+  const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath, {
+    keep: routed.key,
+  });
   const lotsPath = withSort(
     withQuery('/stock/by-lot', { limit, ...query }),
     lotsInOwnOrder ? null : lotSort.sort,
   );
-  const lots = useKeysetList<StockLotRow>(byLot && !noLots ? lotsPath : null);
+  const lots = useKeysetList<StockLotRow>(byLot && !noLots ? lotsPath : null, {
+    keep: routed.key,
+  });
   const list = byLot ? lots : codes;
 
   // Show 50 more: focus on the first new code once it is there, as Items
@@ -300,12 +307,12 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   /** The delivery chosen for it, received on its order's line (ADR-093, v3). */
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [params, setParams] = useSearchParams();
-  const routed = useLocation();
   // The rows open, in the address so Back finds them open (ADR-093's
   // Stock table), and the row Back returns focus to, once.
   const writeAddress = useAddressWrite();
   const opens = (params.get('open') ?? '').split(',').filter(Boolean);
-  const [focusRow] = useState(() => returnedTo(routed.key));
+  const { returned, rowReturn } = useRowReturn();
+  const focusRow = returned?.row ?? null;
   const asked = can('stock.move') && params.has('receive');
   const [moving, setMoving] = useState<{ mode: MoveMode; row: Pile } | null>(
     null,
@@ -835,6 +842,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   loading={lots.loading}
                   seesPlaces={seesPlaces}
                   handlers={handlers}
+                  rowReturn={rowReturn}
                   header={lotSort.header}
                 />
               ) : (
@@ -928,10 +936,11 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           pageSize={PAGE_SIZE}
           onLoadMore={loadMore}
           before={
-            counts && (
+            rows.length > 0 && (
               <ShowingLine
                 shown={rows.length}
-                total={counts.total}
+                total={counts?.total}
+                more={list.hasMore}
                 of={byLot ? 'lot' : 'code'}
               />
             )

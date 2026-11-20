@@ -1,4 +1,10 @@
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import {
@@ -1175,6 +1181,56 @@ describe('InventoryPage', () => {
 
     expect(await screen.findByText('Showing 1 of 128 codes')).toBeVisible();
     expect(counted.at(-1)?.get('low')).toBe('true');
+  });
+
+  // #638 (P1a): the count always, so a person can tell the list is whole.
+  it('says how many codes it shows once every one is shown', async () => {
+    answer();
+    renderAt('/inventory', ['stock.view']);
+
+    expect(await screen.findByText('1 code')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show 50 more' }),
+    ).not.toBeInTheDocument();
+  });
+
+  // #473's last line (P2a): Back after Show 50 more reads the pages shown
+  // again, and focus is on the name of the code left from.
+  it('finds the codes shown and the one left from on Back after Show 50 more', async () => {
+    const user = userEvent.setup();
+    answer();
+    const later = {
+      ...CODE,
+      variantId: 'variant-2',
+      sku: 'ZINC-60',
+      productName: 'Zinc',
+      variantName: null,
+    };
+    server.use(
+      http.get('/api/v1/stock/by-code', ({ request }) =>
+        new URL(request.url).searchParams.has('before')
+          ? HttpResponse.json({ entries: [later], nextCursor: null })
+          : HttpResponse.json({ entries: [CODE], nextCursor: 'next' }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory']}>
+        <Routes>
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/items/:id" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Show 50 more' }),
+    );
+    await user.click(await screen.findByRole('link', { name: /^Zinc/ }));
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+    const left = await screen.findByRole('link', { name: /^Zinc/ });
+    expect(screen.getByRole('link', { name: /^Vitamin D/ })).toBeVisible();
+    await waitFor(() => expect(left).toHaveFocus());
   });
 
   it('says how many lots the Lot view shows of those its filters match', async () => {

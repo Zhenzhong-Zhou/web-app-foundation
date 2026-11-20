@@ -124,7 +124,7 @@ function OrganizationHome() {
   // Back from a tile's list: focus on that tile again (ADR-093's Reorder
   // table), read once as Home opens.
   const { key } = useLocation();
-  const [returnTile] = useState(() => returnedTo(key));
+  const [returnTile] = useState(() => returnedTo(key)?.row ?? null);
   const { session } = useAuth();
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);

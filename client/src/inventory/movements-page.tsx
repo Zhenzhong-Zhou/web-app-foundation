@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useIntl } from 'react-intl';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { WhomToAskRead } from '../account/whom-to-ask';
 import type { Movement, MovementPage, OrderDetail } from '../api/types.gen';
@@ -57,6 +57,7 @@ import {
 } from '../lib/use-list-sort';
 import { useLocations } from '../lib/use-locations';
 import { useResource } from '../lib/use-resource';
+import { useRowReturn } from '../lib/use-row-return';
 import { useVariants } from '../lib/use-variants';
 import { leavesOf } from '../locations/tree';
 import { NO_RECEIVE } from '../products/receive-line';
@@ -117,6 +118,7 @@ const NEWEST: ListSort<'when'> = { key: 'when', order: 'desc' };
 export function MovementsPage() {
   const intl = useIntl();
   const navigate = useNavigate();
+  const { key: entry } = useLocation();
   const can = useCan();
   const phone = useCards();
   const seesPlaces = can('locations.view');
@@ -189,7 +191,10 @@ export function MovementsPage() {
       }),
       range.value,
     ),
+    // The rows shown kept for Back, which reads them again (#473).
+    { keep: entry },
   );
+  const { rowReturn } = useRowReturn();
   const rows = list.entries;
   const period = list.first?.period ?? null;
 
@@ -511,7 +516,11 @@ export function MovementsPage() {
                       />
                     )}
                     {rows?.map((movement) => (
-                      <TableRow key={movement.id} hover>
+                      <TableRow
+                        key={movement.id}
+                        hover
+                        {...rowReturn(movement.id)}
+                      >
                         <TableCell>
                           <MovementWhen movement={movement} />
                         </TableCell>
@@ -534,6 +543,7 @@ export function MovementsPage() {
                       movement={movement}
                       columns={columns}
                       oneCode={oneCode}
+                      back={rowReturn(movement.id)}
                     />
                   ))}
                 </Stack>

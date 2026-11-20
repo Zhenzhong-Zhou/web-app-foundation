@@ -7,6 +7,7 @@ import {
   Route,
   RouterProvider,
   Routes,
+  useNavigate,
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -72,6 +73,16 @@ function renderAt(address: string) {
       <ProductsPage />
     </MemoryRouter>,
     { permissions: ['products.view'] },
+  );
+}
+
+/** An item's page as a row's link lands there, with Back. */
+function Landed() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => void navigate(-1)}>
+      Back
+    </button>
   );
 }
 
@@ -617,7 +628,7 @@ describe('ProductsPage', () => {
     );
     renderAt('/items');
     await screen.findByRole('link', { name: 'Calm 90ct' });
-    expect(screen.getByText('Showing 1 of 2')).toBeVisible();
+    expect(screen.getByText('Showing 1 of 2 items')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Show 50 more' }));
     expect(
@@ -630,6 +641,53 @@ describe('ProductsPage', () => {
     const added = await screen.findByRole('link', { name: 'Focus 60ct' });
     await waitFor(() => expect(added).toHaveFocus());
     expect(names()).toEqual(['Calm 90ct', 'Focus 60ct']);
+  });
+
+  // #638 (P1a): the count always, so a person can tell the list is
+  // whole; no Show 50 more with nothing more to show.
+  it('says how many items it shows once every one is shown', async () => {
+    readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
+    renderAt('/items');
+
+    expect(await screen.findByText('1 item')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show 50 more' }),
+    ).not.toBeInTheDocument();
+  });
+
+  // #473's last line (P2a): Back after Show 50 more reads the pages shown
+  // again, and focus is on the row left from.
+  it('finds the rows shown and the row left from on Back after Show 50 more', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf((query) =>
+      query.get('cursor')
+        ? pageOf([product('Focus 60ct')])
+        : pageOf([product('Calm 90ct')], countsOf({ good: 2 }), 'next'),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/items']}>
+        <Routes>
+          <Route path="/items" element={<ProductsPage />} />
+          <Route path="/items/:id" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['products.view'] },
+    );
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    await user.click(screen.getByRole('button', { name: 'Show 50 more' }));
+    await user.click(await screen.findByRole('link', { name: 'Focus 60ct' }));
+    asked.length = 0;
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+    const left = await screen.findByRole('link', { name: 'Focus 60ct' });
+    expect(names()).toEqual(['Calm 90ct', 'Focus 60ct']);
+    await waitFor(() => expect(left).toHaveFocus());
+    expect(screen.getByText('2 items')).toBeVisible();
+    // The first page, then the next by its cursor, before the rows show.
+    expect(asked.map((query) => query.includes('cursor=next'))).toEqual([
+      false,
+      true,
+    ]);
   });
 
   // Failed: the list's part alone says so, with Try again; the tabs'

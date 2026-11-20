@@ -1,7 +1,13 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { Location, Movement, MovementPage } from '../api/types.gen';
@@ -86,6 +92,16 @@ async function rowFor(entry: Movement, permissions = EVERYONE) {
 }
 
 const addressOf = () => screen.getByRole('status', { name: 'address' });
+
+/** Where a row's link lands, with Back. */
+function Landed() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => void navigate(-1)}>
+      Back
+    </button>
+  );
+}
 
 /**
  * What moved and who moved it, readable by someone who knows products and
@@ -316,6 +332,45 @@ describe('MovementsPage', () => {
     expect(
       screen.getAllByRole('button', { name: 'Show all movements' }),
     ).toHaveLength(2);
+  });
+
+  // #473's last line (P2a): Back after Show 25 more reads the pages shown
+  // again, focus on the link followed from its row.
+  it('finds the rows shown and the link left by on Back after Show 25 more', async () => {
+    const user = userEvent.setup();
+    answer([]);
+    const later = movement({
+      id: 'movement-2',
+      lotId: 'lot-2',
+      lotCode: 'NN-2502-01',
+    });
+    server.use(
+      http.get('/api/v1/stock/movements', ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.has('before')
+            ? { entries: [later], nextCursor: null, period: null }
+            : { entries: [MOVEMENT], nextCursor: 'next', period: null },
+        ),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/movements']}>
+        <Routes>
+          <Route path="/movements" element={<MovementsPage />} />
+          <Route path="*" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: EVERYONE },
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Show 25 more' }),
+    );
+    await user.click(await screen.findByRole('link', { name: 'NN-2502-01' }));
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+    const left = await screen.findByRole('link', { name: 'NN-2502-01' });
+    expect(screen.getByRole('link', { name: 'NN-2410-07' })).toBeVisible();
+    await waitFor(() => expect(left).toHaveFocus());
   });
 
   it('offers Receive stock while nothing has moved', async () => {

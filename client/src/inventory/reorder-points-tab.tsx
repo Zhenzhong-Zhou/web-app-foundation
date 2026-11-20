@@ -41,6 +41,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
+import { ShowingLine } from '../components/showing-line';
 import { SortHeader } from '../components/sort-header';
 import { SPANNING_ROW } from '../components/spanning-row';
 import { TableOrCards } from '../components/table-or-cards';
@@ -55,6 +56,7 @@ import { oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { useListSort, withSort } from '../lib/use-list-sort';
 import { useResource } from '../lib/use-resource';
+import { type RowReturn, useRowReturn } from '../lib/use-row-return';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
 import { NameAndCode } from '../products/name-and-code';
@@ -77,7 +79,6 @@ import {
 } from './reorder-points';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { keepTicks, ticksOf } from './reorder-ticks';
-import { ShowingLine } from './showing-line';
 
 /** A page of the list (ADR-051), as the server's own default. */
 const PAGE_SIZE = 50;
@@ -399,6 +400,8 @@ interface RowProps {
   planned: boolean;
   /** The row's menu, for whoever may set a point (stock.reorder). */
   actions: ReactNode;
+  /** Its way back from a link followed in it (useRowReturn). */
+  back: RowReturn;
 }
 
 /** The draft's cell leaves the table between 600 and 899 px (R14). */
@@ -414,6 +417,7 @@ function PointRow({
   onPlan,
   planned,
   actions,
+  back,
 }: RowProps & { columns: number }) {
   const intl = useIntl();
   const [open, setOpen] = useState(false);
@@ -426,6 +430,7 @@ function PointRow({
           the pointer, which stays an arrow. */}
       <TableRow
         hover
+        {...back}
         sx={{
           '& > td': {
             verticalAlign: 'top',
@@ -495,7 +500,11 @@ function PointRow({
         </TableCell>
       </TableRow>
       {open && (
-        <TableRow id={detailId} {...SPANNING_ROW}>
+        <TableRow
+          id={detailId}
+          {...SPANNING_ROW}
+          onClickCapture={back.onClickCapture}
+        >
           <TableCell colSpan={columns - 1} sx={{ pt: 0 }}>
             <ReorderPointDetail row={row} />
           </TableCell>
@@ -521,6 +530,7 @@ function PointCard({
   onPlan,
   planned,
   actions,
+  back,
 }: RowProps) {
   const intl = useIntl();
   const suggested = !(
@@ -530,6 +540,7 @@ function PointCard({
   return (
     <Box
       component="li"
+      {...back}
       sx={{
         listStyle: 'none',
         p: 2,
@@ -840,7 +851,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     loadingMore,
     loadMore,
     reload,
-  } = useKeysetList<ReorderPointRow>(listPath);
+  } = useKeysetList<ReorderPointRow>(listPath, { keep: entry });
+  const { rowReturn } = useRowReturn();
 
   // Beside All, Low and Out, with the search: the rows pressing each shows;
   // silent, so without a count the buttons still work.
@@ -888,6 +900,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
 
   const rowProps = (row: ReorderPointRow): RowProps => ({
     row,
+    back: rowReturn(row.id),
     choosing,
     chosen: chosen.has(row.variantId),
     onChoose: choose,
@@ -1252,10 +1265,11 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           pageSize={PAGE_SIZE}
           onLoadMore={loadMore}
           before={
-            counts && (
+            rows.length > 0 && (
               <ShowingLine
                 shown={rows.length}
-                total={counts[filter || 'all']}
+                total={counts?.[filter || 'all']}
+                more={hasMore}
                 of="code"
               />
             )

@@ -11,6 +11,7 @@ import { Reference } from '../components/reference';
 import { NameAndEmail } from '../components/who-and-when';
 import { itemName, NO_VALUE } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
+import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import {
@@ -441,10 +442,13 @@ export function MovementCard({
   movement,
   columns,
   oneCode,
+  back,
 }: {
   movement: Movement;
   columns: MovementColumns;
   oneCode: boolean;
+  /** Its way back from a link followed in it (useRowReturn). */
+  back?: RowReturn;
 }) {
   const intl = useIntl();
   const head = (key: keyof typeof MOVEMENT_HEADINGS) =>
@@ -453,6 +457,7 @@ export function MovementCard({
   return (
     <Box
       component="li"
+      {...back}
       sx={{
         listStyle: 'none',
         p: 2,

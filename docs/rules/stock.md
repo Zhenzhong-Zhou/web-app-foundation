@@ -105,11 +105,13 @@ file is kept is in the [README](README.md).
   filters on and its own off: Low stock holds the out, and Expiring soon
   the expired, as Home's tiles do. Beside Show 50 more, "Showing 50 of
   128 codes" (lots on the Lot view) counts the rows the list shows, every
-  filter on, from the same statement.
+  filter on, from the same statement; once every row is shown, the list
+  says how many, "31 codes", as Reorder does.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says how many codes it shows once every one is shown" ·
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
-  MC-1528 · MC-311
+  MC-1528 · MC-311 · MC-323
 - **The Lot view is a row per lot at each place, soonest first, the
   expired on top,** a lot's places together, each saying how many there
   are: the rows Home's Expiring soon counts. Its headers sort it by the

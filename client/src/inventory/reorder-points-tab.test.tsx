@@ -2,7 +2,13 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { type ReactNode, useRef } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { ReorderPointDetail, ReorderPointRow } from '../api/types.gen';
@@ -104,6 +110,16 @@ const DETAIL: ReorderPointDetail = {
 };
 
 /** Where a row's name and its line go: the item's page, at its part. */
+/** An item's page as a row's link lands there, with Back. */
+function Landed() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => void navigate(-1)}>
+      Back
+    </button>
+  );
+}
+
 function ItemPage() {
   const { pathname, hash } = useLocation();
   return (
@@ -532,6 +548,45 @@ describe('Reorder', () => {
       screen.getAllByRole('link', { name: ROWS[0]!.productName }).length,
     ).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible();
+  });
+
+  // #638 (P1a) and #473's last line (P2a): the count always, and Back
+  // after Show 50 more finds the rows shown, focus on the row left from.
+  it('counts its codes once every one is shown, and Back after Show 50 more finds them', async () => {
+    const user = userEvent.setup();
+    const later = point({ sku: 'ZINC-60', productName: 'Zinc' });
+    server.use(
+      http.get('/api/v1/stock/reorder-points', ({ request }) =>
+        new URL(request.url).searchParams.get('before')
+          ? HttpResponse.json({ entries: [later], nextCursor: null })
+          : HttpResponse.json({ entries: [ROWS[0]], nextCursor: 'next' }),
+      ),
+      http.get('/api/v1/stock/reorder-points/counts', () =>
+        HttpResponse.json({ all: 2, low: 2, out: 0 }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory?tab=reorder']}>
+        <Routes>
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/items/:id" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    expect(await screen.findByText('Showing 1 of 2 codes')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Show 50 more' }));
+    expect(await screen.findByText('2 codes')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show 50 more' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'Zinc' }));
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+    const left = await screen.findByRole('link', { name: 'Zinc' });
+    await waitFor(() => expect(left).toHaveFocus());
+    expect(screen.getByText('2 codes')).toBeVisible();
   });
 
   // Points de commande are masculine: Tous, not Invoices' Toutes.

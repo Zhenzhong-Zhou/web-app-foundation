@@ -570,6 +570,16 @@ a second organization.
   shelf open under VITC-100 with its lot VC-0310. Count one of its lots,
   VC-0402, into the same shelf: "…, lot VC-0402." with Movements. A
   role without `stock.adjust` sees no Count it in….
+- **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
+  Show more. As the demo Owner, Stock by item ends with "… codes" under
+  its rows and no Show 50 more; the Lot view says "… lots", Reorder
+  "… codes" and Items "… items", in French « … codes », in 中文 共 … 个编码,
+  and no column numbers the rows. On the volume database Stock reads
+  "Showing 50 of … codes" beside Show 50 more: press it, follow the name
+  of a code in the second fifty, and Back: the hundred rows are there
+  without pressing it again, focus on that name. The same on Items and
+  Reorder, and on Movements after Show 25 more, focus on the link
+  followed from its row, its lot or its For.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
 - **MC-319** *(ADR-093, 87a and 88a)* As the demo Owner, export Movements
@@ -7127,3 +7137,7 @@ first.
   where an item has never been, counted in from the end of its opened
   places into any place and one of its lots or a new one, the new lot
   waiting for a cost: MC-322 added.
+- 2026-11-20: ADR-093's Movements branch, step 15 (#638, #473): Items,
+  Stock and Reorder show their count always, "31 codes" once every row
+  is shown; Back after Show more on Items, Stock, Reorder and Movements
+  reads the rows shown again, focus on the row left from: MC-323 added.
