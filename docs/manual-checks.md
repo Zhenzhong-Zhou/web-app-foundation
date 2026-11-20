@@ -862,8 +862,10 @@ a second organization.
   id, In and Out with no Balance; Back returns to the order. SO-DEMO-1's
   Shipments tab ends with All movements of SO-DEMO-1, its shipments and
   returns there. PO-DEMO-11, nothing received, says so on Receipts. A
-  role made with `orders.view` and no `stock.view` sees no Receipts tab
-  and no All movements link. In 中文 the tab reads 收货记录.
+  role made with `orders.view` alone sees PO-DEMO-4's Receipts tab with
+  When, Item, Received, Lot and By, no Where and no All movements link
+  (102a); Fatima Haddad, Sales, sees the same. In 中文 the tab reads
+  收货记录.
 
 ## 5. Making
 

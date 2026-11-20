@@ -8,7 +8,7 @@ import type { Movement } from '../api/types.gen';
  * `removed: true` keeps those words translatable in NameAndEmail (#245).
  */
 export function movementActor(
-  movement: Movement,
+  movement: Pick<Movement, 'actorName' | 'actorEmail'>,
   removed: string,
 ): { name: string; email: string | null; removed?: true } {
   if (movement.actorEmail === null) {

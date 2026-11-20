@@ -184,7 +184,11 @@ export function MovementCells({
  * time: "16 Nov, 14:10", the year too when it is not this one. A log is
  * read by its moments, which "15 days ago" blurs (ADR-093, 18a).
  */
-export function MovementWhen({ movement }: { movement: Movement }) {
+export function MovementWhen({
+  movement,
+}: {
+  movement: Pick<Movement, 'createdAt'>;
+}) {
   const intl = useIntl();
   const at = new Date(movement.createdAt);
 
@@ -269,7 +273,7 @@ export function Figure({
   movement,
 }: {
   quantity: string | null;
-  movement: Movement;
+  movement: Pick<Movement, 'unitOfMeasure'>;
 }) {
   const intl = useIntl();
 
@@ -376,7 +380,11 @@ export function MovementEnd({
 }
 
 /** The lot's code, a link to its trace, its expiry under it. */
-export function MovementLot({ movement }: { movement: Movement }) {
+export function MovementLot({
+  movement,
+}: {
+  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt'>;
+}) {
   if (!movement.lotId || !movement.lotCode) return NO_VALUE;
 
   return (
@@ -438,7 +446,11 @@ export function MovementFor({ movement }: { movement: Movement }) {
  * (ADR-012). The row survives its author, which is what RESTRICT on
  * actor_id is for.
  */
-export function MovementBy({ movement }: { movement: Movement }) {
+export function MovementBy({
+  movement,
+}: {
+  movement: Pick<Movement, 'actorName' | 'actorEmail'>;
+}) {
   const intl = useIntl();
 
   return (
@@ -456,7 +468,14 @@ export function MovementBy({ movement }: { movement: Movement }) {
  * the code it was recorded under when that has changed (ADR-023; 7a),
  * the name its one link (the design language's Rows).
  */
-export function MovementItem({ movement }: { movement: Movement }) {
+export function MovementItem({
+  movement,
+}: {
+  movement: Pick<
+    Movement,
+    'productId' | 'productName' | 'variantName' | 'type' | 'sku' | 'currentSku'
+  >;
+}) {
   const intl = useIntl();
 
   return (

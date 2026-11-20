@@ -13,7 +13,7 @@ import {
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { Movement } from '../api/types.gen';
+import type { OrderReceipt } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { CardLine } from '../components/card-line';
 import { ListError } from '../components/list-error';
@@ -24,13 +24,13 @@ import { TableOrCards } from '../components/table-or-cards';
 import {
   Figure,
   MovementBy,
-  MovementEnd,
   MovementItem,
   MovementLot,
   MovementWhen,
 } from '../inventory/movement-cells';
 import { MOVEMENT_HEADINGS } from '../inventory/movement-reasons';
 import { movementsPath } from '../inventory/movements-path';
+import { PlacePath } from '../inventory/place-path';
 import { withQuery } from '../lib/api';
 import { OFFER_BACK } from '../lib/offer-back';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -82,13 +82,29 @@ export function AllMovementsOf({
   );
 }
 
+/** Where a receipt went, by its path (93a). */
+function ReceiptWhere({ receipt }: { receipt: OrderReceipt }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <PlacePath
+        place={{
+          locationName: receipt.toLocationName,
+          locationCode: receipt.toLocationCode,
+          locationPath: receipt.toLocationPath,
+        }}
+      />
+    </Box>
+  );
+}
+
 /**
  * A purchase order's receipts (ADR-093, R25; 55a): what was received on
  * it, newest first, each with its day, the item, how much, where it went,
  * its lot and who, read as Movements lists the order, so the two never
- * differ, then All movements of PO-…. The place only for a reader who
- * may see places (96a). Mounted while its tab is open, so a receipt on
- * the Items tab is listed when the tab opens again.
+ * differ, then All movements of PO-…. Its own read, under orders.view,
+ * so whoever sees the order sees them (102a); the place only for a reader
+ * who may see places (96a). Mounted while its tab is open, so a receipt
+ * on the Items tab is listed when the tab opens again.
  */
 export function OrderReceipts({
   orderId,
@@ -100,8 +116,8 @@ export function OrderReceipts({
   const intl = useIntl();
   const can = useCan();
   const places = can('locations.view');
-  const list = useKeysetList<Movement>(
-    withQuery('/stock/movements', { orderId, limit: String(PAGE_SIZE) }),
+  const list = useKeysetList<OrderReceipt>(
+    withQuery(`/orders/${orderId}/receipts`, { limit: String(PAGE_SIZE) }),
   );
   const rows = list.entries;
   const head = (key: keyof typeof MOVEMENT_HEADINGS) =>
@@ -147,13 +163,13 @@ export function OrderReceipts({
                       </TableCell>
                       <TableCell align="right">
                         <Figure
-                          quantity={movement.quantityIn}
+                          quantity={movement.received}
                           movement={movement}
                         />
                       </TableCell>
                       {places && (
                         <TableCell>
-                          <MovementEnd movement={movement} side="to" />
+                          <ReceiptWhere receipt={movement} />
                         </TableCell>
                       )}
                       <TableCell>
@@ -187,13 +203,13 @@ export function OrderReceipts({
                     </CardLine>
                     <CardLine label={intl.formatMessage(WORDS.received)}>
                       <Figure
-                        quantity={movement.quantityIn}
+                        quantity={movement.received}
                         movement={movement}
                       />
                     </CardLine>
                     {places && (
                       <CardLine label={head('where')}>
-                        <MovementEnd movement={movement} side="to" />
+                        <ReceiptWhere receipt={movement} />
                       </CardLine>
                     )}
                     <CardLine label={head('lot')}>

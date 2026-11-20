@@ -26,7 +26,7 @@ If the rest of a line is never coming, choose **Close short** on the line: the s
 
 Beside its status, a confirmed order says how much has come: **Not received**, **Partly received** or **All received**, and on a sale **Not shipped**, **Partly shipped** or **All shipped**. A line closed short counts as done, and more than was ordered still reads **All received**. The label is worked out from the lines, so nobody sets it, and the list’s **Receiving** filter (**Shipping** on a sales list, **Receiving or shipping** on both) narrows it to one of them, kept in the address.
 
-On a purchase, **Receipts** lists each delivery with its lot and who received it, and ends with **All movements of** the order’s number, which opens [Movements](/movements) for it; a sale’s **Shipments** ends the same way. Only someone who may see stock sees them.
+On a purchase, **Receipts** lists each delivery with its lot and who received it, and ends with **All movements of** the order’s number, which opens [Movements](/movements) for it; a sale’s **Shipments** ends the same way. Whoever may see the order sees Receipts, where it went only if they may see locations; the link only if they may see stock.
 
 ## Ship a sale {#ship}
 

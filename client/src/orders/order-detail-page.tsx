@@ -57,8 +57,8 @@ import { fulfillmentLabel, orderStatusLabel, transitionLabel } from './status';
 
 /**
  * The order's sections, in the order they happen (ADR-055). Receipts are
- * a purchase's, read from Movements, so for a reader with stock.view
- * (ADR-093, R25); shipments, returns and documents are a sale's; History
+ * a purchase's, for whoever sees the order (ADR-093, R25; 102a);
+ * shipments, returns and documents are a sale's; History
  * needs audit.view. The page passes the ones this order and member have.
  */
 type OrderTab =
@@ -114,10 +114,9 @@ export function OrderDetailPage() {
    * settled once it arrives, below.
    */
   const canHistory = can('audit.view');
-  const canSeeStock = can('stock.view');
   const possibleTabs: OrderTab[] = [
     'items',
-    ...(canSeeStock ? (['receipts'] as const) : []),
+    'receipts',
     'shipments',
     'returns',
     'documents',
@@ -324,7 +323,7 @@ export function OrderDetailPage() {
   const hasDocuments = sale && !!order.documents && canViewInvoices;
   const tabs: OrderTab[] = [
     'items',
-    ...(!sale && canSeeStock ? (['receipts'] as const) : []),
+    ...(!sale ? (['receipts'] as const) : []),
     ...(sale ? (['shipments', 'returns'] as const) : []),
     ...(hasDocuments ? (['documents'] as const) : []),
     ...(canHistory ? (['history'] as const) : []),
@@ -636,7 +635,7 @@ export function OrderDetailPage() {
               </Box>
             ),
           },
-          ...(!sale && canSeeStock
+          ...(!sale
             ? [
                 {
                   id: 'receipts' as const,

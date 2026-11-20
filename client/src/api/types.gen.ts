@@ -3098,6 +3098,33 @@ export type OrderDetail = {
   lines: Array<OrderLine>;
 };
 
+export type OrderReceipt = {
+  id: string;
+  createdAt: string;
+  productId: string;
+  sku: string;
+  currentSku: string;
+  productName: string;
+  variantName: string | null;
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
+  unitOfMeasure: string;
+  received: string;
+  toLocationId: string | null;
+  toLocationName: string | null;
+  toLocationCode: string | null;
+  toLocationPath: Array<string>;
+  lotId: string | null;
+  lotCode: string | null;
+  lotExpiresAt: string | null;
+  actorName: string | null;
+  actorEmail: string | null;
+};
+
+export type OrderReceiptPage = {
+  entries: Array<OrderReceipt>;
+  nextCursor: string | null;
+};
+
 export type CreateOrderLineDto = {
   variantId: string;
   quantityOrdered: string;
@@ -7516,6 +7543,28 @@ export type OrdersControllerUpdateV1Responses = {
 export type OrdersControllerUpdateV1Response =
   OrdersControllerUpdateV1Responses[keyof OrdersControllerUpdateV1Responses];
 
+export type OrdersControllerListReceiptsV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: {
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/orders/{id}/receipts';
+};
+
+export type OrdersControllerListReceiptsV1Responses = {
+  200: OrderReceiptPage;
+};
+
+export type OrdersControllerListReceiptsV1Response =
+  OrdersControllerListReceiptsV1Responses[keyof OrdersControllerListReceiptsV1Responses];
+
 export type OrdersControllerDuplicateV1Data = {
   body: DuplicateOrderDto;
   headers?: {
@@ -7838,13 +7887,13 @@ export type ReturnAuthorizationsControllerListV1Data = {
   body?: never;
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     status?: 'open' | 'closed' | 'cancelled';
     orderId?: string;
     from?: string;
     until?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/return-authorizations';
 };
@@ -7989,6 +8038,8 @@ export type InvoicesControllerListV1Data = {
   body?: never;
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     status?: 'draft' | 'issued' | 'voided';
     partnerId?: string;
     orderId?: string;
@@ -7997,8 +8048,6 @@ export type InvoicesControllerListV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/invoices';
 };
@@ -8031,6 +8080,8 @@ export type InvoicesControllerExportInvoicesV1Data = {
   };
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     status?: 'draft' | 'issued' | 'voided';
     partnerId?: string;
     orderId?: string;
@@ -8039,8 +8090,6 @@ export type InvoicesControllerExportInvoicesV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/invoices/export';
 };
@@ -8201,6 +8250,8 @@ export type CreditNotesControllerListV1Data = {
   body?: never;
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     partnerId?: string;
     invoiceId?: string;
     sort?: 'creditDate' | 'total';
@@ -8208,8 +8259,6 @@ export type CreditNotesControllerListV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/credit-notes';
 };
@@ -8228,6 +8277,8 @@ export type CreditNotesControllerExportCreditNotesV1Data = {
   };
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     partnerId?: string;
     invoiceId?: string;
     sort?: 'creditDate' | 'total';
@@ -8235,8 +8286,6 @@ export type CreditNotesControllerExportCreditNotesV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/credit-notes/export';
 };

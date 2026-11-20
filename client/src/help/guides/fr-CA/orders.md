@@ -26,7 +26,7 @@ Si le reste d’une ligne ne viendra jamais, choisissez **Clore incomplète** su
 
 À côté de son statut, une commande confirmée dit combien est arrivé : **Non reçue**, **Reçue en partie** ou **Entièrement reçue**, et pour une vente **Non expédiée**, **Expédiée en partie** ou **Entièrement expédiée**. Une ligne close incomplète compte comme terminée, et une quantité supérieure à la commande se lit tout de même **Entièrement reçue**. L’étiquette est calculée à partir des lignes, donc personne ne la fixe, et le filtre **Réception** de la liste (**Expédition** sur une liste de ventes, **Réception ou expédition** pour les deux) la limite à l’une d’elles, conservé dans l’adresse.
 
-Sur un achat, **Réceptions** liste chaque livraison avec son lot et la personne qui l’a reçue, et se termine par **Tous les mouvements de** et le numéro de la commande, qui ouvre [Mouvements](/movements) pour elle; les **Expéditions** d’une vente se terminent de la même façon. Seule une personne qui peut voir le stock les voit.
+Sur un achat, **Réceptions** liste chaque livraison avec son lot et la personne qui l’a reçue, et se termine par **Tous les mouvements de** et le numéro de la commande, qui ouvre [Mouvements](/movements) pour elle; les **Expéditions** d’une vente se terminent de la même façon. Quiconque peut voir la commande voit les Réceptions, l’emplacement seulement s’il peut voir les emplacements; le lien, seulement s’il peut voir le stock.
 
 ## Expédier une vente {#ship}
 

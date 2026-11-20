@@ -4,9 +4,9 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { OrderDetail } from '../api/types.gen';
+import type { OrderDetail, OrderReceipt } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
-import { movement, orderLine } from '../test/factories';
+import { orderLine } from '../test/factories';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -1003,39 +1003,39 @@ describe('OrderDetailPage without prices', () => {
   });
 });
 
-// The order's movements (ADR-093, R25): a purchase's receipts, read as
-// Movements lists the order, with All movements of the order; a sale's
-// link on its Shipments tab; neither for a reader without stock.view.
+// The order's movements (ADR-093, R25): a purchase's receipts, its own
+// read under orders.view (102a), with All movements of the order for a
+// reader with stock.view; a sale's link on its Shipments tab.
 describe('OrderDetailPage receipts', () => {
-  const RECEIPT = movement({
+  const RECEIPT: OrderReceipt = {
     id: 'movement-9',
-    reason: 'receipt',
-    quantity: '60.0000',
-    quantityIn: '60.0000',
-    quantityOut: null,
-    change: '60.0000',
-    fromLocationId: null,
-    fromLocationName: null,
-    fromLocationCode: null,
-    fromLocationPath: [],
+    createdAt: '2026-11-16T22:10:00.000Z',
+    productId: 'product-vitd',
+    sku: 'VITD-60',
+    currentSku: 'VITD-60',
+    productName: 'Vitamin D3',
+    variantName: '60 count',
+    type: 'good',
+    unitOfMeasure: 'each',
+    received: '60.0000',
     toLocationId: 'location-shelf-a',
     toLocationName: 'Shelf A',
     toLocationCode: 'A',
     toLocationPath: ['Main warehouse'],
-    document: { kind: 'order', id: 'order-1', number: 'PO-000001' },
-  });
+    lotId: null,
+    lotCode: null,
+    lotExpiresAt: null,
+    actorName: 'Sam Lee',
+    actorEmail: 'sam@example.com',
+  };
 
   it('lists a purchase’s receipts by its order, with All movements of it', async () => {
     serve(order({ status: 'confirmed' }));
-    let asked: URLSearchParams | null = null;
+    let asked: URL | null = null;
     server.use(
-      http.get('/api/v1/stock/movements', ({ request }) => {
-        asked = new URL(request.url).searchParams;
-        return HttpResponse.json({
-          entries: [RECEIPT],
-          nextCursor: null,
-          period: null,
-        });
+      http.get('/api/v1/orders/:id/receipts', ({ request }) => {
+        asked = new URL(request.url);
+        return HttpResponse.json({ entries: [RECEIPT], nextCursor: null });
       }),
     );
     renderPage(
@@ -1046,7 +1046,7 @@ describe('OrderDetailPage receipts', () => {
     // The row, once read: the table stands while its first page loads.
     const cell = await screen.findByText('60 each');
     const table = cell.closest('table')!;
-    expect(asked!.get('orderId')).toBe('order-1');
+    expect(asked!.pathname).toBe('/api/v1/orders/order-1/receipts');
     expect(
       within(table)
         .getAllByRole('columnheader')
@@ -1065,8 +1065,8 @@ describe('OrderDetailPage receipts', () => {
   it('says when nothing has been received', async () => {
     serve(order({ status: 'confirmed' }));
     server.use(
-      http.get('/api/v1/stock/movements', () =>
-        HttpResponse.json({ entries: [], nextCursor: null, period: null }),
+      http.get('/api/v1/orders/:id/receipts', () =>
+        HttpResponse.json({ entries: [], nextCursor: null }),
       ),
     );
     renderPage([...ALL, 'stock.view'], '/orders/order-1?tab=receipts');
@@ -1091,23 +1091,36 @@ describe('OrderDetailPage receipts', () => {
     expect(screen.queryByRole('tab', { name: 'Receipts' })).toBeNull();
   });
 
-  it('offers neither without stock.view', async () => {
-    let read = false;
+  // 102a: a reader with orders.view alone, as Sales without places,
+  // reads the tab; Where only with locations.view, All movements of the
+  // order only with stock.view.
+  it('lists a purchase’s receipts without stock.view, with no Where and no All movements', async () => {
     serve(order({ status: 'confirmed' }));
     server.use(
-      http.get('/api/v1/stock/movements', () => {
-        read = true;
-        return HttpResponse.json({ entries: [], nextCursor: null });
-      }),
+      http.get('/api/v1/orders/:id/receipts', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              ...RECEIPT,
+              toLocationName: null,
+              toLocationCode: null,
+              toLocationPath: [],
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
     );
     renderPage(ALL, '/orders/order-1?tab=receipts');
 
+    const table = (await screen.findByText('60 each')).closest('table')!;
+    expect(screen.getByRole('tab', { name: 'Receipts' })).toBeVisible();
     expect(
-      await screen.findByRole('heading', { level: 1, name: /PO-000001/ }),
-    ).toBeVisible();
-    expect(screen.queryByRole('tab', { name: 'Receipts' })).toBeNull();
+      within(table)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['When', 'Item', 'Received', 'Lot', 'By']);
     expect(screen.queryByRole('link', { name: /^All movements/ })).toBeNull();
-    expect(read).toBe(false);
   });
 
   it('gives a sale no All movements without stock.view', async () => {

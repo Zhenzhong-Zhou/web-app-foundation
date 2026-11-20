@@ -410,13 +410,15 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "lists an order’s movements alone: a purchase’s receipts, a sale’s shipments, their voids and its returns" ·
   [test](../../server/test/movements.e2e-spec.ts) "refuses an order’s movements to a reader without orders.view, on the list and its export" ·
   MC-321
-- **An order's page lists its movements only to a reader who may see
-  stock,** as Movements needs: a purchase's Receipts, read as Movements
-  lists the order, and All movements of the order; a reader without
-  stock.view gets neither.
+- **A purchase's Receipts are for whoever may see the order,** its own
+  read under orders.view, stock.view or not (102a): When, Item,
+  Received, Lot and By, read as Movements lists the order's receipts;
+  Where only with locations.view (96a); All movements of the order only
+  with stock.view, as Movements needs.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists a purchase’s receipts under orders.view alone, Where only with locations.view" ·
   [test](../../client/src/orders/order-detail-page.test.tsx) "lists a purchase’s receipts by its order, with All movements of it" ·
-  [test](../../client/src/orders/order-detail-page.test.tsx) "offers neither without stock.view" ·
+  [test](../../client/src/orders/order-detail-page.test.tsx) "lists a purchase’s receipts without stock.view, with no Where and no All movements" ·
   [test](../../client/e2e/movements-page.spec.ts) "The order’s page, Receipts, All movements of PO-…: ?orderId=, a chip; In and Out, no balance; Back, the order’s page" ·
   [Help](../../client/src/help/guides/en/orders.md#receive-a-purchase-receive) ·
   MC-321

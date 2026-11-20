@@ -396,6 +396,98 @@ describe('Movements (e2e)', () => {
     expect(theirs.every((row) => row.document === null)).toBe(true);
   });
 
+  // ADR-093, 102a: an order's Receipts tab for a reader with orders.view,
+  // without stock.view: When, Item, Received, Lot and By, read as
+  // Movements lists the order; Where only with locations.view, which
+  // Sales has not; a sale has none; another organization's order is 404.
+  it('lists a purchase’s receipts under orders.view alone, Where only with locations.view', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { shelf, bought, sold } = await orders(alpha);
+    await customRole(app, alpha.organizationId, 'Buyer', ['orders.view']);
+    const buyer = await addMember(app, alpha, 'buyer@example.com', 'Buyer');
+    await customRole(
+      app,
+      alpha.organizationId,
+      'Sales',
+      ROLE_TEMPLATES.sales.permissions,
+    );
+    const sales = await addMember(app, alpha, 'sales@example.com', 'Sales');
+
+    const owners = body<{ entries: Record<string, unknown>[] }>(
+      await alpha.agent.get(`/v1/orders/${bought.id}/receipts`).expect(200),
+    ).entries;
+    expect(owners).toHaveLength(2);
+    // Exactly the tab's fields (ADR-068).
+    expect(Object.keys(owners[0]).sort()).toEqual(
+      [
+        'id',
+        'createdAt',
+        'productId',
+        'sku',
+        'currentSku',
+        'productName',
+        'variantName',
+        'type',
+        'unitOfMeasure',
+        'received',
+        'toLocationId',
+        'toLocationName',
+        'toLocationCode',
+        'toLocationPath',
+        'lotId',
+        'lotCode',
+        'lotExpiresAt',
+        'actorName',
+        'actorEmail',
+      ].sort(),
+    );
+    expect(owners[0]).toMatchObject({
+      sku: 'FOCUS',
+      currentSku: 'FOCUS',
+      unitOfMeasure: 'each',
+      received: '8.0000',
+      toLocationId: shelf,
+      toLocationCode: 'SHELF',
+      toLocationPath: [],
+      lotId: null,
+    });
+
+    for (const reader of [buyer, sales]) {
+      const theirs = body<{ entries: Record<string, unknown>[] }>(
+        await reader.get(`/v1/orders/${bought.id}/receipts`).expect(200),
+      ).entries;
+      expect(theirs).toEqual(
+        owners.map((row) => ({
+          ...row,
+          toLocationName: null,
+          toLocationCode: null,
+          toLocationPath: [],
+        })),
+      );
+    }
+
+    const paged = body<{ entries: { id: string }[]; nextCursor: string }>(
+      await buyer.get(`/v1/orders/${bought.id}/receipts?limit=1`).expect(200),
+    );
+    expect(paged.entries.map((row) => row.id)).toEqual([owners[0].id]);
+    const next = body<{ entries: { id: string }[] }>(
+      await buyer
+        .get(
+          `/v1/orders/${bought.id}/receipts?limit=1&before=${paged.nextCursor}`,
+        )
+        .expect(200),
+    );
+    expect(next.entries.map((row) => row.id)).toEqual([owners[1].id]);
+
+    expect(
+      body<{ entries: unknown[] }>(
+        await buyer.get(`/v1/orders/${sold.id}/receipts`).expect(200),
+      ).entries,
+    ).toEqual([]);
+    const beta = await registerOrganization(app, 'beta');
+    await beta.agent.get(`/v1/orders/${bought.id}/receipts`).expect(404);
+  });
+
   // ADR-093, R13 (#471's first cause): two movements alike but for their
   // lot, a sale shipped from two lots at once, each says its own.
   it('lists one order’s two movements of one quantity from two lots, each with its own lot, in one order on every page', async () => {
