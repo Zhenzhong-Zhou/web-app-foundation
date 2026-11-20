@@ -80,7 +80,7 @@ finding for the as-built and one question for him.*
   fixed is offered for closing, naming its commit, never given to a
   session.
 - None offered leaves a choice open or is labelled `later` or
-  `decision`, unless its decision is asked first; none needs a sweep or
+  `decision`; none needs a sweep or
   the large seed, or names more than about five files.
 - The exports come from `scripts/cloud-picks.sh`, without numbers and
   then with the shortlist's.
