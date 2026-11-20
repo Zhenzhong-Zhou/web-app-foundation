@@ -264,6 +264,16 @@ export function MovementsPage() {
       from: null,
       until: null,
     } satisfies Record<keyof typeof ADDRESS_FILTERS, null>);
+  // A phone's Filters sheet clears its own fields alone (review 48): the
+  // lot's and the order's chips sit outside it, each with its ×.
+  const clearSheet = () =>
+    writeAddress({
+      variantId: null,
+      locationId: null,
+      reason: null,
+      from: null,
+      until: null,
+    });
 
   if (list.refused) {
     return <RevisionRefusalPage failure={list.refused} onRetry={list.reload} />;
@@ -420,7 +430,7 @@ export function MovementsPage() {
               ].filter(Boolean).length
             }
             shown={null}
-            onClear={showAll}
+            onClear={clearSheet}
           >
             {itemFilter}
             {placeFilter}

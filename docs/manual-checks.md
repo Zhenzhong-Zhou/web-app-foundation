@@ -664,7 +664,9 @@ a second organization.
   the Item field, and with Reason › Sampled leaving none, in the line
   too. At
   390 px each movement is a card, the filters behind one Filters button
-  with the sort. As Fatima Haddad (Sales), there is no From → to column
+  with the sort; a lot's Movements with Reason and a When range chosen
+  there: the sheet's Clear empties Reason and When and keeps the Lot
+  chip. As Fatima Haddad (Sales), there is no From → to column
   and no Location filter, and a link with `?locationId=` reads every
   place; as a role without `orders.view`, a link with `?orderId=` lists
   every movement with no chip.

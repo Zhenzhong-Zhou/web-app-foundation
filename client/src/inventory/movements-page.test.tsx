@@ -8,7 +8,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Location, Movement, MovementPage } from '../api/types.gen';
 import { movement } from '../test/factories';
@@ -558,5 +558,67 @@ describe('MovementsPage', () => {
       ),
     ).toBeVisible();
     expect(screen.getByRole('button', { name: 'Receive stock' })).toBeVisible();
+  });
+
+  describe('on a phone', () => {
+    beforeEach(() => {
+      vi.stubGlobal('matchMedia', (query: string) => {
+        const min = /min-width:\s*([\d.]+)px/.exec(query);
+        const max = /max-width:\s*([\d.]+)px/.exec(query);
+        return {
+          matches:
+            (!min || 390 >= Number(min[1])) && (!max || 390 <= Number(max[1])),
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        };
+      });
+      return () => vi.unstubAllGlobals();
+    });
+
+    // Review 48: the sheet's Clear clears the sheet's own fields; the
+    // lot's and the order's chips, outside it, keep theirs, as the sort
+    // does.
+    it('clears the sheet’s own fields with its Clear, the lot and order chips kept', async () => {
+      const user = userEvent.setup();
+      answer([
+        movement({
+          lotId: LOT,
+          lotCode: 'VC-0302',
+          document: { kind: 'order', id: ORDER, number: 'PO-000009' },
+        }),
+      ]);
+      renderAt(
+        `/movements?variantId=${ITEM}&locationId=${SHELF}&lotId=${LOT}&orderId=${ORDER}&reason=shipment&from=2026-10-01&until=2026-10-31&sort=when&order=asc`,
+      );
+
+      await user.click(await screen.findByRole('button', { name: /^Filters/ }));
+      const sheet = await screen.findByRole('dialog', {
+        name: 'Filters and sort',
+      });
+      await user.click(within(sheet).getByRole('button', { name: 'Clear' }));
+      await user.click(within(sheet).getByRole('button', { name: 'Done' }));
+
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('dialog', { name: 'Filters and sort' }),
+        ).not.toBeInTheDocument(),
+      );
+      const address = new URLSearchParams(addressOf().textContent ?? '');
+      expect([...address.keys()].sort()).toEqual([
+        'lotId',
+        'order',
+        'orderId',
+        'sort',
+      ]);
+      expect(address.get('lotId')).toBe(LOT);
+      expect(address.get('orderId')).toBe(ORDER);
+      expect(
+        screen.getByRole('button', { name: 'Remove filter: Lot: VC-0302' }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Remove filter: Order: PO-000009' }),
+      ).toBeVisible();
+    });
   });
 });
