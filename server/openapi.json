@@ -17354,6 +17354,12 @@
               "null"
             ]
           },
+          "variantId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
             "type": "string"
           },
@@ -17368,6 +17374,8 @@
           "id",
           "code",
           "expiresAt",
+          "variantId",
+          "productId",
           "sku",
           "unitOfMeasure",
           "description"

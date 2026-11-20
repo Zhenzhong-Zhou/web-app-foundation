@@ -905,6 +905,7 @@
   "inventory.stock.where": "库位",
   "inventory.tab.reorder": "补货",
   "inventory.tab.stock": "库存",
+  "inventory.trace.allMovements": "此批次的全部库存变动",
   "inventory.trace.anOrder": "一张订单",
   "inventory.trace.cameFrom": "来源",
   "inventory.trace.cameFrom.empty": "此批次没有收货或生产记录，可能是在更正库存数量时加入库存的。",

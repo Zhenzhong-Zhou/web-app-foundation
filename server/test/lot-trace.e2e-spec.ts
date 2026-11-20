@@ -7,7 +7,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { lots } from '../src/database/schema';
+import { lots, productVariants } from '../src/database/schema';
 import {
   addMember,
   body,
@@ -19,7 +19,7 @@ import {
 import { resetDatabase } from './utils/reset-db';
 
 interface Trace {
-  lot: { code: string; sku: string };
+  lot: { code: string; sku: string; variantId: string; productId: string };
   balances: {
     locationId: string;
     locationName: string | null;
@@ -277,6 +277,24 @@ describe('Lot trace (e2e)', () => {
       // Shipped with no order: kept, with nobody to name.
       [null, 'FOC-1', '5.0000', '0', '0'],
     ]);
+  });
+
+  // Review 6: a lot's page links to its item and to its movements.
+  it('carries its item’s variant and product, for the links to them', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await story(alpha);
+
+    const found = await trace(alpha, 'BF-1');
+    const [lot] = await db.select().from(lots).where(eq(lots.code, 'BF-1'));
+    const [variant] = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.id, lot.variantId));
+
+    expect(found.lot).toMatchObject({
+      variantId: lot.variantId,
+      productId: variant.productId,
+    });
   });
 
   it('follows a batch back to the supplier of what went into it', async () => {

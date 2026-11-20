@@ -11,6 +11,10 @@ export class TracedLot {
   id!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Its item, for All movements of this lot's stock card (95a). */
+  variantId!: string;
+  /** Its item's product, the page its name links to. */
+  productId!: string;
   sku!: string;
   unitOfMeasure!: string;
   description!: string;

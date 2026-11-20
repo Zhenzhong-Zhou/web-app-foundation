@@ -42,6 +42,7 @@ import {
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryStatus } from '../lib/use-expiry-status';
@@ -50,6 +51,7 @@ import { LicenceAtRelease } from '../licences/licence-at-release';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { COLOR_OF_TONE } from '../theme/status';
+import { movementsPath } from './movements-path';
 import { PlacesHidden } from './places-hidden';
 import { placeName } from './stock-places';
 
@@ -277,40 +279,77 @@ export function LotTracePage() {
 
   return (
     <Stack spacing={4}>
-      <PageHeader
-        crumbs={[
-          {
-            label: intl.formatMessage({
-              id: 'inventory.trace.title',
-              defaultMessage: 'Trace a lot',
-            }),
-            to: '/lots',
-          },
-        ]}
-        title={intl.formatMessage(
-          { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
-          { code: trace.lot.code },
-        )}
-        status={
-          expiry
-            ? { label: expiry.label, color: COLOR_OF_TONE[expiry.tone] }
-            : undefined
-        }
-        subtitle={[
-          trace.lot.sku,
-          trace.lot.description,
-          trace.lot.expiresAt &&
-            intl.formatMessage(
-              {
-                id: 'inventory.trace.expires',
-                defaultMessage: 'expires {day}',
-              },
-              { day: formatDay(trace.lot.expiresAt) },
+      <Stack spacing={1}>
+        <PageHeader
+          crumbs={[
+            {
+              label: intl.formatMessage({
+                id: 'inventory.trace.title',
+                defaultMessage: 'Trace a lot',
+              }),
+              to: '/lots',
+            },
+          ]}
+          title={intl.formatMessage(
+            { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
+            { code: trace.lot.code },
+          )}
+          status={
+            expiry
+              ? { label: expiry.label, color: COLOR_OF_TONE[expiry.tone] }
+              : undefined
+          }
+          // The item's name its way to the item's page, with products.view
+          // (review 6).
+          subtitle={[
+            trace.lot.sku,
+            can('products.view') ? (
+              <Link
+                key="item"
+                component={RouterLink}
+                to={`/items/${trace.lot.productId}`}
+                state={OFFER_BACK}
+              >
+                {trace.lot.description}
+              </Link>
+            ) : (
+              trace.lot.description
             ),
-        ]
-          .filter(Boolean)
-          .join(SEPARATOR)}
-      />
+            trace.lot.expiresAt &&
+              intl.formatMessage(
+                {
+                  id: 'inventory.trace.expires',
+                  defaultMessage: 'expires {day}',
+                },
+                { day: formatDay(trace.lot.expiresAt) },
+              ),
+          ]
+            .filter(Boolean)
+            .flatMap((part, index) =>
+              index === 0 ? [part] : [SEPARATOR, part],
+            )}
+        />
+
+        {/* The way on to its movements, as the item's page has one (review
+            6): its item and the lot, so the stock card counts this lot
+            (85a, 95a). */}
+        {can('stock.view') && (
+          <Link
+            component={RouterLink}
+            to={movementsPath({
+              variantId: trace.lot.variantId,
+              lotId: trace.lot.id,
+            })}
+            state={OFFER_BACK}
+            sx={{ alignSelf: 'flex-start' }}
+          >
+            {intl.formatMessage({
+              id: 'inventory.trace.allMovements',
+              defaultMessage: 'All movements of this lot',
+            })}
+          </Link>
+        )}
+      </Stack>
 
       <Section
         title={intl.formatMessage({

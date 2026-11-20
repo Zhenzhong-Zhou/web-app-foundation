@@ -12,6 +12,8 @@ You can also find a lot by its code in **Search everything**, or press a lot’s
 
 ## Read a trace {#read}
 
+Under the lot’s code, its item’s name opens the item’s page, for someone who may see items, and **All movements of this lot** opens Movements on its item with this lot alone.
+
 - **Where it is now**: each location holding some, written by its whole path from its warehouse, and how much. Someone who may not see locations reads how much is **Usable** and **Not usable** instead, with no place named.
 - **Where it came from**: its receipt and the supplier’s order, or the run that made it and its licence.
 - **Made from**: the component lots a run used, however many steps back.

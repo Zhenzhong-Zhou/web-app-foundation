@@ -37,6 +37,8 @@ const TRACE: LotTrace = {
     id: 'lot-1',
     code: 'OIL-0425',
     expiresAt: null,
+    variantId: 'variant-oil',
+    productId: 'product-oil',
     sku: 'OIL',
     unitOfMeasure: 'kg',
     description: 'Fish oil',
@@ -157,6 +159,27 @@ describe('LotTracePage', () => {
       'href',
       '/production/run-1',
     );
+  });
+
+  // Review 6: the way on to the lot's item and its movements, each for a
+  // reader who may open that page.
+  it('links its item and All movements of this lot, each for whoever may open it', async () => {
+    const { unmount } = renderTrace(['stock.view', 'products.view']);
+
+    expect(
+      await screen.findByRole('link', { name: 'Fish oil' }),
+    ).toHaveAttribute('href', '/items/product-oil');
+    expect(
+      screen.getByRole('link', { name: 'All movements of this lot' }),
+    ).toHaveAttribute('href', '/movements?variantId=variant-oil&lotId=lot-1');
+    unmount();
+
+    renderTrace(['stock.view']);
+    await screen.findByRole('link', { name: 'All movements of this lot' });
+    expect(
+      screen.queryByRole('link', { name: 'Fish oil' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Fish oil/)).toBeVisible();
   });
 
   // A recall letter goes to everyone on it (ADR-044, amended; #473's 17).

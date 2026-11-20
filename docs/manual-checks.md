@@ -1004,7 +1004,11 @@ search to having the list of customers; the target is **under two minutes**.
   each with its code; codes starting with the text come first.
 - **MC-902** Trace BF-2609: its supplier receipt, the batch it went into
   (FOC-2609-01), and every customer who received that batch, including
-  samples and returns.
+  samples and returns. Under its code, its item's name is a link to the
+  item's page, and All movements of this lot opens Movements with the
+  item's and the lot's chips, a stock card of that lot, Back returning
+  to the trace (review 6). As a role without `products.view`, the name
+  reads as text.
 - **MC-903** Trace FOC-2609-01 back: the run, and the ingredient lots it was
   made from.
 - **MC-904** *(ADR-093, amended; #639; review 3, 115)* Balances: where every unit of
@@ -7309,4 +7313,8 @@ first.
   becomes one find box, Find an item, lot or order, reading the top
   bar's lookup: items, lots and orders offered in words, each choice a
   filter and its chip, typed text alone never a filter: MC-320
+  extended.
+- 2026-11-20: ADR-093's Movements branch, review 6: a lot's page links
+  its item's name to the item's page with `products.view`, and All
+  movements of this lot to Movements on its item and that lot: MC-902
   extended.

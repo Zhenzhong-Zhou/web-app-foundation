@@ -420,6 +420,16 @@ file is kept is in the [README](README.md).
   [test](../../client/e2e/movements-page.spec.ts) "The order’s page, Receipts, All movements of PO-…: ?orderId=, a chip; In and Out, no balance; Back, the order’s page" ·
   [Help](../../client/src/help/guides/en/orders.md#receive-a-purchase-receive) ·
   MC-321
+- **A lot's page leads to its item and to its movements, each only for
+  a reader who may open that page:** the item's name links to the
+  item's page with products.view, and reads as text without it; All
+  movements of this lot opens Movements on its item and that lot, so
+  the stock card counts the lot, with stock.view.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "links its item and All movements of this lot, each for whoever may open it" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "carries its item’s variant and product, for the links to them" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
+  MC-902
 - **A link's place or order that its reader may not use is ignored on
   Movements,** as Stock's address is: a place without locations.view,
   or one no stock can sit at, reads every place; an order without

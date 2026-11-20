@@ -163,6 +163,8 @@ export class LotTraceService {
           l.id,
           l.code,
           l.expires_at,
+          l.variant_id,
+          pv.product_id,
           pv.sku,
           pv.unit_of_measure,
           ${shown.productName} as product_name,
@@ -178,6 +180,8 @@ export class LotTraceService {
       id: string;
       code: string;
       expires_at: string | null;
+      variant_id: string;
+      product_id: string;
       sku: string;
       unit_of_measure: string;
       product_name: string;
@@ -194,6 +198,8 @@ export class LotTraceService {
       id: row.id,
       code: row.code,
       expiresAt: row.expires_at,
+      variantId: row.variant_id,
+      productId: row.product_id,
       sku: row.sku,
       unitOfMeasure: row.unit_of_measure,
       description: itemName(row.product_name, row.variant_name),

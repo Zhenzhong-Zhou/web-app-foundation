@@ -2044,6 +2044,8 @@ export type TracedLot = {
   id: string;
   code: string;
   expiresAt: string | null;
+  variantId: string;
+  productId: string;
   sku: string;
   unitOfMeasure: string;
   description: string;

@@ -905,6 +905,7 @@
   "inventory.stock.where": "Where",
   "inventory.tab.reorder": "Reorder",
   "inventory.tab.stock": "Stock",
+  "inventory.trace.allMovements": "All movements of this lot",
   "inventory.trace.anOrder": "an order",
   "inventory.trace.cameFrom": "Where it came from",
   "inventory.trace.cameFrom.empty": "No receipt or production is recorded for this lot. It may have been counted into stock by a correction.",

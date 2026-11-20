@@ -905,6 +905,7 @@
   "inventory.stock.where": "Où",
   "inventory.tab.reorder": "Réapprovisionner",
   "inventory.tab.stock": "Stock",
+  "inventory.trace.allMovements": "Tous les mouvements de ce lot",
   "inventory.trace.anOrder": "une commande",
   "inventory.trace.cameFrom": "D’où il vient",
   "inventory.trace.cameFrom.empty": "Aucune réception ni production n’est enregistrée pour ce lot. Il a peut-être été ajouté au stock par une correction.",
