@@ -397,6 +397,38 @@ async function buildProbes(
       name: 'movements: one lot',
       run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en', EVERY_PART),
     },
+    // One code as a stock card (ADR-093, 41a): each row's balance worked
+    // back from on hand, less what moved after the page, by the code's
+    // index on the time; oldest first, its first page reads the code's
+    // whole history after it, the most a page reads.
+    {
+      name: 'movements: one product, oldest first',
+      run: () =>
+        stock.listMovements(
+          { variantId: shelf.variantId, order: 'asc' },
+          'en',
+          EVERY_PART,
+        ),
+    },
+    {
+      name: 'movements: one product at one shelf',
+      run: () =>
+        stock.listMovements(
+          { variantId: shelf.variantId, locationId: shelf.locationId },
+          'en',
+          EVERY_PART,
+        ),
+    },
+    // Its period's Opening, In, Out and Closing (88a).
+    {
+      name: 'movements: one product, a month',
+      run: () =>
+        stock.listMovements(
+          { variantId: shelf.variantId, ...MONTH_INSTANTS },
+          'en',
+          EVERY_PART,
+        ),
+    },
     // Through the from and the to place's indexes, in one bitmap OR
     // (ADR-051's watch, taken in ADR-093), where it walked the primary key.
     {

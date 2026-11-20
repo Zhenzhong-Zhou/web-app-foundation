@@ -23,6 +23,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { requestTimeZone } from '../../database/tenant-context';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
@@ -32,13 +33,14 @@ import { RecordMovementDto } from './dto/record-movement.dto';
 import type {
   Lot,
   MovementPage,
+  MovementPeriod,
   RecordedMovementEnvelope,
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
-import { movementOf, type MovementSight } from './movement-view';
+import { cardOf, movementOf, type MovementSight } from './movement-view';
 import { StockService } from './stock.service';
-import { MOVEMENT_COLUMNS } from './stock-exports';
+import { movementColumns, movementLines } from './stock-exports';
 import { StockReadsService } from './stock-reads.service';
 
 /**
@@ -100,7 +102,11 @@ export class StockController {
     );
   }
 
-  /** Every movement the filters match, as CSV (ADR-057): the list's own query, every page. */
+  /**
+   * Every movement the filters match, as CSV (ADR-057): the list's own
+   * query, every page, oldest first, with the reader's sight (ADR-093,
+   * 87a, 88a and 96a).
+   */
   @Get('movements/export')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'movements' })
@@ -110,27 +116,32 @@ export class StockController {
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    // An order's movements refused as the list refuses them. The file
-    // names no document, and both places, as it always has.
-    await this.sightOf(user, query);
-    // The base names, as every CSV keeps them (ADR-056).
-    const rows = await everyRow((before, limit) =>
-      this.reads.listMovements({ ...query, before, limit }, null, {
-        places: true,
-        orders: false,
-        runs: false,
-      }),
-    );
+    // What the reader may see, as the list reads it, an order's movements
+    // refused as the list refuses them.
+    const sight = await this.sightOf(user, query);
+    // The base names, as every CSV keeps them (ADR-056); oldest first,
+    // as a stock card reads (87a). The period is the same on every page.
+    let period: MovementPeriod | null = null;
+    const rows = await everyRow(async (before, limit) => {
+      const page = await this.reads.listMovements(
+        { ...query, order: 'asc', before, limit },
+        null,
+        sight,
+      );
+      period = page.period;
+      return page;
+    });
     recordContext({
       list: 'movements',
       filters: exportFilters(query),
       rows: rows.length,
     });
+    const timeZone = requestTimeZone();
     return csvFile(
       res,
       'movements',
-      MOVEMENT_COLUMNS,
-      rows,
+      movementColumns({ card: cardOf(query), places: sight.places, timeZone }),
+      movementLines(rows, period, query, timeZone),
       localeOf(acceptLanguage),
     );
   }

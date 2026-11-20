@@ -164,13 +164,45 @@ file is kept is in the [README](README.md).
 ## Movements
 
 - **Movements list newest first by when each was recorded, then by
-  id,** each page following on with no gap and no repeat; movements
-  recorded together, as a shipment from two lots, keep one order on
-  every page.
+  id,** or oldest first when asked, each page following on with no gap
+  and no repeat; movements recorded together, as a shipment from two
+  lots, keep one order on every page.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--movements-a-log-filtered-in-the-address-a-stock-card-for-one-code) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists newest first by when each was recorded, then by id, and pages without repeating or skipping a row" ·
   [test](../../server/test/movements.e2e-spec.ts) "lists one order’s two movements of one quantity from two lots, each with its own lot, in one order on every page" ·
+  [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
   MC-306
+- **One code reads as a stock card: In, Out and the balance after each
+  movement.** Across every place, what arrived is In and what left is
+  Out, and a move between two of its places is neither, so the balance
+  holds; with a place chosen, that place alone, a move out of it Out;
+  with a lot chosen, that lot alone, and with a place too, that lot
+  there. The balance is today's on hand, less what moved after the
+  row. With a reason or an order chosen, rows keep In and Out but no
+  balance, since they leave movements out.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
+  [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
+  [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  MC-319
+- **A date range for one code opens and closes: Opening, In, Out,
+  Closing,** Closing the Opening plus In less Out, and a range ending
+  today closing at today's on hand. With a reason chosen, In and Out
+  alone. Never for several items, whose units differ.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  MC-319
+- **Movements' export is the screen's columns, oldest first, one value
+  to each:** When as the organization's day, Code, Item, In, Out and
+  Balance where the list has them, else Change, Unit, Reason, From, To,
+  Lot, Expiry, For and By. One code's range starts with its opening
+  balance and ends with its closing, beside the range's In and Out.
+  From and To, each place by its whole path, only for a reader who may
+  see places, else no such columns; For as the reader may see it.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
+  MC-319
 - **A movement names its places only to a reader who may see places,**
   each by its path, its warehouse first; the rest get each place's id
   alone, so a row still reads as in, out or between.

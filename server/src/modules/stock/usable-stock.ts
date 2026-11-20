@@ -140,8 +140,9 @@ export function onHandByUse(
 /**
  * On hand per item at every place, usable or not, and the part of it at
  * places not available (ADR-042): onHandByUse's first half, and alone
- * what a list sorted by On hand reads (ADR-093, 29a). Rows `variant_id,
- * on_hand, unavailable`, for the items in `variants` with stock anywhere.
+ * what a list sorted by On hand reads (ADR-093, 29a) and what Movements'
+ * balance is worked back from (41a). Rows `variant_id, on_hand,
+ * unavailable`, for the items in `variants` with stock anywhere.
  */
 export function onHandByItem(
   organizationId: string,
@@ -149,6 +150,8 @@ export function onHandByItem(
   variants?: SQL,
   /** At one place alone, Stock's place chosen (ADR-093, 20a). */
   locationId?: string,
+  /** In one lot alone, Movements' lot chosen (ADR-093, 85a). */
+  lotId?: string,
 ): SQL {
   const org = sql`${organizationId}::uuid`;
 
@@ -164,6 +167,7 @@ export function onHandByItem(
       where sl.organization_id = ${org}
         ${variants ? sql`and sl.variant_id in ${variants}` : sql``}
         ${locationId ? sql`and sl.location_id = ${locationId}::uuid` : sql``}
+        ${lotId ? sql`and sl.lot_id = ${lotId}::uuid` : sql``}
         and sl.quantity > 0
       group by sl.variant_id, sl.location_id
     ) s

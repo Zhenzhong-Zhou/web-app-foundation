@@ -17,15 +17,13 @@ refuses and works out is [`docs/rules/stock.md`](../../docs/rules/stock.md),
 updated with the rule it states (ADR-087).
 
 - **Quantity is a ledger.** Every change is a movement, written through
-  `StockService.recordWithin` (or `record`, which opens one)
-  in the same transaction as its `stock_levels` row; nothing else writes
-  a quantity (ADR-023).
+  `StockService.recordWithin` in the same transaction as its
+  `stock_levels` row; nothing else writes a quantity (ADR-023).
 - **The `stock_levels` row is the lock,** taken first by an insert that
   makes it if missing; `CHECK (quantity >= 0)` is the backstop, not the
   check (ADR-025).
 - **Quantities are `numeric(18, 4)`,** worked out in Postgres; the
-  client formats with `displayQuantity` or `formatQuantity` and adds
-  nothing up (ADR-025).
+  client formats with `displayQuantity` and adds nothing up (ADR-025).
 - **Rules across tables live in the service,** asserted in e2e, never in
   a trigger: a lot exactly when the variant tracks lots, and a movement's
   locations leaves (ADR-023, ADR-024, ADR-025).
@@ -50,9 +48,10 @@ updated with the rule it states (ADR-087).
 - **A place's name, code and path only with `locations.view`,** its
   id always (96a): Stock, a lot's trace, Movements; the path by
   `place-paths.ts`.
-- **Movements' row is `movementPage` (`movement-view.ts`):** the page
-  before its joins; `created_at desc nulls last`, as its indexes,
-  then id; `orderId` 403 without `orders.view`.
+- **Movements is `movementPage` (`movement-view.ts`):** page, then
+  joins; `created_at desc nulls last`, id; `cardOf`, `changeOf` and
+  `onHandByItem` give In, Out, balance and period; `orderId` 403
+  without `orders.view`.
 - **The lines behind a code's figures are `code-lines.ts`:** Coming's
   documents, Held's sales and the usable lots without places, each read
   by the rule its figure is, so they add up; Where it stands

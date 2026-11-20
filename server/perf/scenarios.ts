@@ -347,6 +347,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /stock/movements?variantId',
       (org) => `/stock/movements?variantId=${org.hot[0].variantId}`,
     ),
+    // One code as a stock card oldest first (ADR-093, 41a): its first
+    // page's balances read every later movement of the code.
+    read(
+      'GET /stock/movements?variantId&order=asc',
+      (org) => `/stock/movements?variantId=${org.hot[0].variantId}&order=asc`,
+    ),
     // Movements for one shelf, from it or to it (ADR-051's watch; ADR-093,
     // R16): through the from and the to place's indexes.
     read(
@@ -445,6 +451,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read(
       'GET /stock/movements?from&until',
       () => `/stock/movements?${lastMonthInstants()}`,
+    ),
+    // One code's month as a stock card, its period's four figures (88a).
+    read(
+      'GET /stock/movements?variantId&from&until',
+      (org) =>
+        `/stock/movements?variantId=${org.hot[0].variantId}&${lastMonthInstants()}`,
     ),
   ];
 

@@ -18,9 +18,12 @@ import {
 import {
   item,
   order,
+  output,
   partner,
   receive,
   receiveLine,
+  recipe,
+  run,
   ship,
   site,
 } from './utils/reorder-world';
@@ -55,11 +58,22 @@ interface Row {
   lotExpiresAt: string | null;
   actorName: string | null;
   document: { kind: string; id: string; number: string | null } | null;
+  quantityIn: string | null;
+  quantityOut: string | null;
+  balance: string | null;
+}
+
+interface Period {
+  opening: string | null;
+  quantityIn: string;
+  quantityOut: string;
+  closing: string | null;
 }
 
 interface Page {
   entries: Row[];
   nextCursor: string | null;
+  period: Period | null;
 }
 
 /**
@@ -459,5 +473,507 @@ describe('Movements (e2e)', () => {
     // the list.
     const beta = await registerOrganization(app, 'beta');
     await beta.agent.get(`/v1/stock/movements?before=${ids[0]}`).expect(400);
+  });
+
+  /**
+   * FOCUS, untracked, as a stock card reads it (ADR-093, R21 and R34): 20
+   * received by hand and 12 on a purchase into SHELF; 5 shipped on a
+   * sale, and 3 moved to QUAR, a place not available, in the same minute;
+   * 4 issued to a run at LINE and used there; 7 more received. Each is
+   * then dated in November 2026, its day the same anywhere from UTC−8 to
+   * UTC+8.
+   */
+  async function stockCard(org: Org) {
+    const { agent } = org;
+    const shelf = await site(agent, 'SHELF');
+    const line = await site(agent, 'LINE');
+    const quarantine = await site(agent, 'QUAR', false);
+    const focus = await item(agent, 'FOCUS');
+    await receive(agent, focus, shelf, '20');
+    const bought = await order(
+      agent,
+      'purchase',
+      await partner(agent, 'Harbour Supply'),
+      focus,
+      '15',
+    );
+    await receiveLine(agent, bought, shelf, '12');
+    const sold = await order(
+      agent,
+      'sale',
+      await partner(agent, 'Lam Herbal'),
+      focus,
+      '6',
+    );
+    await ship(agent, sold, shelf, '5');
+    await agent
+      .post('/v1/stock/movements')
+      .send({
+        variantId: focus,
+        fromLocationId: shelf,
+        toLocationId: quarantine,
+        quantity: '3',
+        reason: 'transfer',
+      })
+      .expect(201);
+    const bar = await item(agent, 'BAR');
+    const runId = await run(
+      agent,
+      {
+        outputId: bar,
+        bomId: await recipe(agent, bar, focus, '2'),
+        locationId: line,
+        quantityPlanned: '2',
+        reference: 'RUN-7',
+      },
+      shelf,
+    );
+    await output(agent, runId, '2');
+    await agent
+      .post(`/v1/production-orders/${runId}/close`)
+      .send({})
+      .expect(200);
+    await receive(agent, focus, shelf, '7');
+
+    const ids = await db
+      .select({ id: stockMovements.id })
+      .from(stockMovements)
+      .where(eq(stockMovements.variantId, focus))
+      .orderBy(stockMovements.id);
+    const days = [
+      '2026-11-02T09:00:00Z',
+      '2026-11-05T10:00:00Z',
+      // The shipment and the move to QUAR, in one instant.
+      '2026-11-10T09:30:00Z',
+      '2026-11-10T09:30:00Z',
+      '2026-11-12T14:00:00Z',
+      '2026-11-15T16:00:00Z',
+      '2026-11-18T08:00:00Z',
+    ];
+    expect(ids).toHaveLength(days.length);
+    for (const [index, { id }] of ids.entries()) {
+      await db
+        .update(stockMovements)
+        .set({ createdAt: new Date(days[index]) })
+        .where(eq(stockMovements.id, id));
+    }
+    return { focus, shelf, line, quarantine, bought, sold };
+  }
+
+  /** From the 3rd to the 12th of November, at noon UTC either end. */
+  const NOVEMBER =
+    '&from=2026-11-04T12:00:00.000Z&until=2026-11-13T12:00:00.000Z';
+
+  const card = (rows: Row[]) =>
+    rows.map((row) => [
+      row.reason,
+      row.quantityIn,
+      row.quantityOut,
+      row.balance,
+    ]);
+
+  /**
+   * The ledger's own walk, oldest first: each row's balance the one
+   * before it, plus its In, less its Out, from `opening`.
+   */
+  function walks(newestFirst: Row[], opening: number) {
+    let balance = opening;
+    for (const row of [...newestFirst].reverse()) {
+      balance += Number(row.quantityIn ?? 0) - Number(row.quantityOut ?? 0);
+      expect(Number(row.balance)).toBe(balance);
+    }
+    return balance;
+  }
+
+  /** On hand as Stock's row reads it, from codeFigures; at a place, there. */
+  async function onHand(agent: Agent, variantId: string, locationId?: string) {
+    const place = locationId ? `&locationId=${locationId}` : '';
+    const { entries } = body<{
+      entries: {
+        variantId: string;
+        onHand: string;
+        here: { onHand: string } | null;
+      }[];
+    }>(
+      await agent
+        .get(`/v1/stock/by-code?includeEmpty=true${place}`)
+        .expect(200),
+    );
+    const row = entries.find((entry) => entry.variantId === variantId)!;
+    return Number(locationId ? row.here!.onHand : row.onHand);
+  }
+
+  // ADR-093, R21 and 41a: one code's balance after each movement, worked
+  // back from today's on hand; across every place a move between two of
+  // its places is neither In nor Out, at a place a move out reads Out.
+  it('works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const { focus, shelf, line } = await stockCard(alpha);
+
+    const every = (await list(agent, `?variantId=${focus}`)).entries;
+    expect(card(every)).toEqual([
+      ['receipt', '7.0000', null, '30.0000'],
+      ['consumption', null, '4.0000', '23.0000'],
+      ['transfer', null, null, '27.0000'],
+      ['transfer', null, null, '27.0000'],
+      ['shipment', null, '5.0000', '27.0000'],
+      ['receipt', '12.0000', null, '32.0000'],
+      ['receipt', '20.0000', null, '20.0000'],
+    ]);
+    expect(walks(every, 0)).toBe(await onHand(agent, focus));
+
+    // At SHELF, the moves to QUAR and to the run read Out; LINE's own
+    // use is not SHELF's.
+    const atShelf = (
+      await list(agent, `?variantId=${focus}&locationId=${shelf}`)
+    ).entries;
+    expect(card(atShelf)).toEqual([
+      ['receipt', '7.0000', null, '27.0000'],
+      ['transfer', null, '4.0000', '20.0000'],
+      ['transfer', null, '3.0000', '24.0000'],
+      ['shipment', null, '5.0000', '27.0000'],
+      ['receipt', '12.0000', null, '32.0000'],
+      ['receipt', '20.0000', null, '20.0000'],
+    ]);
+    expect(walks(atShelf, 0)).toBe(await onHand(agent, focus, shelf));
+    const atLine = (await list(agent, `?variantId=${focus}&locationId=${line}`))
+      .entries;
+    expect(card(atLine)).toEqual([
+      ['consumption', null, '4.0000', '0.0000'],
+      ['transfer', '4.0000', null, '4.0000'],
+    ]);
+
+    // Each page reads only what moved after it: the same balances a row
+    // at a time, newest first and oldest first.
+    const balances = (rows: Row[]) =>
+      Object.fromEntries(rows.map((row) => [row.id, row.balance]));
+    for (const [query, whole] of [
+      [`&variantId=${focus}`, every],
+      [`&variantId=${focus}&locationId=${shelf}`, atShelf],
+    ] as const) {
+      for (const limit of [1, 2, 3]) {
+        const newest = await everyPage(agent, query, limit);
+        expect(newest.map((row) => row.id)).toEqual(whole.map((row) => row.id));
+        expect(balances(newest)).toEqual(balances(whole));
+        const oldest = await everyPage(agent, `${query}&order=asc`, limit);
+        expect(oldest.map((row) => row.id)).toEqual(
+          whole.map((row) => row.id).reverse(),
+        );
+        expect(balances(oldest)).toEqual(balances(whole));
+      }
+    }
+
+    // Several items keep In and Out, with no balance and no period.
+    const all = await list(agent, NOVEMBER.replace('&', '?'));
+    expect(all.period).toBeNull();
+    expect(all.entries.every((row) => row.balance === null)).toBe(true);
+  });
+
+  // ADR-093, R34 and 88a: a date range's Opening · In · Out · Closing,
+  // Closing = Opening + In − Out, a range ending today closing at today's
+  // on hand; with a reason or an order, In and Out with no balance (91a).
+  it('gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const { focus, shelf, sold } = await stockCard(alpha);
+
+    const holds = (period: Period | null) => {
+      const { opening, quantityIn, quantityOut, closing } = period!;
+      expect(Number(closing)).toBe(
+        Number(opening) + Number(quantityIn) - Number(quantityOut),
+      );
+    };
+
+    const november = await list(agent, `?variantId=${focus}${NOVEMBER}`);
+    expect(card(november.entries)).toEqual([
+      ['transfer', null, null, '27.0000'],
+      ['transfer', null, null, '27.0000'],
+      ['shipment', null, '5.0000', '27.0000'],
+      ['receipt', '12.0000', null, '32.0000'],
+    ]);
+    expect(november.period).toEqual({
+      opening: '20.0000',
+      quantityIn: '12.0000',
+      quantityOut: '5.0000',
+      closing: '27.0000',
+    });
+    holds(november.period);
+    // The closing is its newest row's balance, the opening its oldest's
+    // before it moved.
+    expect(walks(november.entries, 20)).toBe(27);
+    // The same on every page.
+    const second = await list(
+      agent,
+      `?variantId=${focus}${NOVEMBER}&limit=2&before=${november.entries[1].id}`,
+    );
+    expect(second.period).toEqual(november.period);
+
+    const atShelf = await list(
+      agent,
+      `?variantId=${focus}&locationId=${shelf}${NOVEMBER}`,
+    );
+    expect(atShelf.period).toEqual({
+      opening: '20.0000',
+      quantityIn: '12.0000',
+      quantityOut: '12.0000',
+      closing: '20.0000',
+    });
+
+    // Ending today, it closes at today's on hand.
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const toToday = await list(
+      agent,
+      `?variantId=${focus}&from=2026-11-04T12:00:00.000Z&until=${tomorrow}`,
+    );
+    holds(toToday.period);
+    expect(toToday.period).toMatchObject({ opening: '20.0000' });
+    expect(Number(toToday.period!.closing)).toBe(await onHand(agent, focus));
+
+    // A reason leaves movements out: no balance, In and Out kept.
+    const shipped = await list(
+      agent,
+      `?variantId=${focus}&reason=shipment${NOVEMBER}`,
+    );
+    expect(card(shipped.entries)).toEqual([['shipment', null, '5.0000', null]]);
+    expect(shipped.period).toEqual({
+      opening: null,
+      quantityIn: '0.0000',
+      quantityOut: '5.0000',
+      closing: null,
+    });
+
+    // An order: In and Out, no balance; its items' units differ, so no
+    // period without one code.
+    const order = await list(agent, `?orderId=${sold.id}${NOVEMBER}`);
+    expect(card(order.entries)).toEqual([['shipment', null, '5.0000', null]]);
+    expect(order.period).toBeNull();
+  });
+
+  // ADR-093, 85a: a lot counts that lot alone, and with a place, that lot
+  // at that place.
+  it('counts a lot’s balance alone, and that lot at one place', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const quarantine = await site(agent, 'QUAR', false);
+    const vitc = await item(agent, 'VITC', true);
+    await receive(agent, vitc, shelf, '5', {
+      code: 'VC-SOON',
+      expiresAt: '2027-01-31',
+    });
+    await receive(agent, vitc, shelf, '5', {
+      code: 'VC-LATER',
+      expiresAt: '2027-06-30',
+    });
+    const [{ lotId: soon }] = await db
+      .select({ lotId: stockMovements.lotId })
+      .from(stockMovements)
+      .where(eq(stockMovements.variantId, vitc))
+      .orderBy(stockMovements.id)
+      .limit(1);
+    await agent
+      .post('/v1/stock/movements')
+      .send({
+        variantId: vitc,
+        lotId: soon,
+        fromLocationId: shelf,
+        toLocationId: quarantine,
+        quantity: '2',
+        reason: 'transfer',
+      })
+      .expect(201);
+    // Earliest expiry first: 3 of VC-SOON from SHELF, then 1 of VC-LATER.
+    const sold = await order(
+      agent,
+      'sale',
+      await partner(agent, 'Lam Herbal'),
+      vitc,
+      '4',
+    );
+    await ship(agent, sold, shelf, '4');
+
+    const lot = (await list(agent, `?variantId=${vitc}&lotId=${soon}`)).entries;
+    expect(card(lot)).toEqual([
+      ['shipment', null, '3.0000', '2.0000'],
+      ['transfer', null, null, '5.0000'],
+      ['receipt', '5.0000', null, '5.0000'],
+    ]);
+    expect(walks(lot, 0)).toBe(2);
+    expect(
+      card(
+        (
+          await list(
+            agent,
+            `?variantId=${vitc}&lotId=${soon}&locationId=${shelf}`,
+          )
+        ).entries,
+      ),
+    ).toEqual([
+      ['shipment', null, '3.0000', '0.0000'],
+      ['transfer', null, '2.0000', '3.0000'],
+      ['receipt', '5.0000', null, '5.0000'],
+    ]);
+    // The whole code, both lots: the two lots' shipment recorded at once.
+    const code = (await list(agent, `?variantId=${vitc}`)).entries;
+    expect(code.map((row) => [row.lotCode, row.balance])).toEqual([
+      ['VC-LATER', '6.0000'],
+      ['VC-SOON', '7.0000'],
+      ['VC-SOON', '10.0000'],
+      ['VC-LATER', '10.0000'],
+      ['VC-SOON', '5.0000'],
+    ]);
+  });
+
+  /** A CSV's header and its rows, each a list of its fields. */
+  function csvOf(text: string) {
+    const [header, ...rows] = text
+      .replace(/^\uFEFF/, '')
+      .trimEnd()
+      .split('\r\n')
+      .map((line) => line.split(','));
+    return { header, rows };
+  }
+
+  // ADR-093, 87a and 88a: the screen's columns, one value to each, oldest
+  // first, a range's opening first and its closing last with its In and
+  // Out; days the organization's.
+  it('exports one code’s stock card oldest first, its opening first and its closing last', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const { focus, bought, sold } = await stockCard(alpha);
+
+    const { header, rows } = csvOf(
+      (
+        await agent
+          .get(`/v1/stock/movements/export?variantId=${focus}${NOVEMBER}`)
+          .expect(200)
+      ).text,
+    );
+    expect(header).toEqual([
+      'When',
+      'Code',
+      'Item',
+      'In',
+      'Out',
+      'Balance',
+      'Unit',
+      'Reason',
+      'From',
+      'To',
+      'Lot',
+      'Expiry',
+      'For',
+      'By',
+    ]);
+    const line = (when: string, rest: Record<string, string>) =>
+      header.map((name) => (name === 'When' ? when : (rest[name] ?? '')));
+    const moved = { Code: 'FOCUS', Item: 'FOCUS', Unit: 'each', By: 'Owner' };
+    expect(rows).toEqual([
+      line('2026-11-04', { Balance: '20.0000', Reason: 'Opening balance' }),
+      line('2026-11-05', {
+        ...moved,
+        In: '12.0000',
+        Balance: '32.0000',
+        Reason: 'Receipt',
+        To: 'SHELF (SHELF)',
+        For: bought.number,
+      }),
+      line('2026-11-10', {
+        ...moved,
+        Out: '5.0000',
+        Balance: '27.0000',
+        Reason: 'Shipment',
+        From: 'SHELF (SHELF)',
+        For: sold.number,
+      }),
+      line('2026-11-10', {
+        ...moved,
+        Balance: '27.0000',
+        Reason: 'Transfer',
+        From: 'SHELF (SHELF)',
+        To: 'QUAR (QUAR)',
+      }),
+      line('2026-11-12', {
+        ...moved,
+        Balance: '27.0000',
+        Reason: 'Transfer',
+        From: 'SHELF (SHELF)',
+        To: 'LINE (LINE)',
+        For: 'RUN-7',
+      }),
+      line('2026-11-13', {
+        In: '12.0000',
+        Out: '5.0000',
+        Balance: '27.0000',
+        Reason: 'Closing balance',
+      }),
+    ]);
+
+    // Several items: each row's change, a move within its quantity alone.
+    const every = csvOf(
+      (
+        await agent
+          .get(`/v1/stock/movements/export?${NOVEMBER.slice(1)}`)
+          .expect(200)
+      ).text,
+    );
+    expect(every.header.slice(3, 5)).toEqual(['Change', 'Unit']);
+    expect(every.rows.map((row) => [row[3], row[5]])).toEqual([
+      ['12.0000', 'Receipt'],
+      ['-5.0000', 'Shipment'],
+      ['3.0000', 'Transfer'],
+      ['4.0000', 'Transfer'],
+    ]);
+  });
+
+  // ADR-093, 96a: the export reads as the list does for its reader: no
+  // From or To column without locations.view, For only by orders.view and
+  // production.view.
+  it('exports what the reader may see: no From or To for Sales, a run’s For empty', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { focus, bought, sold } = await stockCard(alpha);
+    await customRole(
+      app,
+      alpha.organizationId,
+      'Sales',
+      ROLE_TEMPLATES.sales.permissions,
+    );
+    const sales = await addMember(app, alpha, 'sales@example.com', 'Sales');
+
+    const response = await sales
+      .get(`/v1/stock/movements/export?variantId=${focus}${NOVEMBER}`)
+      .expect(200);
+    const { header, rows } = csvOf(response.text);
+    expect(header).toEqual([
+      'When',
+      'Code',
+      'Item',
+      'In',
+      'Out',
+      'Balance',
+      'Unit',
+      'Reason',
+      'Lot',
+      'Expiry',
+      'For',
+      'By',
+    ]);
+    const column = (name: string) =>
+      rows.map((row) => row[header.indexOf(name)]);
+    expect(column('Reason')).toEqual([
+      'Opening balance',
+      'Receipt',
+      'Shipment',
+      'Transfer',
+      'Transfer',
+      'Closing balance',
+    ]);
+    // The shipment's sale by orders.view; the run's, not without
+    // production.view; the purchase's, by orders.view.
+    expect(column('For')).toEqual(['', bought.number, sold.number, '', '', '']);
+    for (const name of ['SHELF', 'QUAR', 'LINE', 'RUN-7']) {
+      expect(response.text).not.toContain(name);
+    }
   });
 });

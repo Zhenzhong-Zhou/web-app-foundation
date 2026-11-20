@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 
-import type { KeysetPage } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import {
@@ -16,7 +15,7 @@ import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { itemMatches } from '../products/item-search';
 import type { ListMovementsDto } from './dto/list-movements.dto';
-import type { Movement } from './dto/stock-response.dto';
+import type { MovementPage } from './dto/stock-response.dto';
 import { movementPage, type MovementSight } from './movement-view';
 
 /**
@@ -224,13 +223,13 @@ export class StockReadsService {
 
   /**
    * The ledger, read: a page of the one movement row (movement-view.ts),
-   * each part for a reader who may see it.
+   * each part for a reader who may see it, with its stock card's figures.
    */
   listMovements(
     query: ListMovementsDto,
     locale: Locale | null,
     sight: MovementSight,
-  ): Promise<KeysetPage<Movement>> {
+  ): Promise<MovementPage> {
     return this.tenantDb.transaction((tx, organizationId) =>
       movementPage(tx, organizationId, query, locale, sight),
     );

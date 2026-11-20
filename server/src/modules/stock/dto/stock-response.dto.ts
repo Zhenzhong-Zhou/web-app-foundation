@@ -119,9 +119,40 @@ export class Movement {
   createdAt!: Date;
   /**
    * What it was for, from its reference (55a); null with none, and for a
-   * reader who may not see orders, or runs. Never in the export.
+   * reader who may not see orders, or runs, in the list and its export.
    */
   document!: MovementDocument | null;
+  /**
+   * What came into the stock the list counts, as a stock card's In
+   * (ADR-093, 11a): at the place chosen, what came to it; across every
+   * place, what arrived, a move between two places neither In nor Out.
+   * Null when it went out, or moved within.
+   */
+  quantityIn!: string | null;
+  /** What went out of it, as `quantityIn`: a stock card's Out. */
+  quantityOut!: string | null;
+  /**
+   * What the list counts after this movement: today's on hand, less what
+   * moved after it (41a). Only for one code, its lot or place when chosen
+   * too (85a), with every reason and no order (91a); null otherwise.
+   */
+  balance!: string | null;
+}
+
+/**
+ * A date range's stock card for one code (ADR-093, R34; 88a): what came
+ * in and went out over the range, and the balance at its start and at its
+ * end, Closing = Opening + In − Out.
+ */
+export class MovementPeriod {
+  /** The balance before the range's first movement; null where no balance is (91a). */
+  opening!: string | null;
+  /** Every In over the range, the list's filters on. */
+  quantityIn!: string;
+  /** Every Out over the range, the list's filters on. */
+  quantityOut!: string;
+  /** The balance after the range's last movement; null as `opening`. */
+  closing!: string | null;
 }
 
 /** GET /stock/movements: one page. */
@@ -129,6 +160,12 @@ export class MovementPage {
   entries!: Movement[];
   /** Pass as `before` for the next page; null when there is no more. */
   nextCursor!: string | null;
+  /**
+   * The range's stock card, the same on every page: for one code and a
+   * date range (88a), never for several items, whose units differ; null
+   * otherwise.
+   */
+  period!: MovementPeriod | null;
 }
 
 /** A movement just recorded, as the ledger stores it. */

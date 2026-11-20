@@ -1202,23 +1202,24 @@ describe('Stock (e2e)', () => {
       const column = (name: string) =>
         rows.map((row) => row[header.indexOf(name)]);
 
+      // The screen's columns, one value to each, oldest first (ADR-093,
+      // 87a): several items, so each row's Change.
       expect(header).toEqual([
         'When',
-        'Reason',
         'Code',
         'Item',
-        'Variant',
-        'Lot',
-        'Quantity',
+        'Change',
+        'Unit',
+        'Reason',
         'From',
         'To',
+        'Lot',
+        'Expiry',
+        'For',
         'By',
-        'Email',
-        'Note',
       ]);
       expect(column('Item')).toEqual(['Product WIDGET', 'Product WIDGET']);
-      expect(column('By')).toEqual(['Deleted User', 'Owner']);
-      expect(column('Email')).toEqual(['', 'owner@alpha.example.com']);
+      expect(column('By')).toEqual(['Owner', 'Deleted User']);
     });
   });
 

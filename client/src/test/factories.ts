@@ -83,6 +83,10 @@ export function movement(over: Partial<Movement> = {}): Movement {
     actorEmail: 'wang@example.com',
     createdAt: '2026-10-30T17:00:00.000Z',
     document: null,
+    // Out of every place, the list not a stock card (no balance).
+    quantityIn: null,
+    quantityOut: '24.0000',
+    balance: null,
     ...over,
   };
 }

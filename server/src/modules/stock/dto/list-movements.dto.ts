@@ -1,6 +1,7 @@
 import { IsIn, IsISO8601, IsOptional, IsUUID } from 'class-validator';
 
 import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
+import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
 import { MOVEMENT_REASONS } from '../../../database/schema';
 
 export class ListMovementsDto extends KeysetQueryDto {
@@ -53,4 +54,13 @@ export class ListMovementsDto extends KeysetQueryDto {
   @IsOptional()
   @IsISO8601({ strict: true })
   until?: string;
+
+  /**
+   * Newest first unless asked; `asc` runs oldest first, as Movements'
+   * When header pressed and the export read it, a stock card's order
+   * (ADR-093, 87a). By when each was recorded, then by id, either way.
+   */
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order?: SortOrder;
 }

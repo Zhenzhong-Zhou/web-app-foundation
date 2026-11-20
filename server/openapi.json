@@ -4226,6 +4226,18 @@
             }
           },
           {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
             "name": "before",
             "required": false,
             "in": "query",
@@ -4342,6 +4354,18 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           },
           {
@@ -16506,6 +16530,24 @@
                 "type": "null"
               }
             ]
+          },
+          "quantityIn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityOut": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "balance": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -16536,7 +16578,39 @@
           "actorName",
           "actorEmail",
           "createdAt",
-          "document"
+          "document",
+          "quantityIn",
+          "quantityOut",
+          "balance"
+        ]
+      },
+      "MovementPeriod": {
+        "type": "object",
+        "properties": {
+          "opening": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityIn": {
+            "type": "string"
+          },
+          "quantityOut": {
+            "type": "string"
+          },
+          "closing": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "opening",
+          "quantityIn",
+          "quantityOut",
+          "closing"
         ]
       },
       "MovementPage": {
@@ -16553,11 +16627,22 @@
               "string",
               "null"
             ]
+          },
+          "period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementPeriod"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "entries",
-          "nextCursor"
+          "nextCursor",
+          "period"
         ]
       },
       "Lot": {

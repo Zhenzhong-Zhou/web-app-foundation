@@ -1874,11 +1874,22 @@ export type Movement = {
   actorEmail: string | null;
   createdAt: string;
   document: MovementDocument | null;
+  quantityIn: string | null;
+  quantityOut: string | null;
+  balance: string | null;
+};
+
+export type MovementPeriod = {
+  opening: string | null;
+  quantityIn: string;
+  quantityOut: string;
+  closing: string | null;
 };
 
 export type MovementPage = {
   entries: Array<Movement>;
   nextCursor: string | null;
+  period: MovementPeriod | null;
 };
 
 export type Lot = {
@@ -6069,6 +6080,7 @@ export type StockControllerListMovementsV1Data = {
       | 'return';
     from?: string;
     until?: string;
+    order?: 'asc' | 'desc';
     before?: string;
     limit?: number;
   };
@@ -6118,6 +6130,7 @@ export type StockControllerExportMovementsV1Data = {
       | 'return';
     from?: string;
     until?: string;
+    order?: 'asc' | 'desc';
     before?: string;
     limit?: number;
   };

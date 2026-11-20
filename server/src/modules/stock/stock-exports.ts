@@ -1,22 +1,25 @@
-import { csvMoment } from '../../common/csv';
 import { type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
+import { dayIn, todayIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
-import type { ReorderRule, ReorderSource } from '../../database/schema';
+import type {
+  MovementReason,
+  ReorderRule,
+  ReorderSource,
+} from '../../database/schema';
 import type { Translatable } from '../../i18n/translate';
 import { t, translate } from '../../i18n/translate';
+import type { ListMovementsDto } from './dto/list-movements.dto';
 import type { LotRecipient } from './dto/lot-trace-response.dto';
 import type { ReorderPointRow } from './dto/reorder-point-response.dto';
 import type {
   StockCodeRow,
   StockLotRow,
 } from './dto/stock-grouped-response.dto';
+import type { Movement, MovementPeriod } from './dto/stock-response.dto';
+import { itemName } from './item-name';
+import type { MovementCard } from './movement-view';
 import { REORDER_STATUS_WORDS } from './reorder-status';
-import type { StockReadsService } from './stock-reads.service';
-
-type MovementRow = Awaited<
-  ReturnType<StockReadsService['listMovements']>
->['entries'][number];
 
 /**
  * The variant's own name, in the inventory's, the movements' and the
@@ -145,43 +148,241 @@ export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   unitInWords(),
 ];
 
-/** The movements export (ADR-057): the ledger, as recorded. */
-export const MOVEMENT_COLUMNS: ExportColumn<MovementRow>[] = [
-  {
-    header: t({ id: 'exports.column.when', defaultMessage: 'When' }),
-    value: (row) => csvMoment(row.createdAt),
-  },
-  {
-    header: t({ id: 'exports.column.reason', defaultMessage: 'Reason' }),
-    value: (row) => row.reason,
-  },
-  { header: HEADERS.sku, value: (row) => row.sku },
-  { header: HEADERS.item, value: (row) => row.productName },
-  { header: VARIANT, value: (row) => row.variantName },
-  { header: HEADERS.lot, value: (row) => row.lotCode },
-  { header: HEADERS.quantity, value: (row) => row.quantity },
-  {
-    header: t({ id: 'exports.column.from', defaultMessage: 'From' }),
-    value: (row) => row.fromLocationName,
-  },
-  {
-    header: t({ id: 'exports.column.to', defaultMessage: 'To' }),
-    value: (row) => row.toLocationName,
-  },
-  // The person by name and email, as the audit log's export (ADR-063).
-  {
-    header: t({ id: 'exports.column.by', defaultMessage: 'By' }),
-    value: (row) => row.actorName,
-  },
-  {
-    header: t({ id: 'exports.column.email', defaultMessage: 'Email' }),
-    value: (row) => row.actorEmail,
-  },
-  {
-    header: t({ id: 'exports.column.note', defaultMessage: 'Note' }),
-    value: (row) => row.note,
-  },
-];
+/** Why stock moved, as the movements filter names it, in the reader's words. */
+const REASON_WORDS: Record<MovementReason, Translatable> = {
+  receipt: t({ id: 'stock.reason.receipt', defaultMessage: 'Receipt' }),
+  shipment: t({ id: 'stock.reason.shipment', defaultMessage: 'Shipment' }),
+  transfer: t({ id: 'stock.reason.transfer', defaultMessage: 'Transfer' }),
+  adjustment: t({
+    id: 'stock.reason.adjustment',
+    defaultMessage: 'Adjustment',
+  }),
+  production: t({
+    id: 'stock.reason.production',
+    defaultMessage: 'Production',
+  }),
+  consumption: t({
+    id: 'stock.reason.consumption',
+    defaultMessage: 'Consumption',
+  }),
+  sample: t({ id: 'stock.reason.sample', defaultMessage: 'Sample' }),
+  return: t({ id: 'stock.reason.return', defaultMessage: 'Return' }),
+};
+
+/** A stock card's first and last lines (88a), in its Reason column. */
+const BALANCE_WORDS = {
+  opening: t({
+    id: 'exports.value.openingBalance',
+    defaultMessage: 'Opening balance',
+  }),
+  closing: t({
+    id: 'exports.value.closingBalance',
+    defaultMessage: 'Closing balance',
+  }),
+};
+
+/**
+ * A line of Movements' export (ADR-093, 87a and 88a): a movement, or a
+ * date range's opening or closing balance, its first line and its last.
+ */
+export type MovementLine =
+  | { movement: Movement }
+  | {
+      total: 'opening' | 'closing';
+      /** The range's first day, or its last up to today; null when open. */
+      day: string | null;
+      period: MovementPeriod;
+    };
+
+/**
+ * The export's lines, oldest first (87a): with a range's opening and
+ * closing where the list keeps a balance (88a), the opening first, the
+ * closing last with the range's In and Out beside it.
+ */
+export function movementLines(
+  movements: Movement[],
+  period: MovementPeriod | null,
+  range: Pick<ListMovementsDto, 'from' | 'until'>,
+  timeZone: string,
+): MovementLine[] {
+  if (period?.opening === null || period?.opening === undefined) {
+    return movements.map((movement) => ({ movement }));
+  }
+  const today = todayIn(timeZone);
+  // The range's last day is the one before `until`, which it excludes.
+  const lastDay = range.until
+    ? dayIn(timeZone, new Date(Date.parse(range.until) - 1))
+    : today;
+  return [
+    {
+      total: 'opening',
+      day: range.from ? dayIn(timeZone, range.from) : null,
+      period,
+    },
+    ...movements.map((movement) => ({ movement })),
+    {
+      total: 'closing',
+      day: lastDay < today ? lastDay : today,
+      period,
+    },
+  ];
+}
+
+/**
+ * Movements' export (ADR-057, amended by ADR-093's 87a and 88a): the
+ * screen's columns and words, one value to a column. In, Out and Balance
+ * for one code, In and Out for one code with a reason or for an order,
+ * else Change, as the list reads (cardOf); each day the organization's,
+ * year-month-day (ADR-072); From and To, each place by its whole path,
+ * only for a reader who may see places, else no such columns (ADR-080;
+ * 96a); For, the document, only as the reader may see it (55a).
+ */
+export function movementColumns(options: {
+  card: MovementCard;
+  places: boolean;
+  timeZone: string;
+}): ExportColumn<MovementLine>[] {
+  const { card, places, timeZone } = options;
+  const of =
+    <T>(value: (movement: Movement) => T) =>
+    (line: MovementLine) =>
+      'movement' in line ? value(line.movement) : null;
+  const IN = t({ id: 'exports.column.in', defaultMessage: 'In' });
+  const OUT = t({ id: 'exports.column.out', defaultMessage: 'Out' });
+
+  const quantities: ExportColumn<MovementLine>[] = card.inOut
+    ? [
+        {
+          header: IN,
+          value: (line) =>
+            'movement' in line
+              ? line.movement.quantityIn
+              : line.total === 'closing'
+                ? line.period.quantityIn
+                : null,
+        },
+        {
+          header: OUT,
+          value: (line) =>
+            'movement' in line
+              ? line.movement.quantityOut
+              : line.total === 'closing'
+                ? line.period.quantityOut
+                : null,
+        },
+        ...(card.balance
+          ? [
+              {
+                header: t({
+                  id: 'exports.column.balance',
+                  defaultMessage: 'Balance',
+                }),
+                value: (line: MovementLine) =>
+                  'movement' in line
+                    ? line.movement.balance
+                    : line.period[line.total],
+              },
+            ]
+          : []),
+      ]
+    : [
+        {
+          // As the list's Change reads: what came in, what went out with
+          // its minus, a move within neither, its quantity alone.
+          header: t({ id: 'exports.column.change', defaultMessage: 'Change' }),
+          value: of(
+            (movement) =>
+              movement.quantityIn ??
+              (movement.quantityOut === null
+                ? movement.quantity
+                : `-${movement.quantityOut}`),
+          ),
+        },
+      ];
+
+  return [
+    {
+      header: t({ id: 'exports.column.when', defaultMessage: 'When' }),
+      value: (line) =>
+        'movement' in line
+          ? dayIn(timeZone, line.movement.createdAt)
+          : line.day,
+    },
+    { header: HEADERS.sku, value: of((movement) => movement.currentSku) },
+    {
+      header: HEADERS.item,
+      value: of((movement) =>
+        itemName(movement.productName, movement.variantName),
+      ),
+    },
+    ...quantities,
+    inWords(
+      HEADERS.unit,
+      UNIT_WORDS,
+      of((movement) => movement.unitOfMeasure),
+    ),
+    {
+      header: t({ id: 'exports.column.reason', defaultMessage: 'Reason' }),
+      value: (line, locale) =>
+        'movement' in line
+          ? Object.hasOwn(REASON_WORDS, line.movement.reason)
+            ? translate(
+                REASON_WORDS[line.movement.reason as MovementReason],
+                locale,
+              )
+            : line.movement.reason
+          : translate(BALANCE_WORDS[line.total], locale),
+    },
+    ...(places
+      ? [
+          {
+            header: t({ id: 'exports.column.from', defaultMessage: 'From' }),
+            value: of((movement) =>
+              placeInWords(
+                movement.fromLocationPath,
+                movement.fromLocationName,
+                movement.fromLocationCode,
+              ),
+            ),
+          },
+          {
+            header: t({ id: 'exports.column.to', defaultMessage: 'To' }),
+            value: of((movement) =>
+              placeInWords(
+                movement.toLocationPath,
+                movement.toLocationName,
+                movement.toLocationCode,
+              ),
+            ),
+          },
+        ]
+      : []),
+    { header: HEADERS.lot, value: of((movement) => movement.lotCode) },
+    { header: HEADERS.expiry, value: of((movement) => movement.lotExpiresAt) },
+    {
+      header: t({ id: 'exports.column.for', defaultMessage: 'For' }),
+      value: of((movement) => movement.document?.number ?? null),
+    },
+    {
+      header: t({ id: 'exports.column.by', defaultMessage: 'By' }),
+      value: of((movement) => movement.actorName),
+    },
+  ];
+}
+
+/**
+ * A place as the screen names it (57a): the places above it, its
+ * warehouse first, then its own name with its code, "Main warehouse ›
+ * Zone A › Shelf A2 (A2)"; null for no place.
+ */
+function placeInWords(
+  path: string[],
+  name: string | null,
+  code: string | null,
+): string | null {
+  if (name === null) return null;
+  return [...path, code ? `${name} (${code})` : name].join(' › ');
+}
 
 /** Bought or made, as Reorder's rows and its dialog say it. */
 const SOURCE_WORDS: Record<ReorderSource, Translatable> = {

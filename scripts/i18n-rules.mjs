@@ -381,6 +381,7 @@ const SAME_AS_ENGLISH = [
       "inventory.reason.production",
       "layout.nav.production",
       "roles.template.production",
+      "stock.reason.production",
     ],
   ],
   [

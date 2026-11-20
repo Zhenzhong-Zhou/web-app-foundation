@@ -534,6 +534,18 @@ a second organization.
   A role made with `stock.view` alone sees the movements, no order named.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
+- **MC-319** *(ADR-093, 87a and 88a)* As the demo Owner, export Movements
+  with VITC-100 chosen and a date range that ends today: the file runs
+  oldest first, its columns When, Code, Item, In, Out, Balance, Unit,
+  Reason, From, To, Lot, Expiry, For and By, one value to each; its first
+  line Opening balance with the balance at the range's start, its last
+  Closing balance with the range's In and Out and Stock's On hand for
+  VITC-100; each When a day, year-month-day; each place by its whole
+  path. A move between two places has neither In nor Out. With no item
+  chosen, Change stands for In, Out and Balance, a shipment's with its
+  minus. In 中文 the first and last lines read 期初结存 and 期末结存. As
+  Fatima Haddad (Sales), the same file has no From or To column, and its
+  For names an order but never a run.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
@@ -6993,3 +7005,7 @@ first.
 - 2026-11-20: ADR-093's Movements branch, 96a: Movements names a place
   only to a reader with `locations.view`, each row still signed by its
   places' ids: MC-3319.
+- 2026-11-20: ADR-093's Movements branch, 87a and 88a: Movements' export
+  as a stock card, oldest first in the screen's columns, one code's
+  range opening and closing it, From and To only for a reader who may
+  see places: MC-319 added.
