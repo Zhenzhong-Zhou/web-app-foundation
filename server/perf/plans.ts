@@ -389,6 +389,8 @@ async function buildProbes(
       name: 'movements: one lot',
       run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en'),
     },
+    // Through the from and the to place's indexes, in one bitmap OR
+    // (ADR-051's watch, taken in ADR-093), where it walked the primary key.
     {
       name: 'movements: one shelf',
       run: () => stock.listMovements({ locationId: shelf.locationId }, 'en'),

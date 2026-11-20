@@ -161,7 +161,8 @@ answers:
     (ADR-093: a row per code, searched, Low stock, sorted by On hand and
     by Expires first, its counts, and a code's places; the Lot view, a
     deep page of it, Expiring soon and its counts) and an item's Where it
-    stands, the movement list (first page, a deep page, one product), the
+    stands, the movement list (first page, a deep page, one product, and
+    one shelf, the place of the Lot view's first row: ADR-093), the
     invoice list, and a lot trace;
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item

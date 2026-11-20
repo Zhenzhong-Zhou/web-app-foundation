@@ -575,6 +575,13 @@
       "when": 1794703316082,
       "tag": "0081_product_name_language",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1795156276622,
+      "tag": "0082_movements_by_place",
+      "breakpoints": true
     }
   ]
 }

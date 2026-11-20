@@ -49,6 +49,11 @@ export interface Org {
   orderIds: string[];
   deepOrders: string;
   deepMovements: string;
+  /**
+   * The place of the Lot view's first row, the shelf the plan check reads
+   * Movements for (ADR-051's watch, ADR-093).
+   */
+  shelfId: string;
   /** About a thousand rows into the Lot view. */
   deepLots: string;
   /** The top-level category with the most items beneath it (ADR-092). */
@@ -210,6 +215,7 @@ export async function discover(
     orderIds: orders.ids,
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
+    shelfId: rows[0].locationId,
     deepLots: deep,
     categoryTop: picked.top,
     categoryBottom: picked.bottom,
@@ -340,6 +346,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read(
       'GET /stock/movements?variantId',
       (org) => `/stock/movements?variantId=${org.hot[0].variantId}`,
+    ),
+    // Movements for one shelf, from it or to it (ADR-051's watch; ADR-093,
+    // R16): through the from and the to place's indexes.
+    read(
+      'GET /stock/movements?locationId',
+      (org) => `/stock/movements?locationId=${org.shelfId}`,
     ),
     read('GET /invoices', () => '/invoices'),
     // One invoice drawn as a PDF (ADR-071), each request the next of the

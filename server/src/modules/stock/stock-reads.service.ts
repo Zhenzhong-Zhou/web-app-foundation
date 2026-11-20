@@ -245,7 +245,11 @@ export class StockReadsService {
    * them (ADR-056): read for the page alone, once it is taken. Joined here,
    * they were worked out for every movement a filter matched before the
    * newest were kept, a scan of every variant for one shelf at ADR-051's
-   * large scale.
+   * large scale. The places, the lot and the actor are joined the same way,
+   * to the page's rows once it is taken: one shelf's movements come from the
+   * from and the to place's indexes in no order, so joined first, every one
+   * of them was joined, each organization's lots read whole, before the
+   * newest were kept (ADR-051's watch, ADR-093).
    */
   listMovements(
     query: ListMovementsDto,
@@ -278,7 +282,7 @@ export class StockReadsService {
 
       // One more than asked for, so the presence of a next page is known
       // without a second count query.
-      const rows = await tx
+      const movement = tx
         .select({
           id: stockMovements.id,
           variantId: stockMovements.variantId,
@@ -287,6 +291,27 @@ export class StockReadsService {
           reason: stockMovements.reason,
           reasonDetail: stockMovements.reasonDetail,
           note: stockMovements.note,
+          fromLocationId: stockMovements.fromLocationId,
+          toLocationId: stockMovements.toLocationId,
+          lotId: stockMovements.lotId,
+          actorId: stockMovements.actorId,
+          createdAt: stockMovements.createdAt,
+        })
+        .from(stockMovements)
+        .where(and(...filters))
+        .orderBy(desc(stockMovements.id))
+        .limit(limit + 1)
+        .as('movement');
+
+      const rows = await tx
+        .select({
+          id: movement.id,
+          variantId: movement.variantId,
+          sku: movement.sku,
+          quantity: movement.quantity,
+          reason: movement.reason,
+          reasonDetail: movement.reasonDetail,
+          note: movement.note,
           fromLocationName: from.name,
           toLocationName: to.name,
           lotCode: lots.code,
@@ -297,16 +322,14 @@ export class StockReadsService {
           actorEmail: sql<
             string | null
           >`case when ${users.deletedAt} is null then ${users.email} end`,
-          createdAt: stockMovements.createdAt,
+          createdAt: movement.createdAt,
         })
-        .from(stockMovements)
-        .leftJoin(from, eq(from.id, stockMovements.fromLocationId))
-        .leftJoin(to, eq(to.id, stockMovements.toLocationId))
-        .leftJoin(lots, eq(lots.id, stockMovements.lotId))
-        .leftJoin(users, eq(users.id, stockMovements.actorId))
-        .where(and(...filters))
-        .orderBy(desc(stockMovements.id))
-        .limit(limit + 1);
+        .from(movement)
+        .leftJoin(from, eq(from.id, movement.fromLocationId))
+        .leftJoin(to, eq(to.id, movement.toLocationId))
+        .leftJoin(lots, eq(lots.id, movement.lotId))
+        .leftJoin(users, eq(users.id, movement.actorId))
+        .orderBy(desc(movement.id));
 
       const page = pageOf(rows, limit);
       const names = await namesOfItems(
