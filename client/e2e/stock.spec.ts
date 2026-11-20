@@ -474,6 +474,50 @@ test('Stock, a lot’s Actions › Movements: Movements, one lot, a chip; Back, 
   await expect(itemLinks(page).first()).toBeFocused();
 });
 
+// Review 4: from the lot to its shelf by chips, each × clearing its own
+// filter, the shelf's chip the one left.
+test('Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page, '/inventory?search=E2E-VITC');
+
+  await placesOf(page, 'E2E Vitamin C').click();
+  await lotsAt(page, scene.shelfA.name).click();
+  await page
+    .getByRole('button', {
+      name: `Actions for lot VC-LATE at ${scene.shelfA.name}`,
+    })
+    .click();
+  await page.getByRole('menuitem', { name: 'Movements' }).click();
+  const chip = (name: RegExp) => page.getByRole('button', { name });
+  await expect(chip(/^Remove filter: Item: E2E Vitamin C/)).toBeVisible();
+  await expect(chip(/^Remove filter: Lot: VC-LATE$/)).toBeVisible();
+
+  await page.getByRole('combobox', { name: 'Location' }).click();
+  await page
+    .getByRole('option', { name: scene.shelfA.name, exact: true })
+    .and(page.locator('[data-value]'))
+    .click();
+  await expect(
+    chip(new RegExp(`^Remove filter: Location: ${scene.shelfA.name}`)),
+  ).toBeVisible();
+
+  await chip(/^Remove filter: Lot:/).click();
+  await expect(page).not.toHaveURL(/lotId=/);
+  await chip(/^Remove filter: Item:/).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/movements\\?locationId=${scene.shelfA.id}$`),
+  );
+  await expect(chip(/^Remove filter: /)).toHaveCount(1);
+  await expect(
+    chip(new RegExp(`^Remove filter: Location: ${scene.shelfA.name}`)),
+  ).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Item' })).toBeVisible();
+});
+
 // ---------------------------------------------------------------------------
 // Found stock (#628), the amendment's table row by row
 // ---------------------------------------------------------------------------

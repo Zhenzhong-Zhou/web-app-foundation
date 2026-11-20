@@ -635,7 +635,7 @@ a second organization.
   调整：计数错误, and the first column 时间（Vancouver 时间）. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3 and 11)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4 and 11)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -686,7 +686,11 @@ a second organization.
   counts every reason. Clear Reason to see it." with Clear Reason, which
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves
-  Movements. With nothing matching, the line names the filters on, the
+  Movements. Every filter set is a chip under the row, "Item: …",
+  "Location: …", "Lot: …", "Order: …", "Reason: shipped" and "When:
+  …", at 390 px too: from a lot's Actions › Movements on Stock, choose
+  its shelf under Location, then × Lot and × Item: the shelf's
+  movements alone, its chip the one left. With nothing matching, the line names the filters on, the
   days in words: a When with From alone reads "from" and its day, To
   alone "until" and its day, never a dash at either end; a
   lot's Movements with a When range it has no movement in keeps "Lot:"

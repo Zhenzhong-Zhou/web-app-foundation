@@ -303,6 +303,42 @@ describe('MovementsPage', () => {
     expect((until - from) / 86_400_000).toBeCloseTo(31, 0);
   });
 
+  // Review 4: a chip for every filter that is set, each × clearing its
+  // own key alone.
+  it('shows a chip for every filter set, each × clearing its own key', async () => {
+    const user = userEvent.setup();
+    answer([
+      movement({
+        variantId: ITEM,
+        lotId: LOT,
+        lotCode: 'VC-0302',
+        document: { kind: 'order', id: ORDER, number: 'PO-000009' },
+      }),
+    ]);
+    renderAt(
+      `/movements?variantId=${ITEM}&locationId=${SHELF}&lotId=${LOT}&orderId=${ORDER}&reason=shipment&from=2026-10-01&until=2026-10-31`,
+    );
+
+    const chip = (name: RegExp) => screen.getByRole('button', { name });
+    await screen.findByRole('button', { name: 'Remove filter: Lot: VC-0302' });
+    await waitFor(() =>
+      expect(chip(/^Remove filter: Location: Shelf A2/)).toBeVisible(),
+    );
+    expect(chip(/^Remove filter: Item: 维生素 D/)).toBeVisible();
+    expect(chip(/^Remove filter: Reason: shipped$/)).toBeVisible();
+
+    const keys = () => [
+      ...new URLSearchParams(addressOf().textContent ?? '').keys(),
+    ];
+    await user.click(chip(/^Remove filter: Item:/));
+    expect(keys()).not.toContain('variantId');
+    expect(keys()).toContain('lotId');
+    await user.click(chip(/^Remove filter: Location:/));
+    expect(keys()).not.toContain('locationId');
+    await user.click(chip(/^Remove filter: Reason:/));
+    expect(keys().sort()).toEqual(['from', 'lotId', 'orderId', 'until']);
+  });
+
   it('reads a place a reader may not see as Everywhere, never asking it', async () => {
     const asked = answer([MOVEMENT]);
     renderAt(`/movements?locationId=${SHELF}`, SALES);

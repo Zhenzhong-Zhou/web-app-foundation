@@ -213,15 +213,19 @@ file is kept is in the [README](README.md).
 - **Movements' filters are in the address, each by its id,** never a
   code, which can change: the item, place, lot and order, the reason,
   and the days from and until, `until` the last day included, in the
-  organization's days. A reload, a link and Back keep them; a lot and an
-  order show as chips, each removable, each by its code or number though
-  no movement listed carries it; an item the Item field does not list,
+  organization's days. A reload, a link and Back keep them; every filter
+  that is set shows as a chip under the row, on a phone too: the item,
+  the place, the lot, the order, the reason and the days, each chip's ×
+  clearing its own filter alone; a lot and an order each by its code or
+  number though no movement listed carries it; an item the Item field does not list,
   an archived code, is named there from its movements, and kept once a
   filter leaves none; Show all movements clears every one in a single
   write and keeps the sort. On a phone the Filters sheet's Clear clears
   the sheet's own fields alone, the lot's and the order's chips kept.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/inventory/movements-page.test.tsx) "asks the list by the address’s keys, the lot and the order as chips" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "shows a chip for every filter set, each × clearing its own key" ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a lot no row carries, on its chip and in what no result names" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names an order no row carries, on its chip and in what no result names" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a code the picker does not list from its rows, and keeps it when none match" ·

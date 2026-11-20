@@ -470,21 +470,37 @@ export function MovementsPage() {
         )}
       </FilterRow>
 
-      {/* What a way in narrowed that no field shows, each removable:
-          a lot's, an order's (R24); and the days When chose, which a
-          phone's sheet hides (review 1). */}
+      {/* Every filter that is set, each removable by its own ×, on a
+          phone too, where the sheet hides the fields (review 4): the
+          item, the place, a lot's and an order's, which no field shows
+          (R24), the reason, and the days When chose (review 1). */}
       <FilterChips
         chips={[
-          days !== null && {
-            id: 'when',
+          variantId !== '' && {
+            id: 'item',
             label: intl.formatMessage(
               {
-                id: 'inventory.movements.whenChip',
-                defaultMessage: 'When: {days}',
+                id: 'inventory.movements.itemChip',
+                defaultMessage: 'Item: {name}',
               },
-              { days },
+              {
+                name: variant
+                  ? itemName(variant.productName, variant.variantName)
+                  : '…',
+              },
             ),
-            onRemove: () => setFilters({ from: undefined, until: undefined }),
+            onRemove: () => setFilters({ variantId: '' }),
+          },
+          locationId !== '' && {
+            id: 'place',
+            label: intl.formatMessage(
+              {
+                id: 'inventory.movements.placeChip',
+                defaultMessage: 'Location: {place}',
+              },
+              { place: place ? nameAndCode(place.name, place.code) : '…' },
+            ),
+            onRemove: () => setFilters({ locationId: '' }),
           },
           lotId !== '' && {
             id: 'lot',
@@ -507,6 +523,28 @@ export function MovementsPage() {
               { number: orderNumber ?? '…' },
             ),
             onRemove: () => setFilters({ orderId: '' }),
+          },
+          reason !== '' && {
+            id: 'reason',
+            label: intl.formatMessage(
+              {
+                id: 'inventory.movements.reasonChip',
+                defaultMessage: 'Reason: {reason}',
+              },
+              { reason: reasonLabel(reason, intl) },
+            ),
+            onRemove: () => setFilters({ reason: '' }),
+          },
+          days !== null && {
+            id: 'when',
+            label: intl.formatMessage(
+              {
+                id: 'inventory.movements.whenChip',
+                defaultMessage: 'When: {days}',
+              },
+              { days },
+            ),
+            onRemove: () => setFilters({ from: undefined, until: undefined }),
           },
         ]}
       />
