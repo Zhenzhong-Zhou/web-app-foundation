@@ -1256,10 +1256,12 @@ names.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
   days. Package by package: for each one `npm outdated` lists in range,
-  `npm view <package> time --json` gives when its Wanted version was
-  published; take it with `npm update <package>` only when that was at
-  least 7 × 24 hours ago, and say on which day each of the rest comes of
-  age. Never move back a version already locked: the rule keeps new
+  `npm view <package> time --json` gives every version's publish time;
+  take the newest in range published at least 7 × 24 hours ago, the
+  Wanted version when it is that old, keeping `package.json`'s range as
+  it is, and say on which day each of the rest comes of age. A package
+  that publishes daily never lets its Wanted version come of age, so its
+  newest version of age is the one to take. Never move back a version already locked: the rule keeps new
   releases out, it does not undo what is installed (#196's steps 1 and
   8). A package an update pulls in under another, under 7 days old, stays
   at its locked version when every range asking for it still accepts that
