@@ -1092,8 +1092,17 @@ function FoundLine({
           defaultMessage: 'Found some where it has never been?',
         })}
       </Typography>
+      {/* Its name carries the code, since every opened code ends with
+          one (105a). */}
       <Button
         variant="text"
+        aria-label={intl.formatMessage(
+          {
+            id: 'inventory.stock.countInCode',
+            defaultMessage: 'Count it in {code}…',
+          },
+          { code: row.sku },
+        )}
         onClick={() =>
           handlers.onCountIn({
             variantId: row.variantId,

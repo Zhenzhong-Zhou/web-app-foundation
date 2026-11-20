@@ -578,7 +578,8 @@ a second organization.
   no order or run named under For.
 - **MC-322** *(ADR-093, R26; #628)* Stock found where it has never been,
   as the demo Owner. Open VITC-100's places: they end with "Found some
-  where it has never been?" and Count it in…, which opens Correct the
+  where it has never been?" and Count it in…, which a screen reader
+  names "Count it in VITC-100…" (105a), and which opens Correct the
   count with Location and Which lot, neither lot chosen; Escape returns
   focus to Count it in…. Choose a place VITC-100 has never been, Main's
   Shelf, and Save with no lot: "Choose one of its lots, or a new lot."

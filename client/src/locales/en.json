@@ -869,6 +869,7 @@
   "inventory.stock.choosePlaceTo": "{mode, select, transfer {Choose the place to move} ship {Choose the place to ship} sample {Choose the place to send} other {Choose the place to correct}}",
   "inventory.stock.coming": "Coming",
   "inventory.stock.countIn": "Count it in…",
+  "inventory.stock.countInCode": "Count it in {code}…",
   "inventory.stock.emptiedOn": "Emptied {day}",
   "inventory.stock.expiresFirst": "Expires first",
   "inventory.stock.expiresFirstHere": "Expires first here",

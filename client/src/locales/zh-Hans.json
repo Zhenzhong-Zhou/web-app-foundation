@@ -869,6 +869,7 @@
   "inventory.stock.choosePlaceTo": "{mode, select, transfer {请选择要移库的库位} ship {请选择要出库的库位} sample {请选择要寄送的库位} other {请选择要更正的库位}}",
   "inventory.stock.coming": "在途",
   "inventory.stock.countIn": "盘盈入库…",
+  "inventory.stock.countInCode": "盘盈入库 {code}…",
   "inventory.stock.emptiedOn": "{day} 已清空",
   "inventory.stock.expiresFirst": "最早到期",
   "inventory.stock.expiresFirstHere": "此处最早到期",

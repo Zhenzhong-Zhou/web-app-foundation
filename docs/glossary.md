@@ -132,7 +132,7 @@ as the catalogues word it.
 | Backordered | En rupture | 缺货待发 | |
 | Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as Usable's opposite. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
-| Count it in… | Ajouter au compte… | 盘盈入库… | Correct the count for stock found where the item has never been, at a place or in a lot it never had; its reason found, 盘盈 (ADR-093, #628). |
+| Count it in… | Ajouter au compte… | 盘盈入库… | Correct the count for stock found where the item has never been, at a place or in a lot it never had; its reason found, 盘盈 (ADR-093, #628). Its name for a screen reader carries the code, "Count it in VITC-100…", « Ajouter VITC-100 au compte… », 盘盈入库 VITC-100… (105a). |
 | Which lot / One of its lots / A new lot | Quel lot / Un de ses lots / Un nouveau lot | 哪个批次 / 已有批次 / 新批次 | Count it in's choice of lot, neither chosen at first: one the item has, or one made with the count. |
 | Ship out | Sortie de stock | 出库 | Inventory's action that sends stock out with no order; an order's Ship stays Expédier / 发货. |
 | Received / Shipped / Moved / Corrected / Made / Used in a run / Sampled / Returned | Reçu / Expédié / Déplacé / Corrigé / Fabriqué / Utilisé en fabrication / Envoyé en échantillon / Retourné | 收货 / 发货 / 移库 / 调整 / 生产 / 消耗 / 样品 / 退货 | A movement's reason in the boards' words, the same in Movements' Reason column, its filter and its export, and Help (ADR-093, 100a): a correction's detail after a colon, Corrected: found, Corrigé : trouvé, 调整：盘盈. French agrees with Motif. Chinese keeps the reasons' words below and Receipt's and Shipment's above. The audit log keeps its own words, the rows below, until #649 merges the two. |

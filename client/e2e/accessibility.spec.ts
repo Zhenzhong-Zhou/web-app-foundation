@@ -390,7 +390,7 @@ const SCREENS: Screen[] = [
     path: () => '/inventory',
     open: async (page) => {
       await page.getByRole('button', { name: /^1 place: show where / }).click();
-      await page.getByRole('button', { name: 'Count it in…' }).click();
+      await page.getByRole('button', { name: /^Count it in .+…$/ }).click();
     },
     ready: (page) =>
       page

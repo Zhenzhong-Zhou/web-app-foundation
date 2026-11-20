@@ -534,7 +534,7 @@ async function foundScene(page: Page, api: APIRequestContext) {
 
 /** Count it in…'s dialog filled, but for Which lot. */
 async function countIn(page: Page, place: string) {
-  await page.getByRole('button', { name: 'Count it in…' }).click();
+  await page.getByRole('button', { name: 'Count it in E2E-VITC…' }).click();
   const dialog = page.getByRole('dialog', { name: 'Correct the count' });
   await dialog.getByRole('combobox', { name: 'Location' }).click();
   await page.getByRole('option', { name: place }).click();
@@ -554,7 +554,7 @@ test('Stock, Correct the count’s lots, Count it in…: Correct the count with 
   await expect(
     page.getByText('Found some where it has never been?'),
   ).toBeVisible();
-  const button = page.getByRole('button', { name: 'Count it in…' });
+  const button = page.getByRole('button', { name: 'Count it in E2E-VITC…' });
   await button.click();
 
   const dialog = page.getByRole('dialog', { name: 'Correct the count' });

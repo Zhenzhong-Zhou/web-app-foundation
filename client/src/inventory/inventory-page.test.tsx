@@ -803,7 +803,12 @@ describe('InventoryPage', () => {
       expect(
         await screen.findByText('Found some where it has never been?'),
       ).toBeVisible();
-      const countIn = screen.getByRole('button', { name: 'Count it in…' });
+      // Its name carries the code it counts in, read apart from the
+      // code's row (105a); it shows "Count it in…".
+      const countIn = screen.getByRole('button', {
+        name: 'Count it in VITD-60…',
+      });
+      expect(countIn).toHaveTextContent(/^Count it in…$/);
       await user.click(countIn);
 
       const dialog = await screen.findByRole('dialog', {
@@ -821,7 +826,7 @@ describe('InventoryPage', () => {
       await user.keyboard('{Escape}');
       expect(dialog).not.toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: 'Count it in…' }),
+        screen.getByRole('button', { name: 'Count it in VITD-60…' }),
       ).toHaveFocus();
     });
 
@@ -841,7 +846,7 @@ describe('InventoryPage', () => {
         }),
       ).toBeVisible();
       expect(
-        screen.queryByRole('button', { name: 'Count it in…' }),
+        screen.queryByRole('button', { name: /^Count it in/ }),
       ).not.toBeInTheDocument();
     });
   });

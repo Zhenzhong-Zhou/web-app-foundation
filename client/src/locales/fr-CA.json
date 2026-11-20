@@ -869,6 +869,7 @@
   "inventory.stock.choosePlaceTo": "{mode, select, transfer {Choisissez l’emplacement d’où déplacer} ship {Choisissez l’emplacement d’où sortir} sample {Choisissez l’emplacement d’où envoyer} other {Choisissez l’emplacement à corriger}}",
   "inventory.stock.coming": "À venir",
   "inventory.stock.countIn": "Ajouter au compte…",
+  "inventory.stock.countInCode": "Ajouter {code} au compte…",
   "inventory.stock.emptiedOn": "Vidé le {day}",
   "inventory.stock.expiresFirst": "Expire en premier",
   "inventory.stock.expiresFirstHere": "Expire en premier ici",
