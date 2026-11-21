@@ -152,8 +152,8 @@ describe('MovementsPage', () => {
   });
 
   // 100a; review 26: a reason in the boards' words, a correction's
-  // detail after a colon, as the export writes it; the cell capitalizes
-  // its first letter, "Corrected: found".
+  // detail after a colon, as the export writes it: the reason with its
+  // capital, the detail inside the sentence in lower case (136a).
   it('says a reason in the boards’ words, a correction’s detail after it', async () => {
     const row = await rowFor(
       movement({
@@ -163,7 +163,25 @@ describe('MovementsPage', () => {
       }),
     );
 
-    expect(within(row).getByText('corrected: found')).toBeVisible();
+    expect(within(row).getByText('Corrected: found')).toBeVisible();
+  });
+
+  it('says a reason with its capital in French, its detail in lower case', async () => {
+    localStorage.setItem('language', 'fr-CA');
+    try {
+      answer([movement({ reason: 'adjustment', reasonDetail: 'miscount' })]);
+      renderAt('/movements');
+      // The French catalogue, then the row in its words.
+      expect(
+        await screen.findByText(
+          /^Corrigé\u00A0: erreur de comptage$/,
+          { normalizer: (text) => text },
+          { timeout: 3000 },
+        ),
+      ).toBeVisible();
+    } finally {
+      localStorage.removeItem('language');
+    }
   });
 
   it('offers each reason in the boards’ words', async () => {
@@ -180,15 +198,21 @@ describe('MovementsPage', () => {
         .map((option) => option.textContent),
     ).toEqual([
       'Any reason',
-      'received',
-      'shipped',
-      'moved',
-      'corrected',
-      'made',
-      'used in a run',
-      'sampled',
-      'returned',
+      'Received',
+      'Shipped',
+      'Moved',
+      'Corrected',
+      'Made',
+      'Used in a run',
+      'Sampled',
+      'Returned',
     ]);
+
+    // The field shows the one chosen with its capital too (136a).
+    await userEvent.click(screen.getByRole('option', { name: 'Shipped' }));
+    expect(screen.getByRole('combobox', { name: 'Reason' })).toHaveTextContent(
+      'Shipped',
+    );
   });
 
   it('links the document it was for', async () => {
@@ -332,7 +356,7 @@ describe('MovementsPage', () => {
       expect(chip(/^Remove filter: Location: Shelf A2/)).toBeVisible(),
     );
     expect(chip(/^Remove filter: Item: 维生素 D/)).toBeVisible();
-    expect(chip(/^Remove filter: Reason: shipped$/)).toBeVisible();
+    expect(chip(/^Remove filter: Reason: Shipped$/)).toBeVisible();
 
     const keys = () => [
       ...new URLSearchParams(addressOf().textContent ?? '').keys(),
@@ -991,7 +1015,7 @@ describe('MovementsPage', () => {
     ).toBeVisible();
 
     await userEvent.click(screen.getByRole('combobox', { name: 'Reason' }));
-    await userEvent.click(screen.getByRole('option', { name: 'sampled' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Sampled' }));
 
     expect(await screen.findByText(/^No movements match/)).toHaveTextContent(
       'No movements match: Vitamin C and sampled.',

@@ -1262,6 +1262,14 @@ describe('Movements (e2e)', () => {
       ['From', 'supplier', 'counted in', 'SHELF (SHELF)'],
       ['To', 'SHELF (SHELF)', 'SHELF (SHELF)', 'counted out'],
     ]);
+    // Each reason with its capital, its detail after it in lower case,
+    // in French too (136a).
+    expect((await columns('fr-CA'))[1]).toEqual([
+      'Motif',
+      'Reçu',
+      'Corrigé\u00A0: trouvé',
+      'Corrigé\u00A0: endommagé',
+    ]);
     expect((await columns('zh-Hans')).slice(1)).toEqual([
       ['原因', '收货', '调整：盘盈', '调整：损坏'],
       ['从', '供应商', '盘点计入', 'SHELF (SHELF)'],

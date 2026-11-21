@@ -276,17 +276,24 @@ file is kept is in the [README](README.md).
   where that differs, the change with its unit, the reason, the lot with
   its expiry, the document it was for and who did it, the same cells on
   Movements, the item's Latest movements and an order's Receipts. The
-  reason reads in the same words in the row, the Reason filter and the
-  export: Received, Shipped, Moved, Corrected, Made, Used in a run,
-  Sampled and Returned, a correction's detail after a colon, "Corrected:
-  found".
+  reason reads in the same words in the row, the Reason filter and its
+  chip, the export and the Activity log, each with its capital where it
+  stands alone (136a): Received, Shipped, Moved, Corrected, Made, Used in
+  a run, Sampled and Returned, never the Activity log's old Receipt or
+  Shipment; a correction's detail, Miscount, Damaged, Expired, Lost or
+  Found in Correct the count's Why, after a colon in lower case,
+  "Corrected: found", as a reason is inside the no-result line.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names the item first, its code and type grey under it, and reads the change with its unit" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "keeps a changed code’s old one under today’s" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says a reason in the boards’ words, a correction’s detail after it" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "offers each reason in the boards’ words" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a reason with its capital in French, its detail in lower case" ·
+  [test](../../client/src/inventory/move-stock-dialog.test.tsx) "offers each Why with its capital" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
+  [test](../../server/src/core/audit/audit-words.spec.ts) "reads the reason in Movements’ words, in each language" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
   MC-320
 - **Show 25 more adds the next movements below, and failing keeps the
@@ -314,7 +321,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
-  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › Shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither once across In and Out, Balance as it was" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither on its card in its row’s words" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says to choose one item while every item is listed at a place" ·

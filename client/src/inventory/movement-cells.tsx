@@ -20,6 +20,7 @@ import {
   type MovementColumns,
 } from './describe-movement';
 import {
+  inSentence,
   MOVEMENT_HEADINGS,
   reasonDetailLabel,
   reasonLabel,
@@ -282,15 +283,13 @@ export function Figure({
     : displayWithUnit(quantity, movement.unitOfMeasure, intl);
 }
 
-/** "Adjustment: miscount", the note a correction must carry under it. */
+/** "Corrected: miscount", the note a correction must carry under it. */
 export function MovementReason({ movement }: { movement: Movement }) {
   const intl = useIntl();
 
   return (
     <>
-      <Box sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
-        {reasonWords(movement, intl)}
-      </Box>
+      <Box>{reasonWords(movement, intl)}</Box>
       {/* Required on an adjustment, because a person asserting the
           system is wrong has to say what they found (ADR-023). This is
           where it gets read. */}
@@ -312,7 +311,13 @@ function reasonWords(movement: Movement, intl: IntlShape): string {
           id: 'inventory.movements.reasonDetail',
           defaultMessage: '{reason}: {detail}',
         },
-        { reason, detail: reasonDetailLabel(movement.reasonDetail, intl) },
+        {
+          reason,
+          detail: inSentence(
+            reasonDetailLabel(movement.reasonDetail, intl),
+            intl,
+          ),
+        },
       )
     : reason;
 }

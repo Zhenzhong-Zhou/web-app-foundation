@@ -166,6 +166,34 @@ describe('wordEntry, a filter on Low or Out', () => {
   });
 });
 
+/**
+ * A movement's reason in Movements' own words, as its export names it,
+ * each with its capital, never the older Receipt or Shipment (136a).
+ */
+describe('wordEntry, a movement’s reason', () => {
+  it('reads the reason in Movements’ words, in each language', () => {
+    const reason = (value: string, locale: Locale) =>
+      wordEntry(
+        {
+          action: AUDIT_ACTIONS.STOCK_MOVEMENT_RECORDED,
+          resourceType: 'stock_movement',
+          payload: { reason: value },
+        },
+        { locale, timeZone: 'UTC', readerId: null },
+      ).details.map((detail) => [detail.field, detail.value?.text]);
+
+    expect(reason('receipt', 'en')).toEqual([['Reason', 'Received']]);
+    expect(reason('shipment', 'en')).toEqual([['Reason', 'Shipped']]);
+    expect(reason('adjustment', 'en')).toEqual([['Reason', 'Corrected']]);
+    expect(reason('consumption', 'en')).toEqual([['Reason', 'Used in a run']]);
+    expect(reason('receipt', 'fr-CA')).toEqual([['Motif', 'Reçu']]);
+    expect(reason('sample', 'fr-CA')).toEqual([
+      ['Motif', 'Envoyé en échantillon'],
+    ]);
+    expect(reason('adjustment', 'zh-Hans')).toEqual([['原因', '调整']]);
+  });
+});
+
 describe('wordEntry, a day', () => {
   it('reads a filter on moments as the organization’s day', () => {
     const { details } = wordEntry(

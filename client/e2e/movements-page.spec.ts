@@ -236,7 +236,7 @@ test('Movements, every filter in the address: a reload keeps each, and the rows'
     scene.shelfA.name,
   );
   await expect(page.getByRole('combobox', { name: 'Reason' })).toHaveText(
-    'received',
+    'Received',
   );
   // When's days, in Choose dates…'s two fields (review 1).
   await page.getByRole('combobox', { name: 'When' }).click();
@@ -354,7 +354,7 @@ test('Movements, When › Last month, nothing moved then: the no-result line wit
   ).toHaveCount(2);
 });
 
-test('Movements, one item, Reason › shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason', async ({
+test('Movements, one item, Reason › Shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason', async ({
   page,
   freshOrg,
 }) => {
@@ -367,7 +367,7 @@ test('Movements, one item, Reason › shipped: Balance, Opening and Closing go; 
   await expect(head(page, 'Balance')).toBeVisible();
 
   await page.getByRole('combobox', { name: 'Reason' }).click();
-  await page.getByRole('option', { name: 'shipped' }).click();
+  await page.getByRole('option', { name: 'Shipped' }).click();
 
   await expect(page).toHaveURL(/[?&]reason=shipment(&|$)/);
   await expect(rows(page)).toHaveCount(1);
@@ -563,7 +563,7 @@ test('Movements, too wide beside Help at 1366 px: the name pinned, When under it
 // The log read whole: a reason, and a move found from either end
 // ---------------------------------------------------------------------------
 
-test('Movements, Reason › moved: the move alone, From → to naming each end on a line of its own, its change as its whole cell', async ({
+test('Movements, Reason › Moved: the move alone, From → to naming each end on a line of its own, its change as its whole cell', async ({
   page,
   freshOrg,
 }) => {
@@ -574,7 +574,7 @@ test('Movements, Reason › moved: the move alone, From → to naming each end o
   await expect(rows(page)).toHaveCount(7);
 
   await page.getByRole('combobox', { name: 'Reason' }).click();
-  await page.getByRole('option', { name: 'moved' }).click();
+  await page.getByRole('option', { name: 'Moved' }).click();
 
   /**
    * Direction is which location is set, not a column (ADR-023): a

@@ -43,13 +43,13 @@ Un mouvement ne peut pas être modifié. Pour rétablir une quantité, utilisez 
 
 ## Les mots que vous verrez {#words}
 
-- **reçu** : du stock qui arrive, sur une commande ou sans commande.
-- **expédié** : du stock qui part, pour un client ou sans commande.
-- **déplacé** : du stock passé d’un emplacement à un autre.
-- **corrigé** : un compte rectifié, ou du stock trouvé là où il n’avait jamais été, sa cause à la suite, comme dans « Corrigé : trouvé ».
-- **fabriqué** et **utilisé en fabrication** : ce qu’un ordre de fabrication a produit, et ce qu’il a utilisé.
-- **envoyé en échantillon** : du stock donné.
-- **retourné** : du stock renvoyé par un client.
+- **Reçu** : du stock qui arrive, sur une commande ou sans commande.
+- **Expédié** : du stock qui part, pour un client ou sans commande.
+- **Déplacé** : du stock passé d’un emplacement à un autre.
+- **Corrigé** : un compte rectifié, ou du stock trouvé là où il n’avait jamais été, sa cause à la suite, comme dans « Corrigé : trouvé ».
+- **Fabriqué** et **Utilisé en fabrication** : ce qu’un ordre de fabrication a produit, et ce qu’il a utilisé.
+- **Envoyé en échantillon** : du stock donné.
+- **Retourné** : du stock renvoyé par un client.
 - **Utilisateur supprimé** : une personne dont le compte a été supprimé. Ses mouvements restent.
 
 Voir aussi [Inventaire](/inventory) et [Tracer un lot](/lots).

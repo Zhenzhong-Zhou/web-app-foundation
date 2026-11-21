@@ -1,13 +1,10 @@
 import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import type { Locale } from '../../common/locales';
+import { MOVEMENT_REASON_WORDS } from '../../common/movement-reasons';
 import { dayIn, momentIn, todayIn, zonePlaceIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
-import type {
-  MovementReason,
-  ReorderRule,
-  ReorderSource,
-} from '../../database/schema';
+import type { ReorderRule, ReorderSource } from '../../database/schema';
 import type { Translatable } from '../../i18n/translate';
 import { t, translate } from '../../i18n/translate';
 import type { ListMovementsDto } from './dto/list-movements.dto';
@@ -148,28 +145,6 @@ export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   asQuantity(HEADERS.quantity, (row) => row.quantity),
   unitInWords(),
 ];
-
-/**
- * Why stock moved, in the words Movements' Reason column and its filter
- * use, in the reader's language (ADR-093, 100a). The audit log keeps its
- * own (#649).
- */
-const REASON_WORDS: Record<MovementReason, Translatable> = {
-  receipt: t({ id: 'stock.reason.receipt', defaultMessage: 'Received' }),
-  shipment: t({ id: 'stock.reason.shipment', defaultMessage: 'Shipped' }),
-  transfer: t({ id: 'stock.reason.transfer', defaultMessage: 'Moved' }),
-  adjustment: t({
-    id: 'stock.reason.adjustment',
-    defaultMessage: 'Corrected',
-  }),
-  production: t({ id: 'stock.reason.production', defaultMessage: 'Made' }),
-  consumption: t({
-    id: 'stock.reason.consumption',
-    defaultMessage: 'Used in a run',
-  }),
-  sample: t({ id: 'stock.reason.sample', defaultMessage: 'Sampled' }),
-  return: t({ id: 'stock.reason.return', defaultMessage: 'Returned' }),
-};
 
 /**
  * What a correction says it was, chosen when the count is corrected, as
@@ -341,7 +316,7 @@ export function movementColumns(options: {
   // with no word written as recorded (inWords).
   const reasonOf = inWords(
     REASON,
-    REASON_WORDS,
+    MOVEMENT_REASON_WORDS,
     of((movement) => movement.reason),
   );
   const detailOf = inWords(

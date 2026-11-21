@@ -79,6 +79,7 @@ import {
 } from './movement-cells';
 import { MovementFinder } from './movement-finder';
 import {
+  inSentence,
   MOVEMENT_HEADINGS,
   MOVEMENT_REASONS,
   reasonLabel,
@@ -382,11 +383,7 @@ export function MovementsPage() {
       sx={{ minWidth: rem(180) }}
     >
       {MOVEMENT_REASONS.map((value) => (
-        <MenuItem
-          key={value}
-          value={value}
-          sx={{ '&::first-letter': { textTransform: 'uppercase' } }}
-        >
+        <MenuItem key={value} value={value}>
           {reasonLabel(value, intl)}
         </MenuItem>
       ))}
@@ -443,7 +440,7 @@ export function MovementsPage() {
     place && nameAndCode(place.name, place.code),
     lotId && lotCode,
     orderId && orderNumber,
-    reason && reasonLabel(reason, intl),
+    reason && inSentence(reasonLabel(reason, intl), intl),
     days,
   ].filter((name): name is string => !!name);
 

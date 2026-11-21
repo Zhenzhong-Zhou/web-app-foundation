@@ -712,7 +712,7 @@ a second organization.
   brings them back. Press When: oldest first, `?sort=when&order=asc`.
   Show all movements clears every filter at once, and Back then leaves
   Movements. Every filter set is a chip under the row, "Item: …",
-  "Location: …", "Lot: …", "Order: …", "Reason: shipped" and "When:
+  "Location: …", "Lot: …", "Order: …", "Reason: Shipped" and "When:
   …", at 390 px too: from a lot's Actions › Movements on Stock, choose
   its shelf under Location, then × Lot and × Item: the shelf's
   movements alone, its chip the one left. With nothing matching, the line names the filters on, the
@@ -2907,7 +2907,10 @@ Signed in as the demo Owner the seed prints.
   by code, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
   language; a price set on a price list, its unit price and then the item
-  by code, as FOCUS-60CT, and the same when an item is taken off a list. The order's number opens the order, and the role opens
+  by code, as FOCUS-60CT, and the same when an item is taken off a list;
+  a movement recorded on Inventory, its Reason in Movements' words,
+  Received, Shipped or Corrected, never Receipt or Shipment, Reçu and
+  Corrigé in Français (136a). The order's number opens the order, and the role opens
   Members. The last column, where a change came from, is headed 来源 in
   中文 and Provenance in Français, words of its own rather than the date
   filter's 起始 and Depuis.
@@ -7387,3 +7390,9 @@ first.
   header in 中文 names the city in Chinese, 时间（温哥华时间）, by ICU's
   short generic name; English and French keep Vancouver: MC-319
   extended.
+- 2026-11-20: ADR-093's Movements branch, 136a: a reason and a
+  correction's detail start with a capital wherever they stand alone,
+  the Reason filter and its chip, the Why column, the item's Latest
+  movements and Correct the count's Why, in English and Français, and
+  the Audit log names a movement's reason in Movements' words: MC-320
+  and MC-2901 extended.

@@ -529,6 +529,13 @@ describe('Where it stands (ADR-093, R8)', () => {
     const [, newest, oldest] = within(table).getAllByRole('row');
     expect(within(newest).getAllByRole('cell')[3]).toHaveTextContent('82 each');
     expect(within(oldest).getAllByRole('cell')[1]).toHaveTextContent('86 each');
+    // Each reason with its capital, as Movements says it (136a).
+    expect(within(newest).getAllByRole('cell')[4]).toHaveTextContent(
+      /^Shipped/,
+    );
+    expect(within(oldest).getAllByRole('cell')[4]).toHaveTextContent(
+      /^Received/,
+    );
 
     // On this month, to today, so its stock card shows at once (review 1).
     const today = organizationToday();
