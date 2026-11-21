@@ -60,6 +60,15 @@ export function FilterChips({ chips }: { chips: (NarrowedChip | false)[] }) {
             )}
             onClick={remove}
             onDelete={remove}
+            // Its words wrap where the row is too narrow for them, rather
+            // than end in "…", as an expiry chip's do (WCAG 1.4.10): a tap
+            // removes the chip, so no tooltip could show the rest. One line
+            // keeps MUI's 32 px.
+            sx={{
+              height: 'auto',
+              minHeight: 32,
+              '& .MuiChip-label': { whiteSpace: 'normal' },
+            }}
           />
         );
       })}

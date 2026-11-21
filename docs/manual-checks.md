@@ -721,7 +721,10 @@ a second organization.
   "Location: …", "Lot: …", "Order: …", "Reason: Shipped" and "When:
   …", at 390 px too: from a lot's Actions › Movements on Stock, choose
   its shelf under Location, then × Lot and × Item: the shelf's
-  movements alone, its chip the one left. With nothing matching, the line names the filters on, the
+  movements alone, its chip the one left. At 320 px, in Français and
+  at Larger text, VITC-100's chip « Article : … · VITC-100 » wraps onto
+  a second line, never ending in "…", its × beside it, and a chip of
+  one line keeps its height. With nothing matching, the line names the filters on, the
   days in words: a When with From alone reads "from" and its day, To
   alone "until" and its day, never a dash at either end; a
   lot's Movements with a When range it has no movement in keeps "Lot:"
