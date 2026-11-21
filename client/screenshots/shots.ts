@@ -290,4 +290,21 @@ export const SHOTS: Shot[] = [
     path: (targets) =>
       at(targets.partlyReceivedOrderId, (id) => `/orders/${id}`),
   },
+  {
+    // The Filters sheet every list's phone opens (ADR-093, review 9's
+    // footer), on Stock, whose quick filters it holds with the selects.
+    // The button's words for no filter on, its plural's =0 branch: with
+    // two on it reads "Filters · 2", which the match still finds.
+    name: '32-stock-filters-sheet',
+    path: () => '/inventory',
+    widths: ['duo-closed', 'phone'],
+    windowOnly: true,
+    prepare: async (page, words) => {
+      const none = /=0 \{([^}]*)\}/.exec(words('filters.sheet.open'))![1];
+      await page.getByRole('main').getByRole('button', { name: none }).click();
+      await page
+        .getByRole('dialog', { name: words('filters.sheet.title') })
+        .waitFor();
+    },
+  },
 ];
