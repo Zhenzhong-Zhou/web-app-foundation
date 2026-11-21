@@ -1342,3 +1342,34 @@ lines change in the branch's docs step, once the code holds them.
   4 (targets under 44 px on touch), 10 (nothing leads to Larger text)
   and 11 (secondary text at 14 px) stay with their issues, #637, #170
   and #606, #622 and #482, and #610 and #566.
+
+## Amendment (November 2026) — the When menu, a find box, and chips that wrap (ADR-093)
+
+Built on `adr-093-movements` and recorded with ADR-093's Movements
+as-built (#655), where the reasons are (131a). Drawn on the canvas rows
+"库存与库存变动 第八版 · v8" and "第十一版 · v11" to "第十四版 · v14". Movements is each
+pattern's one user; the other lists take them when next changed (#649).
+
+- **When, one menu (review 1, 130b, 135a, 137a):** a list's dates are
+  one field opening a menu, never two date fields beside a Period
+  button: Today, This week, This month, Last 30 days, Last month and
+  This year, each with its own dates beside its name ("This week · Nov
+  16–20"); a line; Choose dates…, a small panel with From and To, both
+  days included, either left empty; a line; Any time. Each period ends
+  on the organization's today, counted in calendar days, a week from
+  Monday in every language; Last month is the whole month. A range is
+  written by `formatRange` in the reader's language, the year once, and
+  in Chinese the Chinese way, 2026年11月1日至20日. The field and a chip
+  show the dates chosen. On a phone, the same list inside the Filters
+  sheet.
+- **A find box (126, 127a, 128a):** where a list filters by things a
+  person knows by name or number, one box finds them all, "Find an
+  item, lot or order", by the top bar's lookup and the reader's
+  permissions, grouped and in words. Exact matches alone when there are
+  any; close ones only when none, under "Close matches". A choice
+  becomes its chip under the row and the box empties for the next. It
+  never filters by free text.
+- **Chips that wrap:** every filter set is a chip under the row, its ×
+  removing it; a chip's words wrap rather than end in "…", since a tap
+  removes it and a tooltip could not be reached; one line is 32 px high
+  with a mouse and 46 px on touch.

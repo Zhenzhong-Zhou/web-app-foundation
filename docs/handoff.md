@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 19 November 2026
+# web-app-foundation — handoff, 21 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,28 +13,27 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 19 November 2026:
+On 21 November 2026:
 
 - **Movements, ADR-093's second branch,** `adr-093-movements`, from
-  `main` at 0ebaac68: planned on 18 and 19 November, its requirements
-  (R24 to R35) confirmed before drafting and every decision chosen as
-  recommended (81a to 94a), in [ADR-093's amendment](adr/0093-inventory-and-movements.md)
-  and ADR-090's, the branch's first commit; the canvas's rows "库存与库存变动
-  第四版 · v4", Movements in the 1,600 px frame at 1920 and 1366, and
-  "第五版 · v5". Its brief, v7 (v6 for steps 1 to 3), is in the ignored
-  `tmp/adr-093-movements/`, with #644's panel reports in its
-  `from-632/`. **Built by 20 November, through step 18:** the indexes,
-  the pinned name and the cut path, one address write, the movement row
-  and the stock card, Movements and its export, every export's plain
-  quantities, the ways in with the history dialog gone, #605's label,
-  #628's found stock, the count always with Back after Show more, the
-  words (94a) and the riders, the browser tests, then Help, the rules
-  file, the design language and the manual checks. **Left:** the figures
-  after (19), the dependencies again (20), the reviews (21), the as-built
-  (22) and the merge (23). With it: [#605] as its 56a decided, [#628], [#636],
-  [#638] with [#473]'s Back after Show more, [#639], [#640], [#642],
-  #644's finding 8 (Free 可分配, Left 预计剩余), the triage's riders and
-  the dependencies by the Dates.
+  `main` at 0ebaac68, planned on 18 and 19 November (R24 to R35, 81a
+  to 94a) and built on 19 and 20 November by its brief, v7, in the
+  ignored `tmp/adr-093-movements/`: 90 commits and its as-built, draft
+  pull request [#655], its CI and its Performance budgets green.
+  Movements as a log in the address that reads as a stock card for one
+  item, one find box for items, lots and orders, When one menu, the ways
+  in with the history dialog gone, the item's latest movements, an
+  order's Receipts and [#605]'s label, [#628]'s found stock, the count
+  always with Back after Show more, the words (94a) and the riders. The
+  reviews found 72; the branch fixed those chosen and the chat's later
+  decisions in 60 commits, filed [#646] to [#654], and commented on the
+  older issues. Every
+  decision, 95a to 143a, each requirement marked, and what was built
+  differently are in [ADR-093's as-built](adr/0093-inventory-and-movements.md),
+  with ADR-090's amendment (the When menu, the find box, chips that
+  wrap) and ADR-051's figures. **Left:** the merge and what follows it
+  (Still to do, by hand). Next, [#629] (119a), its decisions in its
+  comment.
 - **[#632], one 1,600 px page frame and table headers that stay,**
   [ADR-090's amendment](adr/0090-the-design-language.md) of 18
   November, with its as-built: planned and built on 18 November on
@@ -457,15 +456,16 @@ On 19 November 2026:
   `@aws-sdk/client-s3` 3.1167.0, and, by the maintainer's choice on 18
   November, prettier 3.10.1, `@formatjs/cli` 6.19.0 and `user-event`
   14.6.10 hours short of their 7 days, the rule waived for those three
-  alone (ADR-090's as-built). For Movements' branch, each coming of
-  age, by the UTC day b8905dd7's message gives:
-  `@nestjs/cli` 12.0.13 and `@nestjs/swagger` 12.1.2 on 20 November;
-  msw 3.0.6, `eslint-plugin-react-refresh` 0.5.8 and nodemailer 10.6.0
-  on 22 November; Nest 12.5.1, `@nestjs/throttler` 6.8.0,
-  `@aws-sdk/client-s3` 3.1170.0, Sentry 11.13.0, `user-event` 14.6.12
-  and `typescript-eslint` 8.73.0 on 23 November; `@playwright/test`
-  1.65.1 on 20 November, taken only if [#521]'s seven pages pass in the
-  Linux image (`scripts/verify.sh --linux-browsers`). Held:
+  alone (ADR-090's as-built). Movements' branch took
+  `@aws-sdk/client-s3` 3.1168.0 and Nest 12.5.0 (73431f62), then
+  `@nestjs/cli` 12.0.13 and `@nestjs/swagger` 12.1.2 (c31352ba), in
+  `server/`. `@playwright/test` 1.65.1 was tried on 20 November and not
+  taken: it carries 1.65.0's Firefox, and 19 of 159 tests crashed in
+  the Linux image; Dependabot skips 1.65.0 and 1.65.1 ([#521]).
+  typescript-eslint 8.73.0, of age on 23 November, comes in its own
+  pull request, both minimatch overrides removed with it and ADR-019's
+  line, once `npm ls minimatch` shows every copy 11.0.5 or later; the
+  rest by their days, as Dependabot offers them. Held:
   `@playwright/test` at 1.64.1, pinned, its Firefox 159
   crashing in the Linux image ([#521]); `jsdom` at 30.1.3, pinned, 17
   unit tests failing on 31 ([#522]); TypeScript 7 ([#336]); fontkit 3,
@@ -522,6 +522,18 @@ On 19 November 2026:
 
 ## Still to do, by hand
 
+- **[#655]'s merge,** in this order: its as-built pushed; the pull
+  request marked ready (`gh pr ready 655`), Claude Code Review read and
+  each finding fixed or filed; MC-319 to MC-324 and MC-409 walked by
+  hand; the merge as a merge commit (`gh pr merge 655 --merge`); the
+  deploy's checks, `/api/health` saying `apiRevision: 5` and migration
+  0082 applied, and `npm run migrate:all` locally with the volume
+  databases'; the planning skill packed from `main` and uploaded, since
+  the audit's hunks changed it, and its evals walked; the weekly
+  Performance run after the merge read for Movements' figures (R35);
+  `/triage`; the prune and the clean-up, nothing in
+  `tmp/adr-093-movements/` read by a later ADR, since #629's decisions
+  are in its comment; Project knowledge re-synced.
 - **After [#644]'s merge** ([#632]), on the live site: MC-1565 to
   MC-1575 walked, and Stock scrolled until its header sticks, then
   narrowed until it scrolls sideways, on an Android phone in WeChat, in
@@ -765,7 +777,9 @@ request or a set of them:
       the issues that hold them, [#470], [#472], [#459] and [#481], and
       taking [#638] with [#473]'s Back after Show more, [#640], the
       dependencies its Dates name with [#521]'s check, and the
-      Performance run of 23 November; each person choosing their main
+      Performance run of 23 November, built as [#655]; then [#629], a
+      lot's code at receipt and lot tracking started for a code with
+      stock (119a to 124a); each person choosing their main
       action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac; then Orders,
       built to the design language, its findings from ADR-091's panel,
@@ -1114,6 +1128,7 @@ Not repeated here; each list has one home:
 [#608]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/608
 [#616]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/616
 [#628]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/628
+[#629]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/629
 [#631]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/631
 [#632]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/632
 [#633]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/633
@@ -1127,3 +1142,6 @@ Not repeated here; each list has one home:
 [#642]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/642
 [#643]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/643
 [#644]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/644
+[#646]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/646
+[#654]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/654
+[#655]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/655

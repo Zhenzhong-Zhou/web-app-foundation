@@ -217,6 +217,23 @@ Each with what holds it in the code today, or the issue that will.
 - After sorting from the keyboard, focus stays on the column's header.
 - A list its filters made empty is No results, as
   [the five states](#the-five-states) say.
+- A list's dates are one When field opening a menu: Today, This week,
+  This month, Last 30 days, Last month and This year, each with its
+  dates beside its name, then Choose dates… with From and To, then Any
+  time. A period ends on the organization's today, in calendar days, a
+  week from Monday in every language; a range is written by
+  `formatRange` in the reader's language, the year once, and in Chinese
+  2026年11月1日至20日 (`client/src/inventory/when-menu.tsx`,
+  `client/src/lib/date-range.ts`; Movements first, the other lists as
+  each is next changed, ADR-090's amendment for ADR-093).
+- Where a list filters by things known by name or number, one find box
+  finds them, by the top bar's lookup and the reader's permissions:
+  exact matches alone when there are any, close ones under "Close
+  matches" only when none; a choice becomes its chip and the box
+  empties (`client/src/inventory/movement-finder.tsx`). It never filters
+  by free text.
+- Every filter set is a chip under the row, its × removing it; a chip's
+  words wrap, never ending in "…" (`client/src/components/filter-chips.tsx`).
 
 ### Lists on a phone
 
@@ -242,8 +259,8 @@ Each with what holds it in the code today, or the issue that will.
   name, the status, On hand, Free and Expires first, and opens to Held,
   Coming and its lots; Reorder's holds the name, the status, "12 left ·
   reorder at 36" and the main action; at `sm`, the suggested order too.
-  The next cards are Movements', in its branch, and the item's names
-  table, in Items' next.
+  Movements' came with its branch; the next is the item's names
+  table's, in Items' next.
 
 ### A main action the role cannot use
 

@@ -163,6 +163,14 @@ so the timing is the evidence for the name lookup.
 - **Movements for one shelf** went from 2 ms to 21 ms. No screen in the
   budgets reads it yet. Trigger: it joins the budgets, or passes 100 ms.
   Then indexes on the source and destination location with the id.
+  *Closed on 20 November 2026 (ADR-093, #655):* migration 0082's
+  indexes; 68 to 25 ms p95 at large, in the budgets.
+- **Movements' place indexes carry the id** (ADR-093, step 5): it lets a
+  page's cursor join the index lookup, 1.1 ms against 2.1, but makes
+  each index about 8 times bigger, 132 and 125 MB at large against about
+  15. Movements now orders by time, then id, so the cursor no longer
+  uses it. Trigger: the indexes' size mattering on a live database. Then
+  the id dropped from both, timed again.
 - **Lot search** reads through `lots_code_trgm_idx`, the pg_trgm this
   line waited for, since migration 0042 (ADR-056), and joins only the
   organization's variants (#187). Until migration 0077 the index knew no
@@ -976,3 +984,40 @@ with this as-built, pull request #558.
 - **The Watch,** above: `GET /stock`'s sort by names and Availability
   closed, the routes gone; Inventory's by-code counts and JIT added;
   Home's and the PDF's lines dated.
+
+### As built (#655, 20 November 2026)
+
+- **Migration 0082,** the from and to place's indexes, each with the
+  organization and the id: 2.78 s on the large volume's 2.1 million
+  movements. The movements list takes its page from the ledger before
+  joining places, lots and people; ordered "desc nulls last", the time
+  indexes serve the newest first, and read backward, the oldest.
+- **p95 at ten connections on the Mac, in ms:** before on 19 November
+  (step 4), with the indexes (step 5), and after the branch's last step
+  (step 19), each scale on its volume database migrated and vacuumed.
+
+| Read | Small | Large | Plan at large |
+| --- | --- | --- | --- |
+| Movements for one shelf | 23, 19, 23 | 68, 22, 25 | 36.2 to 6.8 ms |
+| Movements, the first page | 19, 17, 21 | 21, 18, 21 | 0.98 to 0.4 ms |
+| Movements, one item | 21, 18, 24 | 20, 18, 24 | 0.91 to 1.1 ms |
+| The stock card, oldest first | 24 | 23 | 0.9 ms |
+| The stock card, a month | 25 | 25 | 0.4 ms |
+| Orders' list, open | 11, 11, 11 | 11, 12, 11 | 0.43 to 0.6 ms |
+| `GET /orders?fulfillment=part` | 33 | 11 | 1.3 ms |
+| `GET /home`, a newcomer | 52, 45, 46 | 306, 275, 277 | 57 ms |
+
+- **Where the figures rose,** each far inside 300 ms: the movement row,
+  one item 18 to 24 ms; Where it stands' Latest movements,
+  `GET /products/:id/stock` 47 to 54 ms at large, about six statements
+  a code.
+- **The plan check** holds every new query at both sizes. Receiving's
+  rarest filter, `orders: purchases partly received`, sums every
+  confirmed purchase's lines, 87 to 128 ms at large, and is allowed with
+  its reason, on the Watch above (109a). Each timed run adds lots to the
+  small volume, and after a third the planner read
+  `stock by code: search` by a scan; a `vacuum analyze` put it back.
+- **On GitHub's runners,** Performance's `budgets` at small, dispatched
+  on the branch (run 44874797517, the median of three rounds), held
+  every budget. The weekly run after the merge reads Movements on
+  `main`.
