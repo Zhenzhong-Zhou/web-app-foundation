@@ -29,7 +29,11 @@ export const RANGE_PRESETS: readonly RangePreset[] = [
   'thisYear',
 ];
 
-/** A day of the calendar as YYYY-MM-DD; months past 11 roll over. */
+/**
+ * A day of the calendar as YYYY-MM-DD, counted in days, never hours, so a
+ * day the clocks change on is one like any other (137a); months past 11
+ * and days past a month's end roll over.
+ */
 export function calendarDay(year: number, month: number, date: number): string {
   return new Date(Date.UTC(year, month, date)).toISOString().slice(0, 10);
 }
@@ -102,7 +106,7 @@ export function whenRange(
     case 'today':
       return { from: today, to: today };
     case 'thisWeek':
-      // From Monday.
+      // From Monday, for every reader and language (ISO 8601, 137a).
       return {
         from: calendarDay(year, month, date - ((weekday + 6) % 7)),
         to: today,

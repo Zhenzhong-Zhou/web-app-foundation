@@ -647,7 +647,7 @@ a second organization.
   Chinese (134b), where English and French keep Vancouver. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
-- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4, 11 and 22; 126)* Movements,
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4, 11 and 22; 126, 135a and 137a)* Movements,
   as the demo Owner at 1920. Every row reads When to the minute, the
   item's name first with its code and type grey under it ("VITC-100 ·
   Product"), "was VITC-90" under VITC-100's rows recorded before its code
@@ -690,7 +690,10 @@ a second organization.
   its days beside it ("This week · 16 – 20 Nov" on Friday 20 November, a
   period that holds today ending today, a space either side of the
   dot), a thin line, Choose dates…, another, and Any time at its foot;
-  Escape closes it, focus back on When. Choose This month: Opening, In,
+  Escape closes it, focus back on When. On a Sunday, This week runs
+  from the Monday before, in Français and 中文 too; with the computer's
+  time zone set to Shanghai while Vancouver's day is not yet over,
+  every period still ends on Vancouver's today (135a, 137a). Choose This month: Opening, In,
   Out and Closing above the table, Closing the Opening plus In less Out,
   and the field and a chip, "When: Nov 1 – 20, 2026", the year once,
   show the days, the chip's × clearing them; in Français « 1–20 nov.

@@ -1,10 +1,23 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import type { DayRange } from '../lib/date-range';
-import { setOrganizationTimeZone } from '../lib/time-zone';
+import {
+  browserTimeZone,
+  setOrganizationTimeZone,
+  todayIn,
+} from '../lib/time-zone';
 import { TestProviders } from '../test/test-providers';
 import { WhenMenu } from './when-menu';
 
@@ -269,4 +282,164 @@ describe('WhenMenu', () => {
     expect(rangeOf()).toEqual({ from: '2026-11-01' });
     expect(when()).toHaveTextContent('from Nov 1, 2026');
   });
+});
+
+// 135a and 137a: the periods end on the organization's today, never the
+// browser's, counted in calendar days, never by taking hours away, a week
+// starting on Monday for every reader and language (ISO 8601).
+describe('WhenMenu, in the organization’s days wherever the browser is', () => {
+  beforeAll(() => {
+    // The browser in Shanghai, UTC+8 all year, ahead of the
+    // organization's day for much of it; Node takes a new TZ at once.
+    vi.stubEnv('TZ', 'Asia/Shanghai');
+  });
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    setOrganizationTimeZone('America/Vancouver');
+  });
+  afterEach(() => {
+    setOrganizationTimeZone(null);
+    vi.useRealTimers();
+    localStorage.removeItem('language');
+  });
+
+  /** The menu's periods, as each reads. */
+  const periods = async () => {
+    await userEvent.setup().click(when());
+    return within(await screen.findByRole('listbox'))
+      .getAllByRole('option')
+      .slice(0, 6)
+      .map((option) => option.textContent?.replace(/\s/g, ' '));
+  };
+
+  it.each([
+    [
+      'en',
+      'Any time',
+      [
+        'Today · Nov 22',
+        'This week · Nov 16 – 22',
+        'This month · Nov 1 – 22',
+        'Last 30 days · Oct 24 – Nov 22',
+        'Last month · Oct 1 – 31',
+        'This year · Jan 1 – Nov 22',
+      ],
+    ],
+    [
+      'fr-CA',
+      'N’importe quand',
+      [
+        'Aujourd’hui · 22 nov.',
+        'Cette semaine · 16 – 22 nov.',
+        'Ce mois-ci · 1 – 22 nov.',
+        'Les 30 derniers jours · 24 oct. – 22 nov.',
+        'Le mois dernier · 1 – 31 oct.',
+        'Cette année · 1 janv. – 22 nov.',
+      ],
+    ],
+    [
+      'zh-Hans',
+      '不限时间',
+      [
+        '今天 · 11月22日',
+        '本周 · 11月16日至22日',
+        '本月 · 11月1日至22日',
+        '最近 30 天 · 10月24日至11月22日',
+        '上月 · 10月1日至31日',
+        '今年 · 1月1日至11月22日',
+      ],
+    ],
+  ])(
+    'in %s, ends each period on the organization’s Sunday, its week from Monday, while the browser is already on Monday',
+    async (language, anyTime, expected) => {
+      // The evening of Sunday 22 November in Vancouver; Monday the 23rd,
+      // 11 am, in Shanghai.
+      vi.setSystemTime(new Date('2026-11-23T03:00:00.000Z'));
+      expect(browserTimeZone()).toBe('Asia/Shanghai');
+      expect(todayIn(browserTimeZone())).toBe('2026-11-23');
+      localStorage.setItem('language', language);
+      render(<Harness />, { wrapper: TestProviders });
+
+      // The catalogue arrives after the first render.
+      await vi.waitFor(() => expect(when()).toHaveTextContent(anyTime));
+      expect(await periods()).toEqual(expected);
+      await userEvent.setup().click(screen.getAllByRole('option')[1]!);
+      expect(rangeOf()).toEqual({ from: '2026-11-16', to: '2026-11-22' });
+    },
+  );
+
+  // Clock changes the time-zone data has: Vancouver's on 8 March 2026,
+  // and Los Angeles's on 1 November 2026, which Vancouver no longer has.
+  // Late in the day, so 24 hours taken away 29 times, or the browser's
+  // today, would land on another day.
+  it.each([
+    [
+      // 11:30 pm on Sunday 8 March in Vancouver, the clocks put forward
+      // that morning; Monday afternoon in Shanghai.
+      'America/Vancouver',
+      '2026-03-09T06:30:00.000Z',
+      [
+        'Today · Mar 8',
+        'This week · Mar 2 – 8',
+        'This month · Mar 1 – 8',
+        'Last 30 days · Feb 7 – Mar 8',
+        'Last month · Feb 1 – 28',
+        'This year · Jan 1 – Mar 8',
+      ],
+    ],
+    [
+      // 12:30 am on Friday 20 March in Vancouver: 30 days by the hour
+      // would start on 18 February.
+      'America/Vancouver',
+      '2026-03-20T07:30:00.000Z',
+      [
+        'Today · Mar 20',
+        'This week · Mar 16 – 20',
+        'This month · Mar 1 – 20',
+        'Last 30 days · Feb 19 – Mar 20',
+        'Last month · Feb 1 – 28',
+        'This year · Jan 1 – Mar 20',
+      ],
+    ],
+    [
+      // 11:30 pm on Friday 20 November in Los Angeles, the clocks put
+      // back on the 1st: 30 days by the hour would start on 23 October.
+      'America/Los_Angeles',
+      '2026-11-21T07:30:00.000Z',
+      [
+        'Today · Nov 20',
+        'This week · Nov 16 – 20',
+        'This month · Nov 1 – 20',
+        'Last 30 days · Oct 22 – Nov 20',
+        'Last month · Oct 1 – 31',
+        'This year · Jan 1 – Nov 20',
+      ],
+    ],
+    [
+      // 11:30 pm on Friday 20 November in Vancouver, on UTC−7 since
+      // March; Saturday afternoon in Shanghai.
+      'America/Vancouver',
+      '2026-11-21T06:30:00.000Z',
+      [
+        'Today · Nov 20',
+        'This week · Nov 16 – 20',
+        'This month · Nov 1 – 20',
+        'Last 30 days · Oct 22 – Nov 20',
+        'Last month · Oct 1 – 31',
+        'This year · Jan 1 – Nov 20',
+      ],
+    ],
+  ])(
+    'counts calendar days across a change of clocks, in %s at %s',
+    async (zone, now, expected) => {
+      vi.setSystemTime(new Date(now));
+      setOrganizationTimeZone(zone);
+      render(<Harness />, { wrapper: TestProviders });
+
+      expect(await periods()).toEqual(expected);
+    },
+  );
 });

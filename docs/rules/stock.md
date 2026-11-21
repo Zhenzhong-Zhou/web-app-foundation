@@ -354,11 +354,19 @@ file is kept is in the [README](README.md).
   MC-319
 - **When's periods are the organization's days, both included:** Today;
   This week from Monday, This month, Last 30 days and This year, each
-  ending today; Last month whole. Choose dates… takes either end alone.
+  ending today; Last month whole. Today is the organization's, by its
+  time zone, never the browser's (135a); the days are counted on the
+  calendar, never by taking hours away, so Last 30 days on 20 November
+  starts at midnight on 22 October whatever the clocks did between; a
+  week starts on Monday for every reader and language, as ISO 8601 has
+  it (137a). Choose dates… takes either end alone.
   A code's All movements of…, under Where it stands, opens on this
   month, so its four figures show at once.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../client/src/inventory/when-menu.test.tsx) "offers each period with its own days, a period that holds today ending today, then Choose dates… and Any time at its foot" ·
+  [test](../../client/src/inventory/when-menu.test.tsx) "WhenMenu, in the organization’s days wherever the browser is" ·
+  [test](../../client/src/lib/date-range.test.ts) "starts a week on Monday, a Sunday’s on the Monday before, across a month and a year" ·
+  [test](../../client/src/lib/date-range.test.ts) "counts calendar days across a change of clocks, each beginning at midnight in the organization’s zone" ·
   [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
   [test](../../client/e2e/movements-page.spec.ts) "The item’s page, Latest movements, All movements of E2E-VITC: ?variantId=, Movements, one item; Back, the item’s page" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
