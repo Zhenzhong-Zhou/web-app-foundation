@@ -575,7 +575,8 @@ a second organization.
   open D3-1000-120's places, then a place's Movements link: that code at
   that place, `&locationId=`, "In, Out and Balance count … alone."; open
   a place's lots, then a lot's Actions › Movements: that lot, `&lotId=`,
-  the chip "Lot: D3-…". Each offers Back, which returns Stock as it was:
+  the chip "Lot: D3-…", no When chosen and no `from` or `until`, its
+  receipt the last row (132b). Each offers Back, which returns Stock as it was:
   the item's row open, the place's lots open with it, focus on the
   item's name. A role made with `stock.view` alone sees the same rows,
   no order or run named under For.
@@ -1033,7 +1034,8 @@ search to having the list of customers; the target is **under two minutes**.
   samples and returns. Under its code, its item's name is a link to the
   item's page, and All movements of this lot opens Movements with the
   item's and the lot's chips, a stock card of that lot, Back returning
-  to the trace (review 6). As a role without `products.view`, the name
+  to the trace (review 6), with no When chosen, the lot's whole life
+  down to its receipt (132b). As a role without `products.view`, the name
   reads as text.
 - **MC-903** Trace FOC-2609-01 back: the run, and the ingredient lots it was
   made from.
@@ -7370,3 +7372,6 @@ first.
 - 2026-11-20: ADR-093's Movements branch, 130b: a range of days in
   中文 is written the Chinese way, the year once, 2026年11月1日至20日,
   in When, its chip and its menu's periods: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 132b: a lot's All movements
+  of this lot and its Actions › Movements on Stock open Movements with
+  no days, the lot's whole life: MC-305 and MC-902 extended.

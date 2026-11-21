@@ -25,7 +25,7 @@ With one item chosen, **In** and **Out** replace the change, and **Balance** say
 
 Movements opens already narrowed from other screens, and **Back** returns to where you were, as you left it.
 
-- On [Inventory](/inventory), an item’s **Actions** › **Movements** opens that code, a place’s **Movements** that code at that place, and a lot’s **Actions** › **Movements** that lot.
+- On [Inventory](/inventory), an item’s **Actions** › **Movements** opens that code, a place’s **Movements** that code at that place, and a lot’s **Actions** › **Movements** that lot over its whole life, with no dates, as **All movements of this lot** on its trace does.
 - On an item’s page, each code under **Where it stands** has its **Latest movements**, the five newest, ending with **All movements of** the code, which opens on this month, its opening balance, In, Out and closing balance above the list.
 - A purchase’s **Receipts** and a sale’s **Shipments** end with **All movements of** the order’s number.
 

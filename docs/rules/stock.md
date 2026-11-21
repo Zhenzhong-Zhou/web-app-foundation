@@ -443,10 +443,13 @@ file is kept is in the [README](README.md).
 - **A lot's page leads to its item and to its movements, each only for
   a reader who may open that page:** the item's name links to the
   item's page with products.view, and reads as text without it; All
-  movements of this lot opens Movements on its item and that lot, so
-  the stock card counts the lot, with stock.view.
+  movements of this lot, with stock.view, opens Movements on its item
+  and that lot, so the stock card counts the lot, and with no days, so
+  it reads the lot's whole life from its receipt, as a lot's Actions ›
+  Movements on Stock does (132b).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../client/src/inventory/lot-trace-page.test.tsx) "links its item and All movements of this lot, each for whoever may open it" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "opens a Lot view row’s Movements on the lot’s whole life, no days" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "carries its item’s variant and product, for the links to them" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
   MC-902

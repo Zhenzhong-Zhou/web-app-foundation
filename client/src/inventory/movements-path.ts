@@ -3,8 +3,9 @@ import { withQuery } from '../lib/api';
 /**
  * What a way into Movements filters it to (ADR-093, R11, R12 and R24):
  * a code, at a place or of one of its lots, or an order's movements; and
- * the days, both included, as "All movements of…" opens on this month
- * (review 1).
+ * the days, both included, as a code's "All movements of…" opens on this
+ * month (review 1). A lot's way in names no days, so it reads the lot's
+ * whole life, the receipt it starts from too (132b).
  */
 export interface MovementsOf {
   variantId?: string;

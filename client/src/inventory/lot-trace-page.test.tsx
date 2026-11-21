@@ -162,16 +162,26 @@ describe('LotTracePage', () => {
   });
 
   // Review 6: the way on to the lot's item and its movements, each for a
-  // reader who may open that page.
+  // reader who may open that page; the movements with no days, the lot's
+  // whole life, its first receipt among them (132b).
   it('links its item and All movements of this lot, each for whoever may open it', async () => {
     const { unmount } = renderTrace(['stock.view', 'products.view']);
 
     expect(
       await screen.findByRole('link', { name: 'Fish oil' }),
     ).toHaveAttribute('href', '/items/product-oil');
-    expect(
-      screen.getByRole('link', { name: 'All movements of this lot' }),
-    ).toHaveAttribute('href', '/movements?variantId=variant-oil&lotId=lot-1');
+    const movements = screen.getByRole('link', {
+      name: 'All movements of this lot',
+    });
+    expect(movements).toHaveAttribute(
+      'href',
+      '/movements?variantId=variant-oil&lotId=lot-1',
+    );
+    const days = new URLSearchParams(
+      movements.getAttribute('href')?.split('?')[1],
+    );
+    expect(days.has('from')).toBe(false);
+    expect(days.has('until')).toBe(false);
     unmount();
 
     renderTrace(['stock.view']);

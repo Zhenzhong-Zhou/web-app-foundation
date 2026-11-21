@@ -25,7 +25,7 @@ Avec un seul article choisi, **Entrée** et **Sortie** remplacent la variation, 
 
 Mouvements s’ouvre déjà restreint depuis d’autres écrans, et **Retour** vous ramène là où vous étiez, tel que vous l’aviez laissé.
 
-- Dans [Inventaire](/inventory), **Actions** › **Mouvements** d’un article ouvre ce code, **Mouvements** d’un emplacement ce code à cet endroit, et **Actions** › **Mouvements** d’un lot ce lot.
+- Dans [Inventaire](/inventory), **Actions** › **Mouvements** d’un article ouvre ce code, **Mouvements** d’un emplacement ce code à cet endroit, et **Actions** › **Mouvements** d’un lot ce lot et toute son histoire, sans dates, comme **Tous les mouvements de ce lot** sur sa traçabilité.
 - Sur la page d’un article, chaque code sous **État du stock** a ses **Derniers mouvements**, les cinq plus récents, qui se terminent par **Tous les mouvements de** ce code, qui s’ouvre sur ce mois-ci, le solde d’ouverture, les entrées, les sorties et le solde de clôture au-dessus de la liste.
 - Les **Réceptions** d’un achat et les **Expéditions** d’une vente se terminent par **Tous les mouvements de** et le numéro de la commande.
 

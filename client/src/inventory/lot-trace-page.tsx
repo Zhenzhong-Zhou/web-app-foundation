@@ -332,7 +332,7 @@ export function LotTracePage() {
 
         {/* The way on to its movements, as the item's page has one (review
             6): its item and the lot, so the stock card counts this lot
-            (85a, 95a). */}
+            (85a, 95a), with no days, the lot's whole life (132b). */}
         {can('stock.view') && (
           <Link
             component={RouterLink}

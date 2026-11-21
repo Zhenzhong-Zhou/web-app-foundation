@@ -120,7 +120,8 @@ export function StockActions({
 
   // Movements, filtered as a code's row says it (ADR-093, R11): the
   // lot's, or, for a code not tracked by lot, its place's, which a reader
-  // without places is not given (96a).
+  // without places is not given (96a); with no days, so a lot reads its
+  // whole life (132b).
   const reads: Action[] = [
     {
       label: words.movements,

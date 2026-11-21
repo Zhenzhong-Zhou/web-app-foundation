@@ -1154,6 +1154,49 @@ describe('InventoryPage', () => {
     }
   });
 
+  // A lot's Movements carries no days, from either view, so it reads the
+  // lot's whole life, the receipt it starts from too (132b).
+  it('opens a Lot view row’s Movements on the lot’s whole life, no days', async () => {
+    const user = userEvent.setup();
+    answer();
+    server.use(
+      http.get('/api/v1/stock/by-lot', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              ...pile('1', 'NN-2410-07', '2027-10-01', 'Shelf A'),
+              productId: PRODUCT,
+              type: 'good',
+              coverFileId: null,
+              locationPath: [],
+              isAvailable: true,
+              places: 1,
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+    renderRouted('/inventory?group=lot', ['stock.view', 'locations.view']);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Actions for lot NN-2410-07 at Shelf A',
+      }),
+    );
+    await user.click(
+      within(await screen.findByRole('menu')).getByRole('menuitem', {
+        name: 'Movements',
+      }),
+    );
+    expect(
+      await screen.findByText(
+        '/movements?variantId=variant-1&lotId=lot-1 with Back',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/from=|until=/)).not.toBeInTheDocument();
+  });
+
   // Bob's third message (6): the quick filters on a row of their own,
   // above the search, Type, Category, Location and Group by.
   it('puts the quick filters on a row of their own above the search', async () => {
