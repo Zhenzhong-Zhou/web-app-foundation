@@ -628,9 +628,9 @@ a second organization.
 - **MC-319** *(ADR-093, 87a, 88a, 98a and 116; review 54; 138b)* As the demo
   Owner, export Movements with VITC-100 chosen and a date range that
   ends today: the file runs oldest first, its columns When (Vancouver
-  time), Code, Recorded as, Item, In, Out, Balance, Unit, Reason, Reason
-  code, From, To, Lot, Expiry, For, By, Email and Note, one value to
-  each; its first
+  time), Code, Recorded as, Item, In, Out, Moved, Balance, Unit, Reason,
+  Reason code, From, To, Lot, Expiry, For, By, Email and Note, one value
+  to each, Moved filled on a move between two places alone; its first
   line Opening balance with the balance at the range's start, its last
   Closing balance with the range's In and Out and Stock's On hand for
   VITC-100, each of the two by its day; each movement's When its day and
