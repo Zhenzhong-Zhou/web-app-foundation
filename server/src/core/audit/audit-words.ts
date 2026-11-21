@@ -1,5 +1,5 @@
 import type { Locale } from '../../common/locales';
-import { canonicalTimeZone, dayIn } from '../../common/today';
+import { canonicalTimeZone, cityOf, dayIn } from '../../common/today';
 import {
   joinList,
   t,
@@ -358,7 +358,7 @@ export function zoneLabel(locale: Locale, zone: string): string {
     const name =
       generic && /^(GMT|UTC)([+−-]|$)/.test(generic) ? named('long') : generic;
     if (!name) return zone;
-    const city = (current.split('/').pop() ?? current).replace(/_/g, ' ');
+    const city = cityOf(current);
     return translate(
       t(
         { id: 'audit.value.timeZone', defaultMessage: '{zone} — {city}' },

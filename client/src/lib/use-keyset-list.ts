@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useState } from 'react';
 
 import { useLanguage } from '../i18n/use-language';
 import { api, isRevisionRefusal } from './api';
+import { keepShown, shownOn } from './return-focus';
 import { useFailureWords } from './use-failure-words';
 
 /** What every keyset endpoint returns (ADR-018). */
@@ -98,10 +99,22 @@ type CursorName = 'before' | 'cursor';
  * since a next page carries none, and up with the rows while a reload is
  * on its way; a new path has none until it answers. One hook for every
  * list's Load more (#33).
+ *
+ * With `keep`, the list's entry in the history (React Router's
+ * location.key), how many rows it shows is kept against it, and Back to
+ * it reads as many again, its pages one after another, before the rows
+ * show (#473, #638's P2a): the rows left after Show more are there, and
+ * the row left from with them. A page that fails on the way keeps those
+ * before it, with the failure beside them as Load more's. Only the
+ * list's first read: a reload after a write reads its first page, as
+ * before.
  */
 export function useKeysetList<T, P extends KeysetPage<T> = KeysetPage<T>>(
   path: string | null,
-  { cursor: cursorName = 'before' }: { cursor?: CursorName } = {},
+  {
+    cursor: cursorName = 'before',
+    keep,
+  }: { cursor?: CursorName; keep?: string } = {},
 ) {
   const [reloads, setReloads] = useState(0);
   const [read, setRead] = useState<Read<T, P>>(NOTHING_READ);
@@ -121,22 +134,49 @@ export function useKeysetList<T, P extends KeysetPage<T> = KeysetPage<T>>(
       ? { ...read, cursor: null }
       : { ...NOTHING_READ, path, reloads, locale };
 
+  // Read as the effect runs, so a new entry for the same list, as a row
+  // opened on Stock writes, never reads it again.
+  const shownBefore = useEffectEvent((at: string) =>
+    keep ? shownOn(keep, at) : 0,
+  );
+
   useEffect(() => {
     if (path === null) return;
 
     let ignore = false;
+    const wanted = reloads === 0 ? shownBefore(path) : 0;
 
-    void api<P>(path)
-      .then(({ entries, nextCursor, ...first }) => {
+    const readPages = async () => {
+      const { entries, nextCursor, ...first } = await api<P>(path);
+      let rows = entries;
+      let next = nextCursor;
+      let failure: unknown = null;
+      while (next !== null && rows.length < wanted && !ignore) {
+        try {
+          const page = await api<KeysetPage<T>>(
+            withCursor(path, cursorName, next),
+          );
+          rows = [...rows, ...page.entries];
+          next = page.nextCursor;
+        } catch (caught) {
+          failure = caught;
+          break;
+        }
+      }
+      return { rows, next, first, failure };
+    };
+
+    void readPages()
+      .then(({ rows, next, first, failure }) => {
         if (ignore) return;
         setRead({
           path,
           reloads,
           locale,
-          entries,
-          cursor: nextCursor,
+          entries: rows,
+          cursor: next,
           first,
-          failure: null,
+          failure,
         });
       })
       .catch((caught: unknown) => {
@@ -147,7 +187,13 @@ export function useKeysetList<T, P extends KeysetPage<T> = KeysetPage<T>>(
     return () => {
       ignore = true;
     };
-  }, [path, reloads, locale]);
+  }, [path, reloads, locale, cursorName]);
+
+  // How many it shows, kept for Back as it changes.
+  const shown = fresh ? (current.entries?.length ?? 0) : 0;
+  useEffect(() => {
+    if (keep && path !== null && shown > 0) keepShown(keep, path, shown);
+  }, [keep, path, shown]);
 
   const { cursor } = current;
 

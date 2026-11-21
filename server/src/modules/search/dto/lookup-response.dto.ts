@@ -1,4 +1,5 @@
-import type { ProductType } from '../../../database/schema';
+import type { OrderDirection, ProductType } from '../../../database/schema';
+import type { OrderFulfillment } from '../../orders/order-fulfillment';
 import type { LookupKind } from '../lookup.service';
 
 /**
@@ -12,6 +13,10 @@ export class LookupResult {
   title!: string;
   detail!: string | null;
   status!: string | null;
+  /** An order's direction, for its status's words; null for other kinds. */
+  direction!: OrderDirection | null;
+  /** How much of a confirmed order has come or gone (#605); null for other kinds. */
+  fulfillment!: OrderFulfillment | null;
   /** A calendar day, YYYY-MM-DD (ADR-052). */
   expiresAt!: string | null;
   productId!: string | null;

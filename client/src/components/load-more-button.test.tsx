@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { LoadMoreButton } from './load-more-button';
+import { ShowingLine } from './showing-line';
 
 describe('LoadMoreButton', () => {
   it('asks for the next page', async () => {
@@ -26,5 +27,45 @@ describe('LoadMoreButton', () => {
     );
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  // #638 (P1a): a list that counts its rows says so always, "31 codes"
+  // once every row is shown, "Showing 50 of 312 codes" while there are
+  // more; no count without a total while there are more.
+  it('keeps its count line once there is no more, the button gone', () => {
+    const { rerender } = render(
+      <LoadMoreButton
+        hasMore
+        loading={false}
+        pageSize={50}
+        onLoadMore={vi.fn()}
+        before={<ShowingLine shown={50} total={312} more of="code" />}
+      />,
+    );
+    expect(screen.getByText('Showing 50 of 312 codes')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Show 50 more' })).toBeVisible();
+
+    rerender(
+      <LoadMoreButton
+        hasMore={false}
+        loading={false}
+        pageSize={50}
+        onLoadMore={vi.fn()}
+        before={<ShowingLine shown={31} total={31} more={false} of="code" />}
+      />,
+    );
+    expect(screen.getByText('31 codes')).toBeVisible();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+
+    rerender(
+      <LoadMoreButton
+        hasMore
+        loading={false}
+        pageSize={50}
+        onLoadMore={vi.fn()}
+        before={<ShowingLine shown={50} total={null} more of="lot" />}
+      />,
+    );
+    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
   });
 });

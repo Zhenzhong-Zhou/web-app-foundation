@@ -331,6 +331,11 @@ export class ReorderPointsReadsService {
             page.entries.map((row) => row.variant_id),
           )
         : new Map<string, ReorderPointDraft[]>();
+      const waiting = await waitingOf(
+        tx,
+        organizationId,
+        page.entries.map((row) => row.variant_id),
+      );
 
       return {
         entries: page.entries.map((row) => ({
@@ -351,6 +356,7 @@ export class ReorderPointsReadsService {
           usable: row.usable,
           coming: row.coming,
           stillNeeded: row.still_needed,
+          waitingOrders: waiting.get(row.variant_id) ?? 0,
           inDraft: row.in_draft,
           position: row.position,
           status: row.status,
@@ -597,6 +603,31 @@ export class ReorderPointsReadsService {
       };
     });
   }
+}
+
+/**
+ * How many confirmed sales still want each of the page's items (ADR-093,
+ * 107a): the orders whose lines Still needed sums (`openSaleLines`),
+ * counted, for the page's rows alone.
+ */
+async function waitingOf(
+  tx: Tx,
+  organizationId: string,
+  variantIds: string[],
+): Promise<Map<string, number>> {
+  const found = new Map<string, number>();
+  if (variantIds.length === 0) return found;
+
+  const items = sql`(select unnest(${sql.param(variantIds)}::uuid[]))`;
+  const { rows } = await tx.execute<{ variant_id: string; orders: number }>(
+    sql`
+      select s.variant_id, count(distinct s.order_id)::int as orders
+      from (${openSaleLines(organizationId, items)}) s
+      group by s.variant_id
+    `,
+  );
+  for (const row of rows) found.set(row.variant_id, row.orders);
+  return found;
 }
 
 /**

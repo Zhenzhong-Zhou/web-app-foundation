@@ -1,6 +1,7 @@
 /**
- * A quantity for a sentence a person reads, a notification's: "30", not
- * "30.0000", as the screens show it (ADR-055).
+ * A quantity for a sentence a person reads, a notification's, or for an
+ * export's column (asQuantity): "30", not "30.0000", as the screens show
+ * it (ADR-055).
  *
  * Trimmed as text, never parsed (ADR-025): numeric(18,4) arrives as a
  * string, and the trailing zeros after its point are all that goes. Grouping

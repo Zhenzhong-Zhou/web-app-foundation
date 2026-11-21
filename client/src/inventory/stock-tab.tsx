@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  ListSubheader,
   MenuItem,
   Paper,
   Stack,
@@ -43,6 +42,7 @@ import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SelectField } from '../components/select-field';
+import { ShowingLine } from '../components/showing-line';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { messageFor, withQuery } from '../lib/api';
 import type {
@@ -53,7 +53,7 @@ import type {
 import { nameAndCode } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { leftFrom, returnedTo } from '../lib/return-focus';
+import { leftFrom } from '../lib/return-focus';
 import { useCards } from '../lib/use-cards';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -68,25 +68,23 @@ import { useListSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { useLocations } from '../lib/use-locations';
 import { useResource } from '../lib/use-resource';
+import { useRowReturn } from '../lib/use-row-return';
 import { leavesOf } from '../locations/tree';
 import { ReceiveLineDialog } from '../orders/receive-line-dialog';
 import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 import { NO_RECEIVE } from '../products/receive-line';
 import { rem } from '../theme/rem';
+import { CountInDialog, type CountInItem } from './count-in-dialog';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
-import {
-  type HistoryOf,
-  MovementHistoryDialog,
-} from './movement-history-dialog';
+import { PlaceFilter } from './place-filter';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
-import { ShowingLine } from './showing-line';
 import type { Pile } from './stock-actions';
 import { StockCodes, type StockHandlers } from './stock-codes';
 import { StockLots } from './stock-lots';
-import { byWarehouse } from './stock-places';
+import { openKey } from './stock-places';
 
 /** A page of Inventory, fifty codes or lots (ADR-093, R16). */
 const PAGE_SIZE = 50;
@@ -240,12 +238,18 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     withQuery('/stock/by-code', { limit, ...query }),
     served,
   );
-  const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath);
+  // The rows shown kept for Back, which reads them again (#473).
+  const routed = useLocation();
+  const codes = useKeysetList<StockCodeRow>(byLot ? null : codesPath, {
+    keep: routed.key,
+  });
   const lotsPath = withSort(
     withQuery('/stock/by-lot', { limit, ...query }),
     lotsInOwnOrder ? null : lotSort.sort,
   );
-  const lots = useKeysetList<StockLotRow>(byLot && !noLots ? lotsPath : null);
+  const lots = useKeysetList<StockLotRow>(byLot && !noLots ? lotsPath : null, {
+    keep: routed.key,
+  });
   const list = byLot ? lots : codes;
 
   // Show 50 more: focus on the first new code once it is there, as Items
@@ -303,18 +307,18 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   /** The delivery chosen for it, received on its order's line (ADR-093, v3). */
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [params, setParams] = useSearchParams();
-  const routed = useLocation();
   // The rows open, in the address so Back finds them open (ADR-093's
   // Stock table), and the row Back returns focus to, once.
   const writeAddress = useAddressWrite();
   const opens = (params.get('open') ?? '').split(',').filter(Boolean);
-  const [focusRow] = useState(() => returnedTo(routed.key));
+  const { returned, rowReturn } = useRowReturn();
+  const focusRow = returned?.row ?? null;
   const asked = can('stock.move') && params.has('receive');
   const [moving, setMoving] = useState<{ mode: MoveMode; row: Pile } | null>(
     null,
   );
-  const [viewing, setViewing] = useState<HistoryOf | null>(null);
   const [editingLot, setEditingLot] = useState<Pile | null>(null);
+  const [countingIn, setCountingIn] = useState<CountInItem | null>(null);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
 
   const refresh = async () => {
@@ -328,21 +332,34 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     canAdjust: can('stock.adjust'),
     canReorder: can('stock.reorder'),
     onMove: (mode, row) => setMoving({ mode, row }),
-    onHistory: setViewing,
+    onLeave: (variantId) => leftFrom(routed.key, variantId),
     onEditLot: setEditingLot,
     onReorder: setReordering,
     onReceive: (variantId) => {
       setReceivingItem(variantId);
       setReceiving(true);
     },
+    onCountIn: setCountingIn,
+  };
+
+  // Codes and places in the address, not a list a person reads; a code
+  // closed closes its places too.
+  const openRow = (key: string, open: boolean) => {
+    const next = opens.filter(
+      (each) => each !== key && !each.startsWith(`${key}.`),
+    );
+    if (open) next.push(key);
+    writeAddress({ open: next.length ? String(next) : null });
   };
 
   if (list.refused) {
     return <RevisionRefusalPage failure={list.refused} onRetry={reload} />;
   }
 
-  // Each quick filter, its count the rows it shows (R3); the Lot view's
-  // four, no Out (31a); without their counts until a read answers.
+  // Each quick filter, its count the rows it shows (R3), saying so: codes,
+  // or lots on the Lot view (108a); the Lot view's four, no Out (31a);
+  // without their counts until a read answers.
+  const of: QuickFilter['of'] = byLot ? 'lot' : 'code';
   const quick: QuickFilter[] = [
     {
       id: 'low',
@@ -351,6 +368,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Low stock',
       }),
       count: counts?.low,
+      of,
       pressed: low,
       onToggle: () => setFilters({ low: !low }),
     },
@@ -364,6 +382,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
               defaultMessage: 'Out',
             }),
             count: counts && 'out' in counts ? counts.out : undefined,
+            of,
             pressed: out,
             onToggle: () => setFilters({ out: !out }),
           },
@@ -375,6 +394,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Expiring soon',
       }),
       count: counts?.expiring,
+      of,
       pressed: expiring,
       onToggle: () => setFilters({ expiring: !expiring }),
     },
@@ -385,6 +405,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Expired',
       }),
       count: counts?.expired,
+      of,
       pressed: expired,
       onToggle: () => setFilters({ expired: !expired }),
     },
@@ -395,6 +416,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Waiting for a cost',
       }),
       count: counts?.needsCost,
+      of,
       pressed: needsCost,
       onToggle: () => setFilters({ needsCost: !needsCost }),
     },
@@ -465,30 +487,13 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
 
   // Only places stock can sit in, grouped by their warehouse (20a).
   const locationFilter = seesPlaces && (
-    <SelectField
+    <PlaceFilter
       id="stock-location"
-      size="small"
-      label={intl.formatMessage({
-        id: 'inventory.location',
-        defaultMessage: 'Location',
-      })}
-      emptyLabel={intl.formatMessage({
-        id: 'inventory.everywhere',
-        defaultMessage: 'Everywhere',
-      })}
+      locations={locations}
+      leaves={leaves}
       value={answered ? locationId : ''}
-      onChange={(event) => setFilters({ locationId: event.target.value })}
-      sx={{ minWidth: rem(200) }}
-    >
-      {byWarehouse(locations, leaves).flatMap(([top, inIt]) => [
-        <ListSubheader key={`top-${top.id}`}>{top.name}</ListSubheader>,
-        ...inIt.map((location) => (
-          <MenuItem key={location.id} value={location.id} sx={{ pl: 4 }}>
-            {nameAndCode(location.name, location.code)}
-          </MenuItem>
-        )),
-      ])}
-    </SelectField>
+      onChange={(next) => setFilters({ locationId: next })}
+    />
   );
 
   const groupBy = (
@@ -827,6 +832,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   loading={lots.loading}
                   seesPlaces={seesPlaces}
                   handlers={handlers}
+                  rowReturn={rowReturn}
                   header={lotSort.header}
                 />
               ) : (
@@ -840,14 +846,8 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   handlers={handlers}
                   changes={changes}
                   opens={opens}
-                  onOpen={(variantId, open) => {
-                    // Codes in the address, not a list a person reads.
-                    const next = opens.filter((each) => each !== variantId);
-                    if (open) next.push(variantId);
-                    writeAddress({ open: next.length ? String(next) : null });
-                  }}
+                  onOpen={openRow}
                   focusRow={newCode ?? focusRow}
-                  onLeave={(variantId) => leftFrom(routed.key, variantId)}
                 />
               )
             ) : (
@@ -926,10 +926,11 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           pageSize={PAGE_SIZE}
           onLoadMore={loadMore}
           before={
-            counts && (
+            rows.length > 0 && (
               <ShowingLine
                 shown={rows.length}
-                total={counts.total}
+                total={counts?.total}
+                more={list.hasMore}
                 of={byLot ? 'lot' : 'code'}
               />
             )
@@ -941,6 +942,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         key={receivingItem ?? 'any'}
         open={receiving || (asked && leaves.length > 0)}
         locations={leaves}
+        tree={locations}
         defaultLocationId={locationId}
         defaultVariantId={receivingItem ?? ''}
         onClose={() => {
@@ -975,6 +977,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           line={delivery.line}
           delivery={delivery}
           locations={leaves}
+          tree={locations}
           canSeeLots
           onClose={() => setDelivery(null)}
           onReceived={refresh}
@@ -989,14 +992,28 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           mode={moving.mode}
           row={moving.row}
           locations={leaves}
+          tree={locations}
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={refresh}
         />
       )}
 
-      {viewing && (
-        <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
+      {/* Found stock counted in (ADR-093, R26): Stock reads again, the
+          code's row open at the place it was counted into, its lots too. */}
+      {countingIn && (
+        <CountInDialog
+          key={countingIn.variantId}
+          item={countingIn}
+          locations={leaves}
+          tree={locations}
+          canSeeCosts={can('costs.view')}
+          onClose={() => setCountingIn(null)}
+          onCounted={async (locationId) => {
+            openRow(openKey(countingIn.variantId, locationId), true);
+            await refresh();
+          }}
+        />
       )}
 
       <EditLotDialog

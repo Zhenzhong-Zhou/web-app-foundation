@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
+import type { KeysetQueryDto } from '../../common/dto/keyset-query.dto';
+import type { Locale } from '../../common/locales';
 import { recordContext } from '../../core/audit/audit-context';
 import { todayOf } from '../../core/organizations/time-zone';
 import { isCheckViolation } from '../../database/errors';
@@ -15,8 +17,9 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { comingOf } from '../stock/availability';
 import { quantity } from '../stock/code-figures';
+import { movementPage } from '../stock/movement-view';
 import { StockService } from '../stock/stock.service';
-import type { Delivery } from './dto/order-response.dto';
+import type { Delivery, OrderReceiptPage } from './dto/order-response.dto';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import { loadOrder } from './load-order';
 
@@ -36,6 +39,56 @@ export class OrderReceiptsService {
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
   ) {}
+
+  /**
+   * A purchase's receipts, newest first (ADR-093, 102a): Movements' own
+   * read of the order (`movementPage`), its receipts alone, so the tab and
+   * All movements of PO-… never differ, projected to the tab's columns
+   * for a reader with orders.view, who may lack stock.view. Where only
+   * with `locations.view` (96a). Another organization's order is a 404;
+   * a sale has none.
+   */
+  list(
+    orderId: string,
+    query: KeysetQueryDto,
+    locale: Locale | null,
+    places: boolean,
+  ): Promise<OrderReceiptPage> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      await loadOrder(tx, organizationId, orderId, { lock: false });
+      const page = await movementPage(
+        tx,
+        organizationId,
+        { ...query, orderId, reason: 'receipt' },
+        locale,
+        { places, orders: false, runs: false, partners: false },
+      );
+      return {
+        nextCursor: page.nextCursor,
+        entries: page.entries.map((row) => ({
+          id: row.id,
+          createdAt: row.createdAt,
+          productId: row.productId,
+          sku: row.sku,
+          currentSku: row.currentSku,
+          productName: row.productName,
+          variantName: row.variantName,
+          type: row.type,
+          unitOfMeasure: row.unitOfMeasure,
+          received: row.quantity,
+          toLocationId: row.toLocationId,
+          toLocationName: row.toLocationName,
+          toLocationCode: row.toLocationCode,
+          toLocationPath: row.toLocationPath,
+          lotId: row.lotId,
+          lotCode: row.lotCode,
+          lotExpiresAt: row.lotExpiresAt,
+          actorName: row.actorName,
+          actorEmail: row.actorEmail,
+        })),
+      };
+    });
+  }
 
   /**
    * The deliveries a receipt of this item may be (ADR-093, v3): each

@@ -2,6 +2,7 @@ import { Button, Stack } from '@mui/material';
 
 import type { OrderDetail } from '../api/types.gen';
 import type { OrderStatus } from '../lib/api-names';
+import { isZero } from '../lib/decimal';
 import { openDialog } from '../lib/open-dialog';
 import { NEXT_STATUSES, transitionLabel } from './status';
 
@@ -18,6 +19,7 @@ export function OrderStatusActions({
   onMove,
   onCloseOrder,
   quiet = false,
+  withoutClose = false,
   stacked = false,
 }: {
   order: OrderDetail;
@@ -31,12 +33,28 @@ export function OrderStatusActions({
    */
   quiet?: boolean;
   /**
+   * Close order is offered above, as the page's main act, once everything
+   * is in (#605): one button for it, not two.
+   */
+  withoutClose?: boolean;
+  /**
    * One above the other, each full width: in the summary panel, where a
    * row of buttons pushed to the right reads as an afterthought.
    */
   stacked?: boolean;
 }) {
-  if (NEXT_STATUSES[order.status].length === 0) return null;
+  // Cancel only while nothing has come or gone, a quantity read as a
+  // decimal, never a number (ADR-025); Close order not where it is
+  // offered above.
+  const cancellable = !order.lines.some(
+    (line) => !isZero(line.quantityFulfilled),
+  );
+  const moves = NEXT_STATUSES[order.status].filter((next) =>
+    next === 'cancelled'
+      ? cancellable
+      : !(withoutClose && next === 'fulfilled'),
+  );
+  if (moves.length === 0) return null;
 
   return (
     <Stack
@@ -47,12 +65,8 @@ export function OrderStatusActions({
       {/* Cancel first, Confirm last: the rightmost position is where
           "proceed" lives, and the destructive one should not be where a
           thumb lands by default. */}
-      {NEXT_STATUSES[order.status]
-        .filter(
-          (next) =>
-            next === 'cancelled' &&
-            !order.lines.some((line) => Number(line.quantityFulfilled) > 0),
-        )
+      {moves
+        .filter((next) => next === 'cancelled')
         .map((next) => (
           <Button
             key={next}
@@ -69,7 +83,7 @@ export function OrderStatusActions({
       {/* Close order is filled only once nothing is left to ship or
           receive: while goods are due, the state waits for them, not for
           closing (conventions.md, Responsive layout; #158). */}
-      {NEXT_STATUSES[order.status]
+      {moves
         .filter((next) => next !== 'cancelled')
         .map((next) => (
           <Button

@@ -1,4 +1,10 @@
-import { render, renderHook, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   Link,
@@ -6,8 +12,9 @@ import {
   useLocation,
   useNavigationType,
 } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { heldRouter } from '../test/held-router';
 import { OFFER_BACK } from './offer-back';
 import {
   day,
@@ -17,6 +24,7 @@ import {
   useAddressWrite,
   useListFilters,
 } from './use-list-filters';
+import { SEARCH_WAIT_MS, useListSearch } from './use-list-search';
 import { useListSort } from './use-list-sort';
 
 const FILTERS = {
@@ -151,7 +159,56 @@ describe('useListFilters', () => {
   });
 });
 
+/** A list's search box beside one of its filters. */
+function SearchAndFilter() {
+  const { text, setText } = useListSearch();
+  const [, setFilters] = useListFilters(FILTERS);
+
+  return (
+    <>
+      <input
+        aria-label="Search"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+      />
+      <button onClick={() => setFilters({ status: '' })}>All</button>
+    </>
+  );
+}
+
 describe('useAddressWrite', () => {
+  // Typed, then a filter pressed within the search's wait, on a page
+  // that shows the filter's address only after the wait, as a slow
+  // device does: the search was written from the address still shown,
+  // putting the filter back on (#636).
+  it('writes from the address as it is when it runs, not as last shown', () => {
+    const router = heldRouter('/list?status=low');
+    render(
+      <router.HeldRouter>
+        <SearchAndFilter />
+      </router.HeldRouter>,
+    );
+    // fireEvent, not userEvent: Testing Library's wrapper around
+    // userEvent waits on a setTimeout the fake clock would hold.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search' }), {
+      target: { value: 'acme' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(router.address()).toBe('/list');
+
+    act(() => vi.advanceTimersByTime(SEARCH_WAIT_MS));
+    expect(router.address()).toBe('/list?search=acme');
+
+    router.show();
+    act(() => vi.advanceTimersByTime(SEARCH_WAIT_MS));
+    expect(router.address()).toBe('/list?search=acme');
+  });
+
   // The search and the tab write from an effect that depends on it, which
   // a new function each render would start again on every render.
   it('is the same function until the address changes', () => {

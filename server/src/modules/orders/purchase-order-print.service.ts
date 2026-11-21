@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
+import { minorUnits } from '../../common/money';
 import {
   partnerAddress,
   type PrintedAddress,
@@ -21,7 +22,6 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { minorUnits } from '../invoices/invoice-amounts';
 import { namedLines } from '../invoices/line-names';
 import type { Tx } from '../stock/stock.service';
 import { loadOrder } from './load-order';

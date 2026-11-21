@@ -1,3 +1,5 @@
+import type { ProductType } from '../../../database/schema';
+
 /**
  * Stock as the API returns it (ADR-068): levels, movements, lots and the
  * counts behind the inventory page's filters, described for the OpenAPI
@@ -53,21 +55,69 @@ export class MovementDocument {
   number!: string | null;
 }
 
-/** A movement as the ledger lists it. */
+/** A sample's recipient (ADR-042; 125): the partner, whose page opens. */
+export class MovementRecipient {
+  id!: string;
+  name!: string;
+}
+
+/**
+ * A movement as the ledger lists it, the one row Movements, the item's
+ * page and the export read (ADR-093, R9 and R20): the item by today's
+ * name and code, the lot, each end, who, when, and the document it was
+ * for, each part only for a reader who may see it.
+ */
 export class Movement {
   id!: string;
-  /** Snapshotted at the time (ADR-023), not joined from the variant. */
+  /** The code that moved. */
+  variantId!: string;
+  /** Its item, whose page the row's name opens. */
+  productId!: string;
+  /** The code it was recorded under, snapshotted at the time (ADR-023). */
   sku!: string;
+  /**
+   * The code today, joined from the variant (7a), which the row shows:
+   * "was VITC-90" under it when `sku` differs.
+   */
+  currentSku!: string;
   /** From the catalogue, in the reader's language (ADR-056). */
   productName!: string;
   variantName!: string | null;
+  type!: ProductType;
+  unitOfMeasure!: string;
   quantity!: string;
   reason!: string;
   reasonDetail!: string | null;
   note!: string | null;
+  /**
+   * Where it came from; null for stock arriving, from a supplier, a run
+   * or a count. The direction is which end is set (ADR-023).
+   */
+  fromLocationId!: string | null;
+  /**
+   * Null with no place, and for a reader without `locations.view`, as the
+   * code is and the path empty, the id kept (ADR-080; ADR-093, 96a), as
+   * Stock's rows send them.
+   */
   fromLocationName!: string | null;
+  fromLocationCode!: string | null;
+  /**
+   * The places above it, its warehouse or site first, by name (57a), for
+   * the page's rows alone. Empty for a place at the top, for no place,
+   * and for a reader without `locations.view`.
+   */
+  fromLocationPath!: string[];
+  /** Where it went; null for stock leaving, to a customer, a run or a count. */
+  toLocationId!: string | null;
+  /** As `fromLocationName`. */
   toLocationName!: string | null;
+  toLocationCode!: string | null;
+  /** As `fromLocationPath`. */
+  toLocationPath!: string[];
+  lotId!: string | null;
   lotCode!: string | null;
+  /** The lot's expiry day, `YYYY-MM-DD` (ADR-052); null with none. */
+  lotExpiresAt!: string | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
@@ -75,9 +125,54 @@ export class Movement {
   createdAt!: Date;
   /**
    * What it was for, from its reference (55a); null with none, and for a
-   * reader who may not see orders, or runs. Never in the export.
+   * reader who may not see orders, or runs, in the list and its export.
    */
   document!: MovementDocument | null;
+  /**
+   * Whom a sample went to, as Send sample recorded it (125), which For
+   * names where a sale's names its order; null for any other movement, a
+   * sample with no recipient recorded, and a reader without
+   * `partners.view`, in the list and its export.
+   */
+  recipient!: MovementRecipient | null;
+  /**
+   * What came into the stock the list counts, as a stock card's In
+   * (ADR-093, 11a): at the place chosen, what came to it; across every
+   * place, what arrived, a move between two places neither In nor Out.
+   * Null when it went out, or moved within.
+   */
+  quantityIn!: string | null;
+  /** What went out of it, as `quantityIn`: a stock card's Out. */
+  quantityOut!: string | null;
+  /**
+   * The same change signed, a list's Change, which its export writes too,
+   * so the two never differ: `quantityIn`, or `quantityOut` negative.
+   * Null for a move counted as neither, between two places across every
+   * place.
+   */
+  change!: string | null;
+  /**
+   * What the list counts after this movement: today's on hand, less what
+   * moved after it (41a). Only for one code, its lot or place when chosen
+   * too (85a), with every reason and no order (91a); null otherwise.
+   */
+  balance!: string | null;
+}
+
+/**
+ * A date range's stock card for one code (ADR-093, R34; 88a): what came
+ * in and went out over the range, and the balance at its start and at its
+ * end, Closing = Opening + In − Out.
+ */
+export class MovementPeriod {
+  /** The balance before the range's first movement; null where no balance is (91a). */
+  opening!: string | null;
+  /** Every In over the range, the list's filters on. */
+  quantityIn!: string;
+  /** Every Out over the range, the list's filters on. */
+  quantityOut!: string;
+  /** The balance after the range's last movement; null as `opening`. */
+  closing!: string | null;
 }
 
 /** GET /stock/movements: one page. */
@@ -85,6 +180,12 @@ export class MovementPage {
   entries!: Movement[];
   /** Pass as `before` for the next page; null when there is no more. */
   nextCursor!: string | null;
+  /**
+   * The range's stock card, the same on every page: for one code and a
+   * date range (88a), never for several items, whose units differ; null
+   * otherwise.
+   */
+  period!: MovementPeriod | null;
 }
 
 /** A movement just recorded, as the ledger stores it. */
@@ -108,6 +209,27 @@ export class RecordedMovement {
 /** POST /stock/movements. */
 export class RecordedMovementEnvelope {
   movement!: RecordedMovement;
+  /**
+   * The movement waits for a cost (ADR-048): found stock in a new lot, or
+   * in an item with no cost yet, which its message says (ADR-093, 90a).
+   */
+  needsCost!: boolean;
+}
+
+/**
+ * One code by its id (ADR-093, 133b): its code, its item's name in the
+ * reader's language, its unit, and whether it is in use, for Movements
+ * to name a code that no row and no picker's option names.
+ */
+export class StockVariant {
+  id!: string;
+  sku!: string;
+  productName!: string;
+  /** In the reader's language (ADR-056); null for a variant with none. */
+  variantName!: string | null;
+  unitOfMeasure!: string;
+  /** False once it, or its item, is discontinued. */
+  isActive!: boolean;
 }
 
 /** A lot of one item, as the receive dialogs offer it. */

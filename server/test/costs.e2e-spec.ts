@@ -698,7 +698,9 @@ describe('Costs (e2e)', () => {
       const exported = (
         await s.agent.get('/v1/costs/valuation/export').expect(200)
       ).text;
-      expect(exported).toContain('SCOOP');
+      // Its money at the currency's places, stored 2.000000 and 20.000000
+      // (99a).
+      expect(exported).toContain('SCOOP,,10,2.00,20.00,CAD,false');
       expect(exported).not.toMatch(/FILLER|PRESS/);
 
       expect(await needsCost(s)).toEqual([]);

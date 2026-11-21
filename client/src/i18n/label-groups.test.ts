@@ -156,6 +156,15 @@ const GROUPS: { shown: string; ids: string[] }[] = [
     ids: ['orders.filter.sales', 'orders.filter.purchases'],
   },
   {
+    shown: "Orders' label beside Status, and its filter's choices (#605)",
+    ids: [
+      'orders.fulfillment.any',
+      'orders.fulfillment.none',
+      'orders.fulfillment.part',
+      'orders.fulfillment.all',
+    ],
+  },
+  {
     shown: "Orders' late chips",
     ids: [
       'orders.filter.toShip',
@@ -419,6 +428,10 @@ const SELECTS: { id: string; argument: string }[] = [
   { id: 'inventory.reorder.kindLine', argument: 'rule' },
   { id: 'inventory.reorder.ruleLine', argument: 'rule' },
   { id: 'settings.numbering.format', argument: 'reset' },
+  { id: 'orders.fulfillment.none', argument: 'direction' },
+  { id: 'orders.fulfillment.part', argument: 'direction' },
+  { id: 'orders.fulfillment.all', argument: 'direction' },
+  { id: 'orders.fulfillment.filter', argument: 'direction' },
 ];
 
 const CATALOGUES: Record<Locale, Record<string, string>> = {

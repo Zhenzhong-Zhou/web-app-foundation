@@ -1,4 +1,4 @@
-import type { ExportColumn } from '../../common/export';
+import { asMoney, type ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
 import type { InvoicesService } from './invoices.service';
@@ -10,7 +10,10 @@ type CreditNoteRow = Awaited<
   ReturnType<InvoicesService['listCreditNotes']>
 >['entries'][number];
 
-/** The invoices export (ADR-057): one row per invoice, amounts as data. */
+/**
+ * The invoices export (ADR-057): one row per invoice, amounts as data at
+ * the invoice's currency's places (99a).
+ */
 export const INVOICE_COLUMNS: ExportColumn<InvoiceRow>[] = [
   { header: HEADERS.number, value: (row) => row.number },
   { header: HEADERS.status, value: (row) => row.status },
@@ -33,20 +36,34 @@ export const INVOICE_COLUMNS: ExportColumn<InvoiceRow>[] = [
   },
   { header: HEADERS.reference, value: (row) => row.orderReference },
   { header: HEADERS.currency, value: (row) => row.currency },
-  { header: HEADERS.subtotal, value: (row) => row.subtotal },
-  { header: HEADERS.tax, value: (row) => row.taxTotal },
-  { header: HEADERS.total, value: (row) => row.total },
-  {
-    header: t({ id: 'exports.column.credited', defaultMessage: 'Credited' }),
-    value: (row) => row.credited,
-  },
-  {
-    header: t({ id: 'exports.column.net', defaultMessage: 'Net invoiced' }),
-    value: (row) => row.net,
-  },
+  asMoney(
+    HEADERS.subtotal,
+    (row) => row.subtotal,
+    (row) => row.currency,
+  ),
+  asMoney(
+    HEADERS.tax,
+    (row) => row.taxTotal,
+    (row) => row.currency,
+  ),
+  asMoney(
+    HEADERS.total,
+    (row) => row.total,
+    (row) => row.currency,
+  ),
+  asMoney(
+    t({ id: 'exports.column.credited', defaultMessage: 'Credited' }),
+    (row) => row.credited,
+    (row) => row.currency,
+  ),
+  asMoney(
+    t({ id: 'exports.column.net', defaultMessage: 'Net invoiced' }),
+    (row) => row.net,
+    (row) => row.currency,
+  ),
 ];
 
-/** The credit notes export (ADR-057). */
+/** The credit notes export (ADR-057), its total as the invoices'. */
 export const CREDIT_NOTE_COLUMNS: ExportColumn<CreditNoteRow>[] = [
   { header: HEADERS.number, value: (row) => row.number },
   {
@@ -62,7 +79,11 @@ export const CREDIT_NOTE_COLUMNS: ExportColumn<CreditNoteRow>[] = [
     value: (row) => row.creditDate,
   },
   { header: HEADERS.currency, value: (row) => row.currency },
-  { header: HEADERS.total, value: (row) => row.total },
+  asMoney(
+    HEADERS.total,
+    (row) => row.total,
+    (row) => row.currency,
+  ),
   {
     header: t({
       id: 'exports.column.voidsInvoice',

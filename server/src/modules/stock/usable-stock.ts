@@ -1,6 +1,15 @@
 import { type SQL, sql } from 'drizzle-orm';
 
 /**
+ * The rule's two tests, each written once: a lot not expired by the
+ * organization's today (ADR-072), one with no expiry never, on the lot
+ * aliased `lt`; and a place marked available (ADR-085), aliased `loc`.
+ */
+const notExpired = (today: string) =>
+  sql`(lt.expires_at is null or lt.expires_at >= ${today}::date)`;
+const AVAILABLE = sql`loc.is_available`;
+
+/**
  * The one rule for usable stock (ADR-085; ADR-093, R20): every figure
  * that means usable reads it, never a copy of it.
  *
@@ -44,10 +53,10 @@ export function usableByLocation(
         sl.variant_id,
         sl.location_id,
         coalesce(sum(sl.quantity) filter (
-          where lt.expires_at < ${today}::date
+          where not ${notExpired(today)}
         ), 0) as expired,
         coalesce(sum(sl.quantity) filter (
-          where lt.expires_at is null or lt.expires_at >= ${today}::date
+          where ${notExpired(today)}
         ), 0) as unexpired
       from stock_levels sl
       left join lots lt
@@ -61,7 +70,7 @@ export function usableByLocation(
     join locations loc
       on loc.id = s.location_id
       and loc.organization_id = ${org}
-      and loc.is_available
+      and ${AVAILABLE}
     left join (
       select
         pol.component_variant_id as variant_id,
@@ -77,6 +86,45 @@ export function usableByLocation(
         and pol.component_variant_id in ${variants}
       group by pol.component_variant_id, po.location_id
     ) i on i.variant_id = s.variant_id and i.location_id = s.location_id
+  `;
+}
+
+/**
+ * One lot at each place it has a row, by the one rule above, for its
+ * trace (ADR-044; ADR-093, 10a; review 27): `usable` its quantity at a
+ * place marked available while the lot has not expired by the
+ * organization's today, null where not, and `not_usable` the rest. What
+ * released runs were issued is counted by item and place, never by lot,
+ * so it is not taken here as usableByLocation takes it. Rows
+ * `location_id, location_name, location_code, is_available, quantity,
+ * usable, not_usable`, a place emptied included at 0.
+ */
+export function usableInLot(
+  organizationId: string,
+  today: string,
+  lotId: string,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+  const usable = sql`${AVAILABLE} and ${notExpired(today)}`;
+
+  return sql`
+    select
+      sl.location_id,
+      loc.name as location_name,
+      loc.code as location_code,
+      loc.is_available,
+      sl.quantity,
+      case when ${usable} then sl.quantity end as usable,
+      case when ${usable} then null else sl.quantity end as not_usable
+    from stock_levels sl
+    join lots lt
+      on lt.id = sl.lot_id
+      and lt.organization_id = ${org}
+    join locations loc
+      on loc.id = sl.location_id
+      and loc.organization_id = ${org}
+    where sl.organization_id = ${org}
+      and sl.lot_id = ${lotId}::uuid
   `;
 }
 
@@ -138,10 +186,40 @@ export function onHandByUse(
 }
 
 /**
+ * What has expired per item wherever it sits, places not available
+ * among them (#611; review 13), by the rule's own expiry test: Stock's
+ * Expires first says "all expired" when it is every unit on hand, though
+ * `expired` above counts the places available alone, which leaves a lot
+ * on a shelf held back out. Rows `variant_id, expired`, for the items in
+ * `variants` with any.
+ */
+export function expiredByItem(
+  organizationId: string,
+  today: string,
+  variants: SQL,
+): SQL {
+  const org = sql`${organizationId}::uuid`;
+
+  return sql`
+    select sl.variant_id, sum(sl.quantity) as expired
+    from stock_levels sl
+    join lots lt
+      on lt.id = sl.lot_id
+      and lt.organization_id = ${org}
+    where sl.organization_id = ${org}
+      and sl.variant_id in ${variants}
+      and sl.quantity > 0
+      and not ${notExpired(today)}
+    group by sl.variant_id
+  `;
+}
+
+/**
  * On hand per item at every place, usable or not, and the part of it at
  * places not available (ADR-042): onHandByUse's first half, and alone
- * what a list sorted by On hand reads (ADR-093, 29a). Rows `variant_id,
- * on_hand, unavailable`, for the items in `variants` with stock anywhere.
+ * what a list sorted by On hand reads (ADR-093, 29a) and what Movements'
+ * balance is worked back from (41a). Rows `variant_id, on_hand,
+ * unavailable`, for the items in `variants` with stock anywhere.
  */
 export function onHandByItem(
   organizationId: string,
@@ -149,6 +227,8 @@ export function onHandByItem(
   variants?: SQL,
   /** At one place alone, Stock's place chosen (ADR-093, 20a). */
   locationId?: string,
+  /** In one lot alone, Movements' lot chosen (ADR-093, 85a). */
+  lotId?: string,
 ): SQL {
   const org = sql`${organizationId}::uuid`;
 
@@ -164,6 +244,7 @@ export function onHandByItem(
       where sl.organization_id = ${org}
         ${variants ? sql`and sl.variant_id in ${variants}` : sql``}
         ${locationId ? sql`and sl.location_id = ${locationId}::uuid` : sql``}
+        ${lotId ? sql`and sl.lot_id = ${lotId}::uuid` : sql``}
         and sl.quantity > 0
       group by sl.variant_id, sl.location_id
     ) s

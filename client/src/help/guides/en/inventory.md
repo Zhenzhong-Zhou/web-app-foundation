@@ -4,7 +4,7 @@ Inventory shows what you have and where: a row for each code, opening to the pla
 
 ## Read the stock {#stock}
 
-On **Stock**, each row is a code, the code on a variant’s label, so an item that comes in three sizes has three rows. It lists every code with stock on hand, wanted by a confirmed sale, coming, or watched by a reorder point; **Show emptied** adds the rest. It reads fifty rows at a time, and **Show 50 more** adds the next fifty.
+On **Stock**, each row is a code, the code on a variant’s label, so an item that comes in three sizes has three rows. It lists every code with stock on hand, wanted by a confirmed sale, coming, or watched by a reorder point; **Show emptied** adds the rest. It reads fifty rows at a time, and **Show 50 more** adds the next fifty. A line says how many it shows: “31 codes”, or “Showing 50 of 312 codes” while there are more. Back from an item, a place or a lot returns the list as you left it, with every row you had shown, its opened places and lots, and the row you left from in focus.
 
 - The name first, its code under it in grey, and its type. Press the name, or the row, to open the item’s page.
 - **Where**: how many places hold it, such as “2 places”. Press it to open the places, and a place’s lots to open them: the lots that expire first on top, the expired above them, a lot with no expiry last. A lot’s code opens its trace.
@@ -13,16 +13,16 @@ On **Stock**, each row is a code, the code on a variant’s label, so an item th
 - **Held**: kept for confirmed sales, the earliest confirmed first.
 - **Coming**: what confirmed purchases and released runs still have to bring, with the soonest day.
 - **Status**: **Low**, **Out** or **Enough**, with “10 left · reorder at 36” under it for a code with a reorder point. Press the line to see where the code stands.
-- **Expires first**: the soonest expiry of the usable stock.
+- **Expires first**: the soonest expiry of the usable stock, or “all expired” where every unit on hand has expired; “—” where nothing expires.
 - **Actions**: the row’s actions, below.
 
-Below 600 px each code is a card with **On hand** and **Free**, and **Filters** holds what the screen has no room for. From 600 to 899 px **Held** and **Coming** leave the table.
+Below 600 px each code is a card with **On hand** and **Free**, saying under them why Free is less, such as “12 not usable: expired” and “30 held”, and **Filters** holds what the screen has no room for. From 600 to 899 px **Held** and **Coming** leave the table.
 
 > Someone who may not see locations reads “3 lots” in place of the places, opens the lots alone, and has no **Location** list.
 
 ## Find stock {#find}
 
-- The quick filters, on a row of their own above the search (on a phone, in **Filters**), show only what they name, each with its count: **Low stock** (the out ones too), **Out**, **Expiring soon** (the expired ones too), **Expired** and **Waiting for a cost**. A count is the rows the filter shows, with the other filters on, so press one and the list is that long.
+- The quick filters, on a row of their own above the search (on a phone, in **Filters**), show only what they name, each with its count and what it counts, such as **Low stock · 4 codes**: **Low stock** (the out ones too), **Out**, **Expiring soon** (the expired ones too), **Expired** and **Waiting for a cost**. A count is the rows the filter shows, with the other filters on, so press one and the list is that long.
 - **Type**, **Category** and **Location** narrow the list, and **Search items, codes or lots** finds a code, an item’s name or a lot’s code. A message says when nothing matches, with **Show all stock**.
 - Press **On hand** or **Expires first** at the head of a column to sort by it, and again to reverse; the name is the default. A code with nothing to expire comes last either way. Free is not a sort.
 - Choose a place under **Location** and the list shows what is there: **On hand here**, **Lots here** and **Expires first here** are that place’s, while **Free, every place** and **Held, every place** count every place, since a sale holds an item, not a shelf. A lot’s code searched with a place chosen finds that lot at that place only.
@@ -59,14 +59,15 @@ What each does:
 - **Ship out…**: stock that leaves with no order. A customer’s goods ship from their sale on Orders.
 - **Send sample…**: a hand-out, with whom it was given to, so a recall can find it.
 - **Correct the count…**: how many more or fewer the shelf has than recorded, why, and what happened.
+- **Count it in…**, ending an item’s opened places and lots under “Found some where it has never been?”: stock found at a place, or in a lot, the item has never had. Choose the location and, for an item tracked by lot, **One of its lots** or **A new lot**, its number as printed on the box and one the item does not have yet. A new lot, or an item with no cost yet, waits for a cost on [Stock value](/costs).
 - **Edit lot details…**, **Trace lot** and **Movements**: the lot, where it went, and its movements.
 - **Change reorder point…**: the item’s reorder point, below.
 
-> Everyone who may see stock sees **Movements** and **Trace lot**. Only someone who may move stock sees **Receive stock** and what changes stock, and only someone who may correct counts sees **Correct the count…**.
+> Everyone who may see stock sees **Movements** and **Trace lot**. Only someone who may move stock sees **Receive stock** and what changes stock, and only someone who may correct counts sees **Correct the count…** and **Count it in…**.
 
 ## What each count counts {#counts}
 
-A number on a filter or a tile counts one kind of thing, and the kind is the same wherever you meet it.
+A number on a filter or a tile counts one kind of thing, says which beside it, such as **Low stock · 4 codes** or **Expiring soon · 2 lots**, and the kind is the same wherever you meet it.
 
 - **Stock**, by item, counts codes: a **Low stock** count of 4 is four codes, wherever they sit.
 - **Stock**, by lot, counts lots at each place: a lot in two places is two rows and counts twice.
@@ -89,9 +90,9 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 ## Where an item stands {#position}
 
-An item’s position = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another. Said in a line it is “10 left · reorder at 36”, and a press on it opens the item’s page at [Where it stands](/items#stands), which lists what makes each figure up.
+What an item has **Left** = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another. Said in a line it is “10 left · reorder at 36”, and a press on it opens the item’s page at [Where it stands](/items#stands), which lists what makes each figure up.
 
-An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The list opens with the most to order first; press **Status** to put the furthest below their point first instead, or on a phone choose **Low first** under **Sort**. **Low stock** shows the out ones too. Open a row to see what makes up its position, late orders marked; on a phone, where each item is a card, press the line saying how many are left, which opens the item’s stock.
+An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. A line under the list says how many codes it shows, such as “4 codes”. The list opens with the most to order first; press **Status** to put the furthest below their point first instead, or on a phone choose **Low first** under **Sort**. **Low stock** shows the out ones too. Open a row with “Who waits · 2 orders”, which says how many orders wait for it, to see what makes up what is left, late orders marked; on a phone, where each item is a card, press the line saying how many are left, which opens the item’s stock.
 
 ## How much to order {#how-much}
 

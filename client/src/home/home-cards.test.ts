@@ -31,6 +31,31 @@ describe("a tile's words", () => {
     });
   });
 
+  // 108a: Low stock counts codes and Expiring soon lots at each place,
+  // as their filters say, in each language, by the plural.
+  it('says what Low stock and Expiring soon count, in each language', () => {
+    const summary = (
+      locale: string,
+      messages: Record<string, string>,
+      kind: 'lowStock' | 'expiring',
+      count: number,
+      late: number,
+    ) =>
+      tileWords(intlFor(locale, messages), homeCard({ kind, count, late }), 30)
+        .summary;
+
+    expect(summary('en', en, 'lowStock', 8, 2)).toBe('8 codes · 2 out');
+    expect(summary('en', en, 'lowStock', 1, 0)).toBe('1 code');
+    expect(summary('en', en, 'expiring', 4, 1)).toBe('4 lots · 1 expired');
+    expect(summary('en', en, 'expiring', 1, 0)).toBe('1 lot');
+    expect(summary('fr-CA', fr, 'lowStock', 8, 2)).toBe('8 codes · 2 épuisés');
+    expect(summary('fr-CA', fr, 'expiring', 1, 0)).toBe('1 lot');
+    expect(summary('zh-Hans', zh, 'lowStock', 8, 2)).toBe(
+      '8 个编码 · 2 项缺货',
+    );
+    expect(summary('zh-Hans', zh, 'expiring', 4, 0)).toBe('4 个批次');
+  });
+
   it('is not late for a kind that is never late', () => {
     expect(
       tileWords(intl, homeCard({ kind: 'drafts', count: 2, late: 2 }), 30),

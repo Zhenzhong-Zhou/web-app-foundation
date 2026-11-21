@@ -1,10 +1,10 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { OrderDetail } from '../api/types.gen';
+import type { OrderDetail, OrderReceipt } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
 import { orderLine } from '../test/factories';
 import { apiError } from '../test/handlers';
@@ -40,6 +40,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     duplicatedFromId: null,
     deliverTo: null,
     fullyFulfilled: false,
+    fulfillment: null,
     isSample: false,
     totals: [],
     totalsComplete: false,
@@ -469,7 +470,9 @@ describe('OrderDetailPage lines', () => {
         serve(order(done));
         renderPage();
 
-        expect(await closeOrder()).toHaveClass('MuiButton-contained');
+        // The close line's, the page's main act once nothing is due (113a),
+        // filled by the theme's default variant, which this render lacks.
+        expect(await closeOrder()).not.toHaveClass('MuiButton-outlined');
       });
 
       it('is outlined on a sale still to ship, under a filled Ship', async () => {
@@ -487,7 +490,9 @@ describe('OrderDetailPage lines', () => {
         serveSale([], done);
         renderPage(SALE_PERMISSIONS);
 
-        expect(await closeOrder()).toHaveClass('MuiButton-contained');
+        // The close line's, the page's main act once nothing is due (113a),
+        // filled by the theme's default variant, which this render lacks.
+        expect(await closeOrder()).not.toHaveClass('MuiButton-outlined');
         expect(
           screen.queryByRole('button', { name: 'Ship' }),
         ).not.toBeInTheDocument();
@@ -842,6 +847,142 @@ describe('OrderDetailPage header', () => {
  * totals or tax (ADR-080): the page leaves their columns, the totals and
  * the order's documents out, rather than showing a dash where each was.
  */
+/**
+ * How much has come or gone (#605; ADR-093's R25): beside Confirmed, never
+ * in its place, and once everything is in, Close order offered as the
+ * page's main act, the status staying a person's decision (ADR-027).
+ */
+describe('OrderDetailPage, how much has come', () => {
+  const allIn = order({
+    status: 'confirmed',
+    fulfillment: 'all',
+    fullyFulfilled: true,
+    lines: [
+      orderLine({
+        quantityFulfilled: '40.0000',
+        quantityOutstanding: '0.0000',
+        isComplete: true,
+      }),
+    ],
+  });
+
+  it('says Partly received beside Confirmed, with no offer to close', async () => {
+    serve(order({ status: 'confirmed', fulfillment: 'part' }));
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'PO-000001' });
+    expect(screen.getByText('Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Partly received')).toBeInTheDocument();
+    expect(screen.queryByText(/Close the order\?/)).not.toBeInTheDocument();
+  });
+
+  it('offers to close a purchase all received, once, closing it at once', async () => {
+    const sent: unknown[] = [];
+    serve(allIn);
+    server.use(
+      http.patch('/api/v1/orders/:id', async ({ request }) => {
+        sent.push(await request.json());
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderPage();
+
+    await screen.findByText('Everything has arrived. Close the order?');
+    expect(screen.getByText('All received')).toBeInTheDocument();
+    // One Close order, the main act, said by the line above it.
+    const [close, ...more] = screen.getAllByRole('button', {
+      name: 'Close order',
+    });
+    expect(more).toEqual([]);
+    expect(close).toHaveAccessibleDescription(
+      'Everything has arrived. Close the order?',
+    );
+    // Filled by the theme's default variant, which this render lacks.
+    expect(close).not.toHaveClass('MuiButton-outlined');
+
+    // Nothing is outstanding, so no question about what is still to come.
+    serve({ ...allIn, status: 'fulfilled', fulfillment: null });
+    await userEvent.click(close);
+    await expect.poll(() => sent).toEqual([{ status: 'fulfilled' }]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Close order gone, focus goes to the order's title, where the page
+    // begins, never to the page's foot (103a).
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Close order' })).toBeNull(),
+    );
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'PO-000001' }),
+    ).toHaveFocus();
+  });
+
+  // 113a: every line closed short with nothing in reads Not received;
+  // nothing is due, so Close order is offered, its line in words that
+  // never say everything came.
+  it('offers to close an order every line of which was closed short, Not received, nothing more expected', async () => {
+    serve(
+      order({
+        status: 'confirmed',
+        fulfillment: 'none',
+        fullyFulfilled: true,
+        lines: [
+          orderLine({
+            quantityFulfilled: '0.0000',
+            quantityOutstanding: '0.0000',
+            isClosedShort: true,
+            isComplete: true,
+          }),
+        ],
+      }),
+    );
+    renderPage();
+
+    const close = await screen.findByRole('button', { name: 'Close order' });
+    expect(close).toHaveAccessibleDescription(
+      'Nothing more is expected. Close the order?',
+    );
+    expect(screen.getByText('Not received')).toBeInTheDocument();
+    expect(screen.queryByText(/^Everything has/)).not.toBeInTheDocument();
+  });
+
+  it('says a line closed short after some came: nothing more is expected', async () => {
+    serve({
+      ...allIn,
+      lines: [
+        orderLine({
+          quantityFulfilled: '10.0000',
+          quantityOutstanding: '0.0000',
+          isClosedShort: true,
+          isComplete: true,
+        }),
+      ],
+    });
+    renderPage();
+
+    expect(
+      await screen.findByText('Nothing more is expected. Close the order?'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('All received')).toBeInTheDocument();
+  });
+
+  it('says a sale all shipped in its own words', async () => {
+    serve({ ...allIn, direction: 'sale', number: 'SO-000001' });
+    renderPage([...ALL, 'orders.ship']);
+
+    expect(
+      await screen.findByText('Everything has shipped. Close the order?'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('All shipped')).toBeInTheDocument();
+  });
+
+  it('shows a reader who cannot close it the label alone', async () => {
+    serve(allIn);
+    renderPage(['orders.view']);
+
+    expect(await screen.findByText('All received')).toBeInTheDocument();
+    expect(screen.queryByText(/Close the order\?/)).not.toBeInTheDocument();
+  });
+});
+
 describe('OrderDetailPage without prices', () => {
   const WAREHOUSE = ['orders.view', 'orders.receive', 'orders.ship'];
 
@@ -921,5 +1062,141 @@ describe('OrderDetailPage without prices', () => {
       screen.getByRole('combobox', { name: 'Deliver to' }),
     ).toHaveAttribute('aria-disabled', 'true');
     expect(askedForLocations).toBe(false);
+  });
+});
+
+// The order's movements (ADR-093, R25): a purchase's receipts, its own
+// read under orders.view (102a), with All movements of the order for a
+// reader with stock.view; a sale's link on its Shipments tab.
+describe('OrderDetailPage receipts', () => {
+  const RECEIPT: OrderReceipt = {
+    id: 'movement-9',
+    createdAt: '2026-11-16T22:10:00.000Z',
+    productId: 'product-vitd',
+    sku: 'VITD-60',
+    currentSku: 'VITD-60',
+    productName: 'Vitamin D3',
+    variantName: '60 count',
+    type: 'good',
+    unitOfMeasure: 'each',
+    received: '60.0000',
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    lotId: null,
+    lotCode: null,
+    lotExpiresAt: null,
+    actorName: 'Sam Lee',
+    actorEmail: 'sam@example.com',
+  };
+
+  it('lists a purchase’s receipts by its order, with All movements of it', async () => {
+    serve(order({ status: 'confirmed' }));
+    let asked: URL | null = null;
+    server.use(
+      http.get('/api/v1/orders/:id/receipts', ({ request }) => {
+        asked = new URL(request.url);
+        return HttpResponse.json({ entries: [RECEIPT], nextCursor: null });
+      }),
+    );
+    renderPage(
+      [...ALL, 'stock.view', 'locations.view'],
+      '/orders/order-1?tab=receipts',
+    );
+
+    // The row, once read: the table stands while its first page loads.
+    const cell = await screen.findByText('60 each');
+    const table = cell.closest('table')!;
+    expect(asked!.pathname).toBe('/api/v1/orders/order-1/receipts');
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['When', 'Item', 'Received', 'Where', 'Lot', 'By']);
+    const [, row] = within(table).getAllByRole('row');
+    expect(within(row).getAllByRole('cell')[2]).toHaveTextContent('60 each');
+    expect(
+      within(row).getByText('Main warehouse › Shelf A (A)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'All movements of PO-000001' }),
+    ).toHaveAttribute('href', '/movements?orderId=order-1');
+  });
+
+  it('says when nothing has been received', async () => {
+    serve(order({ status: 'confirmed' }));
+    server.use(
+      http.get('/api/v1/orders/:id/receipts', () =>
+        HttpResponse.json({ entries: [], nextCursor: null }),
+      ),
+    );
+    renderPage([...ALL, 'stock.view'], '/orders/order-1?tab=receipts');
+
+    expect(
+      await screen.findByText('Nothing has been received on this order yet.'),
+    ).toBeVisible();
+  });
+
+  it('gives a sale’s Shipments tab All movements of it', async () => {
+    serve(
+      order({ direction: 'sale', number: 'SO-000001', status: 'confirmed' }),
+    );
+    server.use(
+      http.get('/api/v1/orders/:id/shipments', () => HttpResponse.json([])),
+    );
+    renderPage([...ALL, 'stock.view'], SHIPMENTS_TAB);
+
+    expect(
+      await screen.findByRole('link', { name: 'All movements of SO-000001' }),
+    ).toHaveAttribute('href', '/movements?orderId=order-1');
+    expect(screen.queryByRole('tab', { name: 'Receipts' })).toBeNull();
+  });
+
+  // 102a: a reader with orders.view alone, as Sales without places,
+  // reads the tab; Where only with locations.view, All movements of the
+  // order only with stock.view.
+  it('lists a purchase’s receipts without stock.view, with no Where and no All movements', async () => {
+    serve(order({ status: 'confirmed' }));
+    server.use(
+      http.get('/api/v1/orders/:id/receipts', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              ...RECEIPT,
+              toLocationName: null,
+              toLocationCode: null,
+              toLocationPath: [],
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+    renderPage(ALL, '/orders/order-1?tab=receipts');
+
+    const table = (await screen.findByText('60 each')).closest('table')!;
+    expect(screen.getByRole('tab', { name: 'Receipts' })).toBeVisible();
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['When', 'Item', 'Received', 'Lot', 'By']);
+    expect(screen.queryByRole('link', { name: /^All movements/ })).toBeNull();
+  });
+
+  it('gives a sale no All movements without stock.view', async () => {
+    serve(
+      order({ direction: 'sale', number: 'SO-000001', status: 'confirmed' }),
+    );
+    server.use(
+      http.get('/api/v1/orders/:id/shipments', () => HttpResponse.json([])),
+    );
+    renderPage(ALL, SHIPMENTS_TAB);
+
+    expect(
+      await screen.findByRole('tab', { name: /Shipments/, selected: true }),
+    ).toBeVisible();
+    expect(screen.queryByRole('link', { name: /^All movements/ })).toBeNull();
   });
 });

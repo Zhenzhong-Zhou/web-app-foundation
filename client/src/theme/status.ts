@@ -4,6 +4,7 @@ import type {
   BomStatus,
   InvitationLinkStatus,
   InvoiceStatus,
+  OrderFulfillment,
   OrderStatus,
   ReorderStatus,
   ReturnAuthorizationStatus,
@@ -23,6 +24,7 @@ import type { ToneName } from './tokens';
  */
 export const STATUS_TONES: {
   order: Record<OrderStatus, ToneName>;
+  orderFulfillment: Record<OrderFulfillment, ToneName>;
   invoice: Record<InvoiceStatus, ToneName>;
   returnAuthorization: Record<ReturnAuthorizationStatus, ToneName>;
   run: Record<RunStatus, ToneName>;
@@ -37,6 +39,9 @@ export const STATUS_TONES: {
     fulfilled: 'positive',
     cancelled: 'neutral',
   },
+  // Beside a confirmed order's status (#605): nothing yet quiet, under way
+  // as Confirmed is, and everything in as a closed order is.
+  orderFulfillment: { none: 'neutral', part: 'info', all: 'positive' },
   invoice: { draft: 'neutral', issued: 'info', voided: 'critical' },
   returnAuthorization: {
     open: 'info',

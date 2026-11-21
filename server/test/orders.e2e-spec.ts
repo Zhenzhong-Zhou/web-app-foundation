@@ -22,6 +22,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { shippedSale } from './utils/sales';
 
 interface OrderResponse {
   id: string;
@@ -1869,6 +1870,231 @@ describe('Orders (e2e)', () => {
       // Scoped, so not found rather than forbidden — a 403 would confirm the
       // id exists somewhere.
       await alpha.agent.get(`/v1/orders/${theirs.id}`).expect(404);
+    });
+  });
+
+  /**
+   * How much of a confirmed order has come or gone (#605; ADR-093's R25),
+   * worked out from its lines beside the status a person decides
+   * (ADR-027): on the list's rows, the order's page and the list's filter
+   * alike.
+   */
+  describe('fulfillment (#605)', () => {
+    type Ctx = Awaited<ReturnType<typeof setup>>;
+
+    /** The order's, read on its page and on the list, which agree. */
+    async function fulfillmentOf(ctx: Ctx, orderId: string) {
+      const detail = body<{ fulfillment: string | null }>(
+        await ctx.agent.get(`/v1/orders/${orderId}`).expect(200),
+      );
+      const row = body<{
+        entries: { id: string; fulfillment: string | null }[];
+      }>(await ctx.agent.get('/v1/orders?status=all').expect(200)).entries.find(
+        (entry) => entry.id === orderId,
+      );
+      expect(row?.fulfillment).toBe(detail.fulfillment);
+      return detail.fulfillment;
+    }
+
+    async function receive(
+      ctx: Ctx,
+      orderId: string,
+      lineId: string,
+      quantity: string,
+    ) {
+      await ctx.agent
+        .post(`/v1/orders/${orderId}/lines/${lineId}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity })
+        .expect(201);
+    }
+
+    async function closeShort(ctx: Ctx, orderId: string, lineId: string) {
+      await ctx.agent
+        .post(`/v1/orders/${orderId}/lines/${lineId}/close`)
+        .send({ reason: 'Supplier discontinued the item' })
+        .expect(204);
+    }
+
+    it('reads a purchase as nothing, part and all received, and none before confirming or once closed', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+      const [line] = order.lines;
+
+      // A draft expects nothing yet.
+      expect(await fulfillmentOf(ctx, order.id)).toBeNull();
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+      expect(await fulfillmentOf(ctx, order.id)).toBe('none');
+
+      await receive(ctx, order.id, line.id, '10');
+      expect(await fulfillmentOf(ctx, order.id)).toBe('part');
+
+      await receive(ctx, order.id, line.id, '30');
+      expect(await fulfillmentOf(ctx, order.id)).toBe('all');
+
+      // Status stays the person's decision (ADR-027): closing it does.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'fulfilled' })
+        .expect(204);
+      expect(await fulfillmentOf(ctx, order.id)).toBeNull();
+    });
+
+    it('counts a line closed short as done, as Still to receive does', async () => {
+      const ctx = await setup('alpha');
+      const gadget = await createVariant(ctx.agent, {
+        type: 'good',
+        name: 'Gadget',
+        variant: { sku: 'GADGET-1' },
+      });
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'purchase',
+            lines: [
+              { variantId: ctx.variant.id, quantityOrdered: '40' },
+              { variantId: gadget, quantityOrdered: '20' },
+            ],
+          })
+          .expect(201),
+      ).order;
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+      const widgetLine = order.lines.find((line) => line.sku === 'WIDGET-1')!;
+      const gadgetLine = order.lines.find((line) => line.sku === 'GADGET-1')!;
+
+      // A line closed with nothing in brings nothing in.
+      await closeShort(ctx, order.id, gadgetLine.id);
+      expect(await fulfillmentOf(ctx, order.id)).toBe('none');
+
+      await receive(ctx, order.id, widgetLine.id, '10');
+      expect(await fulfillmentOf(ctx, order.id)).toBe('part');
+
+      // Nothing is still due: all received, 30 short on one line and
+      // everything on the other, as outstandingOrder() counts it.
+      await closeShort(ctx, order.id, widgetLine.id);
+      expect(await fulfillmentOf(ctx, order.id)).toBe('all');
+      const outstanding = body<OrderPage>(
+        await ctx.agent.get('/v1/orders?outstanding=true').expect(200),
+      );
+      expect(outstanding.entries).toHaveLength(0);
+    });
+
+    // 113a: every line closed short with nothing in is nothing received,
+    // never All received; nothing is still due, so it may be closed.
+    it('reads an order whose every line was closed short with nothing in as Not received', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      await closeShort(ctx, order.id, order.lines[0].id);
+
+      expect(await fulfillmentOf(ctx, order.id)).toBe('none');
+      const detail = body<{ fullyFulfilled: boolean }>(
+        await ctx.agent.get(`/v1/orders/${order.id}`).expect(200),
+      );
+      expect(detail.fullyFulfilled).toBe(true);
+      const notReceived = body<OrderPage>(
+        await ctx.agent
+          .get('/v1/orders?status=all&fulfillment=none')
+          .expect(200),
+      );
+      expect(notReceived.entries.map((entry) => entry.id)).toEqual([order.id]);
+      const allReceived = body<OrderPage>(
+        await ctx.agent
+          .get('/v1/orders?status=all&fulfillment=all')
+          .expect(200),
+      );
+      expect(allReceived.entries).toEqual([]);
+    });
+
+    it('reads a sale by what has shipped', async () => {
+      const ctx = await setup('alpha');
+      const sale = await shippedSale(ctx.agent);
+
+      // 6 of 10 capsules and all 5 scoops have left.
+      expect(await fulfillmentOf(ctx, sale.orderId)).toBe('part');
+
+      await ctx.agent
+        .post(`/v1/orders/${sale.orderId}/shipments`)
+        .send({
+          fromLocationId: sale.shelf,
+          lines: [{ lineId: sale.capsulesLine, quantity: '4' }],
+        })
+        .expect(201);
+      expect(await fulfillmentOf(ctx, sale.orderId)).toBe('all');
+
+      const { lines } = body<{ lines: { variantId: string }[] }>(
+        await ctx.agent.get(`/v1/orders/${sale.orderId}`).expect(200),
+      );
+      const next = body<{ order: { id: string } }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: sale.partnerId,
+            direction: 'sale',
+            lines: [
+              {
+                variantId: lines[0].variantId,
+                quantityOrdered: '3',
+                unitPrice: '12.5',
+                currency: 'CAD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+      await ctx.agent
+        .patch(`/v1/orders/${next.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+      expect(await fulfillmentOf(ctx, next.id)).toBe('none');
+    });
+
+    it('filters the list by it, confirmed orders alone', async () => {
+      const ctx = await setup('alpha');
+      const nothing = await confirmed(ctx);
+      const part = await confirmed(ctx);
+      await receive(ctx, part.id, part.lines[0].id, '10');
+      const all = await confirmed(ctx);
+      await receive(ctx, all.id, all.lines[0].id, '40');
+      // A draft has none, under every status.
+      await ctx.agent
+        .post('/v1/orders')
+        .send(purchase(ctx.partnerId, ctx.variant.id))
+        .expect(201);
+
+      const listed = async (query: string) =>
+        body<OrderPage>(
+          await ctx.agent.get(`/v1/orders?${query}`).expect(200),
+        ).entries.map((entry) => entry.id);
+
+      expect(await listed('fulfillment=none')).toEqual([nothing.id]);
+      expect(await listed('fulfillment=part')).toEqual([part.id]);
+      expect(await listed('status=all&fulfillment=all')).toEqual([all.id]);
+      expect(await listed('status=fulfilled&fulfillment=all')).toEqual([]);
+
+      await ctx.agent.get('/v1/orders?fulfillment=late').expect(400);
     });
   });
 

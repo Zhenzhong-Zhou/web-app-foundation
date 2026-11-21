@@ -31,6 +31,7 @@ function sale(over: Partial<OrderDetail> = {}): OrderDetail {
     duplicatedFromId: null,
     deliverTo: null,
     fullyFulfilled: false,
+    fulfillment: 'none',
     isSample: false,
     totals: [],
     totalsComplete: false,

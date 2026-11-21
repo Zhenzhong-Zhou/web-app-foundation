@@ -403,6 +403,109 @@ describe('useKeysetList', () => {
     expect(result.current.hasMore).toBe(false);
   });
 
+  // #473's last line (P2a): Back after Show more finds the rows shown,
+  // read again page by page against the list's entry in the history.
+  describe('kept against its entry for Back', () => {
+    /** Three pages of one row each: a1, then a2 by c1, then a3 by c2. */
+    function threePages(failSecond = false) {
+      const asked: (string | null)[] = [];
+      server.use(
+        http.get(`${BASE}/things`, ({ request }) => {
+          const before = new URL(request.url).searchParams.get('before');
+          asked.push(before);
+          if (before === 'c1' && failSecond) {
+            return HttpResponse.json({ message: 'down' }, { status: 500 });
+          }
+          return before === 'c2'
+            ? HttpResponse.json({ entries: rows('a3'), nextCursor: null })
+            : before === 'c1'
+              ? HttpResponse.json({ entries: rows('a2'), nextCursor: 'c2' })
+              : HttpResponse.json({ entries: rows('a1'), nextCursor: 'c1' });
+        }),
+      );
+      return asked;
+    }
+
+    /** The list shown on `entry`, two pages of it, then left. */
+    async function leftAfterShowMore(entry: string) {
+      const { result, unmount } = renderHook(() =>
+        useKeysetList<Row>('/things', { keep: entry }),
+      );
+      await waitFor(() => expect(result.current.hasMore).toBe(true));
+      await act(() => result.current.loadMore());
+      expect(ids(result.current.entries)).toEqual(['a1', 'a2']);
+      unmount();
+    }
+
+    it('reads as many rows again as were shown, before they show', async () => {
+      const asked = threePages();
+      await leftAfterShowMore('entry-1');
+      asked.length = 0;
+
+      const { result } = renderHook(() =>
+        useKeysetList<Row>('/things', { keep: 'entry-1' }),
+      );
+      await waitFor(() => expect(result.current.entries).not.toBeNull());
+      expect(ids(result.current.entries)).toEqual(['a1', 'a2']);
+      expect(asked).toEqual([null, 'c1']);
+      expect(result.current.hasMore).toBe(true);
+    });
+
+    it('reads only the first page for another entry, or another list on it', async () => {
+      const asked = threePages();
+      await leftAfterShowMore('entry-1');
+      asked.length = 0;
+
+      const other = renderHook(() =>
+        useKeysetList<Row>('/things', { keep: 'entry-2' }),
+      );
+      await waitFor(() => expect(other.result.current.entries).not.toBeNull());
+      other.unmount();
+      const filtered = renderHook(() =>
+        useKeysetList<Row>('/things?status=open', { keep: 'entry-1' }),
+      );
+      await waitFor(() =>
+        expect(filtered.result.current.entries).not.toBeNull(),
+      );
+      expect(asked).toEqual([null, null]);
+    });
+
+    it('keeps the pages read when one fails on the way, with the failure beside them', async () => {
+      threePages();
+      await leftAfterShowMore('entry-1');
+      threePages(true);
+
+      const { result } = renderHook(() =>
+        useKeysetList<Row>('/things', { keep: 'entry-1' }),
+      );
+      await waitFor(() => expect(result.current.entries).not.toBeNull());
+      expect(ids(result.current.entries)).toEqual(['a1']);
+      expect(result.current.failed).toBe(false);
+      expect(result.current.error).not.toBeNull();
+
+      threePages();
+      await act(() => result.current.loadMore());
+      expect(ids(result.current.entries)).toEqual(['a1', 'a2']);
+      expect(result.current.error).toBeNull();
+    });
+
+    it('reads the first page alone on a reload after a write', async () => {
+      const asked = threePages();
+      await leftAfterShowMore('entry-1');
+
+      const { result } = renderHook(() =>
+        useKeysetList<Row>('/things', { keep: 'entry-1' }),
+      );
+      await waitFor(() =>
+        expect(ids(result.current.entries)).toEqual(['a1', 'a2']),
+      );
+      asked.length = 0;
+      act(() => result.current.reload());
+      await waitFor(() => expect(ids(result.current.entries)).toEqual(['a1']));
+      expect(asked).toEqual([null]);
+    });
+  });
+
   /** An outdated tab's refusal (ADR-081), as useResource has it. */
   describe('refused for this tab’s API revision', () => {
     const INSTALLING =

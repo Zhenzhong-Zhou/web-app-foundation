@@ -54,19 +54,22 @@ function derived(value: string): Valued {
  * pool's average, and two outbounds reading it together would each take
  * value from a balance the other had already spent. Arithmetic stays in
  * Postgres (ADR-025).
+ *
+ * Returns whether the movement waits for a cost, as its value row says,
+ * so the write can say so (ADR-093, 90a).
  */
 export async function valueMovement(
   tx: Tx,
   organizationId: string,
   movement: Movement,
   cost: PurchaseCost | null,
-): Promise<void> {
+): Promise<boolean> {
   const inbound = movement.fromLocationId === null;
   const outbound = movement.toLocationId === null;
 
   // A transfer. The pool is not per location, so nothing about its value
   // changed.
-  if (!inbound && !outbound) return;
+  if (!inbound && !outbound) return false;
 
   if (cost && movement.reason !== 'receipt') {
     throw new Error(`A ${movement.reason} carries no purchase cost`);
@@ -106,6 +109,8 @@ export async function valueMovement(
       ${movement.actorId}::uuid
     )
   `);
+
+  return valued.needsCost;
 }
 
 /**

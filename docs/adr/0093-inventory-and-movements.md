@@ -931,3 +931,467 @@ folder:
 - Its brief's demo line for a changed code goes: VITC-100 is one.
 - #632 merges first, so Movements' boards are drawn at 1920 px in the
   1,600 px frame.
+
+## Amendment (November 2026) — Movements' branch, before building
+
+Planned on 18 and 19 November 2026 on `adr-093-movements`, from `main`
+at 0ebaac68, once #635 and #644 had merged (71a). The maintainer
+confirmed the requirements below before drafting, and chose every
+decision as recommended. The canvas draws them in the rows
+"库存与库存变动 第四版 · Inventory and Movements v4", Movements in the
+1,600 px frame at 1920 and 1366 (E7), and "第五版 · v5", the stock
+card's period line, the export and the order's label. Brief v6
+renumbers Movements' steps: M-3 to M-5 keep their numbers, M-6 is 7,
+M-7 is 8, M-8 is 10, M-9 is 11, M-10 is 12, M-11 is 17, M-12 is 18
+and M-13 is 19.
+
+### Requirements, as confirmed
+
+R9 to R21, their Movements parts, stand. These are added, each naming
+its step in brief v6:
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R24 | Movements filtered to a lot or an order, each a chip from its way in; a lot counts In, Out and Balance alone, and with a place too, that lot at that place (85a); an order, of several items, In and Out with no balance | A server test per filter, the lot's balance against the ledger; browser tests from a lot's Actions and from the order's page | 7, 8, 12, 17 |
+| R25 | The order's page lists its receipts, with All movements of PO-…; #605's label as it decided (56a, 92a): Not received, Partly received, All received, on a sale shipped, while the order is Confirmed, on Orders' list beside Status and on the page, a filter by it in the address, and "Everything has arrived. Close the order?" at All received | A unit test per case (nothing, part, all, a line closed short, a sale); a browser test receives part, then the rest, and meets the close line; the list's read inside ADR-051's budget at large | 12, 13, 17, 19 |
+| R26 | #628: found stock counted into a place or lot the item never had, from a line under Correct the count's places and lots (84a): any leaf place, a lot it has or a new one made with the count; Which lot starts with neither chosen; a new lot waits for a cost, and the message says so (90a) | A server test: a new lot made, a code the item already has refused at its field, a place that is not a leaf refused; a browser test; Help; a manual check | 14, 17, 18 |
+| R27 | #636: a list's address write starts from the address as it is when the write runs, so a search's late write never undoes a filter's | A unit test holding the page's update past the search's wait fails before and passes after | 6 |
+| R28 | #638: Items, Stock and Reorder always show their count; #473's last line, Back after Show more returning the loaded rows and the place (P2a) | Browser tests with 1, 31 and 312 rows; Back after Show 50 more lands on the row left by, its pages loaded | 15, 17 |
+| R29 | A table too wide pins its name column wherever it stands, a column before it passing under it, and with no name column its first (81a); a pinned name at most two lines at a least width of 20em, the whole name in a tooltip on hover and focus that Escape closes (83a, #640); `ListTable` gives `wholeOnFocus` to every list that scrolls sideways, its styles built once (#642); a place's path cut in its middle, the warehouse and the place whole (93a, #639) | `ListTable`'s and `PlacePath`'s unit tests; a browser test beside Help on Movements and on Stock; ADR-090 amended and the design language's lines | 1, 6, 17, 18 |
+| R30 | Every export's quantities without padding zeros, quantities only, money keeping its currency's places (77a, 80a), with ADR-057's line | An export test reads `600`, `12.5` and `0.0001` | 9 |
+| R31 | Dependencies, each 7 days old the day it is taken; Playwright 1.65.1 only if #521's seven pages pass in the Linux image; typescript-eslint 8.73.0 from 23 November, then both minimatch overrides removed once every copy is 11.0.5 or later, with ADR-019's line | The dependency commits and `npm ls minimatch` in each package; or the pin kept, with a comment on #521 | 2, 20 |
+| R32 | #644's panel finding 8: 可用 for Free alone, Free becoming 可分配; one name for the projected figure, Left and 预计剩余, where 剩, 预计可用 and Position stood (94a); a reader of Chinese alone reads Where it stands before the merge | The glossary and the three catalogues agree; a glossary rule in `scripts/i18n-rules.mjs` refuses 预计可用; the reading noted in the pull request | 16, 21 |
+| R33 | The riders the triage of 18 November chose: #609, #611, #612, #624, #629 and #631's Movements lines, with #640's other findings; a rider past one commit stops with a comment on its issue | Each closed by its commit, or commented | 16 |
+| R34 | The stock card's period line, "Opening · In · Out · Closing", for one item with a date range (88a); with a Reason chosen, no Balance, Opening or Closing, In and Out and their sums kept (91a); the export one value per column, From and To apart, oldest first, its first row the opening balance and its last the closing (87a, 88a) | A server test holds Closing = Opening + In − Out, and Closing equal to today's on hand when the range ends today; the export test reads its columns | 8, 11, 17 |
+| R35 | The Performance run of 23 November read; Movements' and Orders' list's figures before and after | ADR-051's as-built names them | 4, 19 |
+
+- **Assumptions:**
+  - Movements shows no total under its rows; #638 leaves the lists
+    without one.
+  - A filter replaces the address, so Back leaves the page (#341's
+    rule, as Inventory built it); v2's tables, which gave a filter's
+    Back as "every item", are replaced by v4's.
+  - No API revision raise: every new field and filter is additive.
+  - One migration, step 5's indexes on the from and to place.
+- **Not included:** #637, E13 with it; #530 and #643, `fix-now` and
+  their own; #613, #614, #616, #617 to #620 and #627, each waiting for
+  its screen's own change; the live checks #644 left, which the handoff
+  holds.
+
+### Checked before drafting
+
+On 19 November 2026, from `scripts/adr-check.mjs 093` on
+`adr-093-movements` at 0ebaac68: the areas `locations`, `orders`,
+`products`, `stock`, `api`, `docs`, `help`, `i18n` and `ui`, and the
+issues 470, 473, 521, 605, 609, 611, 612, 624, 628, 629, 631, 636, 638
+and 640; 148 open issues, 95 read whole. With them, #644's review
+(`tmp/adr-093-movements/from-632/review.md`), the Deferred lines of
+this ADR and ADR-090, ADR-051's watch and Open decisions.
+
+- **Fired, and taken here:**
+  - #605 whole, as its 56a decided (R25, 92a), where 86a had kept it to
+    the order's page.
+  - #628 (R26, 70a); #636 (R27); #638 with #473's Back after Show more
+    (R28, P2a), which is this ADR's own Deferred "Back restoring loaded
+    pages" for Items, Stock, Reorder and Movements; #509, the scroll on
+    a change of page, stays.
+  - #639, a place's path cut at its start (93a), since Movements writes
+    every row's places through `PlacePath`; #640 with its comment on a
+    pinned name (83a); #642, whose trigger is the next change to
+    `list-table.tsx`, which 81a makes.
+  - The triage's riders (R33) and #644's finding 8 (R32).
+  - #521's check, for Playwright 1.65.1 (R31); ADR-051's watch
+    "Movements for one shelf", taken already (9a).
+- **Not fired, and left:**
+  - The 15 `fix-now` issues in these areas, among them #156, #310,
+    #333, #607 and #608: the Fix-ups, and the fix runner's.
+  - #641, each line waiting for its screen; #613, #614, #616, #617 to
+    #620 and #627, as above; #630, #626, #623 and #615, `later`.
+  - #644's panel findings 1 (#637), 4 (#170, #606), 10 (#622, #482)
+    and 11 (#610, #566), each with its issue, as ADR-090's amendment
+    below records.
+  - This ADR's other Deferred lines and ADR-090's: no trigger met; each
+    interaction table below stays under 15 rows. Open decisions' Low
+    stock and purchase pack entries: no trigger met.
+- **Found while checking:**
+  - #605's text decided more than the chat's 86a, which was chosen
+    without reading it; 92a replaces 86a.
+  - #639 asks the opposite of the design language's "cut from the
+    left": the part cut away tells two warehouses apart.
+  - `ListTable` pins the first column; Movements' first is When, its
+    name the second (81a).
+  - #629 offers "found in a count" as a reason for a receipt with no
+    order; once #628 exists, that choice leads to Correct the count.
+  - #640's comment asks whether 16em would do with two lines; 20em
+    stands, 16em tried in the branch's walk.
+  - That Movements fits at 1366 with Help closed is an estimate, about
+    1,000 px in a 1,086 px box; step 3 measures it.
+  - Exports already begin with the UTF-8 mark (`server/src/common/csv.ts`),
+    so Excel opens Chinese.
+
+### Decided before building
+
+The chat's questions, each answered as recommended:
+
+- **Movements' table (81a, 82a, 83a, 93a):** too wide for its box, the
+  item's name stays pinned and When passes under it; with one item, no
+  name column, When is pinned. From → to on two lines in one cell, an
+  end outside the warehouse in grey words (supplier, customer, run,
+  counted in, counted out), each path cut in its middle. A pinned name
+  takes at most two lines.
+- **The stock card (85a, 87a, 88a, 91a):** a lot chosen counts that lot
+  alone; with one item and a date range, "Opening · In · Out · Closing"
+  above the table, never for several items, whose units differ; with a
+  Reason chosen, no balance; the export oldest first, one value per
+  column, Code and Item apart, From and To apart, Lot and Expires apart,
+  dates as year-month-day.
+- **The orders (92a, 89a):** #605 as decided, its words Not received,
+  Partly received and All received (未收货, 部分收货, 已全部收货), on a
+  sale Not shipped, Partly shipped and All shipped.
+- **Found stock (84a, 90a):** still Correct the count, its reason found,
+  a lot made inside the same transaction as its movement; a new lot's
+  pool has no average, so it waits for a cost as `valuation.ts` already
+  values it, and the message links to Stock value's Waiting for a cost;
+  found stock in a lot it has rides at that lot's average.
+- **The words (94a):** Free 可分配, the word Chinese warehouse systems
+  use for stock that can still be committed, and fitting a raw material
+  as 可售 would not; Usable and Not usable keep 现有可用 and 现有不可用;
+  the projected figure is Left and 预计剩余 everywhere.
+
+### How it behaves
+
+The boards are v4's and v5's; each row is a browser test.
+
+**Movements:**
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Movements | Item › Vitamin C | In · Out · Balance replace Change; `?item=` | Movements, one item | leaves Movements (#341) |
+| Movements, one item | Place › Shelf A2 | In, Out and Balance count Shelf A2 alone; a move out reads Out | Movements on A2 | leaves Movements |
+| Movements, a row | The item's name | — | the item's page, focus on its title | Movements as it was, its pages loaded, focus on the row |
+| Movements, a row | A lot or a document | — | the lot's trace, or the order, run or return | Movements as it was |
+| Movements, one item | When › a date range | `?from=` and `?to=` in the organization's days; the period line; Opening balance last | the same list | leaves Movements |
+| Movements, one item | Reason › Shipped | Balance, Opening and Closing go; In and Out stay, with "Balance counts every reason" and Clear Reason | the same list | leaves Movements |
+| Movements | Press When | Oldest first; with one item, the opening balance first | the same list | leaves Movements |
+| Movements | Show 25 more | The next 25, focus on the first new row; failing, the rows kept with Try again | a longer list | — |
+| Movements, a filter on | Show all movements | Every filter and chip cleared in one address write (#636) | every movement | leaves Movements |
+| Movements, too wide | Scroll sideways, or Tab | The name pinned, When under it; a focused link scrolled clear of it | the same list | — |
+
+**Into Movements:**
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Stock, an item's Actions | Movements | `?item=` | Movements, one item | Stock as it was |
+| Stock, a place row | Movements | `?item=&place=` | Movements on that place | Stock as it was, the row open |
+| Stock, a lot's Actions | Movements | `?item=&lot=`, a chip | Movements, one lot | Stock as it was, the rows open |
+| The item's page, Latest movements | All movements | `?item=` | Movements, one item | the item's page |
+| The order's page, Receipts | All movements of PO-000009 | `?order=`, a chip; In and Out, no balance | Movements, one order | the order's page |
+
+**Orders (#605):**
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Orders | Receiving › Partly received | The list narrows to orders partly received; the filter in the address | Orders, filtered | leaves Orders |
+| An order's page, Confirmed | Receive the rest | All received beside Confirmed, with "Everything has arrived. Close the order?" | the same page | — |
+| The close line | Close the order | The close dialog, as today | a dialog | Escape: focus back on Close the order |
+
+**Stock, found stock (#628):**
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Stock, Correct the count's lots | Count it in… | Correct the count with a place and a lot to choose, neither lot chosen | a dialog | Escape: focus back on Count it in… |
+| The dialog | Save correction | A found correction into the place and lot, a new lot made; "Counted in 12 each of VITC-100 at Shelf C3" | Stock, the row open at its new place | — |
+| The dialog | Save correction, no lot chosen | "Choose one of its lots, or a new lot." at its field, focus on it | the same dialog | — |
+
+**The five states** differ from the design language's States section
+only on Movements: first use, "Nothing has moved yet." with Receive
+stock, or the line for a role that cannot; no results naming the
+filters on, with Show all movements; the balance hint while more than
+one item is listed with a place, a lot or an order chosen; a failed
+next 25 kept with Try again (#544).
+
+### Considered and not done, added
+
+- **When alone pinned (81c):** the name scrolls away, and a row read at
+  its lot or its document names no item.
+- **From and To as two columns on screen (82c):** wider rows at 1366;
+  the export has them apart.
+- **Found stock received with no order (84c):** it would read Received
+  and count as a receipt, with no note asked.
+- **The balance kept with a Reason chosen (91b):** its rows would no
+  longer add up.
+- **可售 for Free:** wrong for a raw material, which is never sold.
+
+### Deferred, added
+
+- **A count by place, a sheet per shelf.** Trigger: counts becoming
+  regular, as cycle counts.
+- **A second person approving a large correction.** Trigger: an
+  auditor, or a paying customer, asking.
+- **Found stock in a new lot valued at the item's average across its
+  lots.** Trigger: an accountant asking.
+- **A total under Movements.** Trigger: someone asking how many moved,
+  with its count read inside ADR-051's budgets.
+
+### Consequences
+
+- **Amended:** ADR-090 in this commit (81a, 83a, 93a); ADR-057 for
+  exports' quantities (step 9); ADR-019 when the minimatch overrides go
+  (step 2 or 20); ADR-051 and this ADR in the as-built (step 22).
+- **Docs in their steps:** the design language's Rows and The way back
+  (step 18), the glossary with the messages (step 16), the manual
+  checks with each change, `docs/rules/stock.md`.
+- **Build order:** this amendment and the handoff → the dependencies →
+  the inventory → the figures before → the indexes → the shared pieces
+  → the movement row → the stock card → exports' quantities → the
+  seeds → Movements → the ways in and the order's receipts → #605's
+  label → #628 → the counts and Back → the words and the riders → the
+  browser tests → Help, the rules file and the docs → the figures after
+  → the dependencies again → the reviews → the as-built and the pull
+  request.
+
+## Amendment (November 2026) — Movements as built (#655)
+
+Movements' branch, `adr-093-movements`, built on 19 and 20 November
+2026 from `main` at 0ebaac68, by its brief, v7 (v6 for steps 1 to 3),
+in the ignored `tmp/adr-093-movements/`: 90 commits, then this as-built,
+pull request #655. Where building settled or changed the amendment
+above:
+
+### The requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R9 | Met (29e56421, 18a1cec3): When, the item's name first with its code and type in grey, "was VITC-90" under a changed code, the change with its unit, the reason with its detail and note, From → to by path with an outside end in grey words, the lot with its expiry, For linked, By. A transfer says "moved 4" in grey (118a, f5c8ce98); a sample ends "→ sample", For naming its recipient (125, 40821068) |
+| R10 | Changed: the filters in the address under the API's keys (95a); the Item field one find box for items, lots and orders (126, 38b26afe, 6d5aa08b); When one menu (review 1, 26a427c7, 0fe31a38). #505's 59, `dayRangeProps`, is used by Movements alone; the four other lists wait (review 47, #649) |
+| R11 | Met (df4b8468): Stock's item, place and lot open Movements filtered, Back keeping a place's opened lots; the history dialog gone. A lot's page links to its item and its movements (review 6, 8f16321e) |
+| R12 | Met (df4b8468): each code's five newest movements, read by Movements' own `movementPage`, with All movements of the code, which opens on this month (review 1) |
+| R13 | Met (bc9d5720, 29e56421): SO-DEMO-5 ships its vitamin D from two lots, each row naming its lot; the seed stops if they go |
+| R14 | Met for Movements (18a1cec3, 64b712bc, aabba0d7): cards below 600 px, the filters in one Filters sheet; the cut-text walk at 320, 390 and 820 px holds Movements and a lot's page; a filter chip's words wrap |
+| R15 | Met (6e2dd8ed, eb099088, 59bf1c60, e4e5a094, ca6d9855): Movements' export in the screen's words, by the reader's permissions, its columns grown (98a, 114, 116, 138b) |
+| R16 | Met (23069893): migration 0082's indexes on the from and to place; Movements for one shelf 68 to 25 ms p95 at large, in the budgets and the plan check; Performance's budgets on the branch passed (run 44874797517). The figures are in ADR-051's as-built |
+| R17 | Met (55040a85): every row of Movements' four tables a browser test, but for the rows Built differently below; the canvas's rows v4 to v14 |
+| R18 | Met (bc9d5720): the order shipped from two lots; the volume seed already gives a bin about 1,700 movements at small and 3,500 at large, so it is unchanged |
+| R19 | Met (a84539f1, then each fix's commit): Help's Movements, Orders, Items, Inventory and Trace a lot guides in three languages, `docs/rules/stock.md`, the manual checks; a wrong line about the recall export's numbers corrected |
+| R20 | Met for Movements: one movement row (`movement-view.ts`), one set of cells (`movement-cells.tsx`), the client's `describeMovement` gone (review 24), one `PlaceFilter` (review 28), one list of reason words for the export and the Activity log (`server/src/common/movement-reasons.ts`); the reviews' other copies are filed (#646 to #653) |
+| R21 | Met (6e2dd8ed, 18a1cec3): In, Out and Balance worked back from today's on hand, a place counting itself alone; the period line; Closing dated today while the range runs past it (review 11, 89f41c14) |
+| R24 | Met (29e56421, 6e2dd8ed, df4b8468, de17fc87): a lot or an order a chip from its way in, a chip for every filter set (review 4); a lot counts alone (85a); an order shows In and Out with no balance; `orderId` refused 403 without `orders.view` |
+| R25 | Met (df4b8468, 6a50c9d8, baa3d289, b754d3db, 69c64175): Receipts on a purchase's page, its own read under `orders.view` (102a); the label, its filter `?fulfillment=`, and the close line, which closes at once (103a); every line closed short with nothing in reads Not received (113a). Receiving's rarest filter on ADR-051's Watch (109a) |
+| R26 | Met (96549dac, 8d18cbf4): Count it in… under every opened code, named with its code (105a); a place with places inside it refused 409 (104a). Found stock in a lot waiting for a cost is valued at 0 without saying so: filed (112a) |
+| R27 | Met (53891574) |
+| R28 | Changed (57ef7c01, 1e0ee8d6, c6eda0dd): the count always, Back after Show more, focus on the first new row after Show 25 more (106a); each quick filter's count with its noun (108a, part of #609). The browser tests use 1, 2 and 52 rows, one page and two more, for 1, 31 and 312 |
+| R29 | Met (7ef6dace, 537bef6e, 380ed375, 2b7df507, 18a1cec3): 16em tried and 20em kept (review 23) |
+| R30 | Met (6cced6a1, 9639c5fa): quantities without padding zeros; money at its currency's places, never fewer and never rounded (99a); the organization's full export as stored |
+| R31 | Met as far as the dates allowed (73431f62, c31352ba). Playwright 1.65.1 not taken: it carries 1.65.0's Firefox, and 19 of 159 tests crashed in the Linux image; the pin stays at 1.64.1 and Dependabot skips 1.65.0 and 1.65.1 (139a); #521 commented. typescript-eslint 8.73.0 and the minimatch overrides wait for their own pull request (Deferred, added) |
+| R32 | Met (553c85d5): Free 可分配, Left 预计剩余 everywhere, 预计可用 refused by the glossary's rule; read in step 21's panel by its walker who reads only Chinese, a persona, so a fluent person's reading stays with MC-1405 |
+| R33 | Met as chosen: #612 and #624 closed by their commits; #631's Movements lines; #611 and #640 in part, #609 in part (108a); #629 commented (119a to 124a) |
+| R34 | Changed (6e2dd8ed, 18a1cec3): the period line, and no balance with a Reason chosen, as decided; the export oldest first with an Opening and a Closing line; no opening-balance row in the table, since the period line and the export carry it |
+| R35 | Changed: the figures before and after are in ADR-051's as-built; the weekly run of 23 November measures `main`, so the first after the merge is read instead (the handoff) |
+
+### Decided before building, the labels the code cites
+
+Review 64 found these cited in 29 places, held until now only by the
+brief:
+
+- **95a, the address keys:** Movements' filters are kept in the address
+  under the API's own keys, `variantId`, `locationId`, `lotId`,
+  `orderId`, `reason`, `from` and `until`, `until` the last day
+  included; `sort` and `order` stay the sort's. They replace the tables'
+  `?item=`, `?place=`, `?lot=` and `?order=` above, whose `?order=`
+  clashed with the sort's direction.
+- **96a, places by permission:** a reader without `locations.view` gets
+  no place's name, code or path on Movements, its export, Latest
+  movements or a lot's trace, the ids kept, as on Stock, Reorder and
+  Where it stands; the page has no From → to, the export no From or To,
+  and a line says once a page why (115).
+- **97a, a filter the reader may not use:** the page ignores it, as
+  Stock does: a place without `locations.view` reads Everywhere, an
+  order without `orders.view` lists every movement with no chip; the
+  API refuses `orderId` without `orders.view` with 403, before any read.
+  No other filter came: By and a partner wait (Deferred, added).
+
+### Decided while building
+
+The chat's answers, each by its number, drawn on the canvas's rows v6
+to v14:
+
+- **The export (98a, 99a, 114, 116, 134b, 138b):** the note back as the
+  last column, When to the second under "When (Vancouver time)",
+  Recorded as where the code changed since, and By's email (98a, 116);
+  money at its currency's places (99a); one item's export gains Moved,
+  filled on a transfer alone (114); in Chinese the zone's place is ICU's
+  short generic name, 时间（温哥华时间）, English and French keeping
+  Vancouver (134b); Reason code after Reason, the reason's stable code
+  in every language (138b).
+- **The reason words (100a, 136a, 141a):** the boards' words, Received,
+  Shipped, Moved, Corrected, Made, Used in a run, Sampled and Returned,
+  with the detail, on the rows, the filter, the export, the Activity log
+  and the glossary; a capital wherever a word stands alone, in French
+  too; the Chinese as the glossary has them, 调整 and 生产 among them.
+  A code no longer used reads "(discontinued)", the glossary's word for
+  an item; the canvas's v14 board drew "Archived" by mistake.
+- **Movements' screen (101a, 106a, 115, 118a, 125 to 133b, 135a, 137a):**
+  - "Choose one item" only with a place chosen, never with an order
+    (101a); focus on the first new row after Show 25 more (106a); a
+    transfer's "moved 4" in grey, in neither In nor Out (118a).
+  - A reader without places told why once a page, in the permission's
+    own words, which also replace Stock's rows of "—" (115); a sample's
+    row ending "→ sample", For its recipient by `partners.view` (125).
+  - The find box (126): items, lots and orders through the top bar's
+    lookup, by the reader's permissions; exact matches alone when there
+    are any, close ones under "Close matches" only when none (127a); a
+    choice becomes its chip and the box empties (128a). The top bar's
+    own close matches, #654 (129a).
+  - When one menu: Today, This week, This month, Last 30 days, Last
+    month and This year, each with its dates, then Choose dates… and Any
+    time (review 1). A range written by `formatRange` in the reader's
+    language, Chinese the Chinese way with the year once, 2026年11月1日至20日
+    (130b, `client/src/i18n/intl.ts`). Every period ends on the
+    organization's today, counted in calendar days, a week from Monday
+    for every reader and language (135a, 137a).
+  - "All movements of this lot" opens with no dates, the lot's whole
+    life (132b); a code no row and no picker names is named by its own
+    read, `GET /v1/stock/variants/{id}` under `stock.view` (133b).
+  - The When menu, the find box and wrapping chips go into the design
+    language (131a), by ADR-090's amendment.
+- **Orders (102a, 103a, 109a, 113a):** an order's Receipts for whoever
+  may see the order, by `GET /v1/orders/{id}/receipts` (102a); Close
+  order at All received closes at once, focus on the title, a question
+  before every close being #458's (103a); Receiving's rarest filter
+  allowed in the plan check with its reason (109a); every line closed
+  short with nothing in, Not received and "Nothing more is expected"
+  (113a).
+- **Stock (104a, 105a, 107a, 108a, 112a):** a place with places inside
+  it refused with 409, as every movement already is (104a); Count it
+  in… under every opened code, named with its code (105a); Still needed
+  (待发) and Held (已预留) keep their names, Reorder's row opening by "Who
+  waits · 2 orders" (107a, #640); a noun with each quick filter's count,
+  on Stock, Reorder, Items and Home's tiles (108a, #609); found stock
+  valued at 0 in a lot waiting for a cost, filed `fix-now` (112a).
+- **#629, the next branch (119a to 124a),** in its comment: lot tracking
+  started for a code with stock by a guided step, the stock on hand into
+  one lot made for us across every place, its expiry not known and its
+  cost moving with it, noted "Stock on hand when lot tracking started"
+  (120a, 122a); our own lot codes, their format beside document
+  numbering (121a), at most 20 characters so a GS1 barcode carries them
+  (123a); a code typed before #629 marked by an Owner as made here, then
+  given the supplier's lot (124a).
+- **The way of working (110a, 111a, 117, 139a, 140a, 142a, 143a; the
+  audit's 60, 63, 66, 69, 70):** the branch measured by dispatching
+  Performance (110a); Playwright 1.65.1 tried once of age (111a), not
+  taken (R31), Dependabot skipping it (139a); a check refusing a
+  person's name in a commit, pull request or issue title, filed for
+  later (117); the pictures after showing Stock's Filters sheet as page
+  32, since Orders has none (140a); the pull request marked ready after
+  this as-built and its Performance run (142a); the Performance median
+  job's name filed (143a); `docs/conventions.md` taking 6 November's
+  dependency wording (60), "Public text names no one" in `CLAUDE.md`
+  (63), "For the chat" keeping its 10 to 15 lines (66, declined), the
+  chat's migration reminder naming the volume databases (69), and the
+  eval's exception gone (70).
+
+### Built differently from the text above
+
+- **The address keys** are 95a's, not the tables' `?item=`, `?place=`,
+  `?lot=`, `?order=`, `?to=`.
+- **Not built, so not tested:** an opening-balance row in the table;
+  the close dialog with Escape at All received (103a).
+- **When is one menu,** not the shared `DateRangeFilter` with its Period.
+- **A lot's Usable and Not usable** come from the server, the usable
+  rule living there alone (ADR-055), not summed by the page; a lot's
+  trace reads it from `usable-stock.ts` (review 27).
+- **The API grew, every change adding, the revision still 5:**
+  `currentSku` beside `sku`, which keeps the code a movement was
+  recorded under; a movement's `change`, `quantityIn`, `quantityOut`,
+  `balance` and `recipient`, and a page's `period`; `latestMovements`;
+  `needsCost` and the refusal `lot_code_in_use`; an order's
+  `fulfillment`, with `?fulfillment=`; the lookup's order `direction`
+  and `fulfillment`; a lot's trace's paths, `usable`, `notUsable`,
+  `variantId` and `productId`; `allExpired`; Reorder's `waitingOrders`;
+  `GET /v1/orders/{id}/receipts` and `GET /v1/stock/variants/{id}`. A
+  lot's trace's `locationName`, null for a reader without places, has
+  its line in `server/openapi-breaking-accepted.txt`.
+- **The time indexes are "desc nulls last",** so Movements orders by
+  `created_at desc nulls last, id desc`, and oldest first by `asc nulls
+  first`, reading them backward; plain `desc` sorted all of a large
+  organization's movements, 83 ms. The page is taken from the ledger
+  before its joins (step 5).
+- **Back to Stock** focuses the code's name, not the lot's Actions; lots
+  opened by "Choose the lot to…" are not kept in `?open=`.
+- **A new lot from Count it in…** is saved as a printed code, the dialog
+  not asking.
+- **The shared Filters button changed every list's phone sheet**
+  (review 9), and every filter chip's words now wrap.
+- **R28's 1, 31 and 312 rows** are 1, 2 and 52 in the browser tests.
+
+### Measured
+
+- **Migration 0082** took 2.78 s on the large volume, 2.1 million
+  movements; each index is 132 or 125 MB there, about 8 times what it
+  would be without the id (ADR-051's Watch).
+- **Movements at 1366 px** does not fit: a 1,084 px box, 832 with Help
+  open, against 1,264 px for every item at its narrowest; the pinned
+  name holds it, as 81a planned (#637).
+- **The pictures:** 1,320 before at `ca712441`, 1,332 after at
+  `c7c7fab6`, 769 changed, each traced to a commit or to the date, 21 by
+  anti-aliasing alone. Worth a look, each the branch's side effect: an
+  order number breaking at its hyphen on a phone; French "En stock" on
+  two lines on a phone; Orders' All alone on a second line at 1440;
+  Reorder's names on three or four lines at 1440, Who waits taking the
+  room; Movements' expiry chip on three lines at 1440.
+
+### The reviews
+
+- **Step 21's five reviews** found 72: the panel, 8 walkers on `stock`,
+  `buy` and `trace` and a Sales walk, no one blocked; `/simplify`,
+  `/code-review` and the duplication check; `/production-readiness`;
+  the prompt audit. Fixed on the branch: 24 to 33, 13, 1, 2, 3, 4, 6, 9,
+  11, 22's S16 and S19, 41, 48 to 52, 54, 55 (the lot trace's older
+  joins in #649), 57, and the audit's 60 to 70 but 64 and 66. Filed: #646 to #653. Commented: 14 to 21 on #608, #607,
+  #534, #458, #159, #609, #617 and #473; 5 on #170; #649, #521 and #629.
+- **Said here:** 7, the pinned Item column taking about 320 px at
+  890 px, is #637's; 10, the 14 px line under 32 px figures, stands, as
+  the design language sets 14 px for a line that explains a figure; 22's
+  other minor and cosmetic findings stay in the panel's merge files; 23,
+  20em; 47, `dayRangeProps` on Movements alone; 58, Movements measured
+  on GitHub by the dispatched run; 64, this as-built.
+- **The full verify** passed twice but for #643's Linux WebKit test,
+  which passed 5 of 5 alone.
+
+### Considered and not done, added
+
+- **The text left in the find box after a choice (128b):** the choice
+  would show twice, and the next search would start by deleting it.
+- **Close matches shown after the exact ones (127):** a whole lot code
+  offered other lots.
+- **"All movements of this lot" on this month (132a):** it would hide
+  the receipt a trace starts from.
+- **Periods to their calendar ends (135b):** days still to come, where
+  nothing can have moved.
+- **Each language's own first day of the week (137b):** two people in
+  one organization would see different weeks and exports.
+- **Discontinued codes in every picker (133c):** a wider change than
+  naming the one chosen.
+
+### Deferred, added
+
+- **Filters by who and by partner (97a).** Trigger: someone asking what
+  one person moved, or what went to one customer.
+- **The When menu and `dayRangeProps` on Orders, Invoices, Returns and
+  Production (review 47).** Trigger: each list's next change (#649).
+- **A run's or a return's movements from the find box (126).** Trigger:
+  a filter by run, `runId`, with its read.
+- **A Sunday week, an organization's setting (137c).** Trigger: a
+  customer asking.
+- **typescript-eslint 8.73.0 and both minimatch overrides removed
+  (R31).** Trigger: their own pull request, from 23 November, with
+  ADR-019's line.
+- **Every component test on the app's theme (step 6).** Trigger: the
+  next change to the theme's colour tokens.
+
+### Consequences
+
+- **Amended with this:** ADR-090, the When menu, the find box and
+  wrapping chips (131a); ADR-051, Movements' figures and the Watch.
+- **Next:** #629 (119a), its decisions in its comment; the handoff holds
+  what is owed after the merge.

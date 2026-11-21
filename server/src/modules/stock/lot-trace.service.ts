@@ -3,13 +3,15 @@ import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
-import { dayIn } from '../../common/today';
+import { dayIn, todayIn } from '../../common/today';
 import type { ReleaseLicenceStatus } from '../../database/schema';
 import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemName, namesIn } from './item-name';
+import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
+import { usableInLot } from './usable-stock';
 
 /**
  * How far genealogy is followed. Real recipes are two or three levels deep —
@@ -48,15 +50,23 @@ export interface RelatedLot {
 export class LotTraceService {
   constructor(private readonly tenantDb: TenantDb) {}
 
-  /** Its item named in the reader's language (ADR-056). */
-  async trace(lotId: string, locale: Locale) {
+  /**
+   * Its item named in the reader's language (ADR-056); where it is now
+   * named by place only for a reader who may see places (ADR-093, 96a).
+   */
+  async trace(lotId: string, locale: Locale, seesPlaces: boolean) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const lot = await this.header(tx, organizationId, lotId, locale);
 
       // One after another: a transaction is one connection, and queries on
       // it run in turn whatever the code says, so Promise.all would only
       // pretend to be parallel.
-      const balances = await this.balances(tx, organizationId, lotId);
+      const { balances, usable, notUsable } = await this.whereItIsNow(
+        tx,
+        organizationId,
+        lotId,
+        seesPlaces,
+      );
       const sources = await this.sources(tx, organizationId, lotId);
       const madeFrom = await this.related(tx, organizationId, lotId, 'up');
       const wentInto = await this.related(tx, organizationId, lotId, 'down');
@@ -72,7 +82,16 @@ export class LotTraceService {
         ...wentInto.map((related) => related.lotId),
       ]);
 
-      return { lot, balances, sources, madeFrom, wentInto, recipients };
+      return {
+        lot,
+        balances,
+        usable,
+        notUsable,
+        sources,
+        madeFrom,
+        wentInto,
+        recipients,
+      };
     });
   }
 
@@ -144,6 +163,8 @@ export class LotTraceService {
           l.id,
           l.code,
           l.expires_at,
+          l.variant_id,
+          pv.product_id,
           pv.sku,
           pv.unit_of_measure,
           ${shown.productName} as product_name,
@@ -159,6 +180,8 @@ export class LotTraceService {
       id: string;
       code: string;
       expires_at: string | null;
+      variant_id: string;
+      product_id: string;
       sku: string;
       unit_of_measure: string;
       product_name: string;
@@ -175,41 +198,78 @@ export class LotTraceService {
       id: row.id,
       code: row.code,
       expiresAt: row.expires_at,
+      variantId: row.variant_id,
+      productId: row.product_id,
       sku: row.sku,
       unitOfMeasure: row.unit_of_measure,
       description: itemName(row.product_name, row.variant_name),
     };
   }
 
-  /** Where it is now, including bins marked unavailable (ADR-042). */
-  private async balances(tx: Tx, organizationId: string, lotId: string) {
+  /**
+   * Where it is now, including bins marked unavailable (ADR-042), each
+   * place with something left: by its path, its warehouse first (#639),
+   * for a reader who may see places; its id and figures alone for the
+   * rest (ADR-093, 96a), as Stock leaves them out. Beside them, the lot in
+   * two sums by the usable rule's reading for one lot, usableInLot
+   * (ADR-093, 10a): usable, and not. Summed here, never in the browser
+   * (ADR-055), for a reader who may not see the places (96a); read once
+   * with the places, never a copy of the rule (review 27).
+   */
+  private async whereItIsNow(
+    tx: Tx,
+    organizationId: string,
+    lotId: string,
+    seesPlaces: boolean,
+  ) {
+    const today = todayIn(requestTimeZone());
     const rows = (
       await tx.execute(sql`
         select
-          sl.location_id,
-          loc.name as location_name,
-          loc.is_available,
-          sl.quantity::text as quantity
-        from stock_levels sl
-        join locations loc on loc.id = sl.location_id
-        where sl.organization_id = ${organizationId}::uuid
-          and sl.lot_id = ${lotId}::uuid
-          and sl.quantity <> 0
-        order by loc.name
+          u.location_id,
+          u.location_name,
+          u.location_code,
+          u.is_available,
+          u.quantity::text as quantity,
+          u.quantity <> 0 as is_here,
+          coalesce(sum(u.usable) over (), 0)::text as usable,
+          coalesce(sum(u.not_usable) over (), 0)::text as not_usable
+        from (${usableInLot(organizationId, today, lotId)}) u
+        order by u.location_name
       `)
     ).rows as {
       location_id: string;
       location_name: string;
+      location_code: string | null;
       is_available: boolean;
       quantity: string;
+      is_here: boolean;
+      usable: string;
+      not_usable: string;
     }[];
+    const here = rows.filter((row) => row.is_here);
 
-    return rows.map((row) => ({
-      locationId: row.location_id,
-      locationName: row.location_name,
-      isAvailable: row.is_available,
-      quantity: row.quantity,
-    }));
+    const pathOf = seesPlaces
+      ? await pathsOf(
+          tx,
+          organizationId,
+          here.map((row) => row.location_id),
+        )
+      : new Map<string, string[]>();
+
+    return {
+      balances: here.map((row) => ({
+        locationId: row.location_id,
+        locationName: seesPlaces ? row.location_name : null,
+        locationCode: seesPlaces ? row.location_code : null,
+        locationPath: pathOf.get(row.location_id) ?? [],
+        isAvailable: row.is_available,
+        quantity: row.quantity,
+      })),
+      // The same on every row; nothing anywhere, none.
+      usable: rows[0]?.usable ?? '0',
+      notUsable: rows[0]?.not_usable ?? '0',
+    };
   }
 
   /**

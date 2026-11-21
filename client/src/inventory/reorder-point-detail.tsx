@@ -322,7 +322,7 @@ export function ReorderPointDetail({ row }: { row: ReorderPointRow }) {
       <Part
         title={intl.formatMessage({
           id: 'inventory.reorder.box.position',
-          defaultMessage: '= Position',
+          defaultMessage: '= Left',
         })}
         total={displayQuantity(row.position)}
         strong

@@ -1,6 +1,7 @@
 import { IsIn, IsISO8601, IsOptional, IsUUID } from 'class-validator';
 
 import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
+import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
 import { MOVEMENT_REASONS } from '../../../database/schema';
 
 export class ListMovementsDto extends KeysetQueryDto {
@@ -27,6 +28,16 @@ export class ListMovementsDto extends KeysetQueryDto {
   @IsUUID()
   locationId?: string;
 
+  /**
+   * An order's movements (ADR-093, R24): what was received on it, shipped
+   * on it and returned on it, by each movement's document. A reader
+   * without orders.view is refused it, 403: the answer alone would tell
+   * which movements belong to an order they may not see.
+   */
+  @IsOptional()
+  @IsUUID()
+  orderId?: string;
+
   @IsOptional()
   @IsIn([...MOVEMENT_REASONS])
   reason?: (typeof MOVEMENT_REASONS)[number];
@@ -43,4 +54,13 @@ export class ListMovementsDto extends KeysetQueryDto {
   @IsOptional()
   @IsISO8601({ strict: true })
   until?: string;
+
+  /**
+   * Newest first unless asked; `asc` runs oldest first, as Movements'
+   * When header pressed and the export read it, a stock card's order
+   * (ADR-093, 87a). By when each was recorded, then by id, either way.
+   */
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order?: SortOrder;
 }

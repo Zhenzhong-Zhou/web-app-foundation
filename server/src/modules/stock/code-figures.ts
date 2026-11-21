@@ -2,7 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import { comingOf, openSaleLines } from './availability';
 import { type ReorderStatus, statusOf } from './reorder-status';
-import { onHandByItem, onHandByUse } from './usable-stock';
+import { expiredByItem, onHandByItem, onHandByUse } from './usable-stock';
 
 /**
  * The one read for a code's figures (ADR-093, R1 and R20): Inventory's
@@ -27,6 +27,8 @@ import { onHandByItem, onHandByUse } from './usable-stock';
  *   less still needed;
  * - `expires_first`: the soonest expiry of the usable stock, lots not
  *   expired at places marked available; null when none expires;
+ * - `all_expired`: whether every unit on hand has expired, wherever it
+ *   sits, a place not available too (expiredByItem; #611, review 13);
  * - `reorder_point` and `status`, out, low, enough or discontinued
  *   (reorder-status.ts), both null without a point.
  *
@@ -48,8 +50,8 @@ export function codeFigures(
   variants: SQL,
   /**
    * False for a reader of the status alone, a count or a status filter:
-   * `expires_first` is then null, its pass over the lots not read (review
-   * 39, again).
+   * `expires_first` is then null and `all_expired` false, their passes
+   * over the lots not read (review 39, again).
    */
   { expiresFirst = true }: { expiresFirst?: boolean } = {},
 ): SQL {
@@ -68,6 +70,7 @@ export function codeFigures(
         sum(p.coming) as coming,
         min(p.coming_on) as coming_on,
         min(p.expires_first) as expires_first,
+        sum(p.expired_anywhere) as expired_anywhere,
         max(p.reorder_point) as reorder_point,
         bool_or(p.has_point) as has_point,
         bool_or(p.active) as active
@@ -83,6 +86,7 @@ export function codeFigures(
           0::numeric as coming,
           null::date as coming_on,
           null::date as expires_first,
+          0::numeric as expired_anywhere,
           rp.reorder_point,
           rp.id is not null as has_point,
           v.is_active and pr.is_active as active
@@ -98,21 +102,24 @@ export function codeFigures(
         union all
         select
           st.variant_id, st.on_hand, st.usable, st.expired, st.issued,
-          st.unavailable, 0, 0, null, null, null, null, null
+          st.unavailable, 0, 0, null, null, 0, null, null, null
         from (${onHandByUse(organizationId, today, variants)}) st
         union all
-        select nd.variant_id, 0, 0, 0, 0, 0, nd.still_needed, 0, null, null, null, null, null
+        select nd.variant_id, 0, 0, 0, 0, 0, nd.still_needed, 0, null, null, 0, null, null, null
         from (${stillNeededOf(organizationId, variants)}) nd
         union all
         select
           c.variant_id, 0, 0, 0, 0, 0, 0, c.quantity,
-          c.expected_at, null, null, null, null
+          c.expected_at, null, 0, null, null, null
         from (${comingOf(organizationId, variants)}) c
         ${
           expiresFirst
             ? sql`union all
-        select ex.variant_id, 0, 0, 0, 0, 0, 0, 0, null, ex.expires_first, null, null, null
-        from (${expiresFirstOf(organizationId, today, variants)}) ex`
+        select ex.variant_id, 0, 0, 0, 0, 0, 0, 0, null, ex.expires_first, 0, null, null, null
+        from (${expiresFirstOf(organizationId, today, variants)}) ex
+        union all
+        select ea.variant_id, 0, 0, 0, 0, 0, 0, 0, null, null, ea.expired, null, null, null
+        from (${expiredByItem(organizationId, today, variants)}) ea`
             : sql``
         }
       ) p
@@ -146,6 +153,7 @@ export function codeFigures(
       f.coming_on,
       f.position,
       f.expires_first,
+      f.on_hand > 0 and f.expired_anywhere = f.on_hand as all_expired,
       f.reorder_point,
       case when f.has_point then ${statusOf({
         position: sql`f.position`,
@@ -288,6 +296,7 @@ export function figureColumns(): SQL {
     f.coming_on::text as coming_on,
     ${quantity(sql`f.position`)} as position,
     f.expires_first::text as expires_first,
+    f.all_expired,
     ${quantity(sql`f.reorder_point`)} as reorder_point,
     f.status
   `;
@@ -309,6 +318,7 @@ export type FigureRow = {
   coming_on: string | null;
   position: string;
   expires_first: string | null;
+  all_expired: boolean;
   reorder_point: string | null;
   status: ReorderStatus | null;
 };
@@ -329,6 +339,7 @@ export function figuresOf(row: FigureRow) {
     comingOn: row.coming_on,
     position: row.position,
     expiresFirst: row.expires_first,
+    allExpired: row.all_expired,
     reorderPoint: row.reorder_point,
     status: row.status,
   };

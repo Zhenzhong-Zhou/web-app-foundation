@@ -28,6 +28,20 @@ describe('NameAndCode', () => {
     expect(container.querySelector('[aria-hidden] svg')).not.toBeNull();
   });
 
+  // 83a: pinned in a list too wide, ListTable cuts the link at two lines,
+  // CutName showing it whole; its text stays the whole name.
+  it('marks its link as the name a list too wide cuts at two lines', () => {
+    render(
+      <MemoryRouter>
+        <NameAndCode {...VITAMIN_C} to="/items/vitamin-c" />
+      </MemoryRouter>,
+    );
+
+    const link = screen.getByRole('link', { name: 'Vitamin C 500 mg' });
+    expect(link).toHaveAttribute('data-cut-name');
+    expect(link).toHaveTextContent(/^Vitamin C 500 mg$/);
+  });
+
   // #548: an icon that tells a kind is never alone.
   it('shows the type as a word beside its code where rows of every type sit together', () => {
     render(

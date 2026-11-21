@@ -1307,3 +1307,69 @@ The maintainer's answers, each by its letter:
   pictures in #644's table.
 - After it: `/triage`, the comments the amendment's Consequences name;
   Movements' boards at 1920 (E7) at its branch's first step.
+
+## Amendment (November 2026) — a list's name pinned wherever it stands, two lines at most, and a path cut in its middle (ADR-093)
+
+Planned on 19 November 2026 on `adr-093-movements`, with ADR-093's
+amendment for Movements' branch, whose check and requirements (R29)
+hold the reasons. Drawn on the canvas rows "库存与库存变动 第四版 ·
+Inventory and Movements v4" and "第五版 · v5". The design language's
+lines change in the branch's docs step, once the code holds them.
+
+- **The name pinned wherever it stands (81a):** a table too wide for
+  its box pins its name column, marked as the row's Actions are, not
+  whichever column comes first; a column before it, as Movements' When,
+  passes under it as the box scrolls. A list with no name column, as
+  Movements for one item, pins its first. Each side's edge, the half
+  of the box both may take, and the scroll padding stay as built
+  (E12a).
+- **Two lines at most (83a, #640):** a pinned name keeps a least width
+  of 20em, 320 px at Standard text and growing with it, and takes at
+  most two lines; a longer name ends in "…", the whole name in a
+  tooltip on hover and on focus, which Escape closes and the pointer
+  can rest on (WCAG 1.4.13), never a `title`. A screen reader hears the
+  whole name, since the cut is drawn, not written. Unpinned, a name
+  wraps as before. 16em is tried in the branch's walk.
+- **A path cut in its middle (93a, #639):** a place's path that does
+  not fit keeps the warehouse and the place's own name, "Main
+  warehouse › … › Shelf A2", replacing the cut from the left; the whole
+  path on hover, on focus and on a tap, and for a screen reader.
+- **`wholeOnFocus` for every list that scrolls sideways (#642):** the
+  shared table brings a focused control wholly into view itself, and
+  builds its stuck and sideways styles once.
+- **#644's panel, for this amendment:** finding 8 is ADR-093's R32;
+  findings 1 (a table too wide says so with a line and a fade alone),
+  4 (targets under 44 px on touch), 10 (nothing leads to Larger text)
+  and 11 (secondary text at 14 px) stay with their issues, #637, #170
+  and #606, #622 and #482, and #610 and #566.
+
+## Amendment (November 2026) — the When menu, a find box, and chips that wrap (ADR-093)
+
+Built on `adr-093-movements` and recorded with ADR-093's Movements
+as-built (#655), where the reasons are (131a). Drawn on the canvas rows
+"库存与库存变动 第八版 · v8" and "第十一版 · v11" to "第十四版 · v14". Movements is each
+pattern's one user; the other lists take them when next changed (#649).
+
+- **When, one menu (review 1, 130b, 135a, 137a):** a list's dates are
+  one field opening a menu, never two date fields beside a Period
+  button: Today, This week, This month, Last 30 days, Last month and
+  This year, each with its own dates beside its name ("This week · Nov
+  16–20"); a line; Choose dates…, a small panel with From and To, both
+  days included, either left empty; a line; Any time. Each period ends
+  on the organization's today, counted in calendar days, a week from
+  Monday in every language; Last month is the whole month. A range is
+  written by `formatRange` in the reader's language, the year once, and
+  in Chinese the Chinese way, 2026年11月1日至20日. The field and a chip
+  show the dates chosen. On a phone, the same list inside the Filters
+  sheet.
+- **A find box (126, 127a, 128a):** where a list filters by things a
+  person knows by name or number, one box finds them all, "Find an
+  item, lot or order", by the top bar's lookup and the reader's
+  permissions, grouped and in words. Exact matches alone when there are
+  any; close ones only when none, under "Close matches". A choice
+  becomes its chip under the row and the box empties for the next. It
+  never filters by free text.
+- **Chips that wrap:** every filter set is a chip under the row, its ×
+  removing it; a chip's words wrap rather than end in "…", since a tap
+  removes it and a tooltip could not be reached; one line is 32 px high
+  with a mouse and 46 px on touch.

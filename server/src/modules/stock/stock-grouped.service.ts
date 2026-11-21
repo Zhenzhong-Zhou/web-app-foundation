@@ -14,7 +14,7 @@ import {
   type SortOrder,
 } from '../../common/sorted-page';
 import { dayIn, todayIn } from '../../common/today';
-import { timeZoneOf, todayOf } from '../../core/organizations/time-zone';
+import { timeZoneOf } from '../../core/organizations/time-zone';
 import type { Transaction } from '../../database/database.module';
 import { assertOwnIds } from '../../database/own-ids';
 import {
@@ -28,7 +28,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { categoryPaths } from '../products/category-tree';
+import { inCategoryOrBelow } from '../products/category-tree';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
 import { comingOf, openSaleLines } from './availability';
@@ -59,6 +59,7 @@ import type {
   StockPlace,
 } from './dto/stock-grouped-response.dto';
 import { namesIn, productNameOrder } from './item-name';
+import { pathsOf } from './place-paths';
 import {
   quickFiltersOf,
   stockRowsOf,
@@ -127,10 +128,7 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
       : undefined,
     query.type ? sql`${products.type} = ${query.type}` : undefined,
     query.categoryId
-      ? sql`${products.categoryId} in (
-          select cp.id from ${categoryPaths(organizationId)} cp
-          where ${query.categoryId}::uuid = any(cp.ids)
-        )`
+      ? inCategoryOrBelow(query.categoryId, organizationId)
       : undefined,
     terms
       ? or(
@@ -439,14 +437,7 @@ export class StockGroupedService {
     const way = query.order ?? 'asc';
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
+      const { today } = await openingOf(tx, organizationId, query);
       const org = sql`${organizationId}::uuid`;
       const here =
         query.locationId && (sort === 'onHand' || sort === 'expires')
@@ -701,14 +692,7 @@ export class StockGroupedService {
    */
   counts(query: StockFiltersDto): Promise<StockCodeCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
+      const { today } = await openingOf(tx, organizationId, query);
       const days =
         query.expiringWithin ?? (await warningDays(tx, organizationId));
       const rows = rowFilters(query, organizationId, today, days);
@@ -819,15 +803,7 @@ export class StockGroupedService {
     const limit = query.limit ?? PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const timeZone = await timeZoneOf(tx, organizationId);
-      const today = todayIn(timeZone);
+      const { timeZone, today } = await openingOf(tx, organizationId, query);
       const org = sql`${organizationId}::uuid`;
       const parts = lotKeys(
         query.sort ?? 'expires',
@@ -938,14 +914,7 @@ export class StockGroupedService {
    */
   lotCounts(query: StockFiltersDto): Promise<StockLotCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await assertOwnIds(
-        tx,
-        products,
-        organizationId,
-        [query.productId],
-        UNKNOWN_ITEM,
-      );
-      const today = await todayOf(tx, organizationId);
+      const { today } = await openingOf(tx, organizationId, query);
       const days =
         query.expiringWithin ?? (await warningDays(tx, organizationId));
       const {
@@ -1100,10 +1069,7 @@ function lotFilters(
       sql`${stockLevels.lotId} is not null`,
       query.type ? sql`${products.type} = ${query.type}` : undefined,
       query.categoryId
-        ? sql`${products.categoryId} in (
-            select cp.id from ${categoryPaths(organizationId)} cp
-            where ${query.categoryId}::uuid = any(cp.ids)
-          )`
+        ? inCategoryOrBelow(query.categoryId, organizationId)
         : undefined,
       query.out === 'true' ? statusIn(sql`'out'`) : undefined,
     )}`,
@@ -1206,47 +1172,6 @@ export async function placesOf(
   return placed;
 }
 
-/**
- * The places above each place given, by name, its warehouse or site first
- * (57a): read after a page's rows are chosen, for theirs alone, never in
- * the counts or a sort. The tree is at most five deep; ten stops a loop.
- */
-async function pathsOf(
-  tx: Transaction,
-  organizationId: string,
-  placeIds: string[],
-): Promise<Map<string, string[]>> {
-  const ids = [...new Set(placeIds)];
-  if (!ids.length) return new Map();
-  const org = sql`${organizationId}::uuid`;
-  const { rows } = await tx.execute<{ place_id: string; path: string[] }>(sql`
-    with recursive up (place_id, parent_id, name, depth) as (
-      select l.id, l.parent_id, l.name, 0
-      from locations l
-      where l.organization_id = ${org}
-        and l.id in (${sql.join(
-          ids.map((id) => sql`${id}::uuid`),
-          sql`, `,
-        )})
-      union all
-      select up.place_id, p.parent_id, p.name, up.depth + 1
-      from up
-      join locations p
-        on p.id = up.parent_id
-        and p.organization_id = ${org}
-      where up.depth < 10
-    )
-    select place_id,
-      coalesce(
-        array_agg(name order by depth desc) filter (where depth > 0),
-        '{}'
-      ) as path
-    from up
-    group by place_id
-  `);
-  return new Map(rows.map((row) => [row.place_id, row.path]));
-}
-
 /** The organization's warning days, Expiring soon's (ADR-060). */
 async function warningDays(
   tx: Transaction,
@@ -1312,4 +1237,26 @@ function pileOf(row: PileRow, seesPlaces: boolean, timeZone: string) {
     quantity: row.quantity,
     emptiedOn: row.emptied_at ? dayIn(timeZone, row.emptied_at) : null,
   };
+}
+
+/**
+ * Each of Stock's reads opens the same way (#624): the address's item the
+ * organization's own, else refused as unknown before anything is read,
+ * then the organization's time zone and its today, in the read's own
+ * transaction.
+ */
+async function openingOf(
+  tx: Transaction,
+  organizationId: string,
+  query: { productId?: string },
+): Promise<{ timeZone: string; today: string }> {
+  await assertOwnIds(
+    tx,
+    products,
+    organizationId,
+    [query.productId],
+    UNKNOWN_ITEM,
+  );
+  const timeZone = await timeZoneOf(tx, organizationId);
+  return { timeZone, today: todayIn(timeZone) };
 }

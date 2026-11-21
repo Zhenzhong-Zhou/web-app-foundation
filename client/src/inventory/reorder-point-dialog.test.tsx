@@ -123,8 +123,8 @@ describe('ReorderPointDialog', () => {
         ),
       ).toBeInTheDocument();
       // The bars say they show the position, not stock on hand.
-      expect(screen.getByText('现在的预计可用')).toBeInTheDocument();
-      expect(screen.getByText('按建议生产后的预计可用')).toBeInTheDocument();
+      expect(screen.getByText('现在的预计剩余')).toBeInTheDocument();
+      expect(screen.getByText('按建议生产后的预计剩余')).toBeInTheDocument();
     } finally {
       localStorage.removeItem('language');
     }
@@ -146,8 +146,8 @@ describe('ReorderPointDialog', () => {
     await userEvent.clear(pointField());
     await userEvent.type(pointField(), '500');
     expect(await screen.findByText(/^At or above 500 now/)).toBeInTheDocument();
-    expect(screen.getByText('Position now')).toBeInTheDocument();
-    expect(screen.queryByText(/^Position after|^Position with/)).toBeNull();
+    expect(screen.getByText('Left now')).toBeInTheDocument();
+    expect(screen.queryByText(/^Left after|^Left with/)).toBeNull();
 
     // Nothing suggested, but 2,000 in draft: the bar says so.
     answer = {
@@ -160,7 +160,7 @@ describe('ReorderPointDialog', () => {
     await userEvent.clear(pointField());
     await userEvent.type(pointField(), '900');
     expect(
-      await screen.findByText('Position with 2,000 in draft'),
+      await screen.findByText('Left with 2,000 in draft'),
     ).toBeInTheDocument();
 
     // Both: the suggested order, with the draft named.
@@ -169,7 +169,7 @@ describe('ReorderPointDialog', () => {
     await userEvent.type(pointField(), '2000');
     expect(
       await screen.findByText(
-        'Position after the suggested order, with 2,000 in draft',
+        'Left after the suggested order, with 2,000 in draft',
       ),
     ).toBeInTheDocument();
   });

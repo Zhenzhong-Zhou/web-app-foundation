@@ -14,6 +14,7 @@ import {
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
+import { item, order, partner, receive, site } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
 import { said } from './utils/said';
 
@@ -497,6 +498,88 @@ describe('Exports (e2e)', () => {
     expect(await names('?retired=true')).toEqual(['Old Mill Herbs']);
   });
 
+  // ADR-093's R30 (77a, #473's 29): a quantity as data without its padding
+  // zeros in every export, no grouping; money at its currency's places,
+  // never fewer and never rounded (99a).
+  it('writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money at its currency’s places', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const supplier = await partner(agent, 'Harbour Supply');
+    const priceList = async (name: string, currency: string) =>
+      body<{ priceList: { id: string } }>(
+        await agent
+          .post('/v1/price-lists')
+          .send({ name, direction: 'sale', currency })
+          .expect(201),
+      ).priceList.id;
+    const wholesale = await priceList('Wholesale', 'CAD');
+    const tokyo = await priceList('Tokyo', 'JPY');
+    const figures = { BULK: '600', HALF: '12.5', DUST: '0.0001' };
+    const prices = { BULK: '12.5', HALF: '0.0125', DUST: '7' };
+    for (const [sku, quantity] of Object.entries(figures)) {
+      const variantId = await item(agent, sku, true);
+      await receive(agent, variantId, shelf, quantity, { code: `${sku}-1` });
+      await order(agent, 'purchase', supplier, variantId, quantity);
+      for (const [list, unitPrice] of [
+        [wholesale, prices[sku as keyof typeof prices]],
+        [tokyo, '1250'],
+      ]) {
+        await agent
+          .put(`/v1/price-lists/${list}/items/${variantId}`)
+          .send({ unitPrice })
+          .expect(200);
+      }
+    }
+
+    /** Each code's value in one column of an export, by its header. */
+    const column = async (path: string, header: string, code = 'Code') => {
+      const [names, ...rows] = linesOf(
+        (await agent.get(path).expect(200)).text,
+      ).map((line) => line.split(','));
+      return Object.fromEntries(
+        rows.map((row) => [
+          row[names.indexOf(code)],
+          row[names.indexOf(header)],
+        ]),
+      );
+    };
+
+    expect(await column('/v1/stock/by-code/export', 'On hand')).toEqual(
+      figures,
+    );
+    expect(await column('/v1/stock/by-lot/export', 'Quantity')).toEqual(
+      figures,
+    );
+    expect(await column('/v1/stock/movements/export', 'Change')).toEqual(
+      figures,
+    );
+    expect(
+      Object.values(
+        await column('/v1/orders/export', 'Quantity ordered', 'Number'),
+      ).sort(),
+    ).toEqual(['0.0001', '12.5', '600']);
+    expect(
+      Object.values(
+        await column(
+          '/v1/orders/export',
+          'Quantity received or shipped',
+          'Number',
+        ),
+      ),
+    ).toEqual(['0', '0', '0']);
+    // Money at its currency's places, stored 12.5000, 0.0125, 7.0000 and
+    // 1250.0000: cents for CAD, never fewer and never rounded; none for yen.
+    expect(
+      await column(`/v1/price-lists/${wholesale}/export`, 'Price'),
+    ).toEqual({ BULK: '12.50', HALF: '0.0125', DUST: '7.00' });
+    expect(await column(`/v1/price-lists/${tokyo}/export`, 'Price')).toEqual({
+      BULK: '1250',
+      HALF: '1250',
+      DUST: '1250',
+    });
+  });
+
   it("writes one price list's items, and audits which list left", async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const list = (
@@ -549,7 +632,7 @@ describe('Exports (e2e)', () => {
     ['/v1/credit-notes/export', 'Number'],
     ['/v1/stock/by-code/export', 'Code'],
     ['/v1/stock/by-lot/export', 'Code'],
-    ['/v1/stock/movements/export', 'When'],
+    ['/v1/stock/movements/export', 'When (UTC time)'],
     ['/v1/stock/reorder-points/export', 'Code'],
     ['/v1/orders/export', 'Number'],
     ['/v1/products/export', 'Code'],

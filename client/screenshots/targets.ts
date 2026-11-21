@@ -26,6 +26,19 @@ export interface Targets {
   /** Calm 90ct, the product with a recipe and a run under way. */
   recipeProductId: string | null;
   /**
+   * VITC-100's variant, the one item Movements is pictured for: its code
+   * changed once, and it has receipts, a move and a shipment.
+   */
+  movementsVariantId: string | null;
+  /**
+   * The days around that item's movements, as calendar days: a day before
+   * the first and a day after the last, so every movement falls inside
+   * whether `until` is read as included or excluded.
+   */
+  movementsRange: { from: string; until: string } | null;
+  /** PO-DEMO-4, bought for the second recipe and received in part. */
+  partlyReceivedOrderId: string | null;
+  /**
    * An invitation to set up a new organization (ADR-078), its link's path
    * by the language it is in, which its page speaks: the page's dashed
    * tile, standing in for the logo.

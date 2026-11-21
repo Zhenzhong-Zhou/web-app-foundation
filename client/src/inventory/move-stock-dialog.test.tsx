@@ -45,6 +45,7 @@ describe('MoveStockDialog, refused', () => {
         mode="ship"
         row={ROW}
         locations={[]}
+        tree={[]}
         canSeePartners
         onClose={vi.fn()}
         onMoved={vi.fn()}
@@ -63,5 +64,33 @@ describe('MoveStockDialog, refused', () => {
         'nowrap',
       );
     }
+  });
+});
+
+/**
+ * Correct the count's Why: each detail stands alone in its menu, so it
+ * starts with a capital, as the reason does (136a).
+ */
+describe('MoveStockDialog, correcting the count', () => {
+  it('offers each Why with its capital', async () => {
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MoveStockDialog
+        mode="adjust"
+        row={ROW}
+        locations={[]}
+        tree={[]}
+        canSeePartners
+        onClose={vi.fn()}
+        onMoved={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('combobox', { name: /^Why/ }));
+    expect(
+      within(screen.getByRole('listbox'))
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Miscount', 'Damaged', 'Expired', 'Lost', 'Found']);
   });
 });

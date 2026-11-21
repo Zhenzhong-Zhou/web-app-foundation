@@ -37,6 +37,8 @@ const TRACE: LotTrace = {
     id: 'lot-1',
     code: 'OIL-0425',
     expiresAt: null,
+    variantId: 'variant-oil',
+    productId: 'product-oil',
     sku: 'OIL',
     unitOfMeasure: 'kg',
     description: 'Fish oil',
@@ -45,10 +47,22 @@ const TRACE: LotTrace = {
     {
       locationId: 'loc-1',
       locationName: 'Shelf A',
+      locationCode: 'A',
+      locationPath: ['Main warehouse', 'Zone A'],
       isAvailable: true,
       quantity: '48.0000',
     },
+    {
+      locationId: 'loc-2',
+      locationName: 'Quarantine',
+      locationCode: null,
+      locationPath: ['Main warehouse'],
+      isAvailable: false,
+      quantity: '2.0000',
+    },
   ],
+  usable: '48.0000',
+  notUsable: '2.0000',
   sources: [
     SOURCE,
     {
@@ -115,6 +129,8 @@ const ONWARD = [
   'MO-000009',
 ];
 
+const PLACES_HIDDEN =
+  'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.';
 describe('LotTracePage', () => {
   it('links each partner, order and run for whoever may open it', async () => {
     renderTrace([
@@ -143,6 +159,37 @@ describe('LotTracePage', () => {
       'href',
       '/production/run-1',
     );
+  });
+
+  // Review 6: the way on to the lot's item and its movements, each for a
+  // reader who may open that page; the movements with no days, the lot's
+  // whole life, its first receipt among them (132b).
+  it('links its item and All movements of this lot, each for whoever may open it', async () => {
+    const { unmount } = renderTrace(['stock.view', 'products.view']);
+
+    expect(
+      await screen.findByRole('link', { name: 'Fish oil' }),
+    ).toHaveAttribute('href', '/items/product-oil');
+    const movements = screen.getByRole('link', {
+      name: 'All movements of this lot',
+    });
+    expect(movements).toHaveAttribute(
+      'href',
+      '/movements?variantId=variant-oil&lotId=lot-1',
+    );
+    const days = new URLSearchParams(
+      movements.getAttribute('href')?.split('?')[1],
+    );
+    expect(days.has('from')).toBe(false);
+    expect(days.has('until')).toBe(false);
+    unmount();
+
+    renderTrace(['stock.view']);
+    await screen.findByRole('link', { name: 'All movements of this lot' });
+    expect(
+      screen.queryByRole('link', { name: 'Fish oil' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Fish oil/)).toBeVisible();
   });
 
   // A recall letter goes to everyone on it (ADR-044, amended; #473's 17).
@@ -187,6 +234,42 @@ describe('LotTracePage', () => {
       '10 kg',
     );
     expect(screen.queryByText(/\.0000/)).not.toBeInTheDocument();
+  });
+
+  // Where it is now (#639; ADR-093, 96a): each place by its whole path,
+  // its warehouse first, for a reader who may see places; for one who may
+  // not, the two sums the server sends and no Location column.
+  it('names each place where it is now by its whole path, or sums it for a reader without places', async () => {
+    const { unmount } = renderTrace(['stock.view', 'locations.view']);
+
+    expect(
+      await screen.findByRole('cell', {
+        name: 'Main warehouse › Zone A › Shelf A (A)',
+      }),
+    ).toBeVisible();
+    expect(screen.queryByText(PLACES_HIDDEN)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('cell', {
+        name: 'Main warehouse › Quarantine Not available',
+      }),
+    ).toBeVisible();
+    unmount();
+
+    renderTrace(['stock.view']);
+
+    const heads = await screen.findAllByRole('columnheader');
+    expect(heads.slice(0, 2).map((head) => head.textContent)).toEqual([
+      'Usable',
+      'Not usable',
+    ]);
+    expect(screen.getByRole('cell', { name: '48 kg' })).toBeVisible();
+    expect(screen.getByRole('cell', { name: '2 kg' })).toBeVisible();
+    expect(
+      screen.queryByRole('columnheader', { name: 'Location' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Shelf A|Quarantine/)).not.toBeInTheDocument();
+    // Why, once, where the places would be (review 3, 115).
+    expect(screen.getAllByText(PLACES_HIDDEN)).toHaveLength(1);
   });
 
   // Stock look-up's reader (ADR-080): stock, but none of the three.

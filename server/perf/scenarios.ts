@@ -49,6 +49,11 @@ export interface Org {
   orderIds: string[];
   deepOrders: string;
   deepMovements: string;
+  /**
+   * The place of the Lot view's first row, the shelf the plan check reads
+   * Movements for (ADR-051's watch, ADR-093).
+   */
+  shelfId: string;
   /** About a thousand rows into the Lot view. */
   deepLots: string;
   /** The top-level category with the most items beneath it (ADR-092). */
@@ -210,6 +215,7 @@ export async function discover(
     orderIds: orders.ids,
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
+    shelfId: rows[0].locationId,
     deepLots: deep,
     categoryTop: picked.top,
     categoryBottom: picked.bottom,
@@ -279,6 +285,9 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /orders, page 21',
       (org) => `/orders?status=all&before=${org.deepOrders}`,
     ),
+    // Orders by what has come or gone (#605): partly received or shipped,
+    // the fewest at either scale, so the page reads furthest for its rows.
+    read('GET /orders?fulfillment=part', () => '/orders?fulfillment=part'),
     read(
       'GET /orders/:id',
       (org, n) => `/orders/${org.orderIds[n % org.orderIds.length]}`,
@@ -340,6 +349,18 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read(
       'GET /stock/movements?variantId',
       (org) => `/stock/movements?variantId=${org.hot[0].variantId}`,
+    ),
+    // One code as a stock card oldest first (ADR-093, 41a): its first
+    // page's balances read every later movement of the code.
+    read(
+      'GET /stock/movements?variantId&order=asc',
+      (org) => `/stock/movements?variantId=${org.hot[0].variantId}&order=asc`,
+    ),
+    // Movements for one shelf, from it or to it (ADR-051's watch; ADR-093,
+    // R16): through the from and the to place's indexes.
+    read(
+      'GET /stock/movements?locationId',
+      (org) => `/stock/movements?locationId=${org.shelfId}`,
     ),
     read('GET /invoices', () => '/invoices'),
     // One invoice drawn as a PDF (ADR-071), each request the next of the
@@ -433,6 +454,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read(
       'GET /stock/movements?from&until',
       () => `/stock/movements?${lastMonthInstants()}`,
+    ),
+    // One code's month as a stock card, its period's four figures (88a).
+    read(
+      'GET /stock/movements?variantId&from&until',
+      (org) =>
+        `/stock/movements?variantId=${org.hot[0].variantId}&${lastMonthInstants()}`,
     ),
   ];
 

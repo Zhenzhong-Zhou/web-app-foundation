@@ -95,6 +95,8 @@ as the catalogues word it.
 | Orders · Draft | Commandes · Brouillon | 订单 · 草稿 | Home's drafts tile, its page's name first and Orders' Draft filter after it; hidden until a person shows it in Customise Home, never late (ADR-091, amended November 2026). |
 | Confirmed | Confirmée | 已确认 | Agreed with the partner. |
 | Received / Shipped | Reçue / Expédiée | 已收货 / 已发货 | Closed: the one status, in its direction's word (ADR-041). |
+| Not received / Partly received / All received | Non reçue / Reçue en partie / Entièrement reçue | 未收货 / 部分收货 / 已全部收货 | How much of a confirmed purchase has come, beside its status on Orders and the order's page (#605, ADR-093): worked out from its lines, a line closed short counting as done, every line closed short with nothing in Not received (113a), and gone once the order is closed. Once nothing is due its page asks to close it; where a line was closed short, "Nothing more is expected. Close the order?" / « Plus rien n’est attendu. Clore la commande? » / 不再有货要来或要发。关闭订单？ All received is not Received, the status a person gives it by closing it. Orders' filter by it is Receiving / Réception / 收货进度, its empty choice Any / Toutes / 不限. |
+| Not shipped / Partly shipped / All shipped | Non expédiée / Expédiée en partie / Entièrement expédiée | 未发货 / 部分发货 / 已全部发货 | The same for a sale, its filter Shipping / Expédition / 发货进度. With sales and purchases listed together the filter names both: Receiving or shipping, Réception ou expédition, 收发货进度; Partly received or shipped, Reçue ou expédiée en partie, 部分收货或发货. |
 | Cancelled | Annulée | 已取消 | |
 | Open / Fulfilled | Ouvertes / Exécutées | 未完成 / 已完成 | The list's filters. |
 | Late | En retard | 逾期 | An outstanding order past its expected day, in the organization's day: Orders' filter, and its chip "2 days late" / « 2 jours de retard » / 逾期 2 天. Home's panel of what is late counts these with the items out and the lots and licences expired (ADR-091). Never "overdue". |
@@ -114,19 +116,29 @@ as the catalogues word it.
 | --- | --- | --- | --- |
 | On hand | En stock | 现有 | Every unit at every place, usable or not: 现有 is 现有可用 and 现有不可用 together (ADR-093). |
 | Held | Réservé | 已预留 | Kept for a confirmed sale (ADR-045). |
-| Free | Libre | 可用 | What can still be promised: usable stock less what is held, never below 0 (ADR-093). |
+| Free | Libre | 可分配 | What can still be promised: usable stock less what is held, never below 0 (ADR-093). Chinese says 可分配, the word warehouse systems use for stock still to be committed (94a): never 可用 alone, which also reads as Usable's 现有可用, nor 可售, wrong for a raw material. |
 | Short | manquant(s) | 缺 | Backordered said in a line: what confirmed orders want beyond what they hold, "20 short", « 20 manquants », 缺 20 (ADR-093). |
-| Not usable | Inutilisable | 现有不可用 | On hand that is not usable, its reason beside it in the words the app already uses: expired, 已过期; issued to a run, 已领用; at a place not available, 不可发货 (ADR-093). The pair of Usable's 现有可用; never bare 不可用, which reads as Free's opposite. |
+| Not usable | Inutilisable | 现有不可用 | On hand that is not usable, its reason beside it in the words the app already uses: expired, 已过期; issued to a run, 已领用; at a place not available, 不可发货 (ADR-093). The pair of Usable's 现有可用; never bare 不可用, which reads as the opposite of a usable place or lot. |
 | Where it stands | État du stock | 库存情况 | The item's page's first section: its stock, what is held and coming, and its position (ADR-093). |
 | Group by / Item / Lot | Regrouper par / Article / Lot | 分组 / 按物品 / 按批次 | Inventory's grouping, by item or by lot (ADR-093). |
-| Expires first | Expire en premier | 最早到期 | A row's lot that expires soonest. |
+| Expires first | Expire en premier | 最早到期 | A row's lot that expires soonest. Where every unit on hand has expired: all expired, tout est périmé, 全部已过期 (#611). |
 | In / Out / Balance | Entrée / Sortie / Solde | 收入 / 发出 / 结存 | Movements for one code, as a stock card reads (ADR-093). |
+| moved / counted in neither / Moved | déplacé / ni en entrée ni en sortie / Déplacé | 移库 / 不计入收入和发出 / 移库 | A move between two of a code's places, read across every place: neither In nor Out, its row saying how many moved once, in grey, "moved 20 each, counted in neither", « déplacé 20 unités, ni en entrée ni en sortie », 移库 20 个，不计入收入和发出; with several items "moved 20 each"; the stock card export's column, Moved (ADR-093, 118a and 114). The reason stays Moved / Déplacé / 移库. |
 | Opening balance | Solde d’ouverture | 期初结存 | A stock card's balance at its date range's start. |
+| Closing balance | Solde de clôture | 期末结存 | A stock card's balance at its date range's end: the opening, plus In, less Out. |
+| When: Today / This week / Last 30 days / Choose dates… / Any time | Quand : Aujourd’hui / Cette semaine / Les 30 derniers jours / Choisir les dates… / N’importe quand | 时间：今天 / 本周 / 最近 30 天 / 选择日期… / 不限时间 | Movements' When, one menu, with This month, Last month and This year as the other lists' Period says them; each period with its days beside it, one that holds today ending today, on the organization's calendar (135a); a week starts on Monday, lundi, 周一, for every reader and language (ISO 8601, 137a); Choose dates… opens From and To with Clear and Apply (ADR-093, review 1). Any time, where the other lists' Period keeps Any date. |
+| From / To (Choose dates…) | Du / Au | 起始日 / 结束日 | Choose dates…'s two fields, each a day, both included (ADR-093, review 1). A field's name, never a sentence around it: not 自 … 起 or 截至 … (review 22, S19). |
+| was / Recorded as | anciennement / Enregistré sous | 原编码 | The code a movement was recorded under, where it differs from today's: a row's "was VITC-90", « anciennement VITC-90 », 原编码 VITC-90, and its export's column beside Code (ADR-093, review 54). |
 | Backordered | En rupture | 缺货待发 | |
-| Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as the opposite of Free's 可用. |
+| Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as Usable's opposite. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
+| Count it in… | Ajouter au compte… | 盘盈入库… | Correct the count for stock found where the item has never been, at a place or in a lot it never had; its reason found, 盘盈 (ADR-093, #628). Its name for a screen reader carries the code, "Count it in VITC-100…", « Ajouter VITC-100 au compte… », 盘盈入库 VITC-100… (105a). |
+| Which lot / One of its lots / A new lot | Quel lot / Un de ses lots / Un nouveau lot | 哪个批次 / 已有批次 / 新批次 | Count it in's choice of lot, neither chosen at first: one the item has, or one made with the count. |
 | Ship out | Sortie de stock | 出库 | Inventory's action that sends stock out with no order; an order's Ship stays Expédier / 发货. |
-| Adjustment | Ajustement | 调整 | A movement's reason, as are the four below. |
+| Received / Shipped / Moved / Corrected / Made / Used in a run / Sampled / Returned | Reçu / Expédié / Déplacé / Corrigé / Fabriqué / Utilisé en fabrication / Envoyé en échantillon / Retourné | 收货 / 发货 / 移库 / 调整 / 生产 / 消耗 / 样品 / 退货 | A movement's reason in the boards' words, the same in Movements' Reason column, its filter and its chip, an item's Latest movements, the export, the Activity log and Help (ADR-093, 100a, 136a), with its capital wherever it stands alone, in lower case inside a sentence: a correction's detail after a colon, Corrected: found, Corrigé : trouvé, 调整：盘盈, and the no-result line's "No movements match: sampled". French agrees with Motif. Chinese keeps the reasons' words below and Receipt's and Shipment's above. |
+| Reason code | Code du motif | 原因代码 | Movements' export's column after Reason: the reason's stable code, receipt, shipment, transfer, adjustment, production, consumption, sample or return, never translated, so exports in two languages can be put together (ADR-093, 138b). |
+| Miscount / Damaged / Expired / Lost / Found | Erreur de comptage / Endommagé / Périmé / Perdu / Trouvé | 计数错误 / 损坏 / 过期 / 丢失 / 盘盈 | A correction's detail, Correct the count's Why, with its capital in its menu, in lower case after its reason, Corrected: found (136a). |
+| Adjustment | Ajustement | 调整 | A movement's reason inside a sentence, as are the four below: "An adjustment needs a note saying what was found". Movements, its export and the Activity log name the reason as the Received row does (136a). |
 | Transfer | Transfert | 移库 | |
 | Consumption | Consommation | 消耗 | What a run used. |
 | Sample | Échantillon | 样品 | |
@@ -142,15 +154,16 @@ as the catalogues word it.
 | Reorder point | Point de commande | 库存下限 | An item's level below which it is low (ADR-085). Inventory's Reorder tab lists them (ADR-093). Chinese says the word inventory software uses, a pair with 最高库存, not 再订货点, the English word for word (ADR-091). |
 | Reorder | Réapprovisionner | 补货 | Inventory's tab for what is low, named for what is done there (ADR-093); once Reorder points. |
 | Low stock | Stock bas | 库存不足 | Home's tile, Reorder's filter it opens, which holds the out too, and the bell's notice (ADR-091). |
+| Low stock · 8 codes / Expiring soon · 4 lots | Stock bas · 8 codes / Expire bientôt · 4 lots | 库存不足 · 8 个编码 / 即将过期 · 4 个批次 | A quick filter's count with what it counts, after a dot (108a, #609): codes on Stock by item and on Reorder, lots at each place on the Lot view, items on Items, "Low stock · 2 items" / « Stock bas · 2 articles » / 库存不足 · 2 个物品. Home's Low stock and Expiring soon tiles say it beside the figure, "8 codes", "4 lots". |
 | Low / Out / Enough | Bas / Épuisé / Suffisant | 不足 / 缺货 / 充足 | Where an item stands: below its point, at zero or less, or at or above it. The filter for the low is Low stock. |
-| Position | Position | 预计可用 | Usable + coming − still needed: what the point is compared with. |
-| Left | Il en reste | 剩 | Position said in a line: "10 left · reorder at 36", « Il en reste 10 · point de commande 36 », 剩 10 · 下限 36 (#459, ADR-093). Its sum keeps Position. |
+| Left | Il en reste | 预计剩余 | Usable + coming − still needed: what the point is compared with, one name wherever it shows, Reorder's box and Today, Stock's line, Where it stands and the export (94a). In a line: "10 left · reorder at 36", « Il en reste 10 · point de commande 36 », 预计剩余 10 · 下限 36 (#459, ADR-093). Once Position and 预计可用, and 剩 in a line; Chinese never says 预计可用, which reads as Free. |
 | Usable | Utilisable | 现有可用 | Stock at locations marked available, less expired lots and what runs were issued. |
 | Coming | À venir | 在途 | Confirmed purchases still to receive, and released runs' output still to come. |
 | Still needed | Encore requis | 待发 | Confirmed sales still to ship. |
+| Who waits · 2 orders | Qui attend · 2 commandes | 谁在等 · 2 个订单 | Reorder's control that opens a row's Where it stands, saying how many confirmed sales Still needed counts; Still needed and Held keep their names (107a). |
 | In draft / Drafted | En brouillon / Brouillon fait | 草稿中 / 已下草稿 | Draft purchases and runs: shown, never counted as coming. Drafted: what is in draft leaves nothing to suggest. |
 | Suggested order | Commande suggérée | 建议订货 | For a made item, 建议生产. |
-| Buy / Make | Acheter / Fabriquer | 采购 / 生产 | Reorder's buttons, each with how many: Buy 30, Acheter 30, 采购 30; Make 1,000, Fabriquer 1 000, 生产 1,000 (ADR-093). |
+| Buy / Make | Acheter / Fabriquer | 采购 / 生产 | Reorder's buttons, each with how many: Buy 30, Acheter 30, 采购 30; Make 1,000, Fabriquer 1 000, 生产 1,000 (ADR-093). On Where it stands, alone on its card, the number takes its unit: Buy 30 each, Acheter 30 unités, 采购 30 个 (#640). |
 | Bought / Made | Acheté / Fabriqué | 采购 / 自制 | How an item with a point is replenished. |
 | Just enough / A fixed quantity / Up to a maximum | Juste assez / Quantité fixe / Jusqu’à un maximum | 补足到库存下限 / 固定订货量 / 补到最高库存 | The three rules for how much to order. |
 
@@ -223,6 +236,8 @@ as the catalogues word it.
 | Help | Aide | 帮助 | The button in the top bar, and the panel it opens (ADR-079). |
 | Menu | Menu | 菜单 | The top bar's word under ☰ below `lg`, which opens the drawer (ADR-091). |
 | Search | Rechercher | 搜索 | The top bar's word under the search's icon on a phone; the field itself is Search everything / Tout rechercher / 全局搜索. |
+| Find an item, lot or order | Trouver un article, un lot ou une commande | 查找物品、批次或订单 | Movements' find box (126): it reads the top bar's lookup, and what is chosen becomes a filter and its chip; typed text alone never filters, so it says Find, not Search. |
+| Close matches | Résultats proches | 相近结果 | The find box's heading over what the lookup found by likeness, for a typo, offered only when nothing matches exactly; an exact match comes alone, and a whole lot code such as MCS-001 just that lot (126's polish). The top bar marks each close match / résultat proche / 相近结果 in its row. |
 | Notifications | Notifications | 通知 | The bell, and its word under it below `lg`. |
 | Account | Compte | 账户 | The top bar's word under the person's face below `lg`, which opens the account menu. |
 | Guide | Guide | 指南 | A page's help: what it is for, how to work in it, what may be refused. |
@@ -256,6 +271,7 @@ fails on each word a translation uses where its row holds.
 | 简体中文 | 税务登记号 | 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names | Everywhere |
 | 简体中文 | 退出该组织 | 离开该组织: a member's own Leave is 离开, as the Account page's button says; 退出 is Sign out's word, 退出登录, where it stays right | Everywhere |
 | 简体中文 | 退出组织 | 离开组织, as 退出该组织 says | Everywhere |
+| 简体中文 | 预计可用 | 预计剩余, as Left says: one name for the projected figure, which 预计可用 made read as Free (94a) | Everywhere |
 
 ## Settled messages
 
@@ -325,7 +341,9 @@ spacing.
   half-width , ? : ; or ! beside Chinese. A space between Chinese and
   Latin letters or digits, as in 逾期 2 天, 批次 VC-0301 and 我在
   {organization} 的权限 (ADR-090), and none beside full-width punctuation,
-  inside a date as the reader's calendar writes it, 2026年11月30日, or
+  inside a date as the reader's calendar writes it, 2026年11月30日, and
+  in a range of days, the year once, 2026年11月1日至20日,
+  2026年10月25日至11月20日 (130b), or
   beside a placeholder that Placeholders filled with Chinese words lists,
   由{name}提供支持. A list joins with 、 and its last item with 和, a
   space beside a Latin name. A plural has its other branch alone, since

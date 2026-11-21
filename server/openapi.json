@@ -4183,6 +4183,15 @@
             }
           },
           {
+            "name": "orderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "reason",
             "required": false,
             "in": "query",
@@ -4214,6 +4223,18 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           },
           {
@@ -4293,6 +4314,15 @@
             }
           },
           {
+            "name": "orderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "reason",
             "required": false,
             "in": "query",
@@ -4327,6 +4357,18 @@
             }
           },
           {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
             "name": "before",
             "required": false,
             "in": "query",
@@ -4357,6 +4399,44 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        },
+        "tags": [
+          "Stock"
+        ]
+      }
+    },
+    "/v1/stock/variants/{id}": {
+      "get": {
+        "operationId": "StockController_variant_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockVariant"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7525,6 +7605,19 @@
             }
           },
           {
+            "name": "fulfillment",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none",
+                "part",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -7702,6 +7795,19 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "fulfillment",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "none",
+                "part",
+                "all"
+              ]
             }
           },
           {
@@ -7886,6 +7992,63 @@
         "responses": {
           "204": {
             "description": ""
+          }
+        },
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/v1/orders/{id}/receipts": {
+      "get": {
+        "operationId": "OrdersController_listReceipts_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReceiptPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -8651,6 +8814,25 @@
         "operationId": "ReturnAuthorizationsController_list_v1",
         "parameters": [
           {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "status",
             "required": false,
             "in": "query",
@@ -8695,25 +8877,6 @@
             "schema": {
               "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           }
         ],
@@ -8993,6 +9156,25 @@
         "operationId": "InvoicesController_list_v1",
         "parameters": [
           {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "status",
             "required": false,
             "in": "query",
@@ -9070,25 +9252,6 @@
             "schema": {
               "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           }
         ],
@@ -9143,6 +9306,25 @@
         "operationId": "InvoicesController_exportInvoices_v1",
         "parameters": [
           {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "status",
             "required": false,
             "in": "query",
@@ -9220,25 +9402,6 @@
             "schema": {
               "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           },
           {
@@ -9603,6 +9766,25 @@
         "operationId": "CreditNotesController_list_v1",
         "parameters": [
           {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "partnerId",
             "required": false,
             "in": "query",
@@ -9667,25 +9849,6 @@
             "schema": {
               "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           }
         ],
@@ -9711,6 +9874,25 @@
         "operationId": "CreditNotesController_exportCreditNotes_v1",
         "parameters": [
           {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "partnerId",
             "required": false,
             "in": "query",
@@ -9775,25 +9957,6 @@
             "schema": {
               "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           },
           {
@@ -12951,10 +13114,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -13097,10 +13260,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -13201,10 +13364,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -15234,9 +15397,9 @@
               "null"
             ],
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               null
             ]
@@ -15513,9 +15676,9 @@
           },
           "licenceStatusAtRelease": {
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               null
             ],
@@ -15727,9 +15890,9 @@
           "status": {
             "type": "string",
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               "withdrawn"
             ]
@@ -16306,10 +16469,14 @@
         "properties": {
           "movement": {
             "$ref": "#/components/schemas/RecordedMovement"
+          },
+          "needsCost": {
+            "type": "boolean"
           }
         },
         "required": [
-          "movement"
+          "movement",
+          "needsCost"
         ]
       },
       "MovementDocument": {
@@ -16318,8 +16485,8 @@
           "kind": {
             "type": "string",
             "enum": [
-              "order",
-              "run"
+              "run",
+              "order"
             ]
           },
           "id": {
@@ -16338,13 +16505,37 @@
           "number"
         ]
       },
+      "MovementRecipient": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "Movement": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
+          "variantId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
+            "type": "string"
+          },
+          "currentSku": {
             "type": "string"
           },
           "productName": {
@@ -16355,6 +16546,20 @@
               "string",
               "null"
             ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sample",
+              "good",
+              "material",
+              "packaging",
+              "supply",
+              "equipment"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
           },
           "quantity": {
             "type": "string"
@@ -16374,7 +16579,31 @@
               "null"
             ]
           },
+          "fromLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "fromLocationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLocationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLocationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "toLocationId": {
             "type": [
               "string",
               "null"
@@ -16386,7 +16615,31 @@
               "null"
             ]
           },
+          "toLocationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotExpiresAt": {
             "type": [
               "string",
               "null"
@@ -16417,24 +16670,105 @@
                 "type": "null"
               }
             ]
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementRecipient"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantityIn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityOut": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "change": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "balance": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "id",
+          "variantId",
+          "productId",
           "sku",
+          "currentSku",
           "productName",
           "variantName",
+          "type",
+          "unitOfMeasure",
           "quantity",
           "reason",
           "reasonDetail",
           "note",
+          "fromLocationId",
           "fromLocationName",
+          "fromLocationCode",
+          "fromLocationPath",
+          "toLocationId",
           "toLocationName",
+          "toLocationCode",
+          "toLocationPath",
+          "lotId",
           "lotCode",
+          "lotExpiresAt",
           "actorName",
           "actorEmail",
           "createdAt",
-          "document"
+          "document",
+          "recipient",
+          "quantityIn",
+          "quantityOut",
+          "change",
+          "balance"
+        ]
+      },
+      "MovementPeriod": {
+        "type": "object",
+        "properties": {
+          "opening": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityIn": {
+            "type": "string"
+          },
+          "quantityOut": {
+            "type": "string"
+          },
+          "closing": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "opening",
+          "quantityIn",
+          "quantityOut",
+          "closing"
         ]
       },
       "MovementPage": {
@@ -16451,11 +16785,56 @@
               "string",
               "null"
             ]
+          },
+          "period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementPeriod"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "entries",
-          "nextCursor"
+          "nextCursor",
+          "period"
+        ]
+      },
+      "StockVariant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "isActive"
         ]
       },
       "Lot": {
@@ -16531,10 +16910,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -16611,6 +16990,9 @@
               "null"
             ]
           },
+          "allExpired": {
+            "type": "boolean"
+          },
           "reorderPoint": {
             "type": [
               "string",
@@ -16671,6 +17053,7 @@
           "comingOn",
           "position",
           "expiresFirst",
+          "allExpired",
           "reorderPoint",
           "status",
           "needsCost",
@@ -16960,10 +17343,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -17100,6 +17483,12 @@
               "null"
             ]
           },
+          "variantId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
             "type": "string"
           },
@@ -17114,6 +17503,8 @@
           "id",
           "code",
           "expiresAt",
+          "variantId",
+          "productId",
           "sku",
           "unitOfMeasure",
           "description"
@@ -17126,7 +17517,22 @@
             "type": "string"
           },
           "locationName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "isAvailable": {
             "type": "boolean"
@@ -17138,6 +17544,8 @@
         "required": [
           "locationId",
           "locationName",
+          "locationCode",
+          "locationPath",
           "isAvailable",
           "quantity"
         ]
@@ -17219,9 +17627,9 @@
               "null"
             ],
             "enum": [
+              "expired",
               "none",
               "current",
-              "expired",
               "not_in_force",
               null
             ]
@@ -17380,6 +17788,12 @@
               "$ref": "#/components/schemas/LotBalance"
             }
           },
+          "usable": {
+            "type": "string"
+          },
+          "notUsable": {
+            "type": "string"
+          },
           "sources": {
             "type": "array",
             "items": {
@@ -17408,6 +17822,8 @@
         "required": [
           "lot",
           "balances",
+          "usable",
+          "notUsable",
           "sources",
           "madeFrom",
           "wentInto",
@@ -17443,8 +17859,8 @@
           "kind": {
             "type": "string",
             "enum": [
-              "purchase",
-              "run"
+              "run",
+              "purchase"
             ]
           },
           "id": {
@@ -17482,10 +17898,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -17550,6 +17966,9 @@
           "stillNeeded": {
             "type": "string"
           },
+          "waitingOrders": {
+            "type": "number"
+          },
           "inDraft": {
             "type": "string"
           },
@@ -17602,6 +18021,7 @@
           "usable",
           "coming",
           "stillNeeded",
+          "waitingOrders",
           "inDraft",
           "position",
           "status",
@@ -17732,8 +18152,8 @@
           "kind": {
             "type": "string",
             "enum": [
-              "purchase",
-              "run"
+              "run",
+              "purchase"
             ]
           },
           "id": {
@@ -18130,6 +18550,9 @@
               "null"
             ]
           },
+          "allExpired": {
+            "type": "boolean"
+          },
           "reorderPoint": {
             "type": [
               "string",
@@ -18213,6 +18636,12 @@
             "items": {
               "$ref": "#/components/schemas/UsableLot"
             }
+          },
+          "latestMovements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Movement"
+            }
           }
         },
         "required": [
@@ -18235,6 +18664,7 @@
           "comingOn",
           "position",
           "expiresFirst",
+          "allExpired",
           "reorderPoint",
           "status",
           "source",
@@ -18244,7 +18674,8 @@
           "purchases",
           "runs",
           "places",
-          "lots"
+          "lots",
+          "latestMovements"
         ]
       },
       "ProductStock": {
@@ -18282,6 +18713,29 @@
               "null"
             ]
           },
+          "direction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "sale",
+              "purchase",
+              null
+            ]
+          },
+          "fulfillment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "all",
+              "part",
+              null
+            ]
+          },
           "expiresAt": {
             "type": [
               "string",
@@ -18306,10 +18760,10 @@
               "null"
             ],
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment",
               null
@@ -18324,6 +18778,8 @@
           "title",
           "detail",
           "status",
+          "direction",
+          "fulfillment",
           "expiresAt",
           "productId",
           "coverFileId",
@@ -18459,13 +18915,13 @@
           "kind": {
             "type": "string",
             "enum": [
+              "run",
               "email",
               "jobTitle",
               "invoice",
               "order",
               "lot",
               "product",
-              "run",
               "photo"
             ]
           },
@@ -18767,12 +19223,12 @@
           "kind": {
             "type": "string",
             "enum": [
+              "run",
               "invoice",
               "order",
               "lot",
               "product",
               "partner",
-              "run",
               "return",
               "priceList"
             ]
@@ -19635,10 +20091,10 @@
           "type": {
             "type": "string",
             "enum": [
+              "sample",
               "good",
               "material",
               "packaging",
-              "sample",
               "supply",
               "equipment"
             ]
@@ -20701,6 +21157,18 @@
           },
           "quantityFulfilled": {
             "type": "string"
+          },
+          "fulfillment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "all",
+              "part",
+              null
+            ]
           }
         },
         "required": [
@@ -20716,7 +21184,8 @@
           "createdAt",
           "lineCount",
           "quantityOrdered",
-          "quantityFulfilled"
+          "quantityFulfilled",
+          "fulfillment"
         ]
       },
       "OrderPage": {
@@ -21181,6 +21650,18 @@
           "fullyFulfilled": {
             "type": "boolean"
           },
+          "fulfillment": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "all",
+              "part",
+              null
+            ]
+          },
           "duplicatedFromId": {
             "type": [
               "string",
@@ -21284,6 +21765,7 @@
           "direction",
           "isSample",
           "fullyFulfilled",
+          "fulfillment",
           "duplicatedFromId",
           "status",
           "reference",
@@ -21294,6 +21776,149 @@
           "counts",
           "quantities",
           "lines"
+        ]
+      },
+      "OrderReceipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "currentSku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sample",
+              "good",
+              "material",
+              "packaging",
+              "supply",
+              "equipment"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "received": {
+            "type": "string"
+          },
+          "toLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "productId",
+          "sku",
+          "currentSku",
+          "productName",
+          "variantName",
+          "type",
+          "unitOfMeasure",
+          "received",
+          "toLocationId",
+          "toLocationName",
+          "toLocationCode",
+          "toLocationPath",
+          "lotId",
+          "lotCode",
+          "lotExpiresAt",
+          "actorName",
+          "actorEmail"
+        ]
+      },
+      "OrderReceiptPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderReceipt"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
         ]
       },
       "CreateOrderLineDto": {
@@ -24194,7 +24819,8 @@
           "code_in_use",
           "item_name_missing",
           "product_names_changed",
-          "stock_not_usable"
+          "stock_not_usable",
+          "lot_code_in_use"
         ]
       },
       "ApiVocabulary": {

@@ -20,7 +20,7 @@ import { TableOrCards } from '../components/table-or-cards';
 import type { StockLotSort } from '../lib/api-names';
 import { itemName, NO_VALUE } from '../lib/format';
 import type { SortOrder } from '../lib/use-list-sort';
-import { wholeOnFocus } from '../lib/whole-on-focus';
+import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { EmptiedLine } from './emptied-line';
@@ -50,11 +50,14 @@ export function StockLots({
   seesPlaces,
   handlers,
   header,
+  rowReturn,
 }: {
   rows: StockLotRow[] | null;
   loading: boolean;
   seesPlaces: boolean;
   handlers: StockHandlers;
+  /** Each row's way back to it (useRowReturn). */
+  rowReturn: (id: string) => RowReturn;
   /** A sortable header's state, useListSort's (Bob's third message, 7). */
   header: (key: StockLotSort) => {
     active: boolean;
@@ -74,12 +77,12 @@ export function StockLots({
             id: 'inventory.tab.stock',
             defaultMessage: 'Stock',
           })}
-          onFocus={wholeOnFocus}
           size="small"
         >
           <TableHead>
             <TableRow>
               <SortHeader
+                name
                 label={intl.formatMessage(HEADS.item)}
                 {...header('item')}
                 atRest
@@ -111,7 +114,7 @@ export function StockLots({
           <TableBody>
             {loading && <PlaceholderRows columns={seesPlaces ? 6 : 5} />}
             {numbered.map(({ row, index }) => (
-              <TableRow key={row.id} hover>
+              <TableRow key={row.id} hover {...rowReturn(row.id)}>
                 <TableCell>
                   <NameAndCode
                     name={itemName(row.productName, row.variantName)}
@@ -158,6 +161,7 @@ export function StockLots({
             <Box
               component="li"
               key={row.id}
+              {...rowReturn(row.id)}
               sx={{
                 listStyle: 'none',
                 p: 2,

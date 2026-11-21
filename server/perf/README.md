@@ -94,6 +94,16 @@ runs and counts draw on the first bin alone, so none is refused, and the
 reorder points are set on the whole stock. By position, not from the random
 source: the rest of the year is the year it was.
 
+Movements for one shelf and the lists beside it (ADR-093) need no rows of
+their own: every receipt, put-away, sale, run and count is a movement at a
+bin, so a shelf holds about 1,700 of them at small (50 to 1,950 a bin) and
+about 3,500 at large (200 to 6,700), the dock apart, which every receipt
+passes through. A lot-tracked sale line draws on two lots or more about one
+time in ten (981 of 10,201 at small, 9,594 of 81,303 at large), each
+movement with its own lot, so an order's movements of one quantity are told
+apart by it. Counted on the busiest organization of each volume, as
+seeded on 16 November (small) and 17 November (large).
+
 One lot in five expires within the year after the seed's day, spread
 evenly over it, and one in a hundred has expired already, also by position
 (ADR-093): so Inventory's Expiring soon and Expired, and the sorts by
@@ -161,8 +171,10 @@ answers:
     (ADR-093: a row per code, searched, Low stock, sorted by On hand and
     by Expires first, its counts, and a code's places; the Lot view, a
     deep page of it, Expiring soon and its counts) and an item's Where it
-    stands, the movement list (first page, a deep page, one product), the
-    invoice list, and a lot trace;
+    stands, the movement list (first page, a deep page, one product, one
+    product oldest first with each row's balance, one product's month
+    with its period, and one shelf, the place of the Lot view's first
+    row: ADR-093), the invoice list, and a lot trace;
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item
     pickers by pinyin, both asked in Chinese; and Partners by part of a

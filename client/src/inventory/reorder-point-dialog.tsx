@@ -886,7 +886,7 @@ function Today({
           {
             id: 'inventory.reorder.today.afterWithDraft',
             defaultMessage:
-              '{source, select, other {Position after the suggested order, with {inDraft} in draft}}',
+              '{source, select, other {Left after the suggested order, with {inDraft} in draft}}',
           },
           { source, inDraft: displayQuantity(result.inDraft) },
         )
@@ -894,7 +894,7 @@ function Today({
           {
             id: 'inventory.reorder.today.after',
             defaultMessage:
-              '{source, select, other {Position after the suggested order}}',
+              '{source, select, other {Left after the suggested order}}',
           },
           { source },
         )
@@ -902,7 +902,7 @@ function Today({
       ? intl.formatMessage(
           {
             id: 'inventory.reorder.today.withDraft',
-            defaultMessage: 'Position with {inDraft} in draft',
+            defaultMessage: 'Left with {inDraft} in draft',
           },
           { inDraft: displayQuantity(result.inDraft) },
         )
@@ -912,7 +912,7 @@ function Today({
       id: 'now',
       label: intl.formatMessage({
         id: 'inventory.reorder.today.now',
-        defaultMessage: 'Position now',
+        defaultMessage: 'Left now',
       }),
       position: result.position,
       status: result.status,

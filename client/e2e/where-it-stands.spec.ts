@@ -14,9 +14,10 @@ import { receive, reorderScene, stockScene } from './support/stock';
 
 /**
  * The item's page, Where it stands (ADR-093, R8), row by row: each row of
- * the ADR's table for it is one test here, but Latest movements, which
- * Movements' branch builds; then its state with none on hand, each way
- * into it, and Items' Low stock filter (R23). Stock's ways in, its name,
+ * the ADR's table for it is one test here, but Latest movements' All
+ * movements, which is with Movements' own in movements-page.spec.ts; then
+ * its state with none on hand, each way into it, and Items' Low stock
+ * filter (R23). Stock's ways in, its name,
  * "20 left" and "15 short", are in stock.spec.ts with Stock's rows;
  * Reorder's here.
  *
@@ -85,7 +86,9 @@ test('Where it stands, Buy 80: a purchase order opens filled in, the supplier as
   await signInAs(page, freshOrg.api);
   await itemFrom(page, scene.vitamin.id);
 
-  await standing(page).getByRole('button', { name: 'Buy 80' }).click();
+  await standing(page)
+    .getByRole('button', { name: 'Buy 80 each', exact: true })
+    .click();
 
   await expect(page).toHaveURL(/\/orders\/new$/);
   await expect(page.getByRole('radio', { name: /^Buying/ })).toBeChecked();
@@ -161,8 +164,9 @@ test('By place and lot, a lot’s code: the lot’s trace; Back, the item’s pa
   await signInAs(page, freshOrg.api);
   await itemFrom(page, scene.vitamin.id);
 
-  const byPlace = standing(page);
-  await expect(byPlace.getByText('By place and lot')).toBeVisible();
+  await expect(standing(page).getByText('By place and lot')).toBeVisible();
+  // Its table, the first: Latest movements' after it names lots too.
+  const byPlace = standing(page).getByRole('table').first();
   // Each lot a link, by place, each place's soonest first, the expired
   // among them: A2's, then B1's.
   await expect(byPlace.getByRole('link', { name: /^VC-/ })).toHaveText([
@@ -220,7 +224,9 @@ test('for a Viewer: no Buy or Change reorder point, a line saying whom to ask; n
   await itemFrom(page, scene.vitamin.id);
 
   const section = standing(page);
-  await expect(section.getByRole('button', { name: 'Buy 80' })).toHaveCount(0);
+  await expect(
+    section.getByRole('button', { name: 'Buy 80 each', exact: true }),
+  ).toHaveCount(0);
   await expect(
     section.getByRole('button', { name: 'Change reorder point' }),
   ).toHaveCount(0);
@@ -277,7 +283,7 @@ test('Items, Low stock: the items low or out, counted; a row’s Low opens Where
   // Vitamin C, zinc and copper low, focus out: four items, as Reorder's
   // low and out codes are, each of one code; magnesium has no point.
   const low = page.getByRole('button', { name: /^Low stock/ });
-  await expect(low).toHaveAccessibleName('Low stock 4');
+  await expect(low).toHaveAccessibleName('Low stock · 4 items');
   await low.click();
 
   await expect(page).toHaveURL(/[?&]low=1/);
@@ -356,8 +362,9 @@ test('Where it stands, its figures: five tiles in a row at 1366 px, fewer at 820
 });
 
 // A place written as its path (57a), as on Stock: whole where it fits;
-// cut from the left with "…" where it does not, the place whole.
-test('Where it stands, By place and lot: a place’s whole path where it fits, cut from the left with “…” on a phone, the place whole', async ({
+// cut in its middle where it does not, the warehouse and the place whole
+// (93a, #639).
+test('Where it stands, By place and lot: a place’s whole path where it fits, cut in its middle on a phone, the warehouse and the place whole', async ({
   page,
   freshOrg,
 }) => {
@@ -396,5 +403,65 @@ test('Where it stands, By place and lot: a place’s whole path where it fits, c
   await expect.poll(drawn).toBe(whole);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect.poll(drawn).toMatch(/^….* › E2E Shelf A2$/);
+  await expect
+    .poll(drawn)
+    .toBe('E2E Main warehouse on the river › … › E2E Shelf A2');
+});
+
+// Review 22, S16: on a phone, a place's path in Latest movements stays on
+// its card: cut in its middle as PlacePath cuts, whole on a tap, or
+// wrapped; never clipped at the card's edge with no sign.
+test('Latest movements on a phone: a long path stays on its card, never clipped with no sign', async ({
+  page,
+  freshOrg,
+}) => {
+  const site = (await (
+    await freshOrg.api.post('/v1/locations', {
+      data: { type: 'site', name: 'Richmond warehouse' },
+    })
+  ).json()) as { location: { id: string } };
+  const quarantine = (await (
+    await freshOrg.api.post('/v1/locations', {
+      data: {
+        type: 'zone',
+        name: 'Quarantine',
+        code: 'QUAR',
+        parentId: site.location.id,
+      },
+    })
+  ).json()) as { location: { id: string } };
+  const product = await createProduct(freshOrg.api, {
+    name: 'E2E Vitamin C 500 mg',
+  });
+  await receive(
+    freshOrg.api,
+    product,
+    { id: quarantine.location.id, name: 'Quarantine' },
+    '12',
+  );
+  // As the panel's senior walked it: Larger text.
+  await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInAs(page, freshOrg.api);
+  await itemFrom(page, product.id);
+
+  const latest = standing(page)
+    .getByRole('listitem')
+    .filter({ hasText: 'Richmond' })
+    .first();
+  await expect(latest).toBeVisible();
+  const path = latest.locator('[data-whole]');
+  await expect(path).toHaveAttribute(
+    'data-whole',
+    'Richmond warehouse › Quarantine (QUAR)',
+  );
+  // Its box within its card and the screen, and no text run past it.
+  const card = (await latest.boundingBox())!;
+  const box = (await path.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 0.5);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  const shown = path.locator('> span').first();
+  expect(
+    await shown.evaluate((span) => span.scrollWidth <= span.clientWidth + 1),
+  ).toBe(true);
 });

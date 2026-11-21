@@ -69,6 +69,51 @@ function joined(parts: ListParts) {
   return all.length === 1 ? all[0] : all.length === 0 ? '' : all;
 }
 
+type DayParts = Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
+
+/** A day's year, month and day as the format writes them. */
+function partsOf(format: Intl.DateTimeFormat, day: Date): DayParts {
+  return Object.fromEntries(
+    format.formatToParts(day).map(({ type, value }) => [type, value]),
+  );
+}
+
+/**
+ * Two calendar days as one range, by `format`, in its language (130b):
+ * Intl's formatRange, "Nov 1 – 20, 2026", « 1–20 nov. 2026 », but in
+ * Chinese the Chinese way, as CLDR's own range patterns write it and
+ * as its single days read, 2026年11月20日, where ICU's range gives
+ * "2026/11/1 – 2026/11/20": the year once, "2026年11月1日至20日",
+ * "2026年10月25日至11月20日", "2025年12月20日至2026年11月20日"; with no
+ * year in the format, none, "11月16日至20日". One day reads as one date.
+ * The When field, its chip and its menu's periods write their ranges by
+ * it (lib/format.ts).
+ */
+export function formatDays(
+  format: Intl.DateTimeFormat,
+  from: Date,
+  to: Date,
+): string {
+  const { locale, year } = format.resolvedOptions();
+  if (new Intl.Locale(locale).language !== 'zh') {
+    return format.formatRange(from, to);
+  }
+  const start = partsOf(format, from);
+  const end = partsOf(format, to);
+  const newYear = start.year !== end.year;
+  const newMonth = newYear || start.month !== end.month;
+  if (!newMonth && start.day === end.day) return format.format(from);
+  // CLDR's zh patterns, y年M月d日至d日 and the like.
+  const yearOf = (parts: DayParts) => (year ? `${parts.year}年` : '');
+  return [
+    `${yearOf(start)}${start.month}月${start.day}日`,
+    '至',
+    newYear ? yearOf(end) : '',
+    newMonth ? `${end.month}月` : '',
+    `${end.day}日`,
+  ].join('');
+}
+
 /**
  * The one join of a list a person reads on the screens; lint refuses any
  * other. English lists are British, as the copy is and the server's are

@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Delivery, Location, OrderLine } from '../api/types.gen';
@@ -17,11 +17,11 @@ import { Reference } from '../components/reference';
 import { useToast } from '../components/use-toast';
 import { stillToCome } from '../inventory/delivery-words';
 import { LotFields } from '../inventory/lot-fields';
+import { placePaths } from '../inventory/stock-places';
 import { api } from '../lib/api';
 import {
   formatQuantity,
   groupedNumberMessage,
-  nameAndCode,
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
@@ -57,6 +57,7 @@ export function ReceiveLineDialog({
   line,
   delivery,
   locations,
+  tree,
   canSeeLots,
   onClose,
   onReceived,
@@ -73,6 +74,11 @@ export function ReceiveLineDialog({
    */
   delivery?: Delivery;
   locations: Location[];
+  /**
+   * Every location, the places' parents among them, so each place is
+   * listed by its path (#631).
+   */
+  tree: Location[];
   /** stock.view, from the page: the item's lots already known. */
   canSeeLots: boolean;
   onClose: () => void;
@@ -80,6 +86,7 @@ export function ReceiveLineDialog({
   /** Over Stock: the confirmation offers Open the order (55a). */
   onOpenOrder?: () => void;
 }) {
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
   const intl = useIntl();
   const toast = useToast();
   // What the confirmation says, worked out as the receipt is sent.
@@ -244,7 +251,7 @@ export function ReceiveLineDialog({
             >
               {locations.map((location) => (
                 <MenuItem key={location.id} value={location.id}>
-                  {nameAndCode(location.name, location.code)}
+                  {pathOf(location.id)}
                 </MenuItem>
               ))}
             </TextField>

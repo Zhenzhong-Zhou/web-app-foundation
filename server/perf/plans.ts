@@ -76,6 +76,9 @@ const MONTH_INSTANTS = {
 const EVERY_PERMISSION = new Set(ALL_PERMISSIONS);
 const EVERYTHING = sightOf(EVERY_PERMISSION);
 
+/** Movements as an Owner reads them: each end's path, document and recipient. */
+const EVERY_PART = { places: true, orders: true, runs: true, partners: true };
+
 /**
  * Sequential scans that are the decision, not an accident. Each says why,
  * so the next person can tell whether the reason still holds.
@@ -90,6 +93,18 @@ const ALLOWED: { probe: string; table: string; reason: string }[] = [
       'database reads no other tenant; an export, not a page, is the answer ' +
       'if one organization outgrows a screen.',
   })),
+  {
+    probe: 'orders: purchases partly received',
+    table: 'partners',
+    reason:
+      'Partly received is the rarest label, none at large, so the page ' +
+      'sums the lines of every confirmed purchase to fill none, the ' +
+      'confirmed alone, as fulfillmentOf reads them (review 57); the ' +
+      'planner walks the partners, under 1 ms of 87 to 128, and each ' +
+      'one’s orders by orders_org_partner_idx. The time is the lines ' +
+      'summed, not the partners: ADR-051 watches it, the label stored ' +
+      'once it passes 150 ms at large.',
+  },
 ];
 
 interface Probe {
@@ -237,7 +252,7 @@ async function buildProbes(
     20,
   );
   const deepMovements = await cursorAfter(
-    (before) => stock.listMovements({ before }, 'en'),
+    (before) => stock.listMovements({ before }, 'en', EVERY_PART),
     20,
   );
 
@@ -293,6 +308,17 @@ async function buildProbes(
     {
       name: 'orders: page 21',
       run: () => orders.list({ status: 'all', before: deepOrders }),
+    },
+    // By what has come or gone (#605), each row's label worked out from its
+    // lines: partly is the fewest, so its page reads the most orders, and a
+    // purchase partly received reads every order where there is none.
+    {
+      name: 'orders: partly received or shipped',
+      run: () => orders.list({ fulfillment: 'part' }),
+    },
+    {
+      name: 'orders: purchases partly received',
+      run: () => orders.list({ direction: 'purchase', fulfillment: 'part' }),
     },
     {
       name: 'order detail',
@@ -365,6 +391,7 @@ async function buildProbes(
           places: true,
           orders: true,
           runs: true,
+          partners: true,
         }),
     },
     {
@@ -374,24 +401,77 @@ async function buildProbes(
           places: false,
           orders: false,
           runs: false,
+          partners: false,
         }),
     },
-    { name: 'movements', run: () => stock.listMovements({}, 'en') },
+    {
+      name: 'movements',
+      run: () => stock.listMovements({}, 'en', EVERY_PART),
+    },
     {
       name: 'movements: page 21',
-      run: () => stock.listMovements({ before: deepMovements }, 'en'),
+      run: () =>
+        stock.listMovements({ before: deepMovements }, 'en', EVERY_PART),
     },
     {
       name: 'movements: one product',
-      run: () => stock.listMovements({ variantId: shelf.variantId }, 'en'),
+      run: () =>
+        stock.listMovements({ variantId: shelf.variantId }, 'en', EVERY_PART),
     },
     {
       name: 'movements: one lot',
-      run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en'),
+      run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en', EVERY_PART),
+    },
+    // One code by its id, as Movements names one no row names (133b).
+    {
+      name: 'movements: a code by its id',
+      run: () => stock.variant(shelf.variantId, 'en'),
+    },
+    // One code as a stock card (ADR-093, 41a): each row's balance worked
+    // back from on hand, less what moved after the page, by the code's
+    // index on the time; oldest first, its first page reads the code's
+    // whole history after it, the most a page reads.
+    {
+      name: 'movements: one product, oldest first',
+      run: () =>
+        stock.listMovements(
+          { variantId: shelf.variantId, order: 'asc' },
+          'en',
+          EVERY_PART,
+        ),
     },
     {
+      name: 'movements: one product at one shelf',
+      run: () =>
+        stock.listMovements(
+          { variantId: shelf.variantId, locationId: shelf.locationId },
+          'en',
+          EVERY_PART,
+        ),
+    },
+    // Its period's Opening, In, Out and Closing (88a).
+    {
+      name: 'movements: one product, a month',
+      run: () =>
+        stock.listMovements(
+          { variantId: shelf.variantId, ...MONTH_INSTANTS },
+          'en',
+          EVERY_PART,
+        ),
+    },
+    // Through the from and the to place's indexes, in one bitmap OR
+    // (ADR-051's watch, taken in ADR-093), where it walked the primary key.
+    {
       name: 'movements: one shelf',
-      run: () => stock.listMovements({ locationId: shelf.locationId }, 'en'),
+      run: () =>
+        stock.listMovements({ locationId: shelf.locationId }, 'en', EVERY_PART),
+    },
+    // An order's movements (ADR-093, R24): a sale's shipments and its
+    // return, each arm by the reference index, in one bitmap OR.
+    {
+      name: 'movements: one order',
+      run: () =>
+        stock.listMovements({ orderId: rma.orderId }, 'en', EVERY_PART),
     },
     { name: 'invoices', run: () => invoices.list({}) },
     {
@@ -494,7 +574,7 @@ async function buildProbes(
     },
     {
       name: 'movements: a month',
-      run: () => stock.listMovements({ ...MONTH_INSTANTS }, 'en'),
+      run: () => stock.listMovements({ ...MONTH_INSTANTS }, 'en', EVERY_PART),
     },
     // Reorder points (ADR-085): the low list, every point's position
     // worked out, read only from the items that have one.
@@ -598,7 +678,11 @@ async function buildProbes(
 
   if (org.traceLotId) {
     const lotId = org.traceLotId;
-    probes.push({ name: 'lot trace', run: () => traces.trace(lotId, 'en') });
+    // As a reader who sees places, its places' paths read too (#639).
+    probes.push({
+      name: 'lot trace',
+      run: () => traces.trace(lotId, 'en', true),
+    });
   }
 
   // A newcomer's Home (ADR-079): the same, with their welcome, its first

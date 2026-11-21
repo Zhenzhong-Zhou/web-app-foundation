@@ -2,8 +2,10 @@
 
 What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
-a lot's trace, Where it stands, Reorder, what confirmed sales hold and
-what may be taken, as ADR-093's Inventory branch completed it. Each
+Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
+hold, what may be taken and stock found where it never was, as ADR-093's
+Inventory branch completed it
+and its Movements branch grows it. Each
 rule links the ADR that decided it, the test that proves it, the Help
 section where a person meets it, and the manual check that walks it by
 hand. Why a rule is so is in its ADR; how to do a task is in the
@@ -15,7 +17,7 @@ file is kept is in the [README](README.md).
 - **Usable stock is what is at places marked available, less lots
   expired by the organization's today and what released runs were
   issued and have not used.** One rule, read by what confirmed sales
-  hold and by Reorder's position alike, so an item's Free and its status
+  hold and by Reorder's Left alike, so an item's Free and its status
   cannot disagree.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--one-rule-for-usable-stock-and-figures-that-add-up) ·
   [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
@@ -56,7 +58,8 @@ file is kept is in the [README](README.md).
 - **Coming is what confirmed purchases still have to receive and what
   released runs still have to make,** its day the soonest a purchase is
   expected; a run has no day. **Left is usable, plus coming, less what
-  confirmed sales still want,** Reorder's position.
+  confirmed sales still want,** one name wherever it shows, Reorder's
+  once Position (94a).
   [ADR-085](../adr/0085-low-stock.md#decision--low-when-usable-stock-and-what-is-on-its-way-fall-below-the-point) ·
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--where-it-stands-on-the-items-page) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding" ·
@@ -64,9 +67,13 @@ file is kept is in the [README](README.md).
   MC-219 · MC-4204
 - **What expires first is the usable stock's soonest expiry:** a lot
   already expired, or at a place not available, is not it, and a code
-  with no lots has none.
+  with no lots has none. Where every unit on hand has expired, wherever
+  it sits, a place not available too, it reads "all expired", never "—".
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--a-row-per-code-opening-to-its-places-and-lots) ·
   [test](../../server/test/code-figures.e2e-spec.ts) "works out each figure of a code from the movements recorded, each sum holding" ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "says every unit on hand has expired, an expired lot at a place not available among them" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says all expired where every unit on hand has, and — where nothing expires" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says all expired where an expired lot sits at a place not available too" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-309 · MC-315
 
@@ -103,11 +110,40 @@ file is kept is in the [README](README.md).
   filters on and its own off: Low stock holds the out, and Expiring soon
   the expired, as Home's tiles do. Beside Show 50 more, "Showing 50 of
   128 codes" (lots on the Lot view) counts the rows the list shows, every
-  filter on, from the same statement.
+  filter on, from the same statement; once every row is shown, the list
+  says how many, "31 codes", as Reorder does.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each quick filter as the rows it shows, with the other filters on" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says how many codes it shows once every one is shown" ·
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
-  MC-1528 · MC-311
+  [test](../../client/e2e/stock.spec.ts) "Stock, its count always: “2 codes” when everything fits; Low stock, “1 code”" ·
+  MC-1528 · MC-311 · MC-323
+- **Each count says what it counts, beside its number:** a quick
+  filter's after a dot, "Low stock · 8 codes" on Stock by item and on
+  Reorder, "Expiring soon · 4 lots" on the Lot view, "Low stock · 2
+  items" on Items, by each language's plural; Home's Low stock and
+  Expiring soon tiles beside the figure, "8 codes" and "4 lots" (108a).
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/components/filter-row.test.tsx) "says what it counts beside the number, by the plural" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "lists a row per lot with its own counts, Out not among its filters" ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "opens on Low from the address, with the counts beside each view" ·
+  [test](../../client/src/products/products-page.test.tsx) "narrows to the items low or out by Low stock, its count beside it, in the address" ·
+  [test](../../client/src/home/home-cards.test.ts) "says what Low stock and Expiring soon count, in each language" ·
+  [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
+  MC-1528 · MC-313 · MC-4202 · MC-4213 · MC-311
+- **Back to Stock returns it as it was:** the rows shown after Show 50
+  more are read again, page by page, before they show; the codes opened,
+  with the places and lots opened in them, stay open in the address; and
+  focus returns to the row the person left from. A page failing on the
+  way keeps the pages before it, with Try again.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "finds the codes shown and the one left from on Back after Show 50 more" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "gives a lot its Movements, and Back finds its place’s lots open" ·
+  [test](../../client/src/lib/use-keyset-list.test.ts) "reads as many rows again as were shown, before they show" ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, Back after Show 50 more: the codes shown read again, focus on the row left from" ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements: Movements, one lot, a chip; Back, Stock as it was, the rows open and the place’s lots with them" ·
+  [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
+  MC-323
 - **The Lot view is a row per lot at each place, soonest first, the
   expired on top,** a lot's places together, each saying how many there
   are: the rows Home's Expiring soon counts. Its headers sort it by the
@@ -138,12 +174,6 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "sends the places above each place, its warehouse first, on Stock and Where it stands" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-312
-- **A movement names the document it was for only to a reader who may
-  see it:** the order it was received, shipped or returned on with
-  orders.view, the run with production.view (55a).
-  [ADR-093](../adr/0093-inventory-and-movements.md) ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "names the order each movement was received or shipped on, for a reader who may see orders" ·
-  MC-305
 - **An export is the rows its list shows, with its filters, in the
   screen's words and the reader's language:** a status as Low, Out or
   Enough, a unit as "each", never a stored code; quantities and days
@@ -152,6 +182,22 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
   MC-317
+- **Every stock export writes a quantity as data without its padding
+  zeros, never rounded:** `600`, not `600.0000`; `12.5` and `0.0001` as
+  they are; a minus kept, `-5`; no grouping. Stock's, the Lot view's,
+  Movements', Reorder's, Stock value's and the recall list's; the
+  organization's full export keeps each as stored.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money at its currency’s places" ·
+  [test](../../server/src/common/export.spec.ts) "drops the padding zeros of a quantity, and money’s down to its currency’s places" ·
+  MC-1558
+- **Stock value's export writes each unit cost and value at the base
+  currency's places, never fewer and never rounded:** a value stored
+  `20.000000` as `20.00`, a unit cost of `0.012345` as it is.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/costs.e2e-spec.ts) "leaves equipment out of stock value and of what waits for a cost, though Inventory holds it" ·
+  [test](../../server/src/common/export.spec.ts) "drops the padding zeros of a quantity, and money’s down to its currency’s places" ·
+  MC-1558
 - **Receiving an item still to come on a confirmed purchase asks which
   delivery it is first,** each order with what is still to come and when,
   and Not on an order; an order is received on its own line, so the order
@@ -166,6 +212,288 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/inventory.md#receive-stock-receive) ·
   MC-310
 
+## Movements
+
+- **Movements list newest first by when each was recorded, then by
+  id,** or oldest first when asked, each page following on with no gap
+  and no repeat; movements recorded together, as a shipment from two
+  lots, keep one order on every page.
+  [ADR-093](../adr/0093-inventory-and-movements.md#decision--movements-a-log-filtered-in-the-address-a-stock-card-for-one-code) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists newest first by when each was recorded, then by id, and pages without repeating or skipping a row" ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists one order’s two movements of one quantity from two lots, each with its own lot, in one order on every page" ·
+  [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
+  MC-306
+- **Movements' filters are in the address, each by its id,** never a
+  code, which can change: the item, place, lot and order, the reason,
+  and the days from and until, `until` the last day included, in the
+  organization's days. A reload, a link and Back keep them; every filter
+  that is set shows as a chip under the row, on a phone too: the item,
+  the place, the lot, the order, the reason and the days, each chip's ×
+  clearing its own filter alone; a lot and an order each by its code or
+  number though no movement listed carries it. The item, a lot and an
+  order are chosen in one find box, Find an item, lot or order, which
+  reads the top bar's lookup, its kinds by the reader's permissions, and
+  offers items, lots and orders alone, never a run or a return, the
+  exact matches alone while any match, a whole lot code its lot alone,
+  and the close ones, a typo's, under Close matches only when none does:
+  an item sets the item, a lot its item and the lot, an order the order,
+  each then a chip, the box emptied; what is typed alone never filters. An archived code,
+  which the item list does not hold, is named on its chip from its
+  movements, and kept once a
+  filter leaves none; one that neither the list nor a movement names,
+  a discontinued code with nothing in the days chosen, by its own read
+  under stock.view in the reader's organization, its chip and the
+  no-result line saying "(discontinued)" when it is (133b); Show all movements clears every one in a single
+  write and keeps the sort. On a phone the Filters sheet's Clear clears
+  the sheet's own fields alone, the lot's and the order's chips kept.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "asks the list by the address’s keys, the lot and the order as chips" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "shows a chip for every filter set, each × clearing its own key" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers items, lots and orders in words, grouped, never a run or a return" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "sets a lot’s item and the lot by the keyboard, each a chip, the box emptied" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "sets an order by its option, its chip under the row; Escape closes the list" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers only the exact matches while any match exactly" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers the close matches under Close matches only when nothing matches exactly" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers a whole lot code alone; chosen, the box empties and the lot stays as its chip" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, Find an item, lot or order › a lot by the keyboard: its item and the lot, each a chip, a stock card; › an order: its chip" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
+  [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a lot no row carries, on its chip and in what no result names" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names an order no row carries, on its chip and in what no result names" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a code the picker does not list from its rows, and keeps it when none match" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a discontinued code no row and no option names by its own read, said discontinued" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a code in use by its own read for a reader whose picker is empty, nothing added" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "never reads a code a row or the picker names" ·
+  [test](../../server/test/movements.e2e-spec.ts) "reads one code by its id, its name, code, unit and whether in use, in its organization alone" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "clears every filter and chip in one write with Show all movements, the sort kept" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "clears the sheet’s own fields with its Clear, the lot and order chips kept" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, every filter in the address: a reload keeps each, and the rows" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, a filter on, Show all movements: every filter and chip cleared in one address write; Back leaves Movements" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
+- **A movement is one row on every screen that lists one:** the item's
+  name with today's code and type, "was" the code it was recorded under
+  where that differs, the change with its unit, the reason, the lot with
+  its expiry, the document it was for and who did it, the same cells on
+  Movements, the item's Latest movements and an order's Receipts. The
+  reason reads in the same words in the row, the Reason filter and its
+  chip, the export and the Activity log, each with its capital where it
+  stands alone (136a): Received, Shipped, Moved, Corrected, Made, Used in
+  a run, Sampled and Returned, never the Activity log's old Receipt or
+  Shipment; a correction's detail, Miscount, Damaged, Expired, Lost or
+  Found in Correct the count's Why, after a colon in lower case,
+  "Corrected: found", as a reason is inside the no-result line.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names the item first, its code and type grey under it, and reads the change with its unit" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "keeps a changed code’s old one under today’s" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a reason in the boards’ words, a correction’s detail after it" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers each reason in the boards’ words" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a reason with its capital in French, its detail in lower case" ·
+  [test](../../client/src/inventory/move-stock-dialog.test.tsx) "offers each Why with its capital" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
+  [test](../../server/src/core/audit/audit-words.spec.ts) "reads the reason in Movements’ words, in each language" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
+- **Show 25 more adds the next movements below, and failing keeps the
+  rows, with Try again;** Back from a row past the first page reads those
+  pages again before they show, its row in focus.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "finds the rows shown and the link left by on Back after Show 25 more" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, Show 25 more: the next movements below; failing, the rows kept with Try again; Back from a row past the first page, those pages read again, focus on its row" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-323
+- **One code reads as a stock card: In, Out and the balance after each
+  movement.** Across every place, what arrived is In and what left is
+  Out, and a move between two of its places is neither, so the balance
+  holds: its row says how many moved once, across In and Out, in grey,
+  "moved 20 each, counted in neither", on a phone's card too, and the
+  sums leave it out; with a place chosen, that place alone, a move out of it Out;
+  with a lot chosen, that lot alone, and with a place too, that lot
+  there. The balance is today's on hand, less what moved after the
+  row. With a reason or an order chosen, rows keep In and Out but no
+  balance, since they leave movements out. Several items at a place
+  alone ask for one item to see the balance; with an order chosen they
+  never do, since one item would bring no balance.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
+  [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
+  [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › Shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither once across In and Out, Balance as it was" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither on its card in its row’s words" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says to choose one item while every item is listed at a place" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says nothing of Balance with an order chosen, at a place or not" ·
+  [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
+  MC-319
+- **Several items read each row's Change, signed as the list counts
+  it:** what came in with its plus, what went out with its minus; with a
+  place chosen, a move onto it In and a move off it Out; across every
+  place, a move between two places neither, which the screen says in
+  words, "moved 20 each", never a bare number, and the export writes
+  unsigned. The screen and the export read the one sign the server works
+  out, so they never differ.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "signs a move off the place chosen with its minus, the same on the list and in its export" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "signs a move off the place chosen with its minus, as its export does" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says how many a move between two places moved across every place, never a bare number" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
+- **A date range for one code opens and closes: Opening, In, Out,
+  Closing,** Closing the Opening plus In less Out, and a range ending
+  today, or after it, closing at today's on hand, dated today, on the
+  screen as in the export. With a reason chosen, In and Out
+  alone. Never for several items, whose units differ.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, When › This month: ?from= and ?until= in the organization’s days; the period line, Opening, In, Out and Closing; Back leaves Movements" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "dates Closing today while the range runs past it, Opening as it was" ·
+  [Help](../../client/src/help/guides/en/movements.md#read-one-code-like-a-stock-card-card) ·
+  MC-319
+- **When's periods are the organization's days, both included:** Today;
+  This week from Monday, This month, Last 30 days and This year, each
+  ending today; Last month whole. Today is the organization's, by its
+  time zone, never the browser's (135a); the days are counted on the
+  calendar, never by taking hours away, so Last 30 days on 20 November
+  starts at midnight on 22 October whatever the clocks did between; a
+  week starts on Monday for every reader and language, as ISO 8601 has
+  it (137a). Choose dates… takes either end alone.
+  A code's All movements of…, under Where it stands, opens on this
+  month, so its four figures show at once.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../client/src/inventory/when-menu.test.tsx) "offers each period with its own days, a period that holds today ending today, then Choose dates… and Any time at its foot" ·
+  [test](../../client/src/inventory/when-menu.test.tsx) "WhenMenu, in the organization’s days wherever the browser is" ·
+  [test](../../client/src/lib/date-range.test.ts) "starts a week on Monday, a Sunday’s on the Monday before, across a month and a year" ·
+  [test](../../client/src/lib/date-range.test.ts) "counts calendar days across a change of clocks, each beginning at midnight in the organization’s zone" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
+  [test](../../client/e2e/movements-page.spec.ts) "The item’s page, Latest movements, All movements of E2E-VITC: ?variantId=, Movements, one item; Back, the item’s page" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-320
+- **Movements' export is the screen's columns, oldest first, one value
+  to each, then what a row keeps beyond them:** When to the second on
+  the organization's clocks, its header naming the place its time zone
+  is named for, "When (Vancouver time)", in Chinese by ICU's short
+  generic name, the city in Chinese and the same in every season,
+  "时间（温哥华时间）" (134b); Code; Recorded as, the code a
+  row was recorded under where it differs from today's; Item; In, Out
+  and Balance where the list has them, else Change, and the stock card's
+  Moved between Out and Balance, filled on a move counted in neither
+  alone; Unit, Reason; Reason code, the reason's stable code (receipt,
+  shipment, transfer, adjustment, production, consumption, sample or
+  return), never translated, so exports in two languages can be put
+  together (138b); From,
+  To, Lot, Expiry, For and By; Email, the person's; and the note last,
+  as typed. One code's range starts with its opening balance and ends
+  with its closing, each by its day, beside the range's In and Out.
+  Reason in the screen's words with its detail, "Corrected: found". From
+  and To, each place by its whole path, or an end outside the warehouse
+  in the screen's words, supplier, customer, run, sample, counted in or
+  counted out, only for a reader who may see places, else no such
+  columns; For, the document or a sample's recipient, as the reader may
+  see it.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note" ·
+  [test](../../server/src/common/today.spec.ts) "names the city in Chinese by ICU, and from the id in English and French" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports each reason’s code after its words, the same in every language" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
+  MC-319
+- **A movement names its places only to a reader who may see places,**
+  each by its path, its warehouse first; the rest get each place's id
+  alone, so a row still reads as in, out or between.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
+  [test](../../server/test/movements.e2e-spec.ts) "names no place to a reader without locations.view, each place’s id kept" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "has no From → to for a reader without locations.view (96a)" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/movements.md#correct-a-mistake-correct) ·
+  MC-3319
+- **A reader without locations.view is told why no place is named,
+  once a page, where the places would be:** "Warehouses, zones and bins
+  are hidden: your role can't see them. An Owner or Admin can change
+  that.", in the role editor's words for the permission. On Movements
+  above the list; on a lot's page under Where it is now; on the item's
+  page in Where it stands' first card with stock; on Stock, where a
+  code not tracked by lot opens to it in place of a row of "—" for each
+  place.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says once why places are hidden for a reader without locations.view, never for one with it" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each place where it is now by its whole path, or sums it for a reader without places" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "says once why places are hidden, for a reader without locations.view" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "opens a code not tracked by lot to why its places are hidden, for a reader without places" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  MC-220 ·
+  MC-312 ·
+  MC-320 ·
+  MC-904
+- **A movement names the document it was for only to a reader who may
+  see it:** the order it was received, shipped or returned on with
+  orders.view, the run with production.view (55a).
+  [ADR-093](../adr/0093-inventory-and-movements.md) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "names the order each movement was received or shipped on, for a reader who may see orders" ·
+  MC-305
+- **A sample reads like a shipment:** its From → to ends "sample" in
+  grey, never "—", and its For names the recipient Send sample
+  recorded, a link to the partner, only to a reader who may see
+  partners; "—" for anyone else, and when none was recorded. Its
+  export's To writes "sample", and its For the recipient's name by the
+  same permission.
+  [ADR-093](../adr/0093-inventory-and-movements.md) ·
+  [test](../../server/test/movements.e2e-spec.ts) "ends a sample at “sample” and names its recipient for a reader who may see partners, on the list and in its export" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "ends a sample at “sample” and links the recipient it was for (125)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says — for a sample whose recipient was not recorded, or is not the reader’s to see (125)" ·
+  MC-320
+- **An order's movements are what was received, shipped and returned on
+  it,** a voided shipment's reversal among them, and only for a reader
+  who may see orders: the rest are refused, in their words, before
+  anything is read, since the answer alone would say which movements
+  belong to it.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists an order’s movements alone: a purchase’s receipts, a sale’s shipments, their voids and its returns" ·
+  [test](../../server/test/movements.e2e-spec.ts) "refuses an order’s movements to a reader without orders.view, on the list and its export" ·
+  MC-321
+- **A purchase's Receipts are for whoever may see the order,** its own
+  read under orders.view, stock.view or not (102a): When, Item,
+  Received, Lot and By, read as Movements lists the order's receipts;
+  Where only with locations.view (96a); All movements of the order only
+  with stock.view, as Movements needs.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/movements.e2e-spec.ts) "lists a purchase’s receipts under orders.view alone, Where only with locations.view" ·
+  [test](../../client/src/orders/order-detail-page.test.tsx) "lists a purchase’s receipts by its order, with All movements of it" ·
+  [test](../../client/src/orders/order-detail-page.test.tsx) "lists a purchase’s receipts without stock.view, with no Where and no All movements" ·
+  [test](../../client/e2e/movements-page.spec.ts) "The order’s page, Receipts, All movements of PO-…: ?orderId=, a chip; In and Out, no balance; Back, the order’s page" ·
+  [Help](../../client/src/help/guides/en/orders.md#receive-a-purchase-receive) ·
+  MC-321
+- **A lot's page leads to its item and to its movements, each only for
+  a reader who may open that page:** the item's name links to the
+  item's page with products.view, and reads as text without it; All
+  movements of this lot, with stock.view, opens Movements on its item
+  and that lot, so the stock card counts the lot, and with no days, so
+  it reads the lot's whole life from its receipt, as a lot's Actions ›
+  Movements on Stock does (132b).
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "links its item and All movements of this lot, each for whoever may open it" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "opens a Lot view row’s Movements on the lot’s whole life, no days" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "carries its item’s variant and product, for the links to them" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
+  MC-902
+- **A link's place or order that its reader may not use is ignored on
+  Movements,** as Stock's address is: a place without locations.view,
+  or one no stock can sit at, reads every place; an order without
+  orders.view, every movement, with no chip, so it is never asked.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "reads a place a reader may not see as Everywhere, never asking it" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "reads an order a reader may not see as every movement, with no chip" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a reader without orders.view: a link with ?orderId= reads every movement, with no chip" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/movements.md#correct-a-mistake-correct) ·
+  MC-320
+
 ## A lot's trace
 
 - **A lot's recall list is everyone who received it or anything made
@@ -177,6 +505,18 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
   MC-906
+- **Where it is now names each place by its whole path, its warehouse
+  first, only to a reader with locations.view;** the rest read the
+  lot's usable and not usable, two sums from the server, and no place's
+  name, code or path. Usable is at a place available while the lot has
+  not expired by the organization's today; what runs were issued is
+  counted by item, never by lot.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "names each place where it is now by its path, only to a reader with locations.view" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each place where it is now by its whole path, or sums it for a reader without places" ·
+  [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
+  MC-904
 
 ## Where it stands
 
@@ -218,6 +558,15 @@ file is kept is in the [README](README.md).
   [test](../../client/src/products/where-it-stands.test.tsx) "names whom to ask for Buy, and lists the usable lots without places" ·
   [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
   MC-219 · MC-220
+- **Latest movements are each code's five newest, as Movements lists the
+  code:** the same rows, In, Out and the balance after each, the newest's
+  balance its on hand, each part by the reader's sight as there.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "lists each code’s five newest movements as Movements lists the code, the newest’s balance on hand" ·
+  [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
+  [test](../../client/e2e/movements-page.spec.ts) "The item’s page, Latest movements, All movements of E2E-VITC: ?variantId=, Movements, one item; Back, the item’s page" ·
+  [Help](../../client/src/help/guides/en/items.md#where-it-stands-stands) ·
+  MC-219
 - **Items counts items, Reorder and Home count codes:** Items' Low stock
   is the items among Reorder's low and out codes, and Home's Low stock is
   Reorder's count.
@@ -245,6 +594,23 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/reorder-points-tab.test.tsx) "opens sorted by the suggested order, most first; its header turns it, and Status puts Low first" ·
   [Help](../../client/src/help/guides/en/inventory.md#order-or-make-what-is-low-order) ·
   MC-4202 · MC-4203
+- **Reorder says how many codes it lists, always:** "4 codes" once every
+  one is shown, and beside Show 50 more how many of how many; no row
+  number; Back after Show 50 more reads the codes shown again, focus on
+  the row left from.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "counts its codes once every one is shown, and Back after Show 50 more finds them" ·
+  [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
+  MC-323
+- **A row opens by Who waits, which counts the orders waiting:** the
+  confirmed sales whose lines its Still needed sums, "Who waits · 2
+  orders", by each language's plural; a sale shipped in full or closed
+  short waits no more. Still needed and Held keep their names (107a).
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../server/test/reorder-points.e2e-spec.ts) "counts on each row the confirmed sales still needing it" ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "says on each row who waits, in words, by the plural" ·
+  [Help](../../client/src/help/guides/en/inventory.md#where-an-item-stands-position) ·
+  MC-4204
 - **An opened row names its places only to a reader who may see
   places;** the rest read its usable as one total, with what was left
   out as expired or issued in all.
@@ -335,3 +701,37 @@ file is kept is in the [README](README.md).
   [ADR-054](../adr/0054-languages.md) ·
   [test](../../server/test/reservations.e2e-spec.ts) "says who holds the stock in the reader’s language" ·
   MC-609
+
+## Counting in found stock
+
+- **Stock found where an item has never been is counted in by Correct
+  the count,** its reason found: into any place that holds stock
+  directly, and for an item tracked by lot, one of its lots or a new lot
+  made with the count, in the same write. It needs stock.adjust, as
+  every correction does, and a note. A place with places inside it is
+  refused, as for every movement, and nothing is written.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/stock.e2e-spec.ts) "makes a new lot with the count, at a place the item never was, and says it waits for a cost" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a place that is not a leaf, as every movement, and makes no lot" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "ends a code’s opened places with Count it in…, and Escape returns to it" ·
+  [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
+  [test](../../client/e2e/stock.spec.ts) "Count it in…, Save correction: a found correction into the place, a new lot made, “Counted in 12 each of E2E-VITC at E2E Shelf C3, new lot VC-0310. It waits for a cost.”; Stock, the row open at its new place" ·
+  [test](../../client/e2e/stock.spec.ts) "Count it in…, Save correction, no lot chosen: “Choose one of its lots, or a new lot.” at its field, focus on it" ·
+  MC-322
+- **A new lot's code must be one the item does not have yet:** a code
+  it has is refused, naming that lot, at the new lot's code (the code
+  `lot_code_in_use`), before anything is written; one of its lots is
+  chosen as such. Receiving the same code again still adds to that lot.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a new lot whose code the item has, naming it at its field, and writes nothing" ·
+  [test](../../client/src/inventory/count-in-dialog.test.tsx) "says a code the item has at the lot number, focused there" ·
+  MC-322
+- **Found stock in a new lot, or of an item with no cost yet, waits for
+  a cost,** and its message says so, linked to Stock value's Waiting for
+  a cost for a reader who may see costs; found stock in a lot the item
+  has rides at that lot's average.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [test](../../server/test/stock.e2e-spec.ts) "makes a new lot with the count, at a place the item never was, and says it waits for a cost" ·
+  [test](../../server/test/stock.e2e-spec.ts) "counts into a lot the item has at its average, not waiting for a cost" ·
+  [test](../../client/src/inventory/count-in-dialog.test.tsx) "makes a new lot with the count, saying it waits for a cost, linked to Waiting for a cost" ·
+  MC-322

@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Checkbox,
-  IconButton,
   MenuItem,
   Paper,
   Stack,
@@ -33,13 +32,19 @@ import { useCan } from '../auth/permissions';
 import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
-import { FilterRow, QuickFilterPill } from '../components/filter-row';
+import {
+  FilterRow,
+  type QuickFilter,
+  QuickFilterPill,
+} from '../components/filter-row';
 import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
 import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { PlaceholderRows } from '../components/placeholder-rows';
+import { ShowingLine } from '../components/showing-line';
 import { SortHeader } from '../components/sort-header';
 import { SPANNING_ROW } from '../components/spanning-row';
 import { TableOrCards } from '../components/table-or-cards';
@@ -54,7 +59,7 @@ import { oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { useListSort, withSort } from '../lib/use-list-sort';
 import { useResource } from '../lib/use-resource';
-import { wholeOnFocus } from '../lib/whole-on-focus';
+import { type RowReturn, useRowReturn } from '../lib/use-row-return';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
 import { NameAndCode } from '../products/name-and-code';
@@ -77,7 +82,6 @@ import {
 } from './reorder-points';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { keepTicks, ticksOf } from './reorder-ticks';
-import { ShowingLine } from './showing-line';
 
 /** A page of the list (ADR-051), as the server's own default. */
 const PAGE_SIZE = 50;
@@ -399,6 +403,8 @@ interface RowProps {
   planned: boolean;
   /** The row's menu, for whoever may set a point (stock.reorder). */
   actions: ReactNode;
+  /** Its way back from a link followed in it (useRowReturn). */
+  back: RowReturn;
 }
 
 /** The draft's cell leaves the table between 600 and 899 px (R14). */
@@ -414,6 +420,7 @@ function PointRow({
   onPlan,
   planned,
   actions,
+  back,
 }: RowProps & { columns: number }) {
   const intl = useIntl();
   const [open, setOpen] = useState(false);
@@ -426,6 +433,7 @@ function PointRow({
           the pointer, which stays an arrow. */}
       <TableRow
         hover
+        {...back}
         sx={{
           '& > td': {
             verticalAlign: 'top',
@@ -474,28 +482,45 @@ function PointRow({
           >
             <MainAction row={row} onBuy={onBuy} onPlan={onPlan} />
             {!grey && (
-              <IconButton
+              // Words, not an icon alone (107a): how many orders wait,
+              // its name ending with the code, as every row has one.
+              <Button
+                variant="text"
                 size="small"
                 aria-expanded={open}
                 aria-controls={open ? detailId : undefined}
                 aria-label={intl.formatMessage(
                   {
-                    id: 'inventory.reorder.details',
-                    defaultMessage: 'Where {sku} stands',
+                    id: 'inventory.reorder.whoWaitsFor',
+                    defaultMessage:
+                      '{count, plural, =0 {Who waits · no orders} one {Who waits · # order} other {Who waits · # orders}} for {sku}',
                   },
-                  { sku: row.sku },
+                  { count: row.waitingOrders, sku: row.sku },
                 )}
+                endIcon={open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                 onClick={() => setOpen((was) => !was)}
+                sx={{ whiteSpace: 'nowrap' }}
               >
-                {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-              </IconButton>
+                {intl.formatMessage(
+                  {
+                    id: 'inventory.reorder.whoWaits',
+                    defaultMessage:
+                      '{count, plural, =0 {Who waits · no orders} one {Who waits · # order} other {Who waits · # orders}}',
+                  },
+                  { count: row.waitingOrders },
+                )}
+              </Button>
             )}
             {actions}
           </Stack>
         </TableCell>
       </TableRow>
       {open && (
-        <TableRow id={detailId} {...SPANNING_ROW}>
+        <TableRow
+          id={detailId}
+          {...SPANNING_ROW}
+          onClickCapture={back.onClickCapture}
+        >
           <TableCell colSpan={columns - 1} sx={{ pt: 0 }}>
             <ReorderPointDetail row={row} />
           </TableCell>
@@ -521,6 +546,7 @@ function PointCard({
   onPlan,
   planned,
   actions,
+  back,
 }: RowProps) {
   const intl = useIntl();
   const suggested = !(
@@ -530,6 +556,7 @@ function PointCard({
   return (
     <Box
       component="li"
+      {...back}
       sx={{
         listStyle: 'none',
         p: 2,
@@ -840,7 +867,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     loadingMore,
     loadMore,
     reload,
-  } = useKeysetList<ReorderPointRow>(listPath);
+  } = useKeysetList<ReorderPointRow>(listPath, { keep: entry });
+  const { rowReturn } = useRowReturn();
 
   // Beside All, Low and Out, with the search: the rows pressing each shows;
   // silent, so without a count the buttons still work.
@@ -888,6 +916,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
 
   const rowProps = (row: ReorderPointRow): RowProps => ({
     row,
+    back: rowReturn(row.id),
     choosing,
     chosen: chosen.has(row.variantId),
     onChoose: choose,
@@ -932,9 +961,9 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   // point does, with its own Learn more.
   const none = counts?.all === 0 && !search;
 
-  // All, Low stock and Out, each with its count; none while no point is
-  // set, which the empty state says.
-  const quick = none
+  // All, Low stock and Out, each with its count of codes (108a); none
+  // while no point is set, which the empty state says.
+  const quick: QuickFilter[] = none
     ? []
     : [
         {
@@ -945,6 +974,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             defaultMessage: 'All',
           }),
           count: counts?.all,
+          of: 'code',
           pressed: filter === '',
           onToggle: () => setFilter(''),
         },
@@ -955,6 +985,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             defaultMessage: 'Low stock',
           }),
           count: counts?.low,
+          of: 'code',
           pressed: filter === 'low',
           onToggle: () => setFilter('low'),
         },
@@ -965,6 +996,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             defaultMessage: 'Out',
           }),
           count: counts?.out,
+          of: 'code',
           pressed: filter === 'out',
           onToggle: () => setFilter('out'),
         },
@@ -1131,7 +1163,6 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                     id: 'inventory.tab.reorder',
                     defaultMessage: 'Reorder',
                   })}
-                  onFocus={wholeOnFocus}
                   size="small"
                 >
                   <TableHead>
@@ -1162,7 +1193,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                           />
                         </TableCell>
                       )}
-                      <TableCell>
+                      <TableCell {...NAME_COLUMN}>
                         {intl.formatMessage({
                           id: 'inventory.item',
                           defaultMessage: 'Item',
@@ -1253,10 +1284,11 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           pageSize={PAGE_SIZE}
           onLoadMore={loadMore}
           before={
-            counts && (
+            rows.length > 0 && (
               <ShowingLine
                 shown={rows.length}
-                total={counts[filter || 'all']}
+                total={counts?.[filter || 'all']}
+                more={hasMore}
                 of="code"
               />
             )

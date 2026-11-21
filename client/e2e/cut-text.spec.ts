@@ -96,7 +96,10 @@ interface Where {
   width: number;
 }
 
-/** Cuts filed to be designed, each with its issue. */
+/**
+ * Cuts filed to be designed, each with its issue, or made by a decision,
+ * with its ADR.
+ */
 const KNOWN: {
   issue: string;
   is: (cut: Cut, where: Where) => boolean;
@@ -137,6 +140,16 @@ const KNOWN: {
         'Rechercher des articles, des codes ou des lots',
         '[Šéáŕçĥ íťémš, çóďéš óŕ ĺóťš one two three]',
       ].includes(cut.text),
+  },
+  {
+    // A person's email under their name, as Movements' By and Where it
+    // stands' Latest movements write who moved stock: never wider than
+    // the name, cut with "…", whole in its tooltip, by ADR-063's decision.
+    // The walk's owner's address is longer than most.
+    issue: 'ADR-063',
+    is: (cut, { screen }) =>
+      (screen === 'Where it stands' || screen.startsWith('Movements')) &&
+      /^cut-stock-.+@example\.test$/.test(cut.text),
   },
 ];
 
@@ -507,7 +520,8 @@ for (const language of LANGUAGES) {
 
 /**
  * Inventory's screens (ADR-093, R14): Stock with a row opened to its
- * places, the Lot view, Reorder and the item's Where it stands, at the
+ * places, the Lot view, Reorder, the item's Where it stands, Movements,
+ * every item and one, and a lot's page, at the
  * reflow width, a phone's and a tablet's, each text size and language,
  * signed in as the owner of an organization with stock in two places, a
  * lot expired, an order short and a reorder point low (support/stock.ts).
@@ -594,6 +608,24 @@ for (const language of LANGUAGES) {
         found.push(
           ...(await cuts(page, { ...walk, screen: 'Where it stands' })),
         );
+
+        // Movements, every item and one item's stock card, and a lot's
+        // page naming its places by their paths (Movements' branch).
+        await page.goto('/movements');
+        await expect(named('E2E Magnesium')).toBeVisible();
+        found.push(...(await cuts(page, { ...walk, screen: 'Movements' })));
+
+        await page.goto(`/movements?variantId=${scene.vitamin.variantId}`);
+        await expect(named('VC-LATE')).toBeVisible();
+        found.push(
+          ...(await cuts(page, { ...walk, screen: 'Movements, one item' })),
+        );
+
+        await page.goto(`/lots/${scene.lots.soon}`);
+        await expect(page.getByRole('heading', { level: 1 })).toContainText(
+          'VC-SOON',
+        );
+        found.push(...(await cuts(page, { ...walk, screen: 'A lot' })));
 
         await context.close();
         await org.api.dispose();

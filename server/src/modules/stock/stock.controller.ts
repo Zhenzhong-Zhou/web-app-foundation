@@ -23,6 +23,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { requestTimeZone } from '../../database/tenant-context';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
@@ -32,13 +33,15 @@ import { RecordMovementDto } from './dto/record-movement.dto';
 import type {
   Lot,
   MovementPage,
+  MovementPeriod,
   RecordedMovementEnvelope,
+  StockVariant,
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
-import { movementOf } from './movement-view';
+import { cardOf, movementOf, type MovementSight } from './movement-view';
 import { StockService } from './stock.service';
-import { MOVEMENT_COLUMNS } from './stock-exports';
+import { movementColumns, movementLines } from './stock-exports';
 import { StockReadsService } from './stock-reads.service';
 
 /**
@@ -83,7 +86,8 @@ export class StockController {
      * attached is precisely the row someone will ask about, and the audit log
      * answers a different question with a different retention.
      */
-    return { movement: movementOf(await this.stock.record(dto, user.userId)) };
+    const recorded = await this.stock.record(dto, user.userId);
+    return { movement: movementOf(recorded), needsCost: recorded.needsCost };
   }
 
   @Get('movements')
@@ -93,39 +97,76 @@ export class StockController {
     @CurrentUser() user: RequestContext,
     @AcceptLanguage() acceptLanguage?: string,
   ): Promise<MovementPage> {
-    // Each movement's document only for a reader who may see it (55a).
-    const held = await this.permissions.heldBy(user.membershipId);
-    return this.reads.listMovements(query, localeOf(acceptLanguage), {
-      orders: held.has(PERMISSIONS.ORDERS_VIEW),
-      runs: held.has(PERMISSIONS.PRODUCTION_VIEW),
-    });
+    return this.reads.listMovements(
+      query,
+      localeOf(acceptLanguage),
+      await this.sightOf(user, query),
+    );
   }
 
-  /** Every movement the filters match, as CSV (ADR-057): the list's own query, every page. */
+  /**
+   * Every movement the filters match, as CSV (ADR-057): the list's own
+   * query, every page, oldest first, with the reader's sight (ADR-093,
+   * 87a, 88a and 96a).
+   */
   @Get('movements/export')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'movements' })
   async exportMovements(
     @Query() query: ListMovementsDto,
+    @CurrentUser() user: RequestContext,
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    // The base names, as every CSV keeps them (ADR-056).
-    const rows = await everyRow((before, limit) =>
-      this.reads.listMovements({ ...query, before, limit }, null),
-    );
+    // What the reader may see, as the list reads it, an order's movements
+    // refused as the list refuses them.
+    const sight = await this.sightOf(user, query);
+    // The base names, as every CSV keeps them (ADR-056); oldest first,
+    // as a stock card reads (87a). The period is the same on every page.
+    let period: MovementPeriod | null = null;
+    const rows = await everyRow(async (before, limit) => {
+      const page = await this.reads.listMovements(
+        { ...query, order: 'asc', before, limit },
+        null,
+        sight,
+      );
+      period = page.period;
+      return page;
+    });
     recordContext({
       list: 'movements',
       filters: exportFilters(query),
       rows: rows.length,
     });
+    const timeZone = requestTimeZone();
+    const locale = localeOf(acceptLanguage);
     return csvFile(
       res,
       'movements',
-      MOVEMENT_COLUMNS,
-      rows,
-      localeOf(acceptLanguage),
+      movementColumns({
+        card: cardOf(query),
+        places: sight.places,
+        timeZone,
+        locale,
+      }),
+      movementLines(rows, period, query, timeZone),
+      locale,
     );
+  }
+
+  /**
+   * One code by its id (ADR-093, 133b), for Movements to name a code it
+   * filters by when no row and no picker's option does, a discontinued one
+   * with nothing in the days chosen: under stock.view, as Movements is,
+   * since the pickers' list asks products.view.
+   */
+  @Get('variants/:id')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  variant(
+    @Param('id', ParseUUIDPipe) id: string,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<StockVariant> {
+    return this.reads.variant(id, localeOf(acceptLanguage));
   }
 
   @Get('lots')
@@ -147,5 +188,30 @@ export class StockController {
     @Body() dto: UpdateLotDto,
   ): Promise<void> {
     await this.lots.updateLot(id, dto);
+  }
+
+  /**
+   * What the reader may see of each movement, by their permissions, read
+   * once a request (ADR-080; 55a; ADR-093, 96a). An order's movements are
+   * refused, 403, before any read, to a reader without orders.view, in
+   * their words and naming whom to ask (#148): the answer alone would tell
+   * which movements belong to an order they may not see (ADR-093).
+   */
+  private async sightOf(
+    user: RequestContext,
+    query: ListMovementsDto,
+  ): Promise<MovementSight> {
+    const held = await this.permissions.heldBy(user.membershipId);
+    if (query.orderId && !held.has(PERMISSIONS.ORDERS_VIEW)) {
+      throw await this.permissions.refusal(user, held, [
+        PERMISSIONS.ORDERS_VIEW,
+      ]);
+    }
+    return {
+      places: held.has(PERMISSIONS.LOCATIONS_VIEW),
+      orders: held.has(PERMISSIONS.ORDERS_VIEW),
+      runs: held.has(PERMISSIONS.PRODUCTION_VIEW),
+      partners: held.has(PERMISSIONS.PARTNERS_VIEW),
+    };
   }
 }

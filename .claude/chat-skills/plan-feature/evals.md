@@ -16,8 +16,8 @@ upload.
   the clone.
 - A date in the handoff that is due is raised once.
 - Five parts, every bullet with its status, Decisions needed present.
-- It starts the check before the ADR and asks for the issue lists by
-  area, rather than drafting anything.
+- It plays the request back first, as prompt 8 says, and waits for
+  Bob's confirmation: no check started and nothing drafted.
 
 ## 2. The check before an ADR
 
@@ -80,7 +80,7 @@ finding for the as-built and one question for him.*
   fixed is offered for closing, naming its commit, never given to a
   session.
 - None offered leaves a choice open or is labelled `later` or
-  `decision`, unless its decision is asked first; none needs a sweep or
+  `decision`; none needs a sweep or
   the large seed, or names more than about five files.
 - The exports come from `scripts/cloud-picks.sh`, without numbers and
   then with the shortlist's.
@@ -101,9 +101,11 @@ finding for the as-built and one question for him.*
 - Every Claude Code step has a model in the steps table's Model column.
 - Opus has new logic, design, the reviews and their fixes, and every
   browser test.
-- Sonnet has dependencies, seeds, guides, docs and tests copied from one
-  beside them.
-- Haiku has only a step that runs commands and reports.
+- Sonnet has dependencies, seeds, guides, docs, tests copied from one
+  beside them, and every timed step or one that starts a server or
+  waits on a long command.
+- Haiku has only a step that runs short commands and reports, never one
+  that writes code or waits on a server or a long command.
 - The reviews are the row `Claude Code, main session`, run by
   `/review-step`.
 - The time-and-cost table names each step's model.

@@ -6,10 +6,11 @@ row, each in a fresh subagent (ADR-089). The subagent's file,
 `.claude/agents/brief-step.md`, holds the rules every brief would
 repeat; a brief holds only its decisions and its steps.
 
-1. **The header:** the branch, its base commit, the ADR that holds the
-   decisions, and how the steps run: `/build-from-brief
-   tmp/<branch>/brief.md from N` for Claude Code's, the chat's here, and
-   Bob's by hand.
+1. **The header:** the branch, on a `**Branch:**` line with its name in
+   backticks, which `/build-from-brief` checks the checked-out branch
+   against; its base commit, the ADR that holds the decisions, and how
+   the steps run: `/build-from-brief tmp/<branch>/brief.md from N` for
+   Claude Code's, the chat's here, and Bob's by hand.
 2. **Read first:** the ADR, the issues it takes (`gh issue view <N>
    --comments`), and the docs sections the steps touch.
 3. **This brief's own rules:** what the change is not (no API change,

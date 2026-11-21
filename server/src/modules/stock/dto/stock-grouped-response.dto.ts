@@ -59,6 +59,11 @@ export class StockCodeRow {
   position!: string;
   /** The soonest expiry of the usable stock, or null. */
   expiresFirst!: string | null;
+  /**
+   * Whether every unit on hand has expired, wherever it sits, a place
+   * not available too: Expires first's "all expired" (#611; review 13).
+   */
+  allExpired!: boolean;
   reorderPoint!: string | null;
   /** Null without a reorder point (A4). */
   status!: ReorderStatus | null;

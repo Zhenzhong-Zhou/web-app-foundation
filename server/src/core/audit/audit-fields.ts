@@ -1,8 +1,8 @@
+import { MOVEMENT_REASON_WORDS } from '../../common/movement-reasons';
 import { PRODUCT_TYPE_WORDS } from '../../common/product-types';
 import type {
   IdleSignOutScope,
   LicencePolicy,
-  MovementReason,
   NumberingReset,
   OrderDirection,
   OrderStatus,
@@ -112,33 +112,6 @@ const RAIL_WORDS: Record<OrganizationRail, Translatable> = {
 const PAPER_WORDS: Record<PaperSize, Translatable> = {
   letter: t({ id: 'audit.value.paper.letter', defaultMessage: 'Letter' }),
   a4: t({ id: 'audit.value.paper.a4', defaultMessage: 'A4' }),
-};
-
-/** reason */
-const REASON_WORDS: Record<MovementReason, Translatable> = {
-  receipt: t({ id: 'audit.value.reason.receipt', defaultMessage: 'Receipt' }),
-  shipment: t({
-    id: 'audit.value.reason.shipment',
-    defaultMessage: 'Shipment',
-  }),
-  transfer: t({
-    id: 'audit.value.reason.transfer',
-    defaultMessage: 'Transfer',
-  }),
-  adjustment: t({
-    id: 'audit.value.reason.adjustment',
-    defaultMessage: 'Adjustment',
-  }),
-  production: t({
-    id: 'audit.value.reason.production',
-    defaultMessage: 'Production',
-  }),
-  consumption: t({
-    id: 'audit.value.reason.consumption',
-    defaultMessage: 'Consumption',
-  }),
-  sample: t({ id: 'audit.value.reason.sample', defaultMessage: 'Sample' }),
-  return: t({ id: 'audit.value.reason.return', defaultMessage: 'Return' }),
 };
 
 /** source */
@@ -731,7 +704,8 @@ export const AUDIT_FIELDS = {
   },
   reason: {
     name: t({ id: 'audit.field.reason', defaultMessage: 'Reason' }),
-    read: { set: REASON_WORDS },
+    // Movements' own words, as its export names them (136a).
+    read: { set: MOVEMENT_REASON_WORDS },
   },
   source: {
     name: t({ id: 'audit.field.source', defaultMessage: 'Bought or made' }),

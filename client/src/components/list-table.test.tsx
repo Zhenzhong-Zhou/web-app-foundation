@@ -8,11 +8,12 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { themeFor } from '../theme';
 import { ACTIONS_COLUMN } from './actions-column';
 import { ListTable } from './list-table';
+import { CUT_NAME, NAME_COLUMN } from './name-column';
 import { NUMBER_COLUMN } from './number-column';
 import { SortHeader } from './sort-header';
 import { SPANNING_ROW } from './spanning-row';
@@ -90,6 +91,49 @@ function Stock({
   );
 }
 
+/**
+ * Movements' shape: When first, the item's name marked second (81a), and
+ * `named`, the name a link marked `CUT_NAME` (83a).
+ */
+function Movements({
+  marked = true,
+  named = false,
+}: {
+  marked?: boolean;
+  named?: boolean;
+}) {
+  return (
+    <ThemeProvider theme={themeFor('en')}>
+      <ListTable label="Movements" size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>When</TableCell>
+            <TableCell {...(marked && NAME_COLUMN)}>Item</TableCell>
+            <TableCell {...NUMBER_COLUMN}>Change</TableCell>
+            <TableCell>Reason</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableCell>2 hours ago</TableCell>
+            <TableCell>
+              {named ? (
+                <a {...CUT_NAME} href="/items/1">
+                  Vitamin C 500 mg
+                </a>
+              ) : (
+                'Vitamin C 500 mg'
+              )}
+            </TableCell>
+            <TableCell align="right">+48</TableCell>
+            <TableCell>Received</TableCell>
+          </TableRow>
+        </TableBody>
+      </ListTable>
+    </ThemeProvider>
+  );
+}
+
 const positionOf = (element: Element) => getComputedStyle(element).position;
 
 /** Each cell this wide, as the browser would lay it out. */
@@ -122,6 +166,49 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
     expect(table.parentElement).not.toHaveAttribute('tabindex');
     expect(positionOf(screen.getByText('Vitamin C 500 mg'))).not.toBe('sticky');
+  });
+
+  // Built once, the data attributes deciding (#642): the class does not
+  // change as the box turns sideways or the header sticks.
+  it('keeps one class whether it fits or is too wide', () => {
+    widths(1000, 1000);
+    const { unmount } = render(<Stock />);
+    const fitting = screen.getByRole('table', { name: 'Stock' }).parentElement!
+      .className;
+    unmount();
+
+    widths(800, 1100);
+    render(<Stock />);
+
+    expect(screen.getByRole('region').className).toBe(fitting);
+  });
+
+  // A browser scrolls a focused control into its box only when it is
+  // wholly out of it; too wide, the box brings one half past its edge in
+  // whole, for every list (#642).
+  it('too wide, brings a control focused wholly into its box', () => {
+    // jsdom has none.
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    onTestFinished(() => {
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    });
+    const button = () =>
+      screen.getByRole('button', { name: 'Actions for Vitamin C 500 mg' });
+
+    widths(1000, 1000);
+    const { unmount } = render(<Stock />);
+    fireEvent.focus(button());
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    unmount();
+
+    widths(800, 1100);
+    render(<Stock />);
+    fireEvent.focus(button());
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+    });
   });
 
   it('too wide, is a named region with a tab stop, its name pinned', () => {
@@ -169,6 +256,67 @@ describe('ListTable (ADR-090, amended November 2026)', () => {
     );
     expect(positionOf(screen.getByText('Vitamin C 500 mg'))).toBe('sticky');
     expect(positionOf(screen.getByText('Shelf A2'))).not.toBe('sticky');
+  });
+
+  describe('too wide, the name marked pinned wherever it stands (81a)', () => {
+    it('pins the name, the column before it passing under it', () => {
+      widths(800, 1100);
+      cellWidths(150);
+      const scrollLeft = vi.spyOn(Element.prototype, 'scrollLeft', 'get');
+      render(<Movements />);
+      const region = screen.getByRole('region', {
+        name: 'Movements, scrolls sideways',
+      });
+
+      const item = screen.getByRole('columnheader', { name: 'Item' });
+      const name = screen.getByText('Vitamin C 500 mg');
+      expect(positionOf(item)).toBe('sticky');
+      expect(positionOf(name)).toBe('sticky');
+      expect(getComputedStyle(item).minWidth).toBe('320px');
+      expect(
+        positionOf(screen.getByRole('columnheader', { name: 'When' })),
+      ).not.toBe('sticky');
+      expect(positionOf(screen.getByText('2 hours ago'))).not.toBe('sticky');
+      expect(positionOf(screen.getByText('Received'))).not.toBe('sticky');
+      expect(region).toHaveStyle({ scrollPaddingInlineStart: '150px' });
+
+      // Scrolled, When under it: the name's edge shows.
+      scrollLeft.mockReturnValue(100);
+      fireEvent.scroll(region);
+      expect(getComputedStyle(name).boxShadow.startsWith('inset')).toBe(true);
+    });
+
+    // 83a: at most two lines, a longer name ending in "…"; unpinned, as
+    // the table fits, it wraps as before.
+    it('cuts the name pinned at two lines, and only while pinned', () => {
+      const clamp = () =>
+        getComputedStyle(
+          screen.getByRole('link', { name: 'Vitamin C 500 mg' }),
+        ).getPropertyValue('-webkit-line-clamp');
+
+      widths(1000, 1000);
+      const { unmount } = render(<Movements named />);
+      expect(clamp()).not.toBe('2');
+      unmount();
+
+      widths(800, 1100);
+      render(<Movements named />);
+      expect(clamp()).toBe('2');
+      expect(
+        getComputedStyle(screen.getByRole('link', { name: 'Vitamin C 500 mg' }))
+          .overflow,
+      ).toBe('hidden');
+    });
+
+    it('with none marked, pins the first column, as before', () => {
+      widths(800, 1100);
+      render(<Movements marked={false} />);
+
+      expect(positionOf(screen.getByText('2 hours ago'))).toBe('sticky');
+      expect(positionOf(screen.getByText('Vitamin C 500 mg'))).not.toBe(
+        'sticky',
+      );
+    });
   });
 
   describe('too wide, its row actions pinned at the end (E12a)', () => {

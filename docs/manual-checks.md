@@ -52,7 +52,8 @@ expiry chips), **THE-0915** waiting for a cost (PO-DEMO-5), **PO-DEMO-4**
 partly received and mixing kilograms with bottles, run **CALM-RUN-01**
 released and **CALM-RUN-02** planned, **SO-DEMO-3** a draft started six
 days ago, **SO-DEMO-4** cancelled, **SO-DEMO-5** shipped with its invoice
-in draft and a closed RMA, **SO-DEMO-6** with a voided invoice and its full
+in draft and a closed RMA, its vitamin D 30 from each of two lots,
+**SO-DEMO-6** with a voided invoice and its full
 credit note, **PO-DEMO-6** with a line closed short, a discontinued product
 and a retired partner. Every state the redesigned screens draw (ADR-055) has
 one example among them.
@@ -123,10 +124,22 @@ holds 60 of its 70, Free 10, not short. Coming reads **ELDER-250**'s 48
 **VITC-90**: its first order, **PO-DEMO-8**, and its two receipts say
 VITC-90, and the rest of its ledger VITC-100, since 王建国 corrected the
 code once its first lots arrived. **D3-1000-120**'s **D3-C07**, 20 on Main's
-**Shelf**, has no expiry, so it lists after **D3-A11** (100) and **D3-B02**
-there. **MAGCAP**'s page lists **MAGCAP-240** first, out with 48 not usable
-at a place not available, then **MAGCAP-120**, low; the seed reads both
-back.
+**Shelf**, has no expiry, so it lists after **D3-A11** (70 received) and
+**D3-B02** there. **MAGCAP**'s page lists **MAGCAP-240** first, out with 48
+not usable at a place not available, then **MAGCAP-120**, low; the seed reads
+both back.
+
+For Movements' screens (ADR-093), the same: the seed reads each back and
+stops if one is gone. **SO-DEMO-5**'s 60 vitamin D left as 30 from
+**D3-A11** and 30 from **D3-B02**, two movements of one order and one
+quantity that only their lot tells apart (R13); the 48 of **VC-0301** and
+the 48 of **MAGCAP-240** were moved into Richmond's **Quarantine**;
+**THE-0915** is the lot waiting for a cost; and a confirmed order stands in
+each state of what has come or gone, #605's label: purchase orders
+**PO-DEMO-11** not received, **PO-DEMO-4** partly received, and
+**PO-DEMO-5** all received (**PO-DEMO-6** too, its short line counting as
+done), and sales **SO-DEMO-9** not shipped, **SO-DEMO-1** partly shipped and
+**SO-DEMO-6** all shipped.
 
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
@@ -225,7 +238,11 @@ a second organization.
   sheet from the bottom, which a screen reader names Filters and sort,
   with the category, Sort (On hand, least first;
   Last changed, newest first; Date added, newest first) and Discontinued
-  with its count; Clear resets them and Show closes it.
+  with its count; Clear resets them and Show closes it. Clear and Show
+  sit in a footer, a line above it, that stays at the sheet's foot as
+  its fields scroll; at Larger text, in 中文 too, on Movements' sheet,
+  Done is whole on the screen, and Location follows the find box with
+  the sheet's usual gap, no blank band (review 9).
 - **MC-210** Items' category filter reads All categories, then the tree
   with each category's count on the open tab, Uncategorised with its own
   count (BOTTLE-60 among them on Packaging), and Manage
@@ -353,7 +370,8 @@ a second organization.
   1 个). The number still opens Inventory for the item alone; the status
   opens the item's page at Where it stands, focus on its heading, with
   Back to Items as it was. A Low stock chip sits before Discontinued with
-  its count, the items low or out, ?low=1 in the address, kept by a
+  its count in items, "Low stock · 2 items" (« Stock bas · 2 articles »,
+  库存不足 · 2 个物品; 108a), the items low or out, ?low=1 in the address, kept by a
   reload and Back; its count is the number of items among Reorder's Low
   stock rows, MAGCAP counted once for its two codes. At 390 px the chip
   is in Filters, each card's status opens Where it stands, and with
@@ -375,11 +393,18 @@ a second organization.
   its expiry as Stock's chip, each lot's Actions the lot's menu as on
   Stock (Move…, Ship out…, Send sample…, Correct the count…, Edit lot
   details…, Trace lot, Movements), whose Move… lists every other place
-  under To (the places are read as Move… first opens, not on arrival). Change reorder point opens the point's dialog filled in,
+  under To (the places are read as Move… first opens, not on arrival),
+  and whose Movements opens Movements for that lot, Back returning to the
+  page. Under it, Latest movements: the code's five newest, When, In,
+  Out, Balance, Reason, From → to, Lot, For and By, the newest's Balance
+  its On hand, and All movements of ELDER-250, which opens Movements for
+  the code, Back returning to the page; CALM-SAMPLE, never received, has
+  none. Change reorder point opens the point's dialog filled in,
   and Escape returns focus to it; Save closes it, and Low with its "left
-  · reorder at" line shows the point saved; Buy 134 opens New order, a purchase,
+  · reorder at" line shows the point saved; Buy 134 each, its number with
+  its unit (#640), opens New order, a purchase,
   with ELDER-250 and 134 filled in, nothing saved. SLEEP-60CT's page
-  has Make 230 instead, which opens Plan a run filled in. OMEGA3-90 says
+  has Make 230 each instead, which opens Plan a run filled in. OMEGA3-90 says
   it is in a draft already. MAGCAP's page lists MAGCAP-240 first, out,
   "48 not usable: at a place not available", its lot in Quarantine
   marked "Not usable: a place not available", then MAGCAP-120, low, Buy
@@ -389,12 +414,16 @@ a second organization.
   with nothing on hand and no point, such as CALM-SAMPLE, says "None on
   hand, nothing coming." with Set a reorder point and Receive stock. In
   French the section is État du stock, in 中文 库存情况, and 现有不可用
-  names its reasons 已过期, 已领用 and 不可发货.
-- **MC-220** *(ADR-093, ADR-080)* Where it stands by permission. As
+  names its reasons 已过期, 已领用 and 不可发货; Free reads 可分配, never
+  可用 alone, and the line and its sum 预计剩余, where Reorder's box and
+  Today read 预计剩余 too, never 剩 or 预计可用.
+- **MC-220** *(ADR-093, ADR-080; review 3, 115)* Where it stands by permission. As
   Fatima Haddad (Sales), with no `locations.view`: ELDER-250's page
   lists "Usable lots", each with how many places hold it, and any not
-  usable as one line, no place named, with no Actions and no Change
-  reorder point; Held's orders are listed, and Buy 134 is there.
+  usable as one line, no place named, then, once a page, "Warehouses,
+  zones and bins are hidden: your role can't see them. An Owner or
+  Admin can change that."; with no Actions and no Change
+  reorder point; Held's orders are listed, and Buy 134 each is there.
   SLEEP-60CT's page lists no run under Coming, and in Make's place a
   line says her role does not include planning runs, and whom to ask. As
   Tom Becker (Warehouse): By place and lot with each lot's Actions, and in Buy's place
@@ -443,13 +472,16 @@ a second organization.
   else on the row does: the row tints under the pointer, an arrow. There
   is no
   "Promised to customers" table below the list.
-- **MC-312** *(ADR-093)* D3-1000-120's "2 places" button opens its places
+- **MC-312** *(ADR-093; review 3, 115)* D3-1000-120's "2 places" button opens its places
   under the row, the button pressed in the accent and read as "Hide where
   … is"; Main's Shelf's "3 lots" opens D3-A11, D3-B02 and D3-C07, the
   undated D3-C07 last, each lot's code a link to its trace. VITC-100's
   Quarantine reads "Not usable: a place not available" in red. As Fatima
   Haddad (Sales), with no `locations.view`, the button reads "… lots" and
-  opens the lots alone, no place named. Opened, the address gains
+  opens the lots alone, no place named; a code not tracked by lot in
+  several places reads "… places" and opens to one line, "Warehouses,
+  zones and bins are hidden: your role can't see them. An Owner or
+  Admin can change that.", never a row of "—" for each place. Opened, the address gains
   `open=` with its code; follow the item's name and come Back: the row is
   still open and focus is on its name. Show 50 more puts focus on the
   first new row; on the volume database it reads "Showing 50 of …
@@ -460,9 +492,14 @@ a second organization.
   its row, on the Lot view and on its page's By place and lot. At 1920
   and 1366 px it shows whole, starting under the item's name, and the
   Item header is whole. Where it does not fit, as at 390 px, it is cut
-  from the left with "…" at its start, "…Aisle 1 › Shelf 1-B", the place's
-  own name and code always whole; the pointer on it, or Tab to it, shows
-  the whole path.
+  in its middle, "Richmond warehouse › … › Shelf 1-B", the warehouse and
+  the place's own name and code always whole, the places nearest the
+  shelf kept while they fit; the pointer on it, Tab to it, or a tap on a
+  tablet or phone shows the whole path. "Richmond warehouse › Quarantine
+  (QUAR)", with nothing between, is never cut (#639). Receive stock's
+  Into, Move's To, Count it in's Location and an order's Receive list
+  each place by its path too, and Move, Ship out and Send a sample name
+  the place they take from by it (#631).
 - **MC-313** *(ADR-093)* Group by Lot: one row per lot at each place,
   soonest first, the expired on top, Expires' arrow solid and "Soonest
   first, the expired on top." above the list; Item, Location and
@@ -471,7 +508,8 @@ a second organization.
   own menu; each code with its type as a word,
   "D3-1000-120 · Product"; D3-B02's two rows read "1 of 2
   places" and "2 of 2 places". Its quick filters are Low stock, Expiring
-  soon, Expired and Waiting for a cost, each count the rows it shows.
+  soon, Expired and Waiting for a cost, each count the rows it shows and
+  says lots, "Expiring soon · 4 lots", "Expired · 1 lot" (108a).
   `/inventory?group=lot&out=1` says items that are out have no lots, with
   Group by Item, which lists the out. As Fatima Haddad (Sales), with no
   `locations.view`, VC-0301's row reads "Not usable: a place not
@@ -488,7 +526,9 @@ a second organization.
   by a second press, Free's header words
   alone (35a); a code with nothing to expire last either way; each kept
   in the address and after a reload.
-  At 390 px, Stock is cards, each with On hand and Free, Filters holding
+  At 390 px, Stock is cards, each with On hand and Free, and under them
+  why Free is less: VITC-100's "… not usable: expired", and "… held" on a
+  code a confirmed sale holds (#612); Filters holding
   Type, Category, Location, the sort and the quick filters; from 600 to 899 px Held and
   Coming leave the table.
 - **MC-316** *(ADR-093, R19)* Help's Inventory, Items and Trace a lot
@@ -499,14 +539,18 @@ a second organization.
   something is refused, and no Promised to customers. Each header it names
   (Where, On hand, Free, Held, Coming, Status, Expires first) is on the
   screen under that name, and "12 not usable" and "20 short" read as in
-  the list. What each count counts says Stock by item counts codes, by lot
+  the list. What each count counts says each number names its kind beside
+  it, "Low stock · 4 codes", and that Stock by item counts codes, by lot
   counts lots at each place, Reorder and Home's Low stock count codes,
   Home's Expiring soon counts lots at each place, and Items counts items;
   the demo's MAGCAP, with three codes, shows it: Items' Low stock counts
   it once, "Low · 1 of 3 codes" in the row. On an item's page, Help
-  has Where it stands after What a row shows, and on Trace a lot's page it
-  says the recall list's Export is in your language, with money showing
-  its currency. In Français the title is Inventaire and the guide reads
+  has Where it stands after What a row shows, ending with Latest movements,
+  and on Trace a lot's page it says Where it is now names each place by
+  its whole path, and the recall list's Export has its headings in your
+  language, its day year-month-day and its quantities plain, 600 and not
+  600.0000. On Stock, Help's Read the stock says how many rows the list
+  shows, "31 codes" or "Showing 50 of 312 codes". In Français the title is Inventaire and the guide reads
   Lire le stock, Trouver du stock and Regrouper par lot; in 中文,
   读懂库存, 查找库存 and 按批次分组.
 - **MC-317** *(ADR-093, R15)* Stock's Export. As the demo Owner, with Low
@@ -525,13 +569,186 @@ a second organization.
   appears under Movements with who, when and why.
 - **MC-303** A lot-tracked move asks for the lot; an untracked one does not.
 - **MC-304** An adjustment out cannot take more than is on the shelf.
-- **MC-305** A movement's history dialog reads in the direction it happened
-  (in, out, between). Its Why names the document each movement was for,
-  linked: ELDER-250's receipt "receipt · PO-DEMO-…", a shipment "shipment ·
-  SO-DEMO-…", a run by its reference; a receipt with no order names none.
-  A role made with `stock.view` alone sees the movements, no order named.
+- **MC-305** *(ADR-093, R11)* Stock's ways into Movements, as the demo
+  Owner; there is no history dialog. VITC-100's Actions › Movements
+  opens Movements for it, `?variantId=` with an id, In, Out and Balance;
+  open D3-1000-120's places, then a place's Movements link: that code at
+  that place, `&locationId=`, "In, Out and Balance count … alone."; open
+  a place's lots, then a lot's Actions › Movements: that lot, `&lotId=`,
+  the chip "Lot: D3-…", no When chosen and no `from` or `until`, its
+  receipt the last row (132b). Each offers Back, which returns Stock as it was:
+  the item's row open, the place's lots open with it, focus on the
+  item's name. A role made with `stock.view` alone sees the same rows,
+  no order or run named under For.
+- **MC-322** *(ADR-093, R26; #628)* Stock found where it has never been,
+  as the demo Owner. Open VITC-100's places: they end with "Found some
+  where it has never been?" and Count it in…, which a screen reader
+  names "Count it in VITC-100…" (105a), and which opens Correct the
+  count with Location and Which lot, neither lot chosen; Escape returns
+  focus to Count it in…. Choose a place VITC-100 has never been, Main's
+  Shelf, and Save with no lot: "Choose one of its lots, or a new lot."
+  at Which lot, focus on it. Choose A new lot and type VC-0301, a code
+  it has: refused at Lot number, naming VC-0301, nothing saved. Type
+  VC-0310 with an expiry, 12 and a note: "Counted in 12 each of
+  VITC-100 at Shelf, new lot VC-0310. It waits for a cost." with Waiting
+  for a cost, which opens Stock value's list holding it; Stock shows the
+  shelf open under VITC-100 with its lot VC-0310. Count one of its lots,
+  VC-0402, into the same shelf: "…, lot VC-0402." with Movements. A
+  role without `stock.adjust` sees no Count it in….
+- **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
+  Show more. As the demo Owner, Stock by item ends with "… codes" under
+  its rows and no Show 50 more; the Lot view says "… lots", Reorder
+  "… codes" and Items "… items", in French « … codes », in 中文 共 … 个编码,
+  and no column numbers the rows. On the volume database Stock reads
+  "Showing 50 of … codes" beside Show 50 more: press it, follow the name
+  of a code in the second fifty, and Back: the hundred rows are there
+  without pressing it again, focus on that name. The same on Items and
+  Reorder, and on Movements after Show 25 more, focus on the link
+  followed from its row, its lot or its For. On Movements, Show 25 more
+  itself puts focus on the 26th row's first link, as Items' Show 50
+  more does on the 51st (106a).
+- **MC-324** *(ADR-093, R19; #605, #628)* Help's Movements and Orders
+  guides. As the demo Owner, on Movements, Help opens its guide with Find
+  a movement, Read one code like a stock card, Where a link leads, Export
+  the list, Correct a mistake and Words you'll meet. Every word in bold is
+  on the screen under that name: Item, Location, Reason, When, Period,
+  Show 25 more, Try again, Show all movements, From → to, In, Out,
+  Balance, Filters, Everywhere, For. It says "Show 25 more", not Load
+  more, and that a lot or an order a link names is a chip with its ×. On
+  Orders, Help's Receive a purchase says a confirmed order says how much
+  has come, Not received, Partly received or All received (on a sale Not
+  shipped, Partly shipped, All shipped), names the Receiving filter and
+  Receipts, and Finish an order quotes "Everything has arrived. Close the
+  order?". In Français the guides are Mouvements and Commandes, with a
+  no-break space inside « » and before a colon; in 中文 库存变动 and 订单,
+  naming 未收货, 部分收货 and 已全部收货. Press a link in the guide to
+  Inventory and Movements: each opens its page.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
+- **MC-319** *(ADR-093, 87a, 88a, 98a and 116; review 54; 138b)* As the demo
+  Owner, export Movements with VITC-100 chosen and a date range that
+  ends today: the file runs oldest first, its columns When (Vancouver
+  time), Code, Recorded as, Item, In, Out, Moved, Balance, Unit, Reason,
+  Reason code, From, To, Lot, Expiry, For, By, Email and Note, one value
+  to each, Moved filled on a move between two places alone; its first
+  line Opening balance with the balance at the range's start, its last
+  Closing balance with the range's In and Out and Stock's On hand for
+  VITC-100, each of the two by its day; each movement's When its day and
+  time to the second on Vancouver's clocks, as the screen shows it to
+  the minute; Recorded as VITC-90 on the rows recorded before the code
+  changed, as the screen's "was VITC-90", and empty on the rest; By's
+  email beside By; each place by its whole path. A move between two places has neither In nor Out. Reason reads
+  as on the screen: Received, Shipped, Moved; Reason code after it reads
+  receipt, shipment, transfer, the same in 中文 and Français, under its
+  header 原因代码 and Code du motif. With no item chosen,
+  Change stands for In, Out and Balance, a shipment's with its minus;
+  OMEGA3-90's correction reads Corrected: miscount, its To counted out,
+  its Note the note as typed, and no From or To outside the warehouse is
+  blank: a receipt's From supplier, a shipment's To customer. In 中文 the
+  first and last lines read 期初结存 and 期末结存, that correction
+  调整：计数错误, and the first column 时间（温哥华时间）, the city in
+  Chinese (134b), where English and French keep Vancouver. As
+  Fatima Haddad (Sales), the same file has no From or To column, and its
+  For names an order but never a run.
+- **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4, 11 and 22; 126, 135a and 137a)* Movements,
+  as the demo Owner at 1920. Every row reads When to the minute, the
+  item's name first with its code and type grey under it ("VITC-100 ·
+  Product"), "was VITC-90" under VITC-100's rows recorded before its code
+  changed, the change with its unit, the reason in words (Received,
+  Shipped, Moved, Corrected: miscount, Made, Used in a run, Sampled,
+  Returned, the Reason filter offering the same), From → to on two lines,
+  each place by its path and an end outside the warehouse in grey words
+  (supplier, customer, run, sample, counted in, counted out), the lot
+  linked with its expiry under it, For linked to its order or run, and
+  By. Choose Reason › Sampled: MCS-001's 12 end "→ sample" in grey,
+  never "—", and For reads Northside Pharmacy, a link to its page; the
+  export writes To sample and For Northside Pharmacy. As Tom Becker
+  (Warehouse), without `partners.view`, the same row's For reads "—" and
+  the export's For is empty.
+  SO-DEMO-5's two vitamin D rows of 30 differ by their lot alone. With
+  no Location chosen, a move between two places reads "moved" and its
+  quantity in grey, never a bare number; choose a
+  Location: a move off it reads with its minus and one onto it with its
+  plus, and the export's Change writes the same; "Choose one item to see
+  In, Out and Balance." shows above the list. An order's All movements
+  of PO-… reads In and Out with no such line, a Location chosen too.
+  Type "VC" in Find an item, lot or order: Items, Lots and Orders
+  offered in words ("Lot VC-0302 · Vitamin C 500 mg · expires …",
+  "PO-… · … · Partly received"), never a run or a return, and nothing
+  filtered until one is chosen; arrows move, Enter chooses, Escape
+  closes. Type MCS-001: Lot MCS-001 alone, no close match beside it;
+  type VC-0310, a typo for VC-0301: VC-0301 among what comes close,
+  under Close matches (Résultats proches, 相近结果), and no Close
+  matches once a match is exact. Choose a lot: its item and the lot as two chips, a stock card
+  of that lot, the box empty again and still reading Find an item, lot
+  or order; choose an order: its chip. Type "VITC" and choose
+  VITC-100: the Item column goes, In, Out and Balance replace
+  Change, the newest row's Balance is Stock's On hand for it, a move
+  between two places reads "moved 20 each, counted in neither" once
+  across In and Out, in grey, its Balance unchanged and the period's In
+  and Out without it, the export's Moved column, between Out and
+  Balance, filled on that row alone, and the
+  address reads `?variantId=` with an id. When is one menu: Today, This
+  week, This month, Last 30 days, Last month and This year, each with
+  its days beside it ("This week · 16 – 20 Nov" on Friday 20 November, a
+  period that holds today ending today, a space either side of the
+  dot), a thin line, Choose dates…, another, and Any time at its foot;
+  Escape closes it, focus back on When. On a Sunday, This week runs
+  from the Monday before, in Français and 中文 too; with the computer's
+  time zone set to Shanghai while Vancouver's day is not yet over,
+  every period still ends on Vancouver's today (135a, 137a). Choose This month: Opening, In,
+  Out and Closing above the table, Closing the Opening plus In less Out,
+  and the field and a chip, "When: Nov 1 – 20, 2026", the year once,
+  show the days, the chip's × clearing them; in Français « 1–20 nov.
+  2026 », in 中文 "2026年11月1日至20日", the year once as a single day
+  reads, never "2026/11/1 – 2026/11/20", the menu's 本周 · 11月16日至20日
+  (130b), and Choose dates…'s
+  two fields 起始日 and 结束日, never 自 … 起. Choose Last month:
+  no row, "No movements match: …" with Show all movements. Choose
+  dates… opens a panel titled Choose dates: From and To, typed or
+  picked, "Both days are included. Leave From empty for from the start,
+  To empty for until today." under them, and Clear and Apply on a row
+  below; From alone reads "From 1 Nov 2026" in the field, To alone
+  "Until 15 Nov 2026". Dates to 30 November, on the 20th: "Closing, 20 Nov 2026",
+  today's, never the range's end, Opening still its first day, as the
+  export's closing row. On the item's page, Where it stands' All
+  movements of VITC-100 opens on this month, its four figures at once.
+  Choose Reason › Shipped: Balance, Opening and Closing go, "Balance
+  counts every reason. Clear Reason to see it." with Clear Reason, which
+  brings them back. Press When: oldest first, `?sort=when&order=asc`.
+  Show all movements clears every filter at once, and Back then leaves
+  Movements. Every filter set is a chip under the row, "Item: …",
+  "Location: …", "Lot: …", "Order: …", "Reason: Shipped" and "When:
+  …", at 390 px too: from a lot's Actions › Movements on Stock, choose
+  its shelf under Location, then × Lot and × Item: the shelf's
+  movements alone, its chip the one left. At 320 px, in Français and
+  at Larger text, VITC-100's chip « Article : … · VITC-100 » wraps onto
+  a second line, never ending in "…", its × beside it, and a chip of
+  one line keeps its height. With nothing matching, the line names the filters on, the
+  days in words: a When with From alone reads "from" and its day, To
+  alone "until" and its day, never a dash at either end; a
+  lot's Movements with a When range it has no movement in keeps "Lot:"
+  and its code on the chip and names the code in the line. An archived
+  code's Movements, opened from its item's Where it stands, names it on
+  its Item chip, and with Reason › Sampled leaving none, in the line
+  too. ZINC-60, discontinued and never stocked, chosen in the find box:
+  "Item: Zinc lozenges, 60 count · ZINC-60 (discontinued)" on its chip
+  and "No movements match: Zinc lozenges, 60 count (discontinued)." in
+  the line, « (abandonné) » in Français and （已停用） in 中文 (133b). At
+  390 px each movement is a card, a move counted in neither in its row's
+  words, the filters behind one Filters button
+  with the sort, When the same list there, Choose dates… opening the two
+  dates full width; on the item's page at 390 px, Latest movements'
+  "Richmond warehouse › Quarantine (QUAR)" wraps on its card, never
+  clipped at its edge; a lot's Movements with Reason and a When range chosen
+  there: the sheet's Clear empties Reason and When and keeps the Lot
+  chip. As Fatima Haddad (Sales), there is no From → to column
+  and no Location filter, one line above the list saying "Warehouses,
+  zones and bins are hidden: your role can't see them. An Owner or
+  Admin can change that.", in Français and 中文 too
+  (仓库、区域和货位已隐藏), and a link with `?locationId=` reads every
+  place; as a role without `orders.view`, a link with `?orderId=` lists
+  every movement with no chip.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
@@ -569,8 +786,9 @@ a second organization.
   before, the confirmation ending "with no order". An item with nothing
   ordered asks nothing. In Français « … de ELDER-250 reçus sur … » and
   Ouvrir la commande; in 中文 已按 … 收货 and 打开订单.
-- **MC-311** *(ADR-091, amended by ADR-093)* Inventory's Expired. As the
-  demo Owner, Home's Expiring soon opens the Lot view at
+- **MC-311** *(ADR-091, amended by ADR-093; 108a)* Inventory's Expired. As the
+  demo Owner, Home's Expiring soon, its figure saying lots beside it
+  (个批次 in 中文, lots in French), opens the Lot view at
   `/inventory?group=lot&expiring=1`, and its late button adds
   `&expired=1`: Expiring soon and Expired are pressed, and the list holds
   only the lots past their day, VC-0301 first. Unpress Expired: every lot
@@ -643,6 +861,42 @@ a second organization.
   链接带来的筛选), names each chip as the list shows it, Sales only and
   Purchases only, Draft and Confirmed, Still to ship, Still to receive,
   Late and Oldest first, and says its × removes it.
+- **MC-409** *(ADR-093, R25; #605)* How much of an order has come. As
+  the demo Owner, on Orders, beside Confirmed: PO-DEMO-11 reads Not
+  received in grey, PO-DEMO-4 Partly received in blue, PO-DEMO-5 and
+  PO-DEMO-6 All received in green (PO-DEMO-6's short line counting as
+  done), SO-DEMO-9 Not shipped, SO-DEMO-1 Partly shipped and SO-DEMO-6 All
+  shipped; a draft reads Draft alone, and the Fulfilled column stays.
+  Choose Receiving or shipping › Partly received or shipped: PO-DEMO-4 and
+  SO-DEMO-1 among the rows, none of another state, `fulfillment=part` in
+  the address; open one and press Back: still chosen. Open
+  `/orders?direction=purchase`: the filter reads Receiving, its choices
+  Not received, Partly received and All received. On PO-DEMO-4, Partly
+  received beside Confirmed and no line about closing; receive the rest
+  on its Items tab: All received beside Confirmed, and a green line
+  "Everything has arrived. Close the order?" with Close order, which
+  closes it at once: Received, the label and the line gone, and focus
+  on the title PO-DEMO-4 (103a). SO-DEMO-6's line reads "Everything
+  has shipped. Close the order?"; PO-DEMO-6's, with its short line,
+  "Nothing more is expected. Close the order?" (113a). Close every
+  line of a confirmed purchase short with nothing received: Not
+  received, and the same line with Close order. A role made with
+  only Orders' view sees the labels and no line. In Français: Reçue en
+  partie, Entièrement reçue, « Tout est arrivé. Clore la commande? »; in
+  中文: 部分收货, 已全部收货, 未发货, and 货物已全部到达。关闭订单？
+- **MC-321** *(ADR-093, R25)* An order's movements. As the demo Owner,
+  PO-DEMO-4, received in part: its Receipts tab lists what was received,
+  newest first, When, Item, Received with its unit, Where by its path,
+  Lot with its expiry, and By; receive more on the Items tab and open
+  Receipts again: the new receipt first. All movements of PO-DEMO-4
+  opens Movements with the chip "Order: PO-DEMO-4", `?orderId=` with an
+  id, In and Out with no Balance; Back returns to the order. SO-DEMO-1's
+  Shipments tab ends with All movements of SO-DEMO-1, its shipments and
+  returns there. PO-DEMO-11, nothing received, says so on Receipts. A
+  role made with `orders.view` alone sees PO-DEMO-4's Receipts tab with
+  When, Item, Received, Lot and By, no Where and no All movements link
+  (102a); Fatima Haddad, Sales, sees the same. In 中文 the tab reads
+  收货记录.
 
 ## 5. Making
 
@@ -790,10 +1044,24 @@ search to having the list of customers; the target is **under two minutes**.
   each with its code; codes starting with the text come first.
 - **MC-902** Trace BF-2609: its supplier receipt, the batch it went into
   (FOC-2609-01), and every customer who received that batch, including
-  samples and returns.
+  samples and returns. Under its code, its item's name is a link to the
+  item's page, and All movements of this lot opens Movements with the
+  item's and the lot's chips, a stock card of that lot, Back returning
+  to the trace (review 6), with no When chosen, the lot's whole life
+  down to its receipt (132b). As a role without `products.view`, the name
+  reads as text.
 - **MC-903** Trace FOC-2609-01 back: the run, and the ingredient lots it was
   made from.
-- **MC-904** Balances: where every unit of the batch is now.
+- **MC-904** *(ADR-093, amended; #639; review 3, 115)* Balances: where every unit of
+  the batch is now, each place by its whole path, its warehouse first,
+  "Main warehouse › Zone A › Shelf A2 (A2)", where it said "Shelf A2"
+  alone. Signed in with the Sales template, which has no
+  `locations.view`: Where it is now has no Location column and names no
+  place, reading Usable and Not usable, the two adding up to every unit
+  of the lot, its quantity at a place not available, or all of it once
+  the lot has expired, under Not usable, and under them, once,
+  "Warehouses, zones and bins are hidden: your role can't see them. An
+  Owner or Admin can change that." (review 3, 115).
 - **MC-905** Record the time here and in the release notes.
 - **MC-906** *(ADR-044, amended)* On BF-2609's trace, Who received it's
   Export saves the recall list: each row as the table shows it, who, the
@@ -1439,8 +1707,9 @@ Paper is checked first because it must not change at all.
   Shipments again. Press Back once more: the page before the order, not the
   Items tab. Type ?tab=nonsense on the address: Items opens and the address
   loses it.
-- **MC-1516** A purchase (PO-DEMO-4) has no tab bar, only its items, and no
-  money group. Below 900px the summary sits above the tabs.
+- **MC-1516** A purchase (PO-DEMO-4) has no Shipments, Returns or
+  documents tab and no money group: Items, Receipts (MC-321) and History.
+  Below 900px the summary sits above the tabs.
 - **MC-1517** On SO-DEMO-1's Items tab, quantities read without padding zeros
   (600, 400, 7, 200), and Credited shows 2 in amber, since 5 of the 7 returned
   are not settled. In Français, 1 234,5 reads with the French separators.
@@ -1486,9 +1755,11 @@ Paper is checked first because it must not change at all.
   message, and Raise an order stays where it always is, in the page header;
   with Fulfilled pressed and none fulfilled, only "No orders match that
   filter."
-- **MC-1528** Inventory's quick filters are a row of their own, Low
+- **MC-1528** *(108a)* Inventory's quick filters are a row of their own, Low
   stock, Out, Expiring soon, Expired, Waiting for a cost and Show emptied,
-  each with its count, above the row of Search, Type, Category, Location
+  each with its count and what it counts after a dot, codes, "Low stock ·
+  8 codes", "Out · 1 code" (« Stock bas · 8 codes », 库存不足 · 8 个编码),
+  above the row of Search, Type, Category, Location
   and Group by; at 390 px they are in the Filters sheet, its button
   counting those on. Pressing
   Expiring soon keeps the codes with a lot within 90 days, ELD-24A's
@@ -1499,6 +1770,10 @@ Paper is checked first because it must not change at all.
 - **MC-1529** Expires first shows days left within 90 days, amber, and
   within 30 days red (ELD-24A: "20 days left"), the date beside each; a
   lot two years off shows only its date. Quantities read "400 each".
+  A code whose every unit on hand has expired reads "all expired" in
+  red, 全部已过期 in 中文, never "—", though some of it sits at a place
+  not available, as Vitamin C's 48 in Quarantine; one with nothing to
+  expire keeps "—" (#611).
 - **MC-1530** Receive stock, Ship out or Correct the count on a lot within
   90 days: the list, its opened row and the counts all update without a
   reload. With Expiring soon pressed and none due, the list says no items
@@ -1655,8 +1930,19 @@ Paper is checked first because it must not change at all.
   has them, the columns of the language its items are named in holding
   their own names; and so does Partners with `mill` and Retired; the Audit
   log's entry names the filter in words, not what was typed.
-  Orders' Created, Movements' When and the Audit log's When read like
-  `2026-10-15 18:54:11`, in UTC, and open as dates.
+  Orders' Created and the Audit log's When read like
+  `2026-10-15 18:54:11`, in UTC, and Movements' When the same on the
+  organization's clocks, its header When (Vancouver time); each opens as
+  a date. In the exports of
+  Stock, the Lot view, Reorder, Movements, Orders, Stock value and a
+  lot's recall list, every quantity reads as the screen's figure without
+  its padding zeros, `600` and `12.5`, never `600.0000`, with a point
+  and no grouping, and sums as a number. Money, in the exports of
+  Invoices, Credit notes, a price list and Stock value, reads at its
+  currency's places, never fewer and never rounded: a CAD price of 12.50
+  as `12.50`, not `12.5000`, one of 0.0125 as `0.0125`, an invoice's
+  total `144.38`, nothing credited `0.00`, and a price list in JPY with
+  1250 as `1250`.
 - **MC-1559** *(ADR-058; ADR-091)* Sign in as the demo owner: Home opens,
   greeting by the time of day on the organization's clock, Vancouver's
   for the demo, then the organization's day and time to
@@ -1943,11 +2229,19 @@ Paper is checked first because it must not change at all.
   it, with a line and a fade where the other columns pass under. The
   name keeps its width: Ashwagandha root extract, standardised to 5%
   withanolides takes two lines, not five, and Actions still stays at the
-  right on Stock (MC-1575); a row
+  right on Stock (MC-1575). Give an item a name of three lines or more
+  at that width: pinned, it stops at two, ending in "…"; the pointer on
+  it, or Tab to it, shows the whole name in a tooltip, the pointer can
+  move onto the tooltip without it closing, and Escape closes it. A
+  screen reader reads the whole name. At Larger text the name's column
+  grows with the text and still takes two lines; with the table fitting,
+  as at 1920, the name wraps whole with no "…" (83a). A row
   tinted under the pointer is tinted under the name too. Close Help on
   Reorder: the table fits again, and its header stays as the page
   scrolls (MC-1567). In French and Chinese the box's name is in that
-  language.
+  language. On any list too wide, Orders or Members on a tablet among
+  them, Tab along a row: a link or button left half past the box's edge
+  scrolls wholly into view, clear of the pinned name and Actions (#642).
 - **MC-1569** *(ADR-090, amended November 2026, #632)* Sorting from a
   header that stays. In a window 1920 × 1080, on Inventory's Stock,
   scroll down until the header stays under the top bar, then press On
@@ -2622,7 +2916,10 @@ Signed in as the demo Owner the seed prints.
   by code, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
   language; a price set on a price list, its unit price and then the item
-  by code, as FOCUS-60CT, and the same when an item is taken off a list. The order's number opens the order, and the role opens
+  by code, as FOCUS-60CT, and the same when an item is taken off a list;
+  a movement recorded on Inventory, its Reason in Movements' words,
+  Received, Shipped or Corrected, never Receipt or Shipment, Reçu and
+  Corrigé in Français (136a). The order's number opens the order, and the role opens
   Members. The last column, where a change came from, is headed 来源 in
   中文 and Provenance in Français, words of its own rather than the date
   filter's 起始 and Depuis.
@@ -3322,7 +3619,9 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3319** *(ADR-080)* A screen asks only for what its reader may
   read, and says why where a field cannot be filled. With the Network tab
   open, as Fatima Haddad (Sales): Inventory and Movements open without a
-  refused request and with no Location filter; PO-DEMO-1 opens, and its
+  refused request and with no Location filter, and Movements has no
+  From → to column, a receipt still signed + and a move between two
+  places unsigned; PO-DEMO-1 opens, and its
   Edit's Deliver to keeps its site, greyed, with You can’t see the
   organization’s locations, so you can’t choose one here.; Authorize a
   return on SO-DEMO-2 says the same under Send back to, with where the
@@ -4345,7 +4644,7 @@ site, after a deploy that changes the setting, the route or the relay.
   where it has one.
 - **MC-4202** *(ADR-085; ADR-093, R7)* The list. As the demo Owner,
   Inventory → Reorder: the address gains `?tab=reorder`, the switch reads
-  All 11 · Low stock 8 · Out 2, and "Buy or make what is short. Tick
+  All · 11 codes, Low stock · 8 codes and Out · 2 codes (108a), and "Buy or make what is short. Tick
   several to buy them on one purchase order." sits above the list, with
   Learn more. The list opens with the most to order first, Suggested
   order's arrow solid, Status's faint up-and-down arrow at rest; Status puts the low first instead,
@@ -4379,7 +4678,8 @@ site, after a deploy that changes the setting, the route or the relay.
   rows shown and says the next 50 could not be loaded, with Try again.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
-  Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
+  Type ELDER: the counts follow the search, All · 1 code, Low stock · 1
+  code and Out · 0 codes.
   With Low stock on and the search cleared, Export saves a CSV of the eight, its
   Status, Bought or made, How much to order and Unit in words, such as
   Low, Bought, A fixed quantity and each, in 中文 不足, 采购, 固定订货量
@@ -4391,13 +4691,15 @@ site, after a deploy that changes the setting, the route or the relay.
   order, Export writes the rows in that order. In French the three read
   Tous, Stock bas and Épuisé; in 中文
   全部, 库存不足 and 缺货.
-- **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
-  boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
+- **MC-4204** *(ADR-085; 107a)* An opened row. ELDER-250's "Who waits ·
+  2 orders", in words beside its arrow, never an icon alone (« Qui attend
+  · 2 commandes », 谁在等 · 2 个订单; a row no sale waits for, "Who waits ·
+  no orders"), opens four boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
   Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
-  = Position, 58 against its point of 96, "Up to 192 · suggested order"
+  = Left, 58 against its point of 96, "Up to 192 · suggested order"
   and its quantity. Each number opens its order. VITC-100's Usable says
   how much was left out as expired; BOTTLE-90's, how much was left out as
-  issued to a run. The chevron again closes it. On a fast connection no
+  issued to a run. Who waits again closes it. On a fast connection no
   grey placeholder flashes before the boxes, nor before Edit's fields;
   with the network throttled to Slow 4G, one shows while it reads. As
   Fatima Haddad (Sales), with no `locations.view`, ELDER-250's Usable
@@ -4426,7 +4728,7 @@ site, after a deploy that changes the setting, the route or the relay.
   and no bar, the line above it "Buy or make what is short." alone; the
   chevron still opens a row. In 中文: the tab reads 补货, the
   statuses 缺货, 不足 and 充足, the line 缺什么就采购或生产。, a row's
-  "剩 … · 下限 …", the legend's 库存下限，永远在中间, and an Owner's
+  "预计剩余 … · 下限 …", the legend's 库存下限，永远在中间, and an Owner's
   buttons 采购 96 and 生产 24; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
 - **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
@@ -4444,9 +4746,9 @@ site, after a deploy that changes the setting, the route or the relay.
   the chosen one drawn as Invite's roles are, a thicker accent border and
   a light tint, in both modes; choosing the fixed or the maximum card
   shows its field inside it. Once
-  the typing pauses, Today shows Position now, and a second bar only when
-  something would change it: Position after the suggested order, "with …
-  in draft" where a draft adds to it, or Position with … in draft where
+  the typing pauses, Today shows Left now, and a second bar only when
+  something would change it: Left after the suggested order, "with …
+  in draft" where a draft adds to it, or Left with … in draft where
   only a draft does; each number on one line with its unit, and one
   sentence, such as "Below 500 now, so
   it would suggest 600, 3 of 200.". Typing on changes it once more, never
@@ -4509,19 +4811,20 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
   the button reads 添加库存下限, the switch 采购 and 自制 under its name
   采购或自制, FOCUS-60CT's 已选自制，因为它有配方。, the cards
-  补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
-  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订货
-  600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
+  补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计剩余
+  and 按建议订货后的预计剩余, and its sentence reads naturally, such as "目前低于 500，因此建议订货
+  600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计剩余,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
-- **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
-  the Owner: the tile after To receive reads 8, Low stock and "2 out",
+- **MC-4213** *(ADR-085; ADR-091; 108a)* Home's Low stock. On a fresh demo, as
+  the Owner: the tile after To receive reads 8 codes, the 8 large,
+  Low stock and "2 out",
   its icon red. The tile opens Reorder on Low stock, its own name, at
   `/inventory?tab=reorder&status=low`,
   eight rows, MAGCAP-240 and VITC-100
   first, with Back to Home; What is late's "2 items out of stock" opens it
   on Out, those two rows. Receive 100 of VITC-100 and Refresh: Low stock
-  reads 7, with "1 out", and What is late says "1 item out of stock". In
-  中文: 库存不足, "2 项缺货" and "2 个缺货物品"; in French: Stock bas,
+  reads 7 codes, with "1 out", and What is late says "1 item out of stock". In
+  中文: 8 个编码, 库存不足, "2 项缺货" and "2 个缺货物品"; in French: 8 codes, Stock bas,
   "2 épuisés" and "2 articles épuisés". In a new organization, with no
   reorder point, the tile is quiet, Low stock and "No reorder points set
   yet" (尚未设置库存下限), not Nothing low, and opens Reorder with
@@ -4555,7 +4858,7 @@ site, after a deploy that changes the setting, the route or the relay.
   draft: the order opens as a draft, and Back returns to Reorder,
   not to New order filled in again; there, both rows' In draft reads Drafted in
   the order's number with its quantity, and neither has a box to choose. Edit D3-1000-120:
-  Today says what is in draft covers it, and its second bar, "Position
+  Today says what is in draft covers it, and its second bar, "Left
   with 96 in draft", reads 276, above its point of 240.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
@@ -4592,6 +4895,12 @@ site, after a deploy that changes the setting, the route or the relay.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R104** *(A search written a moment after a filter put the filter
+  back, #636)* In Chrome's DevTools, Performance, slow the CPU 20 times.
+  On Orders with Fulfilled chosen, type "acme" in the search and at once
+  press All: once the list settles, the address reads
+  `?status=all&search=acme` and All stays chosen, never Fulfilled again.
 
 - **MC-R103** *(A main button under the pointer fell to about 3.7 : 1 in
   dark mode, #557)* In dark mode, on Items, rest the pointer on Add item
@@ -4865,9 +5174,9 @@ first.
 
 - **MC-R70** *(Movements naming an item by its SKU alone, with padding
   zeros, and who by email alone, #256)* As the demo Owner in 中文, on
-  库存变动: D3-1000-120's move of 40 to Richmond reads D3-1000-120 in
-  bold, then 维生素 D3 1000 IU，120 粒软胶囊, then its lot; its change
-  reads 40, not 40.0000; 操作人 reads 王建国 with their email beneath,
+  库存变动: D3-1000-120's move of 40 to Richmond reads 维生素 D3 1000
+  IU，120 粒软胶囊 in bold, D3-1000-120 grey under it, and its lot; its
+  change reads 40 个, not 40.0000; 操作人 reads 王建国 with their email beneath,
   whole on hover. Open D3-1000-120's Movements on an Inventory row: its
   title names the item beside the code (and the lot, for a lot's row),
   and its rows read their changes and who the same way. A member who has
@@ -6950,3 +7259,149 @@ first.
   the end of a table too wide while it and the name take no more than
   half the box, an edge on each side only while columns lie under it:
   MC-1575 added.
+- 2026-11-20: ADR-093's Movements branch, #642: every list too wide for
+  its box brings a control focused wholly into view, as Stock and Reorder
+  did: MC-1568.
+- 2026-11-20: ADR-093's Movements branch, #636: a list's address written
+  from the address as it is when the write runs, so a search a moment
+  after a filter keeps the filter's change: MC-R104 added.
+- 2026-11-20: ADR-093's Movements branch, #639 and 96a: a lot's Where it
+  is now names each place by its whole path, and for a reader without
+  `locations.view` no place, its Usable and Not usable instead: MC-904.
+- 2026-11-20: ADR-093's Movements branch, 93a and #639: a place's path
+  that does not fit is cut in its middle, its warehouse and the place
+  whole, the whole path on a tap too: MC-312.
+- 2026-11-20: ADR-093's Movements branch, 83a: a name pinned in a table
+  too wide stops at two lines with "…", the whole name in a tooltip on
+  hover and on focus: MC-1568.
+- 2026-11-20: ADR-093's Movements branch, 96a: Movements names a place
+  only to a reader with `locations.view`, each row still signed by its
+  places' ids: MC-3319.
+- 2026-11-20: ADR-093's Movements branch, 87a and 88a: Movements' export
+  as a stock card, oldest first in the screen's columns, one code's
+  range opening and closing it, From and To only for a reader who may
+  see places: MC-319 added.
+- 2026-11-20: ADR-093's Movements branch, R30 (77a): every export writes
+  a quantity without its padding zeros, `600` and not `600.0000`, money
+  as stored: MC-1558 extended.
+- 2026-11-20: ADR-093's Movements branch, step 11: Movements as a log
+  in the address that reads as a stock card for one code, its rows the
+  name first, From → to by path, the lot and For linked, cards on a
+  phone: MC-320 added, MC-3319 and MC-R70 reworded.
+- 2026-11-20: ADR-093's Movements branch, step 12: the history dialog
+  gone, Stock's item, place and lot open Movements filtered, Back
+  returning Stock with a place's opened lots; Where it stands' Latest
+  movements; an order's Receipts and All movements: MC-305 rewritten,
+  MC-219 and MC-1516 extended, MC-321 added.
+- 2026-11-20: ADR-093's Movements branch, step 13 (#605): a confirmed
+  order's label beside its status, Not received, Partly received and All
+  received, on a sale shipped, on Orders and the order's page, a filter
+  by it in the address, and the line offering to close it once
+  everything is in: MC-409 added.
+- 2026-11-20: ADR-093's Movements branch, step 14 (#628): stock found
+  where an item has never been, counted in from the end of its opened
+  places into any place and one of its lots or a new one, the new lot
+  waiting for a cost: MC-322 added.
+- 2026-11-20: ADR-093's Movements branch, step 15 (#638, #473): Items,
+  Stock and Reorder show their count always, "31 codes" once every row
+  is shown; Back after Show more on Items, Stock, Reorder and Movements
+  reads the rows shown again, focus on the row left from: MC-323 added.
+- 2026-11-20: ADR-093's Movements branch, step 16 (94a, R32): Free is
+  可分配 in Chinese, and the projected figure one name, Left, Il en reste
+  and 预计剩余, where Position, 剩 and 预计可用 stood: MC-219, MC-4204,
+  MC-4206, MC-4207, MC-4212 and MC-4215 reworded.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#612): Stock's phone
+  card says why Free is less than On hand, what is not usable and why,
+  and what is held: MC-315's 390 px line reworded.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#631): the receive,
+  move and count-in dialogs list each place by its path, and Move, Ship
+  out and Send a sample name the place they take from by it: MC-312
+  extended.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#640): Where it
+  stands' Buy and Make say their number with its unit, Buy 134 each:
+  MC-219 and MC-220 reworded.
+- 2026-11-20: ADR-093's Movements branch, step 16 (#611): Stock's Expires
+  first says "all expired" where every unit on hand has expired:
+  MC-1529 extended.
+- 2026-11-20: ADR-093's Movements branch, step 18 (R19): Help's Movements
+  guide rewritten for the stock card, its period line, the links in and
+  the export by the reader's sight, and Orders', Items', Inventory's and
+  Trace a lot's guides gain the order's label and Receipts, Latest
+  movements, the count and Back after Show more, and the recall list's
+  true export: MC-324 added, MC-316 extended.
+- 2026-11-20: ADR-093's Movements branch, review 24: with a place
+  chosen, a move off it reads with its minus on the screen, as its
+  export already wrote it, both from the server's one sign: MC-320
+  extended.
+- 2026-11-20: ADR-093's Movements branch, review 26 (100a): a
+  movement's reason in the boards' words, Received to Returned, the same
+  in the row, the Reason filter and the export, a correction's detail
+  after a colon in the export too, and the export's From or To outside
+  the warehouse in the screen's words: MC-319 and MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, review 54 (98a, 116):
+  Movements' export gains back what main's had, When to the second on
+  the organization's clocks with its place in the header, "When
+  (Vancouver time)", Recorded as beside Code, Email beside By, and the
+  note last: MC-319 extended, MC-1558 reworded.
+- 2026-11-20: ADR-093's Movements branch, 99a: every export writes money
+  at its currency's places, never fewer and never rounded, `12.50` and
+  not `12.5000`, `0.0125` as it is, yen's `1250`: MC-1558 reworded.
+- 2026-11-20: ADR-093's Movements branch, 125: a sample's row ends
+  "→ sample" in grey and For names its recipient, a link with
+  `partners.view` and "—" without; the export's To and For the same:
+  MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, review 13: Expires first's
+  "all expired" counts an expired lot at a place not available too, as
+  the server says it: MC-1529 extended.
+- 2026-11-20: ADR-093's Movements branch, review 31: a lot chosen with
+  no movement listed keeps its code on its chip and in the no-result
+  line: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, review 32: an archived code
+  opened from Where it stands is named in the Item field from its
+  movements, and in the no-result line: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 126: Movements' Item field
+  becomes one find box, Find an item, lot or order, reading the top
+  bar's lookup: items, lots and orders offered in words, each choice a
+  filter and its chip, typed text alone never a filter: MC-320
+  extended.
+- 2026-11-20: ADR-093's Movements branch, review 6: a lot's page links
+  its item's name to the item's page with `products.view`, and All
+  movements of this lot to Movements on its item and that lot: MC-902
+  extended.
+- 2026-11-20: ADR-093's Movements branch, review 9: a phone's Filters
+  sheet keeps Clear and Done in a footer that stays as its fields
+  scroll, and a field that grows across a row no longer leaves a blank
+  band in the sheet: MC-209 extended.
+- 2026-11-20: ADR-093's Movements branch, review 22 (S16, S19): a
+  long path in the item's Latest movements wraps on a phone's card,
+  and Choose dates…'s fields read 起始日 and 结束日 in 中文, each now
+  held by a test: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 108a (#609): each quick
+  filter's count says what it counts, "Low stock · 8 codes", "Expiring
+  soon · 4 lots", "Low stock · 2 items", and Home's Low stock and
+  Expiring soon tiles "8 codes" and "4 lots": MC-1528, MC-313, MC-218,
+  MC-316, MC-4202, MC-4203, MC-4213 and MC-311 extended.
+- 2026-11-20: ADR-093's Movements branch, 126's polish: the find box
+  offers the exact matches alone while any match, a whole lot code its
+  lot alone, and the close ones under Close matches only when none
+  does: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 130b: a range of days in
+  中文 is written the Chinese way, the year once, 2026年11月1日至20日,
+  in When, its chip and its menu's periods: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 132b: a lot's All movements
+  of this lot and its Actions › Movements on Stock open Movements with
+  no days, the lot's whole life: MC-305 and MC-902 extended.
+- 2026-11-20: ADR-093's Movements branch, 133b: a code that neither
+  the item list nor a movement names is named by its own read, under
+  `stock.view`, its chip and the no-result line saying "(discontinued)"
+  when it is: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 134b: the export's When
+  header in 中文 names the city in Chinese, 时间（温哥华时间）, by ICU's
+  short generic name; English and French keep Vancouver: MC-319
+  extended.
+- 2026-11-20: ADR-093's Movements branch, 136a: a reason and a
+  correction's detail start with a capital wherever they stand alone,
+  the Reason filter and its chip, the Why column, the item's Latest
+  movements and Correct the count's Why, in English and Français, and
+  the Audit log names a movement's reason in Movements' words: MC-320
+  and MC-2901 extended.

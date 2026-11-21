@@ -50,6 +50,8 @@ interface Row {
   position: string;
   suggestion: string;
   suggestedMultiples: string | null;
+  stillNeeded: string;
+  waitingOrders: number;
   drafts: {
     kind: string;
     id: string;
@@ -1011,6 +1013,35 @@ describe('Reorder points (e2e)', () => {
       expect(row).toMatchObject({ position: '135.0000', status: 'enough' });
     });
 
+    // 107a: each row says how many orders wait, the orders its Still
+    // needed sums, so the control that opens who waits says it in words:
+    // a sale shipped in full, or its line closed short, waits no more.
+    it('counts on each row the confirmed sales still needing it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const focus = await item(alpha.agent, 'FOCUS-60CT');
+      const calm = await item(alpha.agent, 'CALM-90CT');
+      const shelf = await site(alpha.agent, 'SHELF');
+      const customer = await partner(alpha.agent, 'Northside Pharmacy');
+      await receive(alpha.agent, focus, shelf, '50');
+      await point(alpha.agent, focus, '100');
+      await point(alpha.agent, calm, '10');
+      await order(alpha.agent, 'sale', customer, focus, '5');
+      await order(alpha.agent, 'sale', customer, focus, '7');
+      const shipped = await order(alpha.agent, 'sale', customer, focus, '3');
+      await ship(alpha.agent, shipped, shelf, '3');
+      await order(alpha.agent, 'sale', customer, focus, '4', { draft: true });
+
+      const rows = (await listed(alpha)).entries;
+      expect(
+        rows.map((row) => [row.sku, row.stillNeeded, row.waitingOrders]),
+      ).toEqual(
+        expect.arrayContaining([
+          ['FOCUS-60CT', '12.0000', 2],
+          ['CALM-90CT', '0.0000', 0],
+        ]),
+      );
+    });
+
     it('carries the point itself, as Edit opens with it', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const d3 = await variant(alpha, 'D3-1000');
@@ -1224,23 +1255,24 @@ describe('Reorder points (e2e)', () => {
           .map((id) => said('zh-Hans', id))
           .join(','),
         // Status, bought or made, the rule and the unit in the reader's
-        // words, as the screen says them (ADR-093; #473's 29).
+        // words, as the screen says them (ADR-093; #473's 29); each
+        // quantity without its padding zeros (R30).
         [
           'C-OUT',
           'C-OUT',
           '',
           said('zh-Hans', 'stock.status.out'),
           said('zh-Hans', 'stock.source.bought'),
-          '0.0000',
-          '0.0000',
-          '0.0000',
-          '0.0000',
-          '10.0000',
+          '0',
+          '0',
+          '0',
+          '0',
+          '10',
           said('zh-Hans', 'stock.rule.justEnough'),
           '',
           '',
-          '0.0000',
-          '10.0000',
+          '0',
+          '10',
           said('zh-Hans', 'products.unit.each'),
         ].join(','),
       ]);

@@ -56,6 +56,12 @@ interface InvoiceRow {
   status: string;
 }
 
+/** A day on either side of an instant, as a calendar day (YYYY-MM-DD). */
+function dayAround(instant: string, offsetDays: number): string {
+  const moment = new Date(Date.parse(instant) + offsetDays * 86_400_000);
+  return moment.toISOString().slice(0, 10);
+}
+
 async function read<T>(api: APIRequestContext, path: string): Promise<T> {
   const response = await api.get(`/api/v1${path}`);
 
@@ -293,6 +299,34 @@ async function globalSetup(config: FullConfig): Promise<void> {
       '/products?search=CALM-90CT&discontinued=include',
     );
 
+    // Movements' one item: VITC-100, its variant found through its product,
+    // and the days its own movements fall in, so a later seed's date moves
+    // the range with it.
+    const vitcProducts = await read<KeysetPage<{ id: string; sku: string }>>(
+      api,
+      '/products?search=VITC-100&discontinued=include',
+    );
+    const vitc = vitcProducts.entries.find(
+      (product) => product.sku === 'VITC-100',
+    );
+    const vitcVariant = vitc
+      ? (
+          await read<{ variants: { id: string; sku: string }[] }>(
+            api,
+            `/products/${vitc.id}`,
+          )
+        ).variants.find((variant) => variant.sku === 'VITC-100')
+      : undefined;
+    const vitcMovements = vitcVariant
+      ? await read<KeysetPage<{ createdAt: string }>>(
+          api,
+          `/stock/movements?variantId=${vitcVariant.id}&limit=100`,
+        )
+      : null;
+    const vitcTimes = (vitcMovements?.entries ?? [])
+      .map((movement) => movement.createdAt)
+      .sort();
+
     const orderId = (reference: string) =>
       orders.entries.find((order) => order.reference === reference)?.id;
 
@@ -319,6 +353,15 @@ async function globalSetup(config: FullConfig): Promise<void> {
       runInProgressId: run?.id ?? null,
       batchLotId: batch?.id ?? null,
       recipeProductId: calm?.id ?? null,
+      movementsVariantId: vitcVariant?.id ?? null,
+      movementsRange:
+        vitcTimes.length > 0
+          ? {
+              from: dayAround(vitcTimes[0], -1),
+              until: dayAround(vitcTimes[vitcTimes.length - 1], 1),
+            }
+          : null,
+      partlyReceivedOrderId: orderId('PO-DEMO-4') ?? null,
       organizationInvitationPaths: Object.fromEntries(
         LANGUAGES.map((language) => [
           language,

@@ -7,10 +7,8 @@ import {
   createPartner,
   createProduct,
   daysFromNow,
-  inviteByLink,
-  joinByLink,
+  memberIn,
   signInAs,
-  uniqueEmail,
 } from './support/api';
 import { shownCards } from './support/customise-home';
 import { dragByKeyboard } from './support/drag';
@@ -151,37 +149,6 @@ test.describe('on a touch phone', () => {
     }
   });
 });
-
-/**
- * A member of the Owner's organization, signed in on its own: in a
- * built-in role, or in one made from a template of the same key.
- */
-async function memberIn(
-  owner: APIRequestContext,
-  role: string,
-  template?: string,
-): Promise<APIRequestContext> {
-  if (template) {
-    const catalogue = (await (
-      await owner.get('/v1/roles/catalogue')
-    ).json()) as { templates: { key: string; permissions: string[] }[] };
-    await created(
-      await owner.post('/v1/roles', {
-        data: {
-          name: role,
-          permissions: catalogue.templates.find((each) => each.key === template)
-            ?.permissions,
-        },
-      }),
-    );
-  }
-  const { token } = await inviteByLink(
-    owner,
-    uniqueEmail(role.toLowerCase()),
-    role,
-  );
-  return joinByLink(token, `E2E ${role}`);
-}
 
 /**
  * Home's main action by role (ADR-091): the first the member may do of
@@ -447,7 +414,7 @@ test('Expiring soon opens Inventory’s expiring lots, and nothing late is one c
   await page.goto('/');
 
   await expect(page.getByText('Nothing is late today.')).toBeVisible();
-  await page.getByRole('link', { name: 'Expiring soon, 1' }).click();
+  await page.getByRole('link', { name: 'Expiring soon, 1 lot' }).click();
 
   // The Lot view, soonest first (ADR-091, amended by ADR-093).
   await expect(page).toHaveURL(/\/inventory\?group=lot&expiring=1$/);

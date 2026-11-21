@@ -1,6 +1,7 @@
 import type { ReorderSource } from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 import type { StockPlace } from './stock-grouped-response.dto';
+import type { Movement } from './stock-response.dto';
 
 /**
  * Where it stands, the item's page's first section, as the API returns
@@ -96,6 +97,11 @@ export class CodeStanding {
   position!: string;
   /** The soonest expiry of the usable stock, or null. */
   expiresFirst!: string | null;
+  /**
+   * Whether every unit on hand has expired, wherever it sits, a place
+   * not available too: Expires first's "all expired" (#611; review 13).
+   */
+  allExpired!: boolean;
   reorderPoint!: string | null;
   /** Null without a reorder point (A4). */
   status!: ReorderStatus | null;
@@ -125,6 +131,12 @@ export class CodeStanding {
    * usable one line, `notUsable`; null with it.
    */
   lots!: UsableLot[] | null;
+  /**
+   * Its five newest movements, newest first, as Movements lists the code
+   * (ADR-093, R12): In, Out and the balance after each, each part by the
+   * reader's sight as there (96a, 55a).
+   */
+  latestMovements!: Movement[];
 }
 
 /** GET /products/:id/stock: each code, the low first. */

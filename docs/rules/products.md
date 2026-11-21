@@ -252,7 +252,20 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/items-list.e2e-spec.ts) "keeps two items of one name apart across a page’s edge" ·
   [test](../../server/test/items-list.e2e-spec.ts) "refuses a cursor made for another order, or not made here" ·
   [test](../../client/src/products/products-page.test.tsx) "shows fifty more below with focus on the first new row, and keeps the rows when that fails" ·
-  [test](../../client/e2e/items.spec.ts) "Items, Show 50 more: the next fifty below; focus on the first new row"
+  [test](../../client/e2e/items.spec.ts) "Items, Show 50 more: the next fifty below; focus on the first new row" ·
+  [Help](../../client/src/help/guides/en/items.md#find-items-find) ·
+  MC-211
+- **The list says how many it shows, always:** beside Show 50 more, how
+  many of how many, "Showing 50 of 312 items", and once every item is
+  shown, how many, "31 items"; no column numbers the rows. Back from an
+  item reads the rows shown again before they show, focus on the row
+  left from.
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/products/products-page.test.tsx) "says how many items it shows once every one is shown" ·
+  [test](../../client/src/products/products-page.test.tsx) "finds the rows shown and the row left from on Back after Show 50 more" ·
+  [test](../../client/e2e/items.spec.ts) "Items, Show 50 more: the next fifty below; focus on the first new row" ·
+  [Help](../../client/src/help/guides/en/items.md#find-items-find) ·
+  MC-323
 - **It narrows to one type, to a category with every category under it,
   or to the Uncategorised.**
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
@@ -304,7 +317,7 @@ How this file is kept is in the [README](README.md).
 - **Low stock narrows the list to the items with a code low or out,
   counted beside the filter with the others on and its own off; the
   export follows it.** It counts items, where Reorder and Home count
-  codes.
+  codes, and says so, "Low stock · 2 items", as Discontinued does (108a).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
   [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
   [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each" ·
@@ -532,9 +545,9 @@ How this file is kept is in the [README](README.md).
   the base name.** The server works it out from the language the screen
   asks in, on every read that names an item: Products and the product's
   page, the item pickers, Inventory and its Movements, a lot's trace, an
-  order's lines, shipments and returns, a price list's items, Plan a
-  run's Uses, Recently opened, Home and the top bar's lookup. The screen
-  never chooses among the names. A
+  order's lines, shipments, receipts and returns, a price list's items,
+  Plan a run's Uses, Recently opened, Home and the top bar's lookup. The
+  screen never chooses among the names. A
   screen already open reads again when the language changes, keeping what
   it shows until the answer comes. A read added later that names an item
   fails a test until it does the same, or is listed as keeping the base

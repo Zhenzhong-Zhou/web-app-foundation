@@ -3,6 +3,7 @@ import { TableCell, TableSortLabel } from '@mui/material';
 import type { ReactNode } from 'react';
 
 import type { SortOrder } from '../lib/use-list-sort';
+import { NAME_COLUMN } from './name-column';
 import { NUMBER_COLUMN } from './number-column';
 import { useSortPressed } from './sort-pressed';
 
@@ -27,6 +28,9 @@ import { useSortPressed } from './sort-pressed';
  * `number`, a number column's header in a `ListTable`, right-aligned and
  * as wide as its figures need (`NUMBER_COLUMN`).
  *
+ * `name`, a list's name column's header in a `ListTable`, pinned while the
+ * table is too wide for its box (`NAME_COLUMN`).
+ *
  * Pressed in a `ListTable` whose header has stuck under the top bar, the
  * list's first row comes back under it, the header keeping its focus
  * (E11a; `SortPressed`).
@@ -37,6 +41,7 @@ export function SortHeader({
   order,
   onSort,
   number = false,
+  name = false,
   after,
   atRest = false,
 }: {
@@ -45,6 +50,7 @@ export function SortHeader({
   order: SortOrder;
   onSort: () => void;
   number?: boolean;
+  name?: boolean;
   after?: ReactNode;
   atRest?: boolean;
 }) {
@@ -52,6 +58,7 @@ export function SortHeader({
   return (
     <TableCell
       {...(number && NUMBER_COLUMN)}
+      {...(name && NAME_COLUMN)}
       sortDirection={active ? order : false}
       aria-sort={
         active ? (order === 'asc' ? 'ascending' : 'descending') : undefined

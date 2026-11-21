@@ -168,6 +168,12 @@ export const ERROR_CODES = {
    * `details.productId` is the item, whose Where it stands shows which.
    */
   stockNotUsable: 'stock_not_usable',
+  /**
+   * Found stock counted into a new lot whose code the item already has
+   * (ADR-093, 84a): the message names the lot, and Correct the count
+   * marks the new lot's code, where one of its lots can be chosen instead.
+   */
+  lotCodeInUse: 'lot_code_in_use',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

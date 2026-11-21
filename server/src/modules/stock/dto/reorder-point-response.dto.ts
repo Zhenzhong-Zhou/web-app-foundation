@@ -55,6 +55,12 @@ export class ReorderPointRow {
   coming!: string;
   /** Confirmed sales still to ship. */
   stillNeeded!: string;
+  /**
+   * How many confirmed sales still want it, the orders Still needed sums
+   * (ADR-093, 107a): "Who waits · 2 orders" on the control that opens
+   * them.
+   */
+  waitingOrders!: number;
   /** Draft purchases and draft runs: shown, not counted. */
   inDraft!: string;
   /** Usable, plus coming, less still needed. */

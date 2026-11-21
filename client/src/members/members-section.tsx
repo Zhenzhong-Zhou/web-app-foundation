@@ -22,6 +22,7 @@ import type { Member, Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ActionsHeader } from '../components/actions-header';
 import { ListTable } from '../components/list-table';
+import { NAME_COLUMN } from '../components/name-column';
 import { PersonAvatar } from '../components/person-avatar';
 import { formatMoment } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -271,7 +272,7 @@ export function MembersSection({
             >
               <TableHead>
                 <TableRow>
-                  <TableCell>
+                  <TableCell {...NAME_COLUMN}>
                     {intl.formatMessage({
                       id: 'common.name',
                       defaultMessage: 'Name',

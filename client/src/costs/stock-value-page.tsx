@@ -27,6 +27,7 @@ import { ExportButton } from '../components/export-button';
 import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { LotLink } from '../components/lot-link';
+import { NAME_COLUMN } from '../components/name-column';
 import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
@@ -255,7 +256,7 @@ export function StockValuePage() {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell>
+                    <TableCell {...NAME_COLUMN}>
                       {intl.formatMessage({
                         id: 'inventory.item',
                         defaultMessage: 'Item',
@@ -385,7 +386,7 @@ export function StockValuePage() {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell>
+                    <TableCell {...NAME_COLUMN}>
                       {intl.formatMessage({
                         id: 'inventory.item',
                         defaultMessage: 'Item',

@@ -28,6 +28,7 @@ import {
   type DocumentType,
   invoices,
   lots,
+  type OrderDirection,
   orders,
   partners,
   productionOrders,
@@ -38,6 +39,8 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { literalStart } from '../numbering/numbering-format';
+import type { OrderFulfillment } from '../orders/order-fulfillment';
+import { fulfillmentOf } from '../orders/orders.service';
 import {
   partnerMatches,
   partnerRank,
@@ -68,6 +71,10 @@ export interface LookupResult {
   /** A short second line: a partner, a SKU. */
   detail: string | null;
   status: string | null;
+  /** An order's direction, for its status's words; null for other kinds. */
+  direction: OrderDirection | null;
+  /** How much of a confirmed order has come or gone (#605), as Orders shows it; null for other kinds. */
+  fulfillment: OrderFulfillment | null;
   /** A lot's, for its expiry chip. */
   expiresAt: string | null;
   /** An item's product, which is the page it opens. */
@@ -142,6 +149,8 @@ const tag = (kind: LookupKind) => sql<LookupKind>`${kind}::text`;
 const NONE = {
   variantName: sql<string | null>`null::text`,
   status: sql<string | null>`null::text`,
+  direction: sql<OrderDirection | null>`null::text`,
+  fulfillment: sql<OrderFulfillment | null>`null::text`,
   expiresAt: sql<string | null>`null::text`,
   productId: sql<string | null>`null::uuid`,
   coverFileId: sql<string | null>`null::uuid`,
@@ -278,6 +287,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: partners.name,
               status: orders.status,
+              direction: orders.direction,
+              fulfillment: fulfillmentOf(),
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
@@ -334,6 +345,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: partners.name,
               status: invoices.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
@@ -376,6 +389,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: partners.name,
               status: NONE.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
@@ -417,6 +432,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: productVariants.sku,
               status: NONE.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: sql<string | null>`${lots.expiresAt}::text`,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
@@ -463,6 +480,8 @@ export class LookupService {
               variantName: shown.variantName,
               detail: productVariants.sku,
               status: NONE.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
               productId: products.id,
               // Its product's cover, as Products shows it (ADR-066).
@@ -510,6 +529,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: partners.code,
               status: NONE.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
@@ -544,6 +565,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: productVariants.sku,
               status: productionOrders.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
@@ -585,6 +608,8 @@ export class LookupService {
               variantName: NONE.variantName,
               detail: partners.name,
               status: returnAuthorizations.status,
+              direction: NONE.direction,
+              fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,

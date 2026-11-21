@@ -11,6 +11,8 @@ const row = (kind: LookupKind, position: number, title: string) => ({
   variantName: kind === 'item' ? 'Large' : null,
   detail: null,
   status: null,
+  direction: null,
+  fulfillment: null,
   expiresAt: null,
   productId: null,
   coverFileId: null,

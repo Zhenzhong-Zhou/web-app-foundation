@@ -19,9 +19,11 @@ import {
   addViewer,
   body,
   createE2eApp,
+  createPartner,
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { buy, cad, expectBooksToReconcile } from './utils/valuation';
 
 interface ProductResponse {
   product: { id: string; variants: { id: string; sku: string }[] };
@@ -525,6 +527,157 @@ describe('Stock (e2e)', () => {
           .post('/v1/locations')
           .send({ type: 'bin', name: 'Bin 1', parentId: locationId })
           .expect(201);
+      });
+    });
+
+    /**
+     * Stock found where the item never was, counted in by Correct the
+     * count (ADR-093, R26, 84a and 90a): any leaf place, one of its lots or
+     * a new one made with the count, and the write saying whether it
+     * waits for a cost.
+     */
+    describe('found stock (#628)', () => {
+      /** A found count of 12 into a place, its lot as given. */
+      function found(
+        variantId: string,
+        toLocationId: string,
+        lot: { lotId: string } | { lot: { code: string; expiresAt?: string } },
+      ) {
+        return {
+          variantId,
+          toLocationId,
+          ...lot,
+          quantity: '12',
+          reason: 'adjustment',
+          reasonDetail: 'found',
+          note: 'A box found behind the cartons at the count',
+        };
+      }
+
+      it('makes a new lot with the count, at a place the item never was, and says it waits for a cost', async () => {
+        const { agent, variant, locationId } = await setup('alpha', {
+          tracksLots: true,
+        });
+        await agent
+          .post('/v1/stock/movements')
+          .send({
+            ...receipt(variant.id, locationId, '40'),
+            lot: { code: 'VC-0305' },
+          })
+          .expect(201);
+        const shelf = await createLocation(agent, { name: 'Shelf C3' });
+
+        const res = await agent
+          .post('/v1/stock/movements')
+          .send(
+            found(variant.id, shelf, {
+              lot: { code: 'vc-0310', expiresAt: '2027-06-30' },
+            }),
+          )
+          .expect(201);
+
+        const made = await db
+          .select()
+          .from(lots)
+          .where(eq(lots.code, 'VC-0310'));
+        expect(made).toHaveLength(1);
+        expect(made[0].expiresAt).toBe('2027-06-30');
+        expect(
+          body<{ movement: { lotId: string }; needsCost: boolean }>(res),
+        ).toMatchObject({ movement: { lotId: made[0].id }, needsCost: true });
+        expect(
+          (await piles(agent, variant.id)).map((pile) => [
+            pile.locationName,
+            pile.lotCode,
+            pile.quantity,
+          ]),
+        ).toEqual(
+          expect.arrayContaining([
+            ['Main', 'VC-0305', '40.0000'],
+            ['Shelf C3', 'VC-0310', '12.0000'],
+          ]),
+        );
+      });
+
+      it('counts into a lot the item has at its average, not waiting for a cost', async () => {
+        const { agent, variant, locationId } = await setup('alpha', {
+          tracksLots: true,
+        });
+        await agent
+          .patch('/v1/organization')
+          .send({ baseCurrency: 'CAD' })
+          .expect(204);
+        const supplier = await createPartner(agent, {
+          name: 'Cascade Botanicals',
+          code: 'CASC',
+        });
+        await buy(
+          { agent, supplier, shelf: locationId },
+          variant.id,
+          '40',
+          cad('2'),
+          { code: 'VC-0305' },
+        );
+        const [lot] = await db.select().from(lots);
+        const shelf = await createLocation(agent, { name: 'Shelf C3' });
+
+        const res = await agent
+          .post('/v1/stock/movements')
+          .send(found(variant.id, shelf, { lotId: lot.id }))
+          .expect(201);
+
+        expect(body<{ needsCost: boolean }>(res).needsCost).toBe(false);
+        expect(await db.select().from(lots)).toHaveLength(1);
+        await expectBooksToReconcile(db);
+      });
+
+      it('refuses a new lot whose code the item has, naming it at its field, and writes nothing', async () => {
+        const { agent, variant, locationId } = await setup('alpha', {
+          tracksLots: true,
+        });
+        await agent
+          .post('/v1/stock/movements')
+          .send({
+            ...receipt(variant.id, locationId, '40'),
+            lot: { code: 'VC-0305' },
+          })
+          .expect(201);
+        const shelf = await createLocation(agent, { name: 'Shelf C3' });
+
+        const refused = await agent
+          .post('/v1/stock/movements')
+          .send(found(variant.id, shelf, { lot: { code: 'vc-0305' } }))
+          .expect(409);
+
+        expect(body<{ message: string; code: string }>(refused)).toEqual(
+          expect.objectContaining({
+            message:
+              'WIDGET-1 already has lot VC-0305. Choose it among its lots, or give the new lot another code.',
+            code: 'lot_code_in_use',
+          }),
+        );
+        expect(await db.select().from(lots)).toHaveLength(1);
+        expect(await db.select().from(stockMovements)).toHaveLength(1);
+        expect(
+          await db
+            .select()
+            .from(stockLevels)
+            .where(eq(stockLevels.locationId, shelf)),
+        ).toEqual([]);
+      });
+
+      it('refuses a place that is not a leaf, as every movement, and makes no lot', async () => {
+        const { agent, variant } = await setup('alpha', { tracksLots: true });
+        const warehouse = await createLocation(agent, { name: 'Warehouse' });
+        await createLocation(agent, { name: 'Bin 1', parentId: warehouse });
+
+        await agent
+          .post('/v1/stock/movements')
+          .send(found(variant.id, warehouse, { lot: { code: 'VC-0310' } }))
+          .expect(409);
+
+        expect(await db.select().from(lots)).toEqual([]);
+        expect(await db.select().from(stockMovements)).toEqual([]);
       });
     });
   });
@@ -1202,23 +1355,31 @@ describe('Stock (e2e)', () => {
       const column = (name: string) =>
         rows.map((row) => row[header.indexOf(name)]);
 
+      // The screen's columns, one value to each, oldest first (ADR-093,
+      // 87a): several items, so each row's Change.
       expect(header).toEqual([
-        'When',
-        'Reason',
+        'When (UTC time)',
         'Code',
+        'Recorded as',
         'Item',
-        'Variant',
-        'Lot',
-        'Quantity',
+        'Change',
+        'Unit',
+        'Reason',
+        'Reason code',
         'From',
         'To',
+        'Lot',
+        'Expiry',
+        'For',
         'By',
         'Email',
         'Note',
       ]);
       expect(column('Item')).toEqual(['Product WIDGET', 'Product WIDGET']);
-      expect(column('By')).toEqual(['Deleted User', 'Owner']);
-      expect(column('Email')).toEqual(['', 'owner@alpha.example.com']);
+      expect(column('By')).toEqual(['Owner', 'Deleted User']);
+      // By's email as the audit log's export has it (ADR-063), none once
+      // the account is deleted (ADR-012).
+      expect(column('Email')).toEqual(['owner@alpha.example.com', '']);
     });
   });
 

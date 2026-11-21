@@ -148,8 +148,8 @@ is kept is in the [README](README.md).
 - **Amounts round to the currency's smallest unit:** cents for dollars,
   whole yen, three places for Kuwaiti dinars.
   [ADR-046](../adr/0046-invoicing.md#decision--amounts-are-stored-at-issue-deliberately-unlike-an-order) ·
-  [test](../../server/src/modules/invoices/invoice-amounts.spec.ts) "is 0 for a currency with no minor unit" ·
-  [test](../../server/src/modules/invoices/invoice-amounts.spec.ts) "is 3 for a currency with three places" ·
+  [test](../../server/src/common/money.spec.ts) "is 0 for a currency with no minor unit" ·
+  [test](../../server/src/common/money.spec.ts) "is 3 for a currency with three places" ·
   partly tested ·
   MC-703
 - **An issued invoice keeps the tax it charged, whatever the code's rate
@@ -358,6 +358,14 @@ is the organization's, on Organization → Documents.
   [test](../../client/src/orders/order-detail-page.test.tsx) "links each shipment to its packing slip, to print and to download, saying the app’s language" ·
   [test](../../client/e2e/document-refusals.spec.ts) "a refused PDF shows a page in the app’s language, with the item and the way back to the order" ·
   MC-2513
+- **Invoices' and credit notes' exports write each amount at its
+  currency's places, never fewer and never rounded:** an invoice's total
+  `144.38`, not `144.3800`, nothing credited `0.00`, and a yen amount
+  without a point. The organization's full export keeps them as stored.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/invoices.e2e-spec.ts) "exports its amounts at its currency’s places, 137.50 and not 137.5000" ·
+  [test](../../server/src/common/export.spec.ts) "drops the padding zeros of a quantity, and money’s down to its currency’s places" ·
+  MC-1558
 - **Download everything holds every issued invoice and credit note as its
   PDF, and no draft.**
   [ADR-071](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-export-118-amends-adr-070) ·
