@@ -9,6 +9,7 @@ import {
   ToggleButton,
 } from '@mui/material';
 import type { ReactNode } from 'react';
+import { useIntl } from 'react-intl';
 
 import { rem } from '../theme/rem';
 
@@ -17,6 +18,13 @@ export interface QuickFilter {
   id: string;
   label: string;
   count?: number;
+  /**
+   * What the count counts, said beside it (108a): codes on Stock by item
+   * and Reorder, lots on the Lot view, items on Items, the glossary's
+   * words, as the list's own line under it says them. Without it, the
+   * number alone.
+   */
+  of?: 'code' | 'lot' | 'item';
   pressed: boolean;
   onToggle: () => void;
 }
@@ -24,8 +32,8 @@ export interface QuickFilter {
 /**
  * The one row of filters above a list (ADR-055): a search box, any selects
  * the list needs (as children), then quick filters with their counts —
- * "Expiring soon 2", "Waiting for a cost 1" — which people new to a list find
- * before they find a search box. It wraps as a row, never as a column of
+ * "Expiring soon · 2 lots", "Waiting for a cost · 1 code" — which people new
+ * to a list find before they find a search box. It wraps as a row, never as a column of
  * full-width fields stacked down the page.
  */
 export function FilterRow({
@@ -74,7 +82,10 @@ export function FilterRow({
 
 /**
  * One quick filter, a pill with its count: the row's, and wherever else
- * the same filter is pressed, as Items' sheet on a phone (ADR-092).
+ * the same filter is pressed, as Items' sheet on a phone (ADR-092). With
+ * what it counts, the count in words after a dot, "Low stock · 8 codes"
+ * (108a, #609), so Stock's codes, the Lot view's lots and Items' items
+ * never read as one number disagreeing with another.
  */
 export function QuickFilterPill({
   filter,
@@ -83,6 +94,10 @@ export function QuickFilterPill({
   filter: QuickFilter;
   sx?: SxProps<Theme>;
 }) {
+  const intl = useIntl();
+  // Muted at rest; pressed, the main text, since MUI's pressed tint
+  // under the pointer takes muted text under 4.5 : 1 (#561).
+  const muted = { color: filter.pressed ? 'text.primary' : 'text.secondary' };
   return (
     <ToggleButton
       value={filter.id}
@@ -94,16 +109,33 @@ export function QuickFilterPill({
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
     >
-      {filter.label}
-      {filter.count !== undefined && (
-        // Muted at rest; pressed, the main text, since MUI's pressed tint
-        // under the pointer takes muted text under 4.5 : 1 (#561).
-        <Box
-          component="span"
-          sx={{ color: filter.pressed ? 'text.primary' : 'text.secondary' }}
-        >
-          {filter.count}
-        </Box>
+      {filter.count !== undefined && filter.of ? (
+        intl.formatMessage(
+          {
+            id: 'filters.quick.counted',
+            defaultMessage:
+              '{label} <muted>· {of, select, lot {{count, plural, one {# lot} other {# lots}}} item {{count, plural, one {# item} other {# items}}} other {{count, plural, one {# code} other {# codes}}}}</muted>',
+          },
+          {
+            label: filter.label,
+            of: filter.of,
+            count: filter.count,
+            muted: (chunks: ReactNode[]) => (
+              <Box component="span" sx={muted}>
+                {chunks}
+              </Box>
+            ),
+          },
+        )
+      ) : (
+        <>
+          {filter.label}
+          {filter.count !== undefined && (
+            <Box component="span" sx={muted}>
+              {filter.count}
+            </Box>
+          )}
+        </>
       )}
     </ToggleButton>
   );

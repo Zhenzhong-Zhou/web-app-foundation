@@ -63,3 +63,65 @@ export function placeName(place: Placed): string {
     nameAndCode(place.locationName ?? '', place.locationCode),
   ]);
 }
+
+/**
+ * Each place of a tree as its path, by its id (57a, #631): the names
+ * above it, from the whole tree the server sends flat, then its own with
+ * its code, as `placeName` writes a row's. For a dialog's list of places
+ * and the place it names, which have the tree, not a read's path. Null
+ * for a place not in the tree.
+ *
+ * It walks up from the place asked, as `byWarehouse` finds a leaf's top,
+ * rather than down from the top with `treeOf`, as `categoryPlaces` does
+ * (review 51): that one is typed to a category and gives names, not the
+ * top's record `byWarehouse` groups by, and a walk down never reaches a
+ * place whose parents loop, which this still names.
+ */
+export function placePaths(
+  all: readonly Location[],
+): (id: string) => string | null {
+  const byId = new Map(all.map((location) => [location.id, location]));
+  return (id) => {
+    const place = byId.get(id);
+    if (!place) return null;
+    const above: string[] = [];
+    const seen = new Set([place.id]);
+    let at = place.parentId ? byId.get(place.parentId) : undefined;
+    while (at && !seen.has(at.id)) {
+      above.unshift(at.name);
+      seen.add(at.id);
+      at = at.parentId ? byId.get(at.parentId) : undefined;
+    }
+    return placeName({
+      locationName: place.name,
+      locationCode: place.code,
+      locationPath: above,
+    });
+  };
+}
+
+/** What stands for the places cut from the middle of a path. */
+const CUT = '…';
+
+/**
+ * A path's cuts in its middle, the longest first: its warehouse, "…",
+ * the places nearest the place itself while they fit, then the place,
+ * "Main warehouse › … › Aisle 1 › Shelf A2 (A2)" before "Main warehouse
+ * › … › Shelf A2 (A2)". None for a path with nothing between its
+ * warehouse and the place.
+ */
+export function cutsOf(above: readonly string[], own: string): string[] {
+  const [warehouse, ...between] = above;
+  return between.map((_, dropped) =>
+    pathName([warehouse, CUT, ...between.slice(dropped + 1), own]),
+  );
+}
+
+/**
+ * A row's key in `?open=`: a code's id, or a place's under it as
+ * `code.place`, since a place opens to its lots under each code apart
+ * (ADR-093, R11: Back from a lot's Movements finds its lots open).
+ */
+export function openKey(variantId: string, locationId?: string): string {
+  return locationId ? `${variantId}.${locationId}` : variantId;
+}

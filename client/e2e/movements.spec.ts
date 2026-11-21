@@ -5,21 +5,14 @@ import {
   createLocation,
   createProduct,
   type SeededProduct,
-  signInAs,
 } from './support/api';
 
 /**
- * Two screens that read the same ledger.
- *
- * The first five act on a row that already exists — the variant, the location
- * and the lot come from the row, and the only question is how many. Receiving
- * has its own spec because it has the opposite shape: it asks where something
- * goes.
- *
- * The last two are the movements page, which reads the ledger whole rather
- * than one variant at a time. They live here because they share the receipt
- * and transfer helpers; they move to their own file the moment either half
- * grows.
+ * Stock's actions on a row that already exists: the variant, the location
+ * and the lot come from the row, and the only question is how many.
+ * Receiving has its own spec because it has the opposite shape: it asks
+ * where something goes. The movements page, which reads the ledger whole,
+ * is movements-page.spec.ts.
  *
  * The inventory shows quantities to read, "6 each" (displayQuantity,
  * ADR-055): the server's string trimmed and grouped, never parsed, so a
@@ -51,47 +44,6 @@ async function receive(
   if (!response.ok()) {
     throw new Error(`Receipt failed: ${response.status()}`);
   }
-}
-
-async function transfer(
-  api: Parameters<typeof createProduct>[0],
-  variantId: string,
-  fromLocationId: string,
-  toLocationId: string,
-  quantity: string,
-) {
-  const response = await api.post('/v1/stock/movements', {
-    data: {
-      variantId,
-      fromLocationId,
-      toLocationId,
-      quantity,
-      reason: 'transfer',
-    },
-  });
-
-  if (!response.ok()) {
-    throw new Error(`Transfer failed: ${response.status()}`);
-  }
-}
-
-/**
- * A receipt and a transfer in a fresh organisation, which is what the
- * movements page needs to prove anything: its row counts are absolute, and
- * the shared org carries every other test's ledger.
- */
-async function seedLedger(
-  freshOrg: { api: Parameters<typeof createProduct>[0] },
-  names: { sku: string; from: string; to: string },
-) {
-  const product = await createProduct(freshOrg.api, { sku: names.sku });
-  const from = await createLocation(freshOrg.api, { name: names.from });
-  const to = await createLocation(freshOrg.api, { name: names.to });
-
-  await receive(freshOrg.api, product.variantId, from.id, '40');
-  await transfer(freshOrg.api, product.variantId, from.id, to.id, '15');
-
-  return { product, from, to };
 }
 
 /**
@@ -244,57 +196,4 @@ test('shows emptied rows when asked', async ({ page, api }) => {
   await page.getByRole('button', { name: 'Show emptied' }).click();
 
   await expect(cellOf(page, new RegExp(product.sku), '0 each')).toBeVisible();
-});
-
-test('narrows the ledger by reason', async ({ page, freshOrg }) => {
-  await seedLedger(freshOrg, {
-    sku: 'E2E-MOV-1',
-    from: 'E2E Dock',
-    to: 'E2E Shelf',
-  });
-
-  await signInAs(page, freshOrg.api);
-  await page.goto('/movements');
-
-  // Unfiltered is recent-everything, not an empty screen asking for a filter.
-  await expect(page.getByRole('row')).toHaveCount(3);
-
-  await page.getByLabel('Why').click();
-  await page.getByRole('option', { name: 'transfer' }).click();
-
-  const rows = page.getByRole('row');
-  await expect(rows).toHaveCount(2);
-
-  /**
-   * Direction is which location is set, not a column (ADR-023) — a transfer
-   * is the only movement with both, and the arrow is how the page says so.
-   */
-  await expect(rows.nth(1)).toContainText('E2E Dock → E2E Shelf');
-  // Read without padding zeros (displayQuantity, #256), as its whole cell.
-  await expect(
-    rows.nth(1).getByRole('cell', { name: '15', exact: true }),
-  ).toBeVisible();
-});
-
-test('finds a transfer from either end', async ({ page, freshOrg }) => {
-  await seedLedger(freshOrg, {
-    sku: 'E2E-MOV-2',
-    from: 'E2E From',
-    to: 'E2E To',
-  });
-
-  await signInAs(page, freshOrg.api);
-  await page.goto('/movements');
-
-  /**
-   * The destination has only ever received the transfer, so filtering by it
-   * proves the OR on both location columns: a movement between two shelves is
-   * as much a fact about the source as the destination, and a filter matching
-   * only one end would hide half of every transfer.
-   */
-  await page.getByLabel('Location').click();
-  await page.getByRole('option', { name: 'E2E To' }).click();
-
-  await expect(page.getByRole('row')).toHaveCount(2);
-  await expect(page.getByRole('row').nth(1)).toContainText('transfer');
 });

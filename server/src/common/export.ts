@@ -6,6 +6,8 @@ import { t, type Translatable, translate } from '../i18n/translate';
 import { type CsvValue, toCsv } from './csv';
 import type { KeysetPage } from './keyset';
 import type { Locale } from './locales';
+import { readableMoney } from './money';
+import { readableQuantity } from './readable-quantity';
 import { todayIn } from './today';
 
 /**
@@ -47,6 +49,52 @@ export function inWords<T>(
       return kept !== null && Object.hasOwn(words, kept)
         ? translate(words[kept], locale)
         : kept;
+    },
+  };
+}
+
+/**
+ * A quantity column, its figures as data without their padding zeros:
+ * `600`, not `600.0000`, then `12.5` and `0.0001`, a point and no
+ * grouping, so a spreadsheet reads a number as the screens show it
+ * (ADR-057, amended for ADR-093's R30; #473's 29). Trimmed as text by
+ * readableQuantity, never through a Number (ADR-025), a minus kept.
+ * Quantities only: money is asMoney's.
+ */
+export function asQuantity<T>(
+  header: Translatable,
+  quantity: (row: T) => string | null | undefined,
+): ExportColumn<T> {
+  return {
+    header,
+    value: (row) => {
+      const kept = quantity(row);
+      return kept === null || kept === undefined
+        ? null
+        : readableQuantity(kept);
+    },
+  };
+}
+
+/**
+ * A money column, its figures as data at their currency's places, never
+ * fewer and never rounded: `12.50` for `12.5000` CAD, `0.0125` as it is,
+ * `1250` for yen (ADR-057, amended for ADR-093's 99a). Trimmed as text by
+ * readableMoney (ADR-025), a minus kept. With no currency, as stored, since
+ * nothing says how many places it holds.
+ */
+export function asMoney<T>(
+  header: Translatable,
+  amount: (row: T) => string | null | undefined,
+  currency: (row: T) => string | null,
+): ExportColumn<T> {
+  return {
+    header,
+    value: (row) => {
+      const kept = amount(row);
+      if (kept === null || kept === undefined) return null;
+      const code = currency(row);
+      return code ? readableMoney(kept, code) : kept;
     },
   };
 }
@@ -99,7 +147,8 @@ export function withinLimit<T>(rows: T[], refusal?: Translatable): T[] {
  * The file: headers and words in the reader's language, then a row per
  * record, sent as an attachment named for the list and today,
  * `invoices-2026-10-07.csv`: the organization's today (ADR-072). Times
- * inside stay UTC and say so (ADR-057, amended).
+ * inside stay UTC and say so (ADR-057, amended), but for Movements' When,
+ * on the organization's clocks, its header naming the place (review 54).
  *
  * The text leaves as bytes TextEncoder writes, never as a string for Express
  * to encode: Node 26 can abort the process while Buffer measures a large

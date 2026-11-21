@@ -798,6 +798,33 @@ describe('Invoices (e2e)', () => {
       ]);
     });
 
+    // ADR-057, amended for ADR-093's 99a: the export writes each amount at
+    // the invoice's currency's places, as the screen does, never fewer and
+    // never rounded; what nothing has credited yet reads 0.00.
+    it('exports its amounts at its currency’s places, 137.50 and not 137.5000', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      const [header, row] = (
+        await org.agent.get('/v1/invoices/export').expect(200)
+      ).text
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+      expect(
+        [
+          'Currency',
+          'Subtotal before tax',
+          'Tax',
+          'Total',
+          'Credited',
+          'Net invoiced',
+        ].map((name) => row[header.indexOf(name)]),
+      ).toEqual(['CAD', '137.50', '6.88', '144.38', '0.00', '144.38']);
+    });
+
     /**
      * 0.30 and 0.10 at 5%. Per line that is 0.015 → 0.02 and 0.005 → 0.01,
      * three cents; on the invoice it is 0.40 × 5% = 0.02. The invoice rule

@@ -200,13 +200,17 @@ leave how it matches to this file. How this file is kept is in the
   an order, an invoice, a credit note or a return its partner; a lot its
   SKU and its expiry; an item its SKU and its product's cover, and its
   name in the reader's language; a run its item's SKU; a partner its code.
+  An order carries its direction and, while confirmed, how much of it has
+  come or gone, which Movements' find box says in words ("Partly
+  received"); every other kind carries neither.
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
   [ADR-066](../adr/0066-covers-in-the-lookup.md#decision--an-items-result-shows-its-products-cover) ·
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
   [test](../../server/test/lookup.e2e-spec.ts) "shows an item's cover, and none for other kinds" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds its own records through each join, none of a twin organization's" ·
   [test](../../server/test/lookup.e2e-spec.ts) "ranks an exact match on the reader's name for an item first" ·
-  MC-2201 · MC-1556
+  [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
+  MC-2201 · MC-1556 · MC-320
 - **A result opens its record:** an item opens its page under Items, a
   lot its trace.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·

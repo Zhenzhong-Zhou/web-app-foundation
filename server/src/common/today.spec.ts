@@ -4,9 +4,12 @@ import type { MockInstance } from 'vitest';
 import {
   addDays,
   canonicalTimeZone,
+  cityOf,
   dayIn,
+  momentIn,
   startOfDayIn,
   todayIn,
+  zonePlaceIn,
 } from './today';
 
 /**
@@ -107,6 +110,61 @@ describe('dayIn', () => {
     expect(dayIn('UTC', shipped)).toBe('2026-10-17');
     expect(dayIn('America/Vancouver', shipped)).toBe('2026-10-16');
     expect(dayIn('Asia/Shanghai', new Date(shipped))).toBe('2026-10-17');
+  });
+});
+
+/**
+ * A moment on a zone's clocks, as a spreadsheet opens it (ADR-057, as
+ * csvMoment writes UTC's): Movements' export, at the organization's
+ * (review 54).
+ */
+describe('momentIn', () => {
+  it('reads a stored moment on the zone’s clocks, to the second', () => {
+    const shipped = '2026-10-17T01:30:05.678Z';
+    expect(momentIn('UTC', shipped)).toBe('2026-10-17 01:30:05');
+    // British Columbia stays on UTC−7 from November 2026.
+    expect(momentIn('America/Vancouver', shipped)).toBe('2026-10-16 18:30:05');
+    expect(momentIn('America/Vancouver', '2026-11-11T07:00:09Z')).toBe(
+      '2026-11-11 00:00:09',
+    );
+    expect(momentIn('Asia/Shanghai', new Date(shipped))).toBe(
+      '2026-10-17 09:30:05',
+    );
+  });
+});
+
+/** The place a zone is named for, from its id, never ICU's name (#343). */
+describe('cityOf', () => {
+  it('is the last part of the id, its underscores spaces, under its current name', () => {
+    expect(cityOf('America/Vancouver')).toBe('Vancouver');
+    expect(cityOf('America/Argentina/Buenos_Aires')).toBe('Buenos Aires');
+    expect(cityOf('Asia/Calcutta')).toBe('Kolkata');
+    expect(cityOf('UTC')).toBe('UTC');
+  });
+});
+
+/** The place a header names, in Chinese by ICU's short generic name (134b). */
+describe('zonePlaceIn', () => {
+  it('names the city in Chinese by ICU, and from the id in English and French', () => {
+    expect(zonePlaceIn('America/Vancouver', 'zh-Hans')).toBe('温哥华时间');
+    expect(zonePlaceIn('America/Vancouver', 'en')).toBe('Vancouver');
+    expect(zonePlaceIn('America/Vancouver', 'fr-CA')).toBe('Vancouver');
+    // Under its current name, as cityOf reads it.
+    expect(zonePlaceIn('Asia/Calcutta', 'zh-Hans')).toBe('印度时间');
+  });
+
+  // ICU's short generic name is the same in winter and in summer, never
+  // a standard or a daylight name (#343).
+  it('is the same name in every season', () => {
+    vi.useFakeTimers();
+    try {
+      for (const day of ['2026-01-15T12:00:00Z', '2026-07-15T12:00:00Z']) {
+        vi.setSystemTime(new Date(day));
+        expect(zonePlaceIn('America/Toronto', 'zh-Hans')).toBe('多伦多时间');
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -234,6 +292,9 @@ describe('a stored zone the server cannot read', () => {
     expect(todayIn('Mars/Olympus_Mons', late)).toBe('2026-10-16');
     expect(dayIn('Mars/Olympus_Mons', '2026-10-17T00:30:00.000Z')).toBe(
       '2026-10-17',
+    );
+    expect(momentIn('Mars/Olympus_Mons', '2026-10-17T00:30:00.000Z')).toBe(
+      '2026-10-17 00:30:00',
     );
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0][0])).toContain('Mars/Olympus_Mons');

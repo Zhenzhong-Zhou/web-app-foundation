@@ -81,6 +81,14 @@ function afterCursor(
  * across every organization, keeping the list's own rows: 1 ms at large,
  * growing with the older orders that are not drafts, which `perf:plans`
  * fails past 10 ms (review 78).
+ *
+ * Movements keeps a keyset of its own (`inOrder` and `afterCursor` in
+ * `movement-view.ts`; review 51), for its indexes on the time: oldest
+ * first its nulls come first, where they are kept read backward, so the
+ * planner reads the index rather than sorting every movement; and the
+ * time bounds its condition on its own, `created_at <= t` newest first,
+ * so the index starts at the cursor. Here nulls come last either way,
+ * and the value sits inside an `or`, which bounds no index.
  */
 export async function pagedBy(options: {
   id: SQLWrapper & AnyPgColumn;

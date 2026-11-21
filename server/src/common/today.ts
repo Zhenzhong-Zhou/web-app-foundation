@@ -18,18 +18,31 @@
 
 import { Logger } from '@nestjs/common';
 
+import type { Locale } from './locales';
+
 const logger = new Logger('TimeZone');
 
-/** One formatter per zone, made once: building one is the slow part. */
+/**
+ * One formatter per zone and reading, made once: building one is the slow
+ * part. A day, or a day and its time on the zone's clocks, 00 to 23.
+ */
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
-const dayFormatter = (timeZone: string) =>
-  new Intl.DateTimeFormat('en-US', {
-    timeZone,
+const READINGS = {
+  day: { year: 'numeric', month: '2-digit', day: '2-digit' },
+  moment: {
+    hourCycle: 'h23',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  },
+} as const satisfies Record<string, Intl.DateTimeFormatOptions>;
+
+/** The zones already said to be unreadable, each said once. */
+const unreadable = new Set<string>();
 
 /**
  * A stored zone this server cannot read, written by hand or dropped by a
@@ -37,28 +50,59 @@ const dayFormatter = (timeZone: string) =>
  * rather than failing every request, or the reminder run that reads every
  * organization's zone in turn.
  */
-function formatterFor(timeZone: string): Intl.DateTimeFormat {
-  let formatter = formatters.get(timeZone);
+function formatterFor(
+  timeZone: string,
+  reading: keyof typeof READINGS,
+): Intl.DateTimeFormat {
+  const key = `${reading} ${timeZone}`;
+  let formatter = formatters.get(key);
   if (!formatter) {
+    const options = READINGS[reading];
     try {
-      formatter = dayFormatter(timeZone);
+      formatter = new Intl.DateTimeFormat('en-US', { ...options, timeZone });
     } catch {
-      logger.warn(
-        `${timeZone} is not a time zone this server can read; its days are UTC's until it is set again (ADR-072).`,
-      );
-      formatter = dayFormatter('UTC');
+      if (!unreadable.has(timeZone)) {
+        unreadable.add(timeZone);
+        logger.warn(
+          `${timeZone} is not a time zone this server can read; its days are UTC's until it is set again (ADR-072).`,
+        );
+      }
+      formatter = new Intl.DateTimeFormat('en-US', {
+        ...options,
+        timeZone: 'UTC',
+      });
     }
-    formatters.set(timeZone, formatter);
+    formatters.set(key, formatter);
   }
   return formatter;
 }
 
+/** A moment's parts on a zone's clocks, each by its type. */
+function partsIn(
+  timeZone: string,
+  moment: Date | string,
+  reading: keyof typeof READINGS,
+) {
+  const parts = formatterFor(timeZone, reading).formatToParts(new Date(moment));
+  return (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((each) => each.type === type)?.value ?? '';
+}
+
 /** The calendar day a moment falls on in a time zone, YYYY-MM-DD. */
 export function dayIn(timeZone: string, moment: Date | string): string {
-  const parts = formatterFor(timeZone).formatToParts(new Date(moment));
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((each) => each.type === type)?.value ?? '';
+  const part = partsIn(timeZone, moment, 'day');
   return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+/**
+ * A moment on a time zone's clocks, as a spreadsheet opens it,
+ * `2026-11-10 02:30:00`: csvMoment's shape, at the organization's time
+ * rather than UTC's, for an export whose header names the zone (ADR-093,
+ * review 54).
+ */
+export function momentIn(timeZone: string, moment: Date | string): string {
+  const part = partsIn(timeZone, moment, 'moment');
+  return `${part('year')}-${part('month')}-${part('day')} ${part('hour')}:${part('minute')}:${part('second')}`;
 }
 
 /** Today in a time zone, YYYY-MM-DD. */
@@ -163,6 +207,40 @@ const CURRENT_NAMES: Readonly<Record<string, string>> = {
   'Pacific/Ponape': 'Pacific/Pohnpei',
   'Pacific/Truk': 'Pacific/Chuuk',
 };
+
+/**
+ * The place a zone is named for, as people read it: the last part of its
+ * id under its current name, underscores as spaces, `America/Vancouver`
+ * "Vancouver", `Asia/Calcutta` "Kolkata", `UTC` "UTC". From the id, never
+ * ICU's name for the zone, which can change with the season (#343).
+ */
+export function cityOf(zone: string): string {
+  const current = canonicalTimeZone(zone) ?? zone;
+  return (current.split('/').pop() ?? current).replace(/_/g, ' ');
+}
+
+/**
+ * The place a zone is named for in a reader's language, as a header
+ * names it (134b): in Chinese ICU's short generic name, "温哥华时间", the
+ * city in Chinese and the same in every season, as its other names are
+ * not (#343); in English and French the city from the id, cityOf's,
+ * since French's short name is "HP". cityOf's too where ICU names none.
+ */
+export function zonePlaceIn(zone: string, locale: Locale): string {
+  if (locale !== 'zh-Hans') return cityOf(zone);
+  try {
+    return (
+      new Intl.DateTimeFormat('zh-Hans', {
+        timeZone: canonicalTimeZone(zone) ?? zone,
+        timeZoneName: 'shortGeneric',
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value ?? cityOf(zone)
+    );
+  } catch {
+    return cityOf(zone);
+  }
+}
 
 /**
  * The zone's canonical name, as stored (`America/Vancouver`), or null when

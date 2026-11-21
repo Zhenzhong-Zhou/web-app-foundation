@@ -1,5 +1,5 @@
 import { csvMoment } from '../../common/csv';
-import type { ExportColumn } from '../../common/export';
+import { asQuantity, type ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
 import type { OrdersService } from './orders.service';
@@ -30,19 +30,19 @@ export const ORDER_COLUMNS: ExportColumn<OrderRow>[] = [
     header: t({ id: 'exports.column.lines', defaultMessage: 'Lines' }),
     value: (row) => row.lineCount,
   },
-  {
-    header: t({
+  asQuantity(
+    t({
       id: 'exports.column.quantityOrdered',
       defaultMessage: 'Quantity ordered',
     }),
-    value: (row) => row.quantityOrdered,
-  },
-  {
-    header: t({
+    (row) => row.quantityOrdered,
+  ),
+  asQuantity(
+    t({
       id: 'exports.column.quantityFulfilled',
       defaultMessage: 'Quantity received or shipped',
     }),
-    value: (row) => row.quantityFulfilled,
-  },
+    (row) => row.quantityFulfilled,
+  ),
   { header: HEADERS.created, value: (row) => csvMoment(row.createdAt) },
 ];

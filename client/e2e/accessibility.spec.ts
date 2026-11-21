@@ -63,6 +63,9 @@ interface Screen {
 interface Seed {
   orderId: string;
   productId: string;
+  variantId: string;
+  /** The product's lot, A11Y-LOT-1. */
+  lotId: string;
   /** An item with nothing on hand, coming or needed, and no point. */
   bareProductId: string;
   /** Where the product's lot is. */
@@ -317,7 +320,7 @@ const SCREENS: Screen[] = [
     name: 'reorder points, a row opened and chosen',
     path: () => '/inventory?tab=reorder',
     open: async (page) => {
-      await page.getByRole('button', { name: /^Where .* stands$/ }).click();
+      await page.getByRole('button', { name: /^Who waits · .+ for / }).click();
       await page
         .getByRole('checkbox', { name: /^Choose / })
         .first()
@@ -360,6 +363,40 @@ const SCREENS: Screen[] = [
       page.getByRole('option', { name: /A11Y-LOT-1/ }).and(keyboardOn(page)),
   },
   { name: 'movements', path: () => '/movements', ready: heading },
+  {
+    // One item over a range: In, Out and Balance, and the period line
+    // above them (ADR-093, R21, R34).
+    name: 'movements, one item with a date range',
+    path: (seed) =>
+      `/movements?variantId=${seed.variantId}&from=${daysFromNow(-30)}`,
+    ready: (page) => page.getByText(/^Opening, /),
+  },
+  {
+    // An order's way in: its chip, nothing received on it yet (R24).
+    name: 'movements, one order, its chip',
+    path: (seed) => `/movements?orderId=${seed.orderId}`,
+    ready: (page) => page.getByText(/^No movements match: PO-/),
+  },
+  {
+    // A lot's trace, each place by its whole path (#639).
+    name: 'a lot',
+    path: (seed) => `/lots/${seed.lotId}`,
+    ready: (page) => page.getByText('Where it is now'),
+  },
+  {
+    // Found stock (#628): Correct the count with a place and Which lot,
+    // neither chosen.
+    name: 'inventory, Count it in…',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page.getByRole('button', { name: /^1 place: show where / }).click();
+      await page.getByRole('button', { name: /^Count it in .+…$/ }).click();
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Correct the count' })
+        .getByRole('radiogroup', { name: 'Which lot' }),
+  },
   { name: 'orders', path: () => '/orders', ready: heading },
   {
     // Beside the page at this run's 1280 px, the page keeping its room
@@ -486,6 +523,13 @@ const SCREENS: Screen[] = [
     name: "an order's history",
     path: (seed) => `/orders/${seed.orderId}?tab=history`,
     ready: (page) => page.getByRole('tab', { name: 'History' }),
+  },
+  {
+    // A purchase's receipts, none yet, and All movements of PO-… (R25).
+    name: "an order's receipts",
+    path: (seed) => `/orders/${seed.orderId}?tab=receipts`,
+    ready: (page) =>
+      page.getByText('Nothing has been received on this order yet.'),
   },
   { name: 'invoices', path: () => '/invoices', ready: heading },
   { name: 'credit notes', path: () => '/credit-notes', ready: heading },
@@ -683,7 +727,7 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   const location = await createLocation(api);
   const partner = await createPartner(api);
 
-  await created(
+  const { movement } = await created<{ movement: { lotId: string } }>(
     await api.post('/v1/stock/movements', {
       data: {
         variantId: product.variantId,
@@ -751,6 +795,8 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   return {
     orderId: order.id,
     productId: product.id,
+    variantId: product.variantId,
+    lotId: movement.lotId,
     bareProductId: bare.id,
     locationId: location.id,
     roleId: role.id,

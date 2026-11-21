@@ -1,4 +1,4 @@
-import { intl } from '../i18n/intl';
+import { formatDays, intl } from '../i18n/intl';
 
 /**
  * Marks rather than words: what a screen shows for a value that is not
@@ -185,6 +185,60 @@ export function formatDayShort(
         timeZone: 'UTC',
       }),
   ).format(new Date(value));
+}
+
+/**
+ * Two calendar days with their year, by Intl's range in the reader's
+ * language: "Nov 1 – 20, 2026", the year once when it is one, "Dec 28,
+ * 2026 – Jan 3, 2027" when not; in Chinese "2026年11月1日至20日"
+ * (formatDays, 130b); a chosen range of days (ADR-093, review 1's
+ * polish). In UTC, as formatDay.
+ */
+export function formatDayRange(
+  from: string,
+  to: string,
+  locale: string | undefined = current,
+): string {
+  return formatDays(
+    cached(
+      `day:${locale}`,
+      () =>
+        new Intl.DateTimeFormat(locale, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }),
+    ),
+    new Date(from),
+    new Date(to),
+  );
+}
+
+/**
+ * Two calendar days without their year, "16 – 20 Nov", or one, "20 Nov",
+ * where they are the same, in Chinese "11月16日至20日" (formatDays,
+ * 130b): a When period's days beside its name (ADR-093, review 1). In
+ * UTC, as formatDay.
+ */
+export function formatDaysShort(
+  from: string,
+  to: string,
+  locale: string | undefined = current,
+): string {
+  return formatDays(
+    cached(
+      `daysShort:${locale}`,
+      () =>
+        new Intl.DateTimeFormat(locale, {
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }),
+    ),
+    new Date(from),
+    new Date(to),
+  );
 }
 
 /**

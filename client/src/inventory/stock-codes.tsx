@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import {
   type MouseEvent,
-  type ReactNode,
   type RefObject,
   useEffect,
   useId,
@@ -19,7 +18,7 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type {
   Location,
@@ -29,6 +28,7 @@ import type {
 } from '../api/types.gen';
 import { ActionsHeader } from '../components/actions-header';
 import { type Action, ActionsMenu } from '../components/actions-menu';
+import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ListTable } from '../components/list-table';
 import { LotLink } from '../components/lot-link';
@@ -46,19 +46,21 @@ import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { useOpenRows } from '../lib/use-open-rows';
-import { wholeOnFocus } from '../lib/whole-on-focus';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { WIDE_ONLY } from '../theme/media';
+import type { CountInItem } from './count-in-dialog';
 import { EmptiedLine } from './emptied-line';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
-import type { HistoryOf } from './movement-history-dialog';
+import { movementsPath } from './movements-path';
+import { notUsableWhy } from './not-usable';
 import { PlacePath } from './place-path';
+import { PlacesHidden } from './places-hidden';
 import type { ReorderItem } from './reorder-point-dialog';
 import { LeftLine, ReorderStatusChip } from './reorder-status';
 import { type Pile, StockActions } from './stock-actions';
-import { placeName } from './stock-places';
+import { openKey, placeName } from './stock-places';
 
 /**
  * Where the item's name starts in its cell: the cell's 16 px, the cover's
@@ -73,11 +75,20 @@ export interface StockHandlers {
   canAdjust: boolean;
   canReorder: boolean;
   onMove: (mode: MoveMode, row: Pile) => void;
-  onHistory: (of: HistoryOf) => void;
+  /**
+   * Left for the item's page, or for Movements from the code's row, a
+   * place or a lot: Back returns focus to the code's row.
+   */
+  onLeave: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
   onReorder: (item: ReorderItem) => void;
   /** Receive stock, the dialog with this item filled in (ADR-093 v3). */
   onReceive: (variantId: string) => void;
+  /**
+   * Count it in…: Correct the count for stock found where the item has
+   * never been, a place and a lot to choose (ADR-093, R26).
+   */
+  onCountIn: (item: CountInItem) => void;
 }
 
 type Header = (column: StockCodeSort) => {
@@ -156,7 +167,6 @@ export function StockCodes({
   opens,
   onOpen,
   focusRow,
-  onLeave,
 }: {
   rows: StockCodeRow[] | null;
   loading: boolean;
@@ -178,7 +188,6 @@ export function StockCodes({
     opens,
     onOpen,
     focusRow,
-    onLeave,
   };
 
   return (
@@ -190,12 +199,12 @@ export function StockCodes({
             id: 'inventory.tab.stock',
             defaultMessage: 'Stock',
           })}
-          onFocus={wholeOnFocus}
           size="small"
         >
           <TableHead>
             <TableRow>
               <SortHeader
+                name
                 label={intl.formatMessage(HEADS.item)}
                 {...header('name')}
                 atRest
@@ -265,16 +274,14 @@ export function StockCodes({
 /**
  * The rows the address names open, `?open=`, and the row Back returns
  * focus to (ADR-093's Stock table: Back, Stock as it was, focus on that
- * row).
+ * row, the rows open).
  */
 interface Returning {
-  /** The codes whose rows are open. */
+  /** The codes whose rows are open, and the places whose lots are (openKey). */
   opens: string[];
-  onOpen: (variantId: string, open: boolean) => void;
+  onOpen: (key: string, open: boolean) => void;
   /** The code whose name takes focus once its row is drawn. */
   focusRow: string | null;
-  /** Left for the item's page from this code's row. */
-  onLeave: (variantId: string) => void;
 }
 
 interface Opened extends Returning {
@@ -313,7 +320,7 @@ function usePlaces(row: StockCodeRow, opened: Opened, emptied = false) {
  * The row's name, focused when Back returns to the row it was left from;
  * and what keeps that row as left from: a click on a link to its item.
  */
-function useReturn(row: StockCodeRow, { focusRow, onLeave }: Opened) {
+function useReturn(row: StockCodeRow, { focusRow, handlers }: Opened) {
   const name = useRef<HTMLAnchorElement>(null);
   const returned = focusRow === row.variantId;
   useEffect(() => {
@@ -323,7 +330,7 @@ function useReturn(row: StockCodeRow, { focusRow, onLeave }: Opened) {
   const leaving = (event: MouseEvent) => {
     const link = (event.target as HTMLElement).closest('a');
     if (link?.getAttribute('href')?.startsWith('/items/')) {
-      onLeave(row.variantId);
+      handlers.onLeave(row.variantId);
     }
   };
 
@@ -519,11 +526,7 @@ function CodeTableRow({ row, ...opened }: { row: StockCodeRow } & Opened) {
           <Status row={row} />
         </TableCell>
         <TableCell>
-          <ExpiryChip
-            expiresAt={
-              opened.place ? (row.here?.expiresFirst ?? null) : row.expiresFirst
-            }
-          />
+          <ExpiresFirst row={row} here={!!opened.place} />
         </TableCell>
         <TableCell padding="checkbox">
           <CodeActions row={row} opened={opened} onPile={choice.act} />
@@ -573,8 +576,19 @@ function openName(
   };
 }
 
-/** On hand, and its not-usable part under it (R1). */
-function OnHand({ row, here }: { row: StockCodeRow; here: boolean }) {
+/**
+ * On hand, and its not-usable part under it (R1); on a phone's card, with
+ * why, since the card has no other column to say it (#612).
+ */
+function OnHand({
+  row,
+  here,
+  why = false,
+}: {
+  row: StockCodeRow;
+  here: boolean;
+  why?: boolean;
+}) {
   const intl = useIntl();
   const onHand = here ? (row.here?.onHand ?? '0') : row.onHand;
 
@@ -583,26 +597,43 @@ function OnHand({ row, here }: { row: StockCodeRow; here: boolean }) {
       <span>{displayWithUnit(onHand, row.unitOfMeasure, intl)}</span>
       {!here && !isZero(row.notUsable) && (
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage(
-            {
-              id: 'inventory.stock.notUsable',
-              defaultMessage: '{quantity} not usable',
-            },
-            { quantity: displayQuantity(row.notUsable) },
-          )}
+          {why
+            ? notUsableWhy(row, intl)
+            : intl.formatMessage(
+                {
+                  id: 'inventory.stock.notUsable',
+                  defaultMessage: '{quantity} not usable',
+                },
+                { quantity: displayQuantity(row.notUsable) },
+              )}
         </Typography>
       )}
     </Stack>
   );
 }
 
-/** Free, and what confirmed orders want beyond it, a link to Held (16a). */
-function Free({ row }: { row: StockCodeRow }) {
+/**
+ * Free, and what confirmed orders want beyond it, a link to Held (16a); on
+ * a phone's card, what is held under it too, the rest of why Free is less
+ * than On hand (#612).
+ */
+function Free({ row, held = false }: { row: StockCodeRow; held?: boolean }) {
   const intl = useIntl();
 
   return (
     <Stack sx={{ alignItems: 'flex-end' }}>
       <span>{displayWithUnit(row.free, row.unitOfMeasure, intl)}</span>
+      {held && !isZero(row.held) && (
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {intl.formatMessage(
+            {
+              id: 'inventory.stock.heldUnder',
+              defaultMessage: '{quantity} held',
+            },
+            { quantity: displayQuantity(row.held) },
+          )}
+        </Typography>
+      )}
       {!isZero(row.short) && (
         <Link
           component={RouterLink}
@@ -619,6 +650,29 @@ function Free({ row }: { row: StockCodeRow }) {
       )}
     </Stack>
   );
+}
+
+/**
+ * The soonest expiry of the usable stock, at a place that place's; where
+ * every unit on hand has expired, "all expired", since "—" read as nothing
+ * to expire (#611): as the server says it, an expired lot at a place not
+ * available counted too, which `expired` leaves out (review 13).
+ */
+function ExpiresFirst({ row, here }: { row: StockCodeRow; here: boolean }) {
+  const intl = useIntl();
+  const expiresAt = here ? (row.here?.expiresFirst ?? null) : row.expiresFirst;
+
+  if (!here && row.allExpired) {
+    return (
+      <Typography variant="body2" sx={{ color: 'error.main' }}>
+        {intl.formatMessage({
+          id: 'inventory.stock.allExpired',
+          defaultMessage: 'all expired',
+        })}
+      </Typography>
+    );
+  }
+  return <ExpiryChip expiresAt={expiresAt} />;
 }
 
 /** Coming, with its soonest day; a run has none. */
@@ -658,9 +712,9 @@ function Status({ row }: { row: StockCodeRow }) {
 }
 
 /**
- * A code's one Actions button: its movements, the history dialog for the
- * code alone until Movements' branch, and its reorder point by
- * permission. A lot's own actions are on its row.
+ * A code's one Actions button: its Movements, filtered to the code
+ * (ADR-093, R11), and its reorder point by permission. A lot's own
+ * actions are on its row.
  */
 function CodeActions({
   row,
@@ -673,6 +727,7 @@ function CodeActions({
   onPile: (mode: MoveMode) => void;
 }) {
   const intl = useIntl();
+  const navigate = useNavigate();
   const words = useMenuWords();
   const { handlers } = opened;
   const nothing = isZero(onHandOf(row, opened));
@@ -736,8 +791,12 @@ function CodeActions({
   const reads: Action[] = [
     {
       label: words.movements,
-      onSelect: () =>
-        handlers.onHistory({ ...row, lotId: null, lotCode: null, at: null }),
+      onSelect: () => {
+        handlers.onLeave(row.variantId);
+        void navigate(movementsPath({ variantId: row.variantId }), {
+          state: OFFER_BACK,
+        });
+      },
     },
     // The item's, not a lot's: one point across every place (ADR-085).
     ...(handlers.canReorder
@@ -863,6 +922,8 @@ function PlacesRows({
   seesPlaces,
   place,
   handlers,
+  opens,
+  onOpen,
 }: {
   id: string;
   row: StockCodeRow;
@@ -910,12 +971,34 @@ function PlacesRows({
     </TableRow>
   );
 
+  const found = offersFound(handlers, seesPlaces, choosing) && (
+    <TableRow sx={{ bgcolor: 'action.hover' }} {...SPANNING_ROW}>
+      <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
+        <FoundLine row={row} places={places} handlers={handlers} />
+      </TableCell>
+      <WideOnlyCells />
+    </TableRow>
+  );
+
   // Without places, or at the one chosen: the lots alone, each at a place
   // not available saying so, never which place (A6).
   if (!seesPlaces || place) {
     const lots = places.flatMap((each) =>
       each.lots.map((lot) => ({ lot, usable: each.isAvailable })),
     );
+    // A code not tracked by lot, in places the reader may not name: why,
+    // not a row of "—" for each (review 3, 115); a pile's action still
+    // opens them to choose from.
+    if (!place && !choosing && lots.every(({ lot }) => lot.lotId === null)) {
+      return (
+        <TableRow id={id} {...SPANNING_ROW}>
+          <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
+            <PlacesHidden />
+          </TableCell>
+          <WideOnlyCells />
+        </TableRow>
+      );
+    }
     return (
       <>
         {line}
@@ -931,6 +1014,7 @@ function PlacesRows({
             actionsRef={index === 0 ? first : undefined}
           />
         ))}
+        {found}
       </>
     );
   }
@@ -946,20 +1030,109 @@ function PlacesRows({
           place={each}
           handlers={handlers}
           lotsOpen={!!choosing}
+          opened={opens.includes(openKey(row.variantId, each.locationId))}
+          onOpen={(open) =>
+            onOpen(openKey(row.variantId, each.locationId), open)
+          }
           actionsRef={index === 0 ? first : undefined}
         />
       ))}
+      {found}
     </>
   );
 }
 
-/** A place's row: its name, why it is not usable, its lots behind a button. */
+/**
+ * Whether a code's opened places end with Count it in…: for whoever may
+ * correct counts and see places, and not while a lot is chosen to move,
+ * ship or send.
+ */
+function offersFound(
+  handlers: StockHandlers,
+  seesPlaces: boolean,
+  choosing: MoveMode | null,
+): boolean {
+  return (
+    handlers.canMove &&
+    handlers.canAdjust &&
+    seesPlaces &&
+    (choosing === null || choosing === 'adjust')
+  );
+}
+
+/**
+ * "Found some where it has never been?" and Count it in…, ending a
+ * code's opened places and lots (ADR-093, R26, 84a): Correct the count
+ * with a place and, for an item tracked by lot, a lot to choose.
+ */
+function FoundLine({
+  row,
+  places,
+  handlers,
+}: {
+  row: StockCodeRow;
+  places: StockPlace[];
+  handlers: StockHandlers;
+}) {
+  const intl = useIntl();
+  const tracksLots = places.some((each) =>
+    each.lots.some((lot) => lot.lotId !== null),
+  );
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      useFlexGap
+      sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+    >
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {intl.formatMessage({
+          id: 'inventory.stock.foundElsewhere',
+          defaultMessage: 'Found some where it has never been?',
+        })}
+      </Typography>
+      {/* Its name carries the code, since every opened code ends with
+          one (105a). */}
+      <Button
+        variant="text"
+        aria-label={intl.formatMessage(
+          {
+            id: 'inventory.stock.countInCode',
+            defaultMessage: 'Count it in {code}…',
+          },
+          { code: row.sku },
+        )}
+        onClick={() =>
+          handlers.onCountIn({
+            variantId: row.variantId,
+            sku: row.sku,
+            unitOfMeasure: row.unitOfMeasure,
+            tracksLots,
+          })
+        }
+      >
+        {intl.formatMessage({
+          id: 'inventory.stock.countIn',
+          defaultMessage: 'Count it in…',
+        })}
+      </Button>
+    </Stack>
+  );
+}
+
+/**
+ * A place's row: its name, why it is not usable, its lots behind a
+ * button, open as the address says, so Back finds them open (R11).
+ */
 function PlaceTableRow({
   id,
   row,
   place,
   handlers,
   lotsOpen,
+  opened,
+  onOpen,
   actionsRef,
 }: {
   id?: string;
@@ -968,13 +1141,16 @@ function PlaceTableRow({
   handlers: StockHandlers;
   /** Its lots shown from the start: a lot is being chosen. */
   lotsOpen: boolean;
+  /** Its lots open in the address, `?open=`. */
+  opened: boolean;
+  onOpen: (open: boolean) => void;
   /** Its first lot's Actions, or its own for a code not tracked by lot. */
   actionsRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const intl = useIntl();
   const lotsId = useId();
   // Its lots came with it, so opening reads nothing.
-  const [open, setOpen] = useState(lotsOpen);
+  const [open, setOpen] = useState(lotsOpen || opened);
   // A lot asked for opens them, as React adjusts state to a prop.
   const [asked, setAsked] = useState(lotsOpen);
   if (lotsOpen !== asked) {
@@ -1023,7 +1199,10 @@ function PlaceTableRow({
               open={open}
               busy={false}
               controls={lotsId}
-              onClick={() => setOpen(!open)}
+              onClick={() => {
+                setOpen(!open);
+                onOpen(!open);
+              }}
             />
           )}
         </TableCell>
@@ -1081,7 +1260,8 @@ function NotUsableHere() {
 
 /**
  * A place's own link, its Movements there: a plain link in words, not a
- * menu of one (ADR-093 v3); the history dialog until Movements' branch.
+ * menu of one (ADR-093 v3), opening Movements filtered to the code at
+ * that place (R11).
  */
 function PlaceMovements({
   row,
@@ -1097,8 +1277,12 @@ function PlaceMovements({
 
   return (
     <Link
-      component="button"
-      type="button"
+      component={RouterLink}
+      to={movementsPath({
+        variantId: row.variantId,
+        locationId: place.locationId,
+      })}
+      state={OFFER_BACK}
       variant="body2"
       underline="always"
       aria-label={intl.formatMessage(
@@ -1108,14 +1292,7 @@ function PlaceMovements({
         },
         { item: itemName(row.productName, row.variantName), place: where },
       )}
-      onClick={() =>
-        handlers.onHistory({
-          ...row,
-          lotId: null,
-          lotCode: null,
-          at: { locationId: place.locationId, locationName: where },
-        })
-      }
+      onClick={() => handlers.onLeave(row.variantId)}
       sx={{ whiteSpace: 'nowrap', px: 1 }}
     >
       {intl.formatMessage({
@@ -1202,7 +1379,7 @@ export function PileActions({
       canMove={handlers.canMove}
       canAdjust={handlers.canAdjust}
       onSelect={handlers.onMove}
-      onHistory={handlers.onHistory}
+      onLeave={handlers.onLeave}
       onEditLot={handlers.onEditLot}
       buttonRef={buttonRef}
     />
@@ -1246,19 +1423,15 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
           linkRef={back.name}
         />
         <Status row={row} />
-        <Figure label={intl.formatMessage(HEADS.onHand)}>
-          <OnHand row={row} here={!!opened.place} />
-        </Figure>
-        <Figure label={intl.formatMessage(HEADS.free)}>
-          <Free row={row} />
-        </Figure>
-        <Figure label={intl.formatMessage(HEADS.expiresFirst)}>
-          <ExpiryChip
-            expiresAt={
-              opened.place ? (row.here?.expiresFirst ?? null) : row.expiresFirst
-            }
-          />
-        </Figure>
+        <CardLine label={intl.formatMessage(HEADS.onHand)}>
+          <OnHand row={row} here={!!opened.place} why />
+        </CardLine>
+        <CardLine label={intl.formatMessage(HEADS.free)}>
+          <Free row={row} held />
+        </CardLine>
+        <CardLine label={intl.formatMessage(HEADS.expiresFirst)}>
+          <ExpiresFirst row={row} here={!!opened.place} />
+        </CardLine>
         <Stack
           direction="row"
           spacing={1}
@@ -1282,12 +1455,12 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
         </Stack>
         {places.open && (
           <Stack id={controls} spacing={1}>
-            <Figure label={intl.formatMessage(HEADS.held)}>
+            <CardLine label={intl.formatMessage(HEADS.held)}>
               {displayWithUnit(row.held, row.unitOfMeasure, intl)}
-            </Figure>
-            <Figure label={intl.formatMessage(HEADS.coming)}>
+            </CardLine>
+            <CardLine label={intl.formatMessage(HEADS.coming)}>
               <Coming row={row} />
-            </Figure>
+            </CardLine>
             {choice.choosing && places.rows && (
               <ChooseLine places={places.rows} mode={choice.choosing} />
             )}
@@ -1299,26 +1472,22 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
               first={choice.first}
               {...opened}
             />
+            {places.rows &&
+              offersFound(
+                opened.handlers,
+                opened.seesPlaces,
+                choice.choosing,
+              ) && (
+                <FoundLine
+                  row={row}
+                  places={places.rows}
+                  handlers={opened.handlers}
+                />
+              )}
           </Stack>
         )}
       </Stack>
     </Box>
-  );
-}
-
-/** A figure on a card: its name, then its value. */
-function Figure({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
-    >
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {label}
-      </Typography>
-      <Box sx={{ textAlign: 'right' }}>{children}</Box>
-    </Stack>
   );
 }
 

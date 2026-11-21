@@ -249,6 +249,19 @@ sorts were asked for (#473's 16):
   merge or its figure kept in a column, a decision then.
 - **Each export writes the screen's words,** its headers and values in
   the reader's language (#473's 29).
+- **Each export writes a quantity without its padding zeros** (77a,
+  ADR-093's R30; #473's 29): `600`, not `600.0000`, then `12.5` and
+  `0.0001`, still data, a point and no grouping, trimmed as text by
+  `asQuantity` through `readableQuantity` (ADR-025).
+- **Each export writes money at its currency's places** (99a), never
+  fewer and never rounded: its padding zeros trimmed down to the
+  currency's minor units (`minorUnits`) and no further, a CAD price
+  stored `12.5000` as `12.50`, one of `0.0125` as it is, a yen amount
+  `1250.0000` as `1250`; trimmed as text by `asMoney` through
+  `readableMoney` (ADR-025). Invoices, credit notes, a price list and
+  Stock value's cost and value; Orders' export holds no money. The
+  organization's full export (ADR-071) keeps every value as stored, as
+  its README says.
 
 As built on Inventory's branch (#635, 17 November 2026):
 

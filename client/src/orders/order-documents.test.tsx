@@ -20,6 +20,7 @@ const SOLD: OrderDetail = {
   duplicatedFromId: null,
   deliverTo: null,
   fullyFulfilled: true,
+  fulfillment: null,
   isSample: false,
   totals: [],
   totalsComplete: true,

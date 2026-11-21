@@ -4,7 +4,7 @@ L’inventaire montre ce que vous avez et où : une ligne par code, qui s’ouv
 
 ## Lire le stock {#stock}
 
-Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une variante : un article offert en trois formats a donc trois lignes. La liste contient tous les codes qui sont en stock, qu’une vente confirmée attend, qui est à venir, ou qu’un point de commande surveille; **Afficher le stock vidé** ajoute les autres. Elle charge cinquante lignes à la fois, et **Afficher 50 de plus** ajoute les cinquante suivantes.
+Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une variante : un article offert en trois formats a donc trois lignes. La liste contient tous les codes qui sont en stock, qu’une vente confirmée attend, qui est à venir, ou qu’un point de commande surveille; **Afficher le stock vidé** ajoute les autres. Elle charge cinquante lignes à la fois, et **Afficher 50 de plus** ajoute les cinquante suivantes. Une ligne dit combien elle en montre : « 31 codes », ou « 50 sur 312 codes affichés » tant qu’il y en a d’autres. Retour depuis un article, un emplacement ou un lot ramène la liste telle que vous l’aviez laissée, avec toutes les lignes affichées, ses emplacements et lots ouverts, et la ligne d’où vous veniez au foyer.
 
 - Le nom d’abord, son code en gris dessous, et son type. Appuyez sur le nom, ou sur la ligne, pour ouvrir la page de l’article.
 - **Où** : le nombre d’emplacements qui en contiennent, comme « 2 emplacements ». Appuyez dessus pour ouvrir les emplacements, puis sur les lots d’un emplacement pour les ouvrir : les lots qui expirent en premier en haut, les périmés au-dessus, un lot sans date d’expiration en dernier. Le code d’un lot ouvre son suivi.
@@ -13,16 +13,16 @@ Dans **Stock**, chaque ligne est un code, celui de l’étiquette d’une varian
 - **Réservé** : gardé pour les ventes confirmées, la plus ancienne d’abord.
 - **À venir** : ce que les achats confirmés et les ordres lancés doivent encore apporter, avec le premier jour prévu.
 - **Statut** : **Bas**, **Épuisé** ou **Suffisant**, avec « Il en reste 10 · point de commande 36 » dessous pour un code qui a un point de commande. Appuyez sur la ligne pour voir où en est le code.
-- **Expire en premier** : la première date de péremption du stock utilisable.
+- **Expire en premier** : la première date de péremption du stock utilisable, ou « tout est périmé » quand toutes les unités en stock sont périmées; « — » quand rien n’expire.
 - **Actions** : les actions de la ligne, plus bas.
 
-Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, et **Filtres** contient ce que l’écran n’a pas la place d’afficher. De 600 à 899 px, **Réservé** et **À venir** quittent le tableau.
+Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, qui disent dessous pourquoi Libre est moindre, comme « Inutilisable : 12, périmé » et « réservé : 30 », et **Filtres** contient ce que l’écran n’a pas la place d’afficher. De 600 à 899 px, **Réservé** et **À venir** quittent le tableau.
 
 > Une personne qui ne peut pas voir les emplacements lit « 3 lots » à la place des emplacements, ouvre directement les lots, et n’a pas la liste **Emplacement**.
 
 ## Trouver du stock {#find}
 
-- Les filtres rapides, sur leur propre rangée au-dessus de la recherche (sur un téléphone, dans **Filtres**), montrent seulement ce qu’ils nomment, chacun avec son total : **Stock bas** (les épuisés aussi), **Épuisé**, **Expire bientôt** (les périmés aussi), **Périmés** et **En attente d’un coût**. Un total est le nombre de lignes que le filtre montre, les autres filtres restant actifs : appuyez sur l’un et la liste a cette longueur.
+- Les filtres rapides, sur leur propre rangée au-dessus de la recherche (sur un téléphone, dans **Filtres**), montrent seulement ce qu’ils nomment, chacun avec son total et ce qu’il compte, comme **Stock bas · 4 codes** : **Stock bas** (les épuisés aussi), **Épuisé**, **Expire bientôt** (les périmés aussi), **Périmés** et **En attente d’un coût**. Un total est le nombre de lignes que le filtre montre, les autres filtres restant actifs : appuyez sur l’un et la liste a cette longueur.
 - **Type**, **Catégorie** et **Emplacement** réduisent la liste, et **Rechercher des articles, des codes ou des lots** trouve un code, le nom d’un article ou le code d’un lot. Un message dit quand rien ne correspond, avec **Afficher tout le stock**.
 - Appuyez sur **En stock** ou **Expire en premier** en tête d’une colonne pour trier selon elle, et de nouveau pour inverser; le nom est le tri par défaut. Un code sans rien qui expire vient en dernier dans les deux sens. Libre n’est pas un tri.
 - Choisissez un emplacement sous **Emplacement** et la liste montre ce qui s’y trouve : **En stock ici**, **Lots ici** et **Expire en premier ici** sont ceux de cet emplacement, tandis que **Libre, tous les emplacements** et **Réservé, tous les emplacements** comptent tous les emplacements, puisqu’une vente réserve un article, pas une tablette. Le code d’un lot cherché avec un emplacement choisi trouve ce lot à cet emplacement seulement.
@@ -59,14 +59,15 @@ Ce que fait chacune :
 - **Sortie de stock…** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
 - **Envoyer un échantillon…** : un don, avec la personne à qui il a été remis, pour qu’un rappel puisse le retrouver.
 - **Corriger le compte…** : combien la tablette contient de plus ou de moins que ce qui est enregistré, pourquoi, et ce qui s’est passé.
+- **Ajouter au compte…**, à la fin des emplacements et des lots ouverts d’un article, sous « Du stock trouvé là où il n’a jamais été? » : du stock trouvé à un emplacement, ou dans un lot, que l’article n’a jamais eu. Choisissez l’emplacement et, pour un article suivi par lot, **Un de ses lots** ou **Un nouveau lot**, son numéro tel qu’imprimé sur la boîte et que l’article n’a pas encore. Un nouveau lot, ou un article encore sans coût, est en attente d’un coût dans [Valeur du stock](/costs).
 - **Modifier le lot…**, **Tracer le lot** et **Mouvements** : le lot, où il est allé, et ses mouvements.
 - **Modifier le point de commande…** : le point de commande de l’article, plus bas.
 
-> Toute personne qui peut voir le stock voit **Mouvements** et **Tracer le lot**. Seule une personne qui peut déplacer du stock voit **Recevoir du stock** et ce qui change le stock, et seule une personne qui peut corriger les comptes voit **Corriger le compte…**.
+> Toute personne qui peut voir le stock voit **Mouvements** et **Tracer le lot**. Seule une personne qui peut déplacer du stock voit **Recevoir du stock** et ce qui change le stock, et seule une personne qui peut corriger les comptes voit **Corriger le compte…** et **Ajouter au compte…**.
 
 ## Ce que chaque total compte {#counts}
 
-Un nombre sur un filtre ou une tuile compte une seule sorte de chose, la même partout.
+Un nombre sur un filtre ou une tuile compte une seule sorte de chose, dit laquelle à côté, comme **Stock bas · 4 codes** ou **Expire bientôt · 2 lots**, et c’est la même partout.
 
 - **Stock**, par article, compte des codes : un total de **Stock bas** de 4, ce sont quatre codes, où qu’ils soient.
 - **Stock**, par lot, compte des lots à chaque emplacement : un lot à deux emplacements fait deux lignes et compte deux fois.
@@ -89,9 +90,9 @@ Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock
 
 ## Où en est un article {#position}
 
-La position d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les bons de commande confirmés qui restent à recevoir et la production des ordres lancés qui reste à venir; moins les commandes clients confirmées qui restent à expédier. Ainsi, un bon de commande déjà créé ne déclenche pas une nouvelle commande. Résumée en une ligne, elle se lit « Il en reste 10 · point de commande 36 », et appuyer dessus ouvre la page de l’article à [État du stock](/items#stands), qui énumère ce qui compose chaque chiffre.
+Pour un article, **Il en reste** = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les bons de commande confirmés qui restent à recevoir et la production des ordres lancés qui reste à venir; moins les commandes clients confirmées qui restent à expédier. Ainsi, un bon de commande déjà créé ne déclenche pas une nouvelle commande. En une ligne, cela se lit « Il en reste 10 · point de commande 36 », et appuyer dessus ouvre la page de l’article à [État du stock](/items#stands), qui énumère ce qui compose chaque chiffre.
 
-Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. La liste s’ouvre avec les plus grandes quantités à commander en premier; appuyez sur **Statut** pour mettre d’abord les plus loin sous leur point, ou, sur un téléphone, choisissez **Stock bas d’abord** sous **Tri**. **Stock bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui compose sa position et quelles commandes sont en retard; sur un téléphone, où chaque article est une carte, touchez la ligne qui dit combien il en reste, qui ouvre le stock de l’article.
+Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Une ligne sous la liste dit combien de codes elle montre, comme « 4 codes ». La liste s’ouvre avec les plus grandes quantités à commander en premier; appuyez sur **Statut** pour mettre d’abord les plus loin sous leur point, ou, sur un téléphone, choisissez **Stock bas d’abord** sous **Tri**. **Stock bas** montre aussi les épuisés. Ouvrez une ligne avec « Qui attend · 2 commandes », qui dit combien de commandes l’attendent, pour voir ce qui compose ce qu’il en reste et quelles commandes sont en retard; sur un téléphone, où chaque article est une carte, touchez la ligne qui dit combien il en reste, qui ouvre le stock de l’article.
 
 ## Combien commander {#how-much}
 

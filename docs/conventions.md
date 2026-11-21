@@ -260,14 +260,18 @@ Use these rather than writing the thing again. The client's are under
   `isCurrencyCode` in `database/schema/columns.ts` for checks),
   `dto/decimal.ts` (`IsPositiveDecimal`, `IsNonNegativeDecimal`),
   `dto/calendar-day.ts` (`IsCalendarDay`, which reads
-  `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`),
+  `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`, `momentIn`
+  for a moment on a zone's clocks, `cityOf` for the place it is named for),
   `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`). A DTO never
   restates a rule's message; `$property` names the field. A list sorted
   pages through `sorted-page.ts`: `pagedBy` for a kept column, the cursor
   a row's id; `orderOf`, `afterKeys`, `cursorOf` and `readKeys` for a
   worked-out figure, the cursor its values; `notInThisList`, every list's
   refusal of a cursor. An export through `export.ts`: `everyRow`,
-  `csvFile`, and `inWords` for a code it writes as the screen's word.
+  `csvFile`, `inWords` for a code it writes as the screen's word,
+  `asQuantity` for a quantity, written without its padding zeros, and
+  `asMoney` for money, at its currency's places, never fewer
+  (`money.ts`'s `readableMoney`, beside `minorUnits`).
 - **`core/documents/`:** `sheet.ts` (`masthead`, `party`, `linesTable`,
   `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
   for who and where it names, and `DocumentsService.send` with a
@@ -1109,7 +1113,10 @@ Use these rather than writing the thing again on a page:
   chevron alone.
 - **`TableOrCards`** for a list's rows as a table from 600 px and as cards
   below, two grey cards while the cards are read; `useCards` asks the same
-  width for the rest of the page (ADR-090's width switch).
+  width for the rest of the page (ADR-090's width switch). On a card,
+  **`CardLine`** for a label and its value at the right.
+- **`BIG_FIGURE`** (`theme/figure.ts`) for a figure read across a room:
+  Home's tiles, Where it stands' figures, Movements' period.
 - **`useLocations`** for the locations a filter or a form offers, read when
   it opens and only for a reader with `locations.view`, on `useResource`,
   with `retry` for Try again.
@@ -1255,10 +1262,12 @@ names.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
   days. Package by package: for each one `npm outdated` lists in range,
-  `npm view <package> time --json` gives when its Wanted version was
-  published; take it with `npm update <package>` only when that was at
-  least 7 × 24 hours ago, and say on which day each of the rest comes of
-  age. Never move back a version already locked: the rule keeps new
+  `npm view <package> time --json` gives every version's publish time;
+  take the newest in range published at least 7 × 24 hours ago, the
+  Wanted version when it is that old, keeping `package.json`'s range as
+  it is, and say on which day each of the rest comes of age. A package
+  that publishes daily never lets its Wanted version come of age, so its
+  newest version of age is the one to take. Never move back a version already locked: the rule keeps new
   releases out, it does not undo what is installed (#196's steps 1 and
   8). A package an update pulls in under another, under 7 days old, stays
   at its locked version when every range asking for it still accepts that

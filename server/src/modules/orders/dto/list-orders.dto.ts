@@ -8,6 +8,10 @@ import {
   type OrderDirection,
   type OrderStatus,
 } from '../../../database/schema';
+import {
+  ORDER_FULFILLMENTS,
+  type OrderFulfillment,
+} from '../order-fulfillment';
 
 /**
  * Paged like every list, by KeysetQueryDto; these are the order filters.
@@ -58,6 +62,15 @@ export class ListOrdersDto extends CalendarRangeQueryDto {
   @IsOptional()
   @IsBooleanString()
   late?: string;
+
+  /**
+   * Confirmed orders by how much has come or gone (#605): nothing, part,
+   * or all, a line closed short counting as done, as each row's
+   * `fulfillment` reads. Any other status has none, so matches none.
+   */
+  @IsOptional()
+  @IsIn(ORDER_FULFILLMENTS)
+  fulfillment?: OrderFulfillment;
 
   /** Sorted by expected date (ADR-057), orders without one last. */
   @IsOptional()

@@ -268,4 +268,43 @@ export const SHOTS: Shot[] = [
       await expect(box).toHaveAttribute('data-under-start', 'true');
     },
   },
+  // Movements (ADR-093's branch), taken before it changes so the after
+  // pictures have something to compare with: every item, one item with a
+  // date range in the address, and a purchase order received in part, the
+  // page #605's label goes on. Each at every size the other lists take.
+  { name: '29-movements', path: () => '/movements' },
+  {
+    // The range as calendar days around the item's own movements, written
+    // by the keys ADR-093's amendment names; the page reads none of them
+    // from the address until its Movements step.
+    name: '30-movements-one-item',
+    path: (targets) =>
+      targets.movementsVariantId && targets.movementsRange
+        ? `/movements?variantId=${targets.movementsVariantId}` +
+          `&from=${targets.movementsRange.from}` +
+          `&until=${targets.movementsRange.until}`
+        : null,
+  },
+  {
+    name: '31-order-partly-received',
+    path: (targets) =>
+      at(targets.partlyReceivedOrderId, (id) => `/orders/${id}`),
+  },
+  {
+    // The Filters sheet every list's phone opens (ADR-093, review 9's
+    // footer), on Stock, whose quick filters it holds with the selects.
+    // The button's words for no filter on, its plural's =0 branch: with
+    // two on it reads "Filters · 2", which the match still finds.
+    name: '32-stock-filters-sheet',
+    path: () => '/inventory',
+    widths: ['duo-closed', 'phone'],
+    windowOnly: true,
+    prepare: async (page, words) => {
+      const none = /=0 \{([^}]*)\}/.exec(words('filters.sheet.open'))![1];
+      await page.getByRole('main').getByRole('button', { name: none }).click();
+      await page
+        .getByRole('dialog', { name: words('filters.sheet.title') })
+        .waitFor();
+    },
+  },
 ];

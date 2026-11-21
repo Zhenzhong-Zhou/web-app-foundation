@@ -1,17 +1,35 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { readableQuantity } from '../src/common/readable-quantity';
+import { ROLE_TEMPLATES } from '../src/core/authorization/permissions';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { lots } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import { lots, productVariants } from '../src/database/schema';
+import {
+  addMember,
+  body,
+  createE2eApp,
+  createLocation,
+  customRole,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface Trace {
-  lot: { code: string; sku: string };
-  balances: { locationName: string; quantity: string }[];
+  lot: { code: string; sku: string; variantId: string; productId: string };
+  balances: {
+    locationId: string;
+    locationName: string | null;
+    locationCode: string | null;
+    locationPath: string[];
+    isAvailable: boolean;
+    quantity: string;
+  }[];
+  usable: string;
+  notUsable: string;
   sources: {
     kind: 'receipt' | 'production';
     supplierName: string | null;
@@ -261,6 +279,24 @@ describe('Lot trace (e2e)', () => {
     ]);
   });
 
+  // Review 6: a lot's page links to its item and to its movements.
+  it('carries its item’s variant and product, for the links to them', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await story(alpha);
+
+    const found = await trace(alpha, 'BF-1');
+    const [lot] = await db.select().from(lots).where(eq(lots.code, 'BF-1'));
+    const [variant] = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.id, lot.variantId));
+
+    expect(found.lot).toMatchObject({
+      variantId: lot.variantId,
+      productId: variant.productId,
+    });
+  });
+
   it('follows a batch back to the supplier of what went into it', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await story(alpha);
@@ -334,15 +370,16 @@ describe('Lot trace (e2e)', () => {
       '已退回',
       '日期',
     ]);
-    // The trace's rows, in its order; nobody on record said so in words.
+    // The trace's rows, in its order, each quantity without its padding
+    // zeros (R30); nobody on record said so in words.
     const found = await trace(alpha, 'BF-1');
     expect(chinese.slice(1).map((row) => row.slice(2, 7))).toEqual(
       found.recipients.map((row) => [
         row.lotCode,
         'FOCUS',
-        row.shipped,
-        row.sampled,
-        row.returned,
+        readableQuantity(row.shipped),
+        readableQuantity(row.sampled),
+        readableQuantity(row.returned),
       ]),
     );
     expect(chinese.slice(1).map((row) => row[0])).toEqual([
@@ -362,6 +399,127 @@ describe('Lot trace (e2e)', () => {
     // Another organization's lot is not exported.
     const beta = await registerOrganization(app, 'beta');
     await beta.agent.get(`/v1/stock/lots/${id}/recipients/export`).expect(404);
+  });
+
+  // Where it is now, by each place's path for a reader who may see
+  // places (#639); its ids and figures alone for one who may not, as
+  // Stock leaves them out, with its usable and not usable sums from the
+  // server (ADR-093, 96a).
+  it('names each place where it is now by its path, only to a reader with locations.view', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await story(alpha);
+    const main = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Main warehouse',
+    });
+    const zone = await createLocation(alpha.agent, {
+      type: 'zone',
+      name: 'Zone A',
+      parentId: main,
+    });
+    const shelfA2 = await createLocation(alpha.agent, {
+      type: 'shelf',
+      name: 'Shelf A2',
+      code: 'A2',
+      parentId: zone,
+    });
+    const shelf = (await trace(alpha, 'FOC-1')).balances[0].locationId;
+    await alpha.agent
+      .post('/v1/stock/movements')
+      .send({
+        lotId: await lotId('FOC-1'),
+        variantId: (
+          await db.select().from(lots).where(eq(lots.code, 'FOC-1'))
+        )[0].variantId,
+        fromLocationId: shelf,
+        toLocationId: shelfA2,
+        quantity: '7',
+        reason: 'transfer',
+      })
+      .expect(201);
+    // Shelf A2 held back, as quarantine is: its 7 not usable.
+    await alpha.agent
+      .patch(`/v1/locations/${shelfA2}`)
+      .send({ isAvailable: false })
+      .expect(204);
+
+    const owners = await trace(alpha, 'FOC-1');
+    expect(owners.balances).toEqual([
+      {
+        locationId: shelf,
+        locationName: 'Shelf',
+        locationCode: null,
+        locationPath: [],
+        isAvailable: true,
+        quantity: '60.0000',
+      },
+      {
+        locationId: shelfA2,
+        locationName: 'Shelf A2',
+        locationCode: 'A2',
+        locationPath: ['Main warehouse', 'Zone A'],
+        isAvailable: false,
+        quantity: '7.0000',
+      },
+    ]);
+    expect(owners).toMatchObject({ usable: '60.0000', notUsable: '7.0000' });
+
+    // The Sales template holds stock.view and not locations.view.
+    await customRole(
+      app,
+      alpha.organizationId,
+      'Sales',
+      ROLE_TEMPLATES.sales.permissions,
+    );
+    const sales = await addMember(app, alpha, 'sales@example.com', 'Sales');
+    const theirs = body<Trace>(
+      await sales
+        .get(`/v1/stock/lots/${await lotId('FOC-1')}/trace`)
+        .expect(200),
+    );
+    expect(theirs.balances).toEqual(
+      owners.balances.map((balance) => ({
+        ...balance,
+        locationName: null,
+        locationCode: null,
+        locationPath: [],
+      })),
+    );
+    // The sums, and the rest of the story, theirs as they are the owner's.
+    expect(theirs).toMatchObject({ usable: '60.0000', notUsable: '7.0000' });
+    expect(theirs.recipients).toEqual(owners.recipients);
+
+    // Moved back, Shelf A2 has nothing left: no longer where it is, and
+    // its row, read with the rest, adds nothing to either sum (review 27).
+    await alpha.agent
+      .post('/v1/stock/movements')
+      .send({
+        lotId: await lotId('FOC-1'),
+        variantId: (
+          await db.select().from(lots).where(eq(lots.code, 'FOC-1'))
+        )[0].variantId,
+        fromLocationId: shelfA2,
+        toLocationId: shelf,
+        quantity: '7',
+        reason: 'transfer',
+      })
+      .expect(201);
+    const emptied = await trace(alpha, 'FOC-1');
+    expect(emptied.balances).toEqual([
+      { ...owners.balances[0], quantity: '67.0000' },
+    ]);
+    expect(emptied.usable).toBe('67.0000');
+    expect(Number(emptied.notUsable)).toBe(0);
+
+    // Expired, none of it is usable, wherever it is.
+    await db
+      .update(lots)
+      .set({ expiresAt: '2020-01-31' })
+      .where(eq(lots.code, 'FOC-1'));
+    expect(await trace(alpha, 'FOC-1')).toMatchObject({
+      usable: '0',
+      notUsable: '67.0000',
+    });
   });
 
   it('does not trace another organization lot', async () => {

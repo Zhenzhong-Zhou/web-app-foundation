@@ -33,6 +33,7 @@ import { displayQuantity, formatDate, SEPARATOR } from '../lib/format';
 import { whereItStands } from '../lib/item-path';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
+import type { RowReturn } from '../lib/use-row-return';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
@@ -272,6 +273,7 @@ export function ItemTable({
   header,
   onDate,
   firstNew,
+  rowReturn,
   ticks,
   withType,
 }: {
@@ -282,6 +284,8 @@ export function ItemTable({
   onDate: (key: DateKey) => void;
   /** The first row Show 50 more added, which takes focus. */
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
+  /** Each row's way back to it (useRowReturn). */
+  rowReturn?: (id: string) => RowReturn;
   ticks?: Ticks;
   /** On All: each row's type said after its name. */
   withType?: boolean;
@@ -326,6 +330,7 @@ export function ItemTable({
             </TableCell>
           )}
           <SortHeader
+            name
             label={intl.formatMessage({
               id: 'common.name',
               defaultMessage: 'Name',
@@ -360,6 +365,7 @@ export function ItemTable({
           <TableRow
             key={item.id}
             hover
+            {...rowReturn?.(item.id)}
             selected={ticks?.ticked.has(item.id)}
             // The name is the row's one way in (ADR-093 v3): the row tints
             // under the pointer, which stays an arrow.
@@ -509,11 +515,13 @@ function DateHeader({
 export function ItemCards({
   items,
   firstNew,
+  rowReturn,
   ticks,
   withType,
 }: {
   items: ProductSummary[] | null;
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
+  rowReturn?: (id: string) => RowReturn;
   ticks?: Ticks;
   /** On All: each card's type said after its name. */
   withType?: boolean;
@@ -529,6 +537,7 @@ export function ItemCards({
         <Box
           component="li"
           key={item.id}
+          {...rowReturn?.(item.id)}
           sx={{
             listStyle: 'none',
             display: 'flex',

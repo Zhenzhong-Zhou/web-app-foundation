@@ -53,7 +53,10 @@ Andrej Karpathy's observations on LLM coding pitfalls
   `Zhenzhong Zhou <bob0823.zhou@gmail.com>`; a commit made with Claude
   Code may carry its `Co-Authored-By` trailer. One pull request per
   feature: the ADR or amendment first, then server, client and docs
-  commits. PR descriptions are plain Markdown.
+  commits. PR descriptions are plain Markdown. Commit messages, pull
+  requests, issues and comments name no one, "the maintainer" and never
+  a person's name, since the repository is public
+  ([`docs/engineering.md`, Commits](docs/engineering.md#commits)).
 - **Dependencies.** On every branch, `npm outdated` in `server/` and
   `client/`; the in-range updates at least 7 days old, each package by
   its own publish time, are a commit of their own, at the branch's

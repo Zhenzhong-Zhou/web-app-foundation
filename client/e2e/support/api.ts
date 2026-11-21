@@ -329,3 +329,34 @@ export async function joinByLink(
   expect(response.ok(), await response.text()).toBeTruthy();
   return api;
 }
+
+/**
+ * A member of the Owner's organization, signed in on its own: in a
+ * built-in role, or in one made from a template of the same key.
+ */
+export async function memberIn(
+  owner: APIRequestContext,
+  role: string,
+  template?: string,
+): Promise<APIRequestContext> {
+  if (template) {
+    const catalogue = (await (
+      await owner.get('/v1/roles/catalogue')
+    ).json()) as { templates: { key: string; permissions: string[] }[] };
+    await created(
+      await owner.post('/v1/roles', {
+        data: {
+          name: role,
+          permissions: catalogue.templates.find((each) => each.key === template)
+            ?.permissions,
+        },
+      }),
+    );
+  }
+  const { token } = await inviteByLink(
+    owner,
+    uniqueEmail(role.toLowerCase()),
+    role,
+  );
+  return joinByLink(token, `E2E ${role}`);
+}

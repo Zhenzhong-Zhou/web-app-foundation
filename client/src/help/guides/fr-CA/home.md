@@ -31,8 +31,8 @@ Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’
 
 - **À expédier** et **À recevoir** : Commandes, les commandes en retard d’abord.
 - **Commandes · Brouillon** : Commandes, les commandes en brouillon, les plus anciennes d’abord. Elle reste masquée tant que vous ne l’affichez pas dans Personnaliser l’accueil.
-- **Stock bas** : Réapprovisionner, dans [Inventaire](/inventory#reorder-points), les codes les plus loin sous leur point en premier. Il compte des codes, comme Réapprovisionner.
-- **Expire bientôt** : Inventaire, regroupé par lot, les lots qui périment le plus tôt, les périmés en tête. Il compte des lots à chaque emplacement : un lot à deux emplacements en compte deux.
+- **Stock bas** : Réapprovisionner, dans [Inventaire](/inventory#reorder-points), les codes les plus loin sous leur point en premier. Il compte des codes, comme Réapprovisionner, et le dit : « 8 codes ».
+- **Expire bientôt** : Inventaire, regroupé par lot, les lots qui périment le plus tôt, les périmés en tête. Il compte des lots à chaque emplacement, et le dit, « 4 lots » : un lot à deux emplacements en compte deux.
 - **Valeur du stock · En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
 - **Factures · À émettre** : Factures, les brouillons.
 - **Retours en cours** : Retours, ceux qui sont en cours.

@@ -54,6 +54,7 @@ async function receive(line: OrderLine, lotCode?: string) {
       orderNumber="PO-000001"
       line={line}
       locations={[DOCK]}
+      tree={[DOCK]}
       canSeeLots={false}
       onClose={() => undefined}
       onReceived={() => Promise.resolve()}
@@ -88,6 +89,7 @@ describe('ReceiveLineDialog', () => {
         orderNumber="PO-000001"
         line={orderLine({ unitOfMeasure: 'kg' })}
         locations={[DOCK]}
+        tree={[DOCK]}
         canSeeLots={false}
         onClose={() => undefined}
         onReceived={() => Promise.resolve()}
@@ -145,6 +147,7 @@ describe('ReceiveLineDialog', () => {
           line={delivery.line}
           delivery={delivery}
           locations={[DOCK]}
+          tree={[DOCK]}
           canSeeLots
           onClose={() => undefined}
           onReceived={() => Promise.resolve()}

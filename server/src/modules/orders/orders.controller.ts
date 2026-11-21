@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { KeysetQueryDto } from '../../common/dto/keyset-query.dto';
 import { csvFile, everyRow, exportFilters } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
@@ -37,6 +38,7 @@ import type {
   OrderDetail,
   OrderEnvelope,
   OrderPage,
+  OrderReceiptPage,
   ReceiptEnvelope,
 } from './dto/order-response.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
@@ -124,6 +126,28 @@ export class OrdersController {
       id,
       await this.sight(user),
       localeOf(acceptLanguage),
+    );
+  }
+
+  /**
+   * A purchase's receipts, its Receipts tab (ADR-093, 102a): for whoever
+   * may see the order, stock.view or not; each place only with
+   * locations.view (96a).
+   */
+  @Get(':id/receipts')
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  async listReceipts(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: KeysetQueryDto,
+    @CurrentUser() user: RequestContext,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<OrderReceiptPage> {
+    const held = await this.permissions.heldBy(user.membershipId);
+    return this.receipts.list(
+      id,
+      query,
+      localeOf(acceptLanguage),
+      held.has(PERMISSIONS.LOCATIONS_VIEW),
     );
   }
 

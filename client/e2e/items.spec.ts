@@ -433,7 +433,9 @@ test('Items, Show 50 more: the next fifty below; focus on the first new row', as
   await signInAs(page, freshOrg.api);
   await page.goto('/items');
   await expect(rowNames(page)).toHaveCount(50);
-  await expect(page.getByText('Showing 50 of 52')).toBeVisible();
+  await expect(
+    page.getByText('Showing 50 of 52 items', { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Show 50 more' }).click();
 
@@ -743,7 +745,7 @@ test('the bar, Discontinue: at once; “Discontinued 3 items”, with Undo', asy
   await expect(page.getByRole('button', { name: 'Undo' })).toBeFocused();
   await expect(rowNames(page)).toHaveText(['E2E Keep']);
   await expect(
-    page.getByRole('button', { name: /^Discontinued\s*3$/ }),
+    page.getByRole('button', { name: 'Discontinued · 3 items' }),
   ).toBeVisible();
 });
 

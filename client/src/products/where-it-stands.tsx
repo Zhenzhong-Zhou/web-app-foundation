@@ -32,13 +32,20 @@ import { ListError } from '../components/list-error';
 import { LotLink } from '../components/lot-link';
 import { Reference } from '../components/reference';
 import { TableOrCards } from '../components/table-or-cards';
+import type { MovementColumns } from '../inventory/describe-movement';
 import { EditLotDialog } from '../inventory/edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from '../inventory/move-stock-dialog';
 import {
-  type HistoryOf,
-  MovementHistoryDialog,
-} from '../inventory/movement-history-dialog';
+  MovementCard,
+  MovementCells,
+  MovementHeads,
+  MovementWhen,
+} from '../inventory/movement-cells';
+import { MOVEMENT_HEADINGS } from '../inventory/movement-reasons';
+import { movementsPath } from '../inventory/movements-path';
+import { notUsableWhy } from '../inventory/not-usable';
 import { PlacePath } from '../inventory/place-path';
+import { PlacesHidden } from '../inventory/places-hidden';
 import {
   type ReorderOpening,
   ReorderPointDialog,
@@ -46,6 +53,7 @@ import {
 import { fieldQuantity } from '../inventory/reorder-points';
 import { LeftLine, ReorderStatusChip } from '../inventory/reorder-status';
 import { StockActions } from '../inventory/stock-actions';
+import { whenRange } from '../lib/date-range';
 import { isZero } from '../lib/decimal';
 import { displayQuantity, formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
@@ -58,8 +66,8 @@ import { wholeOnFocus } from '../lib/whole-on-focus';
 import { leavesOf } from '../locations/tree';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
+import { BIG_FIGURE } from '../theme/figure';
 import { rem } from '../theme/rem';
-import { TYPE } from '../theme/tokens';
 import { NO_RECEIVE } from './receive-line';
 import { displayWithUnit } from './units';
 
@@ -121,9 +129,10 @@ const WORDS = defineMessages({
  * its title, for a reader with stock.view. Per code, the low first, as
  * the server orders them: its status and "10 left · reorder at 36"; On
  * hand with what is not usable and why; Free; Held with its orders; Coming
- * with its purchases and runs; Left with its sum in words; and By place
- * and lot. Each part is drawn only when the answer has it, since the
- * server leaves out what the reader may not see (ADR-080); each action
+ * with its purchases and runs; Left with its sum in words; By place and
+ * lot; and its latest movements, with All movements of it. Each part is
+ * drawn only when the answer has it, since the server leaves out what
+ * the reader may not see (ADR-080); each action
  * by its own permission, a main action the role cannot use naming whom to
  * ask. `#stock` and `#held` in the address put focus on the section, or
  * on Held, as Stock's "10 left" and "20 short" open it.
@@ -149,7 +158,6 @@ function Standing({ product }: { product: ProductDetail }) {
     mode: MoveMode;
     row: StockPile;
   } | null>(null);
-  const [viewing, setViewing] = useState<HistoryOf | null>(null);
   const [editingLot, setEditingLot] = useState<StockPile | null>(null);
   // The places read once a lot's Move, Ship out, Send sample or Correct
   // the count first opens, then kept, never on a visit that moves nothing
@@ -215,7 +223,6 @@ function Standing({ product }: { product: ProductDetail }) {
         setMovedOnce(true);
         setMoving({ mode, row });
       },
-      onHistory: setViewing,
       onEditLot: setEditingLot,
     },
   };
@@ -223,6 +230,14 @@ function Standing({ product }: { product: ProductDetail }) {
   // (v2's board); several, the section's title above them, each card
   // titled by its code.
   const single = codes.length === 1;
+  // Without locations.view, why no place is named, once, in the first
+  // card with stock, where its places would be (review 3, 115).
+  const hiddenAt = can('locations.view')
+    ? undefined
+    : codes.find(
+        (code) =>
+          code.lots && (code.lots.length > 0 || !isZero(code.notUsable)),
+      )?.variantId;
 
   return (
     <Box component="section" aria-labelledby="stock">
@@ -236,6 +251,7 @@ function Standing({ product }: { product: ProductDetail }) {
             single={single}
             heldId={code === heldAt ? 'held' : undefined}
             handlers={handlers}
+            placesHidden={code.variantId === hiddenAt}
           />
         ))}
       </Stack>
@@ -274,14 +290,11 @@ function Standing({ product }: { product: ProductDetail }) {
           mode={moving.mode}
           row={moving.row}
           locations={leavesOf(locations).filter((each) => each.isActive)}
+          tree={locations}
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={reload}
         />
-      )}
-
-      {viewing && (
-        <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
       )}
 
       <EditLotDialog
@@ -303,7 +316,6 @@ interface Handlers {
     canMove: boolean;
     canAdjust: boolean;
     onMove: (mode: MoveMode, row: StockPile) => void;
-    onHistory: (of: HistoryOf) => void;
     onEditLot: (row: StockPile) => void;
   };
 }
@@ -330,12 +342,15 @@ function CodeBlock({
   single,
   heldId,
   handlers,
+  placesHidden = false,
 }: {
   code: CodeStanding;
   /** The item's one code: its card holds the section's title. */
   single: boolean;
   heldId?: string;
   handlers: Handlers;
+  /** Says why no place is named, under its lots (review 3, 115). */
+  placesHidden?: boolean;
 }) {
   const intl = useIntl();
   const qty = (value: string) =>
@@ -452,8 +467,11 @@ function CodeBlock({
 
             {code.places && <ByPlace code={code} lot={handlers.lot} />}
             {code.lots && <UsableLots code={code} />}
+            {placesHidden && <PlacesHidden />}
           </>
         )}
+
+        <LatestMovements code={code} />
       </Stack>
     </Paper>
   );
@@ -504,9 +522,7 @@ function Figure({
         component="dd"
         sx={{
           m: 0,
-          fontSize: rem(TYPE.figure),
-          lineHeight: 40 / TYPE.figure,
-          fontVariantNumeric: 'tabular-nums',
+          ...BIG_FIGURE,
           ...(short && { color: 'error.main' }),
         }}
       >
@@ -543,9 +559,11 @@ function StatusLine({ code }: { code: CodeStanding }) {
 }
 
 /**
- * Change reorder point by stock.reorder; Buy 30 or Make 1,000, as its
- * point says, by orders.create or production.create, the main action's
- * line naming whom to ask for a role without it; and what a draft covers.
+ * Change reorder point by stock.reorder; Buy 30 each or Make 1,000
+ * bottles, as its point says, the number with its unit, since alone on a
+ * button it said nothing of what it counts (#640); by orders.create or
+ * production.create, the main action's line naming whom to ask for a role
+ * without it; and what a draft covers.
  */
 function Actions({
   code,
@@ -557,7 +575,9 @@ function Actions({
   const intl = useIntl();
   const can = useCan();
   const low = code.status === 'low' || code.status === 'out';
-  const quantity = code.suggestion && displayQuantity(code.suggestion);
+  const quantity =
+    code.suggestion &&
+    displayWithUnit(code.suggestion, code.unitOfMeasure, intl);
 
   let main: ReactNode = null;
   if (low && code.suggestion !== null && isZero(code.suggestion)) {
@@ -691,38 +711,7 @@ function NotUsableLine({ code }: { code: CodeStanding }) {
       </Line>
     );
   }
-  const reasons = [
-    !isZero(code.expired) &&
-      intl.formatMessage({
-        id: 'products.stock.reason.expired',
-        defaultMessage: 'expired',
-      }),
-    !isZero(code.issued) &&
-      intl.formatMessage({
-        id: 'products.stock.reason.issued',
-        defaultMessage: 'issued to a run',
-      }),
-    !isZero(code.unavailable) &&
-      intl.formatMessage({
-        id: 'products.stock.reason.unavailable',
-        defaultMessage: 'at a place not available',
-      }),
-  ].filter((reason): reason is string => !!reason);
-
-  return (
-    <Line tone="error">
-      {intl.formatMessage(
-        {
-          id: 'products.stock.notUsableWhy',
-          defaultMessage: '{quantity} not usable: {reasons}',
-        },
-        {
-          quantity: displayQuantity(code.notUsable),
-          reasons: intl.formatList(reasons, { type: 'conjunction' }),
-        },
-      )}
-    </Line>
-  );
+  return <Line tone="error">{notUsableWhy(code, intl)}</Line>;
 }
 
 /** What can still be promised, or what the orders want beyond it. */
@@ -924,7 +913,6 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
       canMove={lot.canMove}
       canAdjust={lot.canAdjust}
       onSelect={lot.onMove}
-      onHistory={lot.onHistory}
       onEditLot={lot.onEditLot}
     />
   );
@@ -1020,6 +1008,93 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
           </Stack>
         }
       />
+    </Stack>
+  );
+}
+
+/**
+ * Latest movements (ADR-093, R12; v2's board): the code's five newest,
+ * a stock card's In, Out and Balance in the one movement row's cells,
+ * From → to for a reader who may see places (96a), and All movements of
+ * the code, Movements filtered to it. None until something has moved.
+ */
+function LatestMovements({ code }: { code: CodeStanding }) {
+  const intl = useIntl();
+  const month = whenRange('thisMonth');
+  const can = useCan();
+  const movements = code.latestMovements;
+  if (movements.length === 0) return null;
+  const columns: MovementColumns = {
+    figures: 'balance',
+    places: can('locations.view'),
+  };
+
+  return (
+    <Stack spacing={1}>
+      <Typography component="h3" sx={{ fontWeight: 600 }}>
+        {intl.formatMessage({
+          id: 'products.stock.latestMovements',
+          defaultMessage: 'Latest movements',
+        })}
+      </Typography>
+      <TableOrCards
+        loading={false}
+        table={
+          <TableContainer onFocus={wholeOnFocus}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.when)}
+                  </TableCell>
+                  <MovementHeads columns={columns} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {movements.map((movement) => (
+                  <TableRow key={movement.id}>
+                    <TableCell>
+                      <MovementWhen movement={movement} />
+                    </TableCell>
+                    <MovementCells movement={movement} columns={columns} />
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        }
+        cards={
+          <Stack component="ul" sx={{ m: 0, p: 0 }}>
+            {movements.map((movement) => (
+              <MovementCard
+                key={movement.id}
+                movement={movement}
+                columns={columns}
+                oneCode
+              />
+            ))}
+          </Stack>
+        }
+      />
+      <Link
+        component={RouterLink}
+        // On this month, so its stock card shows at once (review 1).
+        to={movementsPath({
+          variantId: code.variantId,
+          from: month.from,
+          until: month.to,
+        })}
+        state={OFFER_BACK}
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        {intl.formatMessage(
+          {
+            id: 'products.stock.allMovements',
+            defaultMessage: 'All movements of {code}',
+          },
+          { code: code.sku },
+        )}
+      </Link>
     </Stack>
   );
 }

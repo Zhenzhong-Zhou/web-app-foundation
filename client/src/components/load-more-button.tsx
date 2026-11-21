@@ -10,7 +10,9 @@ import { useIntl } from 'react-intl';
 
 /**
  * The foot of a keyset list: Load more, and "Loading…" while a page is on
- * its way. Nothing at all once the server says there is no more.
+ * its way. Once the server says there is no more, the button goes, and
+ * `before` stays alone, so a list that counts its rows says so always
+ * (#638): "31 codes" (`ShowingLine`).
  *
  * Load more rather than page numbers. A keyset cursor has no notion of
  * "page 4", and offset paging repeats rows as new ones arrive at the head —
@@ -24,7 +26,7 @@ import { useIntl } from 'react-intl';
  * `failed`, the next page could not be read: the rows above stay, and
  * the line beside it says so, with Try again (#544), Items' first.
  * `before` sits ahead of it on the same line, as Items' "Showing 50 of
- * 120".
+ * 120 items".
  */
 export function LoadMoreButton({
   hasMore,
@@ -48,7 +50,8 @@ export function LoadMoreButton({
 }) {
   const intl = useIntl();
 
-  if (!hasMore && !failed) return null;
+  const more = hasMore || failed;
+  if (!more && !before) return null;
 
   return (
     <Stack
@@ -77,34 +80,36 @@ export function LoadMoreButton({
           )}
         </Typography>
       )}
-      <Button
-        variant="text"
-        onClick={() => void onLoadMore()}
-        disabled={loading}
-      >
-        {loading
-          ? intl.formatMessage({
-              id: 'common.loading',
-              defaultMessage: 'Loading…',
-            })
-          : failed
+      {more && (
+        <Button
+          variant="text"
+          onClick={() => void onLoadMore()}
+          disabled={loading}
+        >
+          {loading
             ? intl.formatMessage({
-                id: 'common.tryAgain',
-                defaultMessage: 'Try again',
+                id: 'common.loading',
+                defaultMessage: 'Loading…',
               })
-            : pageSize
-              ? intl.formatMessage(
-                  {
-                    id: 'components.loadMore.count',
-                    defaultMessage: 'Show {count} more',
-                  },
-                  { count: pageSize },
-                )
-              : intl.formatMessage({
-                  id: 'components.loadMore',
-                  defaultMessage: 'Load more',
-                })}
-      </Button>
+            : failed
+              ? intl.formatMessage({
+                  id: 'common.tryAgain',
+                  defaultMessage: 'Try again',
+                })
+              : pageSize
+                ? intl.formatMessage(
+                    {
+                      id: 'components.loadMore.count',
+                      defaultMessage: 'Show {count} more',
+                    },
+                    { count: pageSize },
+                  )
+                : intl.formatMessage({
+                    id: 'components.loadMore',
+                    defaultMessage: 'Load more',
+                  })}
+        </Button>
+      )}
     </Stack>
   );
 }

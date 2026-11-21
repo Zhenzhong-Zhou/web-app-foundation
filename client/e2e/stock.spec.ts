@@ -23,7 +23,7 @@ import {
 /**
  * Inventory's Stock tab (ADR-093), row by row: each row of the ADR's
  * Stock table is one test here, named by its words, "where, what you do:
- * what happens; Back", but Actions › Movements, Movements' branch's. Then
+ * what happens; Back", Actions › Movements among them. Then
  * the five states where the ADR says they differ, and the button that
  * opens a row. Where it stands' own rows are in where-it-stands.spec.ts,
  * Reorder's in reorder.spec.ts, axe on each in accessibility.spec.ts.
@@ -107,7 +107,9 @@ test('Stock, by item, Low stock 1: the list narrows to it, the count kept; ?low=
     'aria-pressed',
     'true',
   );
-  await expect(quick(page, 'Low stock')).toContainText('1');
+  await expect(quick(page, 'Low stock')).toHaveAccessibleName(
+    'Low stock · 1 code',
+  );
   await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
 
   // A filter replaces the address (#341's rule, as every list's): Back
@@ -298,7 +300,7 @@ test('Stock, Free, 15 short: the item’s page at Held, focus on it, the waiting
   await expect(itemLinks(page)).toHaveCount(2);
 });
 
-test('Stock, a lot, its code: the lot’s trace; Back, Stock', async ({
+test('Stock, a lot, its code: the lot’s trace; Back, Stock as it was, the rows open', async ({
   page,
   freshOrg,
 }) => {
@@ -315,13 +317,20 @@ test('Stock, a lot, its code: the lot’s trace; Back, Stock', async ({
     'VC-LATE',
   );
 
-  // Stock as it was, the row open, as the address keeps it.
+  // Stock as it was, the row open and the place's lots with it, as the
+  // address keeps both.
   await page.goBack();
   await expect(page).toHaveURL(
-    new RegExp(`/inventory\\?search=E2E-VITC&open=${scene.vitamin.variantId}$`),
+    new RegExp(
+      `/inventory\\?search=E2E-VITC&open=${scene.vitamin.variantId}%2C${scene.vitamin.variantId}\\.${scene.shelfA.id}$`,
+    ),
   );
   await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
   await expect(placesOf(page, 'E2E Vitamin C')).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(lotsAt(page, scene.shelfA.name)).toHaveAttribute(
     'aria-expanded',
     'true',
   );
@@ -407,17 +416,219 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
     'Movements',
   ]);
 
-  // A place's: a plain Movements link, its Movements there.
+  // A place's: a plain Movements link, Movements of the code there (R11).
   await page
-    .getByRole('button', {
+    .getByRole('link', {
       name: `Movements of E2E Vitamin C at ${scene.shelfB.name}`,
     })
     .click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/movements\\?variantId=${scene.vitamin.variantId}&locationId=${scene.shelfB.id}$`,
+    ),
+  );
   await expect(
-    page.getByRole('dialog', {
-      name: new RegExp(`at ${scene.shelfB.name}$`),
-    }),
+    page.getByText(`In, Out and Balance count ${scene.shelfB.name} alone.`),
   ).toBeVisible();
+});
+
+test('Stock, a lot’s Actions › Movements: Movements, one lot, a chip; Back, Stock as it was, the rows open and the place’s lots with them', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page, '/inventory?search=E2E-VITC');
+
+  await placesOf(page, 'E2E Vitamin C').click();
+  await lotsAt(page, scene.shelfA.name).click();
+  await page
+    .getByRole('button', {
+      name: `Actions for lot VC-LATE at ${scene.shelfA.name}`,
+    })
+    .click();
+  await page.getByRole('menuitem', { name: 'Movements' }).click();
+
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/movements\\?variantId=${scene.vitamin.variantId}&lotId=[0-9a-f-]+$`,
+    ),
+  );
+  await expect(page.getByText('Lot: VC-LATE')).toBeVisible();
+  await expect(
+    page.getByRole('columnheader', { name: 'Balance' }),
+  ).toBeVisible();
+
+  // Stock as it was: the code's row open, the place's lots with it, as
+  // `?open=` keeps both, focus on the code's name.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `/inventory\\?search=E2E-VITC&open=${scene.vitamin.variantId}%2C${scene.vitamin.variantId}\\.${scene.shelfA.id}$`,
+    ),
+  );
+  await expect(lotsAt(page, scene.shelfA.name)).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(page.getByRole('link', { name: 'VC-LATE' })).toBeVisible();
+  await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
+  await expect(itemLinks(page).first()).toBeFocused();
+});
+
+// Review 4: from the lot to its shelf by chips, each × clearing its own
+// filter, the shelf's chip the one left.
+test('Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page, '/inventory?search=E2E-VITC');
+
+  await placesOf(page, 'E2E Vitamin C').click();
+  await lotsAt(page, scene.shelfA.name).click();
+  await page
+    .getByRole('button', {
+      name: `Actions for lot VC-LATE at ${scene.shelfA.name}`,
+    })
+    .click();
+  await page.getByRole('menuitem', { name: 'Movements' }).click();
+  const chip = (name: RegExp) => page.getByRole('button', { name });
+  await expect(chip(/^Remove filter: Item: E2E Vitamin C/)).toBeVisible();
+  await expect(chip(/^Remove filter: Lot: VC-LATE$/)).toBeVisible();
+
+  await page.getByRole('combobox', { name: 'Location' }).click();
+  await page
+    .getByRole('option', { name: scene.shelfA.name, exact: true })
+    .and(page.locator('[data-value]'))
+    .click();
+  await expect(
+    chip(new RegExp(`^Remove filter: Location: ${scene.shelfA.name}`)),
+  ).toBeVisible();
+
+  await chip(/^Remove filter: Lot:/).click();
+  await expect(page).not.toHaveURL(/lotId=/);
+  await chip(/^Remove filter: Item:/).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/movements\\?locationId=${scene.shelfA.id}$`),
+  );
+  await expect(chip(/^Remove filter: /)).toHaveCount(1);
+  await expect(
+    chip(new RegExp(`^Remove filter: Location: ${scene.shelfA.name}`)),
+  ).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Item' })).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
+// Found stock (#628), the amendment's table row by row
+// ---------------------------------------------------------------------------
+
+/** Stock with the vitamin's places open, and a shelf it has never been on. */
+async function foundScene(page: Page, api: APIRequestContext) {
+  const scene = await stockScene(api);
+  const shelfC = await createLocation(api, { name: 'E2E Shelf C3' });
+  await signInAs(page, api);
+  await stockFrom(page, '/inventory?search=E2E-VITC');
+  await placesOf(page, 'E2E Vitamin C').click();
+  return { ...scene, shelfC };
+}
+
+/** Count it in…'s dialog filled, but for Which lot. */
+async function countIn(page: Page, place: string) {
+  await page.getByRole('button', { name: 'Count it in E2E-VITC…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Correct the count' });
+  await dialog.getByRole('combobox', { name: 'Location' }).click();
+  await page.getByRole('option', { name: place }).click();
+  await dialog.getByRole('textbox', { name: 'Quantity' }).fill('12');
+  await dialog
+    .getByRole('textbox', { name: 'What happened' })
+    .fill('E2E found behind the pallet');
+  return dialog;
+}
+
+test('Stock, Correct the count’s lots, Count it in…: Correct the count with a place and a lot to choose, neither lot chosen; Escape, focus back on Count it in…', async ({
+  page,
+  freshOrg,
+}) => {
+  await foundScene(page, freshOrg.api);
+
+  await expect(
+    page.getByText('Found some where it has never been?'),
+  ).toBeVisible();
+  const button = page.getByRole('button', { name: 'Count it in E2E-VITC…' });
+  await button.click();
+
+  const dialog = page.getByRole('dialog', { name: 'Correct the count' });
+  await expect(
+    dialog.getByText('Found E2E-VITC where it has never been'),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('combobox', { name: 'Location' }),
+  ).toBeVisible();
+  const which = dialog.getByRole('radiogroup', { name: 'Which lot' });
+  await expect(
+    which.getByRole('radio', { name: 'One of its lots' }),
+  ).not.toBeChecked();
+  await expect(
+    which.getByRole('radio', { name: 'A new lot' }),
+  ).not.toBeChecked();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(button).toBeFocused();
+});
+
+test('Count it in…, Save correction, no lot chosen: “Choose one of its lots, or a new lot.” at its field, focus on it', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await foundScene(page, freshOrg.api);
+  const dialog = await countIn(page, scene.shelfC.name);
+
+  await dialog.getByRole('button', { name: 'Save correction' }).click();
+
+  await expect(
+    dialog.getByText('Choose one of its lots, or a new lot.'),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('radio', { name: 'One of its lots' }),
+  ).toBeFocused();
+  await expect(dialog).toBeVisible();
+});
+
+test('Count it in…, Save correction: a found correction into the place, a new lot made, “Counted in 12 each of E2E-VITC at E2E Shelf C3, new lot VC-0310. It waits for a cost.”; Stock, the row open at its new place', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await foundScene(page, freshOrg.api);
+  const dialog = await countIn(page, scene.shelfC.name);
+  await dialog.getByRole('radio', { name: 'A new lot' }).check();
+  await dialog.getByRole('textbox', { name: 'Lot number' }).fill('VC-0310');
+
+  await dialog.getByRole('button', { name: 'Save correction' }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByText(
+      'Counted in 12 each of E2E-VITC at E2E Shelf C3, new lot VC-0310. It waits for a cost.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Waiting for a cost', exact: true }),
+  ).toBeVisible();
+  // The code's row open, at its new place, its lots open: the new lot.
+  await expect(placesOf(page, 'E2E Vitamin C')).toHaveText('3 places');
+  await expect(lotsAt(page, scene.shelfC.name)).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(
+    codeRow(page, scene.shelfC.name)
+      .first()
+      .getByRole('cell', { name: '12 each', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'VC-0310' })).toBeVisible();
 });
 
 test('Stock, an item with nothing on hand, Actions: what needs stock greyed with why, Correct the count opening its emptied place; never stocked, greyed too', async ({
@@ -712,9 +923,56 @@ test('Stock, Show 50 more: focus on the first new row', async ({
   await stockFrom(page);
   await expect(itemLinks(page)).toHaveCount(50);
 
+  // How many it shows, always (#638, P1a): of how many while there are
+  // more, the count whole once every row is shown.
+  await expect(
+    page.getByText('Showing 50 of 52 codes', { exact: true }),
+  ).toBeVisible();
+
   await page.getByRole('button', { name: 'Show 50 more' }).click();
   await expect(itemLinks(page)).toHaveCount(52);
   await expect(itemLinks(page).nth(50)).toBeFocused();
+  await expect(page.getByText('52 codes', { exact: true })).toBeVisible();
+});
+
+test('Stock, its count always: “2 codes” when everything fits; Low stock, “1 code”', async ({
+  page,
+  freshOrg,
+}) => {
+  await stockScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page);
+  await expect(itemLinks(page)).toHaveCount(2);
+  await expect(page.getByText('2 codes', { exact: true })).toBeVisible();
+  // No row-number column (R1a): the first header is the item.
+  await expect(page.getByRole('columnheader').first()).toHaveText(/^Item/);
+
+  await quick(page, 'Low stock').click();
+  await expect(itemLinks(page)).toHaveCount(1);
+  await expect(page.getByText('1 code', { exact: true })).toBeVisible();
+});
+
+test('Stock, Back after Show 50 more: the codes shown read again, focus on the row left from', async ({
+  page,
+  freshOrg,
+}) => {
+  test.setTimeout(90_000);
+  await fiftyTwo(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page);
+  await page.getByRole('button', { name: 'Show 50 more' }).click();
+  await expect(itemLinks(page)).toHaveCount(52);
+
+  await itemLinks(page).nth(51).click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'E2E Page 52' }),
+  ).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/inventory$/);
+  await expect(itemLinks(page)).toHaveCount(52);
+  await expect(itemLinks(page).nth(51)).toBeFocused();
+  await expect(page.getByText('52 codes', { exact: true })).toBeVisible();
 });
 
 test('Stock, Export: every row the filters match, in the screen’s words', async ({
@@ -825,7 +1083,9 @@ test('done: Low stock at 0 says “Nothing is low.”, naming the items with no 
       'Nothing is low. An item with no reorder point is never low: set one on Reorder.',
     ),
   ).toBeVisible();
-  await expect(quick(page, 'Low stock')).toContainText('0');
+  await expect(quick(page, 'Low stock')).toHaveAccessibleName(
+    'Low stock · 0 codes',
+  );
 });
 
 test('loading: the header kept and placeholder rows past 250 ms', async ({
@@ -971,7 +1231,7 @@ async function deepPlace(api: APIRequestContext, names: string[]) {
   return product;
 }
 
-/** A path as drawn: the "…" and what follows it where cut, else whole. */
+/** A path as drawn: its cut, "…" in its middle, where cut, else whole. */
 const drawn = (page: Page, whole: string) =>
   page
     .locator(`[data-whole="${whole}"]`)
@@ -1019,7 +1279,7 @@ test('Stock, a place within its warehouse, 1920 px: its whole path, starting und
   ).toEqual({ inside: true, scrolled: 0, cut: false });
 });
 
-test('Stock, on a phone, a place deep in its warehouse: its path cut from the left with “…”, the place whole; whole on hover and on focus', async ({
+test('Stock, on a phone, a place deep in its warehouse: its path cut in its middle, the warehouse and the place whole; whole on hover and on focus', async ({
   page,
   freshOrg,
 }) => {
@@ -1036,7 +1296,9 @@ test('Stock, on a phone, a place deep in its warehouse: its path cut from the le
   await page.goto('/inventory');
   await placesOf(page, 'E2E Rosehip').click();
 
-  await expect.poll(() => drawn(page, whole)).toMatch(/^….* › E2E Shelf A2$/);
+  await expect
+    .poll(() => drawn(page, whole))
+    .toBe('E2E Main warehouse on the river › … › E2E Shelf A2');
 
   const box = page.locator(`[data-whole="${whole}"] [tabindex="0"]`);
   await box.hover();
@@ -1100,4 +1362,18 @@ test('Stock beside Help, 1280 × 800: a header half past the table’s edge, rea
       return left >= box.left - 0.5 && right <= box.right + 0.5;
     }),
   ).toBe(true);
+
+  // Scrolled to its end, the name pinned at the box's start (81a): its
+  // first column, Stock's name.
+  const box = page.getByRole('main').locator('.MuiTableContainer-root');
+  await box.evaluate((frame) => {
+    frame.scrollLeft = frame.scrollWidth;
+  });
+  await expect(box).toHaveAttribute('data-under-start');
+  const [frame, name] = await Promise.all([
+    box.boundingBox(),
+    page.getByRole('columnheader').first().boundingBox(),
+  ]);
+  expect(Math.abs(name!.x - frame!.x)).toBeLessThanOrEqual(1);
+  await expect(itemLinks(page).first()).toBeInViewport();
 });

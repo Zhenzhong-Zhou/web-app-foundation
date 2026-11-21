@@ -36,6 +36,7 @@ export class WhereItStandsController {
       places: held.has(PERMISSIONS.LOCATIONS_VIEW),
       orders: held.has(PERMISSIONS.ORDERS_VIEW),
       runs: held.has(PERMISSIONS.PRODUCTION_VIEW),
+      partners: held.has(PERMISSIONS.PARTNERS_VIEW),
     });
   }
 }

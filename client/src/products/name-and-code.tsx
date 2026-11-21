@@ -3,6 +3,8 @@ import type { ReactNode, Ref } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { CutName } from '../components/cut-name';
+import { CUT_NAME } from '../components/name-column';
 import { ProductCover } from '../components/product-cover';
 import type { ProductType } from '../lib/api-names';
 import { TOUCH } from '../theme/media';
@@ -18,12 +20,17 @@ import { productTypeIcon, typeAfter } from './product-types';
  *
  * With `to`, the name is the row's one link, which a keyboard reaches,
  * as a row with controls of its own has; without it, the name is text,
- * for a card that is one link whole.
+ * for a card that is one link whole. Pinned in a list too wide for its
+ * box, the link is at most two lines, its whole name in a tooltip
+ * (`CutName`, 83a).
  *
  * With `withType`, the type is a word at the end of the grey line, beside
  * its icon: on Items' All, where rows of every type sit together, an icon
  * that tells a kind is never alone (#548; the design language's Rows). On
  * a type's tab every row is that type, so nothing.
+ *
+ * `under`, a line under the grey one, as Movements' "was VITC-90" under a
+ * code changed since the row was recorded (ADR-093, R9).
  */
 export function NameAndCode({
   name,
@@ -33,6 +40,7 @@ export function NameAndCode({
   to,
   linkRef,
   withType,
+  under,
 }: {
   name: string;
   /** The grey line under the name: the code, or what the list says there. */
@@ -43,6 +51,7 @@ export function NameAndCode({
   /** The name's link, for a list that moves focus to it. */
   linkRef?: Ref<HTMLAnchorElement>;
   withType?: boolean;
+  under?: ReactNode;
 }) {
   const intl = useIntl();
 
@@ -59,25 +68,28 @@ export function NameAndCode({
       />
       <Stack sx={to ? { minWidth: 0 } : { flex: 1, minWidth: 0 }}>
         {to ? (
-          <Link
-            component={RouterLink}
-            to={to}
-            ref={linkRef}
-            underline="hover"
-            color="inherit"
-            // The row's one way in, a fingertip tall on a touch screen
-            // (Text and targets).
-            sx={{
-              fontWeight: 600,
-              [TOUCH]: {
-                display: 'inline-flex',
-                alignItems: 'center',
-                minHeight: rem(44),
-              },
-            }}
-          >
-            {name}
-          </Link>
+          <CutName name={name}>
+            <Link
+              {...CUT_NAME}
+              component={RouterLink}
+              to={to}
+              ref={linkRef}
+              underline="hover"
+              color="inherit"
+              // The row's one way in, a fingertip tall on a touch screen
+              // (Text and targets).
+              sx={{
+                fontWeight: 600,
+                [TOUCH]: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: rem(44),
+                },
+              }}
+            >
+              {name}
+            </Link>
+          </CutName>
         ) : (
           <Typography sx={{ fontWeight: 600 }}>{name}</Typography>
         )}
@@ -85,6 +97,11 @@ export function NameAndCode({
           {code}
           {withType && typeAfter(type, intl)}
         </Typography>
+        {under && (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {under}
+          </Typography>
+        )}
       </Stack>
     </Stack>
   );

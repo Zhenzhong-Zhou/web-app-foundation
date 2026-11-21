@@ -18,6 +18,7 @@ import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
+import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -178,7 +179,7 @@ export function RmasPage() {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell>
+                  <TableCell {...NAME_COLUMN}>
                     {intl.formatMessage({
                       id: 'invoices.number',
                       defaultMessage: 'Number',

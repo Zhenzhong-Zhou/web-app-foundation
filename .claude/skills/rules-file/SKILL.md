@@ -40,8 +40,7 @@ fixed.
 - **What the area has already.** Its rules file, if there is one: each
   rule checked against the code and the tests as they are now, changed
   where it drifted, added where missing, its headings kept. Its
-  `.claude/rules/` file, if there is one (stock, authorization, database
-  and ui had theirs before a rules file): its rules and `paths` checked,
+  `.claude/rules/` file, if there is one: its rules and `paths` checked,
   kept where they hold, and the paragraph naming the rules file added.
 
 ## 2. Find the area's files

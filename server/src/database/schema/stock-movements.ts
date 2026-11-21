@@ -165,6 +165,24 @@ export const stockMovements = pgTable(
       t.referenceId,
     ),
 
+    /**
+     * Movements for one place, from it or to it: one index a side, which
+     * the planner joins in one bitmap OR, the id taking a later page's
+     * cursor. A busy place, such as a receiving dock, still reads the
+     * newest first by the primary key. ADR-051's watch "Movements for one
+     * shelf", taken when it joined the budgets (ADR-093).
+     */
+    index('stock_movements_org_from_location_idx').on(
+      t.organizationId,
+      t.fromLocationId,
+      t.id,
+    ),
+    index('stock_movements_org_to_location_idx').on(
+      t.organizationId,
+      t.toLocationId,
+      t.id,
+    ),
+
     check(
       'stock_movements_reason_check',
       sql`${t.reason} in ('receipt', 'shipment', 'transfer', 'adjustment', 'production', 'consumption', 'sample', 'return')`,

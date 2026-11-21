@@ -198,6 +198,13 @@ kept is in the [README](README.md).
   [test](../../client/e2e/price-lists.spec.ts) "prices an added item from the customer’s list" ·
   [Help](../../client/src/help/guides/en/price-lists.md#give-a-partner-a-list-partner) ·
   MC-601
+- **A price list's export writes each price at the list's currency's
+  places, never fewer and never rounded:** `12.50` for a CAD price of
+  12.50, `0.0125` as it is, and `1250` for yen.
+  [ADR-057, amended](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#amendment-november-2026--inventorys-and-movements-sorts-adr-093) ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes every quantity without its padding zeros, 600, 12.5 and 0.0001, and money at its currency’s places" ·
+  [test](../../server/src/common/export.spec.ts) "drops the padding zeros of a quantity, and money’s down to its currency’s places" ·
+  MC-1558
 - **A partner's documents print in its own pair of languages, or else
   wholly in the organization's: never half of each.** A second language
   needs a first, and never the same one; the screen clears the second

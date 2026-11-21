@@ -2,7 +2,13 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { type ReactNode, useRef } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { ReorderPointDetail, ReorderPointRow } from '../api/types.gen';
@@ -39,6 +45,7 @@ function point(over: Partial<ReorderPointRow>): ReorderPointRow {
     suggestedMultiples: '2',
     drafted: false,
     drafts: [],
+    waitingOrders: 0,
     ...over,
   };
 }
@@ -104,6 +111,16 @@ const DETAIL: ReorderPointDetail = {
 };
 
 /** Where a row's name and its line go: the item's page, at its part. */
+/** An item's page as a row's link lands there, with Back. */
+function Landed() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => void navigate(-1)}>
+      Back
+    </button>
+  );
+}
+
 function ItemPage() {
   const { pathname, hash } = useLocation();
   return (
@@ -236,7 +253,9 @@ describe('Reorder', () => {
     open(['stock.view']);
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     );
     await userEvent.click(
       within(screen.getByRole('row', { name: /SLEEP-60CT/ })).getByText('Low'),
@@ -334,7 +353,7 @@ describe('Reorder', () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole('button', {
-        name: /^Low stock\s*3$/,
+        name: 'Low stock · 3 codes',
         pressed: true,
       }),
     ).toBeInTheDocument();
@@ -378,12 +397,38 @@ describe('Reorder', () => {
     ).toBeInTheDocument();
   });
 
+  // 107a: the control that opens who waits says it in words, how many
+  // orders by the language's plural, never an icon alone; its name ends
+  // with the row's code.
+  it('says on each row who waits, in words, by the plural', async () => {
+    open(['stock.view'], undefined, {
+      rows: [
+        point({ sku: 'D3-1000', waitingOrders: 2 }),
+        point({ sku: 'OMEGA3-90', productName: 'Omega 3', waitingOrders: 1 }),
+      ],
+    });
+
+    const two = await screen.findByRole('button', {
+      name: 'Who waits · 2 orders for D3-1000',
+    });
+    expect(two).toHaveTextContent(/^Who waits · 2 orders$/);
+    expect(two).toHaveAttribute('aria-expanded', 'false');
+    expect(
+      screen.getByRole('button', { name: 'Who waits · 1 order for OMEGA3-90' }),
+    ).toHaveTextContent(/^Who waits · 1 order$/);
+
+    await userEvent.click(two);
+    expect(two).toHaveAttribute('aria-expanded', 'true');
+  });
+
   // What is in draft is the row's own: the opened row shows it from there.
   it('shows an opened row’s drafts from the row', async () => {
     open(['stock.view', 'orders.view']);
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where OMEGA3-90 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for OMEGA3-90',
+      }),
     );
 
     // The column's header, and the opened row's own part.
@@ -404,7 +449,9 @@ describe('Reorder', () => {
     );
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     );
 
     expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
@@ -417,7 +464,9 @@ describe('Reorder', () => {
     open(['stock.view']);
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     );
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(await screen.findByText('Shelf A')).toBeInTheDocument();
@@ -454,7 +503,9 @@ describe('Reorder', () => {
     open(['stock.view']);
 
     expect(
-      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+      await screen.findByRole('button', {
+        name: 'Who waits · no orders for D3-1000',
+      }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Add reorder point' }),
@@ -497,7 +548,10 @@ describe('Reorder', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
     expect(
-      await screen.findByRole('button', { name: /^All\s*9$/, pressed: true }),
+      await screen.findByRole('button', {
+        name: 'All · 9 codes',
+        pressed: true,
+      }),
     ).toBeInTheDocument();
     expect(asked.at(-1)?.searchParams.has('status')).toBe(false);
   });
@@ -534,6 +588,45 @@ describe('Reorder', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
 
+  // #638 (P1a) and #473's last line (P2a): the count always, and Back
+  // after Show 50 more finds the rows shown, focus on the row left from.
+  it('counts its codes once every one is shown, and Back after Show 50 more finds them', async () => {
+    const user = userEvent.setup();
+    const later = point({ sku: 'ZINC-60', productName: 'Zinc' });
+    server.use(
+      http.get('/api/v1/stock/reorder-points', ({ request }) =>
+        new URL(request.url).searchParams.get('before')
+          ? HttpResponse.json({ entries: [later], nextCursor: null })
+          : HttpResponse.json({ entries: [ROWS[0]], nextCursor: 'next' }),
+      ),
+      http.get('/api/v1/stock/reorder-points/counts', () =>
+        HttpResponse.json({ all: 2, low: 2, out: 0 }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory?tab=reorder']}>
+        <Routes>
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/items/:id" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    expect(await screen.findByText('Showing 1 of 2 codes')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Show 50 more' }));
+    expect(await screen.findByText('2 codes')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show 50 more' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'Zinc' }));
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+    const left = await screen.findByRole('link', { name: 'Zinc' });
+    await waitFor(() => expect(left).toHaveFocus());
+    expect(screen.getByText('2 codes')).toBeVisible();
+  });
+
   // Points de commande are masculine: Tous, not Invoices' Toutes.
   it('says All in French as its own word', async () => {
     localStorage.setItem('language', 'fr-CA');
@@ -541,24 +634,30 @@ describe('Reorder', () => {
       open(['stock.view']);
 
       expect(
-        await screen.findByRole('button', { name: /^Tous\s*4$/ }),
+        await screen.findByRole('button', { name: 'Tous · 4 codes' }),
       ).toBeInTheDocument();
     } finally {
       localStorage.removeItem('language');
     }
   });
 
+  // Each count saying it counts codes (108a), by the plural.
   it('opens on Low from the address, with the counts beside each view', async () => {
-    const asked = open(['stock.view'], '/inventory?tab=reorder&status=low');
+    const asked = open(['stock.view'], '/inventory?tab=reorder&status=low', {
+      counts: { all: 4, low: 3, out: 1 },
+    });
 
     expect(
       await screen.findByRole('button', {
-        name: /^Low stock\s*3$/,
+        name: 'Low stock · 3 codes',
         pressed: true,
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /^All\s*4$/ }),
+      screen.getByRole('button', { name: 'All · 4 codes' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Out · 1 code' }),
     ).toBeInTheDocument();
     expect(asked[0].searchParams.get('status')).toBe('low');
   });

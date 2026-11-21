@@ -22,6 +22,12 @@ interface Crumb {
   to: string;
 }
 
+/** A status chip beside the title: its words, and its tone's colour. */
+interface HeaderStatus {
+  label: string;
+  color: ChipProps['color'];
+}
+
 /**
  * The top of every detail page: where you are, what this is, and what you can
  * do to it.
@@ -57,7 +63,11 @@ export function PageHeader({
   crumbs: Crumb[];
   title: string;
   subtitle?: ReactNode;
-  status?: { label: string; color: ChipProps['color'] };
+  /**
+   * What it is now, by name: its status, or its status and what reads
+   * beside it, as a confirmed order's "Partly received" (#605).
+   */
+  status?: HeaderStatus | HeaderStatus[];
   /** Buttons as a fragment, not a row of their own, so they wrap here. */
   actions?: ReactNode;
   /**
@@ -188,8 +198,18 @@ export function PageHeader({
             {title}
           </Typography>
 
+          {/* Two wrap as a pair, so neither squeezes the title. */}
           {status && (
-            <Chip label={status.label} color={status.color} size="small" />
+            <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
+              {([] as HeaderStatus[]).concat(status).map((one) => (
+                <Chip
+                  key={one.label}
+                  label={one.label}
+                  color={one.color}
+                  size="small"
+                />
+              ))}
+            </Stack>
           )}
         </Stack>
 

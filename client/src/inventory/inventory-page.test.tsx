@@ -1,17 +1,19 @@
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { type ReactNode, useState } from 'react';
 import {
-  createPath,
   Link,
   MemoryRouter,
-  type Navigator,
   Route,
-  Router,
   Routes,
-  type To,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,6 +21,7 @@ import type { Delivery, StockCodeRow, StockPlace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
 import { SEARCH_WAIT_MS } from '../lib/use-list-search';
 import { apiError } from '../test/handlers';
+import { heldRouter } from '../test/held-router';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
@@ -73,6 +76,7 @@ const CODE: StockCodeRow = {
   comingOn: null,
   position: '10.0000',
   expiresFirst: '2027-10-01',
+  allExpired: false,
   reorderPoint: '36.0000',
   status: 'low',
   needsCost: false,
@@ -188,40 +192,32 @@ function renderAt(address: string, permissions: string[]) {
   );
 }
 
-/**
- * A router as react-router 7 is on a slow runner: a write reaches the
- * address at once, and the page shows it only when `show` is called, as
- * the transition react-router renders it in can finish after a search's
- * wait has ended.
- */
-function heldRouter(start: string) {
-  let address = start;
-  let show = () => {};
-  const write = (to: To) => {
-    address = typeof to === 'string' ? to : createPath(to);
-  };
-  const navigator: Navigator = {
-    createHref: (to) => (typeof to === 'string' ? to : createPath(to)),
-    go: () => {},
-    push: write,
-    replace: write,
-  };
+/** Where a way into Movements landed, whether it offered Back, and Back. */
+function Landed() {
+  const { pathname, search, state } = useLocation();
+  const navigate = useNavigate();
+  const back = (state as { offerBack?: boolean } | null)?.offerBack === true;
+  return (
+    <>
+      <p>{`${pathname}${search}${back ? ' with Back' : ''}`}</p>
+      <button type="button" onClick={() => void navigate(-1)}>
+        Back
+      </button>
+    </>
+  );
+}
 
-  function HeldRouter({ children }: { children: ReactNode }) {
-    const [shown, setShown] = useState(start);
-    show = () => setShown(address);
-    return (
-      <Router location={shown} navigator={navigator}>
-        {children}
-      </Router>
-    );
-  }
-
-  return {
-    HeldRouter,
-    address: () => address,
-    show: () => act(() => show()),
-  };
+/** Stock, and Movements as a way in lands there (ADR-093, R11). */
+function renderRouted(address: string, permissions: string[]) {
+  return renderWithAuth(
+    <MemoryRouter initialEntries={[address]}>
+      <Routes>
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/movements" element={<Landed />} />
+      </Routes>
+    </MemoryRouter>,
+    { permissions },
+  );
 }
 
 const CHANGES = ['Move…', 'Ship out…', 'Send sample…', 'Edit lot details…'];
@@ -283,9 +279,13 @@ describe('InventoryPage', () => {
         screen.getByRole('link', { name: '10 left · reorder at 36' }),
       ).toHaveAttribute('href', `/items/${PRODUCT}#stock`);
       expect(screen.getByText('Low')).toBeVisible();
-      // The quick filters with their counts (R3).
+      // The quick filters with their counts (R3), each saying it counts
+      // codes (108a).
       expect(
-        await screen.findByRole('button', { name: /Low stock\s*1/ }),
+        await screen.findByRole('button', { name: 'Low stock · 1 code' }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Out · 0 codes' }),
       ).toBeVisible();
     });
 
@@ -345,6 +345,46 @@ describe('InventoryPage', () => {
       expect(
         screen.queryByRole('combobox', { name: 'Location' }),
       ).not.toBeInTheDocument();
+    });
+
+    // Review 3, 115: a code not tracked by lot opens to why its places
+    // are hidden, not a row of "—" for each.
+    it('opens a code not tracked by lot to why its places are hidden, for a reader without places', async () => {
+      const user = userEvent.setup();
+      answer([{ ...CODE, lots: 0 }]);
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({
+            places: PLACES.map((place) => ({
+              ...place,
+              locationName: null,
+              locationPath: [],
+              lots: [
+                {
+                  ...place.lots[0]!,
+                  locationName: null,
+                  lotId: null,
+                  lotCode: null,
+                  lotExpiresAt: null,
+                },
+              ],
+            })),
+          }),
+        ),
+      );
+      renderAt('/inventory', ['stock.view']);
+
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      expect(
+        await screen.findByText(
+          'Warehouses, zones and bins are hidden: your role can’t see them. An Owner or Admin can change that.',
+        ),
+      ).toBeVisible();
+      expect(screen.queryByText('10 each')).not.toBeInTheDocument();
     });
 
     // A screen reader hears a menu button, not a plain one (#358).
@@ -657,18 +697,12 @@ describe('InventoryPage', () => {
       ).not.toBeInTheDocument();
     });
 
-    // A place's Movements link: the code's Movements there alone.
+    // A place's Movements link: Movements of the code there alone, by
+    // the address's ids (R11, 95a), offering Back.
     it('gives a place its Movements there', async () => {
       const user = userEvent.setup();
       answer();
-      let asked: URLSearchParams | null = null;
-      server.use(
-        http.get('/api/v1/stock/movements', ({ request }) => {
-          asked = new URL(request.url).searchParams;
-          return HttpResponse.json({ entries: [], nextCursor: null });
-        }),
-      );
-      renderAt('/inventory', ['stock.view', 'locations.view']);
+      renderRouted('/inventory', ['stock.view', 'locations.view']);
       await user.click(
         await screen.findByRole('button', {
           name: '2 places: show where Vitamin D (60ct) is',
@@ -676,17 +710,37 @@ describe('InventoryPage', () => {
       );
       // A plain link, not a menu of one (ADR-093 v3).
       await user.click(
-        await screen.findByRole('button', {
+        await screen.findByRole('link', {
           name: 'Movements of Vitamin D (60ct) at Main warehouse › Zone A › Shelf A',
         }),
       );
 
       expect(
-        await screen.findByRole('dialog', {
-          name: /at Main warehouse › Zone A › Shelf A/,
-        }),
+        await screen.findByText(
+          '/movements?variantId=variant-1&locationId=loc-1 with Back',
+        ),
       ).toBeVisible();
-      await vi.waitFor(() => expect(asked?.get('locationId')).toBe('loc-1'));
+    });
+
+    // An item's Actions › Movements: the code's (R11).
+    it('gives an item its Movements', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderRouted('/inventory', ['stock.view', 'locations.view']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'Actions for Vitamin D (60ct)',
+        }),
+      );
+      await user.click(
+        within(await screen.findByRole('menu')).getByRole('menuitem', {
+          name: 'Movements',
+        }),
+      );
+
+      expect(
+        await screen.findByText('/movements?variantId=variant-1 with Back'),
+      ).toBeVisible();
     });
 
     // Not tracked by lot, at the place chosen: its one pile, never "None
@@ -730,6 +784,77 @@ describe('InventoryPage', () => {
     });
   });
 
+  // Found stock (ADR-093, R26, 84a): a code's opened places end with
+  // Count it in…, Correct the count with a place and Which lot, neither
+  // lot chosen; Escape returns focus to it.
+  describe('stock found where it has never been', () => {
+    it('ends a code’s opened places with Count it in…, and Escape returns to it', async () => {
+      const user = userEvent.setup();
+      answer();
+      server.use(http.get('/api/v1/stock/lots', () => HttpResponse.json([])));
+      renderAt('/inventory', [
+        'stock.view',
+        'locations.view',
+        'stock.move',
+        'stock.adjust',
+      ]);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+
+      expect(
+        await screen.findByText('Found some where it has never been?'),
+      ).toBeVisible();
+      // Its name carries the code it counts in, read apart from the
+      // code's row (105a); it shows "Count it in…".
+      const countIn = screen.getByRole('button', {
+        name: 'Count it in VITD-60…',
+      });
+      expect(countIn).toHaveTextContent(/^Count it in…$/);
+      await user.click(countIn);
+
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Correct the count',
+      });
+      expect(
+        within(dialog).getByRole('combobox', { name: /^Location/ }),
+      ).toBeVisible();
+      for (const radio of within(
+        within(dialog).getByRole('radiogroup', { name: /^Which lot/ }),
+      ).getAllByRole('radio')) {
+        expect(radio).not.toBeChecked();
+      }
+
+      await user.keyboard('{Escape}');
+      expect(dialog).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Count it in VITD-60…' }),
+      ).toHaveFocus();
+    });
+
+    it('offers it only to whoever may correct counts', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderAt('/inventory', ['stock.view', 'locations.view', 'stock.move']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+
+      expect(
+        await screen.findByRole('button', {
+          name: '2 lots: show the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole('button', { name: /^Count it in/ }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('a lot’s own actions', () => {
     /** The page, the code's row opened to its Shelf A lots, and a lot's ⋯. */
     async function lotActions(permissions: string[]) {
@@ -753,6 +878,53 @@ describe('InventoryPage', () => {
       );
       return screen.findByRole('menu');
     }
+
+    // A lot's Actions › Movements: the lot's (R11, R24); Back finds the
+    // code's row open and its place's lots with it, as `?open=` keeps
+    // them, focus on the code's name.
+    it('gives a lot its Movements, and Back finds its place’s lots open', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderRouted('/inventory', ['stock.view', 'locations.view']);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 lots: show the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      );
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      );
+      await user.click(
+        within(await screen.findByRole('menu')).getByRole('menuitem', {
+          name: 'Movements',
+        }),
+      );
+      expect(
+        await screen.findByText(
+          '/movements?variantId=variant-1&lotId=lot-1 with Back',
+        ),
+      ).toBeVisible();
+
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(
+        await screen.findByRole('button', {
+          name: '2 lots: hide the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      ).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      ).toBeVisible();
+      expect(screen.getByRole('link', { name: /^Vitamin D/ })).toHaveFocus();
+    });
 
     // A Viewer's first week asks them to look a lot up (ADR-079).
     it('gives someone who may only see stock the actions that read', async () => {
@@ -982,6 +1154,49 @@ describe('InventoryPage', () => {
     }
   });
 
+  // A lot's Movements carries no days, from either view, so it reads the
+  // lot's whole life, the receipt it starts from too (132b).
+  it('opens a Lot view row’s Movements on the lot’s whole life, no days', async () => {
+    const user = userEvent.setup();
+    answer();
+    server.use(
+      http.get('/api/v1/stock/by-lot', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              ...pile('1', 'NN-2410-07', '2027-10-01', 'Shelf A'),
+              productId: PRODUCT,
+              type: 'good',
+              coverFileId: null,
+              locationPath: [],
+              isAvailable: true,
+              places: 1,
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+    renderRouted('/inventory?group=lot', ['stock.view', 'locations.view']);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Actions for lot NN-2410-07 at Shelf A',
+      }),
+    );
+    await user.click(
+      within(await screen.findByRole('menu')).getByRole('menuitem', {
+        name: 'Movements',
+      }),
+    );
+    expect(
+      await screen.findByText(
+        '/movements?variantId=variant-1&lotId=lot-1 with Back',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/from=|until=/)).not.toBeInTheDocument();
+  });
+
   // Bob's third message (6): the quick filters on a row of their own,
   // above the search, Type, Category, Location and Group by.
   it('puts the quick filters on a row of their own above the search', async () => {
@@ -1040,6 +1255,20 @@ describe('InventoryPage', () => {
         }),
       ).toBeVisible();
     });
+
+    // #612: a card has no Held column, so it says why Free is less than
+    // On hand: what is not usable and why, and what is held.
+    it('says on a card why Free is less than On hand', async () => {
+      answer();
+      renderAt('/inventory', ['stock.view']);
+
+      const why = await screen.findByText(
+        '12 not usable: expired and at a place not available',
+      );
+      expect(why).toBeVisible();
+      const card = why.closest('li') as HTMLElement;
+      expect(within(card).getByText('30 held')).toBeVisible();
+    });
   });
 
   // Bob's third message (5): as Items says it, the rows read of every row
@@ -1059,6 +1288,118 @@ describe('InventoryPage', () => {
 
     expect(await screen.findByText('Showing 1 of 128 codes')).toBeVisible();
     expect(counted.at(-1)?.get('low')).toBe('true');
+  });
+
+  // #611: a code whose every unit has expired says so, where "—" read as
+  // nothing to expire; one with nothing to expire keeps "—".
+  it('says all expired where every unit on hand has, and — where nothing expires', async () => {
+    answer([
+      {
+        ...CODE,
+        onHand: '12.0000',
+        usable: '0.0000',
+        notUsable: '12.0000',
+        expired: '12.0000',
+        unavailable: '0.0000',
+        held: '0.0000',
+        short: '0.0000',
+        expiresFirst: null,
+        allExpired: true,
+      },
+      {
+        ...CODE,
+        variantId: 'variant-2',
+        sku: 'VITD-120',
+        variantName: '120ct',
+        expired: '0.0000',
+        notUsable: '12.0000',
+        expiresFirst: null,
+      },
+    ]);
+    renderAt('/inventory', ['stock.view']);
+
+    const expired = await screen.findByText('VITD-60 · Product');
+    const never = await screen.findByText('VITD-120 · Product');
+    expect(
+      within(expired.closest('tr') as HTMLElement).getByText('all expired'),
+    ).toBeVisible();
+    expect(
+      within(never.closest('tr') as HTMLElement).queryByText('all expired'),
+    ).not.toBeInTheDocument();
+  });
+
+  // Review 13: every unit expired though some sit at a place not
+  // available, Vitamin C's 24 on the shelf and 48 in quarantine, where
+  // expired counts the shelf's 24 alone; the server says it.
+  it('says all expired where an expired lot sits at a place not available too', async () => {
+    answer([
+      {
+        ...CODE,
+        onHand: '72.0000',
+        usable: '0.0000',
+        notUsable: '72.0000',
+        expired: '24.0000',
+        unavailable: '48.0000',
+        held: '0.0000',
+        short: '0.0000',
+        expiresFirst: null,
+        allExpired: true,
+      },
+    ]);
+    renderAt('/inventory', ['stock.view']);
+
+    const row = (await screen.findByText('VITD-60 · Product')).closest('tr');
+    expect(within(row as HTMLElement).getByText('all expired')).toBeVisible();
+  });
+
+  // #638 (P1a): the count always, so a person can tell the list is whole.
+  it('says how many codes it shows once every one is shown', async () => {
+    answer();
+    renderAt('/inventory', ['stock.view']);
+
+    expect(await screen.findByText('1 code')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show 50 more' }),
+    ).not.toBeInTheDocument();
+  });
+
+  // #473's last line (P2a): Back after Show 50 more reads the pages shown
+  // again, and focus is on the name of the code left from.
+  it('finds the codes shown and the one left from on Back after Show 50 more', async () => {
+    const user = userEvent.setup();
+    answer();
+    const later = {
+      ...CODE,
+      variantId: 'variant-2',
+      sku: 'ZINC-60',
+      productName: 'Zinc',
+      variantName: null,
+    };
+    server.use(
+      http.get('/api/v1/stock/by-code', ({ request }) =>
+        new URL(request.url).searchParams.has('before')
+          ? HttpResponse.json({ entries: [later], nextCursor: null })
+          : HttpResponse.json({ entries: [CODE], nextCursor: 'next' }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory']}>
+        <Routes>
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/items/:id" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Show 50 more' }),
+    );
+    await user.click(await screen.findByRole('link', { name: /^Zinc/ }));
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+    const left = await screen.findByRole('link', { name: /^Zinc/ });
+    expect(screen.getByRole('link', { name: /^Vitamin D/ })).toBeVisible();
+    await waitFor(() => expect(left).toHaveFocus());
   });
 
   it('says how many lots the Lot view shows of those its filters match', async () => {
@@ -1143,8 +1484,12 @@ describe('InventoryPage', () => {
       await expect
         .poll(() => asked.lotCounts[0]?.get('expiringWithin'))
         .toBe('90');
+      // Each saying it counts lots (108a).
       expect(
-        await screen.findByRole('button', { name: /Low stock\s*2/ }),
+        await screen.findByRole('button', { name: 'Low stock · 2 lots' }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Expiring soon · 1 lot' }),
       ).toBeVisible();
       expect(
         screen.queryByRole('button', { name: /^Out/ }),

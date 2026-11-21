@@ -2,8 +2,10 @@ import type {
   InvoiceStatus,
   OrderDirection,
   OrderStatus,
+  ProductType,
 } from '../../../database/schema';
 import type { ChosenSite } from '../../locations/dto/location-response.dto';
+import type { OrderFulfillment } from '../order-fulfillment';
 
 /**
  * Orders as the API returns them (ADR-068): the fields the client reads,
@@ -29,6 +31,12 @@ export class OrderSummary {
   /** numeric(18,4) as a string, never parsed into a number (ADR-025). */
   quantityOrdered!: string;
   quantityFulfilled!: string;
+  /**
+   * How much has come or gone while the order is confirmed (#605): none,
+   * part or all, a line closed short counting as done. Null on any other
+   * status. Beside Status, never instead of it (ADR-027).
+   */
+  fulfillment!: OrderFulfillment | null;
 }
 
 /** GET /orders: one page, newest first or sorted (ADR-057). */
@@ -157,6 +165,8 @@ export class OrderDetail {
   isSample!: boolean;
   /** Every line received or shipped, or closed short. */
   fullyFulfilled!: boolean;
+  /** As the list's row has it (#605): null unless confirmed. */
+  fulfillment!: OrderFulfillment | null;
   /** Set when this order was raised by duplicating another (ADR-031). */
   duplicatedFromId!: string | null;
   status!: OrderStatus;
@@ -214,6 +224,54 @@ export class ReceivedMovement {
 /** POST /orders/:id/lines/:lineId/receipts. */
 export class ReceiptEnvelope {
   movement!: ReceivedMovement;
+}
+
+/**
+ * A receipt on a purchase, as its Receipts tab lists it (ADR-093, 102a):
+ * When, Item, Received, Lot and By, for a reader with orders.view, read
+ * as Movements lists the order, so the two never differ.
+ */
+export class OrderReceipt {
+  id!: string;
+  /** When it was recorded. */
+  createdAt!: Date;
+  /** Its item, whose page the row's name opens. */
+  productId!: string;
+  /** The code it was received under, snapshotted then (ADR-023). */
+  sku!: string;
+  /** The code today: "was …" under it when `sku` differs (7a). */
+  currentSku!: string;
+  /** In the reader's language (ADR-056). */
+  productName!: string;
+  variantName!: string | null;
+  type!: ProductType;
+  unitOfMeasure!: string;
+  /** How much came in. */
+  received!: string;
+  /**
+   * Where it went: its name, code and path only for a reader with
+   * `locations.view`, null and empty otherwise, its id kept (96a).
+   */
+  toLocationId!: string | null;
+  toLocationName!: string | null;
+  toLocationCode!: string | null;
+  /** The places above it, its warehouse or site first (57a). */
+  toLocationPath!: string[];
+  lotId!: string | null;
+  lotCode!: string | null;
+  /** `YYYY-MM-DD` (ADR-052); null with none. */
+  lotExpiresAt!: string | null;
+  /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
+  actorName!: string | null;
+  /** Null when the actor was anonymised (ADR-012). */
+  actorEmail!: string | null;
+}
+
+/** GET /orders/:id/receipts: one page, newest first. */
+export class OrderReceiptPage {
+  entries!: OrderReceipt[];
+  /** Pass as `before` for the next page; null when there is no more. */
+  nextCursor!: string | null;
 }
 
 /**

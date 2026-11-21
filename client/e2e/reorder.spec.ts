@@ -61,6 +61,8 @@ test('Home, Low stock: Reorder opens with Low stock chosen, the tile’s word; B
     page.getByRole('button', { name: /^Low stock/ }),
   ).toHaveAttribute('aria-pressed', 'true');
   await expect(names(page)).toHaveCount(4);
+  // How many it shows, always (#638, P1a).
+  await expect(page.getByText('4 codes', { exact: true })).toBeVisible();
 
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);

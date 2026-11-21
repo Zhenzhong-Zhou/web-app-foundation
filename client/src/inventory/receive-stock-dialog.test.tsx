@@ -40,6 +40,7 @@ function open(onReceived = vi.fn(), defaultLocationId = 'location-a') {
     <ReceiveStockDialog
       open
       locations={LOCATIONS}
+      tree={LOCATIONS}
       defaultLocationId={defaultLocationId}
       onClose={vi.fn()}
       onReceived={onReceived}
@@ -73,6 +74,38 @@ describe('ReceiveStockDialog', () => {
     open();
 
     expect(screen.getByRole('combobox', { name: 'Item' })).toHaveFocus();
+  });
+
+  // #631: Into lists each place by its path, its warehouse first, read
+  // from the whole tree.
+  it('lists each place by its path', async () => {
+    const shelf: Location = {
+      ...LOCATIONS[0],
+      id: 'shelf-a2',
+      type: 'shelf',
+      name: 'Shelf A2',
+      code: 'A2',
+      parentId: 'location-a',
+    };
+    render(
+      <ReceiveStockDialog
+        open
+        locations={[shelf]}
+        tree={[...LOCATIONS, shelf]}
+        defaultLocationId=""
+        onClose={vi.fn()}
+        onReceived={vi.fn()}
+      />,
+    );
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole('combobox', { name: 'Into' }));
+    expect(
+      await screen.findByRole('option', {
+        name: 'Main Site › Shelf A2 (A2)',
+      }),
+    ).toBeVisible();
   });
 
   /**
@@ -199,6 +232,7 @@ describe('ReceiveStockDialog', () => {
         <ReceiveStockDialog
           open
           locations={LOCATIONS}
+          tree={LOCATIONS}
           defaultLocationId="location-a"
           onClose={vi.fn()}
           onReceived={vi.fn()}
@@ -333,6 +367,7 @@ describe('ReceiveStockDialog', () => {
         <ReceiveStockDialog
           open
           locations={LOCATIONS}
+          tree={LOCATIONS}
           defaultLocationId="location-a"
           defaultVariantId={defaultVariantId}
           onClose={vi.fn()}

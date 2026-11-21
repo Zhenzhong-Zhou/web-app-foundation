@@ -1056,7 +1056,7 @@ export type AcceptInvitationDto = {
 };
 
 export type CategoryItemCount = {
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   active: number;
   discontinued: number;
 };
@@ -1094,7 +1094,7 @@ export type ProductSummaryCategory = {
 
 export type ProductSummary = {
   id: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   displayName: string;
   sku: string;
   variantCount: number;
@@ -1111,7 +1111,7 @@ export type ProductSummary = {
 };
 
 export type ProductTypeCount = {
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   count: number;
 };
 
@@ -1574,7 +1574,7 @@ export type ProductionRun = {
   licenceNumber: string | null;
   licenceAuthority: string | null;
   licenceStatusAtRelease:
-    'none' | 'current' | 'expired' | 'not_in_force' | null;
+    'expired' | 'none' | 'current' | 'not_in_force' | null;
   licenceOverriddenBy: string | null;
   licenceOverrideReason: string | null;
   notes: string | null;
@@ -1635,7 +1635,7 @@ export type RunDetail = {
   licenceNumber: string | null;
   licenceAuthority: string | null;
   licenceStatusAtRelease:
-    'none' | 'current' | 'expired' | 'not_in_force' | null;
+    'expired' | 'none' | 'current' | 'not_in_force' | null;
   licenceOverriddenBy: string | null;
   licenceOverrideReason: string | null;
   notes: string | null;
@@ -1676,7 +1676,7 @@ export type CheckedLicence = {
 
 export type LicenceCheck = {
   licence: CheckedLicence | null;
-  status: 'none' | 'current' | 'expired' | 'not_in_force' | 'withdrawn';
+  status: 'expired' | 'none' | 'current' | 'not_in_force' | 'withdrawn';
   outcome: 'block' | 'override' | 'allow';
 };
 
@@ -1837,35 +1837,76 @@ export type RecordMovementDto = {
 
 export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
+  needsCost: boolean;
 };
 
 export type MovementDocument = {
-  kind: 'order' | 'run';
+  kind: 'run' | 'order';
   id: string;
   number: string | null;
 };
 
+export type MovementRecipient = {
+  id: string;
+  name: string;
+};
+
 export type Movement = {
   id: string;
+  variantId: string;
+  productId: string;
   sku: string;
+  currentSku: string;
   productName: string;
   variantName: string | null;
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
+  unitOfMeasure: string;
   quantity: string;
   reason: string;
   reasonDetail: string | null;
   note: string | null;
+  fromLocationId: string | null;
   fromLocationName: string | null;
+  fromLocationCode: string | null;
+  fromLocationPath: Array<string>;
+  toLocationId: string | null;
   toLocationName: string | null;
+  toLocationCode: string | null;
+  toLocationPath: Array<string>;
+  lotId: string | null;
   lotCode: string | null;
+  lotExpiresAt: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
   document: MovementDocument | null;
+  recipient: MovementRecipient | null;
+  quantityIn: string | null;
+  quantityOut: string | null;
+  change: string | null;
+  balance: string | null;
+};
+
+export type MovementPeriod = {
+  opening: string | null;
+  quantityIn: string;
+  quantityOut: string;
+  closing: string | null;
 };
 
 export type MovementPage = {
   entries: Array<Movement>;
   nextCursor: string | null;
+  period: MovementPeriod | null;
+};
+
+export type StockVariant = {
+  id: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  isActive: boolean;
 };
 
 export type Lot = {
@@ -1889,7 +1930,7 @@ export type StockHere = {
 export type StockCodeRow = {
   variantId: string;
   productId: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   sku: string;
   productName: string;
@@ -1910,6 +1951,7 @@ export type StockCodeRow = {
   comingOn: string | null;
   position: string;
   expiresFirst: string | null;
+  allExpired: boolean;
   reorderPoint: string | null;
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   needsCost: boolean;
@@ -1980,7 +2022,7 @@ export type StockLotRow = {
   quantity: string;
   emptiedOn: string | null;
   productId: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   locationPath: Array<string>;
   isAvailable: boolean;
@@ -2011,6 +2053,8 @@ export type TracedLot = {
   id: string;
   code: string;
   expiresAt: string | null;
+  variantId: string;
+  productId: string;
   sku: string;
   unitOfMeasure: string;
   description: string;
@@ -2018,7 +2062,9 @@ export type TracedLot = {
 
 export type LotBalance = {
   locationId: string;
-  locationName: string;
+  locationName: string | null;
+  locationCode: string | null;
+  locationPath: Array<string>;
   isAvailable: boolean;
   quantity: string;
 };
@@ -2037,7 +2083,7 @@ export type LotSource = {
   licenceNumber: string | null;
   licenceAuthority: string | null;
   licenceStatusAtRelease:
-    'none' | 'current' | 'expired' | 'not_in_force' | null;
+    'expired' | 'none' | 'current' | 'not_in_force' | null;
   licenceOverrideReason: string | null;
   licenceOverriddenByName: string | null;
 };
@@ -2070,6 +2116,8 @@ export type LotRecipient = {
 export type LotTrace = {
   lot: TracedLot;
   balances: Array<LotBalance>;
+  usable: string;
+  notUsable: string;
   sources: Array<LotSource>;
   madeFrom: Array<RelatedLot>;
   wentInto: Array<RelatedLot>;
@@ -2084,7 +2132,7 @@ export type LineHold = {
 };
 
 export type ReorderPointDraft = {
-  kind: 'purchase' | 'run';
+  kind: 'run' | 'purchase';
   id: string;
   number: string | null;
   quantity: string;
@@ -2094,7 +2142,7 @@ export type ReorderPointRow = {
   id: string;
   variantId: string;
   productId: string;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   sku: string;
   productName: string;
@@ -2108,6 +2156,7 @@ export type ReorderPointRow = {
   usable: string;
   coming: string;
   stillNeeded: string;
+  waitingOrders: number;
   inDraft: string;
   position: string;
   status: 'out' | 'low' | 'discontinued' | 'enough';
@@ -2147,7 +2196,7 @@ export type UsableStock = {
 };
 
 export type ComingSupply = {
-  kind: 'purchase' | 'run';
+  kind: 'run' | 'purchase';
   id: string;
   number: string | null;
   partnerName: string | null;
@@ -2244,6 +2293,7 @@ export type CodeStanding = {
   comingOn: string | null;
   position: string;
   expiresFirst: string | null;
+  allExpired: boolean;
   reorderPoint: string | null;
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   source: 'bought' | 'made' | null;
@@ -2254,6 +2304,7 @@ export type CodeStanding = {
   runs: Array<ComingRun> | null;
   places: Array<StockPlace> | null;
   lots: Array<UsableLot> | null;
+  latestMovements: Array<Movement>;
 };
 
 export type ProductStock = {
@@ -2265,14 +2316,16 @@ export type LookupResult = {
   title: string;
   detail: string | null;
   status: string | null;
+  direction: 'sale' | 'purchase' | null;
+  fulfillment: 'none' | 'all' | 'part' | null;
   expiresAt: string | null;
   productId: string | null;
   coverFileId: string | null;
   type:
+    | 'sample'
     | 'good'
     | 'material'
     | 'packaging'
-    | 'sample'
     | 'supply'
     | 'equipment'
     | null;
@@ -2321,13 +2374,13 @@ export type Inviter = {
 
 export type WelcomeDone = {
   kind:
+    | 'run'
     | 'email'
     | 'jobTitle'
     | 'invoice'
     | 'order'
     | 'lot'
     | 'product'
-    | 'run'
     | 'photo';
   id: string | null;
   words: string | null;
@@ -2443,12 +2496,12 @@ export type HomeLayoutDto = {
 
 export type RecentEntry = {
   kind:
+    | 'run'
     | 'invoice'
     | 'order'
     | 'lot'
     | 'product'
     | 'partner'
-    | 'run'
     | 'return'
     | 'priceList';
   id: string;
@@ -2661,7 +2714,7 @@ export type NeedsCostEntry = {
   productId: string;
   productName: string;
   variantName: string | null;
-  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
@@ -2917,6 +2970,7 @@ export type OrderSummary = {
   lineCount: number;
   quantityOrdered: string;
   quantityFulfilled: string;
+  fulfillment: 'none' | 'all' | 'part' | null;
 };
 
 export type OrderPage = {
@@ -3037,6 +3091,7 @@ export type OrderDetail = {
   direction: 'sale' | 'purchase';
   isSample: boolean;
   fullyFulfilled: boolean;
+  fulfillment: 'none' | 'all' | 'part' | null;
   duplicatedFromId: string | null;
   status: 'draft' | 'cancelled' | 'confirmed' | 'fulfilled';
   reference: string | null;
@@ -3051,6 +3106,33 @@ export type OrderDetail = {
   quantities: OrderQuantities | null;
   documents?: OrderDocuments | null;
   lines: Array<OrderLine>;
+};
+
+export type OrderReceipt = {
+  id: string;
+  createdAt: string;
+  productId: string;
+  sku: string;
+  currentSku: string;
+  productName: string;
+  variantName: string | null;
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
+  unitOfMeasure: string;
+  received: string;
+  toLocationId: string | null;
+  toLocationName: string | null;
+  toLocationCode: string | null;
+  toLocationPath: Array<string>;
+  lotId: string | null;
+  lotCode: string | null;
+  lotExpiresAt: string | null;
+  actorName: string | null;
+  actorEmail: string | null;
+};
+
+export type OrderReceiptPage = {
+  entries: Array<OrderReceipt>;
+  nextCursor: string | null;
 };
 
 export type CreateOrderLineDto = {
@@ -3879,6 +3961,7 @@ export const ErrorCode = {
   ITEM_NAME_MISSING: 'item_name_missing',
   PRODUCT_NAMES_CHANGED: 'product_names_changed',
   STOCK_NOT_USABLE: 'stock_not_usable',
+  LOT_CODE_IN_USE: 'lot_code_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -6040,6 +6123,7 @@ export type StockControllerListMovementsV1Data = {
     variantId?: string;
     lotId?: string;
     locationId?: string;
+    orderId?: string;
     reason?:
       | 'receipt'
       | 'shipment'
@@ -6051,6 +6135,7 @@ export type StockControllerListMovementsV1Data = {
       | 'return';
     from?: string;
     until?: string;
+    order?: 'asc' | 'desc';
     before?: string;
     limit?: number;
   };
@@ -6088,6 +6173,7 @@ export type StockControllerExportMovementsV1Data = {
     variantId?: string;
     lotId?: string;
     locationId?: string;
+    orderId?: string;
     reason?:
       | 'receipt'
       | 'shipment'
@@ -6099,6 +6185,7 @@ export type StockControllerExportMovementsV1Data = {
       | 'return';
     from?: string;
     until?: string;
+    order?: 'asc' | 'desc';
     before?: string;
     limit?: number;
   };
@@ -6108,6 +6195,25 @@ export type StockControllerExportMovementsV1Data = {
 export type StockControllerExportMovementsV1Responses = {
   200: unknown;
 };
+
+export type StockControllerVariantV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/stock/variants/{id}';
+};
+
+export type StockControllerVariantV1Responses = {
+  200: StockVariant;
+};
+
+export type StockControllerVariantV1Response =
+  StockControllerVariantV1Responses[keyof StockControllerVariantV1Responses];
 
 export type StockControllerListLotsV1Data = {
   body?: never;
@@ -7351,6 +7457,7 @@ export type OrdersControllerListV1Data = {
     direction?: 'purchase' | 'sale';
     outstanding?: string;
     late?: string;
+    fulfillment?: 'none' | 'part' | 'all';
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;
@@ -7398,6 +7505,7 @@ export type OrdersControllerExportOrdersV1Data = {
     direction?: 'purchase' | 'sale';
     outstanding?: string;
     late?: string;
+    fulfillment?: 'none' | 'part' | 'all';
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;
@@ -7463,6 +7571,28 @@ export type OrdersControllerUpdateV1Responses = {
 
 export type OrdersControllerUpdateV1Response =
   OrdersControllerUpdateV1Responses[keyof OrdersControllerUpdateV1Responses];
+
+export type OrdersControllerListReceiptsV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: {
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/orders/{id}/receipts';
+};
+
+export type OrdersControllerListReceiptsV1Responses = {
+  200: OrderReceiptPage;
+};
+
+export type OrdersControllerListReceiptsV1Response =
+  OrdersControllerListReceiptsV1Responses[keyof OrdersControllerListReceiptsV1Responses];
 
 export type OrdersControllerDuplicateV1Data = {
   body: DuplicateOrderDto;
@@ -7786,13 +7916,13 @@ export type ReturnAuthorizationsControllerListV1Data = {
   body?: never;
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     status?: 'open' | 'closed' | 'cancelled';
     orderId?: string;
     from?: string;
     until?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/return-authorizations';
 };
@@ -7937,6 +8067,8 @@ export type InvoicesControllerListV1Data = {
   body?: never;
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     status?: 'draft' | 'issued' | 'voided';
     partnerId?: string;
     orderId?: string;
@@ -7945,8 +8077,6 @@ export type InvoicesControllerListV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/invoices';
 };
@@ -7979,6 +8109,8 @@ export type InvoicesControllerExportInvoicesV1Data = {
   };
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     status?: 'draft' | 'issued' | 'voided';
     partnerId?: string;
     orderId?: string;
@@ -7987,8 +8119,6 @@ export type InvoicesControllerExportInvoicesV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/invoices/export';
 };
@@ -8149,6 +8279,8 @@ export type CreditNotesControllerListV1Data = {
   body?: never;
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     partnerId?: string;
     invoiceId?: string;
     sort?: 'creditDate' | 'total';
@@ -8156,8 +8288,6 @@ export type CreditNotesControllerListV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/credit-notes';
 };
@@ -8176,6 +8306,8 @@ export type CreditNotesControllerExportCreditNotesV1Data = {
   };
   path?: never;
   query?: {
+    before?: string;
+    limit?: number;
     partnerId?: string;
     invoiceId?: string;
     sort?: 'creditDate' | 'total';
@@ -8183,8 +8315,6 @@ export type CreditNotesControllerExportCreditNotesV1Data = {
     from?: string;
     to?: string;
     search?: string;
-    before?: string;
-    limit?: number;
   };
   url: '/v1/credit-notes/export';
 };

@@ -1,41 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Movement } from '../api/types.gen';
-import { describeMovement, movementActor } from './describe-movement';
-
-function movement(
-  fromLocationName: string | null,
-  toLocationName: string | null,
-): Movement {
-  return { fromLocationName, toLocationName } as Movement;
-}
-
-describe('describeMovement', () => {
-  it('shows a transfer as both ends, unsigned', () => {
-    expect(describeMovement(movement('Shelf A', 'Shelf B'))).toEqual({
-      sign: '',
-      where: 'Shelf A → Shelf B',
-    });
-  });
-
-  it('signs stock arriving with a plus', () => {
-    expect(describeMovement(movement(null, 'Shelf A'))).toEqual({
-      sign: '+',
-      where: 'Shelf A',
-    });
-  });
-
-  it('signs stock leaving with a minus', () => {
-    expect(describeMovement(movement('Shelf A', null))).toEqual({
-      sign: '−',
-      where: 'Shelf A',
-    });
-  });
-});
+import { movement } from '../test/factories';
+import { movementActor } from './describe-movement';
 
 describe('movementActor', () => {
   function by(actorName: string | null, actorEmail: string | null): Movement {
-    return { actorName, actorEmail } as Movement;
+    return movement({ actorName, actorEmail });
   }
 
   // Who by name, their email beneath, as the audit log shows them (#256).

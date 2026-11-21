@@ -1,15 +1,7 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, MenuItem, Paper, Stack, TextField } from '@mui/material';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import { WhomToAskRead } from '../account/whom-to-ask';
 import type {
@@ -31,6 +23,7 @@ import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { ShowingLine } from '../components/showing-line';
 import { TableOrCards } from '../components/table-or-cards';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import type { DiscontinuedShown, ItemSort } from '../lib/api-names';
@@ -48,6 +41,7 @@ import {
   withSort,
 } from '../lib/use-list-sort';
 import { useResource } from '../lib/use-resource';
+import { useRowReturn } from '../lib/use-row-return';
 import { useTab } from '../lib/use-tab';
 import { rem } from '../theme/rem';
 import { CategoryFilter } from './category-filter';
@@ -162,6 +156,7 @@ export function ProductsPage() {
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
   const { category, discontinued, low } = filters;
   const { text, setText, search } = useListSearch();
+  const { key: entry } = useLocation();
   const {
     sort: chosen,
     header,
@@ -192,7 +187,12 @@ export function ProductsPage() {
     loadingMore,
     loadMore,
     reload,
-  } = useKeysetList<ProductSummary, ProductPage>(path, { cursor: 'cursor' });
+  } = useKeysetList<ProductSummary, ProductPage>(path, {
+    cursor: 'cursor',
+    keep: entry,
+  });
+  // Back finds the rows shown and focus on the one left from (#473).
+  const { rowReturn } = useRowReturn();
   const counts = first?.counts ?? null;
   if (counts && counts !== known) setKnown(counts);
 
@@ -289,13 +289,15 @@ export function ProductsPage() {
     id: 'discontinued',
     label: discontinuedLabel,
     count: counts?.discontinued,
+    of: 'item',
     pressed: discontinued === 'only',
     onToggle: () =>
       setFilters({ discontinued: discontinued === 'only' ? '' : 'only' }),
   };
 
   // Beside it, the items low or out, as Home's tile and Reorder count
-  // codes (ADR-093, 21a); its count with the other filters on.
+  // codes (ADR-093, 21a); its count with the other filters on, saying it
+  // counts items (108a).
   const lowLabel = intl.formatMessage({
     id: 'inventory.reorder.filter.low',
     defaultMessage: 'Low stock',
@@ -304,6 +306,7 @@ export function ProductsPage() {
     id: 'low',
     label: lowLabel,
     count: counts?.low,
+    of: 'item',
     pressed: low,
     onToggle: () => setFilters({ low: !low }),
   };
@@ -512,6 +515,7 @@ export function ProductsPage() {
                   ticks={ticks}
                   withType={tab === 'all'}
                   firstNew={newRow}
+                  rowReturn={rowReturn}
                 />
               }
               table={
@@ -524,6 +528,7 @@ export function ProductsPage() {
                   onDate={(key) => setSort(key, 'desc')}
                   ticks={ticks}
                   firstNew={newRow}
+                  rowReturn={rowReturn}
                 />
               }
             />
@@ -555,8 +560,9 @@ export function ProductsPage() {
         </Paper>
       )}
 
-      {/* Show 50 more, and how many of the tab's are shown; failing, the
-          rows stay, with a line saying so and Try again (#544). */}
+      {/* How many of the tab's are shown, always (#638), and Show 50 more;
+          failing, the rows stay, with a line saying so and Try again
+          (#544). */}
       {!failed && items && (
         <LoadMoreButton
           hasMore={hasMore}
@@ -565,16 +571,13 @@ export function ProductsPage() {
           pageSize={50}
           onLoadMore={showMore}
           before={
-            total !== null && (
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {intl.formatMessage(
-                  {
-                    id: 'products.showing',
-                    defaultMessage: 'Showing {shown} of {total}',
-                  },
-                  { shown: items.length, total },
-                )}
-              </Typography>
+            items.length > 0 && (
+              <ShowingLine
+                shown={items.length}
+                total={total}
+                more={hasMore}
+                of="item"
+              />
             )
           }
         />

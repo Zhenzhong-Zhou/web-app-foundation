@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
@@ -43,6 +43,7 @@ import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
 import { OrderDocuments } from './order-documents';
 import { OrderLinesSection } from './order-lines-section';
+import { AllMovementsOf, OrderReceipts } from './order-receipts';
 import { OrderStatusActions } from './order-status-actions';
 import { OrderSummary } from './order-summary';
 import { showsPrices } from './prices';
@@ -52,14 +53,16 @@ import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-import { orderStatusLabel } from './status';
+import { fulfillmentLabel, orderStatusLabel, transitionLabel } from './status';
 
 /**
- * The order's sections, in the order they happen (ADR-055). Shipments,
- * returns and documents are a sale's; History needs audit.view. The page
- * passes the ones this order and member have.
+ * The order's sections, in the order they happen (ADR-055). Receipts are
+ * a purchase's, for whoever sees the order (ADR-093, R25; 102a);
+ * shipments, returns and documents are a sale's; History
+ * needs audit.view. The page passes the ones this order and member have.
  */
-type OrderTab = 'items' | 'shipments' | 'returns' | 'documents' | 'history';
+type OrderTab =
+  'items' | 'receipts' | 'shipments' | 'returns' | 'documents' | 'history';
 
 export function OrderDetailPage() {
   const intl = useIntl();
@@ -89,6 +92,8 @@ export function OrderDetailPage() {
   const [shipping, setShipping] = useState(false);
 
   const [returning, setReturning] = useState(false);
+  /** The order's title, focused once Close order closes it (103a). */
+  const title = useRef<HTMLHeadingElement>(null);
 
   /** Bumped after a shipment so the list below refetches alongside the order. */
   const [shipments, setShipments] = useState(0);
@@ -113,6 +118,7 @@ export function OrderDetailPage() {
   const canHistory = can('audit.view');
   const possibleTabs: OrderTab[] = [
     'items',
+    'receipts',
     'shipments',
     'returns',
     'documents',
@@ -202,7 +208,7 @@ export function OrderDetailPage() {
     };
   }, [order]);
 
-  async function moveTo(status: OrderStatus) {
+  async function moveTo(status: OrderStatus): Promise<boolean> {
     setWorking(true);
     try {
       await api(`/orders/${id}`, {
@@ -210,14 +216,25 @@ export function OrderDetailPage() {
         body: JSON.stringify({ status }),
       });
       await load();
+      return true;
     } catch (caught: unknown) {
       // At the page, not in a dialog: these come from buttons with no form
       // behind them, and the refusal is about the document rather than a
       // field somebody typed.
       setError(messageFor(caught));
+      return false;
     } finally {
       setWorking(false);
     }
+  }
+
+  /**
+   * Close order at All received, at once (#605), then focus on the
+   * order's title, where the page begins, since the button that had it
+   * is gone (103a).
+   */
+  async function closeNow() {
+    if (await moveTo('fulfilled')) title.current?.focus();
   }
 
   /**
@@ -319,6 +336,7 @@ export function OrderDetailPage() {
   const hasDocuments = sale && !!order.documents && canViewInvoices;
   const tabs: OrderTab[] = [
     'items',
+    ...(!sale ? (['receipts'] as const) : []),
     ...(sale ? (['shipments', 'returns'] as const) : []),
     ...(hasDocuments ? (['documents'] as const) : []),
     ...(canHistory ? (['history'] as const) : []),
@@ -326,7 +344,22 @@ export function OrderDetailPage() {
   // A tab this order lacks (a purchase's ?tab=shipments) opens Items.
   const open: OrderTab = tabs.includes(tab) ? tab : 'items';
 
-  /** Ship, when anything can: the page's main act (ADR-055). */
+  /**
+   * Nothing still due and the order still confirmed (#605): closing it
+   * stays a person's decision (ADR-027), offered as the page's main act
+   * once nothing is due, every line closed short with nothing in too,
+   * which reads Not received (113a). Nothing is outstanding, so it closes
+   * at once, with no question about what is still to come.
+   */
+  const closeOffered =
+    canUpdate && order.status === 'confirmed' && order.fullyFulfilled;
+  /** A line closed short: nothing more is expected, not everything came. */
+  const closedShort = order.lines.some((line) => line.isClosedShort);
+
+  /**
+   * The page's main act (ADR-055): Ship, when anything can, or Close
+   * order, once everything is in.
+   */
   const primary = shippable ? (
     <Button
       fullWidth
@@ -338,6 +371,32 @@ export function OrderDetailPage() {
         defaultMessage: 'Ship',
       })}
     </Button>
+  ) : closeOffered ? (
+    <Stack spacing={1}>
+      <Typography id="order-close-line" variant="body2">
+        {closedShort
+          ? intl.formatMessage({
+              id: 'orders.fulfillment.closeShort',
+              defaultMessage: 'Nothing more is expected. Close the order?',
+            })
+          : intl.formatMessage(
+              {
+                id: 'orders.fulfillment.close',
+                defaultMessage:
+                  '{direction, select, sale {Everything has shipped. Close the order?} other {Everything has arrived. Close the order?}}',
+              },
+              { direction: order.direction },
+            )}
+      </Typography>
+      <Button
+        fullWidth
+        disabled={working}
+        aria-describedby="order-close-line"
+        onClick={() => void closeNow()}
+      >
+        {transitionLabel('fulfilled')}
+      </Button>
+    </Stack>
   ) : undefined;
 
   /**
@@ -417,8 +476,11 @@ export function OrderDetailPage() {
           order={order}
           working={working}
           quiet={!!primary}
+          withoutClose={closeOffered}
           stacked
-          onMove={moveTo}
+          onMove={async (next) => {
+            await moveTo(next);
+          }}
           onCloseOrder={() => setClosing(true)}
         />
       )}
@@ -439,13 +501,28 @@ export function OrderDetailPage() {
         ]}
         // Ours, which every order has and people quote (ADR-071).
         title={order.number}
-        status={{
+        headingRef={title}
+        status={[
           // What the order is, by name, rather than relying on CSS
           // capitalisation of the stored status; its tone from the one
           // table (ADR-055).
-          label: orderStatusLabel(order.status, order.direction),
-          color: COLOR_OF_TONE[STATUS_TONES.order[order.status]],
-        }}
+          {
+            label: orderStatusLabel(order.status, order.direction),
+            color: COLOR_OF_TONE[STATUS_TONES.order[order.status]],
+          },
+          // And, while confirmed, how much has come or gone (#605).
+          ...(order.fulfillment
+            ? [
+                {
+                  label: fulfillmentLabel(order.fulfillment, order.direction),
+                  color:
+                    COLOR_OF_TONE[
+                      STATUS_TONES.orderFulfillment[order.fulfillment]
+                    ],
+                },
+              ]
+            : []),
+        ]}
         subtitle={
           <>
             {[
@@ -583,6 +660,24 @@ export function OrderDetailPage() {
               </Box>
             ),
           },
+          ...(!sale
+            ? [
+                {
+                  id: 'receipts' as const,
+                  label: intl.formatMessage({
+                    id: 'orders.receipts.title',
+                    defaultMessage: 'Receipts',
+                  }),
+                  // Mounted only while open, so it reads what was received
+                  // since.
+                  content: (
+                    <Box sx={{ p: 2 }}>
+                      <OrderReceipts orderId={order.id} number={order.number} />
+                    </Box>
+                  ),
+                },
+              ]
+            : []),
           ...(sale
             ? [
                 {
@@ -594,7 +689,7 @@ export function OrderDetailPage() {
                   // None reads better as no number than as a 0.
                   count: order.counts.shipments || undefined,
                   content: (
-                    <Box sx={{ p: 2 }}>
+                    <Stack spacing={2} sx={{ p: 2 }}>
                       <ShipmentsList
                         orderId={order.id}
                         refreshKey={shipments}
@@ -615,7 +710,13 @@ export function OrderDetailPage() {
                           setShipments((count) => count + 1);
                         }}
                       />
-                    </Box>
+                      {/* Its shipments, voids and returns on Movements
+                          (ADR-093, R25). */}
+                      <AllMovementsOf
+                        orderId={order.id}
+                        number={order.number}
+                      />
+                    </Stack>
                   ),
                 },
                 {
@@ -684,6 +785,7 @@ export function OrderDetailPage() {
         orderNumber={order.number}
         line={receiving}
         locations={leaves}
+        tree={locations}
         canSeeLots={can('stock.view')}
         onClose={() => setReceiving(null)}
         onReceived={load}

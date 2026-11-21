@@ -51,9 +51,10 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { useSubmit } from '../lib/use-submit';
+import { BIG_FIGURE } from '../theme/figure';
 import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
-import { RADIUS, TYPE } from '../theme/tokens';
+import { RADIUS } from '../theme/tokens';
 import {
   type Arrangement,
   arrangementOf,
@@ -124,7 +125,7 @@ function OrganizationHome() {
   // Back from a tile's list: focus on that tile again (ADR-093's Reorder
   // table), read once as Home opens.
   const { key } = useLocation();
-  const [returnTile] = useState(() => returnedTo(key));
+  const [returnTile] = useState(() => returnedTo(key)?.row ?? null);
   const { session } = useAuth();
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
@@ -821,7 +822,8 @@ function HiddenLate({
 
 /**
  * A tile (ADR-091): its kind's icon, red while anything in it is late; its
- * count in large figures; its name; and its status in words and colour
+ * count in large figures, what it counts beside it where the tile says
+ * (108a); its name; and its status in words and colour
  * together. The whole tile is one link to its list, filtered and sorted
  * by what it counts. With nothing to do it stays in its place, quiet:
  * muted, its words in place of the count, still a link.
@@ -929,15 +931,24 @@ function Tile({ card, returned }: { card: KnownCard; returned: boolean }) {
           >
             {status}
           </Typography>
+        ) : meta.counted ? (
+          // The figure large, what it counts beside it (108a): "8 codes".
+          <Typography component="span" sx={{ order: 0 }}>
+            {intl.formatMessage(meta.counted, {
+              count: card.count,
+              figure: (chunks: ReactNode[]) => (
+                <Box component="span" sx={{ ...BIG_FIGURE, fontWeight: 700 }}>
+                  {chunks}
+                </Box>
+              ),
+            })}
+          </Typography>
         ) : (
           <Typography
             component="span"
             sx={{
               order: 0,
-              // In rem, so it grows with the text size (ADR-075): the
-              // figure read across a room, on the 4 px grid.
-              fontSize: rem(TYPE.figure),
-              lineHeight: 40 / TYPE.figure,
+              ...BIG_FIGURE,
               fontWeight: 700,
             }}
           >

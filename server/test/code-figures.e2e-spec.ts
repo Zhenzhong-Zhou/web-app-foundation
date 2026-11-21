@@ -52,6 +52,7 @@ type Figures = {
   coming_on: string | null;
   position: string;
   expires_first: string | null;
+  all_expired: boolean;
   reorder_point: string | null;
   status: string | null;
 };
@@ -96,6 +97,7 @@ interface Standing {
   comingOn: string | null;
   position: string;
   expiresFirst: string | null;
+  allExpired: boolean;
   reorderPoint: string | null;
   status: string | null;
   source: string | null;
@@ -122,6 +124,7 @@ interface Standing {
         places: number;
       }[]
     | null;
+  latestMovements: { id: string; balance: string | null }[];
 }
 
 interface ReorderDetail {
@@ -183,6 +186,7 @@ describe('A code’s figures (e2e)', () => {
         f.coming_on::text as coming_on,
         f.position::numeric(18, 4)::text as position,
         f.expires_first::text as expires_first,
+        f.all_expired,
         f.reorder_point::numeric(18, 4)::text as reorder_point,
         f.status
       from (${codeFigures(org.organizationId, today, variants)}) f
@@ -308,6 +312,7 @@ describe('A code’s figures (e2e)', () => {
       // The usable stock's soonest: not the expired lot, nor a lot at a
       // place not available.
       expires_first: '2027-03-14',
+      all_expired: false,
       reorder_point: '600.0000',
       status: 'low',
     });
@@ -323,6 +328,59 @@ describe('A code’s figures (e2e)', () => {
       reorder_point: null,
       status: null,
     });
+  });
+
+  // #611, review 13: "all expired" counts an expired lot wherever it
+  // sits. Vitamin C's 24 on the shelf and 48 in quarantine have both
+  // expired, yet expired counts the shelf's alone, 24 of 72 on hand.
+  it('says every unit on hand has expired, an expired lot at a place not available among them', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const vitamin = await item(agent, 'VITC', true);
+    const mixed = await item(agent, 'MIXED', true);
+    const loose = await item(agent, 'LOOSE');
+    const shelf = await site(agent, 'SHELF');
+    const quarantine = await site(agent, 'QUARANTINE', false);
+    await receive(agent, vitamin, shelf, '24', {
+      code: 'VC-1116',
+      expiresAt: '2020-11-16',
+    });
+    await receive(agent, vitamin, quarantine, '48', {
+      code: 'VC-1118',
+      expiresAt: '2020-11-18',
+    });
+    // An expired lot beside one that has not; stock without lots, which
+    // never expires.
+    await receive(agent, mixed, quarantine, '5', {
+      code: 'MX-OLD',
+      expiresAt: '2020-01-01',
+    });
+    await receive(agent, mixed, quarantine, '5', {
+      code: 'MX-NEW',
+      expiresAt: '2099-01-01',
+    });
+    await receive(agent, loose, shelf, '3');
+
+    const figures = await figuresOf(alpha, [vitamin, mixed, loose]);
+    const of = (id: string) => figures.find((row) => row.variant_id === id);
+    expect(of(vitamin)).toMatchObject({
+      on_hand: '72.0000',
+      expired: '24.0000',
+      unavailable: '48.0000',
+      expires_first: null,
+      all_expired: true,
+    });
+    expect(of(mixed)?.all_expired).toBe(false);
+    expect(of(loose)?.all_expired).toBe(false);
+
+    // Inventory's row and Where it stands say it as the read does.
+    const productId = await productOf(alpha, 'VITC');
+    const [byCode] = body<{ entries: { allExpired: boolean }[] }>(
+      await agent.get(`/v1/stock/by-code?productId=${productId}`).expect(200),
+    ).entries;
+    expect(byCode.allExpired).toBe(true);
+    const [stands] = await standing(agent, productId);
+    expect(stands).toMatchObject({ allExpired: true });
   });
 
   it('gives Inventory’s and Reorder’s routes the same figures for one code', async () => {
@@ -613,6 +671,24 @@ describe('A code’s figures (e2e)', () => {
     await beta.agent.get(`/v1/products/${productId}/stock`).expect(404);
   });
 
+  it('lists each code’s five newest movements as Movements lists the code, the newest’s balance on hand', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { bottle } = await world(alpha);
+    const productId = await productOf(alpha, 'BOTTLE');
+
+    const [stands] = await standing(alpha.agent, productId);
+    const listed = body<{ entries: unknown[] }>(
+      await alpha.agent
+        .get(`/v1/stock/movements?variantId=${bottle}&limit=5`)
+        .expect(200),
+    ).entries;
+    // Four receipts and the run's two issues: the five newest, the one
+    // movement row, a stock card's.
+    expect(stands.latestMovements).toHaveLength(5);
+    expect(stands.latestMovements).toEqual(listed);
+    expect(stands.latestMovements[0].balance).toBe(stands.onHand);
+  });
+
   it('sends Where it stands only to a reader with stock.view, refused in their words', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await world(alpha);
@@ -646,6 +722,8 @@ describe('A code’s figures (e2e)', () => {
       .expect(200);
     const [stands] = body<{ codes: Standing[] }>(response).codes;
     expect(stands.places).toBeNull();
+    // Nor in its latest movements, which keep their places' ids (96a).
+    expect(stands.latestMovements).toHaveLength(5);
     for (const place of ['SHELF', 'KITCHEN', 'QUARANTINE']) {
       expect(response.text).not.toContain(place);
     }

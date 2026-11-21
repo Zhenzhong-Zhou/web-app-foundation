@@ -1,9 +1,14 @@
+import type { APIRequestContext } from '@playwright/test';
+
 import { expect, test } from './fixtures';
 import {
   created,
   createLocation,
   createPartner,
   createProduct,
+  type SeededLocation,
+  type SeededPartner,
+  type SeededProduct,
   signInAs,
 } from './support/api';
 
@@ -222,4 +227,137 @@ test('holds each line’s Total beside its actions on a computer', async ({
   await expect
     .poll(() => total.evaluate((cell) => getComputedStyle(cell).position))
     .toBe('static');
+});
+
+// ---------------------------------------------------------------------------
+// How much has come (#605; ADR-093's Orders table, row by row)
+// ---------------------------------------------------------------------------
+
+/** A confirmed purchase of 30, with `received` of it received on its line. */
+async function purchaseOf(
+  api: APIRequestContext,
+  partner: SeededPartner,
+  product: SeededProduct,
+  dock: SeededLocation,
+  received: string | null,
+): Promise<{ id: string; number: string }> {
+  const { order } = await created<{ order: { id: string; number: string } }>(
+    await api.post('/v1/orders', {
+      data: {
+        partnerId: partner.id,
+        direction: 'purchase',
+        lines: [{ variantId: product.variantId, quantityOrdered: '30' }],
+      },
+    }),
+  );
+  const confirmed = await api.patch(`/v1/orders/${order.id}`, {
+    data: { status: 'confirmed' },
+  });
+  expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
+  if (received) {
+    const { lines } = (await (
+      await api.get(`/v1/orders/${order.id}`)
+    ).json()) as {
+      lines: { id: string }[];
+    };
+    await created(
+      await api.post(`/v1/orders/${order.id}/lines/${lines[0]!.id}/receipts`, {
+        data: { toLocationId: dock.id, quantity: received },
+      }),
+    );
+  }
+  return order;
+}
+
+test('Orders, Receiving › Partly received: the list narrows to orders partly received; ?fulfillment=part; Back leaves Orders', async ({
+  page,
+  freshOrg,
+}) => {
+  const partner = await createPartner(freshOrg.api, { name: 'E2E Mill Co' });
+  const product = await createProduct(freshOrg.api, { sku: 'E2E-ORD-605' });
+  const dock = await createLocation(freshOrg.api, { name: 'E2E Dock' });
+  const none = await purchaseOf(freshOrg.api, partner, product, dock, null);
+  const part = await purchaseOf(freshOrg.api, partner, product, dock, '10');
+  const all = await purchaseOf(freshOrg.api, partner, product, dock, '30');
+
+  await signInAs(page, freshOrg.api);
+  await page.goto('/locations');
+  await page.goto('/orders?direction=purchase');
+  const number = (order: { number: string }) =>
+    page.getByRole('link', { name: order.number, exact: true });
+  await expect(number(none)).toBeVisible();
+  // Each beside its Status, in a purchase's words (92a).
+  for (const [order, label] of [
+    [none, 'Not received'],
+    [part, 'Partly received'],
+    [all, 'All received'],
+  ] as const) {
+    await expect(
+      page.getByRole('row', { name: new RegExp(order.number) }),
+    ).toContainText(label);
+  }
+
+  await page.getByRole('combobox', { name: 'Receiving' }).click();
+  await page.getByRole('option', { name: 'Partly received' }).click();
+
+  await expect(page).toHaveURL(/[?&]fulfillment=part(&|$)/);
+  await expect(number(part)).toBeVisible();
+  await expect(number(none)).toHaveCount(0);
+  await expect(number(all)).toHaveCount(0);
+
+  // A filter replaces the address (#341): Back leaves Orders.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/locations$/);
+});
+
+test('An order’s page, Confirmed: received in part, Partly received; the rest received, All received beside Confirmed, with “Everything has arrived. Close the order?”; Close order closes it', async ({
+  page,
+  freshOrg,
+}) => {
+  const partner = await createPartner(freshOrg.api, { name: 'E2E Mill Co' });
+  const product = await createProduct(freshOrg.api, { sku: 'E2E-ORD-606' });
+  const dock = await createLocation(freshOrg.api, { name: 'E2E Dock' });
+  const order = await purchaseOf(freshOrg.api, partner, product, dock, null);
+
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/orders/${order.id}`);
+  const main = page.getByRole('main');
+  await expect(main.getByText('Not received', { exact: true })).toBeVisible();
+
+  const receive = async (quantity: string) => {
+    await page.getByRole('button', { name: 'Receive', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Into').click();
+    await page.getByRole('option', { name: /E2E Dock/ }).click();
+    await dialog.getByLabel('Quantity').fill(quantity);
+    await dialog.getByRole('button', { name: 'Receive' }).click();
+    await expect(dialog).toBeHidden();
+  };
+
+  await receive('10');
+  await expect(
+    main.getByText('Partly received', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    main.getByText('Everything has arrived. Close the order?'),
+  ).toHaveCount(0);
+
+  await receive('20');
+  await expect(main.getByText('All received', { exact: true })).toBeVisible();
+  await expect(main.getByText('Confirmed', { exact: true })).toBeVisible();
+  const line = main.getByText('Everything has arrived. Close the order?');
+  await expect(line).toBeVisible();
+  // One Close order, the line's, which it describes.
+  const close = page.getByRole('button', { name: 'Close order' });
+  await expect(close).toHaveCount(1);
+  await expect(close).toHaveAccessibleDescription(
+    'Everything has arrived. Close the order?',
+  );
+
+  // Nothing outstanding, so it closes at once, as Close order always has
+  // once everything is in.
+  await close.click();
+  await expect(line).toHaveCount(0);
+  await expect(main.getByText('All received', { exact: true })).toHaveCount(0);
+  await expect(close).toHaveCount(0);
 });
