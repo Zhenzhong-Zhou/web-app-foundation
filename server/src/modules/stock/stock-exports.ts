@@ -1,6 +1,7 @@
 import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
-import { cityOf, dayIn, momentIn, todayIn } from '../../common/today';
+import type { Locale } from '../../common/locales';
+import { dayIn, momentIn, todayIn, zonePlaceIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
 import type {
   MovementReason,
@@ -308,7 +309,8 @@ export function movementLines(
  * Movements' export (ADR-057, amended by ADR-093's 87a and 88a): the
  * screen's columns and words, one value to a column. When to the second
  * on the organization's clocks, its header naming the place its zone is
- * named for, "When (Vancouver time)" (98a; ADR-072), a range's opening
+ * named for, "When (Vancouver time)", in Chinese by ICU's name for it,
+ * "时间（温哥华时间）" (98a, 134b; ADR-072), a range's opening
  * and closing their days; beside Code, the code a row was recorded under
  * where it differs from today's, as the row's "was" (116); In, Out and
  * Balance for one code, In and Out for one code with a reason or for an
@@ -324,8 +326,10 @@ export function movementColumns(options: {
   card: MovementCard;
   places: boolean;
   timeZone: string;
+  /** The reader's, for the place When's header names. */
+  locale: Locale;
 }): ExportColumn<MovementLine>[] {
-  const { card, places, timeZone } = options;
+  const { card, places, timeZone, locale } = options;
   const of =
     <T>(value: (movement: Movement) => T) =>
     (line: MovementLine) =>
@@ -416,7 +420,7 @@ export function movementColumns(options: {
     {
       header: t(
         { id: 'exports.column.whenIn', defaultMessage: 'When ({city} time)' },
-        { city: cityOf(timeZone) },
+        { city: zonePlaceIn(timeZone, locale) },
       ),
       value: (line) =>
         'movement' in line

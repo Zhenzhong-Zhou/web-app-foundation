@@ -9,6 +9,7 @@ import {
   momentIn,
   startOfDayIn,
   todayIn,
+  zonePlaceIn,
 } from './today';
 
 /**
@@ -139,6 +140,31 @@ describe('cityOf', () => {
     expect(cityOf('America/Argentina/Buenos_Aires')).toBe('Buenos Aires');
     expect(cityOf('Asia/Calcutta')).toBe('Kolkata');
     expect(cityOf('UTC')).toBe('UTC');
+  });
+});
+
+/** The place a header names, in Chinese by ICU's short generic name (134b). */
+describe('zonePlaceIn', () => {
+  it('names the city in Chinese by ICU, and from the id in English and French', () => {
+    expect(zonePlaceIn('America/Vancouver', 'zh-Hans')).toBe('温哥华时间');
+    expect(zonePlaceIn('America/Vancouver', 'en')).toBe('Vancouver');
+    expect(zonePlaceIn('America/Vancouver', 'fr-CA')).toBe('Vancouver');
+    // Under its current name, as cityOf reads it.
+    expect(zonePlaceIn('Asia/Calcutta', 'zh-Hans')).toBe('印度时间');
+  });
+
+  // ICU's short generic name is the same in winter and in summer, never
+  // a standard or a daylight name (#343).
+  it('is the same name in every season', () => {
+    vi.useFakeTimers();
+    try {
+      for (const day of ['2026-01-15T12:00:00Z', '2026-07-15T12:00:00Z']) {
+        vi.setSystemTime(new Date(day));
+        expect(zonePlaceIn('America/Toronto', 'zh-Hans')).toBe('多伦多时间');
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

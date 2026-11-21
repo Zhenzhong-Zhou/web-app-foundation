@@ -139,12 +139,18 @@ export class StockController {
       rows: rows.length,
     });
     const timeZone = requestTimeZone();
+    const locale = localeOf(acceptLanguage);
     return csvFile(
       res,
       'movements',
-      movementColumns({ card: cardOf(query), places: sight.places, timeZone }),
+      movementColumns({
+        card: cardOf(query),
+        places: sight.places,
+        timeZone,
+        locale,
+      }),
       movementLines(rows, period, query, timeZone),
-      localeOf(acceptLanguage),
+      locale,
     );
   }
 

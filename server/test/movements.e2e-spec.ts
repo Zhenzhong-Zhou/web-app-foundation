@@ -1344,9 +1344,8 @@ describe('Movements (e2e)', () => {
     expect((await exported('fr-CA')).header[0]).toBe(
       'Quand (fuseau horaire\u00A0: Vancouver)',
     );
-    expect((await exported('zh-Hans')).header[0]).toBe(
-      '时间（Vancouver 时间）',
-    );
+    // In Chinese the city in Chinese, by ICU's name for the zone (134b).
+    expect((await exported('zh-Hans')).header[0]).toBe('时间（温哥华时间）');
   });
 
   // ADR-093, 11a and 85a; review 24: each row's change, signed by the

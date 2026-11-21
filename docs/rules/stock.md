@@ -359,7 +359,9 @@ file is kept is in the [README](README.md).
 - **Movements' export is the screen's columns, oldest first, one value
   to each, then what a row keeps beyond them:** When to the second on
   the organization's clocks, its header naming the place its time zone
-  is named for, "When (Vancouver time)"; Code; Recorded as, the code a
+  is named for, "When (Vancouver time)", in Chinese by ICU's short
+  generic name, the city in Chinese and the same in every season,
+  "时间（温哥华时间）" (134b); Code; Recorded as, the code a
   row was recorded under where it differs from today's; Item; In, Out
   and Balance where the list has them, else Change, and the stock card's
   Moved between Out and Balance, filled on a move counted in neither
@@ -376,6 +378,7 @@ file is kept is in the [README](README.md).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note" ·
+  [test](../../server/src/common/today.spec.ts) "names the city in Chinese by ICU, and from the id in English and French" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·

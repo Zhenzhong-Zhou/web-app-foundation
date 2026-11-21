@@ -18,6 +18,8 @@
 
 import { Logger } from '@nestjs/common';
 
+import type { Locale } from './locales';
+
 const logger = new Logger('TimeZone');
 
 /**
@@ -215,6 +217,29 @@ const CURRENT_NAMES: Readonly<Record<string, string>> = {
 export function cityOf(zone: string): string {
   const current = canonicalTimeZone(zone) ?? zone;
   return (current.split('/').pop() ?? current).replace(/_/g, ' ');
+}
+
+/**
+ * The place a zone is named for in a reader's language, as a header
+ * names it (134b): in Chinese ICU's short generic name, "温哥华时间", the
+ * city in Chinese and the same in every season, as its other names are
+ * not (#343); in English and French the city from the id, cityOf's,
+ * since French's short name is "HP". cityOf's too where ICU names none.
+ */
+export function zonePlaceIn(zone: string, locale: Locale): string {
+  if (locale !== 'zh-Hans') return cityOf(zone);
+  try {
+    return (
+      new Intl.DateTimeFormat('zh-Hans', {
+        timeZone: canonicalTimeZone(zone) ?? zone,
+        timeZoneName: 'shortGeneric',
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value ?? cityOf(zone)
+    );
+  } catch {
+    return cityOf(zone);
+  }
 }
 
 /**

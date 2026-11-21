@@ -571,7 +571,7 @@
   "exports.column.variantFrench": "法文规格名称",
   "exports.column.voidsInvoice": "作废发票",
   "exports.column.when": "时间",
-  "exports.column.whenIn": "时间（{city} 时间）",
+  "exports.column.whenIn": "时间（{city}）",
   "exports.column.who": "收货方",
   "exports.tooMany": "超过 {limit, number} 行符合条件。请缩小日期或筛选范围后重新导出。",
   "exports.value.closingBalance": "期末结存",

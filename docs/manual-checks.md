@@ -643,7 +643,8 @@ a second organization.
   its Note the note as typed, and no From or To outside the warehouse is
   blank: a receipt's From supplier, a shipment's To customer. In 中文 the
   first and last lines read 期初结存 and 期末结存, that correction
-  调整：计数错误, and the first column 时间（Vancouver 时间）. As
+  调整：计数错误, and the first column 时间（温哥华时间）, the city in
+  Chinese (134b), where English and French keep Vancouver. As
   Fatima Haddad (Sales), the same file has no From or To column, and its
   For names an order but never a run.
 - **MC-320** *(ADR-093, R9, R10, R21, R24, R34; 95a, 96a, 101a, 114, 115, 118a and 125; reviews 1, 2, 3, 4, 11 and 22; 126)* Movements,
@@ -7382,3 +7383,7 @@ first.
   the item list nor a movement names is named by its own read, under
   `stock.view`, its chip and the no-result line saying "(discontinued)"
   when it is: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 134b: the export's When
+  header in 中文 names the city in Chinese, 时间（温哥华时间）, by ICU's
+  short generic name; English and French keep Vancouver: MC-319
+  extended.
