@@ -339,7 +339,9 @@ spacing.
   half-width , ? : ; or ! beside Chinese. A space between Chinese and
   Latin letters or digits, as in 逾期 2 天, 批次 VC-0301 and 我在
   {organization} 的权限 (ADR-090), and none beside full-width punctuation,
-  inside a date as the reader's calendar writes it, 2026年11月30日, or
+  inside a date as the reader's calendar writes it, 2026年11月30日, and
+  in a range of days, the year once, 2026年11月1日至20日,
+  2026年10月25日至11月20日 (130b), or
   beside a placeholder that Placeholders filled with Chinese words lists,
   由{name}提供支持. A list joins with 、 and its last item with 和, a
   space beside a Latin name. A plural has its other branch alone, since

@@ -692,7 +692,9 @@ a second organization.
   Out and Closing above the table, Closing the Opening plus In less Out,
   and the field and a chip, "When: Nov 1 – 20, 2026", the year once,
   show the days, the chip's × clearing them; in Français « 1–20 nov.
-  2026 », in 中文 Intl's "2026/11/1 – 2026/11/20", and Choose dates…'s
+  2026 », in 中文 "2026年11月1日至20日", the year once as a single day
+  reads, never "2026/11/1 – 2026/11/20", the menu's 本周 · 11月16日至20日
+  (130b), and Choose dates…'s
   two fields 起始日 and 结束日, never 自 … 起. Choose Last month:
   no row, "No movements match: …" with Show all movements. Choose
   dates… opens a panel titled Choose dates: From and To, typed or
@@ -7365,3 +7367,6 @@ first.
   offers the exact matches alone while any match, a whole lot code its
   lot alone, and the close ones under Close matches only when none
   does: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 130b: a range of days in
+  中文 is written the Chinese way, the year once, 2026年11月1日至20日,
+  in When, its chip and its menu's periods: MC-320 extended.

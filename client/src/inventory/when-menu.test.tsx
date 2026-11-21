@@ -147,6 +147,40 @@ describe('WhenMenu', () => {
     }
   });
 
+  // 130b: in Chinese the field and each period write their days the
+  // Chinese way, the year once, as single days read, never ICU's
+  // "2026/11/1 – 2026/11/20".
+  it('writes its days the Chinese way in Chinese, the year once', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      render(<Harness start={{ from: '2026-11-01', to: '2026-11-20' }} />, {
+        wrapper: TestProviders,
+      });
+
+      // The catalogue arrives after the first render.
+      await vi.waitFor(() =>
+        expect(when()).toHaveTextContent(/^2026年11月1日至20日$/),
+      );
+      await user.click(when());
+      expect(
+        within(await screen.findByRole('listbox'))
+          .getAllByRole('option')
+          .slice(0, 6)
+          .map((option) => option.textContent),
+      ).toEqual([
+        '今天 · 11月20日',
+        '本周 · 11月16日至20日',
+        '本月 · 11月1日至20日',
+        '最近 30 天 · 10月22日至11月20日',
+        '上月 · 10月1日至31日',
+        '今年 · 1月1日至11月20日',
+      ]);
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
   it('opens From and To with Choose dates…, Apply writing both days, Clear emptying them', async () => {
     const user = userEvent.setup();
     render(<Harness start={{ from: '2026-10-01', to: '2026-10-31' }} />, {
