@@ -22,7 +22,7 @@ Below 600 px each code is a card with **On hand** and **Free**, saying under the
 
 ## Find stock {#find}
 
-- The quick filters, on a row of their own above the search (on a phone, in **Filters**), show only what they name, each with its count: **Low stock** (the out ones too), **Out**, **Expiring soon** (the expired ones too), **Expired** and **Waiting for a cost**. A count is the rows the filter shows, with the other filters on, so press one and the list is that long.
+- The quick filters, on a row of their own above the search (on a phone, in **Filters**), show only what they name, each with its count and what it counts, such as **Low stock · 4 codes**: **Low stock** (the out ones too), **Out**, **Expiring soon** (the expired ones too), **Expired** and **Waiting for a cost**. A count is the rows the filter shows, with the other filters on, so press one and the list is that long.
 - **Type**, **Category** and **Location** narrow the list, and **Search items, codes or lots** finds a code, an item’s name or a lot’s code. A message says when nothing matches, with **Show all stock**.
 - Press **On hand** or **Expires first** at the head of a column to sort by it, and again to reverse; the name is the default. A code with nothing to expire comes last either way. Free is not a sort.
 - Choose a place under **Location** and the list shows what is there: **On hand here**, **Lots here** and **Expires first here** are that place’s, while **Free, every place** and **Held, every place** count every place, since a sale holds an item, not a shelf. A lot’s code searched with a place chosen finds that lot at that place only.
@@ -67,7 +67,7 @@ What each does:
 
 ## What each count counts {#counts}
 
-A number on a filter or a tile counts one kind of thing, and the kind is the same wherever you meet it.
+A number on a filter or a tile counts one kind of thing, says which beside it, such as **Low stock · 4 codes** or **Expiring soon · 2 lots**, and the kind is the same wherever you meet it.
 
 - **Stock**, by item, counts codes: a **Low stock** count of 4 is four codes, wherever they sit.
 - **Stock**, by lot, counts lots at each place: a lot in two places is two rows and counts twice.

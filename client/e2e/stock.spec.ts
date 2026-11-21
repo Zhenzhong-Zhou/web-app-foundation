@@ -107,7 +107,9 @@ test('Stock, by item, Low stock 1: the list narrows to it, the count kept; ?low=
     'aria-pressed',
     'true',
   );
-  await expect(quick(page, 'Low stock')).toContainText('1');
+  await expect(quick(page, 'Low stock')).toHaveAccessibleName(
+    'Low stock · 1 code',
+  );
   await expect(itemLinks(page)).toHaveText(['E2E Vitamin C']);
 
   // A filter replaces the address (#341's rule, as every list's): Back
@@ -1081,7 +1083,9 @@ test('done: Low stock at 0 says “Nothing is low.”, naming the items with no 
       'Nothing is low. An item with no reorder point is never low: set one on Reorder.',
     ),
   ).toBeVisible();
-  await expect(quick(page, 'Low stock')).toContainText('0');
+  await expect(quick(page, 'Low stock')).toHaveAccessibleName(
+    'Low stock · 0 codes',
+  );
 });
 
 test('loading: the header kept and placeholder rows past 250 ms', async ({

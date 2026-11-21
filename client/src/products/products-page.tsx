@@ -289,13 +289,15 @@ export function ProductsPage() {
     id: 'discontinued',
     label: discontinuedLabel,
     count: counts?.discontinued,
+    of: 'item',
     pressed: discontinued === 'only',
     onToggle: () =>
       setFilters({ discontinued: discontinued === 'only' ? '' : 'only' }),
   };
 
   // Beside it, the items low or out, as Home's tile and Reorder count
-  // codes (ADR-093, 21a); its count with the other filters on.
+  // codes (ADR-093, 21a); its count with the other filters on, saying it
+  // counts items (108a).
   const lowLabel = intl.formatMessage({
     id: 'inventory.reorder.filter.low',
     defaultMessage: 'Low stock',
@@ -304,6 +306,7 @@ export function ProductsPage() {
     id: 'low',
     label: lowLabel,
     count: counts?.low,
+    of: 'item',
     pressed: low,
     onToggle: () => setFilters({ low: !low }),
   };

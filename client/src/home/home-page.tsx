@@ -822,7 +822,8 @@ function HiddenLate({
 
 /**
  * A tile (ADR-091): its kind's icon, red while anything in it is late; its
- * count in large figures; its name; and its status in words and colour
+ * count in large figures, what it counts beside it where the tile says
+ * (108a); its name; and its status in words and colour
  * together. The whole tile is one link to its list, filtered and sorted
  * by what it counts. With nothing to do it stays in its place, quiet:
  * muted, its words in place of the count, still a link.
@@ -929,6 +930,18 @@ function Tile({ card, returned }: { card: KnownCard; returned: boolean }) {
             sx={{ order: 2, color: 'text.secondary' }}
           >
             {status}
+          </Typography>
+        ) : meta.counted ? (
+          // The figure large, what it counts beside it (108a): "8 codes".
+          <Typography component="span" sx={{ order: 0 }}>
+            {intl.formatMessage(meta.counted, {
+              count: card.count,
+              figure: (chunks: ReactNode[]) => (
+                <Box component="span" sx={{ ...BIG_FIGURE, fontWeight: 700 }}>
+                  {chunks}
+                </Box>
+              ),
+            })}
           </Typography>
         ) : (
           <Typography

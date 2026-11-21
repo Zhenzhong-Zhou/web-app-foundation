@@ -32,7 +32,11 @@ import { useCan } from '../auth/permissions';
 import { ActionsHeader } from '../components/actions-header';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
-import { FilterRow, QuickFilterPill } from '../components/filter-row';
+import {
+  FilterRow,
+  type QuickFilter,
+  QuickFilterPill,
+} from '../components/filter-row';
 import { FiltersButton } from '../components/filters-button';
 import { ListError } from '../components/list-error';
 import { ListTable } from '../components/list-table';
@@ -957,9 +961,9 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   // point does, with its own Learn more.
   const none = counts?.all === 0 && !search;
 
-  // All, Low stock and Out, each with its count; none while no point is
-  // set, which the empty state says.
-  const quick = none
+  // All, Low stock and Out, each with its count of codes (108a); none
+  // while no point is set, which the empty state says.
+  const quick: QuickFilter[] = none
     ? []
     : [
         {
@@ -970,6 +974,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             defaultMessage: 'All',
           }),
           count: counts?.all,
+          of: 'code',
           pressed: filter === '',
           onToggle: () => setFilter(''),
         },
@@ -980,6 +985,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             defaultMessage: 'Low stock',
           }),
           count: counts?.low,
+          of: 'code',
           pressed: filter === 'low',
           onToggle: () => setFilter('low'),
         },
@@ -990,6 +996,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             defaultMessage: 'Out',
           }),
           count: counts?.out,
+          of: 'code',
           pressed: filter === 'out',
           onToggle: () => setFilter('out'),
         },

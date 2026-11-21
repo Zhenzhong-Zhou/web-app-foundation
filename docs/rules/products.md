@@ -317,7 +317,7 @@ How this file is kept is in the [README](README.md).
 - **Low stock narrows the list to the items with a code low or out,
   counted beside the filter with the others on and its own off; the
   export follows it.** It counts items, where Reorder and Home count
-  codes.
+  codes, and says so, "Low stock · 2 items", as Discontinued does (108a).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--items-stock-from-the-same-count-21a) ·
   [test](../../server/test/items-list.e2e-spec.ts) "reads its stock from its codes’ figures: on hand with the not usable part, the worst code’s status and how many share it" ·
   [test](../../server/test/code-figures.e2e-spec.ts) "counts Low stock as items on Items and as codes on Reorder and Home, one number each" ·

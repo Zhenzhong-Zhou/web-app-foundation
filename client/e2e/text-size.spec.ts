@@ -345,7 +345,7 @@ test('at Larger on a phone, Home with its tiles fits', async ({
   await page.goto('/');
 
   await expect(
-    page.getByRole('link', { name: 'Expiring soon, 1' }),
+    page.getByRole('link', { name: 'Expiring soon, 1 lot' }),
   ).toBeVisible();
   await page.waitForLoadState('networkidle');
   expect(await overflowing(page)).toEqual([]);

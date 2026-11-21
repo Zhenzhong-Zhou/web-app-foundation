@@ -118,6 +118,19 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
   [test](../../client/e2e/stock.spec.ts) "Stock, its count always: “2 codes” when everything fits; Low stock, “1 code”" ·
   MC-1528 · MC-311 · MC-323
+- **Each count says what it counts, beside its number:** a quick
+  filter's after a dot, "Low stock · 8 codes" on Stock by item and on
+  Reorder, "Expiring soon · 4 lots" on the Lot view, "Low stock · 2
+  items" on Items, by each language's plural; Home's Low stock and
+  Expiring soon tiles beside the figure, "8 codes" and "4 lots" (108a).
+  [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
+  [test](../../client/src/components/filter-row.test.tsx) "says what it counts beside the number, by the plural" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "lists a row per lot with its own counts, Out not among its filters" ·
+  [test](../../client/src/inventory/reorder-points-tab.test.tsx) "opens on Low from the address, with the counts beside each view" ·
+  [test](../../client/src/products/products-page.test.tsx) "narrows to the items low or out by Low stock, its count beside it, in the address" ·
+  [test](../../client/src/home/home-cards.test.ts) "says what Low stock and Expiring soon count, in each language" ·
+  [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
+  MC-1528 · MC-313 · MC-4202 · MC-4213 · MC-311
 - **Back to Stock returns it as it was:** the rows shown after Show 50
   more are read again, page by page, before they show; the codes opened,
   with the places and lots opened in them, stay open in the address; and

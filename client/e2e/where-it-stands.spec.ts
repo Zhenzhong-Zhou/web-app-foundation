@@ -283,7 +283,7 @@ test('Items, Low stock: the items low or out, counted; a row’s Low opens Where
   // Vitamin C, zinc and copper low, focus out: four items, as Reorder's
   // low and out codes are, each of one code; magnesium has no point.
   const low = page.getByRole('button', { name: /^Low stock/ });
-  await expect(low).toHaveAccessibleName('Low stock 4');
+  await expect(low).toHaveAccessibleName('Low stock · 4 items');
   await low.click();
 
   await expect(page).toHaveURL(/[?&]low=1/);

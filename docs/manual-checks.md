@@ -370,7 +370,8 @@ a second organization.
   1 个). The number still opens Inventory for the item alone; the status
   opens the item's page at Where it stands, focus on its heading, with
   Back to Items as it was. A Low stock chip sits before Discontinued with
-  its count, the items low or out, ?low=1 in the address, kept by a
+  its count in items, "Low stock · 2 items" (« Stock bas · 2 articles »,
+  库存不足 · 2 个物品; 108a), the items low or out, ?low=1 in the address, kept by a
   reload and Back; its count is the number of items among Reorder's Low
   stock rows, MAGCAP counted once for its two codes. At 390 px the chip
   is in Filters, each card's status opens Where it stands, and with
@@ -507,7 +508,8 @@ a second organization.
   own menu; each code with its type as a word,
   "D3-1000-120 · Product"; D3-B02's two rows read "1 of 2
   places" and "2 of 2 places". Its quick filters are Low stock, Expiring
-  soon, Expired and Waiting for a cost, each count the rows it shows.
+  soon, Expired and Waiting for a cost, each count the rows it shows and
+  says lots, "Expiring soon · 4 lots", "Expired · 1 lot" (108a).
   `/inventory?group=lot&out=1` says items that are out have no lots, with
   Group by Item, which lists the out. As Fatima Haddad (Sales), with no
   `locations.view`, VC-0301's row reads "Not usable: a place not
@@ -537,7 +539,8 @@ a second organization.
   something is refused, and no Promised to customers. Each header it names
   (Where, On hand, Free, Held, Coming, Status, Expires first) is on the
   screen under that name, and "12 not usable" and "20 short" read as in
-  the list. What each count counts says Stock by item counts codes, by lot
+  the list. What each count counts says each number names its kind beside
+  it, "Low stock · 4 codes", and that Stock by item counts codes, by lot
   counts lots at each place, Reorder and Home's Low stock count codes,
   Home's Expiring soon counts lots at each place, and Items counts items;
   the demo's MAGCAP, with three codes, shows it: Items' Low stock counts
@@ -763,8 +766,9 @@ a second organization.
   before, the confirmation ending "with no order". An item with nothing
   ordered asks nothing. In Français « … de ELDER-250 reçus sur … » and
   Ouvrir la commande; in 中文 已按 … 收货 and 打开订单.
-- **MC-311** *(ADR-091, amended by ADR-093)* Inventory's Expired. As the
-  demo Owner, Home's Expiring soon opens the Lot view at
+- **MC-311** *(ADR-091, amended by ADR-093; 108a)* Inventory's Expired. As the
+  demo Owner, Home's Expiring soon, its figure saying lots beside it
+  (个批次 in 中文, lots in French), opens the Lot view at
   `/inventory?group=lot&expiring=1`, and its late button adds
   `&expired=1`: Expiring soon and Expired are pressed, and the list holds
   only the lots past their day, VC-0301 first. Unpress Expired: every lot
@@ -1730,9 +1734,11 @@ Paper is checked first because it must not change at all.
   message, and Raise an order stays where it always is, in the page header;
   with Fulfilled pressed and none fulfilled, only "No orders match that
   filter."
-- **MC-1528** Inventory's quick filters are a row of their own, Low
+- **MC-1528** *(108a)* Inventory's quick filters are a row of their own, Low
   stock, Out, Expiring soon, Expired, Waiting for a cost and Show emptied,
-  each with its count, above the row of Search, Type, Category, Location
+  each with its count and what it counts after a dot, codes, "Low stock ·
+  8 codes", "Out · 1 code" (« Stock bas · 8 codes », 库存不足 · 8 个编码),
+  above the row of Search, Type, Category, Location
   and Group by; at 390 px they are in the Filters sheet, its button
   counting those on. Pressing
   Expiring soon keeps the codes with a lot within 90 days, ELD-24A's
@@ -4614,7 +4620,7 @@ site, after a deploy that changes the setting, the route or the relay.
   where it has one.
 - **MC-4202** *(ADR-085; ADR-093, R7)* The list. As the demo Owner,
   Inventory → Reorder: the address gains `?tab=reorder`, the switch reads
-  All 11 · Low stock 8 · Out 2, and "Buy or make what is short. Tick
+  All · 11 codes, Low stock · 8 codes and Out · 2 codes (108a), and "Buy or make what is short. Tick
   several to buy them on one purchase order." sits above the list, with
   Learn more. The list opens with the most to order first, Suggested
   order's arrow solid, Status's faint up-and-down arrow at rest; Status puts the low first instead,
@@ -4648,7 +4654,8 @@ site, after a deploy that changes the setting, the route or the relay.
   rows shown and says the next 50 could not be loaded, with Try again.
 - **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
   shows the eight, VITC-100 among them; Out, MAGCAP-240 and VITC-100; All, the eleven.
-  Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
+  Type ELDER: the counts follow the search, All · 1 code, Low stock · 1
+  code and Out · 0 codes.
   With Low stock on and the search cleared, Export saves a CSV of the eight, its
   Status, Bought or made, How much to order and Unit in words, such as
   Low, Bought, A fixed quantity and each, in 中文 不足, 采购, 固定订货量
@@ -4784,15 +4791,16 @@ site, after a deploy that changes the setting, the route or the relay.
   and 按建议订货后的预计剩余, and its sentence reads naturally, such as "目前低于 500，因此建议订货
   600，按每组 200 计算，共 3 组。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计剩余,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
-- **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
-  the Owner: the tile after To receive reads 8, Low stock and "2 out",
+- **MC-4213** *(ADR-085; ADR-091; 108a)* Home's Low stock. On a fresh demo, as
+  the Owner: the tile after To receive reads 8 codes, the 8 large,
+  Low stock and "2 out",
   its icon red. The tile opens Reorder on Low stock, its own name, at
   `/inventory?tab=reorder&status=low`,
   eight rows, MAGCAP-240 and VITC-100
   first, with Back to Home; What is late's "2 items out of stock" opens it
   on Out, those two rows. Receive 100 of VITC-100 and Refresh: Low stock
-  reads 7, with "1 out", and What is late says "1 item out of stock". In
-  中文: 库存不足, "2 项缺货" and "2 个缺货物品"; in French: Stock bas,
+  reads 7 codes, with "1 out", and What is late says "1 item out of stock". In
+  中文: 8 个编码, 库存不足, "2 项缺货" and "2 个缺货物品"; in French: 8 codes, Stock bas,
   "2 épuisés" and "2 articles épuisés". In a new organization, with no
   reorder point, the tile is quiet, Low stock and "No reorder points set
   yet" (尚未设置库存下限), not Nothing low, and opens Reorder with
@@ -7344,3 +7352,8 @@ first.
   long path in the item's Latest movements wraps on a phone's card,
   and Choose dates…'s fields read 起始日 and 结束日 in 中文, each now
   held by a test: MC-320 extended.
+- 2026-11-20: ADR-093's Movements branch, 108a (#609): each quick
+  filter's count says what it counts, "Low stock · 8 codes", "Expiring
+  soon · 4 lots", "Low stock · 2 items", and Home's Low stock and
+  Expiring soon tiles "8 codes" and "4 lots": MC-1528, MC-313, MC-218,
+  MC-316, MC-4202, MC-4203, MC-4213 and MC-311 extended.

@@ -356,8 +356,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     return <RevisionRefusalPage failure={list.refused} onRetry={reload} />;
   }
 
-  // Each quick filter, its count the rows it shows (R3); the Lot view's
-  // four, no Out (31a); without their counts until a read answers.
+  // Each quick filter, its count the rows it shows (R3), saying so: codes,
+  // or lots on the Lot view (108a); the Lot view's four, no Out (31a);
+  // without their counts until a read answers.
+  const of: QuickFilter['of'] = byLot ? 'lot' : 'code';
   const quick: QuickFilter[] = [
     {
       id: 'low',
@@ -366,6 +368,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Low stock',
       }),
       count: counts?.low,
+      of,
       pressed: low,
       onToggle: () => setFilters({ low: !low }),
     },
@@ -379,6 +382,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
               defaultMessage: 'Out',
             }),
             count: counts && 'out' in counts ? counts.out : undefined,
+            of,
             pressed: out,
             onToggle: () => setFilters({ out: !out }),
           },
@@ -390,6 +394,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Expiring soon',
       }),
       count: counts?.expiring,
+      of,
       pressed: expiring,
       onToggle: () => setFilters({ expiring: !expiring }),
     },
@@ -400,6 +405,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Expired',
       }),
       count: counts?.expired,
+      of,
       pressed: expired,
       onToggle: () => setFilters({ expired: !expired }),
     },
@@ -410,6 +416,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultMessage: 'Waiting for a cost',
       }),
       count: counts?.needsCost,
+      of,
       pressed: needsCost,
       onToggle: () => setFilters({ needsCost: !needsCost }),
     },

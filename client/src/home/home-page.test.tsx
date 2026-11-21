@@ -187,7 +187,7 @@ describe('HomePage', () => {
     });
     for (const [name, href] of [
       ['Orders · Draft, 3', '/orders?status=draft&order=asc'],
-      ['Low stock, 3', '/inventory?tab=reorder&status=low'],
+      ['Low stock, 3 codes', '/inventory?tab=reorder&status=low'],
       ['Invoices · To issue, 4', '/invoices?status=draft'],
       ['Open returns, 1', '/return-authorizations?status=open'],
       ['Production · In progress, 2', '/production?status=released'],
@@ -211,9 +211,16 @@ describe('HomePage', () => {
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
-    expect(
-      await screen.findByRole('link', { name: 'Low stock, 3, 1 out' }),
-    ).toHaveAttribute('href', '/inventory?tab=reorder&status=low');
+    const tile = await screen.findByRole('link', {
+      name: 'Low stock, 3 codes, 1 out',
+    });
+    expect(tile).toHaveAttribute('href', '/inventory?tab=reorder&status=low');
+    // Its count says it counts codes (108a), the figure large, the noun
+    // beside it in the tile's words.
+    expect(within(tile).getByText('3')).toHaveTextContent(/^3$/);
+    expect(within(tile).getByText('3').parentElement).toHaveTextContent(
+      /^3 codes$/,
+    );
     expect(
       screen.getByRole('link', { name: '1 item out of stock' }),
     ).toHaveAttribute('href', '/inventory?tab=reorder&status=out');
@@ -256,7 +263,7 @@ describe('HomePage', () => {
     expect(within(buttons[0]).getByText('2').tagName).toBe('STRONG');
     // The tile opens all of its kind, the late first; the button just those.
     expect(
-      screen.getByRole('link', { name: 'Expiring soon, 4, 1 expired' }),
+      screen.getByRole('link', { name: 'Expiring soon, 4 lots, 1 expired' }),
     ).toHaveAttribute('href', '/inventory?group=lot&expiring=1');
   });
 

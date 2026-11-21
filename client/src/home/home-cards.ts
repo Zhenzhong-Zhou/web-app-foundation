@@ -60,6 +60,13 @@ interface CardMeta {
    * the whole list, where one is set, in place of "Nothing low".
    */
   unset?: { empty: MessageDescriptor; list: string };
+  /**
+   * What the count counts, beside its figure, where the same name on a
+   * filter counts another kind: Low stock's codes and Expiring soon's
+   * lots at each place, "8 codes", "4 lots" (108a, #609). The figure is
+   * the `<figure>` tag's, drawn large.
+   */
+  counted?: MessageDescriptor;
 }
 
 /**
@@ -151,6 +158,20 @@ const PILLS = defineMessages({
   out: {
     id: 'home.count.out',
     defaultMessage: '{count, plural, other {# out}}',
+  },
+});
+
+/** The figure in its tag, which the tile draws large: `<figure>8</figure> codes`. */
+const COUNTED = defineMessages({
+  codes: {
+    id: 'home.tile.codes',
+    defaultMessage:
+      '{count, plural, one {<figure>#</figure> code} other {<figure>#</figure> codes}}',
+  },
+  lots: {
+    id: 'home.tile.lots',
+    defaultMessage:
+      '{count, plural, one {<figure>#</figure> lot} other {<figure>#</figure> lots}}',
   },
 });
 
@@ -265,6 +286,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       empty: LOW_STOCK_UNSET.empty,
       list: '/inventory?tab=reorder',
     },
+    counted: COUNTED.codes,
   },
   expiring: {
     title: TITLES.expiring,
@@ -279,6 +301,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       list: '/inventory?group=lot&expiring=1&expired=1',
       hidden: HIDDEN_LATE.expiredLots,
     },
+    counted: COUNTED.lots,
   },
   costsWaiting: {
     title: TITLES.costsWaiting,
@@ -357,7 +380,8 @@ const SUMMARY = defineMessages<'line'>({
 
 /**
  * A tile's words (ADR-091): its name, the page's first where the tile has
- * one; its count, as the reader writes numbers; and its status, the quiet
+ * one; its count, as the reader writes numbers, with what it counts where
+ * the tile says (108a); and its status, the quiet
  * words with nothing to do (Low stock's own where no reorder point is
  * set, ADR-085), else what is late in it, else none. With them, its
  * badge's tone, and the count and status in one line, "4 · 1 late", or
@@ -386,7 +410,12 @@ export function tileWords(
     : late && meta.late
       ? intl.formatMessage(meta.late.pill, { count: late })
       : null;
-  const count = intl.formatNumber(card.count);
+  const count = meta.counted
+    ? intl.formatMessage(meta.counted, {
+        count: card.count,
+        figure: (chunks: string[]) => chunks.join(''),
+      })
+    : intl.formatNumber(card.count);
   return {
     title,
     count,

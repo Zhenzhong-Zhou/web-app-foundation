@@ -279,9 +279,13 @@ describe('InventoryPage', () => {
         screen.getByRole('link', { name: '10 left · reorder at 36' }),
       ).toHaveAttribute('href', `/items/${PRODUCT}#stock`);
       expect(screen.getByText('Low')).toBeVisible();
-      // The quick filters with their counts (R3).
+      // The quick filters with their counts (R3), each saying it counts
+      // codes (108a).
       expect(
-        await screen.findByRole('button', { name: /Low stock\s*1/ }),
+        await screen.findByRole('button', { name: 'Low stock · 1 code' }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Out · 0 codes' }),
       ).toBeVisible();
     });
 
@@ -1437,8 +1441,12 @@ describe('InventoryPage', () => {
       await expect
         .poll(() => asked.lotCounts[0]?.get('expiringWithin'))
         .toBe('90');
+      // Each saying it counts lots (108a).
       expect(
-        await screen.findByRole('button', { name: /Low stock\s*2/ }),
+        await screen.findByRole('button', { name: 'Low stock · 2 lots' }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Expiring soon · 1 lot' }),
       ).toBeVisible();
       expect(
         screen.queryByRole('button', { name: /^Out/ }),

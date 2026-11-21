@@ -31,8 +31,8 @@ A tile opens its list with just what it counts, the most urgent first:
 
 - **To ship** and **To receive**: Orders, the late first.
 - **Orders · Draft**: Orders, the drafts, the oldest first. It is hidden until you show it in Customise Home.
-- **Low stock**: Reorder, on [Inventory](/inventory#reorder-points), the furthest below their point first. It counts codes, as Reorder does.
-- **Expiring soon**: Inventory, grouped by lot, the lots that expire soonest and the expired first. It counts lots at each place: a lot in two places is two.
+- **Low stock**: Reorder, on [Inventory](/inventory#reorder-points), the furthest below their point first. It counts codes, as Reorder does, and says so: “8 codes”.
+- **Expiring soon**: Inventory, grouped by lot, the lots that expire soonest and the expired first. It counts lots at each place, and says so, “4 lots”: a lot in two places is two.
 - **Stock value · Waiting for a cost**: Stock value, where you set the cost of stock that arrived without one.
 - **Invoices · To issue**: Invoices, the drafts.
 - **Open returns**: Returns, the open ones.

@@ -487,9 +487,10 @@ describe('ProductsPage', () => {
     await expect
       .poll(() => asked.at(-1))
       .toBe('type=good&low=true&search=calm&sort=name&order=asc');
+    // Its count saying it counts items (108a), where Stock counts codes.
     expect(
       screen.getByRole('button', { name: /^Low stock/ }),
-    ).toHaveTextContent('Low stock4');
+    ).toHaveTextContent(/^Low stock · 4 items$/);
     expect(screen.getByRole('button', { name: /^Low stock/ })).toHaveAttribute(
       'aria-pressed',
       'true',

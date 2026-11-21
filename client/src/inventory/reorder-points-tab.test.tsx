@@ -353,7 +353,7 @@ describe('Reorder', () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole('button', {
-        name: /^Low stock\s*3$/,
+        name: 'Low stock · 3 codes',
         pressed: true,
       }),
     ).toBeInTheDocument();
@@ -548,7 +548,10 @@ describe('Reorder', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
     expect(
-      await screen.findByRole('button', { name: /^All\s*9$/, pressed: true }),
+      await screen.findByRole('button', {
+        name: 'All · 9 codes',
+        pressed: true,
+      }),
     ).toBeInTheDocument();
     expect(asked.at(-1)?.searchParams.has('status')).toBe(false);
   });
@@ -631,24 +634,30 @@ describe('Reorder', () => {
       open(['stock.view']);
 
       expect(
-        await screen.findByRole('button', { name: /^Tous\s*4$/ }),
+        await screen.findByRole('button', { name: 'Tous · 4 codes' }),
       ).toBeInTheDocument();
     } finally {
       localStorage.removeItem('language');
     }
   });
 
+  // Each count saying it counts codes (108a), by the plural.
   it('opens on Low from the address, with the counts beside each view', async () => {
-    const asked = open(['stock.view'], '/inventory?tab=reorder&status=low');
+    const asked = open(['stock.view'], '/inventory?tab=reorder&status=low', {
+      counts: { all: 4, low: 3, out: 1 },
+    });
 
     expect(
       await screen.findByRole('button', {
-        name: /^Low stock\s*3$/,
+        name: 'Low stock · 3 codes',
         pressed: true,
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /^All\s*4$/ }),
+      screen.getByRole('button', { name: 'All · 4 codes' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Out · 1 code' }),
     ).toBeInTheDocument();
     expect(asked[0].searchParams.get('status')).toBe('low');
   });

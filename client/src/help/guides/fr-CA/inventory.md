@@ -22,7 +22,7 @@ Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, qui disen
 
 ## Trouver du stock {#find}
 
-- Les filtres rapides, sur leur propre rangée au-dessus de la recherche (sur un téléphone, dans **Filtres**), montrent seulement ce qu’ils nomment, chacun avec son total : **Stock bas** (les épuisés aussi), **Épuisé**, **Expire bientôt** (les périmés aussi), **Périmés** et **En attente d’un coût**. Un total est le nombre de lignes que le filtre montre, les autres filtres restant actifs : appuyez sur l’un et la liste a cette longueur.
+- Les filtres rapides, sur leur propre rangée au-dessus de la recherche (sur un téléphone, dans **Filtres**), montrent seulement ce qu’ils nomment, chacun avec son total et ce qu’il compte, comme **Stock bas · 4 codes** : **Stock bas** (les épuisés aussi), **Épuisé**, **Expire bientôt** (les périmés aussi), **Périmés** et **En attente d’un coût**. Un total est le nombre de lignes que le filtre montre, les autres filtres restant actifs : appuyez sur l’un et la liste a cette longueur.
 - **Type**, **Catégorie** et **Emplacement** réduisent la liste, et **Rechercher des articles, des codes ou des lots** trouve un code, le nom d’un article ou le code d’un lot. Un message dit quand rien ne correspond, avec **Afficher tout le stock**.
 - Appuyez sur **En stock** ou **Expire en premier** en tête d’une colonne pour trier selon elle, et de nouveau pour inverser; le nom est le tri par défaut. Un code sans rien qui expire vient en dernier dans les deux sens. Libre n’est pas un tri.
 - Choisissez un emplacement sous **Emplacement** et la liste montre ce qui s’y trouve : **En stock ici**, **Lots ici** et **Expire en premier ici** sont ceux de cet emplacement, tandis que **Libre, tous les emplacements** et **Réservé, tous les emplacements** comptent tous les emplacements, puisqu’une vente réserve un article, pas une tablette. Le code d’un lot cherché avec un emplacement choisi trouve ce lot à cet emplacement seulement.
@@ -67,7 +67,7 @@ Ce que fait chacune :
 
 ## Ce que chaque total compte {#counts}
 
-Un nombre sur un filtre ou une tuile compte une seule sorte de chose, la même partout.
+Un nombre sur un filtre ou une tuile compte une seule sorte de chose, dit laquelle à côté, comme **Stock bas · 4 codes** ou **Expire bientôt · 2 lots**, et c’est la même partout.
 
 - **Stock**, par article, compte des codes : un total de **Stock bas** de 4, ce sont quatre codes, où qu’ils soient.
 - **Stock**, par lot, compte des lots à chaque emplacement : un lot à deux emplacements fait deux lignes et compte deux fois.
