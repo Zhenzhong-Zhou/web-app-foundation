@@ -422,6 +422,11 @@ async function buildProbes(
       name: 'movements: one lot',
       run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en', EVERY_PART),
     },
+    // One code by its id, as Movements names one no row names (133b).
+    {
+      name: 'movements: a code by its id',
+      run: () => stock.variant(shelf.variantId, 'en'),
+    },
     // One code as a stock card (ADR-093, 41a): each row's balance worked
     // back from on hand, less what moved after the page, by the code's
     // index on the time; oldest first, its first page reads the code's

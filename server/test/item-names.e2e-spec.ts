@@ -193,6 +193,19 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    // One code by its id, as Movements names a code no row names (133b).
+    operation: 'GET /v1/stock/variants/{id}',
+    of: 'item',
+    ask: async (world, language) => {
+      const code = await read<Omit<Named, 'id'>>(
+        world,
+        language,
+        `/v1/stock/variants/${world.variantId}`,
+      );
+      return itemName(code.productName, code.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/reorder-points',
     of: 'item',
     ask: async (world, language) => {

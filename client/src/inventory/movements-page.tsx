@@ -21,6 +21,7 @@ import type {
   Movement,
   MovementPage,
   OrderDetail,
+  StockVariant,
   VariantOption,
 } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -133,7 +134,7 @@ export function MovementsPage() {
   const seesOrders = can('orders.view');
   // Silent if it fails: the filter degrades to an empty picker, and the
   // table below is the point of the page.
-  const { variants } = useVariants(true);
+  const { variants, answered: listed } = useVariants(true);
   const { locations, answered, failure } = useLocations(seesPlaces);
   // Stock sits only at leaves (ADR-024), retired ones keeping their
   // history, so nothing else can be a row's place.
@@ -253,7 +254,8 @@ export function MovementsPage() {
   // A code the picker does not list, an archived one opened from Where
   // it stands, named from its rows (review 32), and kept while a filter
   // added after leaves none to name it.
-  const fromRows = variants.some((each) => each.id === variantId)
+  const inPicker = variants.some((each) => each.id === variantId);
+  const fromRows = inPicker
     ? undefined
     : rows?.find((row) => row.variantId === variantId);
   const [named, setNamed] = useState<VariantOption | null>(null);
@@ -269,8 +271,29 @@ export function MovementsPage() {
     });
   }
   const unlisted = variantId && named?.id === variantId ? named : null;
+  // Named by its own read when neither the picker, once answered, nor a
+  // row names it, a discontinued code with nothing in the days chosen
+  // (133b), under stock.view as Movements is, and said discontinued.
+  const readCode =
+    useResource<StockVariant>(
+      variantId && listed && !inPicker && !unlisted && rows?.length === 0
+        ? `/stock/variants/${variantId}`
+        : null,
+    ).data ?? null;
   const variant =
-    variants.find((each) => each.id === variantId) ?? unlisted ?? null;
+    variants.find((each) => each.id === variantId) ?? unlisted ?? readCode;
+  const discontinued =
+    readCode !== null && variant === readCode && !readCode.isActive;
+  const discontinuedName = (name: string) =>
+    discontinued
+      ? intl.formatMessage(
+          {
+            id: 'inventory.movements.discontinued',
+            defaultMessage: '{name} (discontinued)',
+          },
+          { name },
+        )
+      : name;
   const unit = variant?.unitOfMeasure ?? rows?.[0]?.unitOfMeasure ?? null;
 
   const anyFilter =
@@ -415,7 +438,8 @@ export function MovementsPage() {
   // states), the days in words, an open range by its one end (review
   // 49).
   const filtersOn = [
-    variant && itemName(variant.productName, variant.variantName),
+    variant &&
+      discontinuedName(itemName(variant.productName, variant.variantName)),
     place && nameAndCode(place.name, place.code),
     lotId && lotCode,
     orderId && orderNumber,
@@ -500,7 +524,9 @@ export function MovementsPage() {
               },
               {
                 name: variant
-                  ? `${itemName(variant.productName, variant.variantName)} · ${variant.sku}`
+                  ? discontinuedName(
+                      `${itemName(variant.productName, variant.variantName)} · ${variant.sku}`,
+                    )
                   : '…',
               },
             ),

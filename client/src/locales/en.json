@@ -705,6 +705,7 @@
   "inventory.movements.closingOn": "Closing, {day}",
   "inventory.movements.days": "{from, select, none {until {until}} other {{until, select, none {from {from}} other {{range}}}}}",
   "inventory.movements.deletedUser": "Deleted user",
+  "inventory.movements.discontinued": "{name} (discontinued)",
   "inventory.movements.empty": "Nothing has moved yet. Receiving stock is what puts the first row here.",
   "inventory.movements.end.countedIn": "counted in",
   "inventory.movements.end.countedOut": "counted out",

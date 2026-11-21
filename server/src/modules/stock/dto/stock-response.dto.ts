@@ -216,6 +216,22 @@ export class RecordedMovementEnvelope {
   needsCost!: boolean;
 }
 
+/**
+ * One code by its id (ADR-093, 133b): its code, its item's name in the
+ * reader's language, its unit, and whether it is in use, for Movements
+ * to name a code that no row and no picker's option names.
+ */
+export class StockVariant {
+  id!: string;
+  sku!: string;
+  productName!: string;
+  /** In the reader's language (ADR-056); null for a variant with none. */
+  variantName!: string | null;
+  unitOfMeasure!: string;
+  /** False once it, or its item, is discontinued. */
+  isActive!: boolean;
+}
+
 /** A lot of one item, as the receive dialogs offer it. */
 export class Lot {
   id!: string;

@@ -16,6 +16,7 @@ import type {
   LookupResult,
   Movement,
   MovementPage,
+  StockVariant,
 } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
 import { movement } from '../test/factories';
@@ -1000,6 +1001,132 @@ describe('MovementsPage', () => {
         name: 'Remove filter: Item: Vitamin C · VITC-90',
       }),
     ).toBeVisible();
+  });
+
+  // 133b: a code no row and no picker's option names, a discontinued one
+  // with nothing in the days chosen, named by its own read and said
+  // discontinued, on its chip and in what no result names.
+  const ZINC: StockVariant = {
+    id: ITEM,
+    sku: 'ZINC-60',
+    productName: 'Zinc lozenges',
+    variantName: null,
+    unitOfMeasure: 'each',
+    isActive: false,
+  };
+
+  /** The code's own read, answered with `code`, and each time it is asked. */
+  function codeRead(code: StockVariant): string[] {
+    const asked: string[] = [];
+    server.use(
+      http.get('/api/v1/stock/variants/:id', ({ params }) => {
+        asked.push(params.id as string);
+        return HttpResponse.json(code);
+      }),
+    );
+    return asked;
+  }
+
+  it('names a discontinued code no row and no option names by its own read, said discontinued', async () => {
+    answer([]);
+    const asked = codeRead(ZINC);
+    const { unmount } = renderAt(
+      `/movements?variantId=${ITEM}&from=2026-10-01`,
+    );
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Remove filter: Item: Zinc lozenges · ZINC-60 (discontinued)',
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/^No movements match/)).toHaveTextContent(
+      'No movements match: Zinc lozenges (discontinued) and from Oct 1, 2026.',
+    );
+    expect(asked).toEqual([ITEM]);
+    unmount();
+
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      renderAt(`/movements?variantId=${ITEM}&from=2026-10-01`);
+      expect(
+        await screen.findByRole('button', {
+          name: /Zinc lozenges · ZINC-60（已停用）/,
+        }),
+      ).toBeVisible();
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
+  it('names a code in use by its own read for a reader whose picker is empty, nothing added', async () => {
+    answer([]);
+    codeRead({ ...ZINC, isActive: true });
+    // Stock alone: the pickers' list asks products.view, refused.
+    server.use(
+      http.get('/api/v1/products/variants', () =>
+        HttpResponse.json({ message: 'Forbidden' }, { status: 403 }),
+      ),
+    );
+    renderAt(`/movements?variantId=${ITEM}&from=2026-10-01`, ['stock.view']);
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Remove filter: Item: Zinc lozenges · ZINC-60',
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/^No movements match/)).toHaveTextContent(
+      'No movements match: Zinc lozenges and from Oct 1, 2026.',
+    );
+  });
+
+  it('never reads a code a row or the picker names', async () => {
+    const asked = codeRead(ZINC);
+    answer([]);
+    server.use(
+      http.get('/api/v1/products/variants', () =>
+        HttpResponse.json([
+          {
+            id: ITEM,
+            sku: 'PLAIN-1',
+            variantName: null,
+            productName: 'Plain Widget',
+            type: 'good',
+            unitOfMeasure: 'each',
+            tracksLots: false,
+          },
+        ]),
+      ),
+    );
+    const { unmount } = renderAt(
+      `/movements?variantId=${ITEM}&from=2026-10-01`,
+    );
+    expect(
+      await screen.findByRole('button', {
+        name: 'Remove filter: Item: Plain Widget · PLAIN-1',
+      }),
+    ).toBeVisible();
+    unmount();
+
+    // The picker without it, its rows naming it.
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([])),
+    );
+    answer([
+      movement({
+        variantId: ITEM,
+        productName: 'Vitamin C',
+        variantName: null,
+        sku: 'VITC-90',
+        currentSku: 'VITC-90',
+      }),
+    ]);
+    renderAt(`/movements?variantId=${ITEM}`);
+    expect(
+      await screen.findByRole('button', {
+        name: 'Remove filter: Item: Vitamin C · VITC-90',
+      }),
+    ).toBeVisible();
+    expect(asked).toEqual([]);
   });
 
   // #473's last line (P2a): Back after Show 25 more reads the pages shown

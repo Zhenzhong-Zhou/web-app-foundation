@@ -1900,6 +1900,15 @@ export type MovementPage = {
   period: MovementPeriod | null;
 };
 
+export type StockVariant = {
+  id: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  isActive: boolean;
+};
+
 export type Lot = {
   id: string;
   code: string;
@@ -6186,6 +6195,25 @@ export type StockControllerExportMovementsV1Data = {
 export type StockControllerExportMovementsV1Responses = {
   200: unknown;
 };
+
+export type StockControllerVariantV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/stock/variants/{id}';
+};
+
+export type StockControllerVariantV1Responses = {
+  200: StockVariant;
+};
+
+export type StockControllerVariantV1Response =
+  StockControllerVariantV1Responses[keyof StockControllerVariantV1Responses];
 
 export type StockControllerListLotsV1Data = {
   body?: never;

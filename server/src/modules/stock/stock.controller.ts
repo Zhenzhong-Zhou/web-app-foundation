@@ -35,6 +35,7 @@ import type {
   MovementPage,
   MovementPeriod,
   RecordedMovementEnvelope,
+  StockVariant,
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
@@ -145,6 +146,21 @@ export class StockController {
       movementLines(rows, period, query, timeZone),
       localeOf(acceptLanguage),
     );
+  }
+
+  /**
+   * One code by its id (ADR-093, 133b), for Movements to name a code it
+   * filters by when no row and no picker's option does, a discontinued one
+   * with nothing in the days chosen: under stock.view, as Movements is,
+   * since the pickers' list asks products.view.
+   */
+  @Get('variants/:id')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  variant(
+    @Param('id', ParseUUIDPipe) id: string,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<StockVariant> {
+    return this.reads.variant(id, localeOf(acceptLanguage));
   }
 
   @Get('lots')

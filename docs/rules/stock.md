@@ -240,7 +240,10 @@ file is kept is in the [README](README.md).
   each then a chip, the box emptied; what is typed alone never filters. An archived code,
   which the item list does not hold, is named on its chip from its
   movements, and kept once a
-  filter leaves none; Show all movements clears every one in a single
+  filter leaves none; one that neither the list nor a movement names,
+  a discontinued code with nothing in the days chosen, by its own read
+  under stock.view in the reader's organization, its chip and the
+  no-result line saying "(discontinued)" when it is (133b); Show all movements clears every one in a single
   write and keeps the sort. On a phone the Filters sheet's Clear clears
   the sheet's own fields alone, the lot's and the order's chips kept.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
@@ -258,6 +261,10 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/movements-page.test.tsx) "names a lot no row carries, on its chip and in what no result names" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names an order no row carries, on its chip and in what no result names" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names a code the picker does not list from its rows, and keeps it when none match" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a discontinued code no row and no option names by its own read, said discontinued" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a code in use by its own read for a reader whose picker is empty, nothing added" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "never reads a code a row or the picker names" ·
+  [test](../../server/test/movements.e2e-spec.ts) "reads one code by its id, its name, code, unit and whether in use, in its organization alone" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "clears every filter and chip in one write with Show all movements, the sort kept" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "clears the sheet’s own fields with its Clear, the lot and order chips kept" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, every filter in the address: a reload keeps each, and the rows" ·

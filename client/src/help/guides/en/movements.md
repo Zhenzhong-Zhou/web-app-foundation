@@ -29,7 +29,7 @@ Movements opens already narrowed from other screens, and **Back** returns to whe
 - On an item’s page, each code under **Where it stands** has its **Latest movements**, the five newest, ending with **All movements of** the code, which opens on this month, its opening balance, In, Out and closing balance above the list.
 - A purchase’s **Receipts** and a sale’s **Shipments** end with **All movements of** the order’s number.
 
-Every filter that is set shows as a chip above the list, on a phone too: the item, the location, the reason, the days, and a lot or an order a link names, as “Lot: VC-0302” or “Order: PO-000009”; press a chip’s × to remove that filter alone, as from a lot’s movements down to its shelf’s. An order’s movements are what was received, shipped and returned on it.
+Every filter that is set shows as a chip above the list, on a phone too: the item, marked “(discontinued)” when it is no longer used, the location, the reason, the days, and a lot or an order a link names, as “Lot: VC-0302” or “Order: PO-000009”; press a chip’s × to remove that filter alone, as from a lot’s movements down to its shelf’s. An order’s movements are what was received, shipped and returned on it.
 
 ## Export the list {#export}
 

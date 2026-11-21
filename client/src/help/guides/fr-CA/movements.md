@@ -29,7 +29,7 @@ Mouvements s’ouvre déjà restreint depuis d’autres écrans, et **Retour** v
 - Sur la page d’un article, chaque code sous **État du stock** a ses **Derniers mouvements**, les cinq plus récents, qui se terminent par **Tous les mouvements de** ce code, qui s’ouvre sur ce mois-ci, le solde d’ouverture, les entrées, les sorties et le solde de clôture au-dessus de la liste.
 - Les **Réceptions** d’un achat et les **Expéditions** d’une vente se terminent par **Tous les mouvements de** et le numéro de la commande.
 
-Chaque filtre choisi apparaît en puce au-dessus de la liste, sur un téléphone aussi : l’article, l’emplacement, le motif, les jours, et un lot ou une commande qu’un lien nomme, comme « Lot : VC-0302 » ou « Commande : PO-000009 »; appuyez sur le × d’une puce pour retirer ce filtre seul, par exemple pour passer des mouvements d’un lot à ceux de son emplacement. Les mouvements d’une commande sont ce qui a été reçu, expédié et retourné sur elle.
+Chaque filtre choisi apparaît en puce au-dessus de la liste, sur un téléphone aussi : l’article, marqué « (abandonné) » quand il ne sert plus, l’emplacement, le motif, les jours, et un lot ou une commande qu’un lien nomme, comme « Lot : VC-0302 » ou « Commande : PO-000009 »; appuyez sur le × d’une puce pour retirer ce filtre seul, par exemple pour passer des mouvements d’un lot à ceux de son emplacement. Les mouvements d’une commande sont ce qui a été reçu, expédié et retourné sur elle.
 
 ## Exporter la liste {#export}
 

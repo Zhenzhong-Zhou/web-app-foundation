@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
@@ -15,7 +15,8 @@ import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { itemMatches } from '../products/item-search';
 import type { ListMovementsDto } from './dto/list-movements.dto';
-import type { MovementPage } from './dto/stock-response.dto';
+import type { MovementPage, StockVariant } from './dto/stock-response.dto';
+import { namesIn } from './item-name';
 import { movementPage, type MovementSight } from './movement-view';
 
 /**
@@ -233,5 +234,46 @@ export class StockReadsService {
     return this.tenantDb.transaction((tx, organizationId) =>
       movementPage(tx, organizationId, query, locale, sight),
     );
+  }
+
+  /**
+   * One code by its id, named in the reader's language (ADR-093, 133b):
+   * in use only while it and its item are, as the pickers list it. Its
+   * organization on the code and on its item's join, so another's id is
+   * not found.
+   */
+  variant(id: string, locale: Locale): Promise<StockVariant> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const shown = namesIn(locale, organizationId);
+      const [row] = await tx
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          productName: shown.productName,
+          variantName: shown.variantName,
+          unitOfMeasure: productVariants.unitOfMeasure,
+          isActive: sql<boolean>`${productVariants.isActive} and ${products.isActive}`,
+        })
+        .from(productVariants)
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
+        .where(
+          and(
+            eq(productVariants.organizationId, organizationId),
+            eq(productVariants.id, id),
+          ),
+        );
+      if (!row) {
+        throw new NotFoundException(
+          t({ id: 'stock.suchItem', defaultMessage: 'No such item' }),
+        );
+      }
+      return row;
+    });
   }
 }

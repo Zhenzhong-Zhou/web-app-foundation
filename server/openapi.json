@@ -4406,6 +4406,44 @@
         ]
       }
     },
+    "/v1/stock/variants/{id}": {
+      "get": {
+        "operationId": "StockController_variant_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockVariant"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stock"
+        ]
+      }
+    },
     "/v1/stock/lots": {
       "get": {
         "operationId": "StockController_listLots_v1",
@@ -16763,6 +16801,40 @@
           "entries",
           "nextCursor",
           "period"
+        ]
+      },
+      "StockVariant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "isActive"
         ]
       },
       "Lot": {

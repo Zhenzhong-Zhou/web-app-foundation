@@ -705,6 +705,7 @@
   "inventory.movements.closingOn": "期末（{day}）",
   "inventory.movements.days": "{from, select, none {截至 {until}} other {{until, select, none {自 {from} 起} other {{range}}}}}",
   "inventory.movements.deletedUser": "已删除的用户",
+  "inventory.movements.discontinued": "{name}（已停用）",
   "inventory.movements.empty": "尚无库存变动。收货后这里会出现第一条记录。",
   "inventory.movements.end.countedIn": "盘点计入",
   "inventory.movements.end.countedOut": "盘点扣除",

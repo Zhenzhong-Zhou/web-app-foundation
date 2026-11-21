@@ -705,6 +705,7 @@
   "inventory.movements.closingOn": "Clôture, {day}",
   "inventory.movements.days": "{from, select, none {jusqu’au {until}} other {{until, select, none {à partir du {from}} other {{range}}}}}",
   "inventory.movements.deletedUser": "Utilisateur supprimé",
+  "inventory.movements.discontinued": "{name} (abandonné)",
   "inventory.movements.empty": "Aucun mouvement pour l’instant. Le premier apparaîtra lors de la réception du stock.",
   "inventory.movements.end.countedIn": "compté en plus",
   "inventory.movements.end.countedOut": "compté en moins",

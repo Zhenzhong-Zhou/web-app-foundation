@@ -721,7 +721,10 @@ a second organization.
   and its code on the chip and names the code in the line. An archived
   code's Movements, opened from its item's Where it stands, names it on
   its Item chip, and with Reason › Sampled leaving none, in the line
-  too. At
+  too. ZINC-60, discontinued and never stocked, chosen in the find box:
+  "Item: Zinc lozenges, 60 count · ZINC-60 (discontinued)" on its chip
+  and "No movements match: Zinc lozenges, 60 count (discontinued)." in
+  the line, « (abandonné) » in Français and （已停用） in 中文 (133b). At
   390 px each movement is a card, a move counted in neither in its row's
   words, the filters behind one Filters button
   with the sort, When the same list there, Choose dates… opening the two
@@ -7375,3 +7378,7 @@ first.
 - 2026-11-20: ADR-093's Movements branch, 132b: a lot's All movements
   of this lot and its Actions › Movements on Stock open Movements with
   no days, the lot's whole life: MC-305 and MC-902 extended.
+- 2026-11-20: ADR-093's Movements branch, 133b: a code that neither
+  the item list nor a movement names is named by its own read, under
+  `stock.view`, its chip and the no-result line saying "(discontinued)"
+  when it is: MC-320 extended.

@@ -242,6 +242,58 @@ describe('Movements (e2e)', () => {
     ]);
   });
 
+  // 133b: one code by its id, for Movements to name a code it filters by
+  // when no row and no picker's option does: under stock.view, products'
+  // own permission not needed; in the reader's organization alone; a
+  // discontinued code, or one of a discontinued item, said so.
+  it('reads one code by its id, its name, code, unit and whether in use, in its organization alone', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const beta = await registerOrganization(app, 'beta');
+    const { productId, variantId } = await story(alpha);
+    await customRole(app, alpha.organizationId, 'Stock reader', ['stock.view']);
+    const reader = await addMember(
+      app,
+      alpha,
+      'reader@example.com',
+      'Stock reader',
+    );
+    const code = async () =>
+      body<{ isActive: boolean }>(
+        await reader.get(`/v1/stock/variants/${variantId}`).expect(200),
+      );
+
+    expect(await code()).toEqual({
+      id: variantId,
+      sku: 'VITC-100',
+      productName: 'Vitamin C',
+      variantName: null,
+      unitOfMeasure: 'kg',
+      isActive: true,
+    });
+    // Another organization's id is simply not found.
+    await beta.agent.get(`/v1/stock/variants/${variantId}`).expect(404);
+
+    await alpha.agent
+      .post(`/v1/products/${productId}/variants`)
+      .send({ sku: 'VITC-250' })
+      .expect(201);
+    await alpha.agent
+      .patch(`/v1/products/${productId}/variants/${variantId}`)
+      .send({ isActive: false })
+      .expect(204);
+    expect((await code()).isActive).toBe(false);
+
+    await alpha.agent
+      .patch(`/v1/products/${productId}/variants/${variantId}`)
+      .send({ isActive: true })
+      .expect(204);
+    await alpha.agent
+      .patch(`/v1/products/${productId}`)
+      .send({ isActive: false })
+      .expect(204);
+    expect((await code()).isActive).toBe(false);
+  });
+
   // ADR-093, 96a: Movements names a place only to a reader who may see
   // places, as Stock does; its id stays, so a row still reads in, out or
   // between.
