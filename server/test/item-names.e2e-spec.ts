@@ -32,6 +32,8 @@ interface World {
   scoopId: string;
   orderId: string;
   lineId: string;
+  /** A purchase of the item, part received. */
+  purchaseId: string;
   shelf: string;
   lotId: string;
   priceListId: string;
@@ -279,6 +281,21 @@ const NAMED_READS: NamedRead[] = [
           `/v1/orders/${world.orderId}/returns`,
         )
       )[0].items[0].description,
+  },
+  {
+    // An order's Receipts tab, by Movements' own read (102a).
+    operation: 'GET /v1/orders/{id}/receipts',
+    of: 'item',
+    ask: async (world, language) => {
+      const [receipt] = (
+        await read<{ entries: Omit<Named, 'id'>[] }>(
+          world,
+          language,
+          `/v1/orders/${world.purchaseId}/receipts`,
+        )
+      ).entries;
+      return itemName(receipt.productName, receipt.variantName);
+    },
   },
   {
     operation: 'GET /v1/price-lists/{id}',
@@ -618,6 +635,30 @@ describe('Names in the reader’s language (e2e)', () => {
       })
       .expect(201);
 
+    // A purchase, part received into the same lot.
+    const purchase = body<{ order: { id: string; lines: { id: string }[] } }>(
+      await agent
+        .post('/v1/orders')
+        .send({
+          partnerId: await createPartner(agent, { name: 'Harbour Supply' }),
+          direction: 'purchase',
+          lines: [{ variantId, quantityOrdered: '20' }],
+        })
+        .expect(201),
+    ).order;
+    await agent
+      .patch(`/v1/orders/${purchase.id}`)
+      .send({ status: 'confirmed' })
+      .expect(204);
+    await agent
+      .post(`/v1/orders/${purchase.id}/lines/${purchase.lines[0].id}/receipts`)
+      .send({
+        toLocationId: shelf,
+        quantity: '5',
+        lot: { code: 'L-01', expiresAt: '2030-01-01' },
+      })
+      .expect(201);
+
     const priceListId = body<{ priceList: { id: string } }>(
       await agent
         .post('/v1/price-lists')
@@ -660,6 +701,7 @@ describe('Names in the reader’s language (e2e)', () => {
       scoopId,
       orderId: order.id,
       lineId,
+      purchaseId: purchase.id,
       shelf,
       lotId,
       priceListId,
