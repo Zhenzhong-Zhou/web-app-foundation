@@ -291,7 +291,8 @@ export function movementLines(
  * Balance for one code, In and Out for one code with a reason or for an
  * order, else Change, as the list reads (cardOf), the stock card's
  * Moved between Out and Balance, a move counted in neither's quantity
- * (118a, 114); From and To, each place
+ * (118a, 114); after Reason, the reason's code, never translated (138b);
+ * From and To, each place
  * by its whole path, only for a reader who may see places, else no such
  * columns (ADR-080; 96a); For, the document, or a sample's recipient by
  * name, only as the reader may see it (55a; 125); By with the person's email (ADR-063); the note last, as
@@ -446,6 +447,15 @@ export function movementColumns(options: {
             )
           : reason;
       },
+    },
+    // The reason's own code, never translated, so exports in two
+    // languages can be put together (138b).
+    {
+      header: t({
+        id: 'exports.column.reasonCode',
+        defaultMessage: 'Reason code',
+      }),
+      value: of((movement) => movement.reason),
     },
     ...(places
       ? [

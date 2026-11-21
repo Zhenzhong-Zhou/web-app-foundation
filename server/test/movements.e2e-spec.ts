@@ -1008,6 +1008,7 @@ describe('Movements (e2e)', () => {
       'Balance',
       'Unit',
       'Reason',
+      'Reason code',
       'From',
       'To',
       'Lot',
@@ -1034,6 +1035,7 @@ describe('Movements (e2e)', () => {
         In: '12',
         Balance: '32',
         Reason: 'Received',
+        'Reason code': 'receipt',
         From: 'supplier',
         To: 'SHELF (SHELF)',
         For: bought.number,
@@ -1043,6 +1045,7 @@ describe('Movements (e2e)', () => {
         Out: '5',
         Balance: '27',
         Reason: 'Shipped',
+        'Reason code': 'shipment',
         From: 'SHELF (SHELF)',
         To: 'customer',
         For: sold.number,
@@ -1054,6 +1057,7 @@ describe('Movements (e2e)', () => {
         Moved: '3',
         Balance: '27',
         Reason: 'Moved',
+        'Reason code': 'transfer',
         From: 'SHELF (SHELF)',
         To: 'QUAR (QUAR)',
       }),
@@ -1062,6 +1066,7 @@ describe('Movements (e2e)', () => {
         Moved: '4',
         Balance: '27',
         Reason: 'Moved',
+        'Reason code': 'transfer',
         From: 'SHELF (SHELF)',
         To: 'LINE (LINE)',
         For: 'RUN-7',
@@ -1121,6 +1126,7 @@ describe('Movements (e2e)', () => {
       'Balance',
       'Unit',
       'Reason',
+      'Reason code',
       'Lot',
       'Expiry',
       'For',
@@ -1251,7 +1257,7 @@ describe('Movements (e2e)', () => {
             .expect(200)
         ).text,
       );
-      return [4, 6, 7, 8].map((at) => [
+      return [4, 6, 8, 9].map((at) => [
         header[at],
         ...rows.map((row) => row[at]),
       ]);
@@ -1275,6 +1281,65 @@ describe('Movements (e2e)', () => {
       ['从', '供应商', '盘点计入', 'SHELF (SHELF)'],
       ['到', 'SHELF (SHELF)', 'SHELF (SHELF)', '盘点扣除'],
     ]);
+  });
+
+  // 138b: after Reason, the reason's own code, never translated, so
+  // exports in two languages can be put together.
+  it('exports each reason’s code after its words, the same in every language', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const back = await site(agent, 'BACK');
+    const focus = await item(agent, 'FOCUS');
+    await receive(agent, focus, shelf, '20');
+    for (const movement of [
+      { fromLocationId: shelf, toLocationId: back, reason: 'transfer' },
+      {
+        toLocationId: shelf,
+        reason: 'adjustment',
+        reasonDetail: 'found',
+        note: 'Counted on Monday',
+      },
+      { fromLocationId: back, reason: 'sample' },
+    ]) {
+      await agent
+        .post('/v1/stock/movements')
+        .send({ variantId: focus, quantity: '2', ...movement })
+        .expect(201);
+    }
+
+    // Reason and Reason code, in a language: the header, then each row.
+    const reasons = async (language: string) => {
+      const { header, rows } = csvOf(
+        (
+          await agent
+            .get('/v1/stock/movements/export')
+            .set('Accept-Language', language)
+            .expect(200)
+        ).text,
+      );
+      return [header, ...rows].map((row) => row.slice(6, 8));
+    };
+    const english = await reasons('en');
+    expect(english).toEqual([
+      ['Reason', 'Reason code'],
+      ['Received', 'receipt'],
+      ['Moved', 'transfer'],
+      ['Corrected: found', 'adjustment'],
+      ['Sampled', 'sample'],
+    ]);
+    const chinese = await reasons('zh-Hans');
+    expect(chinese).toEqual([
+      ['原因', '原因代码'],
+      ['收货', 'receipt'],
+      ['移库', 'transfer'],
+      ['调整：盘盈', 'adjustment'],
+      ['样品', 'sample'],
+    ]);
+    // The same movements, the same codes.
+    const codes = (table: string[][]) => table.slice(1).map(([, code]) => code);
+    expect(codes(chinese)).toEqual(codes(english));
+    expect((await reasons('fr-CA'))[0]).toEqual(['Motif', 'Code du motif']);
   });
 
   // ADR-093, 98a and 116; review 54: what main's export had, back. When
@@ -1328,6 +1393,7 @@ describe('Movements (e2e)', () => {
       'Balance',
       'Unit',
       'Reason',
+      'Reason code',
       'From',
       'To',
       'Lot',

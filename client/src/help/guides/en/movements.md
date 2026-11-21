@@ -33,7 +33,7 @@ Every filter that is set shows as a chip above the list, on a phone too: the ite
 
 ## Export the list {#export}
 
-Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, the email of whoever did it, and the note last. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item chosen, a Moved column between Out and Balance gives how many a move counted in neither moved; with days chosen too, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
+Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, a Reason code column after Reason with the reason’s code, such as receipt or shipment, the same in every language so exports in two languages can be put together, the email of whoever did it, and the note last. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item chosen, a Moved column between Out and Balance gives how many a move counted in neither moved; with days chosen too, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
 
 ## Correct a mistake {#correct}
 

@@ -531,6 +531,7 @@
   "exports.column.quantityFulfilled": "已收货或已发货数量",
   "exports.column.quantityOrdered": "订购数量",
   "exports.column.reason": "原因",
+  "exports.column.reasonCode": "原因代码",
   "exports.column.recordedAs": "原编码",
   "exports.column.reference": "参考号",
   "exports.column.reorderPoint": "库存下限",

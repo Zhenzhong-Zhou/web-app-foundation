@@ -380,7 +380,10 @@ file is kept is in the [README](README.md).
   row was recorded under where it differs from today's; Item; In, Out
   and Balance where the list has them, else Change, and the stock card's
   Moved between Out and Balance, filled on a move counted in neither
-  alone; Unit, Reason, From,
+  alone; Unit, Reason; Reason code, the reason's stable code (receipt,
+  shipment, transfer, adjustment, production, consumption, sample or
+  return), never translated, so exports in two languages can be put
+  together (138b); From,
   To, Lot, Expiry, For and By; Email, the person's; and the note last,
   as typed. One code's range starts with its opening balance and ends
   with its closing, each by its day, beside the range's In and Out.
@@ -395,6 +398,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note" ·
   [test](../../server/src/common/today.spec.ts) "names the city in Chinese by ICU, and from the id in English and French" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
+  [test](../../server/test/movements.e2e-spec.ts) "exports each reason’s code after its words, the same in every language" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·

@@ -625,11 +625,12 @@ a second organization.
   Inventory and Movements: each opens its page.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
-- **MC-319** *(ADR-093, 87a, 88a, 98a and 116; review 54)* As the demo
+- **MC-319** *(ADR-093, 87a, 88a, 98a and 116; review 54; 138b)* As the demo
   Owner, export Movements with VITC-100 chosen and a date range that
   ends today: the file runs oldest first, its columns When (Vancouver
-  time), Code, Recorded as, Item, In, Out, Balance, Unit, Reason, From,
-  To, Lot, Expiry, For, By, Email and Note, one value to each; its first
+  time), Code, Recorded as, Item, In, Out, Balance, Unit, Reason, Reason
+  code, From, To, Lot, Expiry, For, By, Email and Note, one value to
+  each; its first
   line Opening balance with the balance at the range's start, its last
   Closing balance with the range's In and Out and Stock's On hand for
   VITC-100, each of the two by its day; each movement's When its day and
@@ -637,7 +638,9 @@ a second organization.
   the minute; Recorded as VITC-90 on the rows recorded before the code
   changed, as the screen's "was VITC-90", and empty on the rest; By's
   email beside By; each place by its whole path. A move between two places has neither In nor Out. Reason reads
-  as on the screen: Received, Shipped, Moved. With no item chosen,
+  as on the screen: Received, Shipped, Moved; Reason code after it reads
+  receipt, shipment, transfer, the same in 中文 and Français, under its
+  header 原因代码 and Code du motif. With no item chosen,
   Change stands for In, Out and Balance, a shipment's with its minus;
   OMEGA3-90's correction reads Corrected: miscount, its To counted out,
   its Note the note as typed, and no From or To outside the warehouse is

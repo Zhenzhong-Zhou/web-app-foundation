@@ -531,6 +531,7 @@
   "exports.column.quantityFulfilled": "Quantité reçue ou expédiée",
   "exports.column.quantityOrdered": "Quantité commandée",
   "exports.column.reason": "Motif",
+  "exports.column.reasonCode": "Code du motif",
   "exports.column.recordedAs": "Enregistré sous",
   "exports.column.reference": "Référence",
   "exports.column.reorderPoint": "Point de commande",

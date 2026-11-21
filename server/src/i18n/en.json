@@ -531,6 +531,7 @@
   "exports.column.quantityFulfilled": "Quantity received or shipped",
   "exports.column.quantityOrdered": "Quantity ordered",
   "exports.column.reason": "Reason",
+  "exports.column.reasonCode": "Reason code",
   "exports.column.recordedAs": "Recorded as",
   "exports.column.reference": "Reference",
   "exports.column.reorderPoint": "Reorder point",
