@@ -701,6 +701,7 @@
   "inventory.movements.change": "Variation",
   "inventory.movements.chooseItem": "Choisissez un article pour voir Entrée, Sortie et Solde.",
   "inventory.movements.clearReason": "Effacer le motif",
+  "inventory.movements.closeMatches": "Résultats proches",
   "inventory.movements.closingOn": "Clôture, {day}",
   "inventory.movements.days": "{from, select, none {jusqu’au {until}} other {{until, select, none {à partir du {from}} other {{range}}}}}",
   "inventory.movements.deletedUser": "Utilisateur supprimé",

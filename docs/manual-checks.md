@@ -671,8 +671,12 @@ a second organization.
   offered in words ("Lot VC-0302 · Vitamin C 500 mg · expires …",
   "PO-… · … · Partly received"), never a run or a return, and nothing
   filtered until one is chosen; arrows move, Enter chooses, Escape
-  closes. Choose a lot: its item and the lot as two chips, a stock card
-  of that lot; choose an order: its chip. Type "VITC" and choose
+  closes. Type MCS-001: Lot MCS-001 alone, no close match beside it;
+  type VC-0310, a typo for VC-0301: VC-0301 among what comes close,
+  under Close matches (Résultats proches, 相近结果), and no Close
+  matches once a match is exact. Choose a lot: its item and the lot as two chips, a stock card
+  of that lot, the box empty again and still reading Find an item, lot
+  or order; choose an order: its chip. Type "VITC" and choose
   VITC-100: the Item column goes, In, Out and Balance replace
   Change, the newest row's Balance is Stock's On hand for it, a move
   between two places reads "moved 20 each, counted in neither" once
@@ -7357,3 +7361,7 @@ first.
   soon · 4 lots", "Low stock · 2 items", and Home's Low stock and
   Expiring soon tiles "8 codes" and "4 lots": MC-1528, MC-313, MC-218,
   MC-316, MC-4202, MC-4203, MC-4213 and MC-311 extended.
+- 2026-11-20: ADR-093's Movements branch, 126's polish: the find box
+  offers the exact matches alone while any match, a whole lot code its
+  lot alone, and the close ones under Close matches only when none
+  does: MC-320 extended.

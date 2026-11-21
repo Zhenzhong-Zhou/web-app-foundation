@@ -701,6 +701,7 @@
   "inventory.movements.change": "Change",
   "inventory.movements.chooseItem": "Choose one item to see In, Out and Balance.",
   "inventory.movements.clearReason": "Clear Reason",
+  "inventory.movements.closeMatches": "Close matches",
   "inventory.movements.closingOn": "Closing, {day}",
   "inventory.movements.days": "{from, select, none {until {until}} other {{until, select, none {from {from}} other {{range}}}}}",
   "inventory.movements.deletedUser": "Deleted user",

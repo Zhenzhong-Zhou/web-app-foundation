@@ -233,9 +233,11 @@ file is kept is in the [README](README.md).
   number though no movement listed carries it. The item, a lot and an
   order are chosen in one find box, Find an item, lot or order, which
   reads the top bar's lookup, its kinds by the reader's permissions, and
-  offers items, lots and orders alone, never a run or a return: an item
-  sets the item, a lot its item and the lot, an order the order, each
-  then a chip; what is typed alone never filters. An archived code,
+  offers items, lots and orders alone, never a run or a return, the
+  exact matches alone while any match, a whole lot code its lot alone,
+  and the close ones, a typo's, under Close matches only when none does:
+  an item sets the item, a lot its item and the lot, an order the order,
+  each then a chip, the box emptied; what is typed alone never filters. An archived code,
   which the item list does not hold, is named on its chip from its
   movements, and kept once a
   filter leaves none; Show all movements clears every one in a single
@@ -247,6 +249,9 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/movements-page.test.tsx) "offers items, lots and orders in words, grouped, never a run or a return" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "sets a lot’s item and the lot by the keyboard, each a chip, the box emptied" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "sets an order by its option, its chip under the row; Escape closes the list" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers only the exact matches while any match exactly" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers the close matches under Close matches only when nothing matches exactly" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers a whole lot code alone; chosen, the box empties and the lot stays as its chip" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Find an item, lot or order › a lot by the keyboard: its item and the lot, each a chip, a stock card; › an order: its chip" ·
   [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
   [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left" ·

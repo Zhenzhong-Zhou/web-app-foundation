@@ -26,12 +26,31 @@ export type FoundFilter =
 const SEPARATOR = ' · ';
 
 /**
+ * What to offer of the lookup's items, lots and orders (126's polish): a
+ * lot whose code is the whole text typed, alone, as MCS-001 is though
+ * MCS-0010 starts with it; else the exact matches alone while any
+ * match; else the close ones, a typo's (`close`), which the box heads
+ * Close matches. The top bar's search shows them all, its own way.
+ */
+function offered(options: Option[], query: string): Option[] {
+  // Full width read as usual, as the lookup reads it: ＭＣＳ－００１.
+  const typed = query.normalize('NFKC').trim().toLowerCase();
+  const exact = options.filter(({ result }) => !result.close);
+  const whole = exact.find(
+    ({ kind, result }) =>
+      kind === 'lot' && result.title.toLowerCase() === typed,
+  );
+  return whole ? [whole] : exact.length > 0 ? exact : options;
+}
+
+/**
  * Movements' Item field as one find box (126): as one types, the top
  * bar's lookup (useLookup, `GET /v1/lookup`, its kinds by the reader's
  * permissions) offers matching items, lots and orders, grouped and in
- * words. An item sets the Item filter; a lot its item and the lot, so the
- * stock card counts that lot (85a); an order the order. Each shows as a
- * chip under the row, the box emptied; typed text alone never filters.
+ * words, the exact first (offered). An item sets the Item filter; a lot
+ * its item and the lot, so the stock card counts that lot (85a); an
+ * order the order. Each shows as a chip under the row, the box emptied;
+ * typed text alone never filters.
  *
  * Arrows, Enter and Escape as the top bar's search. A lot's item is the
  * one its SKU names among `variants`, the page's list.
@@ -48,11 +67,13 @@ export function MovementFinder({
   const intl = useIntl();
   const lookup = useLookup();
   const { text, answer, loading } = lookup;
-  const options: Option[] = (answer?.groups ?? []).flatMap(
-    ({ kind, results }) =>
+  const options = offered(
+    (answer?.groups ?? []).flatMap(({ kind, results }) =>
       (FINDS as readonly string[]).includes(kind)
         ? results.map((result) => ({ kind: kind as Find, result }))
         : [],
+    ),
+    answer?.query ?? '',
   );
   const itemOf = (sku: string | null) =>
     variants.find((variant) => variant.sku === sku) ?? null;
@@ -106,7 +127,14 @@ export function MovementFinder({
       <Autocomplete<Option, false, false, false>
         id={id}
         options={options}
-        groupBy={(option) => intl.formatMessage(KIND_LABELS[option.kind])}
+        groupBy={(option) =>
+          option.result.close
+            ? intl.formatMessage({
+                id: 'inventory.movements.closeMatches',
+                defaultMessage: 'Close matches',
+              })
+            : intl.formatMessage(KIND_LABELS[option.kind])
+        }
         getOptionLabel={words}
         getOptionKey={(option) => `${option.kind}:${option.result.id}`}
         // The server has matched and ranked them; nothing to filter here.

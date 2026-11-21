@@ -701,6 +701,7 @@
   "inventory.movements.change": "变动",
   "inventory.movements.chooseItem": "选择一个物品，即可查看收入、发出和结存。",
   "inventory.movements.clearReason": "清除原因",
+  "inventory.movements.closeMatches": "相近结果",
   "inventory.movements.closingOn": "期末（{day}）",
   "inventory.movements.days": "{from, select, none {截至 {until}} other {{until, select, none {自 {from} 起} other {{range}}}}}",
   "inventory.movements.deletedUser": "已删除的用户",

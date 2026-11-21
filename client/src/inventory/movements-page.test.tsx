@@ -10,7 +10,13 @@ import {
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Location, Movement, MovementPage } from '../api/types.gen';
+import type {
+  Location,
+  LookupGroup,
+  LookupResult,
+  Movement,
+  MovementPage,
+} from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
 import { movement } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -362,8 +368,11 @@ describe('MovementsPage', () => {
       close: false,
     };
 
-    /** The lookup's answer, a return and a run among it; every question. */
-    function found(): string[] {
+    /**
+     * The lookup's answer, a return and a run among it, or the groups
+     * given; every question.
+     */
+    function found(groups?: LookupGroup[]): string[] {
       const asked: string[] = [];
       server.use(
         http.get('/api/v1/products/variants', () =>
@@ -372,7 +381,7 @@ describe('MovementsPage', () => {
         http.get('/api/v1/lookup', ({ request }) => {
           asked.push(new URL(request.url).searchParams.get('q') ?? '');
           return HttpResponse.json({
-            groups: [
+            groups: groups ?? [
               {
                 kind: 'lot',
                 results: [
@@ -425,8 +434,8 @@ describe('MovementsPage', () => {
       return asked;
     }
 
-    const box = () =>
-      screen.getByRole('combobox', { name: 'Find an item, lot or order' });
+    const FIND = 'Find an item, lot or order';
+    const box = () => screen.getByRole('combobox', { name: FIND });
 
     it('offers items, lots and orders in words, grouped, never a run or a return', async () => {
       const user = userEvent.setup();
@@ -485,6 +494,127 @@ describe('MovementsPage', () => {
       ).toBeVisible();
       expect(
         screen.getByRole('button', { name: 'Remove filter: Lot: VC-0302' }),
+      ).toBeVisible();
+    });
+
+    /** A lookup result, exact unless `close`. */
+    const result = (over: Partial<LookupResult>): LookupResult => ({
+      ...NONE,
+      id: LOT,
+      title: 'VC-0302',
+      detail: 'VITC-500',
+      ...over,
+    });
+
+    /** The options offered, in words, and the headings over them. */
+    const offered = async () => {
+      const list = await screen.findByRole('listbox');
+      await within(list).findAllByRole('option');
+      return {
+        options: within(list)
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+        // MUI's group headings, each over its options.
+        headings: [...list.querySelectorAll('.MuiAutocomplete-groupLabel')].map(
+          (heading) => heading.textContent,
+        ),
+      };
+    };
+
+    // 126's polish: an exact match leaves the close ones out, a typo's.
+    it('offers only the exact matches while any match exactly', async () => {
+      const user = userEvent.setup();
+      answer([MOVEMENT]);
+      found([
+        { kind: 'lot', results: [result({ expiresAt: '2026-11-22' })] },
+        {
+          kind: 'order',
+          results: [result({ id: ORDER, title: 'PO-000009', close: true })],
+        },
+        {
+          kind: 'item',
+          results: [
+            result({ id: ITEM, title: 'Vitamin C 500 mg', close: true }),
+          ],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'VC',
+      );
+
+      expect(await offered()).toEqual({
+        options: ['Lot VC-0302 · Vitamin C 500 mg · expires Nov 22, 2026'],
+        headings: ['Lots'],
+      });
+    });
+
+    it('offers the close matches under Close matches only when nothing matches exactly', async () => {
+      const user = userEvent.setup();
+      answer([MOVEMENT]);
+      found([
+        { kind: 'lot', results: [result({ close: true })] },
+        {
+          kind: 'item',
+          results: [
+            result({ id: ITEM, title: 'Vitamin C 500 mg', close: true }),
+          ],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'VC-0320',
+      );
+
+      expect(await offered()).toEqual({
+        options: [
+          'Lot VC-0302 · Vitamin C 500 mg',
+          'Vitamin C 500 mg · VITC-500',
+        ],
+        headings: ['Close matches'],
+      });
+    });
+
+    // A whole lot code typed is that lot, though others start with it.
+    it('offers a whole lot code alone; chosen, the box empties and the lot stays as its chip', async () => {
+      const user = userEvent.setup();
+      answer([movement({ variantId: ITEM, lotId: LOT, lotCode: 'MCS-001' })]);
+      found([
+        {
+          kind: 'lot',
+          results: [
+            result({ title: 'MCS-001' }),
+            result({ id: PARTNER, title: 'MCS-0010' }),
+          ],
+        },
+        {
+          kind: 'item',
+          results: [result({ id: ITEM, title: 'MCS-001 sample bags' })],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'mcs-001',
+      );
+      expect(await offered()).toEqual({
+        options: ['Lot MCS-001 · Vitamin C 500 mg'],
+        headings: ['Lots'],
+      });
+
+      await user.click(screen.getByRole('option', { name: /^Lot MCS-001/ }));
+
+      expect(box()).toHaveValue('');
+      expect(box()).toHaveAccessibleName(FIND);
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Lot: MCS-001',
+        }),
       ).toBeVisible();
     });
 
