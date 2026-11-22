@@ -141,6 +141,20 @@ each state of what has come or gone, #605's label: purchase orders
 done), and sales **SO-DEMO-9** not shipped, **SO-DEMO-1** partly shipped and
 **SO-DEMO-6** all shipped.
 
+For lots (ADR-094), the same again: the seed reads each back and stops if
+one is gone. **BOTTLE-A60**, the amber bottle, tracks no lots and holds 1,500
+at two places, 900 on Main's **Shelf** and 600 in the **Blending room**, so
+its page offers Start tracking lots… with both places in its question.
+**K2-60CT**, vitamin K2, holds lots of every kind: **K2-2609**, 200 bought,
+20 shipped to **Northside Pharmacy**, with 80 moved into **K2-2609B**, 30 of
+which went to **Harbour Health**, who never received K2-2609 (MC-908); the
+first two codes the lot series made, ending -1 and -2: the first received
+as opening stock, its expiry not known yet and no supplier's lot, so
+Details to add lists it with both marks, and the second a sample from the
+supplier carrying its supplier's lot **Hx-2609** (MC-909); and a receipt of
+each other reason with no order, **K2-2601** returned by Northside Pharmacy
+and **K2-2610** under other, with its note.
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -7507,3 +7521,11 @@ first.
   bar's lot row reads its item's code, then its expiry with its label or
   Expiry to add, then its supplier's lot or Supplier's lot to add, each
   part apart: MC-909 added.
+- 2026-11-22: ADR-094's seeds, R23: the demo gains BOTTLE-A60's stock at two
+  places, to start tracking lots for, and K2-60CT's lots, one made here with
+  both details to add, one carrying its supplier's lot, a receipt of each
+  reason and a lot part of which moved to another, where one customer
+  received only the second; the volume seed gains lots made here, a
+  supplier's lot, an expiry not known yet, lots waiting for a cost, lot
+  changes and codes that start tracking lots: the demo's setup names the
+  lots MC-908 and MC-909 walk.

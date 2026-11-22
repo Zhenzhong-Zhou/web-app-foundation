@@ -39,6 +39,7 @@ import {
 } from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
 import { addCategories } from './seed-demo-categories';
+import { addLots } from './seed-demo-lots';
 import { addMarkets } from './seed-demo-markets';
 import { orderSteps } from './seed-demo-orders';
 import { readBackStock } from './seed-demo-stock';
@@ -906,6 +907,25 @@ async function seedDemo(): Promise<void> {
           organizationId: account.organizationId,
         });
 
+        // A code to start tracking lots for, and lots with details to add,
+        // a supplier's lot, a receipt of each reason and stock moved
+        // between lots (ADR-094), on items of their own, after every
+        // figure above. Read back as the screens read it.
+        const lotStates = await addLots(
+          app,
+          db,
+          audited,
+          account.organizationId,
+          {
+            actorId: actor,
+            shelfId: shelf.id,
+            blendingId: blending.id,
+            supplierId: supplier.id,
+            customerId: customer.id,
+            secondCustomerId: secondCustomer.id,
+          },
+        );
+
         // What Inventory's screens read (ADR-093), read back through its
         // own reads, so a step above that stops making one fails the seed.
         const stockStates = await readBackStock(
@@ -919,6 +939,7 @@ async function seedDemo(): Promise<void> {
         logger.log(stockStates);
         logger.log(sorted);
         logger.log(markets);
+        logger.log(lotStates);
         logger.log(describeTeam(team, DEMO_PASSWORD));
       },
     );
