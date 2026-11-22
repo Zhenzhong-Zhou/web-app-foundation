@@ -559,7 +559,11 @@ a second organization.
   usable, Free, Held, Short, Expires first, Status) and a status as Low,
   Out or Enough and a unit as "each", never a stored code; the audit log's
   line for it reads the filters. Group by Lot, Export saves one row per
-  lot at each place, the same rows the list shows. In 中文 the headers and
+  lot at each place, the same rows the list shows, Supplier's lot and
+  Expiry beside Lot (ADR-094): a lot whose code was made here and whose
+  supplier's lot is still to add reads "Supplier's lot to add" there, one
+  whose expiry is not known yet "Expiry to add", and a printed code's
+  Supplier's lot and a lot that does not expire are empty. In 中文 the headers and
   the words read in Chinese. With Main's Shelf chosen under Location, the
   file's headers read On hand here, Free, every place, Held, every place
   and Expires first here, with no Not usable, and D3-1000-120's On hand is
@@ -629,7 +633,8 @@ a second organization.
   Owner, export Movements with VITC-100 chosen and a date range that
   ends today: the file runs oldest first, its columns When (Vancouver
   time), Code, Recorded as, Item, In, Out, Moved, Balance, Unit, Reason,
-  Reason code, From, To, Lot, Expiry, For, By, Email and Note, one value
+  Reason code, From, To, Lot, Supplier's lot, Expiry, For, By, Email and
+  Note, one value
   to each, Moved filled on a move between two places alone; its first
   line Opening balance with the balance at the range's start, its last
   Closing balance with the range's In and Out and Stock's On hand for
@@ -7418,3 +7423,7 @@ first.
 - 2026-11-21: ADR-094's schema, R7: marking a lot's code as made here,
   a permission of its own, the Owner's alone at first and offered in the
   role editor: MC-3328 added.
+- 2026-11-22: ADR-094's expiry not known, R9: the Lot view's export and
+  Movements' write Supplier's lot and Expiry beside Lot, "Supplier's lot
+  to add" and "Expiry to add" where each is still to add: MC-317 and
+  MC-319 extended.

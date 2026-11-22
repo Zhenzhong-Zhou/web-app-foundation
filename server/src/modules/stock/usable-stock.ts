@@ -2,8 +2,11 @@ import { type SQL, sql } from 'drizzle-orm';
 
 /**
  * The rule's two tests, each written once: a lot not expired by the
- * organization's today (ADR-072), one with no expiry never, on the lot
+ * organization's today (ADR-072), one with no day never, on the lot
  * aliased `lt`; and a place marked available (ADR-085), aliased `loc`.
+ * A lot whose expiry is not known yet has no day (lots_expiry_date_check),
+ * so it stays usable, never expired, as one that does not expire
+ * (ADR-094, Q5a).
  */
 const notExpired = (today: string) =>
   sql`(lt.expires_at is null or lt.expires_at >= ${today}::date)`;

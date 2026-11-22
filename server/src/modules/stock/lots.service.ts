@@ -180,9 +180,17 @@ export class LotsService {
 }
 
 /**
- * A lot as the API returns it (ADR-068): what the receive dialogs show, not
- * the row, which would also send the organization and when it arrived.
+ * A lot as the API returns it (ADR-068): what the receive dialogs and Edit
+ * lot details show, not the row, which would also send the organization
+ * and when it arrived.
  */
-function lotOf({ id, code, expiresAt, isAssigned }: Lot): Lot {
-  return { id, code, expiresAt, isAssigned };
+function lotOf({
+  id,
+  code,
+  expiresAt,
+  expiry,
+  isAssigned,
+  supplierLot,
+}: Lot): Lot {
+  return { id, code, expiresAt, expiry, isAssigned, supplierLot };
 }

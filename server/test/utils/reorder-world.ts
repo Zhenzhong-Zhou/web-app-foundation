@@ -31,13 +31,23 @@ export async function site(agent: Agent, name: string, available = true) {
   return id;
 }
 
-/** Stock received by hand, into a lot when one is given. */
+/**
+ * Stock received by hand, into a lot when one is given: a code typed as
+ * printed, or one made for us, with its supplier's lot and its expiry
+ * (ADR-094).
+ */
 export async function receive(
   agent: Agent,
   variantId: string,
   toLocationId: string,
   quantity: string,
-  lot?: { code: string; expiresAt?: string },
+  lot?: {
+    code?: string;
+    makeCode?: boolean;
+    supplierLot?: string;
+    expiry?: 'date' | 'unknown' | 'none';
+    expiresAt?: string;
+  },
 ) {
   await agent
     .post('/v1/stock/movements')

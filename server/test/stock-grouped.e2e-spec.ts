@@ -1,6 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 
 import { readableQuantity } from '../src/common/readable-quantity';
+import {
+  type Database,
+  UNSAFE_GLOBAL_DB,
+} from '../src/database/database.module';
+import { productVariants } from '../src/database/schema';
 import {
   addMember,
   body,
@@ -49,9 +55,11 @@ const SOON = inDays(10);
  */
 describe('Inventory, grouped (e2e)', () => {
   let app: INestApplication;
+  let db: Database;
 
   beforeAll(async () => {
     app = await createE2eApp();
+    db = app.get<Database>(UNSAFE_GLOBAL_DB);
   });
 
   afterAll(async () => {
@@ -796,6 +804,7 @@ describe('Inventory, grouped (e2e)', () => {
       expiring: 'expiringWithin=90',
       expired: 'expired=true',
       needsCost: 'needsCost=true',
+      detailsToAdd: 'detailsToAdd=true',
     };
     const lotsOf = async (query: string) => {
       const page = body<{ entries: Pile[]; nextCursor: string | null }>(
@@ -816,6 +825,7 @@ describe('Inventory, grouped (e2e)', () => {
       expiring: 3,
       expired: 1,
       needsCost: 4,
+      detailsToAdd: 0,
       total: 4,
     });
 
@@ -973,5 +983,328 @@ describe('Inventory, grouped (e2e)', () => {
     expect(byLot).toHaveLength(2);
     expect(byLot[1][byLot[0].indexOf('Lot')]).toBe('VC-OLD');
     expect(byLot[1][byLot[0].indexOf('Unité')]).toBe('unité');
+  });
+
+  // ADR-094, R9 (E5): Details to add, the lots with an expiry or a
+  // supplier's lot still to add, each pile a row, counted as the rows it
+  // shows; every read of a pile, a lot and a movement sends each lot's
+  // expiry and supplier's lot, and every stock export writes both.
+  it('lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const back = await site(agent, 'BACK');
+    const oil = await item(agent, 'OIL', true);
+    // Made for us, its supplier's lot still to add.
+    await receive(agent, oil, shelf, '10', { makeCode: true });
+    // Made with the supplier's lot as printed, its expiry not known yet.
+    await receive(agent, oil, shelf, '5', {
+      makeCode: true,
+      supplierLot: 'Sup-77',
+      expiry: 'unknown',
+    });
+    // Made with both: nothing to add.
+    await receive(agent, oil, shelf, '7', {
+      makeCode: true,
+      supplierLot: 'SUP-88',
+      expiry: 'date',
+      expiresAt: '2099-01-01',
+    });
+    // Typed from the box, the supplier's own: one not known yet, one dated.
+    await receive(agent, oil, shelf, '4', {
+      code: 'TYPED-1',
+      expiry: 'unknown',
+    });
+    await receive(agent, oil, shelf, '6', { code: 'TYPED-2', expiresAt: SOON });
+
+    // The receive dialogs' lots, each with its expiry and supplier's lot.
+    type Known = {
+      id: string;
+      code: string;
+      expiresAt: string | null;
+      expiry: string;
+      isAssigned: boolean;
+      supplierLot: string | null;
+    };
+    const known = body<Known[]>(
+      await agent.get(`/v1/stock/lots?variantId=${oil}`).expect(200),
+    );
+    const lot = (supplierLot: string | null) =>
+      known.find((one) => one.isAssigned && one.supplierLot === supplierLot)!;
+    const [toAdd, later] = [lot(null).code, lot('Sup-77').code];
+    expect(lot('Sup-77')).toMatchObject({ expiry: 'unknown', expiresAt: null });
+    expect(known.find((one) => one.code === 'TYPED-2')).toMatchObject({
+      expiry: 'date',
+      expiresAt: SOON,
+      isAssigned: false,
+      supplierLot: null,
+    });
+    // The second at the back too, by its code.
+    await receive(agent, oil, back, '3', { code: later });
+
+    type Row = Pile & {
+      productId: string;
+      lotExpiresAt: string | null;
+      lotExpiry: string | null;
+      lotIsAssigned: boolean | null;
+      lotSupplierLot: string | null;
+    };
+    const rowsOf = async (query: string) => {
+      const page = body<{ entries: Row[]; nextCursor: string | null }>(
+        await agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      );
+      expect(page.nextCursor).toBeNull();
+      return page.entries;
+    };
+    const named = (rows: Row[]) =>
+      rows.map((row) => `${row.lotCode} ${row.locationName}`);
+    const countsOf = async (query: string) =>
+      body<Record<string, number>>(
+        await agent.get(`/v1/stock/by-lot/counts?${query}`).expect(200),
+      );
+
+    // A lot at each place, soonest first, those with no day by code.
+    expect(named(await rowsOf('detailsToAdd=true'))).toEqual([
+      `${toAdd} SHELF`,
+      `${later} BACK`,
+      `${later} SHELF`,
+      'TYPED-1 SHELF',
+    ]);
+    expect(await countsOf('')).toMatchObject({ detailsToAdd: 4, total: 6 });
+    // Its count is the rows it shows with the other filters on, and theirs
+    // the rows they show beside it.
+    for (const others of [
+      '',
+      `locationId=${back}`,
+      'search=TYPED',
+      'expiringWithin=90',
+      'needsCost=true',
+    ]) {
+      const query = [others, 'detailsToAdd=true'].filter(Boolean).join('&');
+      expect({ others, count: (await rowsOf(query)).length }).toEqual({
+        others,
+        count: (await countsOf(others)).detailsToAdd,
+      });
+    }
+    const asked = await countsOf('detailsToAdd=true');
+    expect(asked.total).toBe(4);
+    for (const [name, filter] of [
+      ['expiring', 'expiringWithin=90'],
+      ['expired', 'expired=true'],
+      ['needsCost', 'needsCost=true'],
+    ]) {
+      expect({
+        name,
+        count: (await rowsOf(`detailsToAdd=true&${filter}`)).length,
+      }).toEqual({ name, count: asked[name] });
+    }
+
+    // Each pile sends its lot's expiry and supplier's lot: the Lot view's,
+    // and Stock's opened row.
+    const all = await rowsOf('');
+    const pile = (code: string, at: string) =>
+      all.find((row) => row.lotCode === code && row.locationName === at);
+    expect(pile(later, 'BACK')).toMatchObject({
+      lotExpiresAt: null,
+      lotExpiry: 'unknown',
+      lotIsAssigned: true,
+      lotSupplierLot: 'Sup-77',
+    });
+    expect(pile(toAdd, 'SHELF')).toMatchObject({
+      lotExpiry: 'none',
+      lotIsAssigned: true,
+      lotSupplierLot: null,
+    });
+    expect(pile('TYPED-2', 'SHELF')).toMatchObject({
+      lotExpiresAt: SOON,
+      lotExpiry: 'date',
+      lotIsAssigned: false,
+      lotSupplierLot: null,
+    });
+    const { places } = body<{ places: { lots: Row[] }[] }>(
+      await agent.get(`/v1/stock/by-code/${oil}/places`).expect(200),
+    );
+    expect(
+      places
+        .flatMap((place) => place.lots)
+        .find((row) => row.lotCode === 'TYPED-1'),
+    ).toMatchObject({ lotExpiry: 'unknown', lotSupplierLot: null });
+
+    // A movement, the lot's page, and Where it stands without places.
+    const movements = body<{ entries: Row[] }>(
+      await agent.get(`/v1/stock/movements?variantId=${oil}`).expect(200),
+    ).entries;
+    expect(movements.find((row) => row.lotCode === 'TYPED-1')).toMatchObject({
+      lotExpiry: 'unknown',
+      lotIsAssigned: false,
+      lotSupplierLot: null,
+    });
+    expect(movements.find((row) => row.lotCode === later)).toMatchObject({
+      lotExpiry: 'unknown',
+      lotIsAssigned: true,
+      lotSupplierLot: 'Sup-77',
+    });
+    const traced = body<{ lot: Record<string, unknown> }>(
+      await agent.get(`/v1/stock/lots/${lot('Sup-77').id}/trace`).expect(200),
+    );
+    expect(traced.lot).toMatchObject({
+      code: later,
+      expiresAt: null,
+      expiry: 'unknown',
+      isAssigned: true,
+      supplierLot: 'Sup-77',
+    });
+    await customRole(app, alpha.organizationId, 'Counter', ['stock.view']);
+    const counter = await addMember(
+      app,
+      alpha,
+      'counter@example.com',
+      'Counter',
+    );
+    const [standing] = body<{
+      codes: { lots: Record<string, unknown>[] | null }[];
+    }>(
+      await counter.get(`/v1/products/${all[0].productId}/stock`).expect(200),
+    ).codes;
+    expect(standing.lots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          lotCode: later,
+          expiry: 'unknown',
+          isAssigned: true,
+          supplierLot: 'Sup-77',
+        }),
+        expect.objectContaining({
+          lotCode: toAdd,
+          expiry: 'none',
+          isAssigned: true,
+          supplierLot: null,
+        }),
+      ]),
+    );
+
+    // Every stock export writes both beside the lot, each marked where it
+    // is still to add, in the reader's language.
+    const csv = async (path: string, language: string) =>
+      (await agent.get(path).set('Accept-Language', language).expect(200)).text
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+    const cells = (lines: string[][], names: string[]) =>
+      lines
+        .slice(1)
+        .map((line) => names.map((name) => line[lines[0].indexOf(name)]));
+    const english = await csv(
+      '/v1/stock/by-lot/export?detailsToAdd=true',
+      'en',
+    );
+    const lotAt = english[0].indexOf('Lot');
+    expect(english[0].slice(lotAt, lotAt + 3)).toEqual([
+      'Lot',
+      'Supplier’s lot',
+      'Expiry',
+    ]);
+    expect(
+      cells(english, ['Lot', 'Location', 'Supplier’s lot', 'Expiry']),
+    ).toEqual([
+      [toAdd, 'SHELF', 'Supplier’s lot to add', ''],
+      [later, 'BACK', 'Sup-77', 'Expiry to add'],
+      [later, 'SHELF', 'Sup-77', 'Expiry to add'],
+      ['TYPED-1', 'SHELF', '', 'Expiry to add'],
+    ]);
+    const finished = cells(await csv('/v1/stock/by-lot/export', 'en'), [
+      'Lot',
+      'Supplier’s lot',
+      'Expiry',
+    ]);
+    expect(finished).toEqual(
+      expect.arrayContaining([
+        [lot('SUP-88').code, 'SUP-88', '2099-01-01'],
+        ['TYPED-2', '', SOON],
+      ]),
+    );
+    expect(
+      cells(await csv('/v1/stock/by-lot/export?detailsToAdd=true', 'zh-Hans'), [
+        '批次',
+        '供应商批号',
+        '有效期至',
+      ]),
+    ).toEqual([
+      [toAdd, '待补供应商批号', ''],
+      [later, 'Sup-77', '待补有效期'],
+      [later, 'Sup-77', '待补有效期'],
+      ['TYPED-1', '', '待补有效期'],
+    ]);
+    // Movements' export, oldest first, the same three beside each other.
+    const moved = await csv(
+      `/v1/stock/movements/export?variantId=${oil}`,
+      'en',
+    );
+    const movedLot = moved[0].indexOf('Lot');
+    expect(moved[0].slice(movedLot, movedLot + 3)).toEqual([
+      'Lot',
+      'Supplier’s lot',
+      'Expiry',
+    ]);
+    expect(cells(moved, ['Lot', 'Supplier’s lot', 'Expiry'])).toEqual([
+      [toAdd, 'Supplier’s lot to add', ''],
+      [later, 'Sup-77', 'Expiry to add'],
+      [lot('SUP-88').code, 'SUP-88', '2099-01-01'],
+      ['TYPED-1', '', 'Expiry to add'],
+      ['TYPED-2', '', SOON],
+      [later, 'Sup-77', 'Expiry to add'],
+    ]);
+  });
+
+  // ADR-094: once a code tracks lots, its stock from before
+  // is in a lot, and its emptied pile with no lot is history alone.
+  it('leaves out, with Include empty, the emptied pile with no lot of a code that now tracks lots (ADR-094)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const back = await site(agent, 'BACK');
+    const bottle = await item(agent, 'BOTTLE');
+    const countedOut = (fields: Record<string, string>) =>
+      agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: bottle,
+          reason: 'adjustment',
+          reasonDetail: 'damaged',
+          note: 'Broken in the move',
+          ...fields,
+        })
+        .expect(201);
+    // Received with no lot and counted away, before tracking started.
+    await receive(agent, bottle, shelf, '10');
+    await countedOut({ fromLocationId: shelf, quantity: '10' });
+    // Its lot tracking started, as Start tracking lots leaves a code.
+    await db
+      .update(productVariants)
+      .set({ tracksLots: true })
+      .where(eq(productVariants.id, bottle));
+    await receive(agent, bottle, shelf, '4', { code: 'B-1' });
+    await receive(agent, bottle, back, '2', { code: 'B-2' });
+    const [second] = body<{ id: string; code: string }[]>(
+      await agent.get(`/v1/stock/lots?variantId=${bottle}`).expect(200),
+    ).filter((one) => one.code === 'B-2');
+    await countedOut({ fromLocationId: back, quantity: '2', lotId: second.id });
+
+    const placesOf = async (query: string) =>
+      body<{ places: { locationName: string; lots: Pile[] }[] }>(
+        await agent
+          .get(`/v1/stock/by-code/${bottle}/places${query}`)
+          .expect(200),
+      ).places.map((place) => [
+        place.locationName,
+        place.lots.map((one) => [one.lotCode, one.quantity]),
+      ]);
+    // A lot's emptied pile stays with Include empty; the no-lot one does not.
+    expect(await placesOf('?includeEmpty=true')).toEqual([
+      ['BACK', [['B-2', '0.0000']]],
+      ['SHELF', [['B-1', '4.0000']]],
+    ]);
+    expect(await placesOf('')).toEqual([['SHELF', [['B-1', '4.0000']]]]);
   });
 });

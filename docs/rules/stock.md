@@ -35,6 +35,12 @@ file is kept is in the [README](README.md).
   [test](../../server/test/reservations.e2e-spec.ts) "leaves an expired lot, an issued quantity and a place not available out of Free, each said beside On hand" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-309 · MC-312
+- **A lot whose expiry is not known yet stays usable:** it is never
+  expired, in no Expired or Expiring soon, and never what expires first,
+  even on a day far ahead; earliest expiry first takes it as a lot with
+  no expiry, after the dated ones, by when it arrived.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [test](../../server/test/code-figures.e2e-spec.ts) "reads a lot whose expiry is not known yet as usable, never expired nor first to expire, taken as a lot with no day (ADR-094, R9)"
 
 ## A code's figures
 
@@ -159,13 +165,27 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/inventory.md#group-by-lot-lots) ·
   MC-313 · MC-311
 - **The Lot view's counts are its rows, lots at each place, never
-  codes:** Low stock, Expiring soon, Expired and Waiting for a cost, each
-  with the other filters on and its own off; no Out, since a code that
-  is out keeps no lot. Its export is the same rows.
+  codes:** Low stock, Expiring soon, Expired, Waiting for a cost and
+  Details to add, each with the other filters on and its own off; no
+  Out, since a code that is out keeps no lot. Its export is the same
+  rows.
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "counts each of the Lot view’s quick filters as the lots it shows, with the other filters on, and exports those rows" ·
   [Help](../../client/src/help/guides/en/inventory.md#what-each-count-counts-counts) ·
   MC-313
+- **Details to add lists the lots not yet finished:** one whose expiry
+  is not known yet, and one whose code was made here and whose
+  supplier's lot is still to add, each pile at every place a row. Every
+  read of a pile, a lot or a movement sends the lot's expiry and its
+  supplier's lot.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)"
+- **A code's opened row lists, with Include empty, its emptied piles
+  too,** but not the emptied pile with no lot of a code that now tracks
+  lots: its stock from before is in a lot.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "says whether a code was ever stocked here, and the day each emptied pile was emptied" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "leaves out, with Include empty, the emptied pile with no lot of a code that now tracks lots (ADR-094)"
 - **A place's name goes only to a reader who may see places;** the rest
   read the lots and their figures without it. Stock and Where it stands
   write it as its path, the places above it by name, its warehouse
@@ -183,6 +203,15 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "exports the rows the screen lists, with its filters, in the screen’s words and the reader’s language" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
   MC-317
+- **The Lot view's and Movements' exports write each lot's supplier's
+  lot and its expiry beside its code,** each marked where it is still
+  to add: Supplier's lot, the supplier's own for a code made here, or
+  "Supplier's lot to add", empty for a printed code; Expiry, its day, or
+  "Expiry to add", empty for a lot that does not expire.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)" ·
+  [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
+  MC-317 · MC-319
 - **Every stock export writes a quantity as data without its padding
   zeros, never rounded:** `600`, not `600.0000`; `12.5` and `0.0001` as
   they are; a minus kept, `-5`; no grouping. Stock's, the Lot view's,
@@ -385,7 +414,8 @@ file is kept is in the [README](README.md).
   shipment, transfer, adjustment, production, consumption, sample or
   return), never translated, so exports in two languages can be put
   together (138b); From,
-  To, Lot, Expiry, For and By; Email, the person's; and the note last,
+  To, Lot, Supplier's lot, Expiry, For and By; Email, the person's; and
+  the note last,
   as typed. One code's range starts with its opening balance and ends
   with its closing, each by its day, beside the range's In and Out.
   Reason in the screen's words with its detail, "Corrected: found". From
@@ -401,6 +431,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason’s code after its words, the same in every language" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
   MC-319

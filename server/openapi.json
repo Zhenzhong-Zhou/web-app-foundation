@@ -5148,6 +5148,16 @@
             }
           },
           {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "before",
             "required": false,
             "in": "query",
@@ -5183,13 +5193,11 @@
             }
           },
           {
-            "name": "limit",
+            "name": "detailsToAdd",
             "required": false,
             "in": "query",
             "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
+              "type": "string"
             }
           },
           {
@@ -5323,6 +5331,14 @@
               "maxLength": 100,
               "type": "string"
             }
+          },
+          {
+            "name": "detailsToAdd",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5449,6 +5465,16 @@
             }
           },
           {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "before",
             "required": false,
             "in": "query",
@@ -5484,13 +5510,11 @@
             }
           },
           {
-            "name": "limit",
+            "name": "detailsToAdd",
             "required": false,
             "in": "query",
             "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
+              "type": "string"
             }
           },
           {
@@ -16678,6 +16702,30 @@
               "null"
             ]
           },
+          "lotExpiry": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "unknown",
+              "date",
+              "none",
+              null
+            ]
+          },
+          "lotIsAssigned": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "lotSupplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "actorName": {
             "type": [
               "string",
@@ -16764,6 +16812,9 @@
           "lotId",
           "lotCode",
           "lotExpiresAt",
+          "lotExpiry",
+          "lotIsAssigned",
+          "lotSupplierLot",
           "actorName",
           "actorEmail",
           "createdAt",
@@ -16885,15 +16936,31 @@
               "null"
             ]
           },
+          "expiry": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "date",
+              "none"
+            ]
+          },
           "isAssigned": {
             "type": "boolean"
+          },
+          "supplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "id",
           "code",
           "expiresAt",
-          "isAssigned"
+          "expiry",
+          "isAssigned",
+          "supplierLot"
         ]
       },
       "UpdateLotDto": {
@@ -17221,9 +17288,27 @@
               "null"
             ]
           },
+          "lotExpiry": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "unknown",
+              "date",
+              "none",
+              null
+            ]
+          },
           "lotIsAssigned": {
             "type": [
               "boolean",
+              "null"
+            ]
+          },
+          "lotSupplierLot": {
+            "type": [
+              "string",
               "null"
             ]
           },
@@ -17250,7 +17335,9 @@
           "lotId",
           "lotCode",
           "lotExpiresAt",
+          "lotExpiry",
           "lotIsAssigned",
+          "lotSupplierLot",
           "quantity",
           "emptiedOn"
         ]
@@ -17373,9 +17460,27 @@
               "null"
             ]
           },
+          "lotExpiry": {
+            "enum": [
+              "unknown",
+              "date",
+              "none",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotIsAssigned": {
             "type": [
               "boolean",
+              "null"
+            ]
+          },
+          "lotSupplierLot": {
+            "type": [
+              "string",
               "null"
             ]
           },
@@ -17434,7 +17539,9 @@
           "lotId",
           "lotCode",
           "lotExpiresAt",
+          "lotExpiry",
           "lotIsAssigned",
+          "lotSupplierLot",
           "quantity",
           "emptiedOn",
           "productId",
@@ -17481,6 +17588,9 @@
           "needsCost": {
             "type": "number"
           },
+          "detailsToAdd": {
+            "type": "number"
+          },
           "total": {
             "type": "number"
           }
@@ -17490,6 +17600,7 @@
           "expiring",
           "expired",
           "needsCost",
+          "detailsToAdd",
           "total"
         ]
       },
@@ -17534,6 +17645,23 @@
               "null"
             ]
           },
+          "expiry": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "date",
+              "none"
+            ]
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "supplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "variantId": {
             "type": "string"
           },
@@ -17554,6 +17682,9 @@
           "id",
           "code",
           "expiresAt",
+          "expiry",
+          "isAssigned",
+          "supplierLot",
           "variantId",
           "productId",
           "sku",
@@ -18517,6 +18648,30 @@
               "null"
             ]
           },
+          "expiry": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "unknown",
+              "date",
+              "none",
+              null
+            ]
+          },
+          "isAssigned": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "supplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -18528,6 +18683,9 @@
           "lotId",
           "lotCode",
           "expiresAt",
+          "expiry",
+          "isAssigned",
+          "supplierLot",
           "quantity",
           "places"
         ]

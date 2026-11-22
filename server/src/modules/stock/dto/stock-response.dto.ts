@@ -1,4 +1,4 @@
-import type { ProductType } from '../../../database/schema';
+import type { LotExpiry, ProductType } from '../../../database/schema';
 
 /**
  * Stock as the API returns it (ADR-068): levels, movements, lots and the
@@ -121,6 +121,12 @@ export class Movement {
   lotCode!: string | null;
   /** The lot's expiry day, `YYYY-MM-DD` (ADR-052); null with none. */
   lotExpiresAt!: string | null;
+  /** Which expiry the lot has, as Stock's piles send it (ADR-094, R8). */
+  lotExpiry!: LotExpiry | null;
+  /** Whether the lot's code was made here, not printed (ADR-094). */
+  lotIsAssigned!: boolean | null;
+  /** The supplier's own lot, for a code made here (ADR-094, R5). */
+  lotSupplierLot!: string | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
@@ -242,13 +248,20 @@ export class StockVariant {
   isActive!: boolean;
 }
 
-/** A lot of one item, as the receive dialogs offer it. */
+/** A lot of one item, as the receive dialogs and Edit lot details offer it. */
 export class Lot {
   id!: string;
   code!: string;
   expiresAt!: string | null;
+  /**
+   * Which expiry it has (ADR-094, R8): a day, not known yet, or none,
+   * the choice a new lot's Expires starts on.
+   */
+  expiry!: LotExpiry;
   /** True when the code was made here, not printed (ADR-094). */
   isAssigned!: boolean;
+  /** The supplier's own lot, as printed, for a code made here; else null. */
+  supplierLot!: string | null;
 }
 
 /** A lot matched by the start of its code (ADR-044). */

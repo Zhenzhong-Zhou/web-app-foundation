@@ -4,7 +4,7 @@ import { sql } from 'drizzle-orm';
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
 import { dayIn, todayIn } from '../../common/today';
-import type { ReleaseLicenceStatus } from '../../database/schema';
+import type { LotExpiry, ReleaseLicenceStatus } from '../../database/schema';
 import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -163,6 +163,9 @@ export class LotTraceService {
           l.id,
           l.code,
           l.expires_at,
+          l.expiry,
+          l.is_assigned,
+          l.supplier_lot,
           l.variant_id,
           pv.product_id,
           pv.sku,
@@ -180,6 +183,9 @@ export class LotTraceService {
       id: string;
       code: string;
       expires_at: string | null;
+      expiry: LotExpiry;
+      is_assigned: boolean;
+      supplier_lot: string | null;
       variant_id: string;
       product_id: string;
       sku: string;
@@ -198,6 +204,9 @@ export class LotTraceService {
       id: row.id,
       code: row.code,
       expiresAt: row.expires_at,
+      expiry: row.expiry,
+      isAssigned: row.is_assigned,
+      supplierLot: row.supplier_lot,
       variantId: row.variant_id,
       productId: row.product_id,
       sku: row.sku,

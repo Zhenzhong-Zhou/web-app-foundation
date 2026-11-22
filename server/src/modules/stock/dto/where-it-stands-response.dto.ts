@@ -1,4 +1,4 @@
-import type { ReorderSource } from '../../../database/schema';
+import type { LotExpiry, ReorderSource } from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 import type { StockPlace } from './stock-grouped-response.dto';
 import type { Movement } from './stock-response.dto';
@@ -59,6 +59,15 @@ export class UsableLot {
   lotId!: string | null;
   lotCode!: string | null;
   expiresAt!: string | null;
+  /**
+   * Which expiry the lot has, as Stock's piles send it (ADR-094, R8);
+   * null with no lot.
+   */
+  expiry!: LotExpiry | null;
+  /** Whether its code was made here, not printed; null with no lot. */
+  isAssigned!: boolean | null;
+  /** The supplier's own lot, for a code made here (ADR-094, R5). */
+  supplierLot!: string | null;
   quantity!: string;
   /** How many places hold it, "in 2 places". */
   places!: number;

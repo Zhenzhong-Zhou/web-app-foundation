@@ -277,6 +277,9 @@ export async function movementPage(
       lotId: movement.lotId,
       lotCode: lots.code,
       lotExpiresAt: lots.expiresAt,
+      lotExpiry: lots.expiry,
+      lotIsAssigned: lots.isAssigned,
+      lotSupplierLot: lots.supplierLot,
       // Who, by name with their email (ADR-063). An anonymised account
       // keeps its row and its name, Deleted User, and its address is a
       // placeholder, which no one should read as theirs (ADR-012).
@@ -389,6 +392,9 @@ export async function movementPage(
         lotId: row.lotId,
         lotCode: row.lotCode,
         lotExpiresAt: row.lotExpiresAt,
+        lotExpiry: row.lotExpiry,
+        lotIsAssigned: row.lotIsAssigned,
+        lotSupplierLot: row.lotSupplierLot,
         actorName: row.actorName,
         actorEmail: row.actorEmail,
         createdAt: row.createdAt,

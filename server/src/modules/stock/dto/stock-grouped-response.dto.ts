@@ -1,4 +1,4 @@
-import type { ProductType } from '../../../database/schema';
+import type { LotExpiry, ProductType } from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 
 /**
@@ -112,6 +112,11 @@ export class StockLotCounts {
   expiring!: number;
   expired!: number;
   needsCost!: number;
+  /**
+   * Details to add (ADR-094, R9; E5): a lot whose expiry is not known
+   * yet, or made here with no supplier's lot.
+   */
+  detailsToAdd!: number;
   /** The lots the list shows, every filter asked on: "Showing 50 of 312 lots". */
   total!: number;
 }
@@ -135,8 +140,18 @@ export class StockPile {
   lotId!: string | null;
   lotCode!: string | null;
   lotExpiresAt!: string | null;
+  /**
+   * Which expiry the lot has (ADR-094, R8): a day, not known yet, which
+   * reads "Expiry to add", or none; null with no lot.
+   */
+  lotExpiry!: LotExpiry | null;
   /** Whether the code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;
+  /**
+   * The supplier's own lot, as printed, for a code made here; null for a
+   * printed code, one whose supplier's lot is still to add, and no lot.
+   */
+  lotSupplierLot!: string | null;
   quantity!: string;
   /**
    * The organization's day it was emptied, its last change leaving none;

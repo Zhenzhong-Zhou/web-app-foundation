@@ -1888,6 +1888,9 @@ export type Movement = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
+  lotExpiry: 'unknown' | 'date' | 'none' | null;
+  lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
@@ -1925,7 +1928,9 @@ export type Lot = {
   id: string;
   code: string;
   expiresAt: string | null;
+  expiry: 'unknown' | 'date' | 'none';
   isAssigned: boolean;
+  supplierLot: string | null;
 };
 
 export type UpdateLotDto = {
@@ -2001,7 +2006,9 @@ export type StockPile = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
+  lotExpiry: 'unknown' | 'date' | 'none' | null;
   lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
   quantity: string;
   emptiedOn: string | null;
 };
@@ -2033,7 +2040,9 @@ export type StockLotRow = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
+  lotExpiry: 'unknown' | 'date' | 'none' | null;
   lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
   quantity: string;
   emptiedOn: string | null;
   productId: string;
@@ -2054,6 +2063,7 @@ export type StockLotCounts = {
   expiring: number;
   expired: number;
   needsCost: number;
+  detailsToAdd: number;
   total: number;
 };
 
@@ -2068,6 +2078,9 @@ export type TracedLot = {
   id: string;
   code: string;
   expiresAt: string | null;
+  expiry: 'unknown' | 'date' | 'none';
+  isAssigned: boolean;
+  supplierLot: string | null;
   variantId: string;
   productId: string;
   sku: string;
@@ -2284,6 +2297,9 @@ export type UsableLot = {
   lotId: string | null;
   lotCode: string | null;
   expiresAt: string | null;
+  expiry: 'unknown' | 'date' | 'none' | null;
+  isAssigned: boolean | null;
+  supplierLot: string | null;
   quantity: string;
   places: number;
 };
@@ -6408,10 +6424,11 @@ export type StockGroupedControllerByLotV1Data = {
     productId?: string;
     includeEmpty?: string;
     search?: string;
+    limit?: number;
     before?: string;
     sort?: 'expires' | 'item' | 'location' | 'quantity';
     order?: 'asc' | 'desc';
-    limit?: number;
+    detailsToAdd?: string;
   };
   url: '/v1/stock/by-lot';
 };
@@ -6439,6 +6456,7 @@ export type StockGroupedControllerLotCountsV1Data = {
     productId?: string;
     includeEmpty?: string;
     search?: string;
+    detailsToAdd?: string;
   };
   url: '/v1/stock/by-lot/counts';
 };
@@ -6469,10 +6487,11 @@ export type StockGroupedControllerExportByLotV1Data = {
     productId?: string;
     includeEmpty?: string;
     search?: string;
+    limit?: number;
     before?: string;
     sort?: 'expires' | 'item' | 'location' | 'quantity';
     order?: 'asc' | 'desc';
-    limit?: number;
+    detailsToAdd?: string;
   };
   url: '/v1/stock/by-lot/export';
 };

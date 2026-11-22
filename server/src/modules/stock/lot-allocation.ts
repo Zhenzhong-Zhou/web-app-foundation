@@ -50,7 +50,9 @@ export interface CandidateQuery {
  *
  * Sorted by expiry with no-expiry lots last, then by when the lot was first
  * seen, then by id, so two lots with the same date always come out in the same
- * order and a preview matches the release that follows it.
+ * order and a preview matches the release that follows it. A lot whose
+ * expiry is not known yet has no day, so it is taken as one that does not
+ * expire, after the dated ones, until #333 decides picking (ADR-094, Q5a).
  *
  * All arithmetic is in SQL. A running total over numeric(18,4) is exactly
  * what ADR-025 kept out of JavaScript; `take` is `least(on hand, still

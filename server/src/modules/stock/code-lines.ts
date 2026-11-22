@@ -89,8 +89,11 @@ export function holdLinesOf(
  * many places hold it; stock with no lot as one row. What a released run
  * was issued at a place is taken from its lots there earliest expiry
  * first, as a release takes them, so the lots add up to usable stock
- * (usable-stock.ts) and the rest is the code's not usable. Rows
- * `variant_id, lot_id, lot_code, expires_at, quantity, places`.
+ * (usable-stock.ts) and the rest is the code's not usable. A lot whose
+ * expiry is not known yet has no day, so it is usable and taken as a lot
+ * with none (ADR-094, Q5a). Rows `variant_id, lot_id, lot_code,
+ * expires_at, expiry, is_assigned, supplier_lot, quantity, places`, the
+ * lot's three null with no lot.
  */
 export function usableLotsOf(
   organizationId: string,
@@ -105,6 +108,9 @@ export function usableLotsOf(
       p.lot_id,
       p.lot_code,
       p.expires_at,
+      p.expiry,
+      p.is_assigned,
+      p.supplier_lot,
       sum(p.usable) as quantity,
       (count(*) filter (where p.usable > 0))::int as places
     from (
@@ -113,6 +119,9 @@ export function usableLotsOf(
         sl.lot_id,
         lt.code as lot_code,
         lt.expires_at,
+        lt.expiry,
+        lt.is_assigned,
+        lt.supplier_lot,
         sl.quantity - greatest(0, least(
           sl.quantity,
           coalesce(u.issued, 0) - coalesce(sum(sl.quantity) over (
@@ -137,7 +146,8 @@ export function usableLotsOf(
         and loc.is_available
         and (lt.expires_at is null or lt.expires_at >= ${today}::date)
     ) p
-    group by p.variant_id, p.lot_id, p.lot_code, p.expires_at
+    group by p.variant_id, p.lot_id, p.lot_code, p.expires_at, p.expiry,
+      p.is_assigned, p.supplier_lot
     having sum(p.usable) > 0
   `;
 }

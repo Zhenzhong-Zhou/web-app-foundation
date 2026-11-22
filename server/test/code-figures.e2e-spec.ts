@@ -383,6 +383,98 @@ describe('A code’s figures (e2e)', () => {
     expect(stands).toMatchObject({ allExpired: true });
   });
 
+  // ADR-094, R9 (Q5a): a lot whose expiry is not known yet stays usable,
+  // is never expired, expiring or what expires first, and is taken as a
+  // lot with no day, after the dated ones, by when it arrived.
+  it('reads a lot whose expiry is not known yet as usable, never expired nor first to expire, taken as a lot with no day (ADR-094, R9)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const powder = await item(agent, 'POWDER', true);
+    const unknown = await item(agent, 'UNKNOWN', true);
+    const shelf = await site(agent, 'SHELF');
+    // Not known yet first, then one that does not expire, then a dated one.
+    await receive(agent, powder, shelf, '40', {
+      code: 'P-LATER',
+      expiry: 'unknown',
+    });
+    await receive(agent, powder, shelf, '10', {
+      code: 'P-NEVER',
+      expiry: 'none',
+    });
+    await receive(agent, powder, shelf, '20', {
+      code: 'P-DATED',
+      expiry: 'date',
+      expiresAt: '2027-03-14',
+    });
+    await receive(agent, unknown, shelf, '5', {
+      code: 'U-LATER',
+      expiry: 'unknown',
+    });
+
+    const figures = await figuresOf(alpha, [powder, unknown]);
+    const of = (id: string) => figures.find((row) => row.variant_id === id);
+    expect(of(powder)).toMatchObject({
+      on_hand: '70.0000',
+      usable: '70.0000',
+      not_usable: '0.0000',
+      expired: '0.0000',
+      expires_first: '2027-03-14',
+      all_expired: false,
+    });
+    // Its only lot not known yet: usable, with nothing that expires first.
+    expect(of(unknown)).toMatchObject({
+      on_hand: '5.0000',
+      usable: '5.0000',
+      expired: '0.0000',
+      expires_first: null,
+      all_expired: false,
+    });
+    // Even on a day far ahead, it never expires.
+    const [later] = await figuresOf(alpha, [unknown], '2099-12-31');
+    expect(later).toMatchObject({ usable: '5.0000', expired: '0.0000' });
+
+    // The Lot view: in no Expired or Expiring soon, after the dated lot
+    // with the lots that have no day.
+    const lotsOf = async (query: string) =>
+      body<{ entries: { lotCode: string }[] }>(
+        await agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      ).entries.map((row) => row.lotCode);
+    expect(await lotsOf('')).toEqual([
+      'P-DATED',
+      'P-LATER',
+      'P-NEVER',
+      'U-LATER',
+    ]);
+    expect(await lotsOf('expired=true')).toEqual([]);
+    expect(await lotsOf('expiringWithin=3650')).toEqual(['P-DATED']);
+
+    // Earliest expiry first takes the dated lot, then the two with no day
+    // by when each arrived: not known yet before none, as received.
+    const sale = await order(
+      agent,
+      'sale',
+      await partner(agent, 'Northside Pharmacy'),
+      powder,
+      '65',
+    );
+    const { lines } = body<{
+      lines: { lots: { code: string; take: string }[] }[];
+    }>(
+      await agent
+        .post(`/v1/orders/${sale.id}/shipments/preview`)
+        .send({
+          fromLocationId: shelf,
+          lines: [{ lineId: sale.lineId, quantity: '65' }],
+        })
+        .expect(200),
+    );
+    expect(lines[0].lots.map((lot) => [lot.code, lot.take])).toEqual([
+      ['P-DATED', '20.0000'],
+      ['P-LATER', '40.0000'],
+      ['P-NEVER', '5.0000'],
+    ]);
+  });
+
   it('gives Inventory’s and Reorder’s routes the same figures for one code', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const { bottle } = await world(alpha);

@@ -1,4 +1,4 @@
-import type { ReleaseLicenceStatus } from '../../../database/schema';
+import type { LotExpiry, ReleaseLicenceStatus } from '../../../database/schema';
 
 /**
  * A lot's trace as the API returns it (ADR-068, ADR-039, ADR-044): where
@@ -11,6 +11,12 @@ export class TracedLot {
   id!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has: a day, not known yet, or none (ADR-094, R8). */
+  expiry!: LotExpiry;
+  /** True when the code was made here, not printed (ADR-094). */
+  isAssigned!: boolean;
+  /** The supplier's own lot, as printed, for a code made here; else null. */
+  supplierLot!: string | null;
   /** Its item, for All movements of this lot's stock card (95a). */
   variantId!: string;
   /** Its item's product, the page its name links to. */

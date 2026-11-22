@@ -13,9 +13,18 @@ const KNOWN: Lot[] = [
     id: 'lot-1',
     code: 'L2024-A',
     expiresAt: '2027-03-31',
+    expiry: 'date',
     isAssigned: false,
+    supplierLot: null,
   },
-  { id: 'lot-2', code: 'L2024-B', expiresAt: null, isAssigned: true },
+  {
+    id: 'lot-2',
+    code: 'L2024-B',
+    expiresAt: null,
+    expiry: 'none',
+    isAssigned: true,
+    supplierLot: null,
+  },
 ];
 
 /** Holds the value the way a dialog's form does. */

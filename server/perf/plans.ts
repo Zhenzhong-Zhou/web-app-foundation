@@ -368,6 +368,12 @@ async function buildProbes(
       name: 'stock by lot: expiring',
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
     },
+    // Details to add (ADR-094, R9): the lots with an expiry or a
+    // supplier's lot still to add, read from the lot of each row.
+    {
+      name: 'stock by lot: details to add',
+      run: () => grouped.byLot({ detailsToAdd: 'true' }, 'en', true),
+    },
     { name: 'stock by lot: counts', run: () => grouped.lotCounts({}) },
     // The Lot view by its other sorts, each way (Bob's third message, 7).
     ...(['item', 'location', 'quantity', 'expires'] as const).flatMap((sort) =>

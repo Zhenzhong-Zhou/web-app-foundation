@@ -26,7 +26,9 @@ const LOT: Lot = {
   id: 'lot-5',
   code: 'VC-0305',
   expiresAt: '2027-03-03',
+  expiry: 'date',
   isAssigned: false,
+  supplierLot: null,
 };
 
 const TRACKED: CountInItem = {

@@ -90,6 +90,21 @@ export class StockFiltersDto {
 }
 
 /**
+ * The Lot view's filters: Inventory's, and a quick filter of its own,
+ * counted beside the others.
+ */
+export class StockLotFiltersDto extends StockFiltersDto {
+  /**
+   * Details to add (ADR-094, R9; E5): a lot whose expiry is not known
+   * yet, or one made here whose supplier's lot is still to add, each
+   * pile of it at every place.
+   */
+  @IsOptional()
+  @IsBooleanString()
+  detailsToAdd?: string;
+}
+
+/**
  * What a row per code is sorted by (ADR-057, amended by ADR-093). Not
  * Free: worked out for every code, it took 335 ms at the large volume,
  * past ADR-051's headroom (35a).
@@ -147,7 +162,15 @@ export class ListStockByCodeDto extends StockPageDto {
  * The Lot view (ADR-093, R4): a row per lot at each place, soonest first,
  * the expired on top, unless its headers sort it otherwise.
  */
-export class ListStockByLotDto extends StockPageDto {
+export class ListStockByLotDto extends StockLotFiltersDto {
+  /** Fifty unless asked; capped, as every list's. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
   /**
    * The answer's `nextCursor`, the last pile's id, for the page after it:
    * anything else is refused, never read as a pile (review 55).

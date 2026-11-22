@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { todayOf } from '../../core/organizations/time-zone';
-import type { ReorderSource } from '../../database/schema';
+import type { LotExpiry, ReorderSource } from '../../database/schema';
 import { products, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -251,6 +251,9 @@ export class WhereItStandsService {
                 lot_id: string | null;
                 lot_code: string | null;
                 expires_at: string | null;
+                expiry: LotExpiry | null;
+                is_assigned: boolean | null;
+                supplier_lot: string | null;
                 quantity: string;
                 places: number;
               }>(sql`
@@ -259,6 +262,9 @@ export class WhereItStandsService {
                   u.lot_id,
                   u.lot_code,
                   u.expires_at::text as expires_at,
+                  u.expiry,
+                  u.is_assigned,
+                  u.supplier_lot,
                   ${quantity(sql`u.quantity`)} as quantity,
                   u.places
                 from (${usableLotsOf(organizationId, today, variants)}) u
@@ -270,6 +276,9 @@ export class WhereItStandsService {
               lotId: row.lot_id,
               lotCode: row.lot_code,
               expiresAt: row.expires_at,
+              expiry: row.expiry,
+              isAssigned: row.is_assigned,
+              supplierLot: row.supplier_lot,
               quantity: row.quantity,
               places: row.places,
             }),

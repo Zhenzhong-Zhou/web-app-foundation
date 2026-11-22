@@ -17,7 +17,12 @@ import {
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Delivery, StockCodeRow, StockPlace } from '../api/types.gen';
+import type {
+  Delivery,
+  StockCodeRow,
+  StockPile,
+  StockPlace,
+} from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
 import { SEARCH_WAIT_MS } from '../lib/use-list-search';
 import { apiError } from '../test/handlers';
@@ -85,7 +90,12 @@ const CODE: StockCodeRow = {
 };
 
 /** One pile, a lot at a place, as a place's lots carry it. */
-function pile(id: string, lot: string, expiresAt: string | null, at: string) {
+function pile(
+  id: string,
+  lot: string,
+  expiresAt: string | null,
+  at: string,
+): StockPile {
   return {
     id,
     variantId: 'variant-1',
@@ -99,7 +109,9 @@ function pile(id: string, lot: string, expiresAt: string | null, at: string) {
     lotId: `lot-${id}`,
     lotCode: lot,
     lotExpiresAt: expiresAt,
+    lotExpiry: expiresAt ? 'date' : 'none',
     lotIsAssigned: false,
+    lotSupplierLot: null,
     quantity: '10.0000',
     emptiedOn: null,
   };

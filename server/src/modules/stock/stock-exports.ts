@@ -7,7 +7,11 @@ import {
 } from '../../common/movement-reasons';
 import { dayIn, momentIn, todayIn, zonePlaceIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
-import type { ReorderRule, ReorderSource } from '../../database/schema';
+import type {
+  LotExpiry,
+  ReorderRule,
+  ReorderSource,
+} from '../../database/schema';
 import type { Translatable } from '../../i18n/translate';
 import { t, translate } from '../../i18n/translate';
 import type { ListMovementsDto } from './dto/list-movements.dto';
@@ -38,6 +42,66 @@ const REORDER_POINT = t({
   id: 'exports.column.reorderPoint',
   defaultMessage: 'Reorder point',
 });
+
+/** A lot's details, as a pile and a movement send them (ADR-094). */
+interface LotDetails {
+  lotExpiresAt: string | null;
+  lotExpiry: LotExpiry | null;
+  lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
+}
+
+/**
+ * A lot's details beside its code, as the screen marks a lot not yet
+ * finished (ADR-094, R5 and R9), for a row's lot, null with none:
+ * Supplier's lot, the supplier's own lot of a code made here, "Supplier's
+ * lot to add" until it is given, and empty for a code printed by the
+ * supplier, which is its own; then Expiry, the day, "Expiry to add" where
+ * it is not known yet, and empty for a lot that does not expire, as the
+ * glossary's Expires is.
+ */
+function lotDetailColumns<T>(
+  lotOf: (row: T) => LotDetails | null,
+): ExportColumn<T>[] {
+  return [
+    {
+      header: t({
+        id: 'exports.column.supplierLot',
+        defaultMessage: 'Supplier’s lot',
+      }),
+      value: (row, locale) => {
+        const lot = lotOf(row);
+        if (!lot) return null;
+        if (lot.lotSupplierLot !== null) return lot.lotSupplierLot;
+        return lot.lotIsAssigned
+          ? translate(
+              t({
+                id: 'exports.value.supplierLotToAdd',
+                defaultMessage: 'Supplier’s lot to add',
+              }),
+              locale,
+            )
+          : null;
+      },
+    },
+    {
+      header: HEADERS.expiry,
+      value: (row, locale) => {
+        const lot = lotOf(row);
+        if (!lot) return null;
+        return lot.lotExpiry === 'unknown'
+          ? translate(
+              t({
+                id: 'exports.value.expiryToAdd',
+                defaultMessage: 'Expiry to add',
+              }),
+              locale,
+            )
+          : lot.lotExpiresAt;
+      },
+    },
+  ];
+}
 
 /** A unit in the reader's words, "each", « unité », 个 (#473's 29). */
 function unitInWords<T extends { unitOfMeasure: string }>(): ExportColumn<T> {
@@ -136,14 +200,15 @@ export function stockCodeColumns(here: boolean): ExportColumn<StockCodeRow>[] {
 /**
  * The Lot view's export (ADR-093): a row per lot at each place, its place
  * named only for a reader who may see places (ADR-080), its unit in the
- * reader's words.
+ * reader's words; beside the lot, its supplier's lot and its expiry, each
+ * marked where it is still to add (ADR-094).
  */
 export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
   { header: HEADERS.item, value: (row) => row.productName },
   { header: VARIANT, value: (row) => row.variantName },
   { header: HEADERS.lot, value: (row) => row.lotCode },
-  { header: HEADERS.expiry, value: (row) => row.lotExpiresAt },
+  ...lotDetailColumns<StockLotRow>((row) => row),
   { header: HEADERS.location, value: (row) => row.locationName },
   asQuantity(HEADERS.quantity, (row) => row.quantity),
   unitInWords(),
@@ -310,7 +375,9 @@ export function movementLines(
  * (118a, 114); after Reason, the reason's code, never translated (138b);
  * From and To, each place
  * by its whole path, only for a reader who may see places, else no such
- * columns (ADR-080; 96a); For, the document, or the partner a sample
+ * columns (ADR-080; 96a); Lot, then its supplier's lot and its expiry,
+ * each marked where it is still to add, as the Lot view's (ADR-094); For,
+ * the document, or the partner a sample
  * went to or a receipt with no order came from, by name, only as the
  * reader may see it (55a; 125; ADR-094, R11); By with the person's email (ADR-063); the note last, as
  * typed (review 54).
@@ -484,7 +551,9 @@ export function movementColumns(options: {
         ]
       : []),
     { header: HEADERS.lot, value: of((movement) => movement.lotCode) },
-    { header: HEADERS.expiry, value: of((movement) => movement.lotExpiresAt) },
+    ...lotDetailColumns<MovementLine>((line) =>
+      'movement' in line && line.movement.lotId !== null ? line.movement : null,
+    ),
     {
       header: t({ id: 'exports.column.for', defaultMessage: 'For' }),
       value: of(
