@@ -211,7 +211,9 @@ function countedBy(
  * inbound, a lot is null for untracked variants, and an actor may be a
  * tombstone (ADR-012); an inner join would drop exactly the rows the
  * RESTRICT constraints exist to preserve. Two of them are the same table
- * aliased, because a transfer names both a source and a destination.
+ * aliased, because a transfer names both a source and a destination, and
+ * so are two more, a lot change naming the lot it leaves and the lot it
+ * enters (ADR-094).
  *
  * The item's names, today's code, its type and unit, each end's path and
  * the document are read for the page's rows alone, once it is taken
@@ -232,6 +234,7 @@ export async function movementPage(
   const card = cardOf(query);
   const from = alias(locations, 'from_location');
   const to = alias(locations, 'to_location');
+  const toLot = alias(lots, 'to_lot');
 
   const filters = [
     eq(stockMovements.organizationId, organizationId),
@@ -272,6 +275,7 @@ export async function movementPage(
       fromLocationId: stockMovements.fromLocationId,
       toLocationId: stockMovements.toLocationId,
       lotId: stockMovements.lotId,
+      toLotId: stockMovements.toLotId,
       actorId: stockMovements.actorId,
       createdAt: stockMovements.createdAt,
       change: sql<string>`${changeOf(
@@ -315,6 +319,8 @@ export async function movementPage(
       lotExpiry: lots.expiry,
       lotIsAssigned: lots.isAssigned,
       lotSupplierLot: lots.supplierLot,
+      toLotId: movement.toLotId,
+      toLotCode: toLot.code,
       // Who, by name with their email (ADR-063). An anonymised account
       // keeps its row and its name, Deleted User, and its address is a
       // placeholder, which no one should read as theirs (ADR-012).
@@ -350,6 +356,13 @@ export async function movementPage(
     .leftJoin(
       lots,
       and(eq(lots.id, movement.lotId), eq(lots.organizationId, organizationId)),
+    )
+    .leftJoin(
+      toLot,
+      and(
+        eq(toLot.id, movement.toLotId),
+        eq(toLot.organizationId, organizationId),
+      ),
     )
     .leftJoin(users, eq(users.id, movement.actorId))
     .orderBy(...inOrder(movement.createdAt, movement.id, order));
@@ -430,6 +443,8 @@ export async function movementPage(
         lotExpiry: row.lotExpiry,
         lotIsAssigned: row.lotIsAssigned,
         lotSupplierLot: row.lotSupplierLot,
+        toLotId: row.toLotId,
+        toLotCode: row.toLotCode,
         actorName: row.actorName,
         actorEmail: row.actorEmail,
         createdAt: row.createdAt,

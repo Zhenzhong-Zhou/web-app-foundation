@@ -6,14 +6,6 @@ import type { ProductType, ValuationKind } from '../../../database/schema';
  * amount is a decimal string, never a number (ADR-025).
  */
 
-/**
- * The kinds a value row is listed as. A lot change's rows (ADR-094) are in
- * the table, and no route writes one yet: they join this list with the
- * route that does, and with how a tab opened before meets the new value
- * (ADR-081).
- */
-export type ListedValuationKind = Exclude<ValuationKind, 'lot_change'>;
-
 /** One pool of stock: an item, or one lot of it. */
 export class ValuationPool {
   variantId!: string;
@@ -44,10 +36,10 @@ export class StockValuationEnvelope {
 /** One valuation row in a lot's history. */
 export class LotCostEntry {
   id!: string;
-  kind!: ListedValuationKind;
+  kind!: ValuationKind;
   /** The movement's reason; null for an opening balance. */
   reason!: string | null;
-  /** Signed: negative for stock leaving. */
+  /** Signed: negative for stock leaving, a lot change's row out too. */
   quantity!: string;
   value!: string;
   unitPrice!: string | null;
@@ -56,6 +48,13 @@ export class LotCostEntry {
   needsCost!: boolean;
   referenceType!: string | null;
   referenceId!: string | null;
+  /**
+   * A lot change's other lot (ADR-094): the lot its row out went to, or
+   * the lot its row in came from, none for stock from before lot
+   * tracking. Null for any other row.
+   */
+  otherLotId!: string | null;
+  otherLotCode!: string | null;
   createdAt!: Date;
 }
 
@@ -119,9 +118,14 @@ export class RunCostEnvelope {
 /** A valuation still waiting for a cost: the to-do list. */
 export class NeedsCostEntry {
   id!: string;
-  kind!: ListedValuationKind;
+  kind!: ValuationKind;
   /** The movement's reason; null for the opening balance. */
   reason!: string | null;
+  /**
+   * The movement's detail under its reason, as Movements sends it: for a
+   * lot change, `between_lots` (ADR-094). Null with none.
+   */
+  reasonDetail!: string | null;
   sku!: string;
   variantId!: string;
   /** The item's page, which its name opens (#296). */
@@ -134,6 +138,13 @@ export class NeedsCostEntry {
   coverFileId!: string | null;
   lotId!: string | null;
   lotCode!: string | null;
+  /**
+   * The lot a lot change's stock came from, which still waits for a cost
+   * (ADR-094, 3a): Stock value names it. Null for every other row, and
+   * for stock from before lot tracking.
+   */
+  fromLotId!: string | null;
+  fromLotCode!: string | null;
   quantity!: string;
   /** Set when a price is known but its rate is not. */
   unitPrice!: string | null;

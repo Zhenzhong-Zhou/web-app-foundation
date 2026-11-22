@@ -4,7 +4,8 @@ What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
 Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
 hold, what may be taken, stock found where it never was, a new lot at
-receipt, a lot's details corrected and lot tracking started, as ADR-093's Inventory branch
+receipt, a lot's details corrected, lot tracking started and stock moved
+to another lot, as ADR-093's Inventory branch
 completed it, its Movements branch grows it and ADR-094's lots at
 receipt grow it again. Each
 rule links the ADR that decided it, the test that proves it, the Help
@@ -872,6 +873,45 @@ file is kept is in the [README](README.md).
   lot.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "waits for a receipt begun before it, and puts that stock in the lot too (two at once)"
+
+## Moving stock to another lot
+
+- **Part of a lot at one place moves into another lot of the same item,
+  by whoever may correct counts,** stock.adjust, with a note saying
+  why: one of the item's lots, or a new one, its code typed as printed
+  or made for us. The stock stays at its place: one lot change, between
+  lots, counted in neither In nor Out for the code, its On hand, Held
+  and Free as before; with a lot chosen, Out of the first lot and In to
+  the second. More than the lot holds there, the lot itself, another
+  item's lot or another organization's, no lot and no note are each
+  refused, saying what to do, and nothing is written, a code made for
+  us using no number.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "moves part of a lot at one place into another of its lots, its value carried at the first lot’s average, both pools summing, the code’s figures as before (R20, Q1a)" ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "refuses more than is there, the same lot, another item’s lot, another organization’s lot or place, no lot, no note, and anyone without stock.adjust, writing nothing (R20, #314)"
+- **A new lot starts as the first lot is:** its expiry, and for a code
+  made for us its supplier's lot, unless the move gives either; a code
+  typed from the box takes no supplier's lot, being the supplier's own,
+  and one given for it is refused. A code the item has is chosen among
+  its lots, never typed again (the code `lot_code_in_use`).
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "makes the new lot, typed or made for us, starting with the first lot’s expiry and supplier’s lot unless given (R20, E7)"
+- **The value goes with the stock:** the first lot's share at its
+  average, out of its pool and into the other lot's, so Stock value is
+  the same. Where any of the first lot's stock still waits for a cost,
+  the stock moved waits too, listed in Waiting for a cost with the lot
+  it came from, and is costed on its own line; stock moved with its
+  whole cost takes none of its own.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [ADR-048, amended](../adr/0048-cost.md#amendment-november-2026--the-cost-on-a-lot-change-and-no-average-while-stock-waits-adr-094) ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "moves part of a lot at one place into another of its lots, its value carried at the first lot’s average, both pools summing, the code’s figures as before (R20, Q1a)" ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "marks the stock moved as waiting for a cost where some of the first lot’s waits, listed with the lot it came from, and costed on its own line (R20, 3a)"
+- **Movements names both lots of a lot change,** the lot it leaves and
+  the lot it enters, and each lot's cost history names the other; the
+  export reads "Lot changed: between lots".
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)"
 
 ## Counting in found stock
 

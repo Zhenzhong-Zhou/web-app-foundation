@@ -549,7 +549,21 @@ export class StockService {
       return lot;
     }
 
-    const incoming = input.lot!;
+    return this.newLot(tx, organizationId, variant, input.lot!);
+  }
+
+  /**
+   * A lot arriving with a movement (MovementLotDto): one the lot series
+   * makes for us, or a code typed as printed, created if new and else
+   * reused unless it must be new. Also the lot a move to another lot
+   * makes, which is always new (ADR-094, R20).
+   */
+  async newLot(
+    tx: Tx,
+    organizationId: string,
+    variant: { id: string; sku: string },
+    incoming: NonNullable<RecordMovementInput['lot']>,
+  ): Promise<{ id: string; code: string }> {
     const expiry = expiryOf(incoming);
 
     if (incoming.makeCode) {

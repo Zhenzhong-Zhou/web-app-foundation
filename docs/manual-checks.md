@@ -4002,11 +4002,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-093's Inventory does from 4 to 5: leave a third tab
-  on Inventory before the push. Back in it once the static site is out,
-  the amber banner asks it to reload (MC-3404); Reload, once: Inventory,
-  a row per code, and no banner, and switching away and back asks nothing
-  more.
+  API revision, as ADR-094's lots at receipt does from 5 to 6: leave a
+  third tab on Stock value before the push. Back in it once the static
+  site is out, the amber banner asks it to reload (MC-3404); Reload, once:
+  Stock value, its Waiting for a cost, and no banner, and switching away
+  and back asks nothing more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -7436,3 +7436,7 @@ first.
   with no lots, any of whose stock still waits for a cost waits for a
   cost too, where it took an average worked out over units at nothing:
   MC-322 extended.
+- 2026-11-22: ADR-094's move to another lot, R20: the API revision
+  raised to 6, since Stock value's Waiting for a cost and a lot's Cost
+  now list a lot change, which a tab opened before would misread:
+  MC-3424's raise now 5 to 6, a tab left on Stock value.

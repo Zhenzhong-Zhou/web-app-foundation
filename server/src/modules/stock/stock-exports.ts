@@ -2,6 +2,7 @@ import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import type { Locale } from '../../common/locales';
 import {
+  type LotChangeDetail,
   MOVEMENT_REASON_WORDS,
   type ReceiptDetail,
 } from '../../common/movement-reasons';
@@ -226,6 +227,22 @@ const RECEIPT_DETAIL_WORDS: Record<ReceiptDetail, Translatable> = {
 };
 
 /**
+ * Which lot change it was (ADR-094, 4a): the code's stock on hand put into
+ * its first lot as its lot tracking started (R16), or part of a lot moved
+ * into another (R20).
+ */
+const LOT_CHANGE_DETAIL_WORDS: Record<LotChangeDetail, Translatable> = {
+  lots_started: t({
+    id: 'stock.detail.lotsStarted',
+    defaultMessage: 'lots started',
+  }),
+  between_lots: t({
+    id: 'stock.detail.betweenLots',
+    defaultMessage: 'between lots',
+  }),
+};
+
+/**
  * What a correction says it was, chosen when the count is corrected, why
  * a receipt had no order, and which lot change it was, as the screen says
  * each after the reason; any other detail is written as recorded, free
@@ -238,12 +255,7 @@ const DETAIL_WORDS: Record<string, Translatable> = {
   lost: t({ id: 'stock.detail.lost', defaultMessage: 'lost' }),
   found: t({ id: 'stock.detail.found', defaultMessage: 'found' }),
   ...RECEIPT_DETAIL_WORDS,
-  // A lot change's: the code's stock on hand put into its first lot as
-  // its lot tracking started (ADR-094, R16).
-  lots_started: t({
-    id: 'stock.detail.lotsStarted',
-    defaultMessage: 'lots started',
-  }),
+  ...LOT_CHANGE_DETAIL_WORDS,
 };
 
 /**

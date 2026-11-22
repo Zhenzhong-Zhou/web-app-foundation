@@ -4521,6 +4521,46 @@
         ]
       }
     },
+    "/v1/stock/lots/{id}/lot-changes": {
+      "post": {
+        "operationId": "StockController_moveToLot_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveToLotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotChanged"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stock"
+        ]
+      }
+    },
     "/v1/stock/by-code": {
       "get": {
         "operationId": "StockGroupedController_byCode_v1",
@@ -10304,7 +10344,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.5",
+    "version": "1.6",
     "contact": {}
   },
   "tags": [],
@@ -16814,6 +16854,18 @@
               "null"
             ]
           },
+          "toLotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "actorName": {
             "type": [
               "string",
@@ -16903,6 +16955,8 @@
           "lotExpiry",
           "lotIsAssigned",
           "lotSupplierLot",
+          "toLotId",
+          "toLotCode",
           "actorName",
           "actorEmail",
           "createdAt",
@@ -17081,6 +17135,100 @@
             "type": "string"
           }
         }
+      },
+      "MoveToNewLotDto": {
+        "type": "object",
+        "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "makeCode": {
+            "type": "boolean"
+          },
+          "supplierLot": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        }
+      },
+      "MoveToLotDto": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "toLotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lot": {
+            "$ref": "#/components/schemas/MoveToNewLotDto"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "locationId",
+          "quantity",
+          "note"
+        ]
+      },
+      "MovedLot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code"
+        ]
+      },
+      "LotChanged": {
+        "type": "object",
+        "properties": {
+          "movement": {
+            "$ref": "#/components/schemas/RecordedMovement"
+          },
+          "fromLot": {
+            "$ref": "#/components/schemas/MovedLot"
+          },
+          "toLot": {
+            "$ref": "#/components/schemas/MovedLot"
+          },
+          "needsCost": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "movement",
+          "fromLot",
+          "toLot",
+          "needsCost"
+        ]
       },
       "StockHere": {
         "type": "object",
@@ -20228,6 +20376,7 @@
             "type": "string",
             "enum": [
               "issued",
+              "lot_change",
               "movement",
               "run_close",
               "correction",
@@ -20279,6 +20428,18 @@
               "null"
             ]
           },
+          "otherLotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "otherLotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -20296,6 +20457,8 @@
           "needsCost",
           "referenceType",
           "referenceId",
+          "otherLotId",
+          "otherLotCode",
           "createdAt"
         ]
       },
@@ -20510,6 +20673,7 @@
             "type": "string",
             "enum": [
               "issued",
+              "lot_change",
               "movement",
               "run_close",
               "correction",
@@ -20517,6 +20681,12 @@
             ]
           },
           "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reasonDetail": {
             "type": [
               "string",
               "null"
@@ -20569,6 +20739,18 @@
               "null"
             ]
           },
+          "fromLotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -20605,6 +20787,7 @@
           "id",
           "kind",
           "reason",
+          "reasonDetail",
           "sku",
           "variantId",
           "productId",
@@ -20614,6 +20797,8 @@
           "coverFileId",
           "lotId",
           "lotCode",
+          "fromLotId",
+          "fromLotCode",
           "quantity",
           "unitPrice",
           "currency",

@@ -127,6 +127,13 @@ export class Movement {
   lotIsAssigned!: boolean | null;
   /** The supplier's own lot, for a code made here (ADR-094, R5). */
   lotSupplierLot!: string | null;
+  /**
+   * The lot a lot change puts the stock into, `lotId` being the one it
+   * leaves, none as lot tracking starts (ADR-094): "LOT-A → LOT-B". Null
+   * for any other movement.
+   */
+  toLotId!: string | null;
+  toLotCode!: string | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
@@ -230,6 +237,30 @@ export class RecordedMovementEnvelope {
    * R3); null with no lot.
    */
   lotCode!: string | null;
+}
+
+/** One end of a move to another lot: a lot, by its code. */
+export class MovedLot {
+  id!: string;
+  code!: string;
+}
+
+/**
+ * POST /stock/lots/:id/lot-changes: part of a lot moved into another of
+ * the item's lots (ADR-094, R20), for the message to name both and the
+ * page to open both.
+ */
+export class LotChanged {
+  /** The lot change, as the ledger stores it; its lot is the one left. */
+  movement!: RecordedMovement;
+  fromLot!: MovedLot;
+  /** The lot it went into: one of the item's, or the one the write made. */
+  toLot!: MovedLot;
+  /**
+   * The stock moved waits for a cost in its new lot, since some of the
+   * first lot's still does (ADR-094, 3a), which the message says.
+   */
+  needsCost!: boolean;
 }
 
 /**

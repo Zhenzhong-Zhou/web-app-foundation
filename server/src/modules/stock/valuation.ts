@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
+import type { LotChangeDetail } from '../../common/movement-reasons';
 import { todayOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
 import { openNeedsCost } from '../costs/open-needs-cost';
@@ -68,10 +69,19 @@ export async function valueMovement(
   const inbound = movement.fromLocationId === null;
   const outbound = movement.toLocationId === null;
 
+  // The lot change that starts a code's lot tracking carries no value of
+  // its own: its value went into the lot with the pool and its rows,
+  // relabelled in the same transaction (ADR-094; LotTrackingService.start).
+  // Any other lot change carries its share from one pool into the other.
+  if (movement.reason === 'lot_change') {
+    if (movement.reasonDetail === ('lots_started' satisfies LotChangeDetail)) {
+      return false;
+    }
+    return valueLotChange(tx, organizationId, movement);
+  }
+
   // A transfer. The pool is not per location, so nothing about its value
-  // changed. So too the lot change that starts a code's lot tracking: its
-  // value went into the lot with the pool and its rows, relabelled in the
-  // same transaction (ADR-094; LotTrackingService.start).
+  // changed.
   if (!inbound && !outbound) return false;
 
   if (cost && movement.reason !== 'receipt') {
@@ -114,6 +124,84 @@ export async function valueMovement(
   `);
 
   return valued.needsCost;
+}
+
+/**
+ * A lot change carries the value its stock has today (ADR-094, Q1a): the
+ * first pool's share at its average, out of that pool and into the
+ * second, two value rows of their own. Where the first pool has stock
+ * still waiting for a cost, the row in waits too, carrying its share, so
+ * Stock value lists the moved stock and its cost can be given on its own
+ * line; the first pool's average is low while it waits, and the moved
+ * stock may be another run's anyway. A cost given later to the first
+ * receipt is not carried across (ADR-094, Deferred).
+ *
+ * Both pools are locked in the order of their lots, the one with none
+ * first, as the piles are (recordWithin): a move from A to B and one from
+ * B to A at two places at once would otherwise each hold one pool and wait
+ * for the other.
+ */
+async function valueLotChange(
+  tx: Tx,
+  organizationId: string,
+  movement: Movement,
+): Promise<boolean> {
+  const ends = [movement.lotId, movement.toLotId].sort((a, b) =>
+    (a ?? '').localeCompare(b ?? ''),
+  );
+  const pools = new Map<string | null, string>();
+  for (const lotId of ends) {
+    pools.set(
+      lotId,
+      await lockPool(tx, organizationId, movement.variantId, lotId),
+    );
+  }
+  const leaves = pools.get(movement.lotId)!;
+  const enters = pools.get(movement.toLotId)!;
+
+  const { value } = await takeFromPool(tx, leaves, movement.quantity);
+
+  const waiting = openNeedsCost(
+    organizationId,
+    sql`(${movement.variantId}::uuid)`,
+  );
+  const found = await tx.execute(sql`
+    select exists (
+      select 1
+      from (${waiting}) o
+      where o.lot_id is not distinct from ${movement.lotId}::uuid
+    ) as waits
+  `);
+  const needsCost = (found.rows[0] as { waits: boolean }).waits;
+
+  for (const [poolId, sign] of [
+    [leaves, -1],
+    [enters, 1],
+  ] as const) {
+    await tx.execute(sql`
+      update valuation_pools
+      set quantity = quantity + ${sign}::integer * ${movement.quantity}::numeric,
+          value = value + ${sign}::integer * ${value}::numeric
+      where id = ${poolId}::uuid
+    `);
+  }
+
+  await tx.execute(sql`
+    insert into stock_valuations
+      (organization_id, variant_id, lot_id, kind, movement_id, quantity, value,
+       needs_cost, actor_id)
+    values
+      (${organizationId}::uuid, ${movement.variantId}::uuid,
+       ${movement.lotId}::uuid, 'lot_change', ${movement.id}::uuid,
+       -${movement.quantity}::numeric, -${value}::numeric, false,
+       ${movement.actorId}::uuid),
+      (${organizationId}::uuid, ${movement.variantId}::uuid,
+       ${movement.toLotId}::uuid, 'lot_change', ${movement.id}::uuid,
+       ${movement.quantity}::numeric, ${value}::numeric, ${needsCost},
+       ${movement.actorId}::uuid)
+  `);
+
+  return needsCost;
 }
 
 /**

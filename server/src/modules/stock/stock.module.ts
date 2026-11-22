@@ -6,6 +6,7 @@ import { NotificationsModule } from '../../core/notifications/notifications.modu
 import { AdjustmentGuard } from './adjustment.guard';
 import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
+import { LotChangesService } from './lot-changes.service';
 import { LotTraceController } from './lot-trace.controller';
 import { LotTraceService } from './lot-trace.service';
 import { LotTrackingController } from './lot-tracking.controller';
@@ -54,6 +55,7 @@ import { WhereItStandsService } from './where-it-stands.service';
     WhereItStandsService,
     LotsService,
     LotTrackingService,
+    LotChangesService,
     AdjustmentGuard,
     LotTraceService,
     AvailabilityService,

@@ -16,6 +16,15 @@ export const RECEIPT_DETAILS = [
 export type ReceiptDetail = (typeof RECEIPT_DETAILS)[number];
 
 /**
+ * Which lot change a movement is (ADR-094, 4a), its detail: the code's
+ * stock on hand put into its first lot as its lot tracking starts, or
+ * part of a lot moved into another of the item's lots.
+ */
+export const LOT_CHANGE_DETAILS = ['lots_started', 'between_lots'] as const;
+
+export type LotChangeDetail = (typeof LOT_CHANGE_DETAILS)[number];
+
+/**
  * Why stock moved, in the words Movements' Reason column and its filter
  * use, the boards' (ADR-093, 100a), each with its capital as it stands
  * alone (136a): Movements' export and the Activity log read this one

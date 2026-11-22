@@ -1891,6 +1891,8 @@ export type Movement = {
   lotExpiry: 'unknown' | 'date' | 'none' | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
+  toLotId: string | null;
+  toLotCode: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
@@ -1939,6 +1941,34 @@ export type UpdateLotDto = {
   code?: string;
   supplierLot?: string;
   expiresAt?: string;
+};
+
+export type MoveToNewLotDto = {
+  expiry?: 'date' | 'unknown' | 'none';
+  code?: string;
+  makeCode?: boolean;
+  supplierLot?: string;
+  expiresAt?: string;
+};
+
+export type MoveToLotDto = {
+  locationId: string;
+  quantity: string;
+  toLotId?: string;
+  lot?: MoveToNewLotDto;
+  note: string;
+};
+
+export type MovedLot = {
+  id: string;
+  code: string;
+};
+
+export type LotChanged = {
+  movement: RecordedMovement;
+  fromLot: MovedLot;
+  toLot: MovedLot;
+  needsCost: boolean;
 };
 
 export type StockHere = {
@@ -2715,7 +2745,13 @@ export type StockValuationEnvelope = {
 
 export type LotCostEntry = {
   id: string;
-  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  kind:
+    | 'issued'
+    | 'lot_change'
+    | 'movement'
+    | 'run_close'
+    | 'correction'
+    | 'opening';
   reason: string | null;
   quantity: string;
   value: string;
@@ -2725,6 +2761,8 @@ export type LotCostEntry = {
   needsCost: boolean;
   referenceType: string | null;
   referenceId: string | null;
+  otherLotId: string | null;
+  otherLotCode: string | null;
   createdAt: string;
 };
 
@@ -2778,8 +2816,15 @@ export type RunCostEnvelope = {
 
 export type NeedsCostEntry = {
   id: string;
-  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  kind:
+    | 'issued'
+    | 'lot_change'
+    | 'movement'
+    | 'run_close'
+    | 'correction'
+    | 'opening';
   reason: string | null;
+  reasonDetail: string | null;
   sku: string;
   variantId: string;
   productId: string;
@@ -2789,6 +2834,8 @@ export type NeedsCostEntry = {
   coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
+  fromLotId: string | null;
+  fromLotCode: string | null;
   quantity: string;
   unitPrice: string | null;
   currency: string | null;
@@ -6333,6 +6380,22 @@ export type StockControllerUpdateLotV1Responses = {
 
 export type StockControllerUpdateLotV1Response =
   StockControllerUpdateLotV1Responses[keyof StockControllerUpdateLotV1Responses];
+
+export type StockControllerMoveToLotV1Data = {
+  body: MoveToLotDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/stock/lots/{id}/lot-changes';
+};
+
+export type StockControllerMoveToLotV1Responses = {
+  201: LotChanged;
+};
+
+export type StockControllerMoveToLotV1Response =
+  StockControllerMoveToLotV1Responses[keyof StockControllerMoveToLotV1Responses];
 
 export type StockGroupedControllerByCodeV1Data = {
   body?: never;

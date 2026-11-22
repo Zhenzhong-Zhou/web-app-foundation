@@ -18,6 +18,8 @@ const RECEIPT: LotCostEntry = {
   needsCost: false,
   referenceType: null,
   referenceId: null,
+  otherLotId: null,
+  otherLotCode: null,
   createdAt: '2026-10-01T15:00:00Z',
 };
 

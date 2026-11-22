@@ -32,15 +32,18 @@ import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
+import { MoveToLotDto } from './dto/move-to-lot.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
 import type {
   Lot,
+  LotChanged,
   MovementPage,
   MovementPeriod,
   RecordedMovementEnvelope,
   StockVariant,
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
+import { LotChangesService } from './lot-changes.service';
 import { LotsService } from './lots.service';
 import { cardOf, movementOf, type MovementSight } from './movement-view';
 import { StockService } from './stock.service';
@@ -68,6 +71,7 @@ export class StockController {
     private readonly stock: StockService,
     private readonly reads: StockReadsService,
     private readonly lots: LotsService,
+    private readonly lotChanges: LotChangesService,
     private readonly permissions: PermissionsService,
     private readonly audit: AuditService,
   ) {}
@@ -227,6 +231,28 @@ export class StockController {
       this.logger.error(`Audit write failed: ${String(error)}`);
       reportFault(error, { failed: 'an audit write' });
     }
+  }
+
+  /**
+   * Move to another lot (ADR-094, R20): part of a lot at one place into
+   * another of the item's lots, or a new one, for whoever may correct
+   * counts. A movement, recorded in the Activity log as every movement is.
+   */
+  @Post('lots/:id/lot-changes')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.STOCK_ADJUST)
+  @Audited({
+    action: AUDIT_ACTIONS.STOCK_MOVEMENT_RECORDED,
+    resourceType: 'stock_movement',
+    resourceId: (response: { movement: { id: string } }) =>
+      response.movement.id,
+  })
+  moveToLot(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MoveToLotDto,
+    @CurrentUser() user: RequestContext,
+  ): Promise<LotChanged> {
+    return this.lotChanges.move(id, dto, user.userId);
   }
 
   /**

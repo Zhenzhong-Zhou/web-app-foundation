@@ -270,14 +270,40 @@ interface Target {
   arrived_ms: number;
   reason: string | null;
   to_location_id: string | null;
+  /** Signed: a lot change's row out is negative. */
+  quantity: string;
+  needs_cost: boolean;
 }
 
 /**
  * Only an acquisition takes a cost. Everything else is valued from something
- * that already has one, and the message says what.
+ * that already has one, and the message says what. So too the stock a lot
+ * change moved in from a lot still waiting for a cost (ADR-094, 3a): it is
+ * costed on its own line, its row in marked as waiting, the flag never
+ * edited, so a cost set may be corrected again.
  */
 function assertAcquisition(target: Target): void {
   if (target.kind === 'opening') return;
+
+  if (target.kind === 'lot_change') {
+    if (target.quantity.startsWith('-')) {
+      throw new ConflictException(
+        t({
+          id: 'stock.stockGoingOutValued',
+          defaultMessage:
+            'Stock going out is valued at its pool’s average. Set the cost of what came in instead.',
+        }),
+      );
+    }
+    if (target.needs_cost) return;
+    throw new ConflictException(
+      t({
+        id: 'stock.lotChangeCarriesCost',
+        defaultMessage:
+          'Stock moved from another lot carries the cost it had there. Set the cost of what that lot received instead.',
+      }),
+    );
+  }
 
   if (target.kind === 'movement') {
     if (target.reason === 'receipt') return;
@@ -351,7 +377,7 @@ export async function correctCost(
   const found = await tx.execute(sql`
     select v.id, v.kind, v.variant_id, v.lot_id,
            (extract(epoch from v.created_at) * 1000)::float8 as arrived_ms,
-           m.reason, m.to_location_id
+           m.reason, m.to_location_id, v.quantity, v.needs_cost
     from stock_valuations v
     left join stock_movements m on m.id = v.movement_id
     where v.id = ${valuationId}::uuid
