@@ -87,7 +87,11 @@ export class StockController {
      * answers a different question with a different retention.
      */
     const recorded = await this.stock.record(dto, user.userId);
-    return { movement: movementOf(recorded), needsCost: recorded.needsCost };
+    return {
+      movement: movementOf(recorded),
+      needsCost: recorded.needsCost,
+      lotCode: recorded.lotCode,
+    };
   }
 
   @Get('movements')

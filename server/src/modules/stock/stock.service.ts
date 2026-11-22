@@ -7,9 +7,10 @@ import {
 import { and, eq, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { RECEIPT_DETAILS } from '../../common/movement-reasons';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
-import { MovementReason } from '../../database/schema';
+import type { LotExpiry, MovementReason } from '../../database/schema';
 import {
   locations,
   lots,
@@ -20,6 +21,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { takeLotCode } from '../numbering/lot-codes';
 import { assertTakeable } from './availability';
 import { PurchaseCost, valueMovement } from './valuation';
 
@@ -62,12 +64,19 @@ export interface RecordMovementInput {
   variantId: string;
   /** An existing lot. Mutually exclusive with `lot`. */
   lotId?: string | null;
-  /** A lot arriving with the shipment, created if its code is new. */
+  /**
+   * A new lot arriving with the movement (MovementLotDto): a code typed as
+   * printed, created if new and else reused unless `mustBeNew`, or one the
+   * lot series makes for it (ADR-094).
+   */
   lot?: {
-    code: string;
+    code?: string;
+    makeCode?: boolean;
+    mustBeNew?: boolean;
+    supplierLot?: string;
+    expiry?: LotExpiry;
     /** A calendar day, YYYY-MM-DD (ADR-052). */
     expiresAt?: string;
-    isAssigned?: boolean;
   } | null;
   fromLocationId?: string | null;
   toLocationId?: string | null;
@@ -78,7 +87,10 @@ export interface RecordMovementInput {
   /** Set by server-side callers — an order, a run, a shipment — never by a client. */
   referenceType?: string | null;
   referenceId?: string | null;
-  /** A sample's recipient; becomes a `partner` reference once checked. */
+  /**
+   * A sample's recipient, or whom a receipt with no order came from;
+   * becomes a `partner` reference once checked.
+   */
   recipientPartnerId?: string | null;
   note?: string | null;
   /**
@@ -178,6 +190,22 @@ export class StockService {
       );
     }
 
+    // Why a receipt has no order is one of its keys, translated when read,
+    // or none, as a tab opened before sends it (ADR-094, R11).
+    if (
+      input.reason === 'receipt' &&
+      input.reasonDetail != null &&
+      !(RECEIPT_DETAILS as readonly string[]).includes(input.reasonDetail)
+    ) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.receiptWhyUnknown',
+          defaultMessage:
+            'Choose why there is no order: opening stock, returned, a sample or other.',
+        }),
+      );
+    }
+
     const [variant] = await tx
       .select()
       .from(productVariants)
@@ -200,7 +228,8 @@ export class StockService {
         }),
       );
 
-    const lotId = await this.resolveLot(tx, organizationId, variant, input);
+    const lot = await this.resolveLot(tx, organizationId, variant, input);
+    const lotId = lot?.id ?? null;
 
     const reference = await this.referenceFor(tx, organizationId, input);
 
@@ -282,7 +311,8 @@ export class StockService {
 
     // Every movement is valued here, so value and quantity have one write
     // path between them (ADR-048). Whether it waits for a cost goes back
-    // with it, for the write to say (ADR-093, 90a).
+    // with it, for the write to say (ADR-093, 90a), and so does the lot's
+    // code, a made one among them (ADR-094, R3).
     const needsCost = await valueMovement(
       tx,
       organizationId,
@@ -294,7 +324,7 @@ export class StockService {
       `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,
     );
 
-    return { ...movement, needsCost };
+    return { ...movement, needsCost, lotCode: lot?.code ?? null };
   }
 
   /**
@@ -374,9 +404,10 @@ export class StockService {
 
   /**
    * Enforces the invariant from ADR-023 — a lot is present exactly when the
-   * variant tracks lots — and returns the id to use, creating the lot when one
-   * arrived with the shipment. Tracking may start for a variant that holds
-   * stock, never stop (ADR-094): from then on, its movements take a lot.
+   * variant tracks lots — and returns the lot to use, its id and its code,
+   * creating it when one arrived with the movement. Tracking may start for a
+   * variant that holds stock, never stop (ADR-094): from then on, its
+   * movements take a lot.
    *
    * A check constraint cannot see across tables, so this lives here and is
    * asserted in e2e. Without it a variant ends up with some lotted rows and
@@ -385,22 +416,29 @@ export class StockService {
    * Creating the lot here rather than through its own endpoint is deliberate:
    * a lot has no independent existence, it arrives printed on a box. A separate
    * call would leave an orphan row every time the movement then failed.
+   *
+   * What the lot is, the write says: one of the item's by its id, a code
+   * typed as printed, or one the lot series makes; and whether it must be
+   * new. Never the movement's reason (#649's 46).
    */
   private async resolveLot(
     tx: Tx,
     organizationId: string,
     variant: typeof productVariants.$inferSelect,
     input: RecordMovementInput,
-  ): Promise<string | null> {
+  ): Promise<{ id: string; code: string } | null> {
     const supplied = input.lotId ?? input.lot ?? null;
 
+    // A screen sends a lot exactly when the code tracks lots, as it read
+    // the code; one that sends none read it before its lot tracking
+    // started (ADR-094, R13), so it is told so, and how to give one.
     if (variant.tracksLots && !supplied) {
       throw new BadRequestException(
         t(
           {
-            id: 'stock.skuLotTrackedSo',
+            id: 'stock.lotTrackingStarted',
             defaultMessage:
-              '{sku} is lot tracked, so this movement needs a lot',
+              'Lot tracking has started for {sku}. Reload to give its lot.',
           },
           { sku: variant.sku },
         ),
@@ -436,7 +474,7 @@ export class StockService {
       // variant, and attaching another's would make a recall return the wrong
       // units.
       const [lot] = await tx
-        .select()
+        .select({ id: lots.id, code: lots.code })
         .from(lots)
         .where(
           and(
@@ -453,33 +491,76 @@ export class StockService {
             defaultMessage: 'Unknown lot for this variant',
           }),
         );
-      return lot.id;
+      return lot;
     }
 
     const incoming = input.lot!;
+    const expiry = expiryOf(incoming);
+
+    if (incoming.makeCode) {
+      if (incoming.code) {
+        throw new BadRequestException(
+          t({
+            id: 'stock.lotTypedOrMade',
+            defaultMessage:
+              'Type the lot number as printed, or make a code for us, not both.',
+          }),
+        );
+      }
+      return this.makeLot(tx, organizationId, variant.id, {
+        ...expiry,
+        supplierLot: incoming.supplierLot?.trim() || null,
+      });
+    }
+
+    if (!incoming.code) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.lotNumberMissing',
+          defaultMessage:
+            'Type the lot number as printed, or make a code for us.',
+        }),
+      );
+    }
+
+    // A typed code is the supplier's own, so it has no supplier's lot to
+    // add; one made for us carries it (ADR-094, R5).
+    if (incoming.supplierLot?.trim()) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.supplierLotForMadeCode',
+          defaultMessage:
+            'A lot number typed from the box is the supplier’s own. Leave the supplier’s lot empty, or make a code for us.',
+        }),
+      );
+    }
+
+    const typed = {
+      organizationId,
+      variantId: variant.id,
+      code: incoming.code,
+      ...expiry,
+      // Typed as printed: a code made up here is marked so in Edit lot
+      // details, by its own permission (ADR-094, R4 and R7).
+      isAssigned: false,
+    };
 
     /**
-     * Found stock counted into a new lot (ADR-093, 84a): the lot is made
-     * with the count, and a code the item already has is refused, since
-     * one of its lots is chosen by its id. Never reused, as a second
-     * delivery is: a count that merged into a lot nobody chose would put
-     * found units under another run's expiry. DO NOTHING writes nothing
-     * when the code is taken, so the refusal comes before any write.
+     * A lot the write must make, as Count it in's new lot (ADR-093, 84a):
+     * a code the item already has is refused, since one of its lots is
+     * chosen by its id. Never reused, as a second delivery is: a count
+     * that merged into a lot nobody chose would put found units under
+     * another run's expiry. DO NOTHING writes nothing when the code is
+     * taken, so the refusal comes before any write.
      */
-    if (input.reason === 'adjustment') {
+    if (incoming.mustBeNew) {
       const [made] = await tx
         .insert(lots)
-        .values({
-          organizationId,
-          variantId: variant.id,
-          code: incoming.code,
-          expiresAt: incoming.expiresAt ?? null,
-          isAssigned: incoming.isAssigned ?? false,
-        })
+        .values(typed)
         .onConflictDoNothing({
           target: [lots.organizationId, lots.variantId, lots.code],
         })
-        .returning({ id: lots.id });
+        .returning({ id: lots.id, code: lots.code });
 
       if (!made) {
         throw new ConflictException(
@@ -496,7 +577,7 @@ export class StockService {
           ),
         );
       }
-      return made.id;
+      return made;
     }
 
     /**
@@ -508,25 +589,52 @@ export class StockService {
      * this closes. Touching updated_at is a no-op write that returns the id in
      * one statement.
      *
-     * expiresAt is deliberately not updated: a later delivery of the same run
-     * does not get to rewrite the expiry of units already on the shelf.
+     * The expiry is deliberately not updated: a later delivery of the same
+     * run does not get to rewrite the expiry of units already on the shelf.
      */
     const [lot] = await tx
       .insert(lots)
-      .values({
-        organizationId,
-        variantId: variant.id,
-        code: incoming.code,
-        expiresAt: incoming.expiresAt ?? null,
-        isAssigned: incoming.isAssigned ?? false,
-      })
+      .values(typed)
       .onConflictDoUpdate({
         target: [lots.organizationId, lots.variantId, lots.code],
         set: { updatedAt: new Date() },
       })
-      .returning();
+      .returning({ id: lots.id, code: lots.code });
 
-    return lot.id;
+    return lot;
+  }
+
+  /**
+   * A lot made for us where the delivery shows no code (ADR-094, R3): its
+   * code taken from the lot series inside this transaction, as the write
+   * is saved, and the lot stored as made here (R4).
+   *
+   * Never merged into a lot of the same code: a code typed for this item by
+   * a write not yet committed is one the take cannot see (takeLotCode), so
+   * the insert waits for that write and, where it committed, takes the next
+   * number rather than add to its lot.
+   */
+  private async makeLot(
+    tx: Tx,
+    organizationId: string,
+    variantId: string,
+    lot: {
+      expiry: LotExpiry;
+      expiresAt: string | null;
+      supplierLot: string | null;
+    },
+  ): Promise<{ id: string; code: string }> {
+    for (;;) {
+      const code = await takeLotCode(tx, organizationId, variantId);
+      const [made] = await tx
+        .insert(lots)
+        .values({ organizationId, variantId, code, ...lot, isAssigned: true })
+        .onConflictDoNothing({
+          target: [lots.organizationId, lots.variantId, lots.code],
+        })
+        .returning({ id: lots.id, code: lots.code });
+      if (made) return made;
+    }
   }
 
   /**
@@ -671,8 +779,10 @@ export class StockService {
 
   /**
    * The movement's reference. Internal callers — orders, runs, shipments —
-   * pass their own; the public endpoint can only name a sample's recipient,
-   * which is checked against this organization before it is trusted.
+   * pass their own; the public endpoint can only name a partner: whom a
+   * sample went to, or whom a receipt with no order came from, kept as a
+   * sample's recipient is (ADR-094, R11), each checked against this
+   * organization before it is trusted.
    */
   private async referenceFor(
     tx: Tx,
@@ -686,11 +796,15 @@ export class StockService {
       };
     }
 
-    if (input.reason !== 'sample') {
+    const namesPartner =
+      input.reason === 'sample' ||
+      (input.reason === 'receipt' && !input.referenceType);
+    if (!namesPartner) {
       throw new BadRequestException(
         t({
-          id: 'stock.sampleRecipient',
-          defaultMessage: 'Only a sample has a recipient',
+          id: 'stock.partnerSampleOrReceipt',
+          defaultMessage:
+            'Only a sample or stock received with no order names a partner. Leave the partner out of this movement.',
         }),
       );
     }
@@ -708,11 +822,48 @@ export class StockService {
     if (!partner)
       throw new BadRequestException(
         t({
-          id: 'stock.unknownRecipient',
-          defaultMessage: 'Unknown recipient',
+          id: 'stock.unknownPartner',
+          defaultMessage:
+            'That partner is not in this organization. Choose one from the list.',
         }),
       );
 
     return { referenceType: 'partner', referenceId: partner.id };
   }
+}
+
+/**
+ * A new lot's expiry, one of three (ADR-094, R8): a day exactly for
+ * `date`, none for not known yet or none. A write that names no kind, as
+ * a tab opened before sends it, reads `date` with a day and `none`
+ * without, so today's lots with no day stay Doesn't expire.
+ */
+function expiryOf(lot: NonNullable<RecordMovementInput['lot']>): {
+  expiry: LotExpiry;
+  expiresAt: string | null;
+} {
+  const expiresAt = lot.expiresAt ?? null;
+  const expiry = lot.expiry ?? (expiresAt ? 'date' : 'none');
+
+  if (expiry === 'date' && !expiresAt) {
+    throw new BadRequestException(
+      t({
+        id: 'stock.lotExpiryNeedsDay',
+        defaultMessage:
+          'Give the day the lot expires, or say it is not known yet or that the lot doesn’t expire.',
+      }),
+    );
+  }
+
+  if (expiry !== 'date' && expiresAt) {
+    throw new BadRequestException(
+      t({
+        id: 'stock.lotExpiryTakesNoDay',
+        defaultMessage:
+          'A lot whose expiry is not known yet, or that doesn’t expire, takes no day. Remove the day, or say the lot expires on it.',
+      }),
+    );
+  }
+
+  return { expiry, expiresAt };
 }

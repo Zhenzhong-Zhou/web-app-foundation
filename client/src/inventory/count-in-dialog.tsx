@@ -224,8 +224,12 @@ export function CountInDialog({
       ? {}
       : form.which === 'new'
         ? {
+            // A new lot, never added to one of the same code: the server
+            // refuses a code the item has, since one of its lots is
+            // chosen by its id (ADR-093, 84a; #649's 46).
             lot: {
               code: form.code,
+              mustBeNew: true,
               expiresAt: form.expiresAt || undefined,
             },
           }

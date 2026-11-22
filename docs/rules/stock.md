@@ -3,9 +3,9 @@
 What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
 Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
-hold, what may be taken and stock found where it never was, as ADR-093's
-Inventory branch completed it
-and its Movements branch grows it. Each
+hold, what may be taken, stock found where it never was and a new lot
+at receipt, as ADR-093's Inventory branch completed it, its Movements
+branch grows it and ADR-094's lots at receipt grow it again. Each
 rule links the ADR that decided it, the test that proves it, the Help
 section where a person meets it, and the manual check that walks it by
 hand. Why a rule is so is in its ADR; how to do a task is in the
@@ -702,12 +702,63 @@ file is kept is in the [README](README.md).
   [test](../../server/test/reservations.e2e-spec.ts) "says who holds the stock in the reader’s language" ·
   MC-609
 
+## Receiving a new lot
+
+- **A new lot's code is typed as printed, or made for us when the write
+  is saved,** in Receive stock, an order's Receive and Count it in…. A
+  made code comes from the organization's lot series by its today,
+  `L-2026-11-21-1` and then `-2` by default; two writes at once never
+  share one, and a write refused uses none. The write answers with the
+  lot's code, for its message to name, and whether it waits for a cost.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--our-own-lot-codes-by-a-format-beside-document-numbering) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes a code for us when saved, stored as made here with the supplier’s lot as printed, one after another" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes two codes at once without sharing one"
+- **A made code is stored as made here, a typed one as printed,** never
+  as made here, whatever the movement's reason; a made code can be
+  corrected later, a printed one cannot.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--our-own-lot-codes-by-a-format-beside-document-numbering) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "stores a typed code as printed, never as made here" ·
+  [test](../../server/test/stock.e2e-spec.ts) "renames a code this organization invented" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses to rename a supplier-printed code"
+- **The supplier's lot goes with a made code alone,** as printed, its
+  case kept; a typed code is the supplier's own, so a write giving both
+  is refused, saying to leave the supplier's lot empty.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-suppliers-lot-beside-our-code) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes a code for us when saved, stored as made here with the supplier’s lot as printed, one after another" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a new lot it cannot read, saying what to do, and writes nothing"
+- **A new lot's expiry is a date, not known yet, or none,** with a day
+  exactly for a date, a write that contradicts it refused. A write
+  naming no kind, as a tab opened before sends it, reads a date with a
+  day and none without. A lot that exists keeps its expiry when more of
+  its code arrives.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "stores each of the three expiries, and a day alone or none as a tab opened before sends them" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a new lot it cannot read, saying what to do, and writes nothing"
+- **A receipt with no order says why: opening stock, returned, a sample
+  or other,** other with a note or without, or nothing, as a tab opened
+  before sends it; anything else is refused, naming the four. Movements'
+  export reads "Received: opening stock".
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-receipt-with-no-order-says-why-and-from-whom) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "a receipt with no order (R11)" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a why that is not one of them, saying the four, and writes nothing"
+- **A receipt with no order may name whom it came from,** a partner of
+  this organization, kept as a sample's recipient is and read under For
+  on Movements and in its export. Another organization's partner is
+  refused, and so is a partner on a count or on an order's receipt.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-receipt-with-no-order-says-why-and-from-whom) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "names who it came from, a partner of this organization alone, on the movement and in its export"
+- **A write with no lot for a code that tracks lots is refused,** saying
+  lot tracking has started for that code and to reload to give its lot:
+  a tab that sends none read the code before its tracking started.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "says lot tracking has started, to reload, where a write sends no lot"
+
 ## Counting in found stock
 
 - **Stock found where an item has never been is counted in by Correct
   the count,** its reason found: into any place that holds stock
   directly, and for an item tracked by lot, one of its lots or a new lot
-  made with the count, in the same write. It needs stock.adjust, as
+  made with the count, in the same write, its code typed or made for us. It needs stock.adjust, as
   every correction does, and a note. A place with places inside it is
   refused, as for every movement, and nothing is written.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
@@ -721,9 +772,13 @@ file is kept is in the [README](README.md).
 - **A new lot's code must be one the item does not have yet:** a code
   it has is refused, naming that lot, at the new lot's code (the code
   `lot_code_in_use`), before anything is written; one of its lots is
-  chosen as such. Receiving the same code again still adds to that lot.
+  chosen as such. Count it in says its lot must be new, which the write
+  says and its reason never does (#649's 46). Receiving the same code
+  again still adds to that lot.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--our-own-lot-codes-by-a-format-beside-document-numbering) ·
   [test](../../server/test/stock.e2e-spec.ts) "refuses a new lot whose code the item has, naming it at its field, and writes nothing" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "tells a new lot by what the write says, never by the movement’s reason" ·
   [test](../../client/src/inventory/count-in-dialog.test.tsx) "says a code the item has at the lot number, focused there" ·
   MC-322
 - **Found stock in a new lot, or of an item with no cost yet, waits for

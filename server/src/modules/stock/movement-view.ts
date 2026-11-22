@@ -79,7 +79,7 @@ export interface MovementSight {
   orders: boolean;
   /** `production.view`: the run it was issued to or made by (55a). */
   runs: boolean;
-  /** `partners.view`: a sample's recipient (125). */
+  /** `partners.view`: a sample's recipient, or a receipt's sender (125; ADR-094). */
   partners: boolean;
 }
 
@@ -722,11 +722,12 @@ async function documentsOf(
 }
 
 /**
- * Each sample's recipient, by the movement's id (125): the partner Send
- * sample recorded as its reference, which only a sample may carry,
- * checked against this organization when it was (ADR-042;
- * `referenceFor`), for the page's rows alone, and only for a reader with
- * partners.view. A sample with no recipient has none here.
+ * Each movement's partner, by the movement's id (125): the partner Send
+ * sample recorded as its reference, or the one a receipt with no order
+ * came from (ADR-094, R11), which only these two may carry, checked
+ * against this organization when it was (ADR-042; `referenceFor`), for
+ * the page's rows alone, and only for a reader with partners.view. A
+ * movement with no partner recorded has none here.
  */
 async function recipientsOf(
   tx: Tx,

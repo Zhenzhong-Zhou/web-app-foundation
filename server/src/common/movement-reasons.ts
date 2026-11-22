@@ -2,6 +2,20 @@ import type { MovementReason } from '../database/schema';
 import { t, type Translatable } from '../i18n/translate';
 
 /**
+ * Why stock was received with no order (ADR-094, R11), the receipt's
+ * detail: a key the screens translate, `other` with a note or without.
+ * Movements reads "Received: opening stock".
+ */
+export const RECEIPT_DETAILS = [
+  'opening',
+  'returned',
+  'sample',
+  'other',
+] as const;
+
+export type ReceiptDetail = (typeof RECEIPT_DETAILS)[number];
+
+/**
  * Why stock moved, in the words Movements' Reason column and its filter
  * use, the boards' (ADR-093, 100a), each with its capital as it stands
  * alone (136a): Movements' export and the Activity log read this one

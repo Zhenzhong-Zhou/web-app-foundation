@@ -219,11 +219,21 @@ export class AddedOrderLineEnvelope {
 /** The stock movement a receipt wrote (ADR-023). */
 export class ReceivedMovement {
   id!: string;
+  /** The lot it went into, which the message opens; null with none. */
+  lotId!: string | null;
 }
 
 /** POST /orders/:id/lines/:lineId/receipts. */
 export class ReceiptEnvelope {
   movement!: ReceivedMovement;
+  /** The receipt waits for a cost, as a line with no price does (ADR-048). */
+  needsCost!: boolean;
+  /**
+   * The lot's code, for the message to name: one made for us when the
+   * write was saved, which the receiver writes on the delivery (ADR-094,
+   * R3); null with no lot.
+   */
+  lotCode!: string | null;
 }
 
 /**

@@ -1817,9 +1817,12 @@ export type CancelledRun = {
 };
 
 export type MovementLotDto = {
-  code: string;
+  expiry?: 'date' | 'unknown' | 'none';
+  code?: string;
+  makeCode?: boolean;
+  mustBeNew?: boolean;
+  supplierLot?: string;
   expiresAt?: string;
-  isAssigned?: boolean;
 };
 
 export type RecordMovementDto = {
@@ -1846,6 +1849,7 @@ export type RecordMovementDto = {
 export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
   needsCost: boolean;
+  lotCode: string | null;
 };
 
 export type MovementDocument = {
@@ -3235,10 +3239,13 @@ export type ReceiveLineDto = {
 
 export type ReceivedMovement = {
   id: string;
+  lotId: string | null;
 };
 
 export type ReceiptEnvelope = {
   movement: ReceivedMovement;
+  needsCost: boolean;
+  lotCode: string | null;
 };
 
 export type ShipmentItem = {

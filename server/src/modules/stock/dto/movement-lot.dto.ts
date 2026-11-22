@@ -1,5 +1,7 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsIn,
   IsOptional,
   IsString,
   MaxLength,
@@ -9,17 +11,22 @@ import {
 import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 import { upper } from '../../../common/dto/upper';
+import { LOT_EXPIRIES, type LotExpiry } from '../../../database/schema';
 
 /**
- * A lot supplied with the movement rather than created beforehand.
+ * A new lot, made with the movement rather than beforehand (ADR-094): a
+ * code typed as printed, or one the organization's lot series makes for
+ * it when the write is saved. An existing lot is named by its id beside
+ * this, never here.
  *
- * Resolved by code inside the same transaction: a second delivery of lot
- * L2024-A finds the existing row rather than colliding on the unique index,
- * which is what "more units of the same run arrived" should mean.
+ * A typed code is resolved inside the same transaction: a second delivery
+ * of lot L2024-A finds the existing row rather than colliding on the
+ * unique index, which is what "more units of the same run arrived" should
+ * mean, unless the write says the lot must be new.
  */
 export class MovementLotDto {
   /**
-   * What the supplier printed, or this organization's own run number.
+   * What the supplier printed, typed as printed; absent with `makeCode`.
    *
    * Uppercased, because the unique index on (organization_id, variant_id,
    * code) is case-sensitive: without this, "l2024-a" and "L2024-A" are two
@@ -27,16 +34,58 @@ export class MovementLotDto {
    * Rows written before this stay as they were — the normalization applies to
    * what arrives, not to what is stored.
    */
+  @IsOptional()
   @trim()
   @upper()
   @IsString()
   @MinLength(1)
   @MaxLength(64)
-  code!: string;
+  code?: string;
 
   /**
-   * Absent for lots that do not expire — hardware, packaging, most equipment.
-   * Ignored when the lot already exists: a second delivery does not get to
+   * True where the delivery shows no code: the lot series makes one when
+   * the write is saved, inside its transaction, so two writes at once never
+   * share it and a write refused uses none (ADR-094, R3). The lot is stored
+   * as made here; a typed code is stored as printed (R4).
+   */
+  @IsOptional()
+  @IsBoolean()
+  makeCode?: boolean;
+
+  /**
+   * True where the write makes a lot and may not add to one: Count it in's
+   * new lot (ADR-093, 84a), where one of the item's lots is chosen by its
+   * id instead. A typed code the item has is then refused, never reused.
+   * Said by the write, never read from the movement's reason (#649's 46).
+   */
+  @IsOptional()
+  @IsBoolean()
+  mustBeNew?: boolean;
+
+  /**
+   * The supplier's own lot, as printed, its case kept (ADR-094, R5): only
+   * for a code made for us, since a typed code is the supplier's already.
+   * Empty reads as not known yet, to add later in Edit lot details.
+   */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(64)
+  supplierLot?: string;
+
+  /**
+   * Which expiry the new lot has (ADR-094, R8): `date`, the day in
+   * `expiresAt`; `unknown`, not known yet; or `none`. Absent, as a tab
+   * opened before sends it, it is `date` with a day and `none` without.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, required: false })
+  @IsOptional()
+  @IsIn([...LOT_EXPIRIES])
+  expiry?: LotExpiry;
+
+  /**
+   * The day it expires, exactly for an expiry `date`. Ignored when a typed
+   * code finds a lot that exists: a second delivery does not get to
    * rewrite the expiry of units already on the shelf, and the expiry is
    * corrected through PATCH /stock/lots/:id instead. A calendar day,
    * YYYY-MM-DD (ADR-052).
@@ -44,20 +93,4 @@ export class MovementLotDto {
   @IsOptional()
   @IsCalendarDay()
   expiresAt?: string;
-
-  /**
-   * False when the code is printed on something physical — a supplier's box,
-   * or a label already applied to a production run. True when nobody had a
-   * code and the receiver invented one, and for a run whose labels have not
-   * been applied yet.
-   *
-   * Two things turn on it. During a recall, a code nobody printed cannot be
-   * matched against a supplier's affected-lot list. And it decides whether the
-   * code can be corrected later: a printed code is authoritative, so a typo is
-   * fixed by moving stock between lots rather than renaming the row, while an
-   * invented one has no external truth behind it and a typo is just a typo.
-   */
-  @IsOptional()
-  @IsBoolean()
-  isAssigned?: boolean;
 }

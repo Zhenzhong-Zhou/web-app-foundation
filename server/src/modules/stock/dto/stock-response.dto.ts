@@ -23,7 +23,7 @@ export class StockRow {
   lotId!: string | null;
   lotCode!: string | null;
   lotExpiresAt!: string | null;
-  /** Whether the code was ours to invent (MovementLotDto). */
+  /** Whether the code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;
   /** numeric(18,4) as a string, never parsed into a number (ADR-025). */
   quantity!: string;
@@ -55,7 +55,10 @@ export class MovementDocument {
   number!: string | null;
 }
 
-/** A sample's recipient (ADR-042; 125): the partner, whose page opens. */
+/**
+ * The partner a movement names (ADR-042; 125): whom a sample went to, or
+ * whom a receipt with no order came from (ADR-094, R11), whose page opens.
+ */
 export class MovementRecipient {
   id!: string;
   name!: string;
@@ -129,10 +132,11 @@ export class Movement {
    */
   document!: MovementDocument | null;
   /**
-   * Whom a sample went to, as Send sample recorded it (125), which For
-   * names where a sale's names its order; null for any other movement, a
-   * sample with no recipient recorded, and a reader without
-   * `partners.view`, in the list and its export.
+   * Whom a sample went to, as Send sample recorded it (125), or whom a
+   * receipt with no order came from, kept as a sample's recipient is
+   * (ADR-094, R11), which For names where a sale's names its order; null
+   * for any other movement, one with no partner recorded, and a reader
+   * without `partners.view`, in the list and its export.
    */
   recipient!: MovementRecipient | null;
   /**
@@ -214,6 +218,12 @@ export class RecordedMovementEnvelope {
    * in an item with no cost yet, which its message says (ADR-093, 90a).
    */
   needsCost!: boolean;
+  /**
+   * The lot's code, for the message to name: one made for us when the
+   * write was saved, which the receiver writes on the delivery (ADR-094,
+   * R3); null with no lot.
+   */
+  lotCode!: string | null;
 }
 
 /**
@@ -237,7 +247,7 @@ export class Lot {
   id!: string;
   code!: string;
   expiresAt!: string | null;
-  /** True when the receiver invented the code (MovementLotDto). */
+  /** True when the code was made here, not printed (ADR-094). */
   isAssigned!: boolean;
 }
 

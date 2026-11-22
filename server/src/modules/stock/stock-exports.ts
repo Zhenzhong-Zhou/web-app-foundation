@@ -1,7 +1,10 @@
 import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import type { Locale } from '../../common/locales';
-import { MOVEMENT_REASON_WORDS } from '../../common/movement-reasons';
+import {
+  MOVEMENT_REASON_WORDS,
+  type ReceiptDetail,
+} from '../../common/movement-reasons';
 import { dayIn, momentIn, todayIn, zonePlaceIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
 import type { ReorderRule, ReorderSource } from '../../database/schema';
@@ -147,9 +150,21 @@ export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
 ];
 
 /**
- * What a correction says it was, chosen when the count is corrected, as
- * the screen says it after the reason; any other detail is written as
- * recorded, free text under its reason (ADR-023).
+ * Why stock was received with no order, as the screen says it after the
+ * reason, "Received: opening stock" (ADR-094, R11).
+ */
+const RECEIPT_DETAIL_WORDS: Record<ReceiptDetail, Translatable> = {
+  opening: t({ id: 'stock.detail.opening', defaultMessage: 'opening stock' }),
+  returned: t({ id: 'stock.detail.returned', defaultMessage: 'returned' }),
+  sample: t({ id: 'stock.detail.sample', defaultMessage: 'a sample' }),
+  other: t({ id: 'stock.detail.other', defaultMessage: 'other' }),
+};
+
+/**
+ * What a correction says it was, chosen when the count is corrected, and
+ * why a receipt had no order, as the screen says each after the reason;
+ * any other detail is written as recorded, free text under its reason
+ * (ADR-023).
  */
 const DETAIL_WORDS: Record<string, Translatable> = {
   miscount: t({ id: 'stock.detail.miscount', defaultMessage: 'miscount' }),
@@ -157,6 +172,7 @@ const DETAIL_WORDS: Record<string, Translatable> = {
   expired: t({ id: 'stock.detail.expired', defaultMessage: 'expired' }),
   lost: t({ id: 'stock.detail.lost', defaultMessage: 'lost' }),
   found: t({ id: 'stock.detail.found', defaultMessage: 'found' }),
+  ...RECEIPT_DETAIL_WORDS,
 };
 
 /**
@@ -294,8 +310,9 @@ export function movementLines(
  * (118a, 114); after Reason, the reason's code, never translated (138b);
  * From and To, each place
  * by its whole path, only for a reader who may see places, else no such
- * columns (ADR-080; 96a); For, the document, or a sample's recipient by
- * name, only as the reader may see it (55a; 125); By with the person's email (ADR-063); the note last, as
+ * columns (ADR-080; 96a); For, the document, or the partner a sample
+ * went to or a receipt with no order came from, by name, only as the
+ * reader may see it (55a; 125; ADR-094, R11); By with the person's email (ADR-063); the note last, as
  * typed (review 54).
  */
 export function movementColumns(options: {

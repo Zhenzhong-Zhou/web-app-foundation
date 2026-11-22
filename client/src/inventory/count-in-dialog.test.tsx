@@ -184,7 +184,7 @@ describe('CountInDialog, found stock', () => {
       {
         variantId: 'variant-c',
         toLocationId: 'loc-c3',
-        lot: { code: 'vc-0310' },
+        lot: { code: 'vc-0310', mustBeNew: true },
         quantity: '12',
         reason: 'adjustment',
         reasonDetail: 'found',

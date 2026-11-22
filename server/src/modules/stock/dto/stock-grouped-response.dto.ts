@@ -135,7 +135,7 @@ export class StockPile {
   lotId!: string | null;
   lotCode!: string | null;
   lotExpiresAt!: string | null;
-  /** Whether the code was ours to invent (MovementLotDto). */
+  /** Whether the code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;
   quantity!: string;
   /**

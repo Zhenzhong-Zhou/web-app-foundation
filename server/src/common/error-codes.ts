@@ -170,9 +170,10 @@ export const ERROR_CODES = {
    */
   stockNotUsable: 'stock_not_usable',
   /**
-   * Found stock counted into a new lot whose code the item already has
-   * (ADR-093, 84a): the message names the lot, and Correct the count
-   * marks the new lot's code, where one of its lots can be chosen instead.
+   * A new lot whose code the item already has, where the write says the
+   * lot must be new, as Count it in's does (ADR-093, 84a; ADR-094): the
+   * message names the lot, and Correct the count marks the new lot's
+   * code, where one of its lots can be chosen instead.
    */
   lotCodeInUse: 'lot_code_in_use',
 } as const;

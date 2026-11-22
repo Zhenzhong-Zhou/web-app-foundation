@@ -560,7 +560,9 @@ describe('Stock (e2e)', () => {
       function found(
         variantId: string,
         toLocationId: string,
-        lot: { lotId: string } | { lot: { code: string; expiresAt?: string } },
+        lot:
+          | { lotId: string }
+          | { lot: { code: string; mustBeNew?: true; expiresAt?: string } },
       ) {
         return {
           variantId,
@@ -590,7 +592,11 @@ describe('Stock (e2e)', () => {
           .post('/v1/stock/movements')
           .send(
             found(variant.id, shelf, {
-              lot: { code: 'vc-0310', expiresAt: '2027-06-30' },
+              lot: {
+                code: 'vc-0310',
+                mustBeNew: true,
+                expiresAt: '2027-06-30',
+              },
             }),
           )
           .expect(201);
@@ -665,7 +671,11 @@ describe('Stock (e2e)', () => {
 
         const refused = await agent
           .post('/v1/stock/movements')
-          .send(found(variant.id, shelf, { lot: { code: 'vc-0305' } }))
+          .send(
+            found(variant.id, shelf, {
+              lot: { code: 'vc-0305', mustBeNew: true },
+            }),
+          )
           .expect(409);
 
         expect(body<{ message: string; code: string }>(refused)).toEqual(
@@ -1485,12 +1495,15 @@ describe('Stock (e2e)', () => {
   });
 
   describe('PATCH /v1/stock/lots/:id', () => {
-    /** Receives stock and returns the lot row it created. */
+    /**
+     * Receives stock and returns the lot row it created: a code typed as
+     * printed, or one made for us, so made here (ADR-094, R4).
+     */
     async function receiveWithLot(
       ctx: Awaited<ReturnType<typeof setup>>,
-      lot: { code: string; expiresAt?: string; isAssigned?: boolean },
+      lot: { code: string; expiresAt?: string } | { makeCode: true },
     ) {
-      await ctx.agent
+      const res = await ctx.agent
         .post('/v1/stock/movements')
         .send({
           variantId: ctx.variant.id,
@@ -1501,12 +1514,13 @@ describe('Stock (e2e)', () => {
         })
         .expect(201);
 
-      // By code, not "the first row" — a test with two lots would otherwise
-      // get the same one twice and pass for the wrong reason.
+      // By the lot it went into, not "the first row" — a test with two lots
+      // would otherwise get the same one twice and pass for the wrong reason.
+      const { movement } = body<{ movement: { lotId: string } }>(res);
       const [row] = await db
         .select()
         .from(lots)
-        .where(eq(lots.code, lot.code.toUpperCase()));
+        .where(eq(lots.id, movement.lotId));
 
       return row;
     }
@@ -1516,7 +1530,6 @@ describe('Stock (e2e)', () => {
       const lot = await receiveWithLot(ctx, {
         code: 'L2026-A',
         expiresAt: '2027-01-01',
-        isAssigned: false,
       });
 
       /**
@@ -1535,13 +1548,11 @@ describe('Stock (e2e)', () => {
 
     it('renames a code this organization invented', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: '2062A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
+      expect(lot.isAssigned).toBe(true);
 
       // No label exists, so there is no external truth the row is disagreeing
-      // with. A typo is a typo.
+      // with. A typo is a typo, and a made code can be corrected (ADR-094, R4).
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
         .send({ code: '2026A' })
@@ -1553,10 +1564,7 @@ describe('Stock (e2e)', () => {
 
     it('refuses to rename a supplier-printed code', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: 'L2026-A',
-        isAssigned: false,
-      });
+      const lot = await receiveWithLot(ctx, { code: 'L2026-A' });
 
       /**
        * The code is on the boxes. Renaming the row would make the record
@@ -1576,11 +1584,8 @@ describe('Stock (e2e)', () => {
 
     it('refuses a rename onto a code that already exists', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      await receiveWithLot(ctx, { code: 'L2026-A', isAssigned: true });
-      const second = await receiveWithLot(ctx, {
-        code: 'L2026-B',
-        isAssigned: true,
-      });
+      await receiveWithLot(ctx, { code: 'L2026-A' });
+      const second = await receiveWithLot(ctx, { makeCode: true });
 
       // Merging two lots is a different operation with its own rules, not a
       // rename that happens to collide.
@@ -1592,10 +1597,7 @@ describe('Stock (e2e)', () => {
 
     it('uppercases a corrected code', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: '2062A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
 
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
@@ -1611,10 +1613,7 @@ describe('Stock (e2e)', () => {
     it('refuses a lot in another organization', async () => {
       const alpha = await setup('alpha', { tracksLots: true });
       const beta = await setup('beta', { tracksLots: true });
-      const lot = await receiveWithLot(beta, {
-        code: 'L2026-A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(beta, { makeCode: true });
 
       await alpha.agent
         .patch(`/v1/stock/lots/${lot.id}`)
@@ -1624,10 +1623,7 @@ describe('Stock (e2e)', () => {
 
     it('refuses a Viewer, which lacks stock.move', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: 'L2026-A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
       const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer

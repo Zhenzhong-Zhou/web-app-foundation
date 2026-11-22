@@ -16400,21 +16400,33 @@
       "MovementLotDto": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
           "code": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64
           },
+          "makeCode": {
+            "type": "boolean"
+          },
+          "mustBeNew": {
+            "type": "boolean"
+          },
+          "supplierLot": {
+            "type": "string",
+            "maxLength": 64
+          },
           "expiresAt": {
             "type": "string"
-          },
-          "isAssigned": {
-            "type": "boolean"
           }
-        },
-        "required": [
-          "code"
-        ]
+        }
       },
       "RecordMovementDto": {
         "type": "object",
@@ -16482,11 +16494,18 @@
           },
           "needsCost": {
             "type": "boolean"
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "movement",
-          "needsCost"
+          "needsCost",
+          "lotCode"
         ]
       },
       "MovementDocument": {
@@ -22269,10 +22288,17 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
-          "id"
+          "id",
+          "lotId"
         ]
       },
       "ReceiptEnvelope": {
@@ -22280,10 +22306,21 @@
         "properties": {
           "movement": {
             "$ref": "#/components/schemas/ReceivedMovement"
+          },
+          "needsCost": {
+            "type": "boolean"
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
-          "movement"
+          "movement",
+          "needsCost",
+          "lotCode"
         ]
       },
       "ShipmentItem": {

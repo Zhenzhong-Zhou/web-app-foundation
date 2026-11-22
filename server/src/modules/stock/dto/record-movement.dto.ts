@@ -74,7 +74,8 @@ export class RecordMovementDto {
   /**
    * "damaged", "expired", "miscount". Free text under a closed reason, because
    * damage and theft are the same operation and only the explanation differs
-   * (ADR-023).
+   * (ADR-023). A receipt's is why it has no order, one of RECEIPT_DETAILS,
+   * or none (ADR-094, R11).
    */
   @IsOptional()
   @trim()
@@ -83,9 +84,11 @@ export class RecordMovementDto {
   reasonDetail?: string;
 
   /**
-   * Who a sample went to. Sample only, and checked against this organization:
-   * a recipient is what a recall finds, so it cannot be free text or another
-   * tenant's partner (ADR-042).
+   * Who a sample went to, or who a receipt with no order came from, kept
+   * as a sample's recipient is (ADR-094, R11). A sample or a receipt only,
+   * and checked against this organization: a recipient is what a recall
+   * finds, and a sender what a lot traces to, so neither can be free text
+   * or another tenant's partner (ADR-042).
    *
    * Replaces the reference fields this DTO used to accept. References are
    * the server's to set — an order, a run, a shipment — and a client naming
