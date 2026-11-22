@@ -572,7 +572,7 @@ const GLOSSARY = [
   t({
     id: 'organization.export.glossary.lots',
     defaultMessage:
-      'lot_id, code, expires_at — a lot of goods, its code, and the day it expires. In lots.csv, is_assigned is true where the code was made here, as nothing printed one; supplier_lot is the supplier’s own lot for such a lot; note is tracking_started for the lot that took the stock on hand when the item started tracking lots.',
+      'lot_id, code, expires_at — a lot of goods, its code, and the day it expires. In lots.csv, expiry is date where expires_at holds that day, unknown where the day is not known yet, and none where the lot does not expire; is_assigned is true where the code was made here, as nothing printed one; supplier_lot is the supplier’s own lot for such a lot; note is tracking_started for the lot that took the stock on hand when the item started tracking lots.',
   }),
   t({
     id: 'organization.export.glossary.movements',

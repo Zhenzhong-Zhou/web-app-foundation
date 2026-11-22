@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 import {
   type Database,
@@ -1634,6 +1634,96 @@ describe('Stock (e2e)', () => {
         .patch(`/v1/stock/lots/${lot.id}`)
         .send({ expiresAt: '2027-06-30' })
         .expect(403);
+    });
+  });
+
+  /**
+   * Migration 0084's trigger, for the minute a deploy takes (ADR-094, Q5a).
+   * The release still serving knows nothing of expiry and names expires_at
+   * alone, so these write as it does, in its own columns, and read what
+   * expiry became; without the trigger, the check tying the two refuses
+   * each write.
+   */
+  describe("a lot's expiry, written as the release still serving writes it", () => {
+    type Ctx = Awaited<ReturnType<typeof setup>>;
+
+    /** A new lot, in the columns the release still serving names. */
+    async function insertedBefore(
+      ctx: Ctx,
+      code: string,
+      expiresAt: string | null,
+    ) {
+      const { rows } = await db.execute<{ id: string }>(sql`
+        insert into lots (organization_id, variant_id, code, expires_at, is_assigned)
+        values (${ctx.organizationId}, ${ctx.variant.id}, ${code}, ${expiresAt}, false)
+        returning id`);
+      return rows[0].id;
+    }
+
+    /** Its Edit, which sets the day alone. */
+    async function dayChangedBefore(id: string, expiresAt: string | null) {
+      await db.execute(
+        sql`update lots set expires_at = ${expiresAt} where id = ${id}`,
+      );
+    }
+
+    async function expiryOf(id: string) {
+      const [row] = await db
+        .select({ expiry: lots.expiry, expiresAt: lots.expiresAt })
+        .from(lots)
+        .where(eq(lots.id, id));
+      return row;
+    }
+
+    it('reads a dated new lot as dated', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+
+      const id = await insertedBefore(ctx, 'L2026-A', '2027-01-01');
+
+      expect(await expiryOf(id)).toEqual({
+        expiry: 'date',
+        expiresAt: '2027-01-01',
+      });
+    });
+
+    it('reads a day added to a lot that had none as dated', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const id = await insertedBefore(ctx, 'L2026-A', null);
+      expect((await expiryOf(id)).expiry).toBe('none');
+
+      await dayChangedBefore(id, '2027-06-30');
+
+      expect(await expiryOf(id)).toEqual({
+        expiry: 'date',
+        expiresAt: '2027-06-30',
+      });
+    });
+
+    it('reads a day taken from a dated lot as none', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const id = await insertedBefore(ctx, 'L2026-A', '2027-01-01');
+
+      await dayChangedBefore(id, null);
+
+      expect(await expiryOf(id)).toEqual({ expiry: 'none', expiresAt: null });
+    });
+
+    it('keeps an expiry not known yet as this release writes it, until a day is given', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const [lot] = await db
+        .insert(lots)
+        .values({
+          organizationId: ctx.organizationId,
+          variantId: ctx.variant.id,
+          code: 'L2026-A',
+          expiry: 'unknown',
+        })
+        .returning({ id: lots.id });
+      expect((await expiryOf(lot.id)).expiry).toBe('unknown');
+
+      await dayChangedBefore(lot.id, '2027-06-30');
+
+      expect((await expiryOf(lot.id)).expiry).toBe('date');
     });
   });
 });

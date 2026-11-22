@@ -12,6 +12,7 @@ erDiagram
     text code
     text supplier_lot
     date expires_at
+    text expiry
     timestamptz received_at
     boolean is_assigned
     text note

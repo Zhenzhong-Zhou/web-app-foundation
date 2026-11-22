@@ -26,6 +26,15 @@ export const LOT_NOTES = ['tracking_started'] as const;
 export type LotNote = (typeof LOT_NOTES)[number];
 
 /**
+ * What a lot's expiry is (ADR-094, R8): `date`, the day in expires_at;
+ * `unknown`, not known yet, so the lot stays usable and reads "Expiry to
+ * add"; or `none`, a lot that does not expire.
+ */
+export const LOT_EXPIRIES = ['date', 'unknown', 'none'] as const;
+
+export type LotExpiry = (typeof LOT_EXPIRIES)[number];
+
+/**
  * A specific production run of one variant — what a recall is issued against
  * and what an expiry date belongs to.
  *
@@ -70,12 +79,27 @@ export const lots = pgTable(
     supplierLot: text('supplier_lot'),
 
     /**
-     * Null for lots that do not expire — hardware, packaging, most equipment.
+     * The day the lot expires, set exactly when expiry is `date`; null for a
+     * lot whose expiry is not known yet, and for lots that do not expire —
+     * hardware, packaging, most equipment (ADR-094).
      * Date, not timestamp: an expiry is a calendar fact printed on a box, and
      * giving it a time of day invents precision the label does not have
      * (ADR-052). mode string, so '2026-10-10' never passes through a JS Date.
      */
     expiresAt: date('expires_at', { mode: 'string' }),
+
+    /**
+     * Which expiry the lot has, from LOT_EXPIRIES, so a date nobody knows
+     * yet no longer reads as none (ADR-094, R8). Lots from before read
+     * `date` where they had a day and `none` elsewhere.
+     *
+     * For now a trigger, lots_expiry_from_date (migration 0084), sets it from
+     * expires_at on every insert and update: the release still serving
+     * while a deploy goes on writes expires_at alone (Q5a). It is temporary,
+     * dropped by the first migration of the next branch, once every
+     * released write names both.
+     */
+    expiry: text('expiry').$type<LotExpiry>().notNull().default('none'),
 
     /**
      * When this lot physically arrived. Distinct from created_at, which is
@@ -136,6 +160,12 @@ export const lots = pgTable(
     check(
       'lots_note_check',
       sql`${t.note} is null or ${t.note} in ('tracking_started')`,
+    ),
+    check('lots_expiry_check', sql`${t.expiry} in ('date', 'unknown', 'none')`),
+    // A day exactly for a dated expiry: not known yet and none have none.
+    check(
+      'lots_expiry_date_check',
+      sql`(${t.expiresAt} is not null) = (${t.expiry} = 'date')`,
     ),
   ],
 );
