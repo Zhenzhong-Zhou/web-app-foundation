@@ -608,9 +608,10 @@ interface Target {
 /**
  * Only an acquisition takes a cost. Everything else is valued from something
  * that already has one, and the message says what. So too the stock a lot
- * change moved in, waiting or not (ADR-094, D5): the cost its first lot
- * waited for, or any given there later, follows it (spread), so a second one
- * typed on it could only disagree.
+ * change moved in, waiting or not (ADR-094, D5), from another lot or from
+ * before the code's lot tracking started: the cost its first pool waited
+ * for, or any given there later, follows it (spread), so a second one typed
+ * on it could only disagree.
  */
 function assertAcquisition(target: Target): void {
   if (target.kind === 'opening') return;
@@ -637,6 +638,16 @@ function assertAcquisition(target: Target): void {
         ),
       );
     }
+    // Come back from before the code's lot tracking started (ADR-094,
+    // Q3a): what it waits for is the cost of the delivery it came from,
+    // which follows it into the lot when given.
+    throw new ConflictException(
+      t({
+        id: 'stock.stockBackFromBefore',
+        defaultMessage:
+          'This stock came back from before lot tracking started. Give the cost of the delivery it came from, and it follows.',
+      }),
+    );
   }
 
   if (target.kind === 'movement') {

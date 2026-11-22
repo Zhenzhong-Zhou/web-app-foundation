@@ -386,9 +386,15 @@ async function purchased(
 }
 
 /**
- * The unit cost at which this pool's stock left on the given shipments,
- * applied to what is coming back. Null when none of it was valued — a
- * shipment from before valuation began.
+ * The unit cost at which this stock left on the given shipments, applied to
+ * what is coming back. Null when none of it was valued — a shipment from
+ * before valuation began.
+ *
+ * The shipments' movements are matched by their own lot, the one the stock
+ * comes back with, and the value taken from their value rows, whatever lot
+ * those carry now: stock shipped with no lot before its code's lot tracking
+ * started comes back with no lot, though its value rows have since taken
+ * the start lot's (ADR-094, Q3a).
  */
 async function shippedAt(
   tx: Tx,
@@ -406,7 +412,8 @@ async function shippedAt(
     where v.organization_id = ${organizationId}::uuid
       and v.kind = 'movement'
       and v.variant_id = ${movement.variantId}::uuid
-      and v.lot_id is not distinct from ${movement.lotId}::uuid
+      and m.organization_id = ${organizationId}::uuid
+      and m.lot_id is not distinct from ${movement.lotId}::uuid
       and m.reason = 'shipment'
       and m.reference_type = 'shipment'
       and m.reference_id in (${shipmentIds})

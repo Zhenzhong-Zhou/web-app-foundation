@@ -624,6 +624,7 @@
   "inventory.detail.found": "Found",
   "inventory.detail.lost": "Lost",
   "inventory.detail.miscount": "Miscount",
+  "inventory.detail.shipmentVoided": "Shipment voided",
   "inventory.emptyItem": "{name} has no stock yet.",
   "inventory.everywhere": "Everywhere",
   "inventory.filter.expired": "Expired",

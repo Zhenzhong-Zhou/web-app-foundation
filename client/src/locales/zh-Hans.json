@@ -624,6 +624,7 @@
   "inventory.detail.found": "盘盈",
   "inventory.detail.lost": "丢失",
   "inventory.detail.miscount": "计数错误",
+  "inventory.detail.shipmentVoided": "发货已作废",
   "inventory.emptyItem": "{name} 还没有库存。",
   "inventory.everywhere": "全部库位",
   "inventory.filter.expired": "已过期",

@@ -17,12 +17,33 @@ export type ReceiptDetail = (typeof RECEIPT_DETAILS)[number];
 
 /**
  * Which lot change a movement is (ADR-094, 4a), its detail: the code's
- * stock on hand put into its first lot as its lot tracking starts, or
- * part of a lot moved into another of the item's lots.
+ * stock on hand put into its first lot as its lot tracking starts, part
+ * of a lot moved into another of the item's lots, or stock come back as
+ * it left before the code's lot tracking started, a return or a voided
+ * shipment's goods, put into that first lot (Q3a).
  */
-export const LOT_CHANGE_DETAILS = ['lots_started', 'between_lots'] as const;
+export const LOT_CHANGE_DETAILS = [
+  'lots_started',
+  'between_lots',
+  'from_before',
+] as const;
 
 export type LotChangeDetail = (typeof LOT_CHANGE_DETAILS)[number];
+
+/**
+ * A voided shipment's goods back, an adjustment's detail (ADR-041): a key
+ * the screens translate, as a correction's are (#647).
+ */
+export const SHIPMENT_VOIDED = 'shipment_voided';
+
+/**
+ * A detail as stored, read as the key it means: until November 2026 a
+ * voided shipment's goods back were stored as the English text "shipment
+ * voided" (#647), so every reader sends that row as the key.
+ */
+export function detailOf(stored: string | null): string | null {
+  return stored === 'shipment voided' ? SHIPMENT_VOIDED : stored;
+}
 
 /**
  * Why stock moved, in the words Movements' Reason column and its filter

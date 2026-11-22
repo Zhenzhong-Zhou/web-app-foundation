@@ -313,7 +313,10 @@ file is kept is in the [README](README.md).
   a run, Sampled and Returned, never the Activity log's old Receipt or
   Shipment; a correction's detail, Miscount, Damaged, Expired, Lost or
   Found in Correct the count's Why, after a colon in lower case,
-  "Corrected: found", as a reason is inside the no-result line.
+  "Corrected: found", as a reason is inside the no-result line. A voided
+  shipment's goods back read "Corrected: shipment voided" in the
+  reader's language, the rows stored in English before November 2026
+  too (#647).
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#amendment-november-2026--movements-branch-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "lists each movement as one row: today’s code and the one it was recorded under, the lot, each place by its path" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "names the item first, its code and type grey under it, and reads the change with its unit" ·
@@ -324,9 +327,11 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/move-stock-dialog.test.tsx) "offers each Why with its capital" ·
   [test](../../client/src/products/where-it-stands.test.tsx) "lists the code’s latest movements as a stock card, with All movements of the code" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason in the screen’s words with its detail, and an end outside the warehouse in words" ·
+  [test](../../server/test/movements.e2e-spec.ts) "reads a voided shipment’s goods back by their key, one stored as English text too, in each language’s words (#647)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says a voided shipment’s goods back in Chinese, never in English" ·
   [test](../../server/src/core/audit/audit-words.spec.ts) "reads the reason in Movements’ words, in each language" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
-  MC-320
+  MC-320 · MC-R105
 - **Show 25 more adds the next movements below, and failing keeps the
   rows, with Try again;** Back from a row past the first page reads those
   pages again before they show, its row in focus.
@@ -873,6 +878,28 @@ file is kept is in the [README](README.md).
   lot.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "waits for a receipt begun before it, and puts that stock in the lot too (two at once)"
+- **Stock that left before the start comes back as it left, then into
+  the lot:** a return, an RMA's receipt and a voided shipment's goods
+  come back with no lot, then one lot change, from before lot tracking,
+  puts them into the lot that took the code's stock, at the cost they
+  left at. A return takes that part of a line by quantity, beside the
+  lots that shipped after, never more than shipped with no lot, each
+  refused saying what to do; the list of what may come back offers it
+  apart, with the lot it goes into. So what each lot shipped and what came back of it
+  still match. Where the code started with nothing on hand, the first of
+  it back makes that lot, made for us, noted the same, its expiry none.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "takes back a sale shipped before the start by quantity, with no lot as it left, then into the start lot, at the cost it left at (Q3a)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "receives an RMA’s goods shipped before the start the same way, held to what it authorized (Q3a)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "voids a shipment made before the start: its goods back with no lot, as they left, then into the start lot, at the cost they left at (Q3a, #647)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "makes the start lot with the first stock back where the code started with nothing on hand, and puts the rest back in it, at the cost it left at (Q4a)" ·
+  MC-614
+- **Stock back from before takes no cost of its own:** where what it
+  came from still waits for a cost, it waits too, and the cost given to
+  that delivery later follows it into the lot; one given to it is
+  refused, saying to cost the delivery it came from.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "carries a cost given later to stock back from before into its lot, which takes none by hand (Q3a, D5)"
 
 ## Moving stock to another lot
 

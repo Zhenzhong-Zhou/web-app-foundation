@@ -7,6 +7,7 @@ import {
 } from '../src/database/database.module';
 import {
   lots,
+  orderLines,
   productVariants,
   stockLevels,
   stockMovements,
@@ -26,7 +27,12 @@ import {
 import { order, output, receive, recipe, run } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
 import { said } from './utils/said';
-import { buy as bought, cad, expectBooksToReconcile } from './utils/valuation';
+import {
+  buy as bought,
+  cad,
+  expectBooksToReconcile,
+  poolOf,
+} from './utils/valuation';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
 type Agent = Org['agent'];
@@ -724,6 +730,520 @@ describe('Start tracking lots (e2e)', () => {
       { locationId: w.main, lotId: lot!.id, quantity: '110.0000' },
       { locationId: w.main, lotId: null, quantity: '0.0000' },
     ]);
+  });
+
+  /**
+   * Stock that left before the code's lot tracking started and comes back
+   * after (ADR-094, R19): a return and an RMA's receipt, a voided shipment,
+   * a run released before, each at the cost it left at (Q2a, Q3a); a code
+   * started with nothing on hand gets its start lot then (Q4a).
+   */
+  describe('what comes back from before (R19)', () => {
+    /** Shipped on the sale from one place; the shipment's id. */
+    async function shipOut(
+      w: World,
+      sale: { id: string; lineId: string },
+      at: string,
+      quantity: string,
+    ) {
+      return body<{ shipment: { id: string } }>(
+        await w.org.agent
+          .post(`/v1/orders/${sale.id}/shipments`)
+          .send({
+            fromLocationId: at,
+            lines: [{ lineId: sale.lineId, quantity }],
+          })
+          .expect(201),
+      ).shipment.id;
+    }
+
+    interface Returnable {
+      tracksLots: boolean;
+      quantityReturned: string;
+      lots: { lotId: string; shipped: string; returned: string }[];
+      fromBefore: {
+        shipped: string;
+        returned: string;
+        lotId: string | null;
+        lotCode: string | null;
+      } | null;
+    }
+
+    async function returnable(w: World, orderId: string) {
+      return body<Returnable[]>(
+        await w.org.agent
+          .get(`/v1/orders/${orderId}/returns/returnable`)
+          .expect(200),
+      );
+    }
+
+    function giveBack(
+      w: World,
+      orderId: string,
+      payload: Record<string, unknown>,
+    ) {
+      return w.org.agent.post(`/v1/orders/${orderId}/returns`).send(payload);
+    }
+
+    /** The code's movements of one reason, oldest first. */
+    async function moved(w: World, reason: string) {
+      return db
+        .select({
+          at: stockMovements.toLocationId,
+          lotId: stockMovements.lotId,
+          toLotId: stockMovements.toLotId,
+          quantity: stockMovements.quantity,
+          detail: stockMovements.reasonDetail,
+          referenceType: stockMovements.referenceType,
+        })
+        .from(stockMovements)
+        .where(
+          and(
+            eq(stockMovements.variantId, w.code),
+            eq(stockMovements.reason, reason as 'return'),
+          ),
+        )
+        .orderBy(stockMovements.createdAt, stockMovements.id);
+    }
+
+    /** A lot change's two value rows, out then in. */
+    async function lotChangeValues(w: World) {
+      return db
+        .select({
+          lotId: stockValuations.lotId,
+          quantity: stockValuations.quantity,
+          value: stockValuations.value,
+          needsCost: stockValuations.needsCost,
+        })
+        .from(stockValuations)
+        .where(
+          and(
+            eq(stockValuations.variantId, w.code),
+            eq(stockValuations.kind, 'lot_change'),
+          ),
+        )
+        .orderBy(stockValuations.id);
+    }
+
+    it('takes back a sale shipped before the start by quantity, with no lot as it left, then into the start lot, at the cost it left at (Q3a)', async () => {
+      const w = await world();
+      await buy(w, '100', '2.00', w.main);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '40');
+      // 30 leave at 2.00, with no lot; then 140 at 3.00 each.
+      await shipOut(w, sale, w.main, '30');
+      await buy(w, '70', '4.00', w.main);
+      const { lot } = await start(w);
+      // 5 of the lot at 3.00.
+      await shipOut(w, sale, w.main, '5');
+
+      const [line] = await returnable(w, sale.id);
+      expect(line).toMatchObject({
+        tracksLots: true,
+        lots: [{ lotId: lot!.id, shipped: '5.0000', returned: '0' }],
+        fromBefore: {
+          shipped: '30.0000',
+          returned: '0',
+          lotId: lot!.id,
+          lotCode: lot!.code,
+        },
+      });
+
+      // 10 from before and 2 of the lot, at the annex.
+      await giveBack(w, sale.id, {
+        toLocationId: w.annex,
+        lines: [
+          {
+            lineId: sale.lineId,
+            quantity: '10',
+            lots: [{ lotId: lot!.id, quantity: '2' }],
+          },
+        ],
+      }).expect(201);
+
+      expect(await moved(w, 'return')).toEqual([
+        expect.objectContaining({
+          at: w.annex,
+          lotId: null,
+          quantity: '10.0000',
+          referenceType: 'order_return',
+        }),
+        expect.objectContaining({
+          at: w.annex,
+          lotId: lot!.id,
+          quantity: '2.0000',
+        }),
+      ]);
+      expect(
+        (await moved(w, 'lot_change')).filter(
+          (each) => each.detail === 'from_before',
+        ),
+      ).toEqual([
+        {
+          at: w.annex,
+          lotId: null,
+          toLotId: lot!.id,
+          quantity: '10.0000',
+          detail: 'from_before',
+          referenceType: null,
+        },
+      ]);
+
+      // Its value follows by the lot change's rows: 10 at 2.00, as it left.
+      expect(await lotChangeValues(w)).toEqual([
+        {
+          lotId: null,
+          quantity: '-10.0000',
+          value: '-20.000000',
+          needsCost: false,
+        },
+        {
+          lotId: lot!.id,
+          quantity: '10.0000',
+          value: '20.000000',
+          needsCost: false,
+        },
+      ]);
+      // 140 at 420.00, less 5 at 3.00, the 2 back at 3.00, the 10 at 2.00.
+      expect(await poolOf(db, w.code, lot!.id)).toMatchObject({
+        quantity: '147.0000',
+        value: '431.000000',
+      });
+      expect(await piles(w.code)).toEqual(
+        expect.arrayContaining([
+          { locationId: w.annex, lotId: lot!.id, quantity: '12.0000' },
+          { locationId: w.annex, lotId: null, quantity: '0.0000' },
+        ]),
+      );
+      expect(await waiting(w)).toEqual([]);
+
+      const [after] = await returnable(w, sale.id);
+      expect(after).toMatchObject({
+        quantityReturned: '12.0000',
+        lots: [{ lotId: lot!.id, returned: '2.0000' }],
+        fromBefore: { shipped: '30.0000', returned: '10.0000' },
+      });
+
+      // Never more than shipped before, and nothing written.
+      const before = await moved(w, 'return');
+      const over = await giveBack(w, sale.id, {
+        toLocationId: w.annex,
+        lines: [{ lineId: sale.lineId, quantity: '21' }],
+      }).expect(409);
+      expect(message(over)).toBe(
+        said('en', 'orders.moreSkuFromBefore', {
+          sku: 'BOTTLE-A60',
+          shipped: '30.0000',
+          returned: '10.0000',
+        }),
+      );
+      expect(await moved(w, 'return')).toEqual(before);
+
+      // A sale shipped after the start alone takes no quantity.
+      const later = await order(w.org.agent, 'sale', w.customer, w.code, '3');
+      await shipOut(w, later, w.main, '3');
+      expect((await returnable(w, later.id))[0].fromBefore).toBeNull();
+      const byQuantity = await giveBack(w, later.id, {
+        toLocationId: w.annex,
+        lines: [{ lineId: later.lineId, quantity: '1' }],
+      }).expect(400);
+      expect(message(byQuantity)).toBe(
+        said('en', 'orders.skuTrackedLotSend', { sku: 'BOTTLE-A60' }),
+      );
+    });
+
+    it('receives an RMA’s goods shipped before the start the same way, held to what it authorized (Q3a)', async () => {
+      const w = await world();
+      await buy(w, '50', '2.00', w.main);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '20');
+      await shipOut(w, sale, w.main, '20');
+      // 30 at 2.00 and 50 at 6.00: 80 at 360.00.
+      await buy(w, '50', '6.00', w.main);
+      const { lot } = await start(w);
+
+      const rma = body<{ returnAuthorization: { id: string } }>(
+        await w.org.agent
+          .post('/v1/return-authorizations')
+          .send({
+            orderId: sale.id,
+            reason: 'Two cases arrived cracked',
+            lines: [
+              { lineId: sale.lineId, quantity: '4', resolution: 'credit' },
+            ],
+          })
+          .expect(201),
+      ).returnAuthorization;
+
+      const against = (quantity: string) =>
+        giveBack(w, sale.id, {
+          toLocationId: w.main,
+          returnAuthorizationId: rma.id,
+          lines: [{ lineId: sale.lineId, quantity }],
+        });
+      await against('4').expect(201);
+      await against('1').expect(409);
+
+      const { returnAuthorization } = body<{
+        returnAuthorization: { lines: { quantityReceived: string }[] };
+      }>(
+        await w.org.agent
+          .get(`/v1/return-authorizations/${rma.id}`)
+          .expect(200),
+      );
+      expect(returnAuthorization.lines[0].quantityReceived).toBe('4.0000');
+
+      // Back into the lot at 2.00, as it left.
+      expect(await poolOf(db, w.code, lot!.id)).toMatchObject({
+        quantity: '84.0000',
+        value: '368.000000',
+      });
+      expect(await piles(w.code)).toEqual(
+        expect.arrayContaining([
+          { locationId: w.main, lotId: lot!.id, quantity: '84.0000' },
+        ]),
+      );
+    });
+
+    it('voids a shipment made before the start: its goods back with no lot, as they left, then into the start lot, at the cost they left at (Q3a, #647)', async () => {
+      const w = await world();
+      await buy(w, '100', '2.00', w.main);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '20');
+      const shipmentId = await shipOut(w, sale, w.main, '20');
+      // 80 at 2.00 and 80 at 4.00: 160 at 480.00.
+      await buy(w, '80', '4.00', w.main);
+      const { lot } = await start(w);
+
+      await w.org.agent
+        .post(`/v1/orders/${sale.id}/shipments/${shipmentId}/void`)
+        .send({ reason: 'Recorded too early' })
+        .expect(204);
+
+      expect(await moved(w, 'adjustment')).toEqual([
+        {
+          at: w.main,
+          lotId: null,
+          toLotId: null,
+          quantity: '20.0000',
+          detail: 'shipment_voided',
+          referenceType: 'shipment',
+        },
+      ]);
+      expect(
+        (await moved(w, 'lot_change')).filter(
+          (each) => each.detail === 'from_before',
+        ),
+      ).toEqual([
+        expect.objectContaining({
+          at: w.main,
+          lotId: null,
+          toLotId: lot!.id,
+          quantity: '20.0000',
+        }),
+      ]);
+      expect(await poolOf(db, w.code, lot!.id)).toMatchObject({
+        quantity: '180.0000',
+        value: '520.000000',
+      });
+      expect(await piles(w.code)).toEqual(
+        expect.arrayContaining([
+          { locationId: w.main, lotId: lot!.id, quantity: '180.0000' },
+          { locationId: w.main, lotId: null, quantity: '0.0000' },
+        ]),
+      );
+      const [line] = await db
+        .select({ fulfilled: orderLines.quantityFulfilled })
+        .from(orderLines)
+        .where(eq(orderLines.id, sale.lineId));
+      expect(line.fulfilled).toBe('0.0000');
+
+      // Its detail is a key, read so on Movements (#647).
+      expect(
+        (await movements(w, { reason: 'adjustment' })).map(
+          (row) => row.reasonDetail,
+        ),
+      ).toEqual(['shipment_voided']);
+    });
+
+    it('closes a run released before its component started against the start lot at its place, at the lot’s cost, no other lot there taken (Q2a)', async () => {
+      const w = await world();
+      const focus = await createVariant(w.org.agent, {
+        type: 'good',
+        name: 'Focus',
+        variant: { sku: 'FOCUS', unitOfMeasure: 'each' },
+      });
+      await buy(w, '30', '2.00', w.main);
+      const bomId = await recipe(w.org.agent, focus, w.code, '1');
+      // 10 bottles issued to the annex with no lot.
+      const runId = await run(
+        w.org.agent,
+        { outputId: focus, bomId, locationId: w.annex, quantityPlanned: '10' },
+        w.main,
+      );
+      const { lot } = await start(w);
+      // Another lot at the annex, never given to the run.
+      await bought(
+        { agent: w.org.agent, supplier: w.supplier, shelf: w.annex },
+        w.code,
+        '5',
+        cad('9.00'),
+        { code: 'OTHER-1' },
+      );
+      await output(w.org.agent, runId, '10');
+
+      await w.org.agent
+        .post(`/v1/production-orders/${runId}/close`)
+        .send({})
+        .expect(200);
+
+      const consumed = await db
+        .select({
+          lotId: stockMovements.lotId,
+          quantity: stockMovements.quantity,
+        })
+        .from(stockMovements)
+        .where(
+          and(
+            eq(stockMovements.variantId, w.code),
+            eq(stockMovements.reason, 'consumption'),
+          ),
+        );
+      expect(consumed).toEqual([{ lotId: lot!.id, quantity: '10.0000' }]);
+      const other = await db
+        .select({ id: lots.id })
+        .from(lots)
+        .where(eq(lots.code, 'OTHER-1'));
+      expect(await piles(w.code)).toEqual(
+        expect.arrayContaining([
+          { locationId: w.annex, lotId: other[0].id, quantity: '5.0000' },
+          { locationId: w.annex, lotId: lot!.id, quantity: '0.0000' },
+        ]),
+      );
+
+      // 10 of the lot at 2.00 made the 10.
+      const cost = body<{
+        runCost: { materialCost: string; provisional: boolean };
+      }>(await w.org.agent.get(`/v1/costs/runs/${runId}`).expect(200)).runCost;
+      expect(cost).toMatchObject({
+        materialCost: '20.000000',
+        provisional: false,
+      });
+    });
+
+    it('makes the start lot with the first stock back where the code started with nothing on hand, and puts the rest back in it, at the cost it left at (Q4a)', async () => {
+      const w = await world();
+      await buy(w, '10', '2.00', w.main);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '10');
+      await shipOut(w, sale, w.main, '10');
+      expect(await start(w)).toEqual({ lot: null });
+
+      expect((await returnable(w, sale.id))[0].fromBefore).toEqual({
+        shipped: '10.0000',
+        returned: '0',
+        lotId: null,
+        lotCode: null,
+      });
+
+      const back = (quantity: string) =>
+        giveBack(w, sale.id, {
+          toLocationId: w.main,
+          lines: [{ lineId: sale.lineId, quantity }],
+        }).expect(201);
+      await back('4');
+
+      const made = await db
+        .select()
+        .from(lots)
+        .where(eq(lots.variantId, w.code));
+      expect(made).toHaveLength(1);
+      expect(made[0].code).toMatch(/^L-\d{4}-\d{2}-\d{2}-1$/);
+      expect(made).toEqual([
+        expect.objectContaining({
+          isAssigned: true,
+          note: 'tracking_started',
+          supplierLot: null,
+          expiry: 'none',
+          expiresAt: null,
+        }),
+      ]);
+      expect((await returnable(w, sale.id))[0].fromBefore).toEqual({
+        shipped: '10.0000',
+        returned: '4.0000',
+        lotId: made[0].id,
+        lotCode: made[0].code,
+      });
+
+      await back('2');
+      expect(
+        await db.select().from(lots).where(eq(lots.variantId, w.code)),
+      ).toHaveLength(1);
+      expect(await poolOf(db, w.code, made[0].id)).toMatchObject({
+        quantity: '6.0000',
+        value: '12.000000',
+      });
+      expect(await piles(w.code)).toEqual([
+        { locationId: w.main, lotId: made[0].id, quantity: '6.0000' },
+        { locationId: w.main, lotId: null, quantity: '0.0000' },
+      ]);
+    });
+
+    it('carries a cost given later to stock back from before into its lot, which takes none by hand (Q3a, D5)', async () => {
+      const w = await world();
+      // Received with no price, then all of it sold at nothing.
+      await receive(w.org.agent, w.code, w.main, '10');
+      const [receipt] = await waiting(w);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '10');
+      await shipOut(w, sale, w.main, '10');
+      await start(w);
+
+      await giveBack(w, sale.id, {
+        toLocationId: w.main,
+        lines: [{ lineId: sale.lineId, quantity: '4' }],
+      }).expect(201);
+      const [made] = await db
+        .select()
+        .from(lots)
+        .where(eq(lots.variantId, w.code));
+
+      // The stock back waits with what it came from.
+      const listed = await waiting(w);
+      expect(listed).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: receipt.id, lotId: null }),
+          expect.objectContaining({ lotId: made.id }),
+        ]),
+      );
+      expect(listed).toHaveLength(2);
+      const backIn = listed.find((entry) => entry.lotId === made.id)!;
+
+      const refused = await w.org.agent
+        .put(`/v1/costs/valuations/${backIn.id}`)
+        .send({ unitPrice: '1.00', currency: 'CAD' })
+        .expect(409);
+      expect(message(refused)).toBe(said('en', 'stock.stockBackFromBefore'));
+
+      // The delivery costed: 4 of its 10 came back into the lot.
+      const { cost } = body<{
+        cost: {
+          held: string;
+          issued: string;
+          followed: { lotId: string; lotCode: string; value: string }[];
+        };
+      }>(
+        await w.org.agent
+          .put(`/v1/costs/valuations/${receipt.id}`)
+          .send({ unitPrice: '1.00', currency: 'CAD' })
+          .expect(200),
+      );
+      expect(cost).toMatchObject({
+        held: '0.000000',
+        issued: '6.000000',
+        followed: [{ lotId: made.id, lotCode: made.code, value: '4.000000' }],
+      });
+      expect(await poolOf(db, w.code, made.id)).toMatchObject({
+        quantity: '4.0000',
+        value: '4.000000',
+      });
+      expect(await waiting(w)).toEqual([]);
+    });
   });
 
   function message(res: Parameters<typeof body>[0]): string {

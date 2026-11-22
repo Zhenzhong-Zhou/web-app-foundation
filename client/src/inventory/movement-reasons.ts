@@ -43,12 +43,20 @@ const REASONS = defineMessages({
   return: { id: 'inventory.reason.return', defaultMessage: 'Returned' },
 });
 
+/**
+ * A correction's details by name, and a voided shipment's goods back,
+ * the server's `shipment_voided`, which no one chooses (#647).
+ */
 const DETAILS = defineMessages({
   miscount: { id: 'inventory.detail.miscount', defaultMessage: 'Miscount' },
   damaged: { id: 'inventory.detail.damaged', defaultMessage: 'Damaged' },
   expired: { id: 'inventory.detail.expired', defaultMessage: 'Expired' },
   lost: { id: 'inventory.detail.lost', defaultMessage: 'Lost' },
   found: { id: 'inventory.detail.found', defaultMessage: 'Found' },
+  shipment_voided: {
+    id: 'inventory.detail.shipmentVoided',
+    defaultMessage: 'Shipment voided',
+  },
 });
 
 /**

@@ -23547,6 +23547,35 @@
           "returned"
         ]
       },
+      "ReturnableFromBefore": {
+        "type": "object",
+        "properties": {
+          "shipped": {
+            "type": "string"
+          },
+          "returned": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "shipped",
+          "returned",
+          "lotId",
+          "lotCode"
+        ]
+      },
       "ReturnableLine": {
         "type": "object",
         "properties": {
@@ -23573,6 +23602,16 @@
             "items": {
               "$ref": "#/components/schemas/ReturnableLot"
             }
+          },
+          "fromBefore": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnableFromBefore"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -23582,7 +23621,8 @@
           "tracksLots",
           "quantityFulfilled",
           "quantityReturned",
-          "lots"
+          "lots",
+          "fromBefore"
         ]
       },
       "ReturnLotDto": {

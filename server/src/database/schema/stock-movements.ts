@@ -34,7 +34,8 @@ export const MOVEMENT_REASONS = [
   'sample', // out, not sold
   'return', // in, from a customer
   // At one place, from one lot of the item into another: none into the
-  // first lot when tracking starts, or part of a lot into another (ADR-094).
+  // first lot when tracking starts, or as stock from before comes back, or
+  // part of a lot into another (ADR-094).
   // Counted neither in nor out, as a transfer across every place is.
   'lot_change',
 ] as const;

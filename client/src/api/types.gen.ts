@@ -3493,6 +3493,13 @@ export type ReturnableLot = {
   returned: string;
 };
 
+export type ReturnableFromBefore = {
+  shipped: string;
+  returned: string;
+  lotId: string | null;
+  lotCode: string | null;
+};
+
 export type ReturnableLine = {
   lineId: string;
   sku: string;
@@ -3501,6 +3508,7 @@ export type ReturnableLine = {
   quantityFulfilled: string;
   quantityReturned: string;
   lots: Array<ReturnableLot>;
+  fromBefore: ReturnableFromBefore | null;
 };
 
 export type ReturnLotDto = {

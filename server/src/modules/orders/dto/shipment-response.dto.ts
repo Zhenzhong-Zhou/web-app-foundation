@@ -132,6 +132,23 @@ export class ReturnableLot {
   returned!: string;
 }
 
+/**
+ * What of a tracked line shipped with no lot, before its code's lot
+ * tracking started, and how much of it has come back (ADR-094, Q3a): it
+ * comes back by quantity, into the lot named here.
+ */
+export class ReturnableFromBefore {
+  shipped!: string;
+  returned!: string;
+  /**
+   * The lot it goes into: the one that took the code's stock as its lot
+   * tracking started. Null where the code started with nothing on hand:
+   * that lot is made for us when the first of it comes back.
+   */
+  lotId!: string | null;
+  lotCode!: string | null;
+}
+
 /** One shipped line, as the return dialog offers it. */
 export class ReturnableLine {
   lineId!: string;
@@ -142,4 +159,9 @@ export class ReturnableLine {
   quantityReturned!: string;
   /** Only lots that shipped on this order; empty when untracked. */
   lots!: ReturnableLot[];
+  /**
+   * What shipped with no lot before the code's lot tracking started; null
+   * where none did, and for a code not tracked, which returns by quantity.
+   */
+  fromBefore!: ReturnableFromBefore | null;
 }

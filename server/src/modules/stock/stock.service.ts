@@ -7,7 +7,10 @@ import {
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
-import { RECEIPT_DETAILS } from '../../common/movement-reasons';
+import {
+  type LotChangeDetail,
+  RECEIPT_DETAILS,
+} from '../../common/movement-reasons';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import type { LotExpiry, LotNote, MovementReason } from '../../database/schema';
@@ -23,6 +26,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { takeLotCode } from '../numbering/lot-codes';
 import { assertTakeable } from './availability';
+import { startLotsOf, TRACKING_STARTED } from './start-lot';
 import { PurchaseCost, valueMovement } from './valuation';
 
 /**
@@ -73,6 +77,16 @@ export interface RecordMovementInput {
    * server-side callers alone, as the movements route takes no lot change.
    */
   toLotId?: string | null;
+  /**
+   * Stock coming back as it left, with no lot (ADR-094, Q3a): a return, or
+   * a voided shipment's goods. Where the code has tracked lots since it
+   * left, it is written so, the one movement of a tracked code with no
+   * lot, and a lot change, `from_before`, then puts it into the lot that
+   * took the code's stock as its tracking started, made then if the code
+   * started with nothing on hand (Q4a). Set by the server's own callers
+   * alone: the movements route's DTO does not declare it.
+   */
+  fromBefore?: boolean;
   /**
    * A new lot arriving with the movement (MovementLotDto): a code typed as
    * printed, created if new and else reused unless `mustBeNew`, or one the
@@ -252,9 +266,27 @@ export class StockService {
       input.reason === 'lot_change'
         ? await this.lotChangeEnds(tx, organizationId, variant, input)
         : null;
+
+    // Stock that left with no lot before the code's lot tracking started
+    // comes back so, then into the code's start lot (ADR-094, Q3a): found,
+    // or made, before any pile is locked.
+    const before =
+      !ends &&
+      input.fromBefore === true &&
+      variant.tracksLots &&
+      !input.lotId &&
+      !input.lot
+        ? await this.startLot(tx, organizationId, variant.id)
+        : null;
+    if (before && !direction.to) {
+      throw new Error('Stock from before lot tracking comes back to a place');
+    }
+
     const lot = ends
       ? ends.enters
-      : await this.resolveLot(tx, organizationId, variant, input);
+      : before
+        ? null
+        : await this.resolveLot(tx, organizationId, variant, input);
     const lotId = ends ? ends.leaves : (lot?.id ?? null);
 
     const reference = await this.referenceFor(tx, organizationId, input);
@@ -369,6 +401,26 @@ export class StockService {
       `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,
     );
 
+    // Its value, the cost it left at, follows by the lot change's rows, out
+    // of the pool with no lot into the start lot's (valueMovement).
+    if (before) {
+      await this.recordWithin(
+        tx,
+        organizationId,
+        {
+          variantId: variant.id,
+          lotId: null,
+          toLotId: before.id,
+          fromLocationId: direction.to,
+          toLocationId: direction.to,
+          quantity: input.quantity,
+          reason: 'lot_change',
+          reasonDetail: 'from_before' satisfies LotChangeDetail,
+        },
+        actorId,
+      );
+    }
+
     return { ...movement, needsCost, lotCode: lot?.code ?? null };
   }
 
@@ -462,7 +514,9 @@ export class StockService {
    * variant tracks lots — and returns the lot to use, its id and its code,
    * creating it when one arrived with the movement. Tracking may start for a
    * variant that holds stock, never stop (ADR-094): from then on, its
-   * movements take a lot.
+   * movements take a lot, all but stock coming back as it left before,
+   * which recordWithin writes with no lot, never reaching here, and moves
+   * into the start lot in the same transaction (`fromBefore`, Q3a).
    *
    * A check constraint cannot see across tables, so this lives here and is
    * asserted in e2e. Without it a variant ends up with some lotted rows and
@@ -750,6 +804,42 @@ export class StockService {
         .returning({ id: lots.id, code: lots.code });
       if (made) return made;
     }
+  }
+
+  /**
+   * The code's start lot, for stock coming back from before its lot
+   * tracking started (ADR-094, Q4a): the lot that took its stock on hand,
+   * found by its note, or, where the code started with nothing on hand,
+   * one made for us now, noted the same, with the first stock back. Its
+   * expiry is none, as a start's is when nothing is said, so the stock
+   * reads as it did before; its supplier's lot is to add.
+   *
+   * Two at once would each make one, so the second waits on the code's own
+   * lock, then finds the first's; the lock is taken only where none is
+   * found, and never the code's row, which every movement holds `for share`.
+   */
+  private async startLot(
+    tx: Tx,
+    organizationId: string,
+    variantId: string,
+  ): Promise<{ id: string; code: string }> {
+    const found = async () =>
+      (await startLotsOf(tx, organizationId, [variantId])).get(variantId);
+
+    const lot = await found();
+    if (lot) return lot;
+
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`start-lot:${variantId}`}, 0))`,
+    );
+    return (
+      (await found()) ??
+      (await this.makeLot(tx, organizationId, variantId, {
+        ...expiryOf({}),
+        supplierLot: null,
+        note: TRACKING_STARTED,
+      }))
+    );
   }
 
   /**

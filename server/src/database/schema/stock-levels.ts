@@ -57,7 +57,9 @@ export const stockLevels = pgTable(
      *
      * Tracking may start later, never stop (ADR-094): a lot change then puts
      * each place's stock with no lot into the first lot, and the row with no
-     * lot stays, at 0.
+     * lot stays, at 0. Stock that left before and comes back passes through
+     * it, in by its return and out by a lot change into that lot, in one
+     * transaction (Q3a).
      */
     lotId: uuid('lot_id').references(() => lots.id, { onDelete: 'restrict' }),
 

@@ -957,6 +957,13 @@ a second organization.
   tile opens Licences with Licences expiring pressed, one name for both.
   In Français they read Licences qui expirent and Expirées; in 中文,
   即将到期的许可证 and 已过期.
+- **MC-513** *(ADR-094, R19; Q2a)* A run released before its component
+  tracked lots. Release a run whose component does not track lots, from
+  another place than the run's, then on the component's item page start
+  tracking its lots. Close the run: it closes, its component consumed
+  from the lot made at the start, at the run's place, and from no other
+  lot there; the run's cost panel shows the component at that lot's
+  cost.
 
 ## 6. Selling
 
@@ -991,6 +998,16 @@ a second organization.
   5 units back on SO-DEMO-1).
 - **MC-613** Duplicate a sale: a new draft with the same lines and the same
   prices, whatever the price list says now (ADR-049).
+- **MC-614** *(ADR-094, R19; Q3a, Q4a)* What comes back from before lot
+  tracking. Ship part of a sale of an item that does not track lots, ship
+  another part, then start tracking the item's lots. Return some of the
+  first part: the return offers it by quantity, naming the lot it goes
+  into; once received, Movements shows the return with no lot, then a lot
+  change from before lot tracking into that lot, and Stock value is up by
+  what it shipped at. Void the second shipment: its goods come back the
+  same way. With an item started with nothing on hand, the first return
+  makes the lot, made for us, its note the stock on hand when lot
+  tracking started; a second return goes into the same lot.
 
 ## 7. Invoicing, returns and credit
 
@@ -4916,6 +4933,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R105** *(A voided shipment's goods back read "Adjustment: shipment
+  voided", in English in every language, #647)* Void a shipment, then open
+  Movements with Reason Corrected: its goods back read "Corrected:
+  shipment voided"; in Français, "Corrigé : expédition annulée"; in 中文,
+  "调整：发货已作废", the Why column and the export alike. On a database
+  with a shipment voided before November 2026, that row reads the same.
+
 - **MC-R104** *(A search written a moment after a filter put the filter
   back, #636)* In Chrome's DevTools, Performance, slow the CPU 20 times.
   On Orders with Fulfilled chosen, type "acme" in the search and at once
@@ -7440,3 +7464,10 @@ first.
   raised to 6, since Stock value's Waiting for a cost and a lot's Cost
   now list a lot change, which a tab opened before would misread:
   MC-3424's raise now 5 to 6, a tab left on Stock value.
+- 2026-11-22: ADR-094's what comes back from before, R19: a return, an
+  RMA's receipt and a voided shipment of stock that left before its item
+  tracked lots come back with no lot, then into the lot that took the
+  item's stock, made with the first back where the item started with
+  nothing on hand; a run released before its component tracked lots
+  closes against that lot: MC-513 and MC-614 added. #647, a voided
+  shipment's goods back in the reader's language: MC-R105 added.

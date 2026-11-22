@@ -35,7 +35,8 @@ export const valuationPools = pgTable(
     /**
      * Null exactly when the variant does not track lots (ADR-023). When it
      * starts, its pool takes the first lot's id, its cost history with it
-     * (ADR-094).
+     * (ADR-094). Stock that left before and comes back makes one with no
+     * lot again, which its lot change into the first lot empties (Q3a).
      */
     lotId: uuid('lot_id').references(() => lots.id, { onDelete: 'restrict' }),
 

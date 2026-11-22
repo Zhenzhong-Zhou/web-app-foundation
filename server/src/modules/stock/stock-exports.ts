@@ -5,6 +5,7 @@ import {
   type LotChangeDetail,
   MOVEMENT_REASON_WORDS,
   type ReceiptDetail,
+  SHIPMENT_VOIDED,
 } from '../../common/movement-reasons';
 import { dayIn, momentIn, todayIn, zonePlaceIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
@@ -228,8 +229,9 @@ const RECEIPT_DETAIL_WORDS: Record<ReceiptDetail, Translatable> = {
 
 /**
  * Which lot change it was (ADR-094, 4a): the code's stock on hand put into
- * its first lot as its lot tracking started (R16), or part of a lot moved
- * into another (R20).
+ * its first lot as its lot tracking started (R16), part of a lot moved
+ * into another (R20), or stock come back from before its lot tracking
+ * started put into that first lot (Q3a).
  */
 const LOT_CHANGE_DETAIL_WORDS: Record<LotChangeDetail, Translatable> = {
   lots_started: t({
@@ -240,13 +242,18 @@ const LOT_CHANGE_DETAIL_WORDS: Record<LotChangeDetail, Translatable> = {
     id: 'stock.detail.betweenLots',
     defaultMessage: 'between lots',
   }),
+  from_before: t({
+    id: 'stock.detail.fromBefore',
+    defaultMessage: 'from before lot tracking',
+  }),
 };
 
 /**
- * What a correction says it was, chosen when the count is corrected, why
- * a receipt had no order, and which lot change it was, as the screen says
- * each after the reason; any other detail is written as recorded, free
- * text under its reason (ADR-023).
+ * What a correction says it was, chosen when the count is corrected, or a
+ * voided shipment's goods back (#647), why a receipt had no order, and
+ * which lot change it was, as the screen says each after the reason; any
+ * other detail is written as recorded, free text under its reason
+ * (ADR-023).
  */
 const DETAIL_WORDS: Record<string, Translatable> = {
   miscount: t({ id: 'stock.detail.miscount', defaultMessage: 'miscount' }),
@@ -254,6 +261,10 @@ const DETAIL_WORDS: Record<string, Translatable> = {
   expired: t({ id: 'stock.detail.expired', defaultMessage: 'expired' }),
   lost: t({ id: 'stock.detail.lost', defaultMessage: 'lost' }),
   found: t({ id: 'stock.detail.found', defaultMessage: 'found' }),
+  [SHIPMENT_VOIDED]: t({
+    id: 'stock.detail.shipmentVoided',
+    defaultMessage: 'shipment voided',
+  }),
   ...RECEIPT_DETAIL_WORDS,
   ...LOT_CHANGE_DETAIL_WORDS,
 };

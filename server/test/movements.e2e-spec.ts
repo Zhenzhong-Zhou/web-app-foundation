@@ -1344,6 +1344,88 @@ describe('Movements (e2e)', () => {
     expect((await reasons('fr-CA'))[0]).toEqual(['Motif', 'Code du motif']);
   });
 
+  // #647: a voided shipment's goods back read by a key, in each reader's
+  // words; one stored as English text, as voiding wrote it before, the
+  // same.
+  it('reads a voided shipment’s goods back by their key, one stored as English text too, in each language’s words (#647)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const focus = await item(agent, 'FOCUS');
+    await receive(agent, focus, shelf, '20');
+    const sold = await order(
+      agent,
+      'sale',
+      await partner(agent, 'Lam Herbal'),
+      focus,
+      '6',
+    );
+    for (const quantity of ['2', '3']) {
+      const shipmentId = body<{ shipment: { id: string } }>(
+        await agent
+          .post(`/v1/orders/${sold.id}/shipments`)
+          .send({
+            fromLocationId: shelf,
+            lines: [{ lineId: sold.lineId, quantity }],
+          })
+          .expect(201),
+      ).shipment.id;
+      await agent
+        .post(`/v1/orders/${sold.id}/shipments/${shipmentId}/void`)
+        .send({ reason: 'Recorded too early' })
+        .expect(204);
+    }
+
+    const voided = await db
+      .select()
+      .from(stockMovements)
+      .where(eq(stockMovements.reason, 'adjustment'))
+      .orderBy(stockMovements.createdAt, stockMovements.id);
+    expect(voided.map((row) => row.reasonDetail)).toEqual([
+      'shipment_voided',
+      'shipment_voided',
+    ]);
+    // The first as voiding stored it before #647.
+    await db
+      .update(stockMovements)
+      .set({ reasonDetail: 'shipment voided' })
+      .where(eq(stockMovements.id, voided[0].id));
+
+    const listed = body<{ entries: { reasonDetail: string | null }[] }>(
+      await agent
+        .get('/v1/stock/movements')
+        .query({ reason: 'adjustment' })
+        .expect(200),
+    ).entries;
+    expect(listed.map((row) => row.reasonDetail)).toEqual([
+      'shipment_voided',
+      'shipment_voided',
+    ]);
+
+    const reasons = async (language: string) =>
+      csvOf(
+        (
+          await agent
+            .get('/v1/stock/movements/export')
+            .query({ reason: 'adjustment' })
+            .set('Accept-Language', language)
+            .expect(200)
+        ).text,
+      ).rows.map((row) => row[6]);
+    expect(await reasons('en')).toEqual([
+      'Corrected: shipment voided',
+      'Corrected: shipment voided',
+    ]);
+    expect(await reasons('fr-CA')).toEqual([
+      'Corrigé\u00A0: expédition annulée',
+      'Corrigé\u00A0: expédition annulée',
+    ]);
+    expect(await reasons('zh-Hans')).toEqual([
+      '调整：发货已作废',
+      '调整：发货已作废',
+    ]);
+  });
+
   // ADR-093, 98a and 116; review 54: what main's export had, back. When
   // to the second on the organization's clock, its header naming the
   // place its zone is named for, not ICU's seasonal name; beside Code,

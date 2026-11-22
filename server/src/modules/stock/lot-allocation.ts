@@ -3,6 +3,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import type { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { TRACKING_STARTED } from './start-lot';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
@@ -27,7 +28,8 @@ export interface CandidateQuery {
   /**
    * Only lots that reached this location for this run. Close consumes what
    * was issued to the run, not whatever else happens to share its location
-   * (ADR-039).
+   * (ADR-039); the start lot there too, for a run released before the
+   * component's lot tracking started (ADR-094, Q2a; candidateScope).
    */
   fromRunId?: string;
   /**
@@ -166,17 +168,31 @@ export async function allocateFefo(
     .map((candidate) => ({ lotId: candidate.lotId, quantity: candidate.take }));
 }
 
+/**
+ * The lots at the location a request may take. For a run's close, the lots
+ * its own transfers carried there; and where it was issued stock with no
+ * lot, released before the component's lot tracking started, the start lot
+ * at the place, which took that stock (ADR-094, Q2a): as before the start,
+ * that stock is told from no other's there.
+ */
 function candidateScope(query: CandidateQuery): SQL {
+  const issued = (lot: SQL) => sql`
+    select sm.lot_id from stock_movements sm
+    where sm.organization_id = ${query.organizationId}::uuid
+      and sm.reference_type = 'production_order'
+      and sm.reference_id = ${query.fromRunId}::uuid
+      and sm.to_location_id = ${query.locationId}::uuid
+      and sm.variant_id = ${query.variantId}::uuid
+      and ${lot}
+  `;
   const runFilter = query.fromRunId
     ? sql`
-        and sl.lot_id in (
-          select sm.lot_id from stock_movements sm
-          where sm.organization_id = ${query.organizationId}::uuid
-            and sm.reference_type = 'production_order'
-            and sm.reference_id = ${query.fromRunId}::uuid
-            and sm.to_location_id = ${query.locationId}::uuid
-            and sm.variant_id = ${query.variantId}::uuid
-            and sm.lot_id is not null
+        and (
+          sl.lot_id in (${issued(sql`sm.lot_id is not null`)})
+          or (
+            l.note = ${TRACKING_STARTED}
+            and exists (${issued(sql`sm.lot_id is null`)})
+          )
         )`
     : sql``;
 

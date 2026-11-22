@@ -845,6 +845,7 @@ export {
   type ReplacementEnvelope,
   type ReplacementOrder,
   type ResetPasswordDto,
+  type ReturnableFromBefore,
   type ReturnableLine,
   type ReturnableLot,
   type ReturnAuthorizationDetail,

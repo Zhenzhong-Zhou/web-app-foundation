@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
+import { detailOf } from '../../common/movement-reasons';
 import {
   products,
   type ProductType,
@@ -544,7 +545,7 @@ export class CostsService {
         id: row.id,
         kind: row.kind,
         reason: row.reason,
-        reasonDetail: row.reason_detail,
+        reasonDetail: detailOf(row.reason_detail),
         sku: row.sku,
         variantId: row.variant_id,
         productId: row.product_id,

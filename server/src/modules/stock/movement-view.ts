@@ -15,6 +15,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
+import { detailOf } from '../../common/movement-reasons';
 import { notInThisList, type SortOrder } from '../../common/sorted-page';
 import {
   locations,
@@ -57,7 +58,7 @@ export function movementOf(
     toLocationId: row.toLocationId,
     quantity: row.quantity,
     reason: row.reason,
-    reasonDetail: row.reasonDetail,
+    reasonDetail: detailOf(row.reasonDetail),
     referenceType: row.referenceType,
     referenceId: row.referenceId,
     note: row.note,
@@ -427,7 +428,8 @@ export async function movementPage(
         unitOfMeasure: item.unitOfMeasure,
         quantity: row.quantity,
         reason: row.reason,
-        reasonDetail: row.reasonDetail,
+        // A detail stored as text read as its key (#647).
+        reasonDetail: detailOf(row.reasonDetail),
         note: row.note,
         fromLocationId: row.fromLocationId,
         fromLocationName: sight.places ? row.fromLocationName : null,

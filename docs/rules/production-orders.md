@@ -303,9 +303,14 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/production.md#record-output-and-close-close)
 - **A lot-tracked component is consumed from the lots this run was
   given,** not from whatever else shares the place, so the recall trail
-  stays exact.
+  stays exact. A run released before its component started tracking lots
+  was given that stock with no lot, so it is given the lot that took it
+  at the run's place, and closes against it at that lot's cost.
   [ADR-039](../adr/0039-component-lots.md#decision--close-consumes-the-lots-the-run-was-given) ·
-  [test](../../server/test/production-orders.e2e-spec.ts) "consumes the lots the run was given, and shows them"
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [test](../../server/test/production-orders.e2e-spec.ts) "consumes the lots the run was given, and shows them" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "closes a run released before its component started against the start lot at its place, at the lot’s cost, no other lot there taken (Q2a)" ·
+  MC-513
 - **A line, or the output, 10% or more off plan either way is flagged,
   never refused.** Close answers with each, the run's page shows them
   once, and whoever may finish runs is told in the bell, the output

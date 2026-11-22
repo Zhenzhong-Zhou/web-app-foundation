@@ -26,13 +26,19 @@ class ReturnLotDto {
 
 /**
  * One order line coming back. Either a quantity (untracked stock) or lots
- * (tracked stock), never both: for a tracked line the total is the sum of its
- * lots, computed in SQL rather than added up by the client (ADR-025).
+ * (tracked stock): for a tracked line the total is the sum of its lots,
+ * computed in SQL rather than added up by the client (ADR-025). A tracked
+ * line may also take a quantity, beside its lots or alone: what shipped
+ * with no lot before the code's lot tracking started (ADR-094, Q3a).
  */
 class ReturnLineDto {
   @IsUUID()
   lineId!: string;
 
+  /**
+   * An untracked line's; a tracked line's part shipped with no lot before
+   * its lot tracking started, as `returnable`'s `fromBefore` offers it.
+   */
   @IsOptional()
   @IsString()
   @IsPositiveDecimal()

@@ -624,6 +624,7 @@
   "inventory.detail.found": "Trouvé",
   "inventory.detail.lost": "Perdu",
   "inventory.detail.miscount": "Erreur de comptage",
+  "inventory.detail.shipmentVoided": "Expédition annulée",
   "inventory.emptyItem": "{name} n’a pas encore de stock.",
   "inventory.everywhere": "Partout",
   "inventory.filter.expired": "Périmés",

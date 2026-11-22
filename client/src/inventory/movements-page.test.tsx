@@ -184,6 +184,26 @@ describe('MovementsPage', () => {
     }
   });
 
+  // #647: a voided shipment's goods back, in the reader's language.
+  it('says a voided shipment’s goods back in Chinese, never in English', async () => {
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      answer([
+        movement({ reason: 'adjustment', reasonDetail: 'shipment_voided' }),
+      ]);
+      renderAt('/movements');
+      expect(
+        await screen.findByText(
+          '调整：发货已作废',
+          { normalizer: (text) => text },
+          { timeout: 3000 },
+        ),
+      ).toBeVisible();
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
   it('offers each reason in the boards’ words', async () => {
     answer([MOVEMENT]);
     renderAt('/movements');

@@ -31,6 +31,7 @@ const RETURNABLE: ReturnableLine[] = [
         returned: '0.0000',
       },
     ],
+    fromBefore: null,
   },
   {
     lineId: 'l-scoop',
@@ -40,6 +41,7 @@ const RETURNABLE: ReturnableLine[] = [
     quantityFulfilled: '10.0000',
     quantityReturned: '0.0000',
     lots: [],
+    fromBefore: null,
   },
 ];
 
