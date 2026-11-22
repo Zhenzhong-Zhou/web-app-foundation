@@ -37,11 +37,18 @@ export function inStockValue(organizationId: string, variantId: SQL): SQL {
  * (ADR-091). Equipment's rows are not waiting: it is not stock value
  * (inStockValue).
  *
- * Each join and subquery names the organization itself (ADR-003), not
- * the outer row's: read
- * as a set, Postgres hashes the run_close lookup once, and through the
- * outer row's column it read every organization's run closes to do so
- * (#276).
+ * A lot change's row in that waited takes no cost of its own: the cost
+ * that its first lot waited for follows it when given (ADR-094, D5;
+ * revaluation.ts). So it waits while anything that waited in the first
+ * lot before the move still does, and not after, which the recursion
+ * reads: a row the first lot took in from a third lot waits the same way,
+ * and each step is a later row, so it ends.
+ *
+ * The waiting rows are read once, `pending`, through the partial index on
+ * the flag, and the recursion joins only those. Each join and subquery
+ * names the organization itself (ADR-003), not the outer row's: read as a
+ * set, Postgres hashes the run_close lookup once, and through the outer
+ * row's column it read every organization's run closes to do so (#276).
  */
 export function openNeedsCost(
   organizationId: string,
@@ -49,32 +56,49 @@ export function openNeedsCost(
   variants?: SQL,
 ): SQL {
   return sql`
-    select v.id, v.variant_id, v.lot_id, v.created_at
-    from stock_valuations v
-    left join stock_movements m
-      on m.id = v.movement_id and m.organization_id = ${organizationId}::uuid
-    where v.organization_id = ${organizationId}::uuid
-      and v.needs_cost
-      ${variants ? sql`and v.variant_id in ${variants}` : sql``}
-      and ${inStockValue(organizationId, sql`v.variant_id`)}
-      and not exists (
-        select 1
-        from stock_valuations c
-        where c.organization_id = ${organizationId}::uuid
-          and c.kind = 'correction'
-          and c.reference_type = 'stock_valuation'
-          and c.reference_id = v.id
-      )
-      and (
-        coalesce(m.reason, '') <> 'production'
-        or not exists (
+    with recursive pending as (
+      select v.id, v.variant_id, v.lot_id, v.created_at, v.kind,
+             m.reason, m.reference_id, m.lot_id as from_lot_id
+      from stock_valuations v
+      left join stock_movements m
+        on m.id = v.movement_id and m.organization_id = ${organizationId}::uuid
+      where v.organization_id = ${organizationId}::uuid
+        and v.needs_cost
+        ${variants ? sql`and v.variant_id in ${variants}` : sql``}
+        and ${inStockValue(organizationId, sql`v.variant_id`)}
+    ),
+    waits (id, variant_id, lot_id, created_at) as (
+      select p.id, p.variant_id, p.lot_id, p.created_at
+      from pending p
+      where p.kind <> 'lot_change'
+        and not exists (
           select 1
-          from stock_valuations r
-          where r.organization_id = ${organizationId}::uuid
-            and r.kind = 'run_close'
-            and r.reference_type = 'production_order'
-            and r.reference_id = m.reference_id
+          from stock_valuations c
+          where c.organization_id = ${organizationId}::uuid
+            and c.kind = 'correction'
+            and c.reference_type = 'stock_valuation'
+            and c.reference_id = p.id
         )
-      )
+        and (
+          coalesce(p.reason, '') <> 'production'
+          or not exists (
+            select 1
+            from stock_valuations r
+            where r.organization_id = ${organizationId}::uuid
+              and r.kind = 'run_close'
+              and r.reference_type = 'production_order'
+              and r.reference_id = p.reference_id
+          )
+        )
+      union
+      select d.id, d.variant_id, d.lot_id, d.created_at
+      from pending d
+      join waits w
+        on w.variant_id = d.variant_id
+       and w.lot_id is not distinct from d.from_lot_id
+       and w.id < d.id
+      where d.kind = 'lot_change'
+    )
+    select id, variant_id, lot_id, created_at from waits
   `;
 }

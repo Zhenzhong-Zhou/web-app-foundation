@@ -24,8 +24,11 @@ import { users } from './users';
  *
  * movement   — what a stock movement carried; one per movement, transfers
  *              excepted.
- * run_close  — the share of a batch's cost still in its pool at close.
- * correction — the share of a corrected cost still in its pool.
+ * run_close  — a batch's cost at close, less the share of units already
+ *              gone; with a lot change's row in as its reference, the part
+ *              of it that change carried, out of one pool and into the
+ *              other (ADR-094, D5).
+ * correction — the same, for a cost set or corrected later.
  * issued     — the share of either that belongs to units already gone. Kept
  *              against the pool's history and never in its balance, so a
  *              pool equals the sum of its other rows.
@@ -113,13 +116,18 @@ export const stockValuations = pgTable(
      * Valued at zero for want of a price, a rate or a run's close; a lot
      * change's row in, at the share it carried (ADR-094). A to-do, cleared
      * by a later row rather than by editing this one: a correction that
-     * references it, or a run_close for the run that produced it.
+     * references it, or a run_close for the run that produced it; a lot
+     * change's row in, once nothing that waited in its first lot before
+     * the move still does, its cost following it (ADR-094, D5;
+     * openNeedsCost).
      */
     needsCost: boolean('needs_cost').notNull().default(false),
 
     /**
      * What a row without a movement belongs to: `production_order` for a
-     * run's close, `stock_valuation` for the row a correction corrects.
+     * run's close, `stock_valuation` for the row a correction corrects; for
+     * the part of a late value a lot change carried, out of one pool and
+     * into the other, that change's row in (ADR-094, D5).
      */
     referenceType: text('reference_type'),
     referenceId: uuid('reference_id'),

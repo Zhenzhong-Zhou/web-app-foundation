@@ -20,6 +20,7 @@ import {
   type CostInput,
 } from '../stock/revaluation';
 import type {
+  CostCarried,
   LotCost,
   NeedsCostPage,
   RunCost,
@@ -72,6 +73,7 @@ interface EntryRow {
   reference_id: string | null;
   other_lot_id: string | null;
   other_lot_code: string | null;
+  carried: CostCarried | null;
   created_at: Date;
   reason: string | null;
 }
@@ -266,19 +268,39 @@ export class CostsService {
       // Newest first and capped: a lot's history is short, and the cap keeps
       // a long-lived one from pulling its whole life into a page. A lot
       // change's rows name the other lot (ADR-094): where the row out went,
-      // where the row in came from.
+      // where the row in came from. So do the rows of a late cost carried
+      // by one, each naming that lot change's row in (D5; spread): in the
+      // lot that row is in, the part that came; in any other, the part
+      // carried on to it.
       const entries = await tx.execute(sql`
         select v.id, v.kind, v.quantity, v.value, v.unit_price, v.currency,
                v.exchange_rate, v.needs_cost, v.reference_type,
                v.reference_id, v.created_at, m.reason,
-               ol.id as other_lot_id, ol.code as other_lot_code
+               ol.id as other_lot_id, ol.code as other_lot_code,
+               case
+                 when ri.id is null then null
+                 when ri.lot_id = v.lot_id then 'from'
+                 else 'to'
+               end as carried
         from stock_valuations v
         left join stock_movements m on m.id = v.movement_id
+        left join stock_valuations ri
+          on ri.organization_id = ${organizationId}::uuid
+         and v.reference_type = 'stock_valuation'
+         and ri.id = v.reference_id
+         and ri.kind = 'lot_change'
+        left join stock_movements rm
+          on rm.organization_id = ${organizationId}::uuid
+         and rm.id = ri.movement_id
         left join lots ol
           on ol.organization_id = ${organizationId}::uuid
-         and v.kind = 'lot_change'
-         and ol.id = case when v.quantity < 0 then m.to_lot_id
-                          else m.lot_id end
+         and ol.id = case
+                       when v.kind = 'lot_change' and v.quantity < 0
+                         then m.to_lot_id
+                       when v.kind = 'lot_change' then m.lot_id
+                       when ri.lot_id = v.lot_id then rm.lot_id
+                       else ri.lot_id
+                     end
         where v.organization_id = ${organizationId}::uuid
           and v.variant_id = ${lot.variant_id}::uuid
           and v.lot_id = ${lotId}::uuid
@@ -309,6 +331,7 @@ export class CostsService {
           referenceId: row.reference_id,
           otherLotId: row.other_lot_id,
           otherLotCode: row.other_lot_code,
+          carried: row.carried,
           createdAt: row.created_at,
         })),
       };

@@ -127,28 +127,39 @@ export async function valueMovement(
 }
 
 /**
+ * The order every write that holds more than one of a code's pools takes
+ * them in: the pool with no lot first, then by the lot's id. A move between
+ * lots takes its two so (valueLotChange), and a late value every pool it
+ * may reach (revaluation.ts), so neither holds one the other waits for.
+ */
+export function inLotOrder(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return -1;
+  if (b === null) return 1;
+  return a < b ? -1 : 1;
+}
+
+/**
  * A lot change carries the value its stock has today (ADR-094, Q1a): the
  * first pool's share at its average, out of that pool and into the
  * second, two value rows of their own. Where the first pool has stock
  * still waiting for a cost, the row in waits too, carrying its share, so
- * Stock value lists the moved stock and its cost can be given on its own
- * line; the first pool's average is low while it waits, and the moved
- * stock may be another run's anyway. A cost given later to the first
- * receipt is not carried across (ADR-094, Deferred).
+ * Stock value lists the moved stock until what it waited for is costed
+ * (openNeedsCost); the first pool's average is low while it waits. That
+ * cost, given later, follows the stock moved (ADR-094, D5; revaluation.ts),
+ * so the row in takes none of its own.
  *
- * Both pools are locked in the order of their lots, the one with none
- * first, as the piles are (recordWithin): a move from A to B and one from
- * B to A at two places at once would otherwise each hold one pool and wait
- * for the other.
+ * Both pools are locked in the order of their lots (inLotOrder), as the
+ * piles are (recordWithin): a move from A to B and one from B to A at two
+ * places at once would otherwise each hold one pool and wait for the
+ * other.
  */
 async function valueLotChange(
   tx: Tx,
   organizationId: string,
   movement: Movement,
 ): Promise<boolean> {
-  const ends = [movement.lotId, movement.toLotId].sort((a, b) =>
-    (a ?? '').localeCompare(b ?? ''),
-  );
+  const ends = [movement.lotId, movement.toLotId].sort(inLotOrder);
   const pools = new Map<string | null, string>();
   for (const lotId of ends) {
     pools.set(

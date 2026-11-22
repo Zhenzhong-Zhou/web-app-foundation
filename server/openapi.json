@@ -20369,6 +20369,17 @@
       "LotCostEntry": {
         "type": "object",
         "properties": {
+          "carried": {
+            "enum": [
+              "to",
+              "from",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -20446,6 +20457,7 @@
           }
         },
         "required": [
+          "carried",
           "id",
           "kind",
           "reason",
@@ -20846,6 +20858,25 @@
           "currency"
         ]
       },
+      "FollowedCost": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotId",
+          "lotCode",
+          "value"
+        ]
+      },
       "CorrectedCost": {
         "type": "object",
         "properties": {
@@ -20860,13 +20891,20 @@
           },
           "issued": {
             "type": "string"
+          },
+          "followed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedCost"
+            }
           }
         },
         "required": [
           "valuationId",
           "value",
           "held",
-          "issued"
+          "issued",
+          "followed"
         ]
       },
       "CorrectedCostEnvelope": {

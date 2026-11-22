@@ -319,11 +319,14 @@ file is kept is in the [README](README.md).
   MC-504
 - **Closing values the batch at what its run consumed:** the material
   cost of our own components, its unit cost per unit made, carried to
-  what already left; a run that made nothing records the cost as a loss,
-  with no unit cost. Whoever may see costs sees it on the finished run.
+  what already left, and to what moved to another lot before the close,
+  in that lot; a run that made nothing records the cost as a loss, with
+  no unit cost. Whoever may see costs sees it on the finished run.
   [ADR-048](../adr/0048-cost.md#decision--a-batch-is-valued-at-close-from-what-its-run-consumed) ·
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
   [test](../../server/test/costs.e2e-spec.ts) "posts a batch its material cost at close" ·
   [test](../../server/test/costs.e2e-spec.ts) "splits the cost between what is left and what already went" ·
+  [test](../../server/test/costs.e2e-spec.ts) "carries a batch’s cost at close to its output moved to another lot before it" ·
   [test](../../server/test/costs.e2e-spec.ts) "has a material cost and no unit cost when nothing was made" ·
   [test](../../client/e2e/costs.spec.ts) "shows what a batch cost, and clears a receipt waiting for one" ·
   MC-505

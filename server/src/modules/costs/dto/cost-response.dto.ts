@@ -1,4 +1,15 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 import type { ProductType, ValuationKind } from '../../../database/schema';
+
+/**
+ * Which way a late cost went by a lot change, as a lot's history reads it
+ * (ADR-094, D5): `to` the other lot, carried on with the stock moved, or
+ * `from` it, come with the stock moved in.
+ */
+export const COST_CARRIED = ['to', 'from'] as const;
+
+export type CostCarried = (typeof COST_CARRIED)[number];
 
 /**
  * What stock, lots and batches cost (ADR-048), as the API returns it
@@ -51,10 +62,18 @@ export class LotCostEntry {
   /**
    * A lot change's other lot (ADR-094): the lot its row out went to, or
    * the lot its row in came from, none for stock from before lot
-   * tracking. Null for any other row.
+   * tracking. For a late cost carried by a lot change, the lot it went to
+   * or came from, as `carried` says. Null for any other row.
    */
   otherLotId!: string | null;
   otherLotCode!: string | null;
+  /**
+   * A late cost carried by a lot change (ADR-094, D5): `to` where this
+   * lot's part went on to the other lot, `from` where it came from it.
+   * Null for every other row.
+   */
+  @ApiProperty({ enum: COST_CARRIED, nullable: true })
+  carried!: CostCarried | null;
   createdAt!: Date;
 }
 
@@ -161,6 +180,16 @@ export class NeedsCostPage {
   nextCursor!: string | null;
 }
 
+/**
+ * A lot a cost followed stock moved to (ADR-094, D5), and what of the
+ * change ended there, held or already gone.
+ */
+export class FollowedCost {
+  lotId!: string;
+  lotCode!: string;
+  value!: string;
+}
+
 /** A cost set on a valuation, and what it changed. */
 export class CorrectedCost {
   valuationId!: string;
@@ -170,6 +199,12 @@ export class CorrectedCost {
   held!: string;
   /** The change recorded against stock already gone. */
   issued!: string;
+  /**
+   * The lots the change followed stock moved to before it was given, in
+   * the order reached; with held and issued, they add up to the change.
+   * Empty where none of it moved.
+   */
+  followed!: FollowedCost[];
 }
 
 /** PUT /costs/valuations/:id. */

@@ -2744,6 +2744,7 @@ export type StockValuationEnvelope = {
 };
 
 export type LotCostEntry = {
+  carried: 'to' | 'from' | null;
   id: string;
   kind:
     | 'issued'
@@ -2855,11 +2856,18 @@ export type SetCostDto = {
   exchangeRate?: string;
 };
 
+export type FollowedCost = {
+  lotId: string;
+  lotCode: string;
+  value: string;
+};
+
 export type CorrectedCost = {
   valuationId: string;
   value: string;
   held: string;
   issued: string;
+  followed: Array<FollowedCost>;
 };
 
 export type CorrectedCostEnvelope = {

@@ -291,13 +291,16 @@ describe('Move to another lot (e2e)', () => {
       .expect(200);
     expect(JSON.stringify(log.body)).toContain('stock.movement_recorded');
 
-    // Stock moved with its cost takes none of its own (ADR-048).
+    // Stock moved takes no cost of its own: its first lot's follows it
+    // (ADR-094, D5).
     const rowIn = await valueRowOf(moved.movement.id, second.id);
     const refused = await w.org.agent
       .put(`/v1/costs/valuations/${rowIn.id}`)
       .send({ unitPrice: '9.00', currency: 'CAD' })
       .expect(409);
-    expect(message(refused)).toBe(said('en', 'stock.lotChangeCarriesCost'));
+    expect(message(refused)).toBe(
+      said('en', 'stock.stockMovedInFromLot', { code: 'NL-2611-A' }),
+    );
   });
 
   it('makes the new lot, typed or made for us, starting with the first lot’s expiry and supplier’s lot unless given (R20, E7)', async () => {
@@ -374,7 +377,7 @@ describe('Move to another lot (e2e)', () => {
     expect(await db.select().from(lots)).toHaveLength(4);
   });
 
-  it('marks the stock moved as waiting for a cost where some of the first lot’s waits, listed with the lot it came from, and costed on its own line (R20, 3a)', async () => {
+  it('marks the stock moved as waiting for a cost where some of the first lot’s waits, listed with the lot it came from (R20, 3a)', async () => {
     const w = await world();
     const first = await buy(w, '60', '2.00', 'NL-2611-A');
     // Forty more of the run, received by hand with no price: they wait.
@@ -418,25 +421,6 @@ describe('Move to another lot (e2e)', () => {
         fromLotId: null,
         fromLotCode: null,
       }),
-    ]);
-
-    // Costed on its own line: the 50 at 2.50, 125.00, its pool revalued.
-    const costed = await w.org.agent
-      .put(`/v1/costs/valuations/${listed[0].id}`)
-      .send({ unitPrice: '2.50', currency: 'CAD' })
-      .expect(200);
-    expect(body<{ cost: unknown }>(costed).cost).toEqual({
-      valuationId: listed[0].id,
-      value: '125.000000',
-      held: '65.000000',
-      issued: '0.000000',
-    });
-    expect(await poolOf(db, w.code, moved.toLot.id)).toMatchObject({
-      quantity: '50.0000',
-      value: '125.000000',
-    });
-    expect(await waiting(w)).toEqual([
-      expect.objectContaining({ id: receipt.id }),
     ]);
 
     // The row out is stock going out, valued at its pool's average.

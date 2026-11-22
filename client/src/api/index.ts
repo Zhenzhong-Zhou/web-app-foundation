@@ -254,6 +254,7 @@ export {
   type FilesControllerUploadSquareLogoV1Response,
   type FilesControllerUploadSquareLogoV1Responses,
   type FileSizes,
+  type FollowedCost,
   type ForgotPasswordDto,
   type GettingStarted,
   type GettingStartedSteps,
