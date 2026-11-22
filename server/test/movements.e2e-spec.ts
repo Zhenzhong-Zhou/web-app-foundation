@@ -812,7 +812,7 @@ describe('Movements (e2e)', () => {
     }
 
     // Several items keep In and Out, with no balance and no period.
-    const all = await list(agent, NOVEMBER.replace('&', '?'));
+    const all = await list(agent, `?${NOVEMBER.slice(1)}`);
     expect(all.period).toBeNull();
     expect(all.entries.every((row) => row.balance === null)).toBe(true);
   });
