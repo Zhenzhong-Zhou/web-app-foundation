@@ -17972,10 +17972,17 @@
         "type": "object",
         "properties": {
           "kind": {
-            "type": "string",
             "enum": [
+              "receipt",
               "production",
-              "receipt"
+              "lot_change"
+            ],
+            "type": "string"
+          },
+          "reasonDetail": {
+            "type": [
+              "string",
+              "null"
             ]
           },
           "at": {
@@ -18003,7 +18010,25 @@
               "null"
             ]
           },
+          "partnerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "supplierName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLotCode": {
             "type": [
               "string",
               "null"
@@ -18067,12 +18092,16 @@
         },
         "required": [
           "kind",
+          "reasonDetail",
           "at",
           "quantity",
           "orderId",
           "orderNumber",
           "orderReference",
+          "partnerId",
           "supplierName",
+          "fromLotId",
+          "fromLotCode",
           "runId",
           "runReference",
           "licenceId",
@@ -18159,6 +18188,15 @@
           "lotCode": {
             "type": "string"
           },
+          "lotSupplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotIsAssigned": {
+            "type": "boolean"
+          },
           "sku": {
             "type": "string"
           },
@@ -18187,6 +18225,8 @@
           "isSampleOrder",
           "lotId",
           "lotCode",
+          "lotSupplierLot",
+          "lotIsAssigned",
           "sku",
           "shipped",
           "sampled",

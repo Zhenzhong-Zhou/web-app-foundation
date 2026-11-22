@@ -2128,13 +2128,17 @@ export type LotBalance = {
 };
 
 export type LotSource = {
-  kind: 'production' | 'receipt';
+  kind: 'receipt' | 'production' | 'lot_change';
+  reasonDetail: string | null;
   at: string;
   quantity: string;
   orderId: string | null;
   orderNumber: string | null;
   orderReference: string | null;
+  partnerId: string | null;
   supplierName: string | null;
+  fromLotId: string | null;
+  fromLotCode: string | null;
   runId: string | null;
   runReference: string | null;
   licenceId: string | null;
@@ -2164,6 +2168,8 @@ export type LotRecipient = {
   isSampleOrder: boolean;
   lotId: string;
   lotCode: string;
+  lotSupplierLot: string | null;
+  lotIsAssigned: boolean;
   sku: string;
   shipped: string;
   sampled: string;

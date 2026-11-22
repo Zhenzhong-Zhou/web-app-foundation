@@ -538,15 +538,39 @@ file is kept is in the [README](README.md).
 
 ## A lot's trace
 
-- **A lot's recall list is everyone who received it or anything made
-  from it,** each with how much was shipped, sampled and returned and
-  the day it first left; its export is the same rows, in the reader's
-  language, for a reader with stock.view.
+- **A lot's recall list is everyone who received it, anything made
+  from it, or any lot its stock moved into,** through as many runs and
+  moves as lead there, each row under the lot they received, with how
+  much was shipped, sampled and returned and the day it first left; its
+  export is the same rows, each lot's supplier's lot after its code, in
+  the reader's language, for a reader with stock.view.
   [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-recall-lists-export-and-a-lots-expired-days-adr-093) ·
+  [ADR-044, amended again](../adr/0044-lot-trace.md#amendment-november-2026--the-trace-follows-a-move-between-lots-and-one-rule-for-the-lot-search-adr-094) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "lists on the first lot’s recall list a customer who received only the second lot, with the lot it came through, on the page and in the export (R21)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "follows a chain of three moves and a move back, each lot once, the recall list naming each lot’s supplier’s lot (R21)" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
-  MC-906
+  MC-906 · MC-908
+- **A move between lots is followed as the same stock:** Made from and
+  Went into list a lot its stock moved from or into as many runs away
+  as the lot it moved with, through the same run; a move alone is no
+  step, and each lot is listed once, a move back included.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "lists on the first lot’s recall list a customer who received only the second lot, with the lot it came through, on the page and in the export (R21)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "follows a chain of three moves and a move back, each lot once, the recall list naming each lot’s supplier’s lot (R21)" ·
+  MC-908
+- **Where a lot came from is each way stock came into it:** a receipt,
+  with its order and supplier, or with none, why it came and from whom;
+  a run that made it, with its licence; a move from another lot, naming
+  that lot; and for the lot that took an item's stock, the stock on
+  hand when lot tracking started and stock back from before it, which
+  name none.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "lists on the first lot’s recall list a customer who received only the second lot, with the lot it came through, on the page and in the export (R21)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "says where a start lot came from: the stock on hand when lot tracking started, and stock back from before it (R21, Q4a)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "names who a receipt with no order came from and why, and an order’s supplier by its partner (ADR-094, E2)" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read)
 - **Where it is now names each place by its whole path, its warehouse
   first, only to a reader with locations.view;** the rest read the
   lot's usable and not usable, two sums from the server, and no place's

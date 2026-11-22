@@ -18,11 +18,11 @@ Sous le code du lot, le nom de son article ouvre la page de l’article, pour qu
 - **D’où il vient** : sa réception et la commande du fournisseur, ou l’ordre de fabrication qui l’a produit et sa licence.
 - **Fabriqué à partir de** : les lots de composants qu’un ordre de fabrication a utilisés, peu importe le nombre d’étapes.
 - **Utilisé dans** : les ordres de fabrication qui l’ont utilisé, et les lots qu’ils ont produits.
-- **Qui l’a reçu** : chaque client à qui ce lot, ou ce qui en a été fabriqué, a été expédié ou donné en échantillon, et ce qui est revenu.
+- **Qui l’a reçu** : chaque client à qui ce lot, ou ce qui en a été fabriqué, a été expédié ou donné en échantillon, et ce qui est revenu. Une partie déplacée vers un autre lot y est suivie : qui a reçu cet autre lot figure aussi, sous le code de ce lot.
 
 Certaines unités ont pu partir sans destinataire enregistré : expédiées sans commande, ou données en échantillon sans nom. Elles figurent sans partenaire.
 
-À côté de **Qui l’a reçu**, **Exporter** écrit la liste de rappel : les mêmes lignes, dans votre langue, avec ce qui a été expédié, donné en échantillon et retourné, et le jour où le lot est parti la première fois. Ses titres et ses mots sont dans votre langue, le jour est écrit année-mois-jour, et les quantités sont écrites simplement, 600 et non 600.0000. À l’écran, une date de péremption passée dit depuis combien de temps : « Expiré depuis 4 jours ».
+À côté de **Qui l’a reçu**, **Exporter** écrit la liste de rappel : les mêmes lignes, dans votre langue, le lot du fournisseur de chaque lot à côté de son code, avec ce qui a été expédié, donné en échantillon et retourné, et le jour où le lot est parti la première fois. Ses titres et ses mots sont dans votre langue, le jour est écrit année-mois-jour, et les quantités sont écrites simplement, 600 et non 600.0000. À l’écran, une date de péremption passée dit depuis combien de temps : « Expiré depuis 4 jours ».
 
 > Seule une personne qui peut voir les coûts voit le coût du lot et l’évolution de sa valeur.
 

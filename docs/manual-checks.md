@@ -1090,12 +1090,14 @@ search to having the list of customers; the target is **under two minutes**.
   "Warehouses, zones and bins are hidden: your role can't see them. An
   Owner or Admin can change that." (review 3, 115).
 - **MC-905** Record the time here and in the release notes.
-- **MC-906** *(ADR-044, amended)* On BF-2609's trace, Who received it's
+- **MC-906** *(ADR-044, amended; ADR-094)* On BF-2609's trace, Who received it's
   Export saves the recall list: each row as the table shows it, who, the
   order, the lot and its code, shipped, sampled and returned, and the
-  day it first left, also a column on the table. In 中文 the headers read
-  收货方 to 日期, and a row with nobody on record 未记录收货方. The audit
-  log's line for it names a lot's recall list.
+  day it first left, also a column on the table. After the lot, its
+  Supplier's lot: empty for a code printed by the supplier, "Supplier's
+  lot to add" for a code made here with none yet. In 中文 the headers read
+  收货方 to 日期, 供应商批号 after 批次, and a row with nobody on record
+  未记录收货方. The audit log's line for it names a lot's recall list.
 - **MC-907** *(ADR-044, amended)* Open VC-0301's trace, a lot past its
   expiry: beside its title a red chip reads "Expired 4 days ago", with
   as many days as it is, its date in the line under the title; in 中文
@@ -1104,6 +1106,15 @@ search to having the list of customers; the target is **under two minutes**.
   organization's, Cost's Paid names its currency's code, "USD 4.20 at
   1.37"; one bought in the organization's own currency reads as the
   panel's other money.
+- **MC-908** *(ADR-094, R21)* A recall through a move between lots. On
+  a lot, move part of it into another lot of the item, then ship from
+  the second lot to a customer who never received the first. On the
+  first lot's trace, Who received it lists that customer, its Lot the
+  second lot's code, which opens the second lot's page; the Export lists
+  them the same. The second lot's Who received it lists only its own
+  customers. Trace the ingredient the first lot was made from: its Went
+  into lists both lots, through the same run, and its recall list
+  reaches the same customer.
 
 ## 10. Audit
 
@@ -7471,3 +7482,8 @@ first.
   nothing on hand; a run released before its component tracked lots
   closes against that lot: MC-513 and MC-614 added. #647, a voided
   shipment's goods back in the reader's language: MC-R105 added.
+- 2026-11-22: ADR-094's trace follows a lot change, R21: a lot's recall
+  list, on the page and in its export, reaches whoever received a lot
+  its stock moved into, each row under the lot they received, and the
+  export writes each lot's Supplier's lot after its code: MC-906
+  extended, MC-908 added.

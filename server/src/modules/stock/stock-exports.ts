@@ -54,38 +54,49 @@ interface LotDetails {
 }
 
 /**
+ * Supplier's lot, for a row's lot, null with none: the supplier's own lot
+ * of a code made here, "Supplier's lot to add" until it is given, and
+ * empty for a code printed by the supplier, which is its own (ADR-094, R5).
+ */
+function supplierLotColumn<T>(
+  lotOf: (
+    row: T,
+  ) => Pick<LotDetails, 'lotSupplierLot' | 'lotIsAssigned'> | null,
+): ExportColumn<T> {
+  return {
+    header: t({
+      id: 'exports.column.supplierLot',
+      defaultMessage: 'Supplier’s lot',
+    }),
+    value: (row, locale) => {
+      const lot = lotOf(row);
+      if (!lot) return null;
+      if (lot.lotSupplierLot !== null) return lot.lotSupplierLot;
+      return lot.lotIsAssigned
+        ? translate(
+            t({
+              id: 'exports.value.supplierLotToAdd',
+              defaultMessage: 'Supplier’s lot to add',
+            }),
+            locale,
+          )
+        : null;
+    },
+  };
+}
+
+/**
  * A lot's details beside its code, as the screen marks a lot not yet
- * finished (ADR-094, R5 and R9), for a row's lot, null with none:
- * Supplier's lot, the supplier's own lot of a code made here, "Supplier's
- * lot to add" until it is given, and empty for a code printed by the
- * supplier, which is its own; then Expiry, the day, "Expiry to add" where
- * it is not known yet, and empty for a lot that does not expire, as the
- * glossary's Expires is.
+ * finished (ADR-094, R5 and R9), for a row's lot, null with none: its
+ * Supplier's lot; then Expiry, the day, "Expiry to add" where it is not
+ * known yet, and empty for a lot that does not expire, as the glossary's
+ * Expires is.
  */
 function lotDetailColumns<T>(
   lotOf: (row: T) => LotDetails | null,
 ): ExportColumn<T>[] {
   return [
-    {
-      header: t({
-        id: 'exports.column.supplierLot',
-        defaultMessage: 'Supplier’s lot',
-      }),
-      value: (row, locale) => {
-        const lot = lotOf(row);
-        if (!lot) return null;
-        if (lot.lotSupplierLot !== null) return lot.lotSupplierLot;
-        return lot.lotIsAssigned
-          ? translate(
-              t({
-                id: 'exports.value.supplierLotToAdd',
-                defaultMessage: 'Supplier’s lot to add',
-              }),
-              locale,
-            )
-          : null;
-      },
-    },
+    supplierLotColumn(lotOf),
     {
       header: HEADERS.expiry,
       value: (row, locale) => {
@@ -711,10 +722,11 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
 
 /**
  * A lot's recall list, its trace's Who received it (ADR-044, amended;
- * #473's 17): each customer who received the lot or anything made from
- * it, the order, the lot, how much and the day it first left, in the
- * screen's words. A row with no recipient on record says so, as the
- * screen does.
+ * #473's 17): each customer who received the lot, anything made from it
+ * or any lot its stock moved into, the order, the lot it came through
+ * with that lot's supplier's lot (ADR-094, R21), how much and the day it
+ * first left, in the screen's words. A row with no recipient on record
+ * says so, as the screen does.
  */
 export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
   {
@@ -746,6 +758,7 @@ export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
         : row.orderNumber,
   },
   { header: HEADERS.lot, value: (row) => row.lotCode },
+  supplierLotColumn((row) => row),
   { header: HEADERS.sku, value: (row) => row.sku },
   asQuantity(
     t({ id: 'exports.column.shipped', defaultMessage: 'Shipped' }),
