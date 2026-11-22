@@ -3,6 +3,7 @@ status: accepted
 date: 2026-10-17
 areas: [invoices, numbering]
 amends: [ADR-046, ADR-047, ADR-056, ADR-071]
+amended-by: [ADR-094]
 ---
 
 # ADR-073 — Each organization's document numbering (amends ADR-046, ADR-047, ADR-056 and ADR-071)
@@ -278,3 +279,20 @@ are a 400. Two conflicts are a 409, each with its code ([conventions.md,
   cannot do; an organization in Kiritimati, whose daily prefix prints its
   own day rather than UTC's, shows the same thing, beside ADR-072's tests
   of `dayIn` either side of midnight.
+
+## Amendment (November 2026) — a series for lot codes (ADR-094)
+
+ADR-094 adds a series that numbers no document: the codes of lots the
+organization makes for itself at receipt. It is kept as the five are, a
+row per organization and a counter per period, its number taken in the
+transaction that saves the lot, and it differs in three ways:
+
+- **Its characters are narrower:** capital letters, digits and hyphens,
+  with no `_` or `/`, and at most 20 characters with its number, so a
+  GS1 barcode's lot field can carry it.
+- **Its default is by the day:** `L-{YYYY}-{MM}-{DD}-`, one digit, a
+  daily reset, so `L-2026-11-21-1`.
+- **It is not gapless by promise:** a made code the item already has
+  is passed over for the next.
+
+Run numbers stay ADR-074's.

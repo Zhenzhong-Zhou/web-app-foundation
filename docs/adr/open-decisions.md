@@ -596,7 +596,8 @@ different: it does not pre-exist, it comes into being at the moment of a run,
 and most manufacturing systems issue it from a scheme — date plus line plus
 shift, or a sequence. Typed by hand for every run is how two runs end up
 sharing a number. Receiving from a supplier stays typed, because that code is
-printed on the box and is not ours to invent. The forcing function is a
+printed on the box and is not ours to invent; where the box shows none,
+ADR-094 makes one by the organization's own lot format. The forcing function is a
 production module; until one exists there is no run to hang a sequence off.
 
 ## Performance budgets

@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-14
 areas: [products, stock, ui]
 amends: [ADR-044, ADR-045, ADR-051, ADR-057, ADR-085, ADR-090, ADR-091, ADR-092]
+amended-by: [ADR-094]
 ---
 
 # ADR-093 — Inventory and Movements: one row per code, where it stands on the item's page, and a stock card (amends ADR-044, ADR-045, ADR-051, ADR-057, ADR-085, ADR-090, ADR-091 and ADR-092)
@@ -1395,3 +1396,18 @@ to v14:
   wrapping chips (131a); ADR-051, Movements' figures and the Watch.
 - **Next:** #629 (119a), its decisions in its comment; the handoff holds
   what is owed after the merge.
+
+## Amendment (November 2026) — lots at receipt (ADR-094)
+
+ADR-094 builds #629, with decisions 119a to 124a of this ADR's review,
+and changes three things said above:
+
+- **Count it in…'s new lot** is told by the route, new or made, never
+  by the movement's reason (#649's 46), and may take a code made for
+  the organization.
+- **120a's "split out later with Move or Correct the count"** becomes
+  Move to another lot…: Move changes a place, never a lot, and two
+  corrections read as lost and found.
+- **124a** is a permission of its own, the Owner's alone at first,
+  where this ADR's as-built said an Owner and #629's comment an Owner
+  or Admin.

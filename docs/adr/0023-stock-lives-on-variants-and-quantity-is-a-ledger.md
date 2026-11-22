@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-09-03
 areas: [products, stock]
-amended-by: [ADR-025]
+amended-by: [ADR-025, ADR-094]
 ---
 
 # ADR-023 — Stock lives on variants, and quantity is a ledger
@@ -189,3 +189,21 @@ noun does not. Renamed before the stock service read any of them.
 
 Everything above describing `batches`, `batch_id`, or `stock` refers to these
 names; the reasoning is unchanged.
+
+## Amendment (November 2026) — tracking may start later, and a lot's code may be made (ADR-094)
+
+ADR-094 changes two of this ADR's rules, and keeps its invariant: a lot
+is present exactly when the variant tracks lots.
+
+- **Lot tracking may start for a variant that holds stock,** by one
+  guided write that puts the stock on hand into one lot made for the
+  organization, its cost with it; with nothing on hand, tracking turns
+  on alone. It never turns off.
+- **A lot's code may be made by the organization's own format,** where
+  the delivery shows none, and is then flagged as assigned, the flag
+  this ADR gave the table and no screen had set. An older code typed
+  up at receipt can be marked so afterwards, one way, by a permission
+  of its own.
+- **A ninth reason, a lot change,** joins the closed list: stock put
+  into a lot when tracking starts, or moved from one lot of an item to
+  another, counted neither in nor out.

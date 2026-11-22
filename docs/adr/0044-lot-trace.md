@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-09-23
 areas: [stock]
-amended-by: [ADR-093]
+amended-by: [ADR-093, ADR-094]
 ---
 
 # ADR-044 — Lot trace
@@ -62,3 +62,16 @@ ADR-093 takes the export this ADR deferred, asked for by a reviewer
   ago" (#479's lot half).
 
 Quantities per downstream batch stay deferred.
+
+## Amendment (November 2026) — the trace follows a move between lots, and one rule for the lot search (ADR-094)
+
+- **A move between lots is a joint, as a run is.** ADR-094 lets part of
+  a lot move to another lot of the same item. The second lot's page
+  says where it came from, and the first lot's Who received it lists
+  the second's recipients, each with the lot it came through, on the
+  page and in the export. Without it a move would hide stock from a
+  recall.
+- **The lot search is decided once:** any part of a code, the start
+  first, as the code does it; this ADR had said both that and "the
+  start of a code" (#308's 37). It reads a lot's own code and its
+  supplier's lot alike.
