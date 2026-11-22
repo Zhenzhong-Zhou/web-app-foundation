@@ -123,10 +123,6 @@ const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);
  */
 const CHECKED_INSIDE = new Map<Permission, string>([
   [
-    'stock.adjust',
-    'AdjustmentGuard, on a movement whose reason is an adjustment; the route declares stock.move',
-  ],
-  [
     'production.override_licence',
     'LicenceOverrideGuard, on a release with an override (ADR-050); the route declares production.release',
   ],

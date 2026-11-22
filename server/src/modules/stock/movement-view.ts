@@ -110,11 +110,22 @@ export function cardOf(query: ListMovementsDto): MovementCard {
   };
 }
 
-/** A movement's ends and quantity, as a query names them. */
+/** A movement's ends, its lots, reason and quantity, as a query names them. */
 interface Ends {
   from: SQLWrapper;
   to: SQLWrapper;
   quantity: SQLWrapper;
+  reason: SQLWrapper;
+  /** The lot it moved in; for a lot change, the lot it leaves. */
+  lot: SQLWrapper;
+  /** The lot a lot change enters (ADR-094). */
+  toLot: SQLWrapper;
+}
+
+/** What a list counts by: its place and its lot, each when chosen. */
+interface Counted {
+  locationId?: string;
+  lotId?: string;
 }
 
 /**
@@ -123,20 +134,36 @@ interface Ends {
  * across every place, what arrived and, negative, what left, a move
  * between two places 0, neither In nor Out, so the balance holds. A
  * quantity is never negative; its direction is which end is set
- * (ADR-023). The one rule each row's In, Out and signed change, the
- * balance and the period read, so the screen and the export sign a row
- * alike (review 24).
+ * (ADR-023). A lot change is told by its reason (ADR-094, R16): 0 for
+ * the code, at its place too, and with a lot chosen, out of the lot it
+ * leaves and in to the lot it enters. The one rule each row's In, Out
+ * and signed change, the balance and the period read, so the screen and
+ * the export sign a row alike (review 24).
  */
-function changeOf(ends: Ends, locationId: string | undefined): SQL {
-  if (locationId) {
-    const here = sql`${locationId}::uuid`;
-    return sql`(case when ${ends.to} = ${here} then ${ends.quantity}
-      when ${ends.from} = ${here} then -${ends.quantity}
-      else 0 end)`;
-  }
-  return sql`(case when ${ends.from} is null then ${ends.quantity}
-    when ${ends.to} is null then -${ends.quantity}
-    else 0 end)`;
+function changeOf(ends: Ends, counted: Counted): SQL {
+  const byPlace = counted.locationId
+    ? sql`case when ${ends.to} = ${counted.locationId}::uuid then ${ends.quantity}
+      when ${ends.from} = ${counted.locationId}::uuid then -${ends.quantity}
+      else 0 end`
+    : sql`case when ${ends.from} is null then ${ends.quantity}
+      when ${ends.to} is null then -${ends.quantity}
+      else 0 end`;
+  const byLot = counted.lotId
+    ? sql`case when ${ends.toLot} = ${counted.lotId}::uuid then ${ends.quantity}
+      when ${ends.lot} = ${counted.lotId}::uuid then -${ends.quantity}
+      else 0 end`
+    : sql`0`;
+  return sql`(case when ${ends.reason} = 'lot_change' then ${byLot}
+    else ${byPlace} end)`;
+}
+
+/**
+ * A movement of the lot chosen (ADR-044): in it, or, a lot change, into
+ * it (ADR-094). Each arm by its own index led by the organization.
+ */
+function ofLot(m: string, lotId: string): SQL {
+  const at = sql.raw(m);
+  return sql`(${at}.lot_id = ${lotId}::uuid or ${at}.to_lot_id = ${lotId}::uuid)`;
 }
 
 /**
@@ -153,7 +180,7 @@ function countedBy(
   const at = sql.raw(m);
   return sql`${at}.organization_id = ${organizationId}::uuid
     ${query.variantId ? sql`and ${at}.variant_id = ${query.variantId}::uuid` : sql``}
-    ${query.lotId ? sql`and ${at}.lot_id = ${query.lotId}::uuid` : sql``}
+    ${query.lotId ? sql`and ${ofLot(m, query.lotId)}` : sql``}
     ${
       query.locationId
         ? sql`and (${at}.from_location_id = ${query.locationId}::uuid
@@ -212,7 +239,12 @@ export async function movementPage(
       ? await afterCursor(tx, organizationId, query.before, order)
       : undefined,
     query.variantId ? eq(stockMovements.variantId, query.variantId) : undefined,
-    query.lotId ? eq(stockMovements.lotId, query.lotId) : undefined,
+    query.lotId
+      ? or(
+          eq(stockMovements.lotId, query.lotId),
+          eq(stockMovements.toLotId, query.lotId),
+        )
+      : undefined,
     query.locationId
       ? or(
           eq(stockMovements.fromLocationId, query.locationId),
@@ -247,8 +279,11 @@ export async function movementPage(
           from: stockMovements.fromLocationId,
           to: stockMovements.toLocationId,
           quantity: stockMovements.quantity,
+          reason: stockMovements.reason,
+          lot: stockMovements.lotId,
+          toLot: stockMovements.toLotId,
         },
-        query.locationId,
+        query,
       )}`.as('change'),
     })
     .from(stockMovements)
@@ -492,11 +527,14 @@ async function balancesOf(
     from: sql.raw(`${m}.from_location_id`),
     to: sql.raw(`${m}.to_location_id`),
     quantity: sql.raw(`${m}.quantity`),
+    reason: sql.raw(`${m}.reason`),
+    lot: sql.raw(`${m}.lot_id`),
+    toLot: sql.raw(`${m}.to_lot_id`),
   });
   const { rows } = await tx.execute<{ id: string; balance: string }>(sql`
     with page as (
       select pm.id, pm.created_at,
-        ${changeOf(ends('pm'), query.locationId)} as change
+        ${changeOf(ends('pm'), query)} as change
       from stock_movements pm
       where pm.organization_id = ${organizationId}::uuid
         and pm.id in (${sql.join(
@@ -519,7 +557,7 @@ async function balancesOf(
       )}) oh
     ),
     later as (
-      select coalesce(sum(${changeOf(ends('lm'), query.locationId)}), 0)
+      select coalesce(sum(${changeOf(ends('lm'), query)}), 0)
         as moved
       from stock_movements lm, newest n
       where ${countedBy(organizationId, query, 'lm')}
@@ -560,8 +598,11 @@ async function periodOf(
       from: stockMovements.fromLocationId,
       to: stockMovements.toLocationId,
       quantity: stockMovements.quantity,
+      reason: stockMovements.reason,
+      lot: stockMovements.lotId,
+      toLot: stockMovements.toLotId,
     },
-    query.locationId,
+    query,
   );
   const inRange = query.until
     ? sql`${stockMovements.createdAt} < ${query.until}::timestamptz`

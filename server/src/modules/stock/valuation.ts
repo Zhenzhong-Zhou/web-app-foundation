@@ -69,7 +69,9 @@ export async function valueMovement(
   const outbound = movement.toLocationId === null;
 
   // A transfer. The pool is not per location, so nothing about its value
-  // changed.
+  // changed. So too the lot change that starts a code's lot tracking: its
+  // value went into the lot with the pool and its rows, relabelled in the
+  // same transaction (ADR-094; LotTrackingService.start).
   if (!inbound && !outbound) return false;
 
   if (cost && movement.reason !== 'receipt') {

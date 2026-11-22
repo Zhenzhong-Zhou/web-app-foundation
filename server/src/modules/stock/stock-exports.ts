@@ -226,10 +226,10 @@ const RECEIPT_DETAIL_WORDS: Record<ReceiptDetail, Translatable> = {
 };
 
 /**
- * What a correction says it was, chosen when the count is corrected, and
- * why a receipt had no order, as the screen says each after the reason;
- * any other detail is written as recorded, free text under its reason
- * (ADR-023).
+ * What a correction says it was, chosen when the count is corrected, why
+ * a receipt had no order, and which lot change it was, as the screen says
+ * each after the reason; any other detail is written as recorded, free
+ * text under its reason (ADR-023).
  */
 const DETAIL_WORDS: Record<string, Translatable> = {
   miscount: t({ id: 'stock.detail.miscount', defaultMessage: 'miscount' }),
@@ -238,6 +238,12 @@ const DETAIL_WORDS: Record<string, Translatable> = {
   lost: t({ id: 'stock.detail.lost', defaultMessage: 'lost' }),
   found: t({ id: 'stock.detail.found', defaultMessage: 'found' }),
   ...RECEIPT_DETAIL_WORDS,
+  // A lot change's: the code's stock on hand put into its first lot as
+  // its lot tracking started (ADR-094, R16).
+  lots_started: t({
+    id: 'stock.detail.lotsStarted',
+    defaultMessage: 'lots started',
+  }),
 };
 
 /**
@@ -304,11 +310,12 @@ const BALANCE_WORDS = {
 /**
  * A move between two places counted in neither In nor Out, as one code
  * across every place reads it (85a): its quantity is the Moved column's
- * (118a, 114).
+ * (118a, 114). So is a lot change, at one place too, but with its lot
+ * chosen (ADR-094, R16).
  */
 function movedInNeither(movement: Movement): boolean {
   return (
-    movement.reason === 'transfer' &&
+    (movement.reason === 'transfer' || movement.reason === 'lot_change') &&
     movement.quantityIn === null &&
     movement.quantityOut === null
   );

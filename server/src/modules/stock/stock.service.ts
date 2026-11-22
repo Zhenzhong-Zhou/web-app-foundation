@@ -4,13 +4,13 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { RECEIPT_DETAILS } from '../../common/movement-reasons';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
-import type { LotExpiry, MovementReason } from '../../database/schema';
+import type { LotExpiry, LotNote, MovementReason } from '../../database/schema';
 import {
   locations,
   lots,
@@ -62,8 +62,17 @@ export type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
 export interface RecordMovementInput {
   variantId: string;
-  /** An existing lot. Mutually exclusive with `lot`. */
+  /**
+   * An existing lot. Mutually exclusive with `lot`. For a lot change, the
+   * lot it leaves: none for stock from before the code's lot tracking
+   * started (ADR-094).
+   */
   lotId?: string | null;
+  /**
+   * The lot a lot change enters, one of the item's (ADR-094); set by
+   * server-side callers alone, as the movements route takes no lot change.
+   */
+  toLotId?: string | null;
   /**
    * A new lot arriving with the movement (MovementLotDto): a code typed as
    * printed, created if new and else reused unless `mustBeNew`, or one the
@@ -206,6 +215,14 @@ export class StockService {
       );
     }
 
+    /**
+     * Read `for share`, so the start of the code's lot tracking, which
+     * takes the row `for update` first, waits for this movement to commit,
+     * and a movement begun after it reads the code as it now is: a receipt
+     * racing the start never writes stock with no lot onto a tracked code
+     * (ADR-094). `for key share`, what the movement's own reference takes,
+     * would not make the start wait.
+     */
     const [variant] = await tx
       .select()
       .from(productVariants)
@@ -214,7 +231,8 @@ export class StockService {
           eq(productVariants.id, input.variantId),
           eq(productVariants.organizationId, organizationId),
         ),
-      );
+      )
+      .for('share');
 
     // The variant and the locations come from a body, or from the caller's
     // own rows, never from a path: another organization's, or one that does
@@ -228,29 +246,55 @@ export class StockService {
         }),
       );
 
-    const lot = await this.resolveLot(tx, organizationId, variant, input);
-    const lotId = lot?.id ?? null;
+    // A lot change names the lot it leaves and the lot it enters, at one
+    // place; any other movement one lot, or none (ADR-094).
+    const ends =
+      input.reason === 'lot_change'
+        ? await this.lotChangeEnds(tx, organizationId, variant, input)
+        : null;
+    const lot = ends
+      ? ends.enters
+      : await this.resolveLot(tx, organizationId, variant, input);
+    const lotId = ends ? ends.leaves : (lot?.id ?? null);
 
     const reference = await this.referenceFor(tx, organizationId, input);
 
     /**
-     * Locked in a deterministic order, sorted by location id.
+     * Locked in a deterministic order, sorted by location id, then by lot.
      *
      * A transfer touches two rows. Two concurrent transfers, A→B and B→A,
      * that each grab their source first will deadlock — rare in testing,
      * reliable under load. Sorting means both transactions always take the
-     * same row first, so one waits instead of dying.
+     * same row first, so one waits instead of dying. A lot change touches
+     * two piles of one place, so the lot decides between them, the pile
+     * with no lot first.
      */
     const touched = [
       ...(direction.from
-        ? [{ locationId: direction.from, delta: `-${input.quantity}` }]
+        ? [
+            {
+              locationId: direction.from,
+              lotId,
+              delta: `-${input.quantity}`,
+            },
+          ]
         : []),
       ...(direction.to
-        ? [{ locationId: direction.to, delta: input.quantity }]
+        ? [
+            {
+              locationId: direction.to,
+              lotId: ends ? ends.enters.id : lotId,
+              delta: input.quantity,
+            },
+          ]
         : []),
-    ].sort((a, b) => a.locationId.localeCompare(b.locationId));
+    ].sort(
+      (a, b) =>
+        a.locationId.localeCompare(b.locationId) ||
+        (a.lotId ?? '').localeCompare(b.lotId ?? ''),
+    );
 
-    for (const { locationId, delta } of touched) {
+    for (const { locationId, lotId: pileLotId, delta } of touched) {
       const location = await this.assertUsableLeaf(
         tx,
         organizationId,
@@ -283,7 +327,7 @@ export class StockService {
       await this.applyDelta(tx, organizationId, {
         variantId: input.variantId,
         locationId,
-        lotId,
+        lotId: pileLotId,
         delta,
       });
     }
@@ -297,6 +341,7 @@ export class StockService {
         // (ADR-023).
         sku: variant.sku,
         lotId,
+        toLotId: ends?.enters.id ?? null,
         fromLocationId: direction.from,
         toLocationId: direction.to,
         quantity: input.quantity,
@@ -351,6 +396,16 @@ export class StockService {
               'A transfer needs both a source and a destination location',
           }),
         );
+      }
+      return { from, to };
+    }
+
+    // A lot change stays at its place, both ends (ADR-094). Only the
+    // server's own callers record one; the movements route refuses the
+    // reason, so a wrong shape here is a bug, never a person's mistake.
+    if (input.reason === 'lot_change') {
+      if (!from || from !== to) {
+        throw new Error('A lot change stays at one place, both its ends');
       }
       return { from, to };
     }
@@ -605,16 +660,61 @@ export class StockService {
   }
 
   /**
+   * The two lots of a lot change (ADR-094), each one of the item's: the
+   * lot it leaves, none for stock from before the code's lot tracking
+   * started, and the lot it enters. Only a code that tracks lots changes
+   * lot; the table's checks keep the two apart.
+   */
+  private async lotChangeEnds(
+    tx: Tx,
+    organizationId: string,
+    variant: typeof productVariants.$inferSelect,
+    input: RecordMovementInput,
+  ): Promise<{ leaves: string | null; enters: { id: string; code: string } }> {
+    if (!variant.tracksLots || !input.toLotId) {
+      throw new Error(
+        'A lot change is of a tracked code, into one of its lots',
+      );
+    }
+
+    const ids = [input.toLotId, ...(input.lotId ? [input.lotId] : [])];
+    const found = await tx
+      .select({ id: lots.id, code: lots.code })
+      .from(lots)
+      .where(
+        and(
+          inArray(lots.id, ids),
+          eq(lots.organizationId, organizationId),
+          eq(lots.variantId, variant.id),
+        ),
+      );
+
+    const enters = found.find((each) => each.id === input.toLotId);
+    if (!enters || found.length !== new Set(ids).size) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.unknownLotVariant',
+          defaultMessage: 'Unknown lot for this variant',
+        }),
+      );
+    }
+
+    return { leaves: input.lotId ?? null, enters };
+  }
+
+  /**
    * A lot made for us where the delivery shows no code (ADR-094, R3): its
    * code taken from the lot series inside this transaction, as the write
-   * is saved, and the lot stored as made here (R4).
+   * is saved, and the lot stored as made here (R4). Also the lot that
+   * takes a code's stock on hand as its lot tracking starts, its note
+   * saying so (Q4a).
    *
    * Never merged into a lot of the same code: a code typed for this item by
    * a write not yet committed is one the take cannot see (takeLotCode), so
    * the insert waits for that write and, where it committed, takes the next
    * number rather than add to its lot.
    */
-  private async makeLot(
+  async makeLot(
     tx: Tx,
     organizationId: string,
     variantId: string,
@@ -622,6 +722,7 @@ export class StockService {
       expiry: LotExpiry;
       expiresAt: string | null;
       supplierLot: string | null;
+      note?: LotNote | null;
     },
   ): Promise<{ id: string; code: string }> {
     for (;;) {

@@ -907,6 +907,7 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product.lot_tracking_started",
                 "product_category.created",
                 "product_category.updated",
                 "product_category.deleted",
@@ -1095,6 +1096,7 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product.lot_tracking_started",
                 "product_category.created",
                 "product_category.updated",
                 "product_category.deleted",
@@ -1664,6 +1666,7 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product.lot_tracking_started",
                 "product_category.created",
                 "product_category.updated",
                 "product_category.deleted",
@@ -1852,6 +1855,7 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product.lot_tracking_started",
                 "product_category.created",
                 "product_category.updated",
                 "product_category.deleted",
@@ -6190,6 +6194,90 @@
         },
         "tags": [
           "WhereItStands"
+        ]
+      }
+    },
+    "/v1/products/{id}/variants/{variantId}/lot-tracking": {
+      "get": {
+        "operationId": "LotTrackingController_question_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotTrackingQuestion"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "LotTracking"
+        ]
+      },
+      "post": {
+        "operationId": "LotTrackingController_start_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartLotTrackingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotTrackingStarted"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "LotTracking"
         ]
       }
     },
@@ -18901,6 +18989,154 @@
           "codes"
         ]
       },
+      "LotTrackingPlace": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationPath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "locationName",
+          "locationCode",
+          "locationPath",
+          "quantity"
+        ]
+      },
+      "LotTrackingRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "makes": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "makes"
+        ]
+      },
+      "LotTrackingQuestion": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "places": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotTrackingPlace"
+            }
+          },
+          "runCount": {
+            "type": "number"
+          },
+          "runs": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LotTrackingRun"
+            }
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "onHand",
+          "places",
+          "runCount",
+          "runs"
+        ]
+      },
+      "StartLotTrackingDto": {
+        "type": "object",
+        "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
+          "supplierLot": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        }
+      },
+      "StartedLot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code"
+        ]
+      },
+      "LotTrackingStarted": {
+        "type": "object",
+        "properties": {
+          "lot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StartedLot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "lot"
+        ]
+      },
       "LookupResult": {
         "type": "object",
         "properties": {
@@ -24946,6 +25182,7 @@
           "product.updated",
           "product.variant_added",
           "product.variant_updated",
+          "product.lot_tracking_started",
           "product_category.created",
           "product_category.updated",
           "product_category.deleted",

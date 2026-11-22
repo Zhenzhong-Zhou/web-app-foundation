@@ -365,6 +365,12 @@ export class CostsService {
         ) c
       `);
 
+      /**
+       * Each output by the lot of its value row, where its cost was
+       * posted (postRunCost): output made before the code's lot tracking
+       * started has no lot of its own, and its value row has since taken
+       * the lot its stock went into (ADR-094, Q2a).
+       */
       const outputs = await tx.execute(sql`
         select l.code as lot_code,
                sum(m.quantity) as quantity,
@@ -374,33 +380,44 @@ export class CostsService {
                    and r.kind in ('run_close', 'issued')
                    and r.reference_type = 'production_order'
                    and r.reference_id = ${runId}::uuid
-                   and r.variant_id = m.variant_id
-                   and r.lot_id is not distinct from m.lot_id) as value
+                   and r.variant_id = v.variant_id
+                   and r.lot_id is not distinct from v.lot_id) as value
         from stock_movements m
-        left join lots l on l.id = m.lot_id
+        join stock_valuations v
+          on v.movement_id = m.id
+         and v.kind = 'movement'
+         and v.organization_id = ${organizationId}::uuid
+        left join lots l
+          on l.id = v.lot_id and l.organization_id = ${organizationId}::uuid
         where m.organization_id = ${organizationId}::uuid
           and m.reference_type = 'production_order'
           and m.reference_id = ${runId}::uuid
           and m.reason = 'production'
-        group by m.variant_id, m.lot_id, l.code
+        group by v.variant_id, v.lot_id, l.code
         order by l.code nulls first
       `);
 
       /**
        * Provisional when something it consumed was drawn from a pool that
        * was still waiting for a cost at the time — the consumption took an
-       * average that was missing part of its value.
+       * average that was missing part of its value. The pool is its value
+       * row's, which a component's lot tracking starting since moved into
+       * its lot with the pool's rows still waiting (ADR-094).
        */
       const waiting = await tx.execute(sql`
         with open as (${openNeedsCost(organizationId)})
         select exists (
           select 1
           from open o
+          join stock_valuations v
+            on v.variant_id = o.variant_id
+           and v.lot_id is not distinct from o.lot_id
+           and v.kind = 'movement'
+           and v.organization_id = ${organizationId}::uuid
           join stock_movements m
-            on m.variant_id = o.variant_id
-           and m.lot_id is not distinct from o.lot_id
-          where m.organization_id = ${organizationId}::uuid
-            and m.reference_type = 'production_order'
+            on m.id = v.movement_id
+           and m.organization_id = ${organizationId}::uuid
+          where m.reference_type = 'production_order'
             and m.reference_id = ${runId}::uuid
             and m.reason = 'consumption'
             and o.created_at <= m.created_at

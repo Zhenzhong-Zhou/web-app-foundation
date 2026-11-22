@@ -4,7 +4,7 @@ What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
 Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
 hold, what may be taken, stock found where it never was, a new lot at
-receipt and a lot's details corrected, as ADR-093's Inventory branch
+receipt, a lot's details corrected and lot tracking started, as ADR-093's Inventory branch
 completed it, its Movements branch grows it and ADR-094's lots at
 receipt grow it again. Each
 rule links the ADR that decided it, the test that proves it, the Help
@@ -341,7 +341,9 @@ file is kept is in the [README](README.md).
   "moved 20 each, counted in neither", on a phone's card too, and the
   sums leave it out; with a place chosen, that place alone, a move out of it Out;
   with a lot chosen, that lot alone, and with a place too, that lot
-  there. The balance is today's on hand, less what moved after the
+  there. A lot change is neither for the code, at its place too; with a
+  lot chosen, it is Out of the lot it leaves and In to the lot it
+  enters. The balance is today's on hand, less what moved after the
   row. With a reason or an order chosen, rows keep In and Out but no
   balance, since they leave movements out. Several items at a place
   alone ask for one item to see the balance; with an order chosen they
@@ -350,6 +352,8 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "works each row’s balance back from today’s on hand, across every place and at one, the same on every page and either way" ·
   [test](../../server/test/movements.e2e-spec.ts) "counts a lot’s balance alone, and that lot at one place" ·
   [test](../../server/test/movements.e2e-spec.ts) "gives one code’s date range its opening, In, Out and closing; a reason or an order keeps In and Out alone" ·
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "keeps the stock card’s balance, a lot change in neither In nor Out, and counts it In for the lot (R16)" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Item › E2E Vitamin C: In · Out · Balance replace Change; ?variantId=; Back leaves Movements" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, one item, Reason › Shipped: Balance, Opening and Closing go; In and Out stay, with “Balance counts every reason” and Clear Reason" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "says a move counted in neither once across In and Out, Balance as it was" ·
@@ -410,10 +414,10 @@ file is kept is in the [README](README.md).
   row was recorded under where it differs from today's; Item; In, Out
   and Balance where the list has them, else Change, and the stock card's
   Moved between Out and Balance, filled on a move counted in neither
-  alone; Unit, Reason; Reason code, the reason's stable code (receipt,
-  shipment, transfer, adjustment, production, consumption, sample or
-  return), never translated, so exports in two languages can be put
-  together (138b); From,
+  alone, a lot change's too; Unit, Reason; Reason code, the reason's
+  stable code (receipt, shipment, transfer, adjustment, production,
+  consumption, sample, return or lot_change), never translated, so
+  exports in two languages can be put together (138b); From,
   To, Lot, Supplier's lot, Expiry, For and By; Email, the person's; and
   the note last,
   as typed. One code's range starts with its opening balance and ends
@@ -824,6 +828,50 @@ file is kept is in the [README](README.md).
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-suppliers-lot-beside-our-code) ·
   [test](../../server/test/stock.e2e-spec.ts) "marks an older code as made here once, its own entry in the Activity log, and then it may be corrected (ADR-094, R7)" ·
   [test](../../server/test/stock.e2e-spec.ts) "marks and corrects in one save, an entry for each (ADR-094, R7)"
+
+## Starting lot tracking
+
+- **A code not tracked by lot may start, once, by whoever may change
+  items and correct counts,** products.update and stock.adjust both;
+  never equipment, which is counted where it stands, and never a code
+  that tracks lots already, each refused saying what to do, nothing
+  written. Nothing turns it off: an item's update takes no lot tracking.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses equipment, a code that tracks lots, another organization’s code, and anyone without both permissions, writing nothing (R13, R18)"
+- **Before it starts, the question reads where the code's stock is,**
+  each place and how much, and the runs in progress that make the code
+  or use it from a place, each to close against the lot; a reader who
+  may not see runs reads how many alone. A run still a draft is not in
+  progress.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "asks where the stock is, then puts all of it into one lot made for us, noted, every figure as before (R14, R15)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "lists a run only for a reader who may see runs, its count for all (ADR-080)"
+- **Started with stock, one lot made for us takes all of it,** at every
+  place, its code from the lot series, noted as the stock on hand when
+  lot tracking started, with the supplier's lot and the expiry when
+  given: one lot change a place, Lots started, counted in neither In nor
+  Out. On hand, usable, Held, Free, Short and Coming read as before,
+  with an expiry not in the past; who and when are in the item's
+  History. With nothing on hand, tracking turns on alone and no lot is
+  made; from then on, every movement of the code takes a lot.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "asks where the stock is, then puts all of it into one lot made for us, noted, every figure as before (R14, R15)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "turns tracking on alone for a code with nothing on hand: no lot, no movement, and a receipt then asks for one (R13)"
+- **The code's whole cost history goes into the lot:** Stock value and
+  the average are the same after, what waited for a cost still waits,
+  now the lot's, and its cost given later lands on the lot. A batch whose
+  run closes after its product started takes its cost on the lot, and a
+  run that drew on stock still waiting stays provisional.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [ADR-048, amended](../adr/0048-cost.md#amendment-november-2026--the-cost-on-a-lot-change-and-no-average-while-stock-waits-adr-094) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "moves the code’s whole cost history into the lot: Stock value unchanged, what waited still waits, its cost landing on the lot (R17)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "puts a batch’s cost on the lot, its run closing after its product started (Q2a)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "keeps a run provisional that drew on stock still waiting, once its component started (Q2a)"
+- **A movement of the code begun before the start finishes first,** and
+  its stock goes into the lot with the rest; one begun after asks for a
+  lot.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "waits for a receipt begun before it, and puts that stock in the lot too (two at once)"
 
 ## Counting in found stock
 

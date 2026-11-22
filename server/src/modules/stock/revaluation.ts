@@ -3,7 +3,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { sql } from 'drizzle-orm';
+import { type SQL, sql } from 'drizzle-orm';
 
 import { dayIn } from '../../common/today';
 import { recordPrevious } from '../../core/audit/audit-context';
@@ -113,13 +113,37 @@ async function post(tx: Tx, posting: Posting, shares: Split): Promise<void> {
 }
 
 /**
+ * Holds the code's row `for share`, as every movement does (recordWithin),
+ * before the lot of its value rows is read: the start of its lot tracking
+ * relabels them, taking the row `for update`, so a cost posted meanwhile
+ * waits for it, or it for the cost, and never reads a lot since changed
+ * (ADR-094).
+ */
+async function holdCode(
+  tx: Tx,
+  organizationId: string,
+  variantId: SQL,
+): Promise<void> {
+  await tx.execute(sql`
+    select 1
+    from product_variants pv
+    where pv.organization_id = ${organizationId}::uuid
+      and pv.id = (${variantId})
+    for share
+  `);
+}
+
+/**
  * A batch's material cost, posted to its output at close (ADR-048).
  *
  * Called by `ProductionCloseService.close` after the consumption movements
  * are written, in the same transaction, so what the run consumed is already
  * valued at its pools' averages. The material cost is minus their sum; each
  * output lot takes its share by quantity, the last taking whatever rounding
- * left so the shares add up to the cost exactly.
+ * left so the shares add up to the cost exactly. The output's lot is its
+ * value row's, never its movement's: output made before the code's lot
+ * tracking started was recorded with no lot, and its value row has since
+ * taken the lot its stock went into (ADR-094, Q2a).
  *
  * A run that produced nothing posts nothing: its material cost is what its
  * consumption rows already say, and there is no unit to carry it.
@@ -130,6 +154,15 @@ export async function postRunCost(
   runId: string,
   actorId: string,
 ): Promise<void> {
+  await holdCode(
+    tx,
+    organizationId,
+    sql`select po.output_variant_id
+        from production_orders po
+        where po.id = ${runId}::uuid
+          and po.organization_id = ${organizationId}::uuid`,
+  );
+
   const shares = await tx.execute(sql`
     with cost as (
       select coalesce(-sum(v.value), 0) as material
@@ -141,13 +174,17 @@ export async function postRunCost(
         and m.reason = 'consumption'
     ),
     output as (
-      select m.variant_id, m.lot_id, sum(m.quantity) as quantity
+      select v.variant_id, v.lot_id, sum(m.quantity) as quantity
       from stock_movements m
+      join stock_valuations v
+        on v.movement_id = m.id
+       and v.kind = 'movement'
+       and v.organization_id = ${organizationId}::uuid
       where m.organization_id = ${organizationId}::uuid
         and m.reference_type = 'production_order'
         and m.reference_id = ${runId}::uuid
         and m.reason = 'production'
-      group by m.variant_id, m.lot_id
+      group by v.variant_id, v.lot_id
     ),
     ranked as (
       select o.variant_id, o.lot_id, o.quantity, c.material,
@@ -302,6 +339,15 @@ export async function correctCost(
   input: CostInput,
   actorId: string,
 ): Promise<CorrectedCost> {
+  await holdCode(
+    tx,
+    organizationId,
+    sql`select v.variant_id
+        from stock_valuations v
+        where v.id = ${valuationId}::uuid
+          and v.organization_id = ${organizationId}::uuid`,
+  );
+
   const found = await tx.execute(sql`
     select v.id, v.kind, v.variant_id, v.lot_id,
            (extract(epoch from v.created_at) * 1000)::float8 as arrived_ms,

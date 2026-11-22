@@ -57,6 +57,11 @@ export const AUDIT_ACTIONS = {
 
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
+  /**
+   * A code's lot tracking started, one way (ADR-094, R16): its stock on
+   * hand put into a lot made for us, its cost history with it.
+   */
+  PRODUCT_LOT_TRACKING_STARTED: 'product.lot_tracking_started',
 
   /**
    * Items' categories (ADR-092), each by its name: added under its parent,

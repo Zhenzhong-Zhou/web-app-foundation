@@ -2342,6 +2342,44 @@ export type ProductStock = {
   codes: Array<CodeStanding>;
 };
 
+export type LotTrackingPlace = {
+  locationId: string;
+  locationName: string;
+  locationCode: string | null;
+  locationPath: Array<string>;
+  quantity: string;
+};
+
+export type LotTrackingRun = {
+  id: string;
+  reference: string | null;
+  makes: boolean;
+};
+
+export type LotTrackingQuestion = {
+  variantId: string;
+  sku: string;
+  onHand: string;
+  places: Array<LotTrackingPlace>;
+  runCount: number;
+  runs: Array<LotTrackingRun> | null;
+};
+
+export type StartLotTrackingDto = {
+  expiry?: 'date' | 'unknown' | 'none';
+  supplierLot?: string;
+  expiresAt?: string;
+};
+
+export type StartedLot = {
+  id: string;
+  code: string;
+};
+
+export type LotTrackingStarted = {
+  lot: StartedLot | null;
+};
+
 export type LookupResult = {
   id: string;
   title: string;
@@ -3888,6 +3926,7 @@ export const AuditAction = {
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
+  PRODUCT_LOT_TRACKING_STARTED: 'product.lot_tracking_started',
   PRODUCT_CATEGORY_CREATED: 'product_category.created',
   PRODUCT_CATEGORY_UPDATED: 'product_category.updated',
   PRODUCT_CATEGORY_DELETED: 'product_category.deleted',
@@ -4554,6 +4593,7 @@ export type AuditControllerListV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -4672,6 +4712,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -5002,6 +5043,7 @@ export type WorkControllerActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -5120,6 +5162,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -6751,6 +6794,40 @@ export type WhereItStandsControllerReadV1Responses = {
 
 export type WhereItStandsControllerReadV1Response =
   WhereItStandsControllerReadV1Responses[keyof WhereItStandsControllerReadV1Responses];
+
+export type LotTrackingControllerQuestionV1Data = {
+  body?: never;
+  path: {
+    id: string;
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/products/{id}/variants/{variantId}/lot-tracking';
+};
+
+export type LotTrackingControllerQuestionV1Responses = {
+  200: LotTrackingQuestion;
+};
+
+export type LotTrackingControllerQuestionV1Response =
+  LotTrackingControllerQuestionV1Responses[keyof LotTrackingControllerQuestionV1Responses];
+
+export type LotTrackingControllerStartV1Data = {
+  body: StartLotTrackingDto;
+  path: {
+    id: string;
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/products/{id}/variants/{variantId}/lot-tracking';
+};
+
+export type LotTrackingControllerStartV1Responses = {
+  201: LotTrackingStarted;
+};
+
+export type LotTrackingControllerStartV1Response =
+  LotTrackingControllerStartV1Responses[keyof LotTrackingControllerStartV1Responses];
 
 export type LookupControllerLookupV1Data = {
   body?: never;

@@ -8,6 +8,8 @@ import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
 import { LotTraceController } from './lot-trace.controller';
 import { LotTraceService } from './lot-trace.service';
+import { LotTrackingController } from './lot-tracking.controller';
+import { LotTrackingService } from './lot-tracking.service';
 import { LotsService } from './lots.service';
 import { LowStockNoticesService } from './low-stock-notices.service';
 import { LowStockNoticesTimer } from './low-stock-notices.timer';
@@ -43,6 +45,7 @@ import { WhereItStandsService } from './where-it-stands.service';
     AvailabilityController,
     ReorderPointsController,
     WhereItStandsController,
+    LotTrackingController,
   ],
   providers: [
     StockService,
@@ -50,6 +53,7 @@ import { WhereItStandsService } from './where-it-stands.service';
     StockGroupedService,
     WhereItStandsService,
     LotsService,
+    LotTrackingService,
     AdjustmentGuard,
     LotTraceService,
     AvailabilityService,

@@ -240,6 +240,10 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.productCreated',
     defaultMessage: 'Item created',
   }),
+  'product.lot_tracking_started': t({
+    id: 'audit.action.productLotTrackingStarted',
+    defaultMessage: 'Lot tracking started',
+  }),
   'product.updated': t({
     id: 'audit.action.productUpdated',
     defaultMessage: 'Item updated',
