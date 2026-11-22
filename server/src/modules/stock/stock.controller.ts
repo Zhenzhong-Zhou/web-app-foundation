@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -15,6 +16,8 @@ import {
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
+import { reportFault } from '../../common/faults/tracker';
+import { AuditService } from '../../core/audit/audit.service';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
@@ -59,11 +62,14 @@ import { StockReadsService } from './stock-reads.service';
  */
 @Controller({ path: 'stock', version: '1' })
 export class StockController {
+  private readonly logger = new Logger(StockController.name);
+
   constructor(
     private readonly stock: StockService,
     private readonly reads: StockReadsService,
     private readonly lots: LotsService,
     private readonly permissions: PermissionsService,
+    private readonly audit: AuditService,
   ) {}
 
   @Post('movements')
@@ -188,10 +194,39 @@ export class StockController {
     resourceId: (_response, request) => request.params.id,
   })
   async updateLot(
+    @CurrentUser() user: RequestContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateLotDto,
   ): Promise<void> {
-    await this.lots.updateLot(id, dto);
+    // Marking a code as made here lets it be renamed, so a recall may no
+    // longer match the boxes: a permission of its own, beside stock.move,
+    // asked before anything is read (ADR-094, R7).
+    if (dto.madeHere) {
+      await this.permissions.demand(user, [PERMISSIONS.STOCK_LOT_MADE_HERE]);
+    }
+
+    const { marked } = await this.lots.updateLot(id, dto);
+
+    /**
+     * The mark is its own entry in the Activity log, beside Lot updated
+     * where the same save changed more (R7). Written here, as the
+     * interceptor writes one: the mark has happened, so a failed entry is
+     * logged rather than reported as a failed save.
+     */
+    if (!marked) return;
+    try {
+      await this.audit.record({
+        actorId: user.userId,
+        action: AUDIT_ACTIONS.STOCK_LOT_MARKED_MADE_HERE,
+        resourceType: 'lot',
+        resourceId: id,
+        ip: user.ip,
+        userAgent: user.userAgent,
+      });
+    } catch (error) {
+      this.logger.error(`Audit write failed: ${String(error)}`);
+      reportFault(error, { failed: 'an audit write' });
+    }
   }
 
   /**

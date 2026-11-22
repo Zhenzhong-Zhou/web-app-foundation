@@ -344,6 +344,10 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.roleUpdated',
     defaultMessage: 'Role changed',
   }),
+  'stock.lot_marked_made_here': t({
+    id: 'audit.action.stockLotMarkedMadeHere',
+    defaultMessage: 'Lot’s code marked as made up here',
+  }),
   'stock.lot_updated': t({
     id: 'audit.action.stockLotUpdated',
     defaultMessage: 'Lot updated',

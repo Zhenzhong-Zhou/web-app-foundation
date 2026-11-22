@@ -1929,7 +1929,10 @@ export type Lot = {
 };
 
 export type UpdateLotDto = {
+  expiry?: 'date' | 'unknown' | 'none';
+  madeHere?: true;
   code?: string;
+  supplierLot?: string;
   expiresAt?: string;
 };
 
@@ -3896,6 +3899,7 @@ export const AuditAction = {
   PARTNER_CONTACT_UPDATED: 'partner.contact.updated',
   PARTNER_CONTACT_RETIRED: 'partner.contact.retired',
   STOCK_LOT_UPDATED: 'stock.lot_updated',
+  STOCK_LOT_MARKED_MADE_HERE: 'stock.lot_marked_made_here',
   STOCK_VALUATION_COST_SET: 'stock_valuation.cost_set',
   EXCHANGE_RATE_SET: 'exchange_rate.set',
   PRODUCT_LICENCE_CREATED: 'product_licence.created',
@@ -4561,6 +4565,7 @@ export type AuditControllerListV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -4678,6 +4683,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -5007,6 +5013,7 @@ export type WorkControllerActivityV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -5124,6 +5131,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'

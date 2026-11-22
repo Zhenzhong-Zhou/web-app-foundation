@@ -96,6 +96,12 @@ export const AUDIT_ACTIONS = {
   PARTNER_CONTACT_RETIRED: 'partner.contact.retired',
 
   STOCK_LOT_UPDATED: 'stock.lot_updated',
+  /**
+   * An older lot's code marked as made here, one way (ADR-094, R7): its
+   * code may then be renamed, so a recall may no longer match the boxes.
+   * Its own entry, beside Lot updated where the same save changed more.
+   */
+  STOCK_LOT_MARKED_MADE_HERE: 'stock.lot_marked_made_here',
 
   STOCK_VALUATION_COST_SET: 'stock_valuation.cost_set',
   EXCHANGE_RATE_SET: 'exchange_rate.set',

@@ -3,9 +3,10 @@
 What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
 Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
-hold, what may be taken, stock found where it never was and a new lot
-at receipt, as ADR-093's Inventory branch completed it, its Movements
-branch grows it and ADR-094's lots at receipt grow it again. Each
+hold, what may be taken, stock found where it never was, a new lot at
+receipt and a lot's details corrected, as ADR-093's Inventory branch
+completed it, its Movements branch grows it and ADR-094's lots at
+receipt grow it again. Each
 rule links the ADR that decided it, the test that proves it, the Help
 section where a person meets it, and the manual check that walks it by
 hand. Why a rule is so is in its ADR; how to do a task is in the
@@ -752,6 +753,46 @@ file is kept is in the [README](README.md).
   a tab that sends none read the code before its tracking started.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "says lot tracking has started, to reload, where a write sends no lot"
+
+## Correcting a lot's details
+
+- **Edit lot details moves any lot between the three expiries:** a
+  date, not known yet, or none, so a day can be taken away and given
+  again; a day exactly for a date, a correction that contradicts it
+  refused, nothing changed. A day alone, as a tab opened before sends
+  it, reads a date; an expiry not named stays as it is. Correcting a
+  lot needs stock.move.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [test](../../server/test/stock.e2e-spec.ts) "moves a lot between the three expiries, a day taken away and given again (ADR-094, R8)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses an expiry it cannot read, saying what to do, and changes nothing (ADR-094, R8)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "corrects the expiry on any lot" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a Viewer, which lacks stock.move"
+- **A lot made here takes its supplier's lot when it is known,** as
+  printed, its case kept; emptied, it is to add again. A code typed from
+  the box is the supplier's own, so a supplier's lot for it is refused,
+  saying to leave it empty or say we made the code up, and nothing is
+  changed.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-suppliers-lot-beside-our-code) ·
+  [test](../../server/test/stock.e2e-spec.ts) "adds the supplier’s lot to a lot made here, as printed, and takes it away again (ADR-094, R5)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a supplier’s lot for a code typed from the box, saying what to do, and changes nothing (ADR-094, R5)"
+- **An older code typed up here is marked as made here by
+  stock.lot_made_here alone,** the Owner's at first: one way, never
+  unmarked, a second mark changing nothing. Marked, in the same save or
+  later, its code may be corrected and it takes a supplier's lot.
+  Without the permission the whole save is refused, in the reader's
+  words, and nothing is changed.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-suppliers-lot-beside-our-code) ·
+  [test](../../server/test/stock.e2e-spec.ts) "marks an older code as made here once, its own entry in the Activity log, and then it may be corrected (ADR-094, R7)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "never unmarks a code made here, saying it stays marked (ADR-094, R7)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses the mark without stock.lot_made_here, in the reader’s words, and changes nothing (ADR-094, R7)" ·
+  MC-3328
+- **The mark is its own entry in the Activity log,** "Lot’s code marked
+  as made up here", beside Lot updated where the same save changed
+  more; a save that changed nothing, or only marked, writes no Lot
+  updated.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-suppliers-lot-beside-our-code) ·
+  [test](../../server/test/stock.e2e-spec.ts) "marks an older code as made here once, its own entry in the Activity log, and then it may be corrected (ADR-094, R7)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "marks and corrects in one save, an entry for each (ADR-094, R7)"
 
 ## Counting in found stock
 

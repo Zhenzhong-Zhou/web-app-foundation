@@ -934,6 +934,7 @@
                 "partner.contact.updated",
                 "partner.contact.retired",
                 "stock.lot_updated",
+                "stock.lot_marked_made_here",
                 "stock_valuation.cost_set",
                 "exchange_rate.set",
                 "product_licence.created",
@@ -1121,6 +1122,7 @@
                 "partner.contact.updated",
                 "partner.contact.retired",
                 "stock.lot_updated",
+                "stock.lot_marked_made_here",
                 "stock_valuation.cost_set",
                 "exchange_rate.set",
                 "product_licence.created",
@@ -1689,6 +1691,7 @@
                 "partner.contact.updated",
                 "partner.contact.retired",
                 "stock.lot_updated",
+                "stock.lot_marked_made_here",
                 "stock_valuation.cost_set",
                 "exchange_rate.set",
                 "product_licence.created",
@@ -1876,6 +1879,7 @@
                 "partner.contact.updated",
                 "partner.contact.retired",
                 "stock.lot_updated",
+                "stock.lot_marked_made_here",
                 "stock_valuation.cost_set",
                 "exchange_rate.set",
                 "product_licence.created",
@@ -16895,9 +16899,27 @@
       "UpdateLotDto": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
+          "madeHere": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
           "code": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 64
+          },
+          "supplierLot": {
+            "type": "string",
             "maxLength": 64
           },
           "expiresAt": {
@@ -24793,6 +24815,7 @@
           "partner.contact.updated",
           "partner.contact.retired",
           "stock.lot_updated",
+          "stock.lot_marked_made_here",
           "stock_valuation.cost_set",
           "exchange_rate.set",
           "product_licence.created",

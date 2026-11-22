@@ -836,9 +836,13 @@ export class StockService {
  * A new lot's expiry, one of three (ADR-094, R8): a day exactly for
  * `date`, none for not known yet or none. A write that names no kind, as
  * a tab opened before sends it, reads `date` with a day and `none`
- * without, so today's lots with no day stay Doesn't expire.
+ * without, so today's lots with no day stay Doesn't expire. Edit lot
+ * details reads its expiry by the same rule (LotsService.updateLot).
  */
-function expiryOf(lot: NonNullable<RecordMovementInput['lot']>): {
+export function expiryOf(lot: {
+  expiry?: LotExpiry | null;
+  expiresAt?: string | null;
+}): {
   expiry: LotExpiry;
   expiresAt: string | null;
 } {

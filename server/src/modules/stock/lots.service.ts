@@ -1,11 +1,13 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
+import { recordUnchanged } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import { lots } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -13,10 +15,12 @@ import { t } from '../../i18n/translate';
 import { ListLotsDto } from './dto/list-lots.dto';
 import type { Lot } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
+import { expiryOf } from './stock.service';
 
 /**
  * Lots as records: the codes already known for a variant, and correcting
- * one's code or expiry.
+ * one's details: its code, its supplier's lot, its expiry, and the mark
+ * that its code was made here.
  *
  * Its own service because neither moves stock. A lot comes into being with
  * the movement that brings it in, and that stays in StockService.
@@ -48,63 +52,130 @@ export class LotsService {
   }
 
   /**
-   * Corrects a lot's expiry, and its code when the code was ours to invent.
+   * Edit lot details (ADR-094): a lot's expiry, one of three, on any lot;
+   * its supplier's lot and its code where the code was ours to invent; and
+   * an older code typed up here marked so, one way. What it did, for the
+   * controller to log the mark as its own entry.
    *
    * `isAssigned` is the discriminator. A supplier-printed code is authoritative
    * — renaming the row makes the record disagree with the boxes, and the
    * honest correction is adjustment movements between two lots. A code this
    * organization invented has no external truth behind it, so a typo is a
-   * typo.
+   * typo. Marked in the same save, the code is treated as invented already.
+   *
+   * The row is read for update, so two saves at once mark it once.
    */
-  async updateLot(lotId: string, input: UpdateLotDto) {
-    const [lot] = await this.tenantDb.select(lots, eq(lots.id, lotId));
+  async updateLot(
+    lotId: string,
+    input: UpdateLotDto,
+  ): Promise<{ marked: boolean }> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [lot] = await tx
+        .select()
+        .from(lots)
+        .where(and(eq(lots.id, lotId), eq(lots.organizationId, organizationId)))
+        .for('update');
 
-    if (!lot)
-      throw new NotFoundException(
-        t({ id: 'stock.suchLot', defaultMessage: 'No such lot' }),
-      );
+      if (!lot)
+        throw new NotFoundException(
+          t({ id: 'stock.suchLot', defaultMessage: 'No such lot' }),
+        );
 
-    if (input.code && input.code !== lot.code && !lot.isAssigned) {
-      throw new ConflictException(
-        t(
-          {
-            id: 'stock.codeCameSupplierSo',
-            defaultMessage:
-              '{code} came from the supplier, so it cannot be renamed. Move the stock to the correct lot instead.',
-          },
-          { code: lot.code },
-        ),
-      );
-    }
+      // One way: true marks, and nothing unmarks (R7).
+      const marked = input.madeHere === true && !lot.isAssigned;
+      const madeHere = lot.isAssigned || marked;
 
-    try {
-      await this.tenantDb.update(
-        lots,
-        {
-          code: input.code,
-          // YYYY-MM-DD as it arrives (ADR-052); undefined leaves it alone.
-          expiresAt: input.expiresAt,
-        },
-        eq(lots.id, lotId),
-      );
-    } catch (error) {
-      // The unique index on (organization_id, variant_id, code). Merging two
-      // lots is a different operation with its own rules, not a rename.
-      if (isUniqueViolation(error)) {
+      if (input.code && input.code !== lot.code && !madeHere) {
         throw new ConflictException(
           t(
             {
-              id: 'stock.codeExistsItem',
-              defaultMessage: '{code} already exists for this item',
+              id: 'stock.codeCameSupplierSo',
+              defaultMessage:
+                '{code} came from the supplier, so it cannot be renamed. Move the stock to the correct lot instead.',
             },
-            { code: input.code },
+            { code: lot.code },
           ),
         );
       }
-      throw error;
-    }
 
-    this.logger.log(`Lot ${lotId} updated`);
+      // Empty, or null as an API caller may send it, takes it away.
+      const supplierLot =
+        input.supplierLot === undefined
+          ? undefined
+          : input.supplierLot?.trim() || null;
+
+      // A code typed from the box is the supplier's own, so it has no
+      // supplier's lot to add (R5).
+      if (supplierLot && !madeHere) {
+        throw new BadRequestException(
+          t(
+            {
+              id: 'stock.supplierLotForTypedLot',
+              defaultMessage:
+                '{code} was typed from the box, so it is the supplier’s own lot. Leave the supplier’s lot empty, or say we made this code up.',
+            },
+            { code: lot.code },
+          ),
+        );
+      }
+
+      // The three, by the rule a new lot's are read (R8); with neither
+      // field, the expiry stays as it is.
+      const expiry =
+        input.expiry == null && input.expiresAt === undefined
+          ? undefined
+          : expiryOf(input);
+
+      const changes: Partial<typeof lots.$inferInsert> = {
+        ...(input.code !== undefined && input.code !== lot.code
+          ? { code: input.code }
+          : {}),
+        ...(supplierLot !== undefined && supplierLot !== lot.supplierLot
+          ? { supplierLot }
+          : {}),
+        ...(expiry &&
+        (expiry.expiry !== lot.expiry || expiry.expiresAt !== lot.expiresAt)
+          ? expiry
+          : {}),
+      };
+
+      // The mark is logged as its own entry; Lot updated, the route's,
+      // only where something else changed, so a save that changed
+      // nothing, or only marked the code, writes no entry of its own.
+      const changed = Object.keys(changes).length > 0;
+      if (!changed) recordUnchanged();
+      if (!changed && !marked) return { marked };
+
+      try {
+        await tx
+          .update(lots)
+          .set({ ...changes, ...(marked ? { isAssigned: true } : {}) })
+          .where(
+            and(eq(lots.id, lotId), eq(lots.organizationId, organizationId)),
+          );
+      } catch (error) {
+        // The unique index on (organization_id, variant_id, code). Merging
+        // two lots is a different operation with its own rules, not a
+        // rename.
+        if (isUniqueViolation(error)) {
+          throw new ConflictException(
+            t(
+              {
+                id: 'stock.codeExistsItem',
+                defaultMessage: '{code} already exists for this item',
+              },
+              { code: input.code },
+            ),
+          );
+        }
+        throw error;
+      }
+
+      this.logger.log(
+        `Lot ${lotId} updated${marked ? ', marked made here' : ''}`,
+      );
+      return { marked };
+    });
   }
 }
 

@@ -117,9 +117,9 @@ const GATED_INSIDE = new Map<string, string>([
 const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);
 
 /**
- * Permissions no route declares, checked by a guard of the route's own
- * beside the one it declares, each with its reason: whether they apply
- * depends on the request's body.
+ * Permissions no route declares, checked by a guard of the route's own,
+ * or by its handler, beside the one it declares, each with its reason:
+ * whether they apply depends on the request's body.
  */
 const CHECKED_INSIDE = new Map<Permission, string>([
   [
@@ -132,7 +132,7 @@ const CHECKED_INSIDE = new Map<Permission, string>([
   ],
   [
     'stock.lot_made_here',
-    'On a lot’s details marking its code as made here, madeHere: true (ADR-094, R7); PATCH /v1/stock/lots/:id declares its own',
+    'StockController.updateLot, on a lot’s details marking its code as made here, madeHere: true (ADR-094, R7); the route declares stock.move',
   ],
 ]);
 
