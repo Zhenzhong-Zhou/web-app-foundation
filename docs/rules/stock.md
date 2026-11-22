@@ -853,12 +853,20 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "tells a new lot by what the write says, never by the movement’s reason" ·
   [test](../../client/src/inventory/count-in-dialog.test.tsx) "says a code the item has at the lot number, focused there" ·
   MC-322
-- **Found stock in a new lot, or of an item with no cost yet, waits for
-  a cost,** and its message says so, linked to Stock value's Waiting for
-  a cost for a reader who may see costs; found stock in a lot the item
-  has rides at that lot's average.
+- **Found stock waits for a cost in a new lot, for an item with no cost
+  yet, and wherever any of the stock it joins still waits for one,** the
+  lot's, or the item's for one with no lots, even a part of it (#650).
+  Its message says so, linked to Stock value's Waiting for a cost for a
+  reader who may see costs, where it is given its cost on its own line.
+  Otherwise found stock rides at its lot's average, or the item's for
+  one with no lots.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [ADR-048, amended](../adr/0048-cost.md#amendment-november-2026--the-cost-on-a-lot-change-and-no-average-while-stock-waits-adr-094) ·
   [test](../../server/test/stock.e2e-spec.ts) "makes a new lot with the count, at a place the item never was, and says it waits for a cost" ·
   [test](../../server/test/stock.e2e-spec.ts) "counts into a lot the item has at its average, not waiting for a cost" ·
+  [test](../../server/test/costs.e2e-spec.ts) "counts found stock into a lot whose receipt waits for a cost as waiting too, listed, and costed on its own line" ·
+  [test](../../server/test/costs.e2e-spec.ts) "takes no average from a pool only part of whose stock waits, and takes one again once none does (2a)" ·
   [test](../../client/src/inventory/count-in-dialog.test.tsx) "makes a new lot with the count, saying it waits for a cost, linked to Waiting for a cost" ·
+  [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
   MC-322

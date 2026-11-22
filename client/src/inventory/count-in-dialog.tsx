@@ -137,9 +137,10 @@ export function CountInDialog({
       },
     );
 
-    // A new lot, or an item with no cost yet, waits for a cost, and links
-    // to Stock value's Waiting for a cost for whoever may set one (90a);
-    // otherwise to its Movements at that place.
+    // A new lot, an item with no cost yet, or stock joining any that still
+    // waits (#650) waits for a cost, and links to Stock value's Waiting for
+    // a cost for whoever may set one (90a); otherwise to its Movements at
+    // that place.
     const waits = result.needsCost;
     toast(
       waits

@@ -2,6 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import { todayOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
+import { openNeedsCost } from '../costs/open-needs-cost';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
 
@@ -204,7 +205,7 @@ async function valueInbound(
 
       return (
         shipped ??
-        (await atPoolAverage(tx, poolId, movement.quantity)) ??
+        (await atPoolAverage(tx, organizationId, poolId, movement)) ??
         unvalued(null)
       );
     }
@@ -212,7 +213,8 @@ async function valueInbound(
     default: {
       // An inbound adjustment. A voided shipment's reversal comes back at
       // the cost it left at; found stock rides at its pool's average, since
-      // it was bought at the price its pool already carries.
+      // it was bought at the price its pool already carries, and waits for
+      // a cost while that pool does.
       const reversed =
         movement.referenceType === 'shipment' && movement.referenceId
           ? await shippedAt(
@@ -225,7 +227,7 @@ async function valueInbound(
 
       return (
         reversed ??
-        (await atPoolAverage(tx, poolId, movement.quantity)) ??
+        (await atPoolAverage(tx, organizationId, poolId, movement)) ??
         unvalued(null)
       );
     }
@@ -314,17 +316,37 @@ async function shippedAt(
   return row ? derived(row.value) : null;
 }
 
-/** The pool's current unit cost, or null for an empty pool. */
+/**
+ * The pool's current unit cost: null for an empty pool, and null while any
+ * of its stock still waits for a cost, the whole or a part (ADR-048, amended
+ * by ADR-094; #650). Those units sit in the pool at nothing, so its average
+ * is low, 0 where all of it waits: stock taken in at it would read as
+ * costed, and the cost given later would be spread over it as well. "Still
+ * waiting" is `openNeedsCost`'s, the rows Stock value's Waiting for a cost
+ * lists.
+ */
 async function atPoolAverage(
   tx: Tx,
+  organizationId: string,
   poolId: string,
-  quantity: string,
+  movement: Movement,
 ): Promise<Valued | null> {
+  const waiting = openNeedsCost(
+    organizationId,
+    sql`(${movement.variantId}::uuid)`,
+  );
+
   const result = await tx.execute(sql`
-    select round(${quantity}::numeric * value / quantity, 6) as value
-    from valuation_pools
-    where id = ${poolId}::uuid
-      and quantity > 0
+    select round(${movement.quantity}::numeric * p.value / p.quantity, 6)
+             as value
+    from valuation_pools p
+    where p.id = ${poolId}::uuid
+      and p.quantity > 0
+      and not exists (
+        select 1
+        from (${waiting}) o
+        where o.lot_id is not distinct from p.lot_id
+      )
   `);
 
   const [row] = result.rows as { value: string }[];

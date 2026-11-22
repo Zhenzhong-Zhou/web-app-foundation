@@ -59,7 +59,7 @@ What each does:
 - **Ship out…**: stock that leaves with no order. A customer’s goods ship from their sale on Orders.
 - **Send sample…**: a hand-out, with whom it was given to, so a recall can find it.
 - **Correct the count…**: how many more or fewer the shelf has than recorded, why, and what happened.
-- **Count it in…**, ending an item’s opened places and lots under “Found some where it has never been?”: stock found at a place, or in a lot, the item has never had. Choose the location and, for an item tracked by lot, **One of its lots** or **A new lot**, its number as printed on the box and one the item does not have yet. A new lot, or an item with no cost yet, waits for a cost on [Stock value](/costs).
+- **Count it in…**, ending an item’s opened places and lots under “Found some where it has never been?”: stock found at a place, or in a lot, the item has never had. Choose the location and, for an item tracked by lot, **One of its lots** or **A new lot**, its number as printed on the box and one the item does not have yet. What you count in waits for a cost on [Stock value](/costs) in a new lot, for an item with no cost yet, and while any of the stock it joins still waits for one.
 - **Edit lot details…**, **Trace lot** and **Movements**: the lot, where it went, and its movements.
 - **Change reorder point…**: the item’s reorder point, below.
 

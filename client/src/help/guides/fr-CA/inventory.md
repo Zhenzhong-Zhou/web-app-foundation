@@ -59,7 +59,7 @@ Ce que fait chacune :
 - **Sortie de stock…** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
 - **Envoyer un échantillon…** : un don, avec la personne à qui il a été remis, pour qu’un rappel puisse le retrouver.
 - **Corriger le compte…** : combien la tablette contient de plus ou de moins que ce qui est enregistré, pourquoi, et ce qui s’est passé.
-- **Ajouter au compte…**, à la fin des emplacements et des lots ouverts d’un article, sous « Du stock trouvé là où il n’a jamais été? » : du stock trouvé à un emplacement, ou dans un lot, que l’article n’a jamais eu. Choisissez l’emplacement et, pour un article suivi par lot, **Un de ses lots** ou **Un nouveau lot**, son numéro tel qu’imprimé sur la boîte et que l’article n’a pas encore. Un nouveau lot, ou un article encore sans coût, est en attente d’un coût dans [Valeur du stock](/costs).
+- **Ajouter au compte…**, à la fin des emplacements et des lots ouverts d’un article, sous « Du stock trouvé là où il n’a jamais été? » : du stock trouvé à un emplacement, ou dans un lot, que l’article n’a jamais eu. Choisissez l’emplacement et, pour un article suivi par lot, **Un de ses lots** ou **Un nouveau lot**, son numéro tel qu’imprimé sur la boîte et que l’article n’a pas encore. Ce que vous ajoutez au compte est en attente d’un coût dans [Valeur du stock](/costs) s’il entre dans un nouveau lot, si l’article n’a encore aucun coût, ou tant qu’une partie du stock qu’il rejoint attend encore le sien.
 - **Modifier le lot…**, **Tracer le lot** et **Mouvements** : le lot, où il est allé, et ses mouvements.
 - **Modifier le point de commande…** : le point de commande de l’article, plus bas.
 

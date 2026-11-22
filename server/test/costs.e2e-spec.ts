@@ -524,6 +524,103 @@ describe('Costs (e2e)', () => {
     });
   });
 
+  /**
+   * A pool with any stock still waiting for a cost gives no average
+   * (ADR-048, amended by ADR-094, R22; #650): stock counted into it waits
+   * too, rather than riding at an average worked out over units valued at
+   * nothing, and is given its cost on its own line.
+   */
+  describe('stock counted in while its pool waits for a cost (#650)', () => {
+    /** A found count onto the shelf, as Count it in… writes it. */
+    async function countedIn(
+      s: Setup,
+      found: { variantId: string; lotId?: string; quantity: string },
+    ) {
+      const res = await s.agent
+        .post('/v1/stock/movements')
+        .send({
+          ...found,
+          toLocationId: s.shelf,
+          reason: 'adjustment',
+          reasonDetail: 'found',
+          note: 'A box found behind the cartons at the count',
+        })
+        .expect(201);
+
+      return body<{ movement: { id: string }; needsCost: boolean }>(res);
+    }
+
+    it('counts found stock into a lot whose receipt waits for a cost as waiting too, listed, and costed on its own line', async () => {
+      const s = await setup('alpha');
+      const vitc = await variant(s, 'VITC-100', 'material', true);
+
+      // Received by hand, with no price: the 100 wait for a cost.
+      const receipt = await move(s, {
+        variantId: vitc,
+        toLocationId: s.shelf,
+        quantity: '100',
+        reason: 'receipt',
+        lot: { code: 'L1' },
+      });
+      const lotId = await lotIdOf(db, 'L1');
+
+      const found = await countedIn(s, {
+        variantId: vitc,
+        lotId,
+        quantity: '12',
+      });
+
+      expect(found.needsCost).toBe(true);
+      const receiptRow = await valuationOf(db, receipt);
+      const foundRow = await valuationOf(db, found.movement.id);
+      expect(foundRow).toMatchObject({ value: '0.000000', needsCost: true });
+      expect((await needsCost(s)).map((entry) => entry.id).sort()).toEqual(
+        [receiptRow.id, foundRow.id].sort(),
+      );
+
+      // Each at 5.00: 560.00 for the 112, never 500.00 at 4.46 a unit.
+      await setCost(s, receiptRow.id, cad('5'));
+      await setCost(s, foundRow.id, cad('5'));
+
+      expect(await needsCost(s)).toEqual([]);
+      expect(await poolOf(db, vitc, lotId)).toMatchObject({
+        quantity: '112.0000',
+        value: '560.000000',
+      });
+    });
+
+    it('takes no average from a pool only part of whose stock waits, and takes one again once none does (2a)', async () => {
+      const s = await setup('alpha');
+      const scoop = await variant(s, 'SCOOP');
+
+      await buy(s, scoop, '10', cad('2'));
+      const waiting = await move(s, {
+        variantId: scoop,
+        toLocationId: s.shelf,
+        quantity: '10',
+        reason: 'receipt',
+      });
+
+      // The pool's 20.00 for 20 would give 1.00 a unit, half what any cost.
+      const found = await countedIn(s, { variantId: scoop, quantity: '5' });
+
+      expect(found.needsCost).toBe(true);
+      const foundRow = await valuationOf(db, found.movement.id);
+      expect(foundRow).toMatchObject({ value: '0.000000', needsCost: true });
+
+      await setCost(s, (await valuationOf(db, waiting)).id, cad('2'));
+      await setCost(s, foundRow.id, cad('2'));
+
+      const again = await countedIn(s, { variantId: scoop, quantity: '5' });
+
+      expect(again.needsCost).toBe(false);
+      expect(await valuationOf(db, again.movement.id)).toMatchObject({
+        value: '10.000000',
+        needsCost: false,
+      });
+    });
+  });
+
   describe('exchange rates', () => {
     it('keeps one rate a day, the latest entered', async () => {
       const s = await setup('alpha');

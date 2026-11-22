@@ -584,21 +584,26 @@ a second organization.
   the item's row open, the place's lots open with it, focus on the
   item's name. A role made with `stock.view` alone sees the same rows,
   no order or run named under For.
-- **MC-322** *(ADR-093, R26; #628)* Stock found where it has never been,
-  as the demo Owner. Open VITC-100's places: they end with "Found some
-  where it has never been?" and Count it in…, which a screen reader
-  names "Count it in VITC-100…" (105a), and which opens Correct the
-  count with Location and Which lot, neither lot chosen; Escape returns
-  focus to Count it in…. Choose a place VITC-100 has never been, Main's
-  Shelf, and Save with no lot: "Choose one of its lots, or a new lot."
-  at Which lot, focus on it. Choose A new lot and type VC-0301, a code
-  it has: refused at Lot number, naming VC-0301, nothing saved. Type
-  VC-0310 with an expiry, 12 and a note: "Counted in 12 each of
-  VITC-100 at Shelf, new lot VC-0310. It waits for a cost." with Waiting
-  for a cost, which opens Stock value's list holding it; Stock shows the
-  shelf open under VITC-100 with its lot VC-0310. Count one of its lots,
-  VC-0402, into the same shelf: "…, lot VC-0402." with Movements. A
-  role without `stock.adjust` sees no Count it in….
+- **MC-322** *(ADR-093, R26; ADR-094, R22; #628, #650)* Stock found
+  where it has never been, as the demo Owner. Open VITC-100's places:
+  they end with "Found some where it has never been?" and Count it in…,
+  which a screen reader names "Count it in VITC-100…" (105a), and which
+  opens Correct the count with Location and Which lot, neither lot
+  chosen; Escape returns focus to Count it in…. Choose a place VITC-100
+  has never been, Main's Shelf, and Save with no lot: "Choose one of its
+  lots, or a new lot." at Which lot, focus on it. Choose A new lot and
+  type VC-0301, a code it has: refused at Lot number, naming VC-0301,
+  nothing saved. Type VC-0310 with an expiry, 12 and a note: "Counted in
+  12 each of VITC-100 at Shelf, new lot VC-0310. It waits for a cost."
+  with Waiting for a cost, which opens Stock value's list holding it;
+  Stock shows the shelf open under VITC-100 with its lot VC-0310. Count
+  one of its lots, VC-0402, into the same shelf: "…, lot VC-0402." with
+  Movements. Receive stock… 10 of VITC-100 with no order, into a new lot
+  VC-0500: it waits for a cost. Count 2 of VC-0500, one of its lots,
+  into another place: "…, lot VC-0500. It waits for a cost." with
+  Waiting for a cost, whose list holds both, the receipt and the count
+  (#650); give the receipt its cost, and the count still waits for its
+  own. A role without `stock.adjust` sees no Count it in….
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -7427,3 +7432,7 @@ first.
   Movements' write Supplier's lot and Expiry beside Lot, "Supplier's lot
   to add" and "Expiry to add" where each is still to add: MC-317 and
   MC-319 extended.
+- 2026-11-22: ADR-094's #650, R22: stock counted into a lot, or an item
+  with no lots, any of whose stock still waits for a cost waits for a
+  cost too, where it took an average worked out over units at nothing:
+  MC-322 extended.
