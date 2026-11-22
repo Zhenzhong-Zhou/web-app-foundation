@@ -7,6 +7,7 @@
     "node_modules",
     "test",
     "dist",
+    "tmp",
     "drizzle.config.ts",
     "vitest.config.mts",
     "perf",

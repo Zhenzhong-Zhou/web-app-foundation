@@ -101,6 +101,7 @@ export default tseslint.config(
       'dist-openapi/**',
       'coverage/**',
       'scripts/**',
+      'tmp/**',
     ],
   },
 
