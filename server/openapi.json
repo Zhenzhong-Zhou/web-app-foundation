@@ -19599,6 +19599,9 @@
           "purchaseOrder": {
             "$ref": "#/components/schemas/NumberingSeries"
           },
+          "lot": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
           "documentsInDateOrder": {
             "type": "boolean"
           },
@@ -19612,6 +19615,7 @@
           "returnAuthorization",
           "saleOrder",
           "purchaseOrder",
+          "lot",
           "documentsInDateOrder",
           "today"
         ]
@@ -19676,6 +19680,9 @@
             "$ref": "#/components/schemas/NumberingSeriesDto"
           },
           "purchaseOrder": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "lot": {
             "$ref": "#/components/schemas/NumberingSeriesDto"
           },
           "documentsInDateOrder": {

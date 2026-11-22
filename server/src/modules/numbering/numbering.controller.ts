@@ -47,6 +47,7 @@ export class NumberingController {
       'returnAuthorization',
       'saleOrder',
       'purchaseOrder',
+      'lot',
       'documentsInDateOrder',
     ],
   })

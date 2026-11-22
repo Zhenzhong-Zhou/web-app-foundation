@@ -2604,6 +2604,7 @@ export type Numbering = {
   returnAuthorization: NumberingSeries;
   saleOrder: NumberingSeries;
   purchaseOrder: NumberingSeries;
+  lot: NumberingSeries;
   documentsInDateOrder: boolean;
   today: string;
 };
@@ -2625,6 +2626,7 @@ export type UpdateNumberingDto = {
   returnAuthorization: NumberingSeriesDto;
   saleOrder: NumberingSeriesDto;
   purchaseOrder: NumberingSeriesDto;
+  lot?: NumberingSeriesDto;
   documentsInDateOrder: boolean;
 };
 

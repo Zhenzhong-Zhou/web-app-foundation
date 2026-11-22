@@ -29,6 +29,11 @@ export class Numbering {
   returnAuthorization!: NumberingSeries;
   saleOrder!: NumberingSeries;
   purchaseOrder!: NumberingSeries;
+  /**
+   * The codes of lots made here, where a delivery shows none (ADR-094):
+   * last is the latest lot made here.
+   */
+  lot!: NumberingSeries;
   documentsInDateOrder!: boolean;
   /** The organization's today (ADR-072), which a preview prints. */
   today!: string;

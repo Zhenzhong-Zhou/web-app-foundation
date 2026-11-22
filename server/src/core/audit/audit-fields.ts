@@ -837,6 +837,11 @@ export const AUDIT_FIELDS = {
     }),
     read: 'text',
   },
+  // The lot series' settings in a numbering change (ADR-094).
+  lot: {
+    name: t({ id: 'audit.field.lot', defaultMessage: 'Lot codes' }),
+    read: 'text',
+  },
   filters: {
     name: t({ id: 'audit.field.filters', defaultMessage: 'Filters' }),
     read: 'text',

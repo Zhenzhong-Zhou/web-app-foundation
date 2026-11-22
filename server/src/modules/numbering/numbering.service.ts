@@ -11,10 +11,12 @@ import { todayOf } from '../../core/organizations/time-zone';
 import type { Transaction } from '../../database/database.module';
 import {
   creditNotes,
+  DEFAULT_NUMBERING,
   documentNumbering,
   documentSequences,
   type DocumentType,
   invoices,
+  lots,
   type NumberingReset,
   orders,
   organizations,
@@ -27,6 +29,7 @@ import type {
   NumberingSeriesDto,
   UpdateNumberingDto,
 } from './dto/update-numbering.dto';
+import { openLotSeries } from './lot-codes';
 import {
   couldPrintSame,
   formatNumber,
@@ -37,13 +40,17 @@ import {
   render,
 } from './numbering-format';
 
-/** The API's name for each series, and the table's. */
+/**
+ * The API's name for each series, and the table's: the five documents',
+ * and the codes of lots made here (ADR-094).
+ */
 const SERIES = {
   invoice: 'invoice',
   creditNote: 'credit_note',
   returnAuthorization: 'return_authorization',
   saleOrder: 'sale_order',
   purchaseOrder: 'purchase_order',
+  lot: 'lot',
 } as const satisfies Record<string, DocumentType>;
 
 type SeriesKey = keyof typeof SERIES;
@@ -51,6 +58,8 @@ type SeriesKey = keyof typeof SERIES;
 const KEYS = Object.keys(SERIES) as SeriesKey[];
 
 type Counter = typeof documentSequences.$inferSelect;
+
+type Setting = typeof documentNumbering.$inferSelect;
 
 /**
  * Each organization's numbering (ADR-073): the Numbering section's read,
@@ -72,7 +81,7 @@ export class NumberingService {
 
       const series = (key: SeriesKey): NumberingSeries => {
         const type = SERIES[key];
-        const setting = settings.get(type)!;
+        const setting = settingOf(settings, type);
         const nextUnder = (reset: NumberingReset) =>
           standing(counters, type, periodKey(reset, today));
         return {
@@ -95,6 +104,7 @@ export class NumberingService {
         returnAuthorization: series('returnAuthorization'),
         saleOrder: series('saleOrder'),
         purchaseOrder: series('purchaseOrder'),
+        lot: series('lot'),
         documentsInDateOrder: await inDateOrder(tx, organizationId),
         today,
       };
@@ -105,10 +115,13 @@ export class NumberingService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       for (const key of KEYS) {
         const wanted = input[key];
+        // A tab opened before lot codes were numbered sends no lot series.
+        if (!wanted) continue;
         const problem = prefixProblem(
           wanted.prefix,
           wanted.digits,
           wanted.reset,
+          key === 'lot' ? 'lot' : 'document',
         );
         if (problem) {
           throw new BadRequestException(
@@ -116,7 +129,7 @@ export class NumberingService {
               {
                 id: 'numbering.prefixInvalid',
                 defaultMessage:
-                  'The {series, select, invoice {invoice} credit_note {credit note} return_authorization {return authorization} sale_order {sale order} other {purchase order}} prefix {problem, select, start {must start with a capital letter, a digit or the date} end {can’t end with a digit or the date, or where the number starts would be unclear} doubleSlash {can’t hold //} repeated {shows a part of the date twice} tooLong {prints more than 16 characters} tooLongWithDigits {and its digits print more than 20 characters} resetNeedsDate {needs the year, month or day it starts again by} other {can hold only capital letters, digits, -, _, / and the date}}',
+                  'The {series, select, invoice {invoice} credit_note {credit note} return_authorization {return authorization} sale_order {sale order} lot {lot code} other {purchase order}} prefix {problem, select, start {must start with a capital letter, a digit or the date} end {can’t end with a digit or the date, or where the number starts would be unclear} doubleSlash {can’t hold //} repeated {shows a part of the date twice} tooLong {prints more than 16 characters} tooLongWithDigits {and its digits print more than 20 characters} resetNeedsDate {needs the year, month or day it starts again by} lotCharacters {can hold only capital letters, digits, - and the date} other {can hold only capital letters, digits, -, _, / and the date}}',
               },
               { series: SERIES[key], problem },
             ),
@@ -126,6 +139,10 @@ export class NumberingService {
 
       const today = await todayOf(tx, organizationId);
 
+      // An organization registered while the deploy went on has no lot
+      // series yet: its default first, as its first code would write it.
+      await openLotSeries(tx, organizationId);
+
       // Two saves queue here, each checking what the other wrote.
       const rows = await tx
         .select()
@@ -134,8 +151,17 @@ export class NumberingService {
         .for('update');
       const current = new Map(rows.map((row) => [row.documentType, row]));
 
+      // Each series as it is to be: as sent, or a lot series not sent as
+      // it stands.
+      const sent = Object.fromEntries(
+        KEYS.map((key) => {
+          const { prefix, digits, reset } = current.get(SERIES[key])!;
+          return [key, input[key] ?? { prefix, digits, reset }];
+        }),
+      ) as Record<SeriesKey, NumberingSeriesDto>;
+
       const changed = KEYS.filter((key) => {
-        const wanted = input[key];
+        const wanted = sent[key];
         const setting = current.get(SERIES[key])!;
         return (
           wanted.next !== undefined ||
@@ -154,7 +180,7 @@ export class NumberingService {
           const { prefix, digits } = current.get(SERIES[key])!;
           return {
             type: SERIES[key],
-            period: periodKey(input[key].reset, today),
+            period: periodKey(sent[key].reset, today),
             prefix,
             digits,
           };
@@ -171,7 +197,7 @@ export class NumberingService {
           prefix: setting.prefix,
           digits: setting.digits,
           reset: setting.reset,
-          ...(input[key].next !== undefined
+          ...(sent[key].next !== undefined
             ? {
                 next: standing(counters, type, periodKey(setting.reset, today)),
               }
@@ -184,19 +210,22 @@ export class NumberingService {
         returnAuthorization: before('returnAuthorization'),
         saleOrder: before('saleOrder'),
         purchaseOrder: before('purchaseOrder'),
+        lot: before('lot'),
         documentsInDateOrder: await inDateOrder(tx, organizationId),
       });
 
+      // A lot's code and a document's number printing alike would be two
+      // records the lookup cannot tell apart by their prefix.
       KEYS.forEach((first, index) => {
         for (const second of KEYS.slice(index + 1)) {
-          if (couldPrintSame(input[first].prefix, input[second].prefix)) {
+          if (couldPrintSame(sent[first].prefix, sent[second].prefix)) {
             throw new ConflictException(
               withCode(
                 t(
                   {
                     id: 'numbering.prefixShared',
                     defaultMessage:
-                      '{first, select, invoice {Invoices} credit_note {Credit notes} return_authorization {Return authorizations} sale_order {Sale orders} other {Purchase orders}} and {second, select, invoice {invoices} credit_note {credit notes} return_authorization {return authorizations} sale_order {sale orders} other {purchase orders}} would print the same numbers. Give each its own prefix.',
+                      '{first, select, invoice {Invoices} credit_note {Credit notes} return_authorization {Return authorizations} sale_order {Sale orders} lot {Lot codes} other {Purchase orders}} and {second, select, invoice {invoices} credit_note {credit notes} return_authorization {return authorizations} sale_order {sale orders} lot {lot codes} other {purchase orders}} would print the same numbers. Give each its own prefix.',
                   },
                   { first: SERIES[first], second: SERIES[second] },
                 ),
@@ -209,11 +238,11 @@ export class NumberingService {
       });
 
       for (const key of changed) {
-        await assertFree(tx, organizationId, key, input[key], counters, today);
+        await assertFree(tx, organizationId, key, sent[key], counters, today);
       }
 
       for (const key of changed) {
-        await save(tx, organizationId, SERIES[key], input[key], today);
+        await save(tx, organizationId, SERIES[key], sent[key], today);
       }
 
       await tx
@@ -226,7 +255,8 @@ export class NumberingService {
 
 /**
  * Each series' settings. Every organization has a row for each, from the
- * migration or its registration (ADR-073).
+ * migrations or its registration (ADR-073), but for the lot series of one
+ * registered while the deploy went on (ADR-094), read as its default.
  */
 async function settingsOf(tx: Transaction, organizationId: string) {
   const rows = await tx
@@ -234,6 +264,17 @@ async function settingsOf(tx: Transaction, organizationId: string) {
     .from(documentNumbering)
     .where(eq(documentNumbering.organizationId, organizationId));
   return new Map(rows.map((row) => [row.documentType, row]));
+}
+
+function settingOf(
+  settings: Map<DocumentType, Setting>,
+  type: DocumentType,
+): Pick<Setting, 'prefix' | 'digits' | 'reset'> {
+  const setting = settings.get(type);
+  if (setting) return setting;
+  if (type === 'lot') return DEFAULT_NUMBERING.lot;
+  // As in takeNumber: a missing row is a broken record, not a refusal.
+  throw new Error(`No numbering for ${type}`);
 }
 
 async function inDateOrder(
@@ -344,12 +385,24 @@ async function lastNumbers(
       .orderBy(desc(orders.createdAt), desc(orders.id))
       .limit(1);
 
+  // A lot made here, by when it was made: the series gives every such
+  // code, and an older lot marked as made here was made before it existed.
+  const lot = await tx
+    .select({ number: lots.code })
+    .from(lots)
+    .where(
+      and(eq(lots.organizationId, organizationId), eq(lots.isAssigned, true)),
+    )
+    .orderBy(desc(lots.createdAt), desc(lots.id))
+    .limit(1);
+
   return {
     invoice: first(invoice),
     credit_note: first(creditNote),
     return_authorization: first(returnAuthorization),
     sale_order: first(await order('sale')),
     purchase_order: first(await order('purchase')),
+    lot: first(lot),
   };
 }
 
@@ -362,6 +415,11 @@ async function lastNumbers(
  *
  * Every document's number is read back against the prefix, so values are
  * compared, not text: INV-0050 and INV-000050 are both 50.
+ *
+ * The lot series is held to the codes of lots made here alone (ADR-094),
+ * so a made code names one lot in the organization. A code typed as
+ * printed is a supplier's, which any format may happen to match: the take
+ * passes over one the item already has.
  */
 async function assertFree(
   tx: Transaction,
@@ -378,7 +436,7 @@ async function assertFree(
   const pattern = patternOf(wanted.prefix);
   const printed = render(wanted.prefix, today);
 
-  const carried = await tx.execute<{ kind: DocumentType; number: string }>(sql`
+  const documents = sql`
     select 'invoice' as kind, i.number from invoices as i
       where i.organization_id = ${organizationId} and i.number ~ ${pattern.source}
     union all
@@ -391,7 +449,15 @@ async function assertFree(
     select case o.direction when 'sale' then 'sale_order' else 'purchase_order' end,
       o.number from orders as o
       where o.organization_id = ${organizationId} and o.number ~ ${pattern.source}
-  `);
+  `;
+  const madeLots = sql`
+    select 'lot' as kind, l.code as number from lots as l
+      where l.organization_id = ${organizationId} and l.is_assigned
+        and l.code ~ ${pattern.source}
+  `;
+  const carried = await tx.execute<{ kind: DocumentType; number: string }>(
+    series === 'lot' ? madeLots : documents,
+  );
 
   let highest: { kind: DocumentType; number: string; value: number } | null =
     null;
@@ -411,7 +477,7 @@ async function assertFree(
               {
                 id: 'numbering.numberTakenLater',
                 defaultMessage:
-                  '{number} is already {kind, select, invoice {an invoice} credit_note {a credit note} return_authorization {a return authorization} sale_order {a sale order} other {a purchase order}}, and this numbering would give it again. Choose another prefix.',
+                  '{number} is already {kind, select, invoice {an invoice} credit_note {a credit note} return_authorization {a return authorization} sale_order {a sale order} lot {a lot’s code} other {a purchase order}}, and this numbering would give it again. Choose another prefix.',
               },
               { number: row.number, kind: row.kind },
             ),
@@ -432,7 +498,7 @@ async function assertFree(
           {
             id: 'numbering.numberTaken',
             defaultMessage:
-              '{number} is already {kind, select, invoice {an invoice} credit_note {a credit note} return_authorization {a return authorization} sale_order {a sale order} other {a purchase order}}. {prefix, select, none {Without a prefix} other {Under {prefix}}}, the next number must be {lowest} or more.',
+              '{number} is already {kind, select, invoice {an invoice} credit_note {a credit note} return_authorization {a return authorization} sale_order {a sale order} lot {a lot’s code} other {a purchase order}}. {prefix, select, none {Without a prefix} other {Under {prefix}}}, the next number must be {lowest} or more.',
           },
           {
             number: highest.number,

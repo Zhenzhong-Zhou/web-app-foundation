@@ -54,6 +54,41 @@ describe('prefixProblem', () => {
     );
   });
 
+  describe('for a lot’s code made here (ADR-094)', () => {
+    it('accepts the default, L-2026-11-21-1, and reads as a document’s would', () => {
+      expect(
+        prefixProblem('L-{YYYY}-{MM}-{DD}-', 1, 'daily', 'lot'),
+      ).toBeNull();
+      expect(prefixProblem('LOT{YY}{MM}-', 4, 'monthly', 'lot')).toBeNull();
+      expect(prefixProblem('L1', 4, 'never', 'lot')).toBe('end');
+      expect(prefixProblem('L-{YYYY}-', 4, 'daily', 'lot')).toBe(
+        'resetNeedsDate',
+      );
+    });
+
+    it('prints at most 20 characters with its digits', () => {
+      // L-2026-11-21- is 13 characters: with 7 digits 20, with 8 21.
+      expect(
+        prefixProblem('L-{YYYY}-{MM}-{DD}-', 7, 'daily', 'lot'),
+      ).toBeNull();
+      expect(prefixProblem('L-{YYYY}-{MM}-{DD}-', 8, 'daily', 'lot')).toBe(
+        'tooLongWithDigits',
+      );
+    });
+
+    it.each(['L_', 'L/{YYYY}/', 'l-', 'L.', 'LOT-{yyyy}-'])(
+      'refuses %s, holding only capitals, digits, hyphens and the date',
+      (prefix) => {
+        expect(prefixProblem(prefix, 4, 'never', 'lot')).toBe('lotCharacters');
+      },
+    );
+
+    it('leaves a document’s prefix its _ and /', () => {
+      expect(prefixProblem('L_', 4, 'never')).toBeNull();
+      expect(prefixProblem('L/{YYYY}/', 4, 'never')).toBeNull();
+    });
+  });
+
   it('wants the period of a reset in the prefix', () => {
     expect(prefixProblem('INV-', 4, 'yearly')).toBe('resetNeedsDate');
     expect(prefixProblem('INV-{YY}-', 4, 'yearly')).toBeNull();

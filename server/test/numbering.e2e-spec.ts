@@ -14,7 +14,9 @@ import {
   auditLog,
   documentNumbering,
   documentSequences,
+  lots,
 } from '../src/database/schema';
+import { takeLotCode } from '../src/modules/numbering/lot-codes';
 import { lockTodaysCounters } from '../src/modules/numbering/numbering.service';
 import {
   addViewer,
@@ -45,6 +47,7 @@ interface Numbering {
   };
   saleOrder: Series & { next: Record<string, number>; last: string | null };
   purchaseOrder: Series & { next: Record<string, number>; last: string | null };
+  lot: Series & { next: Record<string, number>; last: string | null };
   documentsInDateOrder: boolean;
   today: string;
 }
@@ -61,6 +64,13 @@ const DEFAULTS = {
   returnAuthorization: { prefix: 'RMA-', digits: 6, reset: 'never' },
   saleOrder: { prefix: 'SO-', digits: 6, reset: 'never' },
   purchaseOrder: { prefix: 'PO-', digits: 6, reset: 'never' },
+} as const;
+
+/** The lot series' default (ADR-094): L-2026-11-21-1, again each day. */
+const LOT = {
+  prefix: 'L-{YYYY}-{MM}-{DD}-',
+  digits: 1,
+  reset: 'daily',
 } as const;
 
 /** The day before another, YYYY-MM-DD. */
@@ -99,10 +109,13 @@ describe('Numbering (e2e)', () => {
     ).numbering;
   }
 
-  /** A save with the defaults, but for the series given. */
+  /**
+   * A save with the defaults, but for the series given. The lot series is
+   * sent only when given, as a tab opened before it sends none.
+   */
   function save(
     org: Org,
-    changes: Partial<Record<keyof typeof DEFAULTS, Series>> & {
+    changes: Partial<Record<keyof typeof DEFAULTS | 'lot', Series>> & {
       documentsInDateOrder?: boolean;
     },
   ) {
@@ -204,6 +217,45 @@ describe('Numbering (e2e)', () => {
     return ids;
   }
 
+  /** A tracked item, and a place to receive it. */
+  async function trackedItem(org: Org, sku: string) {
+    const variantId = await createVariant(org.agent, {
+      type: 'material',
+      name: `Material ${sku}`,
+      variant: { sku, tracksLots: true },
+    });
+    const shelf = await createLocation(org.agent, {
+      type: 'site',
+      name: `Shelf ${sku}`,
+    });
+    return { variantId, shelf };
+  }
+
+  /** A receipt into a lot whose code is typed as printed. */
+  async function receiveTyped(
+    org: Org,
+    item: { variantId: string; shelf: string },
+    code: string,
+  ) {
+    await org.agent
+      .post('/v1/stock/movements')
+      .send({
+        variantId: item.variantId,
+        toLocationId: item.shelf,
+        quantity: '5',
+        reason: 'receipt',
+        lot: { code },
+      })
+      .expect(201);
+  }
+
+  /** A lot's code made here, taken in a transaction of its own. */
+  function take(org: Org, variantId: string): Promise<string> {
+    return db.transaction((tx) =>
+      takeLotCode(tx, org.organizationId, variantId),
+    );
+  }
+
   /**
    * Until an issue's number waits on a counter another transaction holds:
    * its takeNumber statement, blocked on the row lock.
@@ -257,6 +309,11 @@ describe('Numbering (e2e)', () => {
         last: null,
       });
       expect(shown.purchaseOrder.prefix).toBe('PO-');
+      expect(shown.lot).toMatchObject({
+        ...LOT,
+        next: { never: 1, yearly: 1, monthly: 1, daily: 1 },
+        last: null,
+      });
       expect(shown.documentsInDateOrder).toBe(false);
       expect(shown.today).toBe(todayIn('UTC'));
     });
@@ -299,6 +356,57 @@ describe('Numbering (e2e)', () => {
       });
     });
 
+    it('logs a change of the lot series with the others (ADR-094)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      await save(org, {
+        lot: { prefix: 'LOT-{YY}{MM}{DD}-', digits: 2, reset: 'daily' },
+      }).expect(204);
+      const shown = await numbering(org);
+      expect(shown.lot).toMatchObject({
+        prefix: 'LOT-{YY}{MM}{DD}-',
+        digits: 2,
+        reset: 'daily',
+      });
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.organizationId, org.organizationId),
+            eq(auditLog.action, 'organization.numbering_updated'),
+          ),
+        )
+        .orderBy(desc(auditLog.createdAt));
+      const payload = entry.payload as Record<
+        string,
+        { from: unknown; to: unknown }
+      >;
+      expect(payload.lot).toEqual({
+        from: LOT,
+        to: { prefix: 'LOT-{YY}{MM}{DD}-', digits: 2, reset: 'daily' },
+      });
+    });
+
+    it('keeps the lot series as it is for a save that sends none, as a tab opened before (ADR-094)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      await save(org, {
+        lot: { prefix: 'LOT-{YYYY}{MM}{DD}-', digits: 3, reset: 'daily' },
+      }).expect(204);
+
+      await save(org, {
+        saleOrder: { prefix: 'XS-', digits: 6, reset: 'never' },
+      }).expect(204);
+
+      const shown = await numbering(org);
+      expect(shown.saleOrder.prefix).toBe('XS-');
+      expect(shown.lot).toMatchObject({
+        prefix: 'LOT-{YYYY}{MM}{DD}-',
+        digits: 3,
+      });
+    });
+
     it('refuses a prefix of the wrong form, naming the series', async () => {
       const org = await registerOrganization(app, 'alpha');
 
@@ -332,6 +440,124 @@ describe('Numbering (e2e)', () => {
         invoice: { prefix: 'S{YY}-', digits: 6, reset: 'yearly' },
         creditNote: { prefix: `S${year}-`, digits: 6, reset: 'never' },
       }).expect(409);
+    });
+
+    it('refuses a lot code prefix past 20 characters with its digits, or holding _ or / (ADR-094)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      // L-2026-11-21- prints 13: with 7 digits 20, with 8 21.
+      const long = await save(org, {
+        lot: { ...LOT, digits: 8 },
+      }).expect(400);
+      expect(body<Refusal>(long).message).toBe(
+        'The lot code prefix and its digits print more than 20 characters',
+      );
+      await save(org, { lot: { ...LOT, digits: 7 } }).expect(204);
+
+      for (const prefix of ['L_{YYYY}{MM}{DD}_', 'L/{YYYY}{MM}{DD}/']) {
+        const res = await save(org, { lot: { ...LOT, prefix } }).expect(400);
+        expect(body<Refusal>(res).message).toBe(
+          'The lot code prefix can hold only capital letters, digits, - and the date',
+        );
+      }
+      // Which a document's prefix may hold.
+      await save(org, {
+        invoice: { prefix: 'F/{YYYY}/', digits: 4, reset: 'yearly' },
+      }).expect(204);
+    });
+
+    it('refuses a lot code prefix a document’s could print the same as (ADR-094)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      const same = await save(org, {
+        lot: { prefix: 'SO-', digits: 6, reset: 'never' },
+      }).expect(409);
+      expect(body<Refusal>(same)).toMatchObject({
+        code: 'numbering_prefix_shared',
+        details: { series: ['saleOrder', 'lot'] },
+        message:
+          'Sale orders and lot codes would print the same numbers. Give each its own prefix.',
+      });
+    });
+  });
+
+  describe('lot codes made here (ADR-094)', () => {
+    it('takes one after another in a day, by the organization’s today', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      await org.agent
+        .patch('/v1/organization')
+        .send({ timeZone: KIRITIMATI })
+        .expect(204);
+      const { variantId } = await trackedItem(org, 'VITC');
+
+      await clearOfMidnight([KIRITIMATI]);
+      const day = todayIn(KIRITIMATI);
+      expect(await take(org, variantId)).toBe(`L-${day}-1`);
+      expect(await take(org, variantId)).toBe(`L-${day}-2`);
+
+      expect((await numbering(org)).lot.next.daily).toBe(3);
+    });
+
+    it('passes over a code the item already has, and not another item’s', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const day = (await numbering(org)).today;
+      const vitc = await trackedItem(org, 'VITC');
+      const zinc = await trackedItem(org, 'ZINC');
+      await receiveTyped(org, vitc, `L-${day}-2`);
+      await receiveTyped(org, zinc, `L-${day}-4`);
+
+      expect(await take(org, vitc.variantId)).toBe(`L-${day}-1`);
+      expect(await take(org, vitc.variantId)).toBe(`L-${day}-3`);
+      expect(await take(org, vitc.variantId)).toBe(`L-${day}-4`);
+    });
+
+    it('writes the default for an organization registered while the deploy went on', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const { variantId } = await trackedItem(org, 'VITC');
+      const day = (await numbering(org)).today;
+      // As the release still serving registers one: the five series alone.
+      const lotSeries = and(
+        eq(documentNumbering.organizationId, org.organizationId),
+        eq(documentNumbering.documentType, 'lot'),
+      );
+      await db.delete(documentNumbering).where(lotSeries);
+
+      expect((await numbering(org)).lot).toMatchObject(LOT);
+      expect(await take(org, variantId)).toBe(`L-${day}-1`);
+      expect(
+        await db.select().from(documentNumbering).where(lotSeries),
+      ).toMatchObject([LOT]);
+
+      // A save, too, from a tab opened before or after.
+      await db.delete(documentNumbering).where(lotSeries);
+      await save(org, {}).expect(204);
+      await save(org, { lot: { ...LOT, digits: 2 } }).expect(204);
+      expect((await numbering(org)).lot.digits).toBe(2);
+    });
+
+    it('refuses a next number a lot made here carries, and not one typed as printed', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const day = (await numbering(org)).today;
+      const vitc = await trackedItem(org, 'VITC');
+      const code = await take(org, vitc.variantId);
+      await db.insert(lots).values({
+        organizationId: org.organizationId,
+        variantId: vitc.variantId,
+        code,
+        isAssigned: true,
+      });
+      await receiveTyped(org, vitc, `L-${day}-5`);
+      expect((await numbering(org)).lot.last).toBe(`L-${day}-1`);
+
+      const taken = await save(org, { lot: { ...LOT, next: 1 } }).expect(409);
+      expect(body<Refusal>(taken)).toMatchObject({
+        code: 'numbering_number_taken',
+        details: { series: ['lot'], lowest: 2 },
+        message: `L-${day}-1 is already a lot’s code. Under L-${day}-, the next number must be 2 or more.`,
+      });
+
+      // L-…-5 was typed as printed: the take passes over it for its item.
+      await save(org, { lot: { ...LOT, next: 3 } }).expect(204);
     });
   });
 

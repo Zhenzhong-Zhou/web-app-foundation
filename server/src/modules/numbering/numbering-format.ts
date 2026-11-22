@@ -5,10 +5,15 @@ import type { NumberingReset } from '../../database/schema';
  * number, the settings and their checks, and the lookup.
  *
  * A prefix is text and date tokens. It prints the document's own date in
- * place of each token, then the counter follows, padded to the width.
+ * place of each token, then the counter follows, padded to the width. A
+ * lot's code made here is written the same way, from narrower characters
+ * (ADR-094).
  */
 
-/** The most a prefix prints, and with its digits (Italy and France take 20). */
+/**
+ * The most a prefix prints, and with its digits: Italy and France take 20,
+ * and so does a GS1 barcode's lot field (ADR-094).
+ */
 const MAX_PRINTED_PREFIX = 16;
 const MAX_PRINTED_NUMBER = 20;
 
@@ -18,9 +23,22 @@ const TOKEN_WIDTH: Record<Token, number> = { YYYY: 4, YY: 2, MM: 2, DD: 2 };
 
 type Piece = { text: string } | { token: Token };
 
+/**
+ * What a prefix numbers: a document, or a lot's code made here (ADR-094),
+ * which a GS1 barcode's lot field must carry, so capitals, digits and
+ * hyphens alone.
+ */
+export type PrefixKind = 'document' | 'lot';
+
+const TEXT: Record<PrefixKind, RegExp> = {
+  document: /^[A-Z0-9_/-]*$/,
+  lot: /^[A-Z0-9-]*$/,
+};
+
 /** What is wrong with a prefix, for the refusal to name. */
 export type PrefixProblem =
   | 'characters'
+  | 'lotCharacters'
   | 'start'
   | 'end'
   | 'doubleSlash'
@@ -67,20 +85,24 @@ export function printedLength(prefix: string): number {
 /**
  * The first thing wrong with a series' settings, or null when it can be
  * saved. Ending in a non-digit is what lets a number split one way only,
- * prefix then counter, which the refusals rely on.
+ * prefix then counter, which the refusals rely on. A lot's prefix is held
+ * to the same rules, 20 characters with its digits among them, but for its
+ * characters (ADR-094).
  */
 export function prefixProblem(
   prefix: string,
   digits: number,
   reset: NumberingReset,
+  kind: PrefixKind = 'document',
 ): PrefixProblem | null {
+  const characters = kind === 'lot' ? 'lotCharacters' : 'characters';
   const pieces = piecesOf(prefix);
-  if (!pieces) return 'characters';
+  if (!pieces) return characters;
 
   const texts = pieces.flatMap((piece) =>
     'text' in piece ? [piece.text] : [],
   );
-  if (texts.some((text) => !/^[A-Z0-9_/-]*$/.test(text))) return 'characters';
+  if (texts.some((text) => !TEXT[kind].test(text))) return characters;
 
   const tokens = tokensOf(pieces);
   if (new Set(tokens).size !== tokens.length) return 'repeated';

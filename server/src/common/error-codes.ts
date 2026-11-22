@@ -52,8 +52,9 @@ export const ERROR_CODES = {
    */
   numberingPrefixShared: 'numbering_prefix_shared',
   /**
-   * A series would give a number a document already carries, or go below
-   * the numbers given (ADR-073): `details.series` names it, and
+   * A series would give a number a document already carries, or a code a
+   * lot made here does (ADR-094), or go below the numbers given (ADR-073):
+   * `details.series` names it, and
    * `details.lowest` is the least next number accepted, when there is one.
    */
   numberingNumberTaken: 'numbering_number_taken',
