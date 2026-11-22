@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
-import { codeMatches, searchTerms } from '../../common/search';
+import { searchTerms } from '../../common/search';
 import {
   locations,
   lots,
@@ -17,6 +17,7 @@ import { itemMatches } from '../products/item-search';
 import type { ListMovementsDto } from './dto/list-movements.dto';
 import type { MovementPage, StockVariant } from './dto/stock-response.dto';
 import { namesIn } from './item-name';
+import { lotMatches } from './lot-search';
 import { movementPage, type MovementSight } from './movement-view';
 
 /**
@@ -96,12 +97,13 @@ function filtersOf(
     scope.push(gt(stockLevels.quantity, '0'));
   }
 
-  // The item (SKU, names in every language, pinyin) or the lot code, matched
-  // as every search in the app matches (ADR-056, common/search.ts).
+  // The item (SKU, names in every language, pinyin) or the lot's code or
+  // supplier's lot, matched as every search in the app matches (ADR-056,
+  // common/search.ts; ADR-094, R6).
   if (query.search) {
     const terms = searchTerms(query.search);
     scope.push(
-      or(itemMatches(terms, organizationId), codeMatches(lots.code, terms))!,
+      or(itemMatches(terms, organizationId), lotMatches(lots, terms))!,
     );
   }
 

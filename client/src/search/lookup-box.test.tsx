@@ -23,6 +23,9 @@ const ANSWER: LookupResponse = {
           direction: null,
           fulfillment: null,
           expiresAt: null,
+          expiry: 'none',
+          supplierLot: null,
+          isAssigned: false,
           productId: null,
           coverFileId: null,
           type: null,
@@ -41,6 +44,9 @@ const ANSWER: LookupResponse = {
           direction: null,
           fulfillment: null,
           expiresAt: null,
+          expiry: null,
+          supplierLot: null,
+          isAssigned: null,
           productId: 'product-1',
           coverFileId: 'file-1',
           type: 'good',
@@ -131,6 +137,9 @@ describe('LookupBox', () => {
                   direction: null,
                   fulfillment: null,
                   expiresAt: null,
+                  expiry: null,
+                  supplierLot: null,
+                  isAssigned: null,
                   productId: 'product-2',
                   coverFileId: null,
                   type: 'material',
@@ -154,6 +163,64 @@ describe('LookupBox', () => {
     expect(blend).toHaveTextContent('FOCUS-BLEND · Raw material');
     const lot = screen.getByRole('option', { name: /BF-2609/ });
     expect(lot).toHaveTextContent(/^BF-2609FOCUS-60$/);
+  });
+
+  // #618: a lot's row read "MAGCAP-60Oct 7, 2028", its item's code run
+  // into its date. Each part now has its label and a dot between, and a
+  // lot says what is still to add (ADR-094, R5 and R9).
+  it('reads a lot’s item code, then its expiry or its mark, each labelled, and its supplier’s lot', async () => {
+    const lot = (
+      title: string,
+      over: Partial<LookupResponse['groups'][number]['results'][number]>,
+    ) => ({
+      ...ANSWER.groups[0].results[0],
+      id: title,
+      title,
+      ...over,
+    });
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'lot',
+              results: [
+                lot('LOT-DATED', { expiresAt: '2099-01-01', expiry: 'date' }),
+                lot('LOT-UNKNOWN', {
+                  expiry: 'unknown',
+                  supplierLot: 'Hx-2609',
+                  isAssigned: true,
+                }),
+                lot('LOT-PAST', {
+                  expiresAt: '2020-01-01',
+                  expiry: 'date',
+                  isAssigned: true,
+                }),
+                lot('LOT-NONE', {}),
+              ],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'lot');
+
+    const row = (title: string) =>
+      screen.findByRole('option', { name: new RegExp(`^${title}`) });
+    expect(await row('LOT-DATED')).toHaveTextContent(
+      /^LOT-DATEDFOCUS-60 · Expires Jan 1, 2099$/,
+    );
+    expect(await row('LOT-UNKNOWN')).toHaveTextContent(
+      /^LOT-UNKNOWNFOCUS-60 · Expiry to add · Supplier’s lot Hx-2609$/,
+    );
+    // Near or past, the chip says how near, its date beside it.
+    expect(await row('LOT-PAST')).toHaveTextContent(
+      /^LOT-PASTFOCUS-60 · Expired [\d,]+ days agoJan 1, 2020 · Supplier’s lot to add$/,
+    );
+    expect(await row('LOT-NONE')).toHaveTextContent(/^LOT-NONEFOCUS-60$/);
   });
 
   it('asks for one Chinese character alone', async () => {

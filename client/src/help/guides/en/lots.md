@@ -5,10 +5,10 @@ A lot is a quantity with its own code and expiry, received from a supplier or ma
 ## Trace a lot {#trace}
 
 1. Open **Trace a lot**.
-2. Type any part of the lot code; the batch number is usually enough. Press Enter.
+2. Type any part of the lot code, or of the supplier’s lot kept beside a code made here; the batch number is usually enough. Press Enter.
 3. Choose the lot from those listed. Its whole code opens it at once.
 
-You can also find a lot by its code in **Search everything**, or press a lot’s code wherever one is listed: on Inventory, under **Where it stands** on an item’s page, and under **Waiting for a cost** on Stock value. **Trace lot** on a row of Inventory opens it too.
+You can also find a lot by its code or its supplier’s lot in **Search everything**: its row gives its item’s code, then when it expires or **Expiry to add**, then its supplier’s lot or **Supplier’s lot to add**. Or press a lot’s code wherever one is listed: on Inventory, under **Where it stands** on an item’s page, and under **Waiting for a cost** on Stock value. **Trace lot** on a row of Inventory opens it too.
 
 ## Read a trace {#read}
 

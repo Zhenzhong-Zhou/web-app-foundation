@@ -27,10 +27,11 @@ const SEPARATOR = ' · ';
 
 /**
  * What to offer of the lookup's items, lots and orders (126's polish): a
- * lot whose code is the whole text typed, alone, as MCS-001 is though
- * MCS-0010 starts with it; else the exact matches alone while any
- * match; else the close ones, a typo's (`close`), which the box heads
- * Close matches. The top bar's search shows them all, its own way.
+ * lot whose code or supplier's lot is the whole text typed, alone, as
+ * MCS-001 is though MCS-0010 starts with it (ADR-094, R6); else the exact
+ * matches alone while any match; else the close ones, a typo's
+ * (`close`), which the box heads Close matches. The top bar's search
+ * shows them all, its own way.
  */
 function offered(options: Option[], query: string): Option[] {
   // Full width read as usual, as the lookup reads it: ＭＣＳ－００１.
@@ -38,7 +39,10 @@ function offered(options: Option[], query: string): Option[] {
   const exact = options.filter(({ result }) => !result.close);
   const whole = exact.find(
     ({ kind, result }) =>
-      kind === 'lot' && result.title.toLowerCase() === typed,
+      kind === 'lot' &&
+      [result.title, result.supplierLot].some(
+        (code) => code?.toLowerCase() === typed,
+      ),
   );
   return whole ? [whole] : exact.length > 0 ? exact : options;
 }
@@ -47,10 +51,11 @@ function offered(options: Option[], query: string): Option[] {
  * Movements' Item field as one find box (126): as one types, the top
  * bar's lookup (useLookup, `GET /v1/lookup`, its kinds by the reader's
  * permissions) offers matching items, lots and orders, grouped and in
- * words, the exact first (offered). An item sets the Item filter; a lot
- * its item and the lot, so the stock card counts that lot (85a); an
- * order the order. Each shows as a chip under the row, the box emptied;
- * typed text alone never filters.
+ * words, the exact first (offered); a lot by its code or its supplier's
+ * lot (ADR-094, R6). An item sets the Item filter; a lot its item and
+ * the lot, so the stock card counts that lot (85a); an order the order.
+ * Each shows as a chip under the row, the box emptied; typed text alone
+ * never filters.
  *
  * Arrows, Enter and Escape as the top bar's search. A lot's item is the
  * one its SKU names among `variants`, the page's list.
@@ -90,6 +95,15 @@ export function MovementFinder({
           { id: 'inventory.movements.findLot', defaultMessage: 'Lot {code}' },
           { code: result.title },
         ),
+        // Which finds it as its code does (ADR-094, R6).
+        result.supplierLot &&
+          intl.formatMessage(
+            {
+              id: 'inventory.movements.findSupplierLot',
+              defaultMessage: 'supplier’s lot {code}',
+            },
+            { code: result.supplierLot },
+          ),
         item ? itemName(item.productName, item.variantName) : result.detail,
         result.expiresAt &&
           intl.formatMessage(

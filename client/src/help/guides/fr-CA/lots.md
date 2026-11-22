@@ -5,10 +5,10 @@ Un lot est une quantité avec son propre code et sa date de péremption, reçue 
 ## Tracer un lot {#trace}
 
 1. Ouvrez **Tracer un lot**.
-2. Saisissez n’importe quelle partie du code de lot; le numéro de lot suffit généralement. Appuyez sur Entrée.
+2. Saisissez n’importe quelle partie du code de lot, ou du lot du fournisseur gardé à côté d’un code créé chez nous; le numéro de lot suffit généralement. Appuyez sur Entrée.
 3. Choisissez le lot parmi ceux listés. Son code complet l’ouvre directement.
 
-Vous pouvez aussi trouver un lot par son code avec **Tout rechercher**, ou appuyer sur le code d’un lot partout où il est listé : dans l’inventaire, sous **État du stock** sur la page d’un article, et sous **En attente d’un coût** dans Valeur du stock. **Tracer le lot** sur une ligne de l’inventaire l’ouvre aussi.
+Vous pouvez aussi trouver un lot par son code ou par le lot du fournisseur avec **Tout rechercher** : sa ligne donne le code de son article, puis sa date de péremption ou **Date de péremption à ajouter**, puis le lot du fournisseur ou **Lot du fournisseur à ajouter**. Vous pouvez aussi appuyer sur le code d’un lot partout où il est listé : dans l’inventaire, sous **État du stock** sur la page d’un article, et sous **En attente d’un coût** dans Valeur du stock. **Tracer le lot** sur une ligne de l’inventaire l’ouvre aussi.
 
 ## Lire une traçabilité {#read}
 

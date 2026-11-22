@@ -360,6 +360,11 @@ async function buildProbes(
       run: () => grouped.places(shelf.variantId, {}, 'en', true),
     },
     { name: 'stock by lot', run: () => grouped.byLot({}, 'en', true) },
+    // The item, or a lot's code or supplier's lot (ADR-094, R6).
+    {
+      name: 'stock by lot: search',
+      run: () => grouped.byLot({ search: 'LV-0001' }, 'en', true),
+    },
     {
       name: 'stock by lot: page 21',
       run: () => grouped.byLot({ before: deepLots }, 'en', true),
@@ -489,6 +494,12 @@ async function buildProbes(
       run: () => invoices.list({ partnerId: org.customerId }),
     },
     { name: 'lot search', run: () => traces.search('LV-0001') },
+    // A lot's supplier's lot finds it as its code does (ADR-094, R6),
+    // through its own trigram index led by the organization.
+    {
+      name: 'lot search: a supplier’s lot',
+      run: () => traces.search('SUP-0001'),
+    },
     // Search (ADR-056): served by the trigram indexes for three characters
     // or more, so no allowance here; a sequential scan of a large table is a
     // failure like any other.

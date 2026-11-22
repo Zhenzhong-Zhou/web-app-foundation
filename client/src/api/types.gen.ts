@@ -2424,6 +2424,9 @@ export type LookupResult = {
   direction: 'sale' | 'purchase' | null;
   fulfillment: 'none' | 'all' | 'part' | null;
   expiresAt: string | null;
+  expiry: 'unknown' | 'date' | 'none' | null;
+  supplierLot: string | null;
+  isAssigned: boolean | null;
   productId: string | null;
   coverFileId: string | null;
   type:

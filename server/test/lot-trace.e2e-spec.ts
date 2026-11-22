@@ -358,6 +358,54 @@ describe('Lot trace (e2e)', () => {
     expect(found.map((lot) => lot.code)).toEqual(['FOC-1']);
   });
 
+  // A supplier's letter names its own lot, which a code made here keeps
+  // beside ours: either finds the lot, any part of it, capitals aside,
+  // the start of either first (ADR-044, amended; #308's 37).
+  it('finds a lot by any part of its code or its supplier’s lot, the start of either first (ADR-094, R6)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Shelf',
+    });
+    const calm = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Calm',
+      variant: { sku: 'CALM-30', tracksLots: true },
+    });
+    const receive = async (lot: Record<string, unknown>) =>
+      body<{ lotCode: string }>(
+        await alpha.agent
+          .post('/v1/stock/movements')
+          .send({
+            variantId: calm,
+            toLocationId: shelf,
+            quantity: '5',
+            reason: 'receipt',
+            lot,
+          })
+          .expect(201),
+      ).lotCode;
+
+    const typed = await receive({ code: 'ZZ-AB-77' });
+    const made = await receive({ makeCode: true, supplierLot: 'ab-7731' });
+    const codes = async (code: string) =>
+      body<{ code: string; sku: string }[]>(
+        await alpha.agent
+          .get(`/v1/stock/lots/search?code=${encodeURIComponent(code)}`)
+          .expect(200),
+      ).map((lot) => `${lot.code} ${lot.sku}`);
+
+    // The start of the supplier's lot before the middle of a code.
+    expect(await codes('AB-77')).toEqual([
+      `${made} CALM-30`,
+      `${typed} CALM-30`,
+    ]);
+    expect(await codes('7731')).toEqual([`${made} CALM-30`]);
+    // Our own code still finds it; % matches itself, not everything.
+    expect(await codes(made)).toEqual([`${made} CALM-30`]);
+    expect(await codes('%')).toEqual([]);
+  });
+
   // A recall letter goes to everyone on it (ADR-044, amended; #473's 17).
   it('exports the recall list as Who received it lists it, in the reader’s words', async () => {
     const alpha = await registerOrganization(app, 'alpha');

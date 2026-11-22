@@ -1115,6 +1115,20 @@ search to having the list of customers; the target is **under two minutes**.
   customers. Trace the ingredient the first lot was made from: its Went
   into lists both lots, through the same run, and its recall list
   reaches the same customer.
+- **MC-909** *(ADR-094, R6; #618)* A lot found by its supplier's lot.
+  Take a lot made here that carries a supplier's lot, say `Hx-2609`.
+  Type part of it, `hx-26`, in the top bar's search: Lots lists the lot,
+  its own code above, and under it its item's code, then "Expires" and
+  the date, the chip where it is near, or "Expiry to add", then
+  "Supplier's lot Hx-2609", each part apart, never run together as
+  "FOCUS-60CTNov 19, 2028"; a code made here with none reads "Supplier's
+  lot to add", and a lot that does not expire shows its item's code
+  alone. Typed whole, `Hx-2609` puts Lots first. The same text finds
+  the lot in Trace a lot, in Inventory's search by item and by lot, and
+  in Movements' Find an item, lot or order, where, typed whole, the lot
+  is offered alone, "Lot … · supplier's lot Hx-2609 · …". In 中文 the
+  top bar's line reads 有效期至 … or 待补有效期, then 供应商批号 Hx-2609 or
+  待补供应商批号.
 
 ## 10. Audit
 
@@ -7487,3 +7501,9 @@ first.
   its stock moved into, each row under the lot they received, and the
   export writes each lot's Supplier's lot after its code: MC-906
   extended, MC-908 added.
+- 2026-11-22: ADR-094's both codes found, R6, and #618: a lot is found
+  by any part of its supplier's lot as by its code, in the top bar,
+  Movements' find box, Trace a lot and Inventory's search; the top
+  bar's lot row reads its item's code, then its expiry with its label or
+  Expiry to add, then its supplier's lot or Supplier's lot to add, each
+  part apart: MC-909 added.

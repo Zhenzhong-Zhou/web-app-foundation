@@ -6,7 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { productVariants } from '../src/database/schema';
+import { lots, productVariants } from '../src/database/schema';
 import {
   addMember,
   body,
@@ -469,6 +469,54 @@ describe('Inventory, grouped (e2e)', () => {
       'VC-FAR SHELF',
     ]);
     expect(await lotsAt(`search=VC-FAR&locationId=${back}`)).toEqual([]);
+  });
+
+  /** VITC's lot made here, at BACK, its supplier's lot as printed. */
+  async function madeAtBack(org: Org, vitc: string, back: string) {
+    await receive(org.agent, vitc, back, '4', {
+      makeCode: true,
+      supplierLot: 'Hb-Soon-2',
+    });
+    const [made] = await db
+      .select({ code: lots.code })
+      .from(lots)
+      .where(eq(lots.supplierLot, 'Hb-Soon-2'));
+    return made.code;
+  }
+
+  it('finds a code by any part of a lot’s supplier’s lot, capitals aside, at the place chosen alone (ADR-094, R6)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { vitc, shelf, back } = await world(alpha);
+    await madeAtBack(alpha, vitc, back);
+
+    expect(skus(await codes(alpha, '?search=hb-soon'))).toEqual(['VITC']);
+    expect(
+      skus(await codes(alpha, `?search=HB-SOON&locationId=${back}`)),
+    ).toEqual(['VITC']);
+    // Held at BACK alone, as a lot's code at a place (20a).
+    expect(
+      skus(await codes(alpha, `?search=HB-SOON&locationId=${shelf}`)),
+    ).toEqual([]);
+  });
+
+  it('lists a lot by any part of its supplier’s lot, beside the lots its own code finds (ADR-094, R6)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { vitc, back } = await world(alpha);
+    const made = await madeAtBack(alpha, vitc, back);
+    const lotsAt = async (query: string) =>
+      body<{ entries: Pile[] }>(
+        await alpha.agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      ).entries.map((row) => `${row.lotCode} ${row.locationName}`);
+
+    expect(await lotsAt('search=hb-soon')).toEqual([`${made} BACK`]);
+    // "soon" is in VC-SOON's code and in the made lot's supplier's lot:
+    // the Lot view keeps its own order, soonest first, a lot's places by
+    // name, never by match.
+    expect(await lotsAt('search=soon')).toEqual([
+      'VC-SOON BACK',
+      'VC-SOON SHELF',
+      `${made} BACK`,
+    ]);
   });
 
   it('opens a code to its places and their lots, soonest first, a place’s name only for a reader who may see places', async () => {

@@ -11,6 +11,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { LotSourceKind } from './dto/lot-trace-response.dto';
 import { itemName, namesIn } from './item-name';
+import { lotMatches, lotRank } from './lot-search';
 import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
 import { usableInLot } from './usable-stock';
@@ -125,27 +126,31 @@ export class LotTraceService {
   }
 
   /**
-   * Lots whose code contains what was typed, across every product. A recall
-   * usually arrives as part of a code — the batch number or date people
-   * remember, "2609" from "FOC-2609-01" — with no product attached, and the
-   * same code can exist for two products, so every match is returned with
-   * its SKU rather than guessing.
+   * Lots whose code or supplier's lot contains what was typed, across every
+   * product (ADR-044, amended by ADR-094: one rule, R6). A recall usually
+   * arrives as part of a code — the batch number or date people remember,
+   * "2609" from "FOC-2609-01", or the supplier's own lot off its letter —
+   * with no product attached, and the same code can exist for two
+   * products, so every match is returned with its SKU rather than guessing.
    *
-   * Codes that start with the text come first, so typing a prefix still puts
-   * the obvious match on top. % and _ are escaped so they match themselves.
+   * Exact, then the start of either code, then anywhere (lotRank), so
+   * typing a prefix still puts the obvious match on top. % and _ are
+   * escaped so they match themselves.
    *
-   * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx, a trigram
-   * index (ADR-056, migration 0042), serves it, led by the organization
-   * since migration 0077 (ADR-051, the amendment for #225 and #276), so it
-   * reads only this organization's matching lots. That index hands back the
-   * matches unordered, so every one is joined before the sort, and the join
+   * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx and
+   * lots_supplier_lot_trgm_idx, trigram indexes (ADR-056, migrations 0042
+   * and 0083), serve it, led by the organization since migration 0077
+   * (ADR-051, the amendment for #225 and #276), so it reads only this
+   * organization's matching lots. Those indexes hand back the matches
+   * unordered, so every one is joined before the sort, and the join
    * carries the organization: without it, Postgres read every
    * organization's variants to join this one's lots (ADR-051's plan check,
    * #187).
    */
   async search(code: string) {
     // Escaped and trimmed as every search is (ADR-056, common/search.ts).
-    const { anywhere, prefix } = searchTerms(code);
+    const terms = searchTerms(code);
+    const lot = { code: sql`l.code`, supplierLot: sql`l.supplier_lot` };
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (
@@ -156,8 +161,8 @@ export class LotTraceService {
             on pv.id = l.variant_id
             and pv.organization_id = ${organizationId}::uuid
           where l.organization_id = ${organizationId}::uuid
-            and l.code ilike ${anywhere}
-          order by (l.code ilike ${prefix}) desc, l.code, pv.sku
+            and ${lotMatches(lot, terms)}
+          order by ${lotRank(lot, terms)}, l.code, pv.sku
           limit 20
         `)
       ).rows as {

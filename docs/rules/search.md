@@ -24,9 +24,9 @@ leave how it matches to this file. How this file is kept is in the
 - **A name matches with its accents, capitals and punctuation set aside; a
   code only with its capitals set aside.** "saint laurent" finds Pharmacie
   Saint-Laurent and "eleuthero" finds Éleuthéro. A code, that is an order's
-  or a document's number, a reference, a SKU, a lot code, or a partner's
-  code or tax ID, is matched as typed apart from capitals, so "FOC2609"
-  does not find FOC-2609-01.
+  or a document's number, a reference, a SKU, a lot's code or its
+  supplier's lot, or a partner's code or tax ID, is matched as typed apart
+  from capitals, so "FOC2609" does not find FOC-2609-01.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "ignores accents and punctuation in a name" ·
   [test](../../server/test/stock.e2e-spec.ts) "finds names without accents, Chinese by pinyin, and % as itself" ·
@@ -83,8 +83,8 @@ leave how it matches to this file. How this file is kept is in the
 - **An item: any part of its SKU, of its product's or its variant's name
   in any language, or of their pinyin.** Items finds an item through any of
   its variants, discontinued ones only when asked for them; Inventory
-  finds a row by its item or by its lot code. The top bar finds
-  discontinued items too.
+  finds a row by its item or by a lot's code or supplier's lot. The top
+  bar finds discontinued items too.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by part of a SKU or a name, case and accents ignored" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product when asked to include them, as the top bar does" ·
@@ -123,12 +123,20 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   no test ·
   MC-1557
-- **A lot: any part of its code,** in the top bar and on Inventory.
+- **A lot: any part of its own code or of its supplier's lot,** the
+  supplier's own lot kept beside a code made here, in the top bar,
+  Movements' find box, Trace a lot and on Inventory's two views; the
+  top bar and Trace a lot rank an exact match, then the start of either
+  code, before the rest.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
+  [ADR-056, amended](../adr/0056-search.md#amendment-november-2026--a-lot-found-by-its-suppliers-lot-adr-094) ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "finds a lot by its supplier’s lot as by its code, exactly either putting lots first, with its expiry and its marks (ADR-094, R6)" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code by any part of a lot’s supplier’s lot, capitals aside, at the place chosen alone (ADR-094, R6)" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a lot by any part of its supplier’s lot, beside the lots its own code finds (ADR-094, R6)" ·
   [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
-  MC-1556 · MC-308
+  MC-1556 · MC-308 · MC-909
 - **Locations, people and settings are not in the top bar's search.**
   Each is found from its own page, and People has a box of its own.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
@@ -176,14 +184,15 @@ leave how it matches to this file. How this file is kept is in the
   puts that kind first,** the longest prefix that fits: with invoices
   numbered QX-, QX-000001 lists Invoices before Orders, and SO- or PO-
   lists Orders first; the lot series' L- lists Lots first. A search that
-  is exactly a lot's code puts Lots first. With one kind found, there is
-  nothing to reorder.
+  is exactly a lot's code or its supplier's lot puts Lots first. With one
+  kind found, there is nothing to reorder.
   [ADR-056, amended](../adr/0056-search.md#amendment-october-2026--the-organizations-prefixes-adr-073) ·
   [ADR-073](../adr/0073-each-organizations-document-numbering.md#decision--what-else-reads-the-prefixes) ·
   [ADR-073, amended](../adr/0073-each-organizations-document-numbering.md#amendment-november-2026--a-series-for-lot-codes-adr-094) ·
   [test](../../server/test/numbering.e2e-spec.ts) "puts the kind a query’s prefix names first in the lookup" ·
   [test](../../server/test/numbering.e2e-spec.ts) "puts lots first for a query starting with the lot series’ prefix (ADR-094)" ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "finds a lot by its supplier’s lot as by its code, exactly either putting lots first, with its expiry and its marks (ADR-094, R6)" ·
   MC-2713 · MC-1556
 - **A typo is forgiven only in the top bar, and only when the whole
   search found fewer than five records.** Each kind then adds close
@@ -192,8 +201,8 @@ leave how it matches to this file. How this file is kept is in the
   for in an order's number, reference and partner's name, an item's SKU
   and its product's own name, a partner's name, and the other kinds'
   number, reference or code; not in a translation, a variant's name, a
-  pinyin, or a partner's code or tax ID. A list or a picker never adds
-  close matches.
+  pinyin, a lot's supplier's lot, or a partner's code or tax ID. A list or
+  a picker never adds close matches.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
   [test](../../server/test/lookup.e2e-spec.ts) "forgives a typo with a close match, after any exact one" ·
   [test](../../client/src/search/lookup-box.test.tsx) "asks after two characters, and shows results by kind" ·
@@ -201,8 +210,12 @@ leave how it matches to this file. How this file is kept is in the
   MC-1556
 - **Each result shows its record's number or name, and a second line:**
   an order, an invoice, a credit note or a return its partner; a lot its
-  SKU and its expiry; an item its SKU and its product's cover, and its
-  name in the reader's language; a run its item's SKU; a partner its code.
+  SKU, then its expiry with its label, "Expires Nov 19, 2028", the chip
+  that says how near it is, or "Expiry to add", then its supplier's lot,
+  or "Supplier's lot to add" for a code made here with none, each part
+  dotted apart, a lot that does not expire saying nothing of it; an item
+  its SKU and its product's cover, and its name in the reader's
+  language; a run its item's SKU; a partner its code.
   An order carries its direction and, while confirmed, how much of it has
   come or gone, which Movements' find box says in words ("Partly
   received"); every other kind carries neither.
@@ -213,7 +226,8 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "finds its own records through each join, none of a twin organization's" ·
   [test](../../server/test/lookup.e2e-spec.ts) "ranks an exact match on the reader's name for an item first" ·
   [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
-  MC-2201 · MC-1556 · MC-320
+  [test](../../client/src/search/lookup-box.test.tsx) "reads a lot’s item code, then its expiry or its mark, each labelled, and its supplier’s lot" ·
+  MC-2201 · MC-1556 · MC-320 · MC-909
 - **A result opens its record:** an item opens its page under Items, a
   lot its trace.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
@@ -342,12 +356,14 @@ leave how it matches to this file. How this file is kept is in the
   no test ·
   [Help](../../client/src/help/guides/en/people.md#find-someone-find) ·
   MC-1901
-- **Trace a lot finds a lot by any part of its code, across products,**
-  each with its SKU, the codes that start with it first, at most 20. An
-  empty box is refused.
+- **Trace a lot finds a lot by any part of its code or of its supplier's
+  lot, across products,** each with its SKU, an exact match first, then
+  the start of either code, at most 20. An empty box is refused.
   [ADR-044](../adr/0044-lot-trace.md#decision--search-by-any-part-of-a-code-across-products) ·
+  [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-trace-follows-a-move-between-lots-and-one-rule-for-the-lot-search-adr-094) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "finds a lot by the start of its code" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "finds a lot by any part of its code" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "finds a lot by any part of its code or its supplier’s lot, the start of either first (ADR-094, R6)" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
   MC-901

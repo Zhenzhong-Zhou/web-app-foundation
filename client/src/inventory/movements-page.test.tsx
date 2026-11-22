@@ -407,6 +407,9 @@ describe('MovementsPage', () => {
       direction: null,
       fulfillment: null,
       expiresAt: null,
+      expiry: null,
+      supplierLot: null,
+      isAssigned: null,
       productId: null,
       coverFileId: null,
       type: null,
@@ -659,6 +662,39 @@ describe('MovementsPage', () => {
       expect(
         await screen.findByRole('button', {
           name: 'Remove filter: Lot: MCS-001',
+        }),
+      ).toBeVisible();
+    });
+
+    // A lot made here is found by its supplier's lot as by its code
+    // (ADR-094, R6): typed whole, that lot alone, saying it.
+    it('offers a lot whose whole supplier’s lot is typed alone, naming it', async () => {
+      const user = userEvent.setup();
+      answer([movement({ variantId: ITEM, lotId: LOT, lotCode: 'L-0001' })]);
+      found([
+        {
+          kind: 'lot',
+          results: [
+            result({ title: 'L-0001', supplierLot: 'Hx-2609' }),
+            result({ id: PARTNER, title: 'HX-2609-B' }),
+          ],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'hx-2609',
+      );
+      expect(await offered()).toEqual({
+        options: ['Lot L-0001 · supplier’s lot Hx-2609 · Vitamin C 500 mg'],
+        headings: ['Lots'],
+      });
+
+      await user.click(screen.getByRole('option', { name: /^Lot L-0001/ }));
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Lot: L-0001',
         }),
       ).toBeVisible();
     });

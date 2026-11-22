@@ -19375,6 +19375,30 @@
               "null"
             ]
           },
+          "expiry": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "unknown",
+              "date",
+              "none",
+              null
+            ]
+          },
+          "supplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isAssigned": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
           "productId": {
             "type": [
               "string",
@@ -19414,6 +19438,9 @@
           "direction",
           "fulfillment",
           "expiresAt",
+          "expiry",
+          "supplierLot",
+          "isAssigned",
           "productId",
           "coverFileId",
           "type",

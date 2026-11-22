@@ -295,7 +295,10 @@ export class Lot {
   supplierLot!: string | null;
 }
 
-/** A lot matched by the start of its code (ADR-044). */
+/**
+ * A lot matched by any part of its code or its supplier's lot, the start
+ * first (ADR-044, amended by ADR-094).
+ */
 export class LotMatch {
   id!: string;
   code!: string;

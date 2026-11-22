@@ -29,6 +29,10 @@ interface LookupResponse {
       status: string | null;
       direction: string | null;
       fulfillment: string | null;
+      expiresAt: string | null;
+      expiry: string | null;
+      supplierLot: string | null;
+      isAssigned: boolean | null;
       coverFileId: string | null;
       type: string | null;
       close: boolean;
@@ -132,6 +136,104 @@ describe('Lookup (e2e)', () => {
     expect(titles(await lookup(alpha, '明德'), 'partner')).toEqual([
       '明德药房',
     ]);
+  });
+
+  // A lot made here keeps the supplier's lot beside its code: either
+  // finds it, the start of either first, and exactly either puts Lots
+  // first; its row carries what its second line says (#618).
+  it('finds a lot by its supplier’s lot as by its code, exactly either putting lots first, with its expiry and its marks (ADR-094, R6)', async () => {
+    const alpha = await stocked('alpha');
+    const back = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Back',
+    });
+    const calm = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Calm 30ct',
+      variant: { sku: 'CALM-30', tracksLots: true },
+    });
+    const receipt = async (lot: Record<string, unknown>) =>
+      body<{ lotCode: string }>(
+        await alpha.agent
+          .post('/v1/stock/movements')
+          .send({
+            variantId: calm,
+            toLocationId: back,
+            quantity: '5',
+            reason: 'receipt',
+            lot,
+          })
+          .expect(201),
+      ).lotCode;
+    const made = await receipt({
+      makeCode: true,
+      supplierLot: 'Hx-2609',
+      expiry: 'unknown',
+    });
+    const toAdd = await receipt({ makeCode: true, expiresAt: '2099-01-01' });
+    // Newer, so it would come first among equals: the middle of a code.
+    await receipt({ code: 'ZZ-HX-26' });
+    // An order found by its partner's name, a kind listed before Lots.
+    const partnerId = await createPartner(alpha.agent, {
+      name: 'HX-2609 Supplies',
+    });
+    await alpha.agent
+      .post('/v1/orders')
+      .send({
+        partnerId,
+        direction: 'purchase',
+        lines: [{ variantId: calm, quantityOrdered: '1' }],
+      })
+      .expect(201);
+
+    const exact = await lookup(alpha, 'hx-2609');
+    expect(exact.map((group) => group.kind)).toEqual([
+      'lot',
+      'order',
+      'partner',
+    ]);
+    expect(exact[0].results.filter((result) => !result.close)).toEqual([
+      expect.objectContaining({
+        title: made,
+        detail: 'CALM-30',
+        expiresAt: null,
+        expiry: 'unknown',
+        supplierLot: 'Hx-2609',
+        isAssigned: true,
+      }),
+    ]);
+    expect(exact[2].results[0]).toMatchObject({
+      expiry: null,
+      supplierLot: null,
+      isAssigned: null,
+    });
+
+    // The start of the supplier's lot before the middle of a code.
+    expect(
+      (await lookup(alpha, 'HX-26'))
+        .find((group) => group.kind === 'lot')
+        ?.results.filter((result) => !result.close)
+        .map((result) => result.title),
+    ).toEqual([made, 'ZZ-HX-26']);
+
+    // A code made here with none to show says so; a printed one has none
+    // to add.
+    const lotOf = async (q: string) =>
+      (await lookup(alpha, q)).find((group) => group.kind === 'lot')
+        ?.results[0];
+    expect(await lotOf(toAdd)).toMatchObject({
+      title: toAdd,
+      expiresAt: '2099-01-01',
+      expiry: 'date',
+      supplierLot: null,
+      isAssigned: true,
+    });
+    expect(await lotOf('BF-2609')).toMatchObject({
+      title: 'BF-2609',
+      expiry: 'none',
+      supplierLot: null,
+      isAssigned: false,
+    });
   });
 
   // #546: an item's result carries its type, for its icon where it has

@@ -179,6 +179,19 @@ so the timing is the evidence for the name lookup.
   it leads with the organization (the amendment for #225 and #276,
   below): at small, lot search finds 341 candidates in its own
   organization, and its plan went from 6.0 to 0.7 ms on the Mac.
+  *Joined by the supplier's lot on 22 November 2026 (ADR-094, R6):* a
+  lot is found by any part of its code or of its supplier's lot,
+  `lots_supplier_lot_trgm_idx` led by the organization (migration 0083),
+  which the planner reads with the code's index in one bitmap OR, in
+  Trace a lot, Stock's search, the Lot view and the top bar's lookup.
+  At large, with a third of the lots given a supplier's lot for the
+  timing, the plans 3.9 ms for the lot search (3.6 before) and 16.2 for
+  the lookup's code (15.4), and at p95: the lookup with a lot's whole
+  code 246 ms (247 on 21 November, before the branch), with a whole
+  supplier's lot 211, the lot search 10 to 12. The lookup's close pass
+  reads the lot's code alone.
+  Trigger: the lookup with a lot's whole code past 300 ms at large. Then
+  its close pass first, the costliest query in it.
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
   in `zh-Hans`, at large, in its largest organization: 40 ms (4 November
   2026, #449), after 63.5 (29 October, #317) and 77.0 (1 November). Since

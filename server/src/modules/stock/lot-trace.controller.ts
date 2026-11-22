@@ -38,7 +38,10 @@ export class LotTraceController {
     private readonly permissions: PermissionsService,
   ) {}
 
-  /** Find a lot by the start of its code: how a recall usually begins. */
+  /**
+   * Find a lot by any part of its code or its supplier's lot, the start
+   * first: how a recall usually begins (ADR-044, amended by ADR-094).
+   */
   @Get('search')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   search(@Query() query: SearchLotsDto): Promise<LotMatch[]> {

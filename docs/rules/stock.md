@@ -97,12 +97,17 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-301
-- **A lot's code searched with a place chosen finds that lot at that
-  place alone,** never a code whose matching lot is held elsewhere.
+- **A lot's code or its supplier's lot searched with a place chosen
+  finds that lot at that place alone,** never a code whose matching lot
+  is held elsewhere; either code finds the lot, any part of it, capitals
+  aside, on Stock and on the Lot view (ADR-094, R6).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
+  [ADR-056, amended](../adr/0056-search.md#amendment-november-2026--a-lot-found-by-its-suppliers-lot-adr-094) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a lot by its code at the place chosen alone, never one held elsewhere" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code by any part of a lot’s supplier’s lot, capitals aside, at the place chosen alone (ADR-094, R6)" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a lot by any part of its supplier’s lot, beside the lots its own code finds (ADR-094, R6)" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
-  MC-314
+  MC-314 · MC-909
 - **Sorted by On hand or Expires first, each page follows the figure
   its rows show, either way,** a code with nothing to expire last both
   ways; at one place chosen, On hand and Expires first are what is
@@ -265,7 +270,9 @@ file is kept is in the [README](README.md).
   order are chosen in one find box, Find an item, lot or order, which
   reads the top bar's lookup, its kinds by the reader's permissions, and
   offers items, lots and orders alone, never a run or a return, the
-  exact matches alone while any match, a whole lot code its lot alone,
+  exact matches alone while any match, a lot by its code or its
+  supplier's lot, the supplier's lot named on its option, a whole lot
+  code or supplier's lot its lot alone,
   and the close ones, a typo's, under Close matches only when none does:
   an item sets the item, a lot its item and the lot, an order the order,
   each then a chip, the box emptied; what is typed alone never filters. An archived code,
@@ -286,6 +293,7 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/movements-page.test.tsx) "offers only the exact matches while any match exactly" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "offers the close matches under Close matches only when nothing matches exactly" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "offers a whole lot code alone; chosen, the box empties and the lot stays as its chip" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers a lot whose whole supplier’s lot is typed alone, naming it" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Find an item, lot or order › a lot by the keyboard: its item and the lot, each a chip, a stock card; › an order: its chip" ·
   [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
   [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left" ·
@@ -301,7 +309,7 @@ file is kept is in the [README](README.md).
   [test](../../client/e2e/movements-page.spec.ts) "Movements, every filter in the address: a reload keeps each, and the rows" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, a filter on, Show all movements: every filter and chip cleared in one address write; Back leaves Movements" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
-  MC-320
+  MC-320 · MC-909
 - **A movement is one row on every screen that lists one:** the item's
   name with today's code and type, "was" the code it was recorded under
   where that differs, the change with its unit, the reason, the lot with

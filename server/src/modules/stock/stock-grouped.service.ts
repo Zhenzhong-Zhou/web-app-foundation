@@ -3,7 +3,7 @@ import { and, eq, or, type SQL, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
-import { codeMatches, searchTerms } from '../../common/search';
+import { searchTerms } from '../../common/search';
 import {
   afterKeys,
   cursorOf,
@@ -61,6 +61,7 @@ import type {
   StockPlace,
 } from './dto/stock-grouped-response.dto';
 import { namesIn, productNameOrder } from './item-name';
+import { lotMatches } from './lot-search';
 import { pathsOf } from './place-paths';
 import {
   quickFiltersOf,
@@ -115,8 +116,9 @@ function presentOf(
  * What narrows the codes whatever the quick filters: their presence, one
  * item, its type, its category with every category under it, and the
  * search, the item as every search matches it (ADR-056) or one of its
- * lots on hand by its code, at the place chosen when one is: the list
- * keeps what is there (20a). Every join names the organization (ADR-003).
+ * lots on hand by its code or its supplier's lot (ADR-094, R6), at the
+ * place chosen when one is: the list keeps what is there (20a). Every
+ * join names the organization (ADR-003).
  */
 function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
   const org = sql`${organizationId}::uuid`;
@@ -142,7 +144,10 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
               and lt.organization_id = ${org}
             where sl.organization_id = ${org}
               and sl.quantity > 0
-              and ${codeMatches(sql`lt.code`, terms)}
+              and ${lotMatches(
+                { code: sql`lt.code`, supplierLot: sql`lt.supplier_lot` },
+                terms,
+              )}
               ${
                 query.locationId
                   ? sql`and sl.location_id = ${query.locationId}::uuid`
