@@ -195,6 +195,10 @@ const ACTS = defineMessages({
     id: 'account.access.act.stockReorder',
     defaultMessage: 'set reorder points',
   },
+  stockLotMadeHere: {
+    id: 'account.access.act.stockLotMadeHere',
+    defaultMessage: 'mark a lot’s code as made up here',
+  },
   ordersReceive: {
     id: 'account.access.act.ordersReceive',
     defaultMessage: 'receive what was ordered',
@@ -320,6 +324,7 @@ const GRANTS: Record<Permission, Grant> = {
   'stock.move': act('stock', ACTS.stockMove),
   'stock.adjust': act('stock', ACTS.stockAdjust),
   'stock.reorder': act('stock', ACTS.stockReorder),
+  'stock.lot_made_here': act('stock', ACTS.stockLotMadeHere),
   'locations.create': add('stock', 'locations'),
   'locations.update': change('stock', 'locations'),
 

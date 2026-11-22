@@ -7,6 +7,7 @@
   "account.access.act.productionOverride": "说明原因后，例外批准下达许可证未处于有效状态的生产订单",
   "account.access.act.rolesAssign": "修改成员的角色",
   "account.access.act.stockAdjust": "更正库存数量",
+  "account.access.act.stockLotMadeHere": "将批次编码标记为本公司自编",
   "account.access.act.stockMove": "收货、发货和移库",
   "account.access.act.stockReorder": "设置库存下限",
   "account.access.actedOn.drafts": "{verbs}草稿",

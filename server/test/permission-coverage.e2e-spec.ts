@@ -130,6 +130,10 @@ const CHECKED_INSIDE = new Map<Permission, string>([
     'production.override_licence',
     'LicenceOverrideGuard, on a release with an override (ADR-050); the route declares production.release',
   ],
+  [
+    'stock.lot_made_here',
+    'On a lot’s details marking its code as made here, madeHere: true (ADR-094, R7); PATCH /v1/stock/lots/:id declares its own',
+  ],
 ]);
 
 /**

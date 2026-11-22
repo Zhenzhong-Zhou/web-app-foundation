@@ -518,7 +518,7 @@ const GLOSSARY = [
   t({
     id: 'organization.export.glossary.numbering',
     defaultMessage:
-      'document_numbering, document_sequences — how each kind of document is numbered, and the counter for each year, month or day; a number already given stays on its document.',
+      'document_numbering, document_sequences — how each kind of document, and each lot code made here, is numbered, and the counter for each year, month or day; a number already given stays on its document.',
   }),
   t({
     id: 'organization.export.glossary.reference',
@@ -572,12 +572,12 @@ const GLOSSARY = [
   t({
     id: 'organization.export.glossary.lots',
     defaultMessage:
-      'lot_id, code, expires_at — a lot of goods, the code printed on it, and the day it expires.',
+      'lot_id, code, expires_at — a lot of goods, its code, and the day it expires. In lots.csv, is_assigned is true where the code was made here, as nothing printed one; supplier_lot is the supplier’s own lot for such a lot; note is tracking_started for the lot that took the stock on hand when the item started tracking lots.',
   }),
   t({
     id: 'organization.export.glossary.movements',
     defaultMessage:
-      'from_location_id, to_location_id, reason — in stock_movements.csv, where stock left, where it arrived, and why.',
+      'from_location_id, to_location_id, reason — in stock_movements.csv, where stock left, where it arrived, and why. A lot change, reason lot_change, stays at one place and moves stock from lot_id into to_lot_id, lot_id empty when lot tracking started.',
   }),
   t({
     id: 'organization.export.glossary.audit',

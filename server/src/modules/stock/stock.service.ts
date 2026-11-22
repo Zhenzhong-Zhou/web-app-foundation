@@ -375,7 +375,8 @@ export class StockService {
   /**
    * Enforces the invariant from ADR-023 — a lot is present exactly when the
    * variant tracks lots — and returns the id to use, creating the lot when one
-   * arrived with the shipment.
+   * arrived with the shipment. Tracking may start for a variant that holds
+   * stock, never stop (ADR-094): from then on, its movements take a lot.
    *
    * A check constraint cannot see across tables, so this lives here and is
    * asserted in e2e. Without it a variant ends up with some lotted rows and

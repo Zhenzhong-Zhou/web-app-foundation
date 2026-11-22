@@ -114,6 +114,7 @@ const KIND_OF_SERIES: Record<DocumentType, LookupKind> = {
   return_authorization: 'returnAuthorization',
   sale_order: 'order',
   purchase_order: 'order',
+  lot: 'lot',
 };
 
 /** A prefix's text before its date, and the kind it names. */

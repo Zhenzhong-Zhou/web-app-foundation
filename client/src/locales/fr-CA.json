@@ -7,6 +7,7 @@
   "account.access.act.productionOverride": "lancer un ordre de fabrication même si la licence n’est pas en vigueur, en précisant la raison",
   "account.access.act.rolesAssign": "changer les rôles des membres",
   "account.access.act.stockAdjust": "corriger le compte",
+  "account.access.act.stockLotMadeHere": "indiquer qu’un code de lot a été inventé ici",
   "account.access.act.stockMove": "recevoir, expédier et déplacer du stock",
   "account.access.act.stockReorder": "définir les points de commande",
   "account.access.actedOn.drafts": "{verbs} les brouillons",

@@ -7,7 +7,6 @@ import {
   products,
   type ProductType,
   productVariants,
-  type ValuationKind,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -20,6 +19,7 @@ import {
   type CostInput,
 } from '../stock/revaluation';
 import type {
+  ListedValuationKind,
   LotCost,
   NeedsCostPage,
   RunCost,
@@ -61,7 +61,7 @@ interface BalanceRow {
 
 interface EntryRow {
   id: string;
-  kind: ValuationKind;
+  kind: ListedValuationKind;
   quantity: string;
   value: string;
   unit_price: string | null;
@@ -97,7 +97,7 @@ interface OutputRow {
 
 interface NeedsCostRow {
   id: string;
-  kind: ValuationKind;
+  kind: ListedValuationKind;
   sku: string;
   variant_id: string;
   product_id: string;

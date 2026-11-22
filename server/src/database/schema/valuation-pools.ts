@@ -32,7 +32,11 @@ export const valuationPools = pgTable(
       .notNull()
       .references(() => productVariants.id, { onDelete: 'restrict' }),
 
-    /** Null exactly when the variant does not track lots (ADR-023). */
+    /**
+     * Null exactly when the variant does not track lots (ADR-023). When it
+     * starts, its pool takes the first lot's id, its cost history with it
+     * (ADR-094).
+     */
     lotId: uuid('lot_id').references(() => lots.id, { onDelete: 'restrict' }),
 
     /** The sum of `stock_levels` for this pool, across every location. */

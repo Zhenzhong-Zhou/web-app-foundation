@@ -175,11 +175,14 @@ leave how it matches to this file. How this file is kept is in the
 - **A search that starts with one of the organization's number prefixes
   puts that kind first,** the longest prefix that fits: with invoices
   numbered QX-, QX-000001 lists Invoices before Orders, and SO- or PO-
-  lists Orders first. A search that is exactly a lot's code puts Lots
-  first. With one kind found, there is nothing to reorder.
+  lists Orders first; the lot series' L- lists Lots first. A search that
+  is exactly a lot's code puts Lots first. With one kind found, there is
+  nothing to reorder.
   [ADR-056, amended](../adr/0056-search.md#amendment-october-2026--the-organizations-prefixes-adr-073) ·
   [ADR-073](../adr/0073-each-organizations-document-numbering.md#decision--what-else-reads-the-prefixes) ·
+  [ADR-073, amended](../adr/0073-each-organizations-document-numbering.md#amendment-november-2026--a-series-for-lot-codes-adr-094) ·
   [test](../../server/test/numbering.e2e-spec.ts) "puts the kind a query’s prefix names first in the lookup" ·
+  [test](../../server/test/numbering.e2e-spec.ts) "puts lots first for a query starting with the lot series’ prefix (ADR-094)" ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
   MC-2713 · MC-1556
 - **A typo is forgiven only in the top bar, and only when the whole

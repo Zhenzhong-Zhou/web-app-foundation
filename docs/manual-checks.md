@@ -3704,6 +3704,16 @@ The pages, in a private window unless a check says otherwise.
   tint as made roles are on Members, and Chloé Tremblay's Viewer a plain
   pill; at 390 px they wrap under his name rather than widen the card. Tom's
   own page shows the same two, a little apart.
+- **MC-3328** *(ADR-094, R7)* Marking a lot's code as made here is the
+  Owner's alone at first. Daniel Okafor (Admin), Tom Becker (Warehouse) and
+  Chloé Tremblay (Viewer) do not hold it: their Your access says nothing of
+  it. As the demo Owner, Make a role, Nothing ticked: under Stock and
+  locations, tick Mark a lot’s code as made up here, so it can be
+  corrected, and Receive, ship or transfer stock ticks with it, with what
+  that needs, the line above the areas saying so; the summary beside the
+  boxes says the role can mark a lot’s code as made up here, in 中文
+  将批次编码标记为本公司自编, in Français indiquer qu’un code de lot a été
+  inventé ici.
 
 ## 34. Old tabs after a deploy (ADR-081)
 
@@ -7405,3 +7415,6 @@ first.
   movements and Correct the count's Why, in English and Français, and
   the Audit log names a movement's reason in Movements' words: MC-320
   and MC-2901 extended.
+- 2026-11-21: ADR-094's schema, R7: marking a lot's code as made here,
+  a permission of its own, the Owner's alone at first and offered in the
+  role editor: MC-3328 added.

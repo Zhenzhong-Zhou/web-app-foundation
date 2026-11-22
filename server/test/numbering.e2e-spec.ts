@@ -20,6 +20,7 @@ import {
   addViewer,
   body,
   createE2eApp,
+  createLocation,
   createPartner,
   createVariant,
   registerOrganization,
@@ -239,7 +240,13 @@ describe('Numbering (e2e)', () => {
         .select()
         .from(documentNumbering)
         .where(eq(documentNumbering.organizationId, org.organizationId));
-      expect(rows).toHaveLength(5);
+      expect(rows).toHaveLength(6);
+      // Lot codes made here, L-2026-11-21-1, again from 1 each day (ADR-094).
+      expect(rows.find((row) => row.documentType === 'lot')).toMatchObject({
+        prefix: 'L-{YYYY}-{MM}-{DD}-',
+        digits: 1,
+        reset: 'daily',
+      });
 
       const shown = await numbering(org);
       expect(shown.invoice).toMatchObject({
@@ -619,6 +626,40 @@ describe('Numbering (e2e)', () => {
       ).groups;
       expect(groups.map((group) => group.kind).slice(0, 2)).toEqual([
         'invoice',
+        'order',
+      ]);
+    });
+
+    it('puts lots first for a query starting with the lot series’ prefix (ADR-094)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const order = await catalogue(org);
+      const variantId = await createVariant(org.agent, {
+        type: 'material',
+        name: 'Ascorbic acid',
+        variant: { sku: 'VITC', tracksLots: true },
+      });
+      const shelf = await createLocation(org.agent, {
+        type: 'site',
+        name: 'Shelf',
+      });
+      await org.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId,
+          toLocationId: shelf,
+          quantity: '5',
+          reason: 'receipt',
+          lot: { code: 'L-2026-11-21-1' },
+        })
+        .expect(201);
+      // Found first otherwise, as orders are.
+      await order('sale', 'L-2026-11-21-1-B');
+
+      const groups = body<{ groups: { kind: string }[] }>(
+        await org.agent.get('/v1/lookup?q=L-2026-11-21').expect(200),
+      ).groups;
+      expect(groups.map((group) => group.kind).slice(0, 2)).toEqual([
+        'lot',
         'order',
       ]);
     });

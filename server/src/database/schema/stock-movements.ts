@@ -33,6 +33,10 @@ export const MOVEMENT_REASONS = [
   'consumption', // out, into a build
   'sample', // out, not sold
   'return', // in, from a customer
+  // At one place, from one lot of the item into another: none into the
+  // first lot when tracking starts, or part of a lot into another (ADR-094).
+  // Counted neither in nor out, as a transfer across every place is.
+  'lot_change',
 ] as const;
 
 export type MovementReason = (typeof MOVEMENT_REASONS)[number];
@@ -73,8 +77,18 @@ export const stockMovements = pgTable(
     lotId: uuid('lot_id').references(() => lots.id, { onDelete: 'restrict' }),
 
     /**
-     * Null marks direction. Both set is a transfer; only `to` is inbound; only
-     * `from` is outbound.
+     * The lot a lot change puts the stock into, lot_id being the one it
+     * leaves, null when tracking starts (ADR-094). Set exactly for a lot
+     * change, whose place is both its ends.
+     */
+    toLotId: uuid('to_lot_id').references(() => lots.id, {
+      onDelete: 'restrict',
+    }),
+
+    /**
+     * Null marks direction. Both set is a transfer, or, the same place at
+     * both, a lot change (ADR-094); only `to` is inbound; only `from` is
+     * outbound.
      *
      * One row rather than two, because a transfer is one decision by one
      * person for one reason, and splitting it into a negative and a positive
@@ -156,6 +170,15 @@ export const stockMovements = pgTable(
     index('stock_movements_org_lot_idx').on(t.organizationId, t.lotId),
 
     /**
+     * The same for the lot a lot change enters, which a recall follows
+     * from the first lot into the next (ADR-094). Partial: almost no
+     * movement sets it.
+     */
+    index('stock_movements_org_to_lot_idx')
+      .on(t.organizationId, t.toLotId)
+      .where(sql`${t.toLotId} is not null`),
+
+    /**
      * Everything one document caused — a run's issues and consumption, a
      * shipment's lots. Read on every run and order page.
      */
@@ -185,7 +208,7 @@ export const stockMovements = pgTable(
 
     check(
       'stock_movements_reason_check',
-      sql`${t.reason} in ('receipt', 'shipment', 'transfer', 'adjustment', 'production', 'consumption', 'sample', 'return')`,
+      sql`${t.reason} in ('receipt', 'shipment', 'transfer', 'adjustment', 'production', 'consumption', 'sample', 'return', 'lot_change')`,
     ),
 
     check('stock_movements_quantity_positive_check', sql`${t.quantity} > 0`),
@@ -198,10 +221,22 @@ export const stockMovements = pgTable(
     ),
 
     // A transfer to the same shelf it came from is a no-op row that makes
-    // every history view show an event that did not happen.
+    // every history view show an event that did not happen. A lot change
+    // stays on its shelf and changes the lot instead (ADR-094).
     check(
       'stock_movements_distinct_locations_check',
-      sql`${t.fromLocationId} is null or ${t.toLocationId} is null or ${t.fromLocationId} <> ${t.toLocationId}`,
+      sql`${t.fromLocationId} is null or ${t.toLocationId} is null or ${t.fromLocationId} <> ${t.toLocationId} or ${t.reason} = 'lot_change'`,
+    ),
+
+    // The lot it enters, exactly for a lot change: at one place, from one
+    // lot into another, or from none into the first (ADR-094).
+    check(
+      'stock_movements_to_lot_check',
+      sql`(${t.toLotId} is not null) = (${t.reason} = 'lot_change')`,
+    ),
+    check(
+      'stock_movements_lot_change_shape_check',
+      sql`${t.reason} <> 'lot_change' or (${t.fromLocationId} is not distinct from ${t.toLocationId} and ${t.toLotId} is distinct from ${t.lotId})`,
     ),
 
     /**

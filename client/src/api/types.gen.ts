@@ -80,6 +80,7 @@ export type CurrentSession = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -335,6 +336,7 @@ export type Role = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -401,6 +403,7 @@ export type CataloguePermission = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -463,6 +466,7 @@ export type CataloguePermission = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -531,6 +535,7 @@ export type RoleTemplate = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -618,6 +623,7 @@ export type RoleDetail = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -688,6 +694,7 @@ export type CreateRoleDto = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -754,6 +761,7 @@ export type UpdateRoleDto = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -789,8 +797,8 @@ export type AuditLink = {
     | 'location'
     | 'role'
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'product'
     | 'partner'
     | 'product_category'
@@ -1815,12 +1823,6 @@ export type MovementLotDto = {
 };
 
 export type RecordMovementDto = {
-  variantId: string;
-  lotId?: string;
-  lot?: MovementLotDto;
-  fromLocationId?: string;
-  toLocationId?: string;
-  quantity: string;
   reason:
     | 'receipt'
     | 'shipment'
@@ -1830,6 +1832,12 @@ export type RecordMovementDto = {
     | 'consumption'
     | 'sample'
     | 'return';
+  variantId: string;
+  lotId?: string;
+  lot?: MovementLotDto;
+  fromLocationId?: string;
+  toLocationId?: string;
+  quantity: string;
   reasonDetail?: string;
   recipientPartnerId?: string;
   note?: string;
@@ -2335,8 +2343,8 @@ export type LookupResult = {
 export type LookupGroup = {
   kind:
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'partner'
     | 'creditNote'
     | 'returnAuthorization'
@@ -2378,8 +2386,8 @@ export type WelcomeDone = {
     | 'email'
     | 'jobTitle'
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'product'
     | 'photo';
   id: string | null;
@@ -2498,8 +2506,8 @@ export type RecentEntry = {
   kind:
     | 'run'
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'product'
     | 'partner'
     | 'return'
@@ -3798,6 +3806,7 @@ export const Permission = {
   STOCK_MOVE: 'stock.move',
   STOCK_ADJUST: 'stock.adjust',
   STOCK_REORDER: 'stock.reorder',
+  STOCK_LOT_MADE_HERE: 'stock.lot_made_here',
   COSTS_VIEW: 'costs.view',
   COSTS_UPDATE: 'costs.update',
   PRICE_LISTS_VIEW: 'price_lists.view',
@@ -6132,7 +6141,8 @@ export type StockControllerListMovementsV1Data = {
       | 'production'
       | 'consumption'
       | 'sample'
-      | 'return';
+      | 'return'
+      | 'lot_change';
     from?: string;
     until?: string;
     order?: 'asc' | 'desc';
@@ -6182,7 +6192,8 @@ export type StockControllerExportMovementsV1Data = {
       | 'production'
       | 'consumption'
       | 'sample'
-      | 'return';
+      | 'return'
+      | 'lot_change';
     from?: string;
     until?: string;
     order?: 'asc' | 'desc';

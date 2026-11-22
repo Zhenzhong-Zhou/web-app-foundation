@@ -4205,7 +4205,8 @@
                 "production",
                 "consumption",
                 "sample",
-                "return"
+                "return",
+                "lot_change"
               ]
             }
           },
@@ -4336,7 +4337,8 @@
                 "production",
                 "consumption",
                 "sample",
-                "return"
+                "return",
+                "lot_change"
               ]
             }
           },
@@ -10415,6 +10417,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11264,6 +11267,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11349,6 +11353,7 @@
               "stock.move",
               "stock.adjust",
               "stock.reorder",
+              "stock.lot_made_here",
               "costs.view",
               "costs.update",
               "price_lists.view",
@@ -11424,6 +11429,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11523,6 +11529,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11688,6 +11695,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11800,6 +11808,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11889,6 +11898,7 @@
                 "stock.move",
                 "stock.adjust",
                 "stock.reorder",
+                "stock.lot_made_here",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -11946,8 +11956,8 @@
               "location",
               "role",
               "invoice",
-              "order",
               "lot",
+              "order",
               "product",
               "partner",
               "product_category",
@@ -16409,6 +16419,19 @@
       "RecordMovementDto": {
         "type": "object",
         "properties": {
+          "reason": {
+            "enum": [
+              "receipt",
+              "shipment",
+              "transfer",
+              "adjustment",
+              "production",
+              "consumption",
+              "sample",
+              "return"
+            ],
+            "type": "string"
+          },
           "variantId": {
             "type": "string",
             "format": "uuid"
@@ -16431,19 +16454,6 @@
           "quantity": {
             "type": "string"
           },
-          "reason": {
-            "type": "string",
-            "enum": [
-              "receipt",
-              "shipment",
-              "transfer",
-              "adjustment",
-              "production",
-              "consumption",
-              "sample",
-              "return"
-            ]
-          },
           "reasonDetail": {
             "type": "string",
             "maxLength": 100
@@ -16459,9 +16469,9 @@
           }
         },
         "required": [
+          "reason",
           "variantId",
-          "quantity",
-          "reason"
+          "quantity"
         ]
       },
       "RecordedMovementEnvelope": {
@@ -18794,8 +18804,8 @@
             "type": "string",
             "enum": [
               "invoice",
-              "order",
               "lot",
+              "order",
               "partner",
               "creditNote",
               "returnAuthorization",
@@ -18919,8 +18929,8 @@
               "email",
               "jobTitle",
               "invoice",
-              "order",
               "lot",
+              "order",
               "product",
               "photo"
             ]
@@ -19225,8 +19235,8 @@
             "enum": [
               "run",
               "invoice",
-              "order",
               "lot",
+              "order",
               "product",
               "partner",
               "return",
@@ -24658,6 +24668,7 @@
           "stock.move",
           "stock.adjust",
           "stock.reorder",
+          "stock.lot_made_here",
           "costs.view",
           "costs.update",
           "price_lists.view",

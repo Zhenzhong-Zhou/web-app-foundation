@@ -7,6 +7,7 @@
   "account.access.act.productionOverride": "release a run whose licence is not in force, with a reason",
   "account.access.act.rolesAssign": "change members’ roles",
   "account.access.act.stockAdjust": "correct a count",
+  "account.access.act.stockLotMadeHere": "mark a lot’s code as made up here",
   "account.access.act.stockMove": "receive, ship and move stock",
   "account.access.act.stockReorder": "set reorder points",
   "account.access.actedOn.drafts": "{verbs} drafts",

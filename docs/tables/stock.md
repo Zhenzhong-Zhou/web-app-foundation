@@ -10,9 +10,11 @@ erDiagram
     uuid id PK
     uuid variant_id FK
     text code
+    text supplier_lot
     date expires_at
     timestamptz received_at
     boolean is_assigned
+    text note
     timestamptz created_at
     timestamptz updated_at
   }
@@ -42,6 +44,7 @@ erDiagram
     uuid variant_id FK
     text sku
     uuid lot_id FK
+    uuid to_lot_id FK
     uuid from_location_id FK
     uuid to_location_id FK
     numeric(18,4) quantity
@@ -87,6 +90,7 @@ erDiagram
   stock_levels }o--o| lots : "lot_id"
   stock_movements }o--|| product_variants : "variant_id"
   stock_movements }o--o| lots : "lot_id"
+  stock_movements }o--o| lots : "to_lot_id"
   stock_movements }o--o| locations : "from_location_id"
   stock_movements }o--o| locations : "to_location_id"
   stock_movements }o--|| users : "actor_id"

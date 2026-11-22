@@ -302,7 +302,7 @@ function standing(
 async function lastNumbers(
   tx: Transaction,
   organizationId: string,
-): Promise<Record<DocumentType, string | null>> {
+): Promise<Record<(typeof SERIES)[SeriesKey], string | null>> {
   const first = (rows: { number: string | null }[]) => rows[0]?.number ?? null;
 
   const invoice = await tx

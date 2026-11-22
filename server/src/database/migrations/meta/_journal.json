@@ -582,6 +582,13 @@
       "when": 1795156276622,
       "tag": "0082_movements_by_place",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1795325323584,
+      "tag": "0083_lots_at_receipt",
+      "breakpoints": true
     }
   ]
 }

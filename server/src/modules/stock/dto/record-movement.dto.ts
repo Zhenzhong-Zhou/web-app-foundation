@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -11,8 +12,24 @@ import {
 
 import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
-import { MOVEMENT_REASONS } from '../../../database/schema';
+import type { MovementReason } from '../../../database/schema';
 import { MovementLotDto } from './movement-lot.dto';
+
+/**
+ * The reasons this route records, listed rather than read from
+ * MOVEMENT_REASONS (#328): a lot change is written only by starting lot
+ * tracking and by a move to another lot, each with both its lots (ADR-094).
+ */
+export const RECORDED_REASONS = [
+  'receipt',
+  'shipment',
+  'transfer',
+  'adjustment',
+  'production',
+  'consumption',
+  'sample',
+  'return',
+] as const satisfies readonly MovementReason[];
 
 export class RecordMovementDto {
   @IsUUID()
@@ -50,8 +67,9 @@ export class RecordMovementDto {
   @IsPositiveDecimal()
   quantity!: string;
 
-  @IsIn([...MOVEMENT_REASONS])
-  reason!: (typeof MOVEMENT_REASONS)[number];
+  @ApiProperty({ enum: RECORDED_REASONS })
+  @IsIn([...RECORDED_REASONS])
+  reason!: (typeof RECORDED_REASONS)[number];
 
   /**
    * "damaged", "expired", "miscount". Free text under a closed reason, because

@@ -6,6 +6,14 @@ import type { ProductType, ValuationKind } from '../../../database/schema';
  * amount is a decimal string, never a number (ADR-025).
  */
 
+/**
+ * The kinds a value row is listed as. A lot change's rows (ADR-094) are in
+ * the table, and no route writes one yet: they join this list with the
+ * route that does, and with how a tab opened before meets the new value
+ * (ADR-081).
+ */
+export type ListedValuationKind = Exclude<ValuationKind, 'lot_change'>;
+
 /** One pool of stock: an item, or one lot of it. */
 export class ValuationPool {
   variantId!: string;
@@ -36,7 +44,7 @@ export class StockValuationEnvelope {
 /** One valuation row in a lot's history. */
 export class LotCostEntry {
   id!: string;
-  kind!: ValuationKind;
+  kind!: ListedValuationKind;
   /** The movement's reason; null for an opening balance. */
   reason!: string | null;
   /** Signed: negative for stock leaving. */
@@ -111,7 +119,7 @@ export class RunCostEnvelope {
 /** A valuation still waiting for a cost: the to-do list. */
 export class NeedsCostEntry {
   id!: string;
-  kind!: ValuationKind;
+  kind!: ListedValuationKind;
   /** The movement's reason; null for the opening balance. */
   reason!: string | null;
   sku!: string;

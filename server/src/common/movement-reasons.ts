@@ -23,4 +23,8 @@ export const MOVEMENT_REASON_WORDS: Record<MovementReason, Translatable> = {
   }),
   sample: t({ id: 'stock.reason.sample', defaultMessage: 'Sampled' }),
   return: t({ id: 'stock.reason.return', defaultMessage: 'Returned' }),
+  lot_change: t({
+    id: 'stock.reason.lotChange',
+    defaultMessage: 'Lot changed',
+  }),
 };

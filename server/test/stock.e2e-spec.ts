@@ -208,6 +208,25 @@ describe('Stock (e2e)', () => {
       expect(rows[0].lotId).toBeNull();
     });
 
+    // Written only by starting lot tracking and by a move to another lot,
+    // each with both its lots (ADR-094).
+    it('refuses a lot change, which this route does not record', async () => {
+      const { agent, variant, locationId } = await setup('alpha');
+
+      await agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: variant.id,
+          fromLocationId: locationId,
+          toLocationId: locationId,
+          quantity: '1',
+          reason: 'lot_change',
+        })
+        .expect(400);
+
+      expect(await db.select().from(stockMovements)).toEqual([]);
+    });
+
     it('accumulates rather than replacing, and the ledger keeps both', async () => {
       const { agent, variant, locationId } = await setup('alpha');
 

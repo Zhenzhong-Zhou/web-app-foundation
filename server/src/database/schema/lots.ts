@@ -16,6 +16,16 @@ import { organizations } from './organizations';
 import { productVariants } from './product-variants';
 
 /**
+ * What a lot's note may say (ADR-094): a key the screens translate, never a
+ * sentence, so a lot is found by it. `tracking_started` is the lot that took
+ * a code's stock on hand when its lot tracking started, and what comes back
+ * from before then.
+ */
+export const LOT_NOTES = ['tracking_started'] as const;
+
+export type LotNote = (typeof LOT_NOTES)[number];
+
+/**
  * A specific production run of one variant — what a recall is issued against
  * and what an expiry date belongs to.
  *
@@ -45,8 +55,19 @@ export const lots = pgTable(
       // ADR-023 already forbids deleting it — discontinuing is the mechanism.
       .references(() => productVariants.id, { onDelete: 'restrict' }),
 
-    /** What the supplier printed. "L2024-A", "240115". Typed, never generated. */
+    /**
+     * What the supplier printed, "L2024-A", "240115", typed as printed; or,
+     * where the delivery shows none, made by the organization's lot series,
+     * "L-2026-11-21-1", and then is_assigned (ADR-094).
+     */
     code: text('code').notNull(),
+
+    /**
+     * The supplier's own lot, as printed, for a lot whose code was made
+     * here: given at receipt or added later. Null where the code is the
+     * supplier's, or the supplier's lot is not yet known (ADR-094).
+     */
+    supplierLot: text('supplier_lot'),
 
     /**
      * Null for lots that do not expire — hardware, packaging, most equipment.
@@ -66,12 +87,14 @@ export const lots = pgTable(
       .defaultNow(),
 
     /**
-     * True only when no code existed and the receiver had to invent one.
+     * True only when no code was printed and one was made here: by the lot
+     * series at receipt, or typed up by the receiver and marked so
+     * afterwards, one way (ADR-094).
      *
      * False when the code came from an authoritative source — printed by the
-     * supplier, or issued by this organization's own numbering scheme for a
-     * production run. The flag is about provenance, not about who typed it:
-     * a manufactured lot code is ours and is authoritative, so it is false.
+     * supplier, or issued for a production run (ADR-074). The flag is about
+     * provenance, not about who typed it: a manufactured lot code is ours
+     * and is authoritative, so it is false.
      *
      * Leaving the lot null would break the invariant; inventing a code
      * silently is worse. During a recall the question is which units came from
@@ -81,11 +104,16 @@ export const lots = pgTable(
      */
     isAssigned: boolean('is_assigned').notNull().default(false),
 
+    /** A key from LOT_NOTES, translated when read; null for most lots. */
+    note: text('note').$type<LotNote>(),
+
     ...timestamps,
   },
   (t) => [
     // Search (ADR-056): trigram indexes, as trigramIndex builds them.
     trigramIndex('lots_code_trgm_idx', t.organizationId, t.code),
+    // The supplier's lot finds the lot as its code does (ADR-094, R6).
+    trigramIndex('lots_supplier_lot_trgm_idx', t.organizationId, t.supplierLot),
     // Per variant, not per organization: two different products may legitimately
     // carry the same supplier lot code, and they are not the same lot.
     uniqueIndex('lots_org_variant_code_key').on(
@@ -101,5 +129,13 @@ export const lots = pgTable(
       .where(sql`${t.expiresAt} is not null`),
     index('lots_variant_id_idx').on(t.variantId),
     check('lots_code_not_blank_check', sql`length(btrim(${t.code})) > 0`),
+    check(
+      'lots_supplier_lot_not_blank_check',
+      sql`${t.supplierLot} is null or length(btrim(${t.supplierLot})) > 0`,
+    ),
+    check(
+      'lots_note_check',
+      sql`${t.note} is null or ${t.note} in ('tracking_started')`,
+    ),
   ],
 );

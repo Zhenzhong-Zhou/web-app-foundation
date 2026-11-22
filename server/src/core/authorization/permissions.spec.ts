@@ -47,9 +47,9 @@ const ROLES: [string, readonly Permission[]][] = [
  * templates a role starts from.
  */
 describe('permissions', () => {
-  it('has 59, each once', () => {
-    expect(ALL_PERMISSIONS).toHaveLength(59);
-    expect(new Set(ALL_PERMISSIONS).size).toBe(59);
+  it('has 60, each once', () => {
+    expect(ALL_PERMISSIONS).toHaveLength(60);
+    expect(new Set(ALL_PERMISSIONS).size).toBe(60);
   });
 
   describe('their words', () => {
@@ -240,6 +240,16 @@ describe('permissions', () => {
       expect(SYSTEM_ROLE_PERMISSIONS.Admin).not.toContain('stock.reorder');
       expect(SYSTEM_ROLE_PERMISSIONS.Viewer).not.toContain('stock.reorder');
       expect(NEVER_OFFERED).not.toContain('stock.reorder');
+    });
+
+    it('keeps marking a lot’s code as made here the Owner’s, giveable in a made role (ADR-094)', () => {
+      expect(SYSTEM_ROLE_PERMISSIONS.Admin).not.toContain(
+        'stock.lot_made_here',
+      );
+      expect(SYSTEM_ROLE_PERMISSIONS.Viewer).not.toContain(
+        'stock.lot_made_here',
+      );
+      expect(NEVER_OFFERED).not.toContain('stock.lot_made_here');
     });
 
     it('gives the Owner everything', () => {
