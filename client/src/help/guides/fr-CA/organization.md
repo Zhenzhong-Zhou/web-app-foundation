@@ -38,7 +38,7 @@ Sous **Documents**, chaque type de document a sa propre série. Une modification
 2. Choisissez les **Chiffres**, et quand la série **Recommence** : jamais, chaque année, chaque mois ou chaque jour.
 3. Fixez le **Prochain numéro**, appuyez sur **Enregistrer la numérotation**, puis sur **Modifier la numérotation**.
 
-Les **Codes de lot** sont numérotés ici aussi : les codes créés pour un nouveau lot à sa réception, L-2026-11-21-1 par défaut, qui recommencent à 1 chaque jour. Leur préfixe ne contient que des majuscules, des chiffres, le signe - et la date, et sous le prochain code, la ligne indique combien de codes tiennent en 20 caractères, ce que porte le champ de lot d’un code-barres, en ambre quand moins de 10 000 tiennent en un an ou au total. La date d’un code de lot est le jour où il est créé.
+Les **Codes de lot** sont numérotés ici aussi : les codes créés pour un nouveau lot à sa réception, L-2026-11-21-1 par défaut, qui recommencent à 1 chaque jour. Leur préfixe ne contient que des majuscules, des chiffres, le signe - et la date, et sous le prochain code, la ligne indique combien de codes tiennent en 20 caractères, ce que porte le champ de lot d’un code-barres, en ambre quand moins de 10 000 tiennent en un an ou au total. La date d’un code de lot est le jour où il est créé. Un code dépasse 20 caractères quand son compteur dépasse ses chiffres, comme le numéro d’un document, et aucune réception n’est refusée pour cela.
 
 ## Licences au lancement {#licences}
 

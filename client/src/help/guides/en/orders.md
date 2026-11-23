@@ -31,7 +31,7 @@ On a purchase, **Receipts** lists each delivery with its lot and who received it
 ## Ship a sale {#ship}
 
 1. Open the confirmed sale and press **Ship**.
-2. Choose where it ships from, and how much of each item. Lots are taken earliest expiry first, or **Choose lots** to pick them yourself.
+2. Choose where it ships from, and how much of each item. Lots are taken earliest expiry first, or **Choose lots** to pick them yourself. A lot whose expiry has not been entered still ships, with an amber line naming it: its expiry reads **Expiry to add**, and the packing slip shows none until it is added.
 3. Add the carrier and tracking number if you have them, and press **Ship**.
 
 Everything listed ships together, or nothing does: set a line to 0 to leave it for later. The packing slip and the invoice start from the shipment, on **Shipments**.

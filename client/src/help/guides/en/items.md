@@ -48,7 +48,7 @@ First under an item’s title, **Where it stands** shows each of its codes, the 
 - **Held**, the sales holding stock, each a link, the earliest confirmed first, with how much each holds of what it wants.
 - **Coming**, the purchase orders and runs still to bring stock, each with its day.
 - **Left**, with its sum in plain words: “30 usable + 0 coming − 20 for orders”.
-- **By place and lot**, each place written from its warehouse down, with its lots, soonest first, each lot’s code a link to its trace, and each lot’s **Actions**, as on Stock.
+- **By place and lot**, each place written from its warehouse down, with its lots, soonest first, each lot’s code a link to its trace, and each lot’s **Actions**, as on Stock. A lot whose expiry is not known yet reads **Expiry to add**, and a lot made here with no supplier’s lot reads **Supplier’s lot to add**.
 - **Latest movements**, the code’s five newest, as a stock card with **In**, **Out** and **Balance**, ending with **All movements of** the code, which opens [Movements](/movements) for it. A code that nothing has moved has none.
 
 The actions, on the code’s card beside its title, are **Change reorder point**, and **Buy** or **Make** with how many in its unit, such as “Buy 30 each” or “Make 1,000 bottles”, each shown by what your role may do; where it may not, a line says whom to ask. **Buy** and **Make** open their form filled in with the suggested order and save nothing until you create it. A code with nothing on hand or coming reads “None on hand, nothing coming.” with **Set a reorder point** and **Receive stock**.
@@ -136,6 +136,18 @@ Two markets can also share a licence and a bottle, each recipe with its own labe
 When a formula changes over time, it keeps its item and its code: press **New version** on its recipe, change what it uses, and press **Promote**.
 
 Barcodes come later. The Code is your own, not a barcode.
+
+## Start tracking lots {#tracking}
+
+An item added without **Track lot numbers and expiry** can start tracking lots later, once it holds stock. Under **Lots**, its code on the item’s page offers **Start tracking lots…**; equipment never offers it, and only someone who may change items and correct counts sees it.
+
+1. Press **Start tracking lots…**. The question lists the places holding the item and how much each holds, and the runs in progress that use or make it, each of which will close against the new lot.
+2. Give the **Supplier’s lot** and **Expires** if you know them. **Expires** starts on **Not known yet**, so the lot is listed under **Details to add** until someone gives the day or says it doesn’t expire; the stock can still be used meanwhile.
+3. Press **Start tracking lots**.
+
+All the stock on hand goes into one lot, its code made for us, and the code reads **Tracked** from then on: nothing turns it off, and each receipt asks for its lot. An item with nothing on hand starts too, and no lot is made until stock comes. The stock stays where it is, so every figure is as before, and [Movements](/movements) shows one row for each place, **Lots started**, counted in neither In nor Out.
+
+The lot’s cost history holds the item’s earlier entries, so [Stock value](/costs) is the same, and what waited for a cost still waits, its cost landing on the lot. Stock that comes back from before, such as a return of a sale shipped earlier, goes into this lot.
 
 ## Words you’ll meet {#words}
 

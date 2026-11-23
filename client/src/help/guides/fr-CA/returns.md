@@ -18,6 +18,8 @@ Une autorisation de retour indique ce qu’un client peut renvoyer d’une vente
 2. Choisissez l’autorisation sous **Sur l’autorisation de retour**, et l’emplacement sous **Placer dans** : habituellement un casier marqué non disponible, pour que la marchandise ne puisse pas être expédiée de nouveau avant vérification.
 3. Appuyez sur **Recevoir le retour**. La marchandise n’est pas encore remise dans le stock disponible : une fois vérifiée, déplacez-la sur une tablette ou corrigez le compte si elle doit être radiée.
 
+Une ligne expédiée avant que son article suive les lots indique **Expédié avant le suivi par lot**, et où elle va : **Va dans le lot** créé au début du suivi, ou **Va dans un lot créé pour nous à son retour** quand l’article n’avait alors rien en stock. Elle revient au coût auquel elle est partie, et une expédition annulée de la même façon remet sa marchandise dans le même lot.
+
 La marchandise arrivée avant la création de l’autorisation est comptée sur celle-ci avec **Lier un retour**, une seule fois.
 
 > Seule une personne qui peut recevoir des marchandises voit **Recevoir un retour**.

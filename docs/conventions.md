@@ -503,6 +503,14 @@ committed, and neither is edited by hand.
   while instead. CI's "Against main" job holds the rule with oasdiff; a
   change reviewed and accepted as harmless goes in
   `server/openapi-breaking-accepted.txt`, with its reason.
+- **A value from a list the server may add to** (ADR-094, D4): a kind, a
+  reason or a status. Where the client words one, its default says
+  nothing it cannot know, "Other change" or "Waiting for a cost" and no
+  stored key, never one of the known cases' words, and offers no action
+  built for a known case; a test gives it an invented value, as
+  `lot-cost-panel.test.tsx` and `stock-value-page.test.tsx` do. A tab
+  opened before the deploy then never misreads the next new value, and
+  the revision is raised only when a known value changes its meaning.
 - **The e2e suite checks every response against the document** (ADR-068,
   amended): each object schema is closed, so a field the contract does
   not declare fails the test that made the request, as does a declared

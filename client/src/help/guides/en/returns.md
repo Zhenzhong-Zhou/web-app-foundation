@@ -18,6 +18,8 @@ A return authorization, or RMA, says what a customer may send back from a sale, 
 2. Choose the RMA under **Against RMA**, and where to **Put it in**: usually a bin marked not available, so nothing ships it before it is checked.
 3. Press **Receive return**. Nothing is restocked yet: once checked, move it to a shelf, or correct the count if it is written off.
 
+A line shipped before its item tracked lots says **Shipped before lot tracking**, and where it goes: **Goes into lot** the lot made when tracking started, or **Goes into a lot made for us as it comes back** where the item then held nothing. It comes back at the cost it left at, and a shipment voided the same way puts its goods back in the same lot.
+
 Goods that arrived before the RMA was raised are counted against it with **Link a return**, once.
 
 > Only someone who may receive goods sees **Take a return**.

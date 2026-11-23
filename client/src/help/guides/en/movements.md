@@ -10,13 +10,13 @@ Movements are every change to a quantity, newest first: receipts, shipments, tra
 
 Press **When** at the head of the first column to put the oldest first, and again for the newest. Every filter is in the address, so a reload, a link and Back keep them; **Show all movements** takes every one off.
 
-Each row says when; the item’s name, with its code and type under it, and “was VITC-90” where the code has changed since; the change, with its unit; the reason; from → to, each place by its path, an end outside the warehouse said in grey as supplier, customer, run, sample, counted in or counted out; the lot with its expiry; what it was for, a link to the order or run, or to the partner a sample went to; and who did it. Below 600 px each movement is a card, and the filters and the sort are behind one **Filters** button.
+Each row says when; the item’s name, with its code and type under it, and “was VITC-90” where the code has changed since; the change, with its unit; the reason; from → to, each place by its path, an end outside the warehouse said in grey as supplier, customer, run, sample, counted in or counted out; a receipt with no order starts at the partner it came from, a link for someone who may see partners, or else says “opening stock”, “customer” or “other” by why it came; the lot with its expiry, and for a lot change both lots, as “LOT-A → LOT-B”; what it was for, a link to the order or run, or to the partner a sample went to; and who did it. Below 600 px each movement is a card, and the filters and the sort are behind one **Filters** button.
 
 ## Read one code like a stock card {#card}
 
 With one item chosen, **In** and **Out** replace the change, and **Balance** says what was on hand after each row, worked back from today’s on hand.
 
-- Across every place, a move between two of the code’s places is neither In nor Out, so the balance holds: its row says how many moved once, across both, in grey, as in “moved 20 each, counted in neither”, and the period’s In and Out leave it out. With several items, the change reads “moved 20 each”. With a **Location** chosen, the figures count that place alone, and a line says so; with a lot chosen, that lot alone, and with a place too, that lot there.
+- Across every place, a move between two of the code’s places is neither In nor Out, so the balance holds: its row says how many moved once, across both, in grey, as in “moved 20 each, counted in neither”, and the period’s In and Out leave it out. A lot change, stock moved from one lot to another at one place, reads the same, “moved 20 each into a lot, counted in neither”; with a lot chosen it is Out of the first and In to the second. With several items, the change reads “moved 20 each”. With a **Location** chosen, the figures count that place alone, and a line says so; with a lot chosen, that lot alone, and with a place too, that lot there.
 - With days chosen, a line above the list gives the opening balance, **In**, **Out** and the closing balance for them: the closing is the opening plus In less Out, and for days that end today, or run past it, it is today’s on hand, dated today. Several items have no such line, since their units differ.
 - With a **Reason** chosen, **Balance** goes, since it counts every reason: “Balance counts every reason. Clear Reason to see it.” In and Out stay.
 - With several items listed at a place, a line asks you to choose one item to see In, Out and Balance. An order’s movements show In and Out, never Balance, so with an order chosen there is no such line.
@@ -33,7 +33,7 @@ Every filter that is set shows as a chip above the list, on a phone too: the ite
 
 ## Export the list {#export}
 
-Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, a Reason code column after Reason with the reason’s code, such as receipt or shipment, the same in every language so exports in two languages can be put together, the email of whoever did it, and the note last. Beside Lot, Supplier’s lot gives the supplier’s own lot of a code made here, or Supplier’s lot to add until it is given, and Expiry reads Expiry to add where the expiry is not known yet. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item chosen, a Moved column between Out and Balance gives how many a move counted in neither moved; with days chosen too, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
+Press **Export** to download the movements your filters show as a CSV file, for a spreadsheet. It has the screen’s columns, one value in each, oldest first, then the code a movement was recorded under where it has changed since, a Reason code column after Reason with the reason’s code, such as receipt or shipment, the same in every language so exports in two languages can be put together, the email of whoever did it, and the note last. After Lot, To lot names the lot a lot change moved the stock into. Beside Lot, Supplier’s lot gives the supplier’s own lot of a code made here, or Supplier’s lot to add until it is given, and Expiry reads Expiry to add where the expiry is not known yet. **When** gives the day and the time on your organization’s clock, the day written year-month-day, and its header names the place, as in When (Vancouver time). With one item chosen, a Moved column between Out and Balance gives how many a move counted in neither moved; with days chosen too, its first row is the opening balance and its last the closing balance, beside the period’s In and Out.
 
 ## Correct a mistake {#correct}
 
@@ -47,6 +47,7 @@ A movement cannot be changed. To put a quantity right, use **Correct the count**
 - **Shipped**: stock leaving, for a customer or with no order.
 - **Moved**: stock taken from one location to another.
 - **Corrected**: a count put right, or stock found where it had never been, its cause after a colon, as in “Corrected: found”.
+- **Lot changed**: stock moved from one lot into another at one place, as when lot tracking starts or part of a lot moves to another lot, counted in neither In nor Out.
 - **Made** and **Used in a run**: what a run made, and what it used.
 - **Sampled**: stock given away.
 - **Returned**: stock a customer sent back.

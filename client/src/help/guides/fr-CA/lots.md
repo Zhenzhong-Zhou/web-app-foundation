@@ -15,7 +15,7 @@ Vous pouvez aussi trouver un lot par son code ou par le lot du fournisseur avec 
 Sous le code du lot, le nom de son article ouvre la page de l’article, pour qui peut voir les articles, et **Tous les mouvements de ce lot** ouvre Mouvements sur son article, pour ce lot seul et toute son histoire, sans dates.
 
 - **Où il se trouve** : chaque emplacement qui en contient, écrit par son chemin complet depuis son entrepôt, et combien. Une personne qui ne peut pas voir les emplacements lit plutôt la quantité **Utilisable** et **Inutilisable**, sans aucun emplacement nommé. Si une partie du lot est passée dans un autre lot, **Passé ensuite à** liste chacun de ces lots, après autant de passages qu’il y en a eu, avec tout ce qu’il contient maintenant : un rappel atteint aussi ce stock.
-- **D’où il vient** : sa réception et la commande du fournisseur, ou l’ordre de fabrication qui l’a produit et sa licence. Une réception sans commande dit de qui elle vient, s’il a été indiqué, et pourquoi, par exemple « Reçu sans commande : stock d’ouverture »; du stock venu d’un autre lot nomme ce lot; et le lot créé au début du suivi par lot indique « Stock en main au début du suivi par lot ».
+- **D’où il vient** : sa réception et la commande du fournisseur, ou l’ordre de fabrication qui l’a produit et sa licence. Une réception sans commande dit de qui elle vient, s’il a été indiqué, et pourquoi, par exemple « Reçu sans commande : stock d’ouverture »; du stock venu d’un autre lot nomme ce lot; du stock revenu d’avant le suivi par lot indique « Revenu d’avant le suivi par lot »; et le lot créé au début du suivi par lot indique « Ce qui était en stock au début du suivi par lot ».
 - **Fabriqué à partir de** : les lots de composants qu’un ordre de fabrication a utilisés, peu importe le nombre d’étapes.
 - **Utilisé dans** : les ordres de fabrication qui l’ont utilisé, et les lots qu’ils ont produits.
 - **Qui l’a reçu** : chaque client à qui ce lot, ou ce qui en a été fabriqué, a été expédié ou donné en échantillon, et ce qui est revenu. Une partie déplacée vers un autre lot y est suivie : qui a reçu cet autre lot figure aussi, sa colonne **Par le lot** nommant ce lot, qui ouvre sa page. Sous le code du lot, une ligne dit combien de partenaires l’ont reçu; appuyez dessus pour aller à la liste. Sur un téléphone, chacun est une carte.
@@ -24,7 +24,7 @@ Certaines unités ont pu partir sans destinataire enregistré : expédiées san
 
 À côté de **Qui l’a reçu**, **Exporter** écrit la liste de rappel : les mêmes lignes, dans votre langue, le lot du fournisseur de chaque lot à côté de son code, avec ce qui a été expédié, donné en échantillon et retourné, et le jour où le lot est parti la première fois. Ses titres et ses mots sont dans votre langue, le jour est écrit année-mois-jour, et les quantités sont écrites simplement, 600 et non 600.0000. À l’écran, une date de péremption passée dit depuis combien de temps : « Expiré depuis 4 jours ».
 
-> Seule une personne qui peut voir les coûts voit le coût du lot et l’évolution de sa valeur.
+> Seule une personne qui peut voir les coûts voit le coût du lot et l’évolution de sa valeur. Le lot créé au début du suivi par lot contient les entrées de coût antérieures de l’article, et un coût reporté par un déplacement entre lots figure dans les deux lots, comme « Coût reporté au lot » et « Coût venu du lot ».
 
 ## Les mots que vous verrez {#words}
 

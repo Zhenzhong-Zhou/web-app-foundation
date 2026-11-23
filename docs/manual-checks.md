@@ -670,7 +670,7 @@ a second organization.
   role without `stock.adjust` is offered no Found in a count, and one
   without `partners.view` no From. In Français « Pourquoi n'y a-t-il
   pas de commande? »; in 中文 为什么没有订单？ and 盘盈.
-- **MC-327** *(ADR-094, R13 to R16)* Start tracking lots. As the demo
+- **MC-327** *(ADR-094, R13 to R18)* Start tracking lots. As the demo
   Owner, on **BOTTLE-A60**'s item page, its row's Lots column offers
   Start tracking lots…; a role without both Change items and Correct a
   count, and every equipment item, is offered none. It opens "Start tracking lots for
@@ -689,7 +689,12 @@ a second organization.
   add" in its Expires, and the Lot view's Details to add lists it, its
   stock still counted usable. Movements shows one row a place, "Lot changed: lots
   started", "moved 900 each into a lot, counted in neither", its Lot "—
-  → L-…"; the item's History names who started it. A Receive stock left
+  → L-…"; the item's History names who started it. Stock value, By item
+  and lot: BOTTLE-A60's total and Unit cost are what they were, now on the
+  lot; had 10 been received first as opening stock, they still wait,
+  listed under Waiting for a cost with the lot's code, and Set cost
+  values the lot. Nothing turns it off: the row offers no Start tracking
+  lots… again, and no screen unsets Tracked. A Receive stock left
   open on the item since before the start is told "Lot tracking has
   started for BOTTLE-A60. Reload to give its lot." An item with nothing
   on hand starts too: "Nothing is on hand, so no lot is made now.", and
@@ -7778,3 +7783,9 @@ first.
   on Not known yet; a receipt's partner after its reason where there is
   no From → to; "Cost set."; Numbering's words for lot codes: MC-327,
   MC-333, MC-805, MC-908, MC-909 and MC-2714 rewritten.
+- 2026-11-22: ADR-094's Help, rules and words, R17, R18 and R23: Help in
+  three languages for Start tracking lots, Move to another lot, Edit lot
+  details, Expiry to add and Ship's amber line, a return of a sale shipped
+  before tracking, a recall's Moved on to and a cost that follows a move; the
+  glossary's lot words; and French's "en stock" for what was on hand: MC-327
+  extended with Stock value after the start and its one way.

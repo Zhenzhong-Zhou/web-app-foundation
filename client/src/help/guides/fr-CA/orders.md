@@ -31,7 +31,7 @@ Sur un achat, **Réceptions** liste chaque livraison avec son lot et la personne
 ## Expédier une vente {#ship}
 
 1. Ouvrez la vente confirmée et appuyez sur **Expédier**.
-2. Choisissez d’où elle part, et combien de chaque article. Les lots sont pris par péremption la plus proche, ou **Choisir les lots** pour les choisir vous-même.
+2. Choisissez d’où elle part, et combien de chaque article. Les lots sont pris par péremption la plus proche, ou **Choisir les lots** pour les choisir vous-même. Un lot dont la date de péremption n’a pas été saisie part quand même, avec une ligne ambre qui le nomme : sa date indique **Date de péremption à ajouter**, et le bordereau d’expédition n’en montre aucune tant qu’elle n’est pas ajoutée.
 3. Ajoutez le transporteur et le numéro de suivi si vous les avez, puis appuyez sur **Expédier**.
 
 Tout ce qui est listé part ensemble, ou rien ne part : mettez une ligne à 0 pour la laisser à plus tard. Le bordereau d’expédition et la facture partent de l’expédition, sous **Expéditions**.

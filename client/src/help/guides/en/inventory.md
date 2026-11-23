@@ -30,7 +30,7 @@ Below 600 px each code is a card with **On hand** and **Free**, saying under the
 
 ## Group by lot {#lots}
 
-Choosing **Lot** under **Group by** turns the list into one row for each lot at each place: the lot that expires first on top, the expired above it, a lot’s places together, and each saying “1 of 2 places” so its rows read as one lot. Press **Item**, **Location** or **Quantity** at the head of a column to sort by it instead, again to reverse it; **Expires** puts it back. Its filters are **Low stock**, **Expiring soon**, **Expired** and **Waiting for a cost**; there is no **Out**, since an item that is out has no lots, and choosing it says “Items that are out have no lots.” with **Group by Item** to go back.
+Choosing **Lot** under **Group by** turns the list into one row for each lot at each place: the lot that expires first on top, the expired above it, a lot’s places together, and each saying “1 of 2 places” so its rows read as one lot. Press **Item**, **Location** or **Quantity** at the head of a column to sort by it instead, again to reverse it; **Expires** puts it back. Its filters are **Low stock**, **Expiring soon**, **Expired**, **Waiting for a cost** and **Details to add**, the lots whose expiry or supplier’s lot is still to add; there is no **Out**, since an item that is out has no lots, and choosing it says “Items that are out have no lots.” with **Group by Item** to go back. A lot whose expiry is not known yet reads **Expiry to add** wherever its expiry shows, and stays usable: it is never counted expired or expiring. A lot made here reads **Supplier’s lot to add** under its code until the supplier’s lot is given.
 
 Home’s **Expiring soon** opens this view, soonest first, the expired on top, and counts these rows.
 
@@ -41,7 +41,7 @@ Home’s **Expiring soon** opens this view, soonest first, the expired on top, a
 3. Say **Why is there no order?**: **Opening stock**, **Returned**, **A sample** or **Other**, with a note if you like; whom it came from goes under **From**. Stock found in a count is no receipt: **Found in a count** opens **Correct the count** with the item and the place.
 4. Choose the location it goes **Into**. Only locations that hold stock directly are listed.
 5. Type the quantity, in the item’s unit.
-6. For an item tracked by lot, type the lot number as printed on the box; under it the field says whether it is one of the item’s lots, which this adds to, or a new lot. With no lot on the box, press **Make a code for us**: the code is made when you save, and the message names it, to write on the delivery, with **Copy code**. For a new lot, choose when it **Expires**: **On a date**, **Not known yet** or **Doesn’t expire**, starting as the item’s last lot had it.
+6. For an item tracked by lot, type the lot number as printed on the box; under it the field says whether it is one of the item’s lots, which this adds to, or a new lot. With no lot on the box, press **Make a code for us**: the code is made when you save, and the message names it, to write on the delivery, with **Copy code**. For a new lot, choose when it **Expires**: **On a date**, **Not known yet** or **Doesn’t expire**, starting as the item’s last lot had it. The supplier’s lot of a code made here can be given then or later, in **Edit lot details…**. An item that holds stock and does not track lots yet starts doing so from its page: see [Start tracking lots](/items#tracking).
 7. Press **Receive**.
 
 Goods a supplier sends against a purchase are received on its order, so the order closes and the stock is counted once: here by choosing it, or on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.
@@ -52,7 +52,7 @@ Each row has **Actions**, by what the row is:
 
 - An item’s row: **Move…**, **Ship out…**, **Send sample…** and **Correct the count…**; **Receive stock…**, with the item filled in; **Movements** and **Change reorder point…**. When the item is one lot at one place, the first four act on it straight. With more, the menu says a lot comes next, and the row opens to its lots under “Choose the lot to move”, each lot with its own Actions. With nothing on hand, Move, Ship out and Send sample are greyed, with why beneath; Correct the count opens its emptied places and lots; an item never stocked there says to receive it first.
 - A place’s row: its **Movements** there, a link.
-- A lot’s row: **Move…**, **Ship out…**, **Send sample…** and **Correct the count…**; **Edit lot details…** and **Trace lot**; **Movements**. An emptied lot says when it was emptied.
+- A lot’s row: **Move…**, **Ship out…**, **Send sample…** and **Correct the count…**; **Move to another lot…**, **Edit lot details…** and **Trace lot**; **Movements**. An emptied lot says when it was emptied.
 
 What each does:
 
@@ -61,7 +61,9 @@ What each does:
 - **Send sample…**: a hand-out, with whom it was given to, so a recall can find it.
 - **Correct the count…**: how many more or fewer the shelf has than recorded, why, and what happened.
 - **Count it in…**, ending an item’s opened places and lots under “Found some where it has never been?”: stock found at a place, or in a lot, the item has never had. Choose the location and, for an item tracked by lot, **One of its lots** or **A new lot**, its number as printed on the box and one the item does not have yet. What you count in waits for a cost on [Stock value](/costs) in a new lot, for an item with no cost yet, and while any of the stock it joins still waits for one.
-- **Edit lot details…**, **Trace lot** and **Movements**: the lot, where it went, and its movements.
+- **Move to another lot…**: part of a lot at one place into another lot of the same item, one it has or a new one, typed or made for us, with a note saying why. A new lot starts with the first lot’s expiry and supplier’s lot, to change where it really is another run. The movement counts in neither In nor Out, and the cost goes with the stock: a cost given later to a delivery follows any of it moved to another lot, and stock that still waits for a cost waits in the new lot too. The lot’s trace follows it, so a recall of the first lot reaches whoever received the second.
+- **Edit lot details…**: the supplier’s lot, added when it is known, and **Expires**, moved between **On a date**, **Not known yet** and **Doesn’t expire**. A code printed on the boxes is greyed; someone who may mark it ticks **We made this code up; nothing printed it** when nothing printed it, so the code can be corrected and the supplier’s lot added. Once saved it stays marked, in the Activity log.
+- **Trace lot** and **Movements**: where the lot went, and its movements.
 - **Change reorder point…**: the item’s reorder point, below.
 
 > Everyone who may see stock sees **Movements** and **Trace lot**. Only someone who may move stock sees **Receive stock** and what changes stock, and only someone who may correct counts sees **Correct the count…** and **Count it in…**.
@@ -118,6 +120,7 @@ Nothing is saved until you create it, and what you create shows on the row at on
 - **Free**: stock that can be promised, sampled or used in production.
 - **Not available**: a location whose stock is not for sending, such as a bin of returns waiting to be checked.
 - **Expiring soon**: a lot that expires within the days your organization has set.
+- **Expiry to add**: a lot whose expiry is not known yet. It stays usable, and is never counted expired or expiring.
 - **Expired**: a lot past its expiry day. As a filter, the list shows only these, the soonest first, until you remove it.
 
 ## If something is refused {#refused}
@@ -127,6 +130,7 @@ Nothing is saved until you create it, and what you create shows on the row at on
 - Stock held for a confirmed sale cannot be taken for anything else. Ship it on that sale, or take only what is free.
 - Expired stock, or stock issued to a run, is on the shelf but holds nothing for anyone. Taking it when another order needs the usable stock is refused, saying how many are expired or issued, with a link to the item’s page, where its places show which.
 - A lot code printed on the boxes cannot be renamed. Move the stock to the correct lot instead.
+- A move to another lot needs a note, and a lot of the same item other than the one it leaves. The refusal says which.
 - An item has one reorder point at most. Edit the one it has: the refusal links to it.
 - A reorder point and its quantities are above zero, and a maximum is above the point.
 

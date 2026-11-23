@@ -810,7 +810,9 @@ file is kept is in the [README](README.md).
   lot's code, for its message to name, and whether it waits for a cost.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--our-own-lot-codes-by-a-format-beside-document-numbering) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes a code for us when saved, stored as made here with the supplier’s lot as printed, one after another" ·
-  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes two codes at once without sharing one"
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes two codes at once without sharing one" ·
+  [Help](../../client/src/help/guides/en/inventory.md#receive-stock-receive) ·
+  MC-325
 - **A made code is stored as made here, a typed one as printed,** never
   as made here, whatever the movement's reason; a made code can be
   corrected later, a printed one cannot.
@@ -887,7 +889,9 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock.e2e-spec.ts) "moves a lot between the three expiries, a day taken away and given again (ADR-094, R8)" ·
   [test](../../server/test/stock.e2e-spec.ts) "refuses an expiry it cannot read, saying what to do, and changes nothing (ADR-094, R8)" ·
   [test](../../server/test/stock.e2e-spec.ts) "corrects the expiry on any lot" ·
-  [test](../../server/test/stock.e2e-spec.ts) "refuses a Viewer, which lacks stock.move"
+  [test](../../server/test/stock.e2e-spec.ts) "refuses a Viewer, which lacks stock.move" ·
+  [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
+  MC-329
 - **A lot made here takes its supplier's lot when it is known,** as
   printed, its case kept; emptied, it is to add again. A code typed from
   the box is the supplier's own, so a supplier's lot for it is refused,
@@ -923,7 +927,9 @@ file is kept is in the [README](README.md).
   that tracks lots already, each refused saying what to do, nothing
   written. Nothing turns it off: an item's update takes no lot tracking.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
-  [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses equipment, a code that tracks lots, another organization’s code, and anyone without both permissions, writing nothing (R13, R18)"
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses equipment, a code that tracks lots, another organization’s code, and anyone without both permissions, writing nothing (R13, R18)" ·
+  [Help](../../client/src/help/guides/en/items.md#start-tracking-lots-tracking) ·
+  MC-327
 - **Before it starts, the question reads where the code's stock is,**
   each place and how much, and the runs in progress that make the code
   or use it from a place, each to close against the lot; a reader who
@@ -1002,7 +1008,9 @@ file is kept is in the [README](README.md).
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lot-changes.e2e-spec.ts) "moves part of a lot at one place into another of its lots, its value carried at the first lot’s average, both pools summing, the code’s figures as before (R20, Q1a)" ·
   [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
-  [test](../../server/test/lot-changes.e2e-spec.ts) "refuses more than is there, the same lot, another item’s lot, another organization’s lot or place, no lot, no note, and anyone without stock.adjust, writing nothing (R20, #314)"
+  [test](../../server/test/lot-changes.e2e-spec.ts) "refuses more than is there, the same lot, another item’s lot, another organization’s lot or place, no lot, no note, and anyone without stock.adjust, writing nothing (R20, #314)" ·
+  [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
+  MC-328
 - **A new lot starts as the first lot is:** its expiry, and for a code
   made for us its supplier's lot, unless the move gives either; a code
   typed from the box takes no supplier's lot, being the supplier's own,
