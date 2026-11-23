@@ -225,9 +225,15 @@ describe('LotFields', () => {
       screen.getByRole('button', { name: 'Make a code for us' }),
     );
 
-    // Today's next code, from the organization's lot series.
+    // Today's next code, from the organization's lot series, and what it
+    // is (review 35).
     expect(screen.getByRole('textbox', { name: 'Lot number' })).toHaveValue(
       'Made when you save, like L-2026-10-17-1',
+    );
+    expect(
+      screen.getByRole('textbox', { name: 'Lot number' }),
+    ).toHaveAccessibleDescription(
+      'Our own code. Add the supplier’s lot when you have it.',
     );
     expect(
       screen.getByRole('textbox', { name: 'Supplier’s lot' }),

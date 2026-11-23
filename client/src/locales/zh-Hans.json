@@ -683,6 +683,7 @@
   "inventory.lot.isExisting": "已有批次，本次收货将累加到该批次。",
   "inventory.lot.isNew": "新批次。",
   "inventory.lot.madeCode": "批次编码",
+  "inventory.lot.madeCode.help": "这是我们自编的编码。拿到供应商批号后再补填。",
   "inventory.lot.madeWhenSaved": "保存时生成，例如 {example}",
   "inventory.lot.madeWhenSavedPlain": "保存时生成",
   "inventory.lot.makeCode": "生成批次编码",

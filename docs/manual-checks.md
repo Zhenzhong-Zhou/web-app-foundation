@@ -638,7 +638,8 @@ a second organization.
   and Expires is gone, the lot's own kept. Type `K2-9999`: "A new
   lot.", Expires back; On a date asks The day it expires. Press Make a
   code for us: Lot number reads "Made when you save, like
-  L-2026-…-3", today's next code from Settings' lot series, Supplier's
+  L-2026-…-3", today's next code from Settings' lot series, "Our own
+  code. Add the supplier's lot when you have it." under it, Supplier's
   lot shows, and Expires moves to Not known yet, saying the lot is
   marked "Expiry to add" and still usable; a choice you made first
   stays, and so does a day typed under On a date as it started. Type

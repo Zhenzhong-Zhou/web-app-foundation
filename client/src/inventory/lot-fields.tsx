@@ -285,6 +285,12 @@ function MadeCode({ id, label }: { id: string; label: string }) {
               defaultMessage: 'Made when you save',
             })
       }
+      // What the code is, as v15's board says under it (review 35).
+      helperText={intl.formatMessage({
+        id: 'inventory.lot.madeCode.help',
+        defaultMessage:
+          'Our own code. Add the supplier’s lot when you have it.',
+      })}
       slotProps={{ htmlInput: { readOnly: true } }}
       sx={{ '& input': { color: 'text.secondary' } }}
     />

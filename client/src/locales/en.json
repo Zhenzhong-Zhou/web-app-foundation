@@ -683,6 +683,7 @@
   "inventory.lot.isExisting": "An existing lot. This adds to it.",
   "inventory.lot.isNew": "A new lot.",
   "inventory.lot.madeCode": "Lot number",
+  "inventory.lot.madeCode.help": "Our own code. Add the supplier’s lot when you have it.",
   "inventory.lot.madeWhenSaved": "Made when you save, like {example}",
   "inventory.lot.madeWhenSavedPlain": "Made when you save",
   "inventory.lot.makeCode": "Make a code for us",
