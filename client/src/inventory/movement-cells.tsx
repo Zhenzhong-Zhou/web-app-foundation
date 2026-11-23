@@ -506,8 +506,9 @@ function Sender({
 
 /**
  * The lot's code, a link to its trace, its expiry under it; a lot change
- * both its lots, "LOT-A → LOT-B", the one it left first, none as lot
- * tracking starts (ADR-094), each a link.
+ * both its lots, "LOT-A → LOT-B", the one it left first, each a link; and
+ * as lot tracking starts, or for stock back from before, the lot it
+ * entered alone, there being no first (ADR-094; review 30).
  */
 export function MovementLot({
   movement,
@@ -516,6 +517,9 @@ export function MovementLot({
     Partial<Pick<Movement, 'toLotId' | 'toLotCode'>>;
 }) {
   const intl = useIntl();
+  if (movement.toLotId && movement.toLotCode && !movement.lotId) {
+    return <LotLink id={movement.toLotId} code={movement.toLotCode} />;
+  }
   if (movement.toLotId && movement.toLotCode) {
     return (
       <Stack

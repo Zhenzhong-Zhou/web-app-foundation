@@ -1108,9 +1108,11 @@ file is kept is in the [README](README.md).
   [test](../../server/test/costs.e2e-spec.ts) "gives a cost and a move at once, neither waiting on the other (two at once)"
 - **Movements names both lots of a lot change,** the lot it leaves and
   the lot it enters, and each lot's cost history names the other; the
-  export reads "Lot changed: between lots".
+  export reads "Lot changed: between lots". Lots started, and stock back
+  from before, name the lot entered alone, there being no first.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
-  [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)"
+  [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "counts a lot change in neither In nor Out for its code, and Out of the lot it left, a lot started with none before it"
 
 ## Counting in found stock
 

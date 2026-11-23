@@ -714,8 +714,8 @@ a second organization.
   is gone, the row reads Tracked, Where it stands lists the lot, "Expiry to
   add" in its Expires, and the Lot view's Details to add lists it, its
   stock still counted usable. Movements shows one row a place, "Lot changed: lots
-  started", "moved 900 each into a lot, counted in neither", its Lot "—
-  → L-…"; the item's History names who started it. Stock value, By item
+  started", "moved 900 each into a lot, counted in neither", its Lot
+  "L-…" alone, with no dash for a first; the item's History names who started it. Stock value, By item
   and lot: BOTTLE-A60's total and Unit cost are what they were, now on the
   lot; had 10 been received first as opening stock, they still wait,
   listed under Waiting for a cost with the lot's code, and Set cost

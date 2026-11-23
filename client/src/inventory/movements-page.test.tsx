@@ -248,9 +248,10 @@ describe('MovementsPage', () => {
       screen.getByText('moved 3,000 each into a lot, counted in neither'),
     ).toBeVisible();
     expect(screen.getByText('Lot changed: lots started')).toBeVisible();
+    // The lot it entered alone, there being no first (review 30).
     expect(
       screen.getByRole('link', { name: 'L-2026-11-22-1' }).closest('td'),
-    ).toHaveTextContent('—→intoL-2026-11-22-1');
+    ).toHaveTextContent(/^L-2026-11-22-1$/);
   });
 
   it('says a reason with its capital in French, its detail in lower case', async () => {
