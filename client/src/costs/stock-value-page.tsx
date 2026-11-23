@@ -113,14 +113,11 @@ function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): ReactNode {
         defaultMessage="Moved in from lot {code}. Its cost follows that lot’s."
         values={{
           code: (
-            <Link
-              component={RouterLink}
-              to={`/lots/${entry.fromLotId}`}
-              state={OFFER_BACK}
+            <LotLink
+              id={entry.fromLotId}
+              code={entry.fromLotCode}
               underline="always"
-            >
-              <Reference>{entry.fromLotCode}</Reference>
-            </Link>
+            />
           ),
         }}
       />
@@ -474,13 +471,8 @@ export function StockValuePage() {
                         <Reference>{pool.sku}</Reference>
                       </TableCell>
                       <TableCell>
-                        {pool.lotId ? (
-                          <Link
-                            component={RouterLink}
-                            to={`/lots/${pool.lotId}`}
-                          >
-                            {pool.lotCode}
-                          </Link>
+                        {pool.lotId && pool.lotCode ? (
+                          <LotLink id={pool.lotId} code={pool.lotCode} />
                         ) : (
                           NO_VALUE
                         )}

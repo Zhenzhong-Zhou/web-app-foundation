@@ -622,6 +622,30 @@ describe('LotTracePage, ADR-094', () => {
     ).not.toBeInTheDocument();
   });
 
+  // Review 46: a lot reached from a lot's page offers Back to it.
+  it('offers Back on the lot a recipient came through, reached from this lot', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v1/stock/lots/:id/trace', () => HttpResponse.json(MOVED)),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/lots/lot-1']}>
+        <Routes>
+          <Route path="/lots/:id" element={<LotTracePage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Back' }),
+    ).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('link', { name: 'OIL-0425-B' }));
+    expect(
+      await screen.findByRole('button', { name: 'Back' }),
+    ).toBeInTheDocument();
+  });
+
   // R21's column: the lot a row came through, where it is not this one,
   // a link to that lot's page (the interaction table's row).
   it('says the lot each recipient received it through, this lot’s own rows none', async () => {

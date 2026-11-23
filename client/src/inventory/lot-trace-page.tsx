@@ -37,6 +37,7 @@ import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ExportButton } from '../components/export-button';
 import { ListTable } from '../components/list-table';
+import { LotLink } from '../components/lot-link';
 import { NAME_COLUMN } from '../components/name-column';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
@@ -213,9 +214,7 @@ export function LotSearchPage() {
               {matches.map((lot) => (
                 <TableRow key={lot.id} hover>
                   <TableCell>
-                    <Link component={RouterLink} to={`/lots/${lot.id}`}>
-                      {lot.code}
-                    </Link>
+                    <LotLink id={lot.id} code={lot.code} />
                     {/* The supplier's lot, which finds it too, as the
                         lookup's lot row reads it (ADR-094, S10). */}
                     <SupplierLotLine
@@ -646,9 +645,7 @@ function MovedOnTo({
   const amount = (quantity: string) =>
     displayWithUnit(quantity, unitOfMeasure, intl);
   const lotLink = (lot: MovedOnLot) => (
-    <Link component={RouterLink} to={`/lots/${lot.lotId}`}>
-      <Reference>{lot.code}</Reference>
-    </Link>
+    <LotLink id={lot.lotId} code={lot.code} />
   );
   const lotHead = intl.formatMessage({
     id: 'inventory.lot',
@@ -890,9 +887,7 @@ function Recipients({
     row.lotId === lotId ? (
       NO_VALUE
     ) : (
-      <Link component={RouterLink} to={`/lots/${row.lotId}`}>
-        <Reference>{row.lotCode}</Reference>
-      </Link>
+      <LotLink id={row.lotId} code={row.lotCode} />
     );
 
   return (
@@ -1030,9 +1025,7 @@ function RelatedTable({
         }),
       ]}
       rows={rows.map((row) => [
-        <Link component={RouterLink} to={`/lots/${row.lotId}`}>
-          {row.code}
-        </Link>,
+        <LotLink id={row.lotId} code={row.code} />,
         row.sku,
         String(row.depth),
         <Onward to={`/production/${row.runId}`} open={opens.runs}>
@@ -1117,13 +1110,11 @@ function SourceText({
           defaultMessage="Moved in from lot {code}"
           values={{
             code: (
-              <Link
-                component={RouterLink}
-                to={`/lots/${source.fromLotId}`}
+              <LotLink
+                id={source.fromLotId}
+                code={source.fromLotCode}
                 underline="always"
-              >
-                <Reference>{source.fromLotCode}</Reference>
-              </Link>
+              />
             ),
           }}
         />
