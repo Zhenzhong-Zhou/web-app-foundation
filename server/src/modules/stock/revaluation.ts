@@ -11,7 +11,7 @@ import { timeZoneOf } from '../../core/organizations/time-zone';
 import { t } from '../../i18n/translate';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
-import { inLotOrder, lockPool } from './valuation';
+import { lockPool, lockPools } from './valuation';
 
 /**
  * Value that arrives after the stock did (ADR-048): a batch's cost at its
@@ -160,17 +160,12 @@ async function lockReach(
     select distinct lot_id from reach
   `);
 
-  const lotIds = (found.rows as { lot_id: string | null }[])
-    .map((row) => row.lot_id)
-    .sort(inLotOrder);
-
-  const pools = new Map<string | null, string>();
-  for (const lotId of lotIds) {
-    pools.set(
-      lotId,
-      await lockPool(tx, late.organizationId, late.variantId, lotId),
-    );
-  }
+  const pools = await lockPools(
+    tx,
+    late.organizationId,
+    late.variantId,
+    (found.rows as { lot_id: string | null }[]).map((row) => row.lot_id),
+  );
   return { pools, claimed: new Map() };
 }
 

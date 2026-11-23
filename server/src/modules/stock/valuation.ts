@@ -140,6 +140,24 @@ export function inLotOrder(a: string | null, b: string | null): number {
 }
 
 /**
+ * Locks a code's pools, each lot's, in lot order (inLotOrder), and gives
+ * each pool's id by its lot: the one rule that keeps a move and a late
+ * cost from each holding a pool the other waits for (review 50).
+ */
+export async function lockPools(
+  tx: Tx,
+  organizationId: string,
+  variantId: string,
+  lotIds: (string | null)[],
+): Promise<Map<string | null, string>> {
+  const pools = new Map<string | null, string>();
+  for (const lotId of [...new Set(lotIds)].sort(inLotOrder)) {
+    pools.set(lotId, await lockPool(tx, organizationId, variantId, lotId));
+  }
+  return pools;
+}
+
+/**
  * A lot change carries the value its stock has today (ADR-094, Q1a): the
  * first pool's share at its average, out of that pool and into the
  * second, two value rows of their own. Where the first pool has stock
@@ -159,14 +177,10 @@ async function valueLotChange(
   organizationId: string,
   movement: Movement,
 ): Promise<boolean> {
-  const ends = [movement.lotId, movement.toLotId].sort(inLotOrder);
-  const pools = new Map<string | null, string>();
-  for (const lotId of ends) {
-    pools.set(
-      lotId,
-      await lockPool(tx, organizationId, movement.variantId, lotId),
-    );
-  }
+  const pools = await lockPools(tx, organizationId, movement.variantId, [
+    movement.lotId,
+    movement.toLotId,
+  ]);
   const leaves = pools.get(movement.lotId)!;
   const enters = pools.get(movement.toLotId)!;
 
