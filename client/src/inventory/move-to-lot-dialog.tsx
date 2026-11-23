@@ -352,6 +352,15 @@ export function MoveToLotDialog({
               }
               slotProps={{ htmlInput: { maxLength: 500 } }}
             />
+
+            {/* What happens to its cost (v15's board; review 23). */}
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {intl.formatMessage({
+                id: 'inventory.moveLot.cost',
+                defaultMessage:
+                  'Its cost moves with it, at this lot’s average. Stock value stays the same.',
+              })}
+            </Typography>
           </Stack>
         </DialogContent>
 

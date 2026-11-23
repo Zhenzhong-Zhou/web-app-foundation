@@ -162,6 +162,10 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     expect(dialog).toHaveTextContent(
       'Moves part of this lot into another lot of the item, one it has or a new one. The stock stays where it is.',
     );
+    // And its cost (review 23).
+    expect(dialog).toHaveTextContent(
+      'Its cost moves with it, at this lot’s average. Stock value stays the same.',
+    );
     await user.type(
       screen.getByRole('combobox', { name: /^Lot number/ }),
       'VC-0311',

@@ -752,6 +752,7 @@
   "inventory.move.whatHappened": "What happened",
   "inventory.move.whatHappened.help": "Whoever reads this in six months was not there.",
   "inventory.moveLot.action": "Move to lot",
+  "inventory.moveLot.cost": "Its cost moves with it, at this lot’s average. Stock value stays the same.",
   "inventory.moveLot.done": "Moved {quantity} from lot {from} to lot {to}.",
   "inventory.moveLot.doneWaiting": "Moved {quantity} from lot {from} to lot {to}. It waits for a cost there, as some of lot {from} does.",
   "inventory.moveLot.expiryStart": "Starts as the lot it leaves has it.",

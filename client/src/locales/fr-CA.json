@@ -752,6 +752,7 @@
   "inventory.move.whatHappened": "Ce qui s’est passé",
   "inventory.move.whatHappened.help": "Expliquez ce qui s’est passé pour que quelqu’un puisse le comprendre dans six mois.",
   "inventory.moveLot.action": "Déplacer vers le lot",
+  "inventory.moveLot.cost": "Son coût le suit, au coût moyen de ce lot. La valeur du stock ne change pas.",
   "inventory.moveLot.done": "{quantity} déplacé du lot {from} vers le lot {to}.",
   "inventory.moveLot.doneWaiting": "{quantity} déplacé du lot {from} vers le lot {to}. Il y attend un coût, comme une partie du lot {from}.",
   "inventory.moveLot.expiryStart": "Commence comme l’a le lot qu’il quitte.",
