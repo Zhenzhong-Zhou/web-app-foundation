@@ -569,6 +569,12 @@ describe('Start tracking lots', () => {
     expect(dialog).toHaveTextContent(
       'This cannot be undone: once started, lot tracking stays on, and each receipt asks for its lot.',
     );
+    // In amber, a warning, as the boards draw it (review 18).
+    expect(
+      within(dialog)
+        .getByText(/^This cannot be undone/)
+        .closest('.MuiAlert-root'),
+    ).toHaveClass('MuiAlert-colorWarning');
     expect(
       within(dialog).getByRole('textbox', { name: /^Supplier’s lot/ }),
     ).toHaveValue('');

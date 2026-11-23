@@ -272,7 +272,9 @@ export function StartTrackingDialog({
 
                 {asked.runCount > 0 && <RunsLine question={asked} />}
 
-                <Alert severity="info">
+                {/* Amber, as the boards draw it: it cannot be undone
+                    (review 18). */}
+                <Alert severity="warning">
                   {intl.formatMessage({
                     id: 'products.startTracking.oneWay',
                     defaultMessage:

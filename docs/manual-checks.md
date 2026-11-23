@@ -690,7 +690,7 @@ a second organization.
   waiting, on this lot." and "Split it into real lots later with Move
   to another lot…"; where runs in
   progress use or make it, those runs, "Each will close against this
-  lot."; and "This cannot be undone". Supplier's lot is empty and Expires
+  lot."; and "This cannot be undone", in amber. Supplier's lot is empty and Expires
   is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
   on Stock, by lot, under Details to add until someone gives the day or
   says it doesn't expire. The stock can still be used." under it. Choose On a date with a
