@@ -76,6 +76,22 @@ import { onHandByItem } from './usable-stock';
 const PAGE_SIZE = 50;
 
 /**
+ * Which piles a read lists (20a): those holding stock, and with Include
+ * empty the emptied ones too, but not, for a code that tracks lots, its
+ * emptied pile with no lot: its stock from before is in a lot now, as its
+ * opened row reads it, so the pile would list a code with nothing to open
+ * (ADR-094). One rule for the row per code and its places (review 54).
+ */
+function keptPiles(
+  includeEmpty: boolean,
+  pile: { quantity: SQL; lotId: SQL; tracksLots: SQL },
+): SQL {
+  return includeEmpty
+    ? sql`not (${pile.quantity} = 0 and ${pile.lotId} is null and ${pile.tracksLots})`
+    : sql`${pile.quantity} > 0`;
+}
+
+/**
  * The codes a row per code lists before its quick filters (A2): every
  * code with stock on hand, held or wanted by a confirmed sale, coming on a
  * confirmed purchase or a released run, or watched by a reorder point, so
@@ -88,18 +104,16 @@ function presentOf(
   organizationId: string,
 ): SQL | undefined {
   const org = sql`${organizationId}::uuid`;
-  // An emptied pile with no lot of a code that now tracks lots is not
-  // kept: its stock from before is in a lot, as its opened row reads it
-  // (placesOf), so it would list a code with nothing to open (ADR-094).
-  const kept =
-    query.includeEmpty === 'true'
-      ? sql`and (sl.quantity > 0 or sl.lot_id is not null or not exists (
-          select 1 from product_variants tracked
-          where tracked.organization_id = ${org}
-            and tracked.id = sl.variant_id
-            and tracked.tracks_lots
-        ))`
-      : sql`and sl.quantity > 0`;
+  const kept = sql`and ${keptPiles(query.includeEmpty === 'true', {
+    quantity: sql`sl.quantity`,
+    lotId: sql`sl.lot_id`,
+    tracksLots: sql`exists (
+      select 1 from product_variants tracked
+      where tracked.organization_id = ${org}
+        and tracked.id = sl.variant_id
+        and tracked.tracks_lots
+    )`,
+  })}`;
 
   if (query.locationId) {
     return sql`${productVariants.id} in (
@@ -1183,13 +1197,11 @@ export async function placesOf(
       query.locationId
         ? sql`${stockLevels.locationId} = ${query.locationId}::uuid`
         : undefined,
-      query.includeEmpty === 'true'
-        ? sql`not (
-            ${stockLevels.quantity} = 0
-            and ${stockLevels.lotId} is null
-            and ${productVariants.tracksLots}
-          )`
-        : sql`${stockLevels.quantity} > 0`,
+      keptPiles(query.includeEmpty === 'true', {
+        quantity: sql`${stockLevels.quantity}`,
+        lotId: sql`${stockLevels.lotId}`,
+        tracksLots: sql`${productVariants.tracksLots}`,
+      }),
     )}
     order by ${stockLevels.variantId}, ${locations.name}, ${locations.id},
       ${lots.expiresAt} asc nulls last, ${lots.code}, ${stockLevels.id}
