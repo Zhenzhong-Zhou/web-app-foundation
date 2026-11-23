@@ -40,6 +40,12 @@ const BESIDE: Partial<Record<Permission, MessageDescriptor>> = defineMessages({
     defaultMessage:
       'Without it, orders show no prices and their PDFs can’t be opened. Packing slips never show prices.',
   },
+  // What renaming a code risks (v15's Q1c card; review 38).
+  'stock.lot_made_here': {
+    id: 'roles.editor.lotMadeHere',
+    defaultMessage:
+      'It lets the code be renamed, so a recall may no longer match the boxes.',
+  },
 });
 
 /**

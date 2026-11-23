@@ -2246,6 +2246,7 @@
   "roles.editor.keepEditing": "Continuer à modifier",
   "roles.editor.line": "À quoi il sert (facultatif)",
   "roles.editor.locked": "Chaque rôle voit qui travaille ici, les rôles et les paramètres de l’organisation.",
+  "roles.editor.lotMadeHere": "Le code peut alors être renommé, et un rappel risque de ne plus correspondre aux boîtes.",
   "roles.editor.made": "Rôle {role} créé",
   "roles.editor.name": "Nom",
   "roles.editor.name.help": "Ce nom s’affiche tel quel dans toutes les langues. Choisissez la langue que votre équipe utilise.",

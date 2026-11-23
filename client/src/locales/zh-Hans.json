@@ -2246,6 +2246,7 @@
   "roles.editor.keepEditing": "继续编辑",
   "roles.editor.line": "用途（选填）",
   "roles.editor.locked": "每个角色都可以查看在这里工作的人、角色和组织的设置。",
+  "roles.editor.lotMadeHere": "这样编码可以改名，召回时可能与包装上的编码对不上。",
   "roles.editor.made": "已创建 {role}",
   "roles.editor.name": "名称",
   "roles.editor.name.help": "角色名称在所有语言界面中都会原样显示。请使用团队熟悉的语言命名。",

@@ -4041,8 +4041,10 @@ The pages, in a private window unless a check says otherwise.
   Owner's alone at first. Daniel Okafor (Admin), Tom Becker (Warehouse) and
   Chloé Tremblay (Viewer) do not hold it: their Your access says nothing of
   it. As the demo Owner, Make a role, Nothing ticked: under Stock and
-  locations, tick Mark a lot’s code as made up here, so it can be
-  corrected, and Receive, ship or transfer stock ticks with it, with what
+  locations, Mark a lot’s code as made up here, so it can be corrected,
+  says under it "It lets the code be renamed, so a recall may no longer
+  match the boxes."; tick it, and Receive, ship or transfer stock ticks
+  with it, with what
   that needs, the line above the areas saying so; the summary beside the
   boxes says the role can mark a lot’s code as made up here, in 中文
   将批次编码标记为本公司自编, in Français indiquer qu’un code de lot a été
