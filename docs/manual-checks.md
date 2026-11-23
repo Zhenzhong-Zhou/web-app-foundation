@@ -646,7 +646,8 @@ a second organization.
   lot gone. Make a code again, type `Hx-2701` as the supplier's lot and
   receive 5: "Received 5 each of K2-60CT with no order, new lot
   L-…. Write this code on the delivery. It waits for a cost." with Copy
-  code and Open the lot. Copy code says "Lot code L-… copied." and the
+  code and Open the lot, underlined words in the message's own white,
+  never a grey box. Copy code says "Lot code L-… copied." and the
   code pastes. Stock, behind the message, has opened K2-60CT's row at
   its place, the new lot shown, though the row was closed before; Open
   the lot opens its page, Back returning to Stock as it was. On an

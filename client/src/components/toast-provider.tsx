@@ -95,6 +95,9 @@ export function ToastProvider({
             {actions.map((action) => (
               <Button
                 key={action.label}
+                // Text in the message's own colour: the app's contained
+                // default drew white on grey, 1.3:1 (review 2).
+                variant="text"
                 color="inherit"
                 size="small"
                 sx={{ ml: 1, textDecoration: 'underline' }}
