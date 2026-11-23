@@ -373,16 +373,25 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
 
   // Codes and places in the address, not a list a person reads, in one
   // write; a code closed closes its places too.
-  const openRows = (keys: string[], open: boolean) => {
-    const next = opens.filter(
-      (each) =>
-        !keys.some(
-          (key) => each === key || (!open && each.startsWith(`${key}.`)),
-        ),
-    );
-    if (open) next.push(...keys);
-    writeAddress({ open: next.length ? String(next) : null });
-  };
+  // From the rows open as the address holds them when it is written, not
+  // as last shown, so a second click before the page reads again keeps
+  // the first's change.
+  const openRows = (keys: string[], open: boolean) =>
+    writeAddress({
+      open: (previous) => {
+        const next = (previous ?? '')
+          .split(',')
+          .filter(Boolean)
+          .filter(
+            (each) =>
+              !keys.some(
+                (key) => each === key || (!open && each.startsWith(`${key}.`)),
+              ),
+          );
+        if (open) next.push(...keys);
+        return next.length ? String(next) : null;
+      },
+    });
 
   // Received, moved to another lot or counted in: the code's row open, at
   // its place, its lots open (ADR-094's table), whether its row was open

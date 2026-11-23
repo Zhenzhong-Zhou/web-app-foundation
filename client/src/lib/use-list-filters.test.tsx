@@ -209,6 +209,36 @@ describe('useAddressWrite', () => {
     expect(router.address()).toBe('/list?search=acme');
   });
 
+  // Two writes before the page reads again, each worked out from the
+  // key's value as the first left it: Stock's rows, closed then opened.
+  it('works a function out from the value the write before it left', () => {
+    const { result } = renderHook(
+      () => ({ write: useAddressWrite(), location: useLocation() }),
+      {
+        wrapper: ({ children }) => (
+          <MemoryRouter initialEntries={['/list?open=a,b']}>
+            {children}
+          </MemoryRouter>
+        ),
+      },
+    );
+    const { write } = result.current;
+    const without = (key: string) => (previous: string | null) =>
+      (previous ?? '')
+        .split(',')
+        .filter((each) => each && each !== key)
+        .join(',') || null;
+    const adding = (key: string) => (previous: string | null) =>
+      [previous, key].filter(Boolean).join(',');
+
+    act(() => {
+      write({ open: without('b') });
+      write({ open: adding('c') });
+    });
+
+    expect(result.current.location.search).toBe('?open=a%2Cc');
+  });
+
   // The search and the tab write from an effect that depends on it, which
   // a new function each render would start again on every render.
   it('is the same function until the address changes', () => {

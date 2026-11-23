@@ -102,10 +102,16 @@ let written: { shown: Location; search: string } | null = null;
  * page last showed it (#636): react-router 7 shows an address in a
  * transition, which on a slow device ends after a search's wait, and a
  * search written then from the address shown put back a filter just
- * cleared. Two writes in a row each keep the other's.
+ * cleared. Two writes in a row each keep the other's. A value given as a
+ * function is worked out from the key's value then, not as last shown:
+ * Stock's open rows, a list a quick second click adds to (step 26's
+ * verify).
  */
 export function useAddressWrite(): (
-  changes: Record<string, string | null>,
+  changes: Record<
+    string,
+    string | null | ((previous: string | null) => string | null)
+  >,
 ) => void {
   const [, setParams] = useSearchParams();
   const location = useLocation();
@@ -117,7 +123,9 @@ export function useAddressWrite(): (
           const next = new URLSearchParams(
             written?.shown === location ? written.search : previous,
           );
-          for (const [key, value] of Object.entries(changes)) {
+          for (const [key, change] of Object.entries(changes)) {
+            const value =
+              typeof change === 'function' ? change(next.get(key)) : change;
             if (value === null) next.delete(key);
             else next.set(key, value);
           }
