@@ -76,18 +76,17 @@ export class LotChangesService {
         );
       }
 
-      const to = dto.toLotId
-        ? await otherLot(tx, organizationId, from, dto.toLotId)
-        : dto.lot
-          ? await this.stock.newLot(
-              tx,
-              organizationId,
-              { id: from.variantId, sku: from.sku },
-              startingAs(from, dto.lot),
-            )
-          : null;
-
-      if (!to) {
+      let to: MovedLot;
+      if (dto.toLotId) {
+        to = await otherLot(tx, organizationId, from, dto.toLotId);
+      } else if (dto.lot) {
+        to = await this.stock.newLot(
+          tx,
+          organizationId,
+          { id: from.variantId, sku: from.sku },
+          startingAs(from, dto.lot),
+        );
+      } else {
         throw new BadRequestException(
           t({
             id: 'stock.lotChangeNeedsLot',
