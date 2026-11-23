@@ -1238,10 +1238,15 @@ test('A lot’s page, Who received it, the lot a row came through: that lot’s 
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     'FO-0101-B',
   );
-  // It says where it came from: the first lot, a link back to it.
-  await expect(
-    page.getByRole('main').getByRole('link', { name: 'FO-0101', exact: true }),
-  ).toBeVisible();
+  // It says where it came from, the first lot a link back to it, and so
+  // does its cost history's lot change (review 34): each opens that lot.
+  const firstLot = page
+    .getByRole('main')
+    .getByRole('link', { name: 'FO-0101', exact: true });
+  await expect(firstLot).toHaveCount(2);
+  for (const link of await firstLot.all()) {
+    await expect(link).toHaveAttribute('href', `/lots/${scene.first.id}`);
+  }
 
   await page.goBack();
   await expect(page).toHaveURL(new RegExp(`/lots/${scene.first.id}$`));

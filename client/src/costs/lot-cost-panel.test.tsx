@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { LotCost, LotCostEntry } from '../api/types.gen';
@@ -49,7 +50,7 @@ describe('LotCostPanel', () => {
         HttpResponse.json({ lotCost: COST }),
       ),
     );
-    render(<LotCostPanel lotId="lot-1" />);
+    render(<LotCostPanel lotId="lot-1" />, { wrapper: MemoryRouter });
 
     const history = await screen.findByRole('table', {
       name: 'How its value changed',
@@ -69,7 +70,7 @@ describe('LotCostPanel', () => {
         HttpResponse.json({ lotCost: { ...COST, entries } }),
       ),
     );
-    render(<LotCostPanel lotId="lot-1" />);
+    render(<LotCostPanel lotId="lot-1" />, { wrapper: MemoryRouter });
     const history = await screen.findByRole('table', {
       name: 'How its value changed',
     });
@@ -148,6 +149,13 @@ describe('LotCostPanel', () => {
 
     expect(to).toHaveTextContent('Cost carried to lot LOT-B');
     expect(from).toHaveTextContent('Cost from lot LOT-A');
+    // Each other lot a link to its page, offering Back (review 34).
+    const toB = within(to).getByRole('link', { name: 'LOT-B' });
+    expect(toB).toHaveAttribute('href', '/lots/lot-b');
+    expect(within(from).getByRole('link', { name: 'LOT-A' })).toHaveAttribute(
+      'href',
+      '/lots/lot-a',
+    );
     // A cost moves no units.
     expect(within(to).getAllByRole('cell')[2]).toHaveTextContent('—');
   });

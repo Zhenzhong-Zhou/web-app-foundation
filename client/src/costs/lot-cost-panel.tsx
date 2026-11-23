@@ -24,6 +24,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { LotCost, LotCostEntry } from '../api/types.gen';
 import { LabelledValue } from '../components/labelled-value';
+import { LotLink } from '../components/lot-link';
 import {
   displayQuantity,
   formatDate,
@@ -72,10 +73,17 @@ const WORDS = defineMessages({
  * row out are. A late cost carried with stock moved between lots names
  * the other lot, whichever way it went (ADR-094, D5). A kind or a reason
  * this tab does not know reads "Other change", never its stored key
- * (D4).
+ * (D4). The other lot is a link to its page.
  */
-function describe(entry: LotCostEntry, intl: IntlShape): string {
+function describe(entry: LotCostEntry, intl: IntlShape): ReactNode {
   const out = entry.quantity.startsWith('-');
+  // The other lot a link to its page, with Back (v17's board; review 34).
+  const other =
+    entry.otherLotId && entry.otherLotCode ? (
+      <LotLink key="lot" id={entry.otherLotId} code={entry.otherLotCode} />
+    ) : (
+      entry.otherLotCode
+    );
   if (entry.carried && entry.otherLotCode) {
     return entry.carried === 'to'
       ? intl.formatMessage(
@@ -83,14 +91,14 @@ function describe(entry: LotCostEntry, intl: IntlShape): string {
             id: 'costs.entry.carriedTo',
             defaultMessage: 'Cost carried to lot {code}',
           },
-          { code: entry.otherLotCode },
+          { code: other },
         )
       : intl.formatMessage(
           {
             id: 'costs.entry.carriedFrom',
             defaultMessage: 'Cost from lot {code}',
           },
-          { code: entry.otherLotCode },
+          { code: other },
         );
   }
 
@@ -108,14 +116,14 @@ function describe(entry: LotCostEntry, intl: IntlShape): string {
                 id: 'costs.entry.movedTo',
                 defaultMessage: 'Moved to lot {code}',
               },
-              { code: entry.otherLotCode },
+              { code: other },
             )
           : intl.formatMessage(
               {
                 id: 'costs.entry.movedInFrom',
                 defaultMessage: 'Moved in from lot {code}',
               },
-              { code: entry.otherLotCode },
+              { code: other },
             );
       }
       return intl.formatMessage(out ? WORDS.other : WORDS.fromBefore);

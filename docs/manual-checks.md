@@ -1277,7 +1277,8 @@ a second organization.
   delivery's cost: the message reads "Cost set. … of it followed the
   stock moved to lot …", each lot named where several took a part; the
   moved row leaves the list, both lots are valued, and their histories
-  read "Cost carried to lot …" and "Cost from lot …". A row of a kind
+  read "Cost carried to lot …" and "Cost from lot …", the other lot a
+  link to its page, Back returning here. A row of a kind
   the tab does not know, in an old tab after a deploy, reads "Other
   change" and "Waiting for a cost", never a stored key, and offers no
   Set cost.
