@@ -633,7 +633,7 @@ export class StockService {
       }
       return this.makeLot(tx, organizationId, variant.id, {
         ...expiry,
-        supplierLot: incoming.supplierLot?.trim() || null,
+        supplierLot: incoming.supplierLot || null,
       });
     }
 
@@ -649,7 +649,7 @@ export class StockService {
 
     // A typed code is the supplier's own, so it has no supplier's lot to
     // add; one made for us carries it (ADR-094, R5).
-    if (incoming.supplierLot?.trim()) {
+    if (incoming.supplierLot) {
       throw new BadRequestException(
         t({
           id: 'stock.supplierLotForMadeCode',

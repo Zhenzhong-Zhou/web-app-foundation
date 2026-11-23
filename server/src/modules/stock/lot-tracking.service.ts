@@ -135,7 +135,7 @@ export class LotTrackingService {
 
       const lot = await this.stock.makeLot(tx, organizationId, variantId, {
         ...expiry,
-        supplierLot: dto.supplierLot?.trim() || null,
+        supplierLot: dto.supplierLot || null,
         note: 'tracking_started',
       });
 

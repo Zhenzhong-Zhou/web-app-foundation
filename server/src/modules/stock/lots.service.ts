@@ -98,11 +98,10 @@ export class LotsService {
         );
       }
 
-      // Empty, or null as an API caller may send it, takes it away.
+      // Empty, or null as an API caller may send it, takes it away; the
+      // DTO has trimmed it.
       const supplierLot =
-        input.supplierLot === undefined
-          ? undefined
-          : input.supplierLot?.trim() || null;
+        input.supplierLot === undefined ? undefined : input.supplierLot || null;
 
       // A code typed from the box is the supplier's own, so it has no
       // supplier's lot to add (R5).
