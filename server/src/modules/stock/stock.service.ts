@@ -331,6 +331,7 @@ export class StockService {
         tx,
         organizationId,
         locationId,
+        input.reason === 'lot_change',
       );
 
       /**
@@ -850,11 +851,16 @@ export class StockService {
    * which is the other half of the same invariant. Both are needed: one stops
    * stock arriving at a branch, the other stops a leaf becoming a branch
    * underneath existing stock.
+   *
+   * A lot change may be at a retired place: nothing arrives there or leaves
+   * it, only which lot the stock is in changes, so Start tracking lots puts
+   * the stock still there into its lot too (review 74).
    */
   private async assertUsableLeaf(
     tx: Tx,
     organizationId: string,
     locationId: string,
+    staysInPlace = false,
   ): Promise<typeof locations.$inferSelect> {
     const [location] = await tx
       .select()
@@ -875,7 +881,7 @@ export class StockService {
         }),
       );
 
-    if (!location.isActive) {
+    if (!location.isActive && !staysInPlace) {
       throw new ConflictException(
         t(
           { id: 'stock.nameRetired', defaultMessage: '{name} is retired' },

@@ -375,6 +375,36 @@ describe('Start tracking lots (e2e)', () => {
     });
   });
 
+  it('starts for stock at a retired place too, which it never leaves, while a receipt there is still refused (review 74)', async () => {
+    const w = await world();
+    await buy(w, '300', '0.40', w.main);
+    await buy(w, '20', '0.40', w.annex);
+    await w.org.agent
+      .patch(`/v1/locations/${w.annex}`)
+      .send({ isActive: false })
+      .expect(204);
+
+    const { lot } = await start(w);
+
+    expect(
+      (await piles(w.code)).filter(
+        (pile) => pile.locationId === w.annex && pile.lotId,
+      ),
+    ).toEqual([{ locationId: w.annex, lotId: lot!.id, quantity: '20.0000' }]);
+    await w.org.agent
+      .post('/v1/stock/movements')
+      .send({
+        variantId: w.code,
+        lotId: lot!.id,
+        toLocationId: w.annex,
+        quantity: '1',
+        reason: 'adjustment',
+        reasonDetail: 'found',
+        note: 'A box found behind the cartons at the count',
+      })
+      .expect(409);
+  });
+
   it('moves the code’s whole cost history into the lot: Stock value unchanged, what waited still waits, its cost landing on the lot (R17)', async () => {
     const w = await world();
     await buy(w, '100', '2.00', w.main);

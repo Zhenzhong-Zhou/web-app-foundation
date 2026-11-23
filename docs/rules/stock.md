@@ -939,12 +939,13 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lot-tracking.e2e-spec.ts) "asks where the stock is, then puts all of it into one lot made for us, noted, every figure as before (R14, R15)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "lists a run only for a reader who may see runs, its count for all (ADR-080)"
 - **Started with stock, one lot made for us takes all of it,** at every
-  place, its code from the lot series, noted as the stock on hand when
-  lot tracking started, with the supplier's lot and the expiry when
-  given: one lot change a place, Lots started, counted in neither In nor
-  Out. With no expiry given, the lot's is not known yet, never Doesn't
-  expire, so it is listed under Details to add and stays usable; the
-  question starts on Not known yet, shown chosen. On hand, usable, Held,
+  place, a retired one too, which the stock never leaves, its code from
+  the lot series, noted as the stock on hand when lot tracking started,
+  with the supplier's lot and the expiry when given: one lot change a
+  place, Lots started, counted in neither In nor Out. With no expiry
+  given, the lot's is not known yet, never Doesn't expire, so it is
+  listed under Details to add and stays usable; the question starts on
+  Not known yet, shown chosen. On hand, usable, Held,
   Free, Short and Coming read as before, with an expiry not in the past;
   who and when are in the item's History. With nothing on hand, tracking
   turns on alone and no lot is made; from then on, every movement of the
@@ -952,6 +953,7 @@ file is kept is in the [README](README.md).
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "asks where the stock is, then puts all of it into one lot made for us, noted, every figure as before (R14, R15)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "stores the expiry as not known yet where the question gives none, every figure as before (S6, R15)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "starts for stock at a retired place too, which it never leaves, while a receipt there is still refused (review 74)" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "asks with the places and what each holds, the code it will make, the runs that close against it and that it is one way; Cancel changes nothing (R14)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "turns tracking on alone for a code with nothing on hand: no lot, no movement, and a receipt then asks for one (R13)"
 - **The code's whole cost history goes into the lot:** Stock value and
