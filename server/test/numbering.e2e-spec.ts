@@ -561,6 +561,33 @@ describe('Numbering (e2e)', () => {
     });
   });
 
+  describe('a lot code past its digits (ADR-094, D1)', () => {
+    it('makes a code past 20 characters once its counter outgrows its digits, and refuses no receipt for it', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const day = (await numbering(org)).today;
+      const vitc = await trackedItem(org, 'VITC');
+      // L-2026-11-21- prints 13: 7 digits fill 20, and 10,000,000 has 8.
+      await save(org, {
+        lot: { ...LOT, digits: 7, next: 10_000_000 },
+      }).expect(204);
+
+      const res = await org.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: vitc.variantId,
+          toLocationId: vitc.shelf,
+          quantity: '5',
+          reason: 'receipt',
+          reasonDetail: 'opening',
+          lot: { makeCode: true, expiry: 'unknown' },
+        })
+        .expect(201);
+      const { lotCode } = body<{ lotCode: string }>(res);
+      expect(lotCode).toBe(`L-${day}-10000000`);
+      expect(lotCode).toHaveLength(21);
+    });
+  });
+
   describe('numbers by the settings', () => {
     it('gives an order its series’ number, by the day it is made', async () => {
       const org = await registerOrganization(app, 'alpha');

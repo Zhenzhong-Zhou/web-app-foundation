@@ -815,6 +815,25 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes two codes at once without sharing one" ·
   [Help](../../client/src/help/guides/en/inventory.md#receive-stock-receive) ·
   MC-325
+- **The lot series prints capitals, digits, hyphens and the date, in 20
+  characters with its digits,** what a barcode's lot field holds, set in
+  Organization › Documents › Lot codes: a prefix holding anything else,
+  or printing more than 20 with its digits, is refused there, and one a
+  document's series could print the same as. Under the next code the row
+  says how many codes fit within 20 characters, a day, a month, a year or
+  in all, in amber where fewer than 10,000 fit in a year or in all, never
+  for a day's or a month's. A code grows past 20 once its counter
+  outgrows its digits, as a document's number does, and no receipt is
+  refused for it.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--our-own-lot-codes-by-a-format-beside-document-numbering) ·
+  [test](../../server/src/modules/numbering/numbering-format.spec.ts) "prints at most 20 characters with its digits" ·
+  [test](../../server/test/numbering.e2e-spec.ts) "refuses a lot code prefix past 20 characters with its digits, or holding _ or / (ADR-094)" ·
+  [test](../../server/test/numbering.e2e-spec.ts) "refuses a lot code prefix a document’s could print the same as (ADR-094)" ·
+  [test](../../client/src/settings/numbering-section.test.tsx) "shows the next code made today, with the room for codes a day within 20 characters" ·
+  [test](../../client/src/settings/numbering-section.test.tsx) "warns in amber with room for 9,999 in all, and Save still works; as many a day stay grey" ·
+  [test](../../server/test/numbering.e2e-spec.ts) "makes a code past 20 characters once its counter outgrows its digits, and refuses no receipt for it" ·
+  [Help](../../client/src/help/guides/en/organization.md#numbering-numbering) ·
+  MC-2701
 - **A made code is stored as made here, a typed one as printed,** never
   as made here, whatever the movement's reason; a made code can be
   corrected later, a printed one cannot.
