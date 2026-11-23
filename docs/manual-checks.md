@@ -641,7 +641,8 @@ a second organization.
   L-2026-…-3", today's next code from Settings' lot series, Supplier's
   lot shows, and Expires moves to Not known yet, saying the lot is
   marked "Expiry to add" and still usable; a choice you made first
-  stays. Type one instead: the field empties, focus in it, Supplier's
+  stays, and so does a day typed under On a date as it started. Type
+  one instead: the field empties, focus in it, Supplier's
   lot gone. Make a code again, type `Hx-2701` as the supplier's lot and
   receive 5: "Received 5 each of K2-60CT with no order, new lot
   L-…. Write this code on the delivery. It waits for a cost." with Copy

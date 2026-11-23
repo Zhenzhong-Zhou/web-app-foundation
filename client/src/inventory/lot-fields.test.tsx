@@ -268,6 +268,38 @@ describe('LotFields', () => {
     expect(screen.getByRole('radio', { name: 'Doesn’t expire' })).toBeChecked();
   });
 
+  // A day typed under the last lot's On a date is a choice made: Make a
+  // code for us keeps it, never turning to Not known yet (review 69).
+  it('keeps a day typed under On a date as it started when a code is then made', async () => {
+    knownLots();
+    const user = userEvent.setup();
+    let value = NO_LOT;
+    render(
+      <Harness
+        onValue={(next) => {
+          value = next;
+        }}
+      />,
+    );
+    await screen.findByRole('radio', { name: 'On a date', checked: true });
+
+    await user.type(screen.getByLabelText(/^The day it expires/), '2027-06-30');
+    await user.click(
+      screen.getByRole('button', { name: 'Make a code for us' }),
+    );
+
+    expect(screen.getByRole('radio', { name: 'On a date' })).toBeChecked();
+    expect(screen.getByLabelText(/^The day it expires/)).toHaveValue(
+      '2027-06-30',
+    );
+    expect(lotRequest(value, KNOWN)).toEqual({
+      makeCode: true,
+      supplierLot: undefined,
+      expiry: 'date',
+      expiresAt: '2027-06-30',
+    });
+  });
+
   // Count it in's new lot (ADR-093, 84a): a code the item has is refused.
   it('says, for a lot that must be new, that a code it has is one to choose among its lots', async () => {
     const askedFor = knownLots();

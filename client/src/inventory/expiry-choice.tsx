@@ -118,7 +118,11 @@ export function ExpiryChoice({
           required
           fullWidth
           value={expiresAt}
-          onChange={(event) => onChange({ expiresAt: event.target.value })}
+          // A day typed is On a date chosen, though it was only where the
+          // choice started: making a code then keeps it (review 69).
+          onChange={(event) =>
+            onChange({ expiry: 'date', expiresAt: event.target.value })
+          }
           inputRef={dayRef}
           error={!!errors.day}
           helperText={errors.day}
