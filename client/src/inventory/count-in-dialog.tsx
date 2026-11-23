@@ -24,19 +24,24 @@ import {
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
-import type { Location, Lot, RecordedMovementEnvelope } from '../api/types.gen';
+import type { Location, RecordedMovementEnvelope } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api, hasCode } from '../lib/api';
 import { groupedNumberMessage, SEPARATOR, toApiDecimal } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
-import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit, unitLabel } from '../products/units';
 import { lotExpiry } from './lot-expiry';
 import { LotFields } from './lot-fields';
-import { type LotErrors, lotErrors, lotRequest, NO_LOT } from './lot-input';
+import {
+  type LotErrors,
+  lotErrors,
+  lotRequest,
+  NO_LOT,
+  useItemLots,
+} from './lot-input';
 import { useLotMessage } from './lot-received';
 import { movementsPath } from './movements-path';
 import { placePaths } from './stock-places';
@@ -114,10 +119,7 @@ export function CountInDialog({
 
   // Its lots, for One of its lots and to say a new code is one of them.
   // Silent if they fail: a new lot still can be made.
-  const read = useResource<Lot[]>(
-    item.tracksLots ? `/stock/lots?variantId=${item.variantId}` : null,
-  ).data;
-  const lots = read ?? [];
+  const { lots, known } = useItemLots(item.tracksLots ? item.variantId : null);
 
   const unit = unitLabel(item.unitOfMeasure, intl);
   const place = locations.find((each) => each.id === form.locationId);
@@ -405,7 +407,7 @@ export function CountInDialog({
                 variantId={item.variantId}
                 unitOfMeasure={item.unitOfMeasure}
                 lots={lots}
-                knowsLots={read !== null}
+                knowsLots={known}
                 mustBeNew
                 value={form.lot}
                 onChange={(update) => {
