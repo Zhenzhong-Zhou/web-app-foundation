@@ -688,8 +688,8 @@ a second organization.
   progress use or make it, those runs, "Each will close against this
   lot."; and "This cannot be undone". Supplier's lot is empty and Expires
   is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
-  under Details to add until someone gives the day or says it doesn't
-  expire. The stock can still be used." under it. Choose On a date with a
+  on Stock, by lot, under Details to add until someone gives the day or
+  says it doesn't expire. The stock can still be used." under it. Choose On a date with a
   day already past: an amber line says the stock will read as expired.
   Escape, or Cancel, closes it with nothing changed, focus back on what
   opened it: Stock's Actions, the line's Start tracking lots…, or the

@@ -142,7 +142,7 @@ Barcodes come later. The Code is your own, not a barcode.
 An item added without **Track lot numbers and expiry** can start tracking lots later, once it holds stock. **Start tracking lots…** is in three places: in the item’s **Actions** on **Stock**; on the item’s page, under **By place and lot**, at the end of the line saying the code doesn’t track lots; and in the item’s **Variants** table, under **Lots**. Equipment never offers it, and only someone who may change items and correct counts sees it.
 
 1. Press **Start tracking lots…**. The question lists the places holding the item and how much each holds, and the runs in progress that use or make it, each of which will close against the new lot.
-2. Give the **Supplier’s lot** and **Expires** if you know them. **Expires** starts on **Not known yet**, so the lot is listed under **Details to add** until someone gives the day or says it doesn’t expire; the stock can still be used meanwhile.
+2. Give the **Supplier’s lot** and **Expires** if you know them. **Expires** starts on **Not known yet**, so the lot is listed on Stock, by lot, under **Details to add** until someone gives the day or says it doesn’t expire; the stock can still be used meanwhile.
 3. Press **Start tracking lots**.
 
 All the stock on hand goes into one lot, its code made for us, and the code reads **Tracked** from then on: nothing turns it off, and each receipt asks for its lot. An item with nothing on hand starts too, and no lot is made until stock comes. The stock stays where it is, so every figure is as before, and [Movements](/movements) shows one row for each place, **Lots started**, counted in neither In nor Out.

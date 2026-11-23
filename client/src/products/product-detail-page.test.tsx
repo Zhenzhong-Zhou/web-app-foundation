@@ -578,7 +578,7 @@ describe('Start tracking lots', () => {
     expect(
       within(dialog).getByRole('radiogroup', { name: 'Expires' }),
     ).toHaveAccessibleDescription(
-      'Listed under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
+      'Listed on Stock, by lot, under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
     );
 
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));

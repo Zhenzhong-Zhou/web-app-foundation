@@ -305,7 +305,7 @@ export function StartTrackingDialog({
                           ? intl.formatMessage({
                               id: 'products.startTracking.expiry.unknownHelp',
                               defaultMessage:
-                                'Listed under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
+                                'Listed on Stock, by lot, under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
                             })
                           : undefined
                       }

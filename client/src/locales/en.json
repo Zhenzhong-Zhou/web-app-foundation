@@ -1998,7 +1998,7 @@
   "products.startTracking.action": "Start tracking lots",
   "products.startTracking.done": "Lot tracking started for {sku}. Its stock on hand is in lot {lot}.",
   "products.startTracking.doneEmpty": "Lot tracking started for {sku}. Each receipt now asks for its lot.",
-  "products.startTracking.expiry.unknownHelp": "Listed under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.",
+  "products.startTracking.expiry.unknownHelp": "Listed on Stock, by lot, under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.",
   "products.startTracking.nothingOnHand": "Nothing is on hand, so no lot is made now.",
   "products.startTracking.onHand": "{quantity} on hand goes into one lot, its code made for us when you start, like {example}:",
   "products.startTracking.onHandPlain": "{quantity} on hand goes into one lot, its code made for us when you start:",

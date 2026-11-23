@@ -1998,7 +1998,7 @@
   "products.startTracking.action": "Commencer le suivi par lot",
   "products.startTracking.done": "Suivi par lot commencé pour {sku}. Son stock est dans le lot {lot}.",
   "products.startTracking.doneEmpty": "Suivi par lot commencé pour {sku}. Chaque réception demande maintenant son lot.",
-  "products.startTracking.expiry.unknownHelp": "Listé sous Détails à ajouter jusqu’à ce que quelqu’un donne la date ou indique qu’il n’expire pas. Le stock reste utilisable.",
+  "products.startTracking.expiry.unknownHelp": "Listé dans Stock, par lot, sous Détails à ajouter jusqu’à ce que quelqu’un donne la date ou indique qu’il n’expire pas. Le stock reste utilisable.",
   "products.startTracking.nothingOnHand": "Rien n’est en stock, donc aucun lot n’est créé maintenant.",
   "products.startTracking.onHand": "{quantity} en stock va dans un seul lot, son code créé pour nous au départ, comme {example} :",
   "products.startTracking.onHandPlain": "{quantity} en stock va dans un seul lot, son code créé pour nous au départ :",

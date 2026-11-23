@@ -1998,7 +1998,7 @@
   "products.startTracking.action": "开始按批次跟踪",
   "products.startTracking.done": "{sku} 已开始按批次跟踪。其现有库存在批次 {lot} 中。",
   "products.startTracking.doneEmpty": "{sku} 已开始按批次跟踪。此后每次收货都会要求填写批次。",
-  "products.startTracking.expiry.unknownHelp": "列在“待补信息”下，直到有人补上日期或说明它不过期。库存仍可使用。",
+  "products.startTracking.expiry.unknownHelp": "在库存页按批次查看时列在“待补信息”下，直到有人补上日期或说明它不过期。库存仍可使用。",
   "products.startTracking.nothingOnHand": "目前没有现有库存，因此现在不生成批次。",
   "products.startTracking.onHand": "现有库存 {quantity} 将全部放入一个批次，批次编码在开始时为我们生成，例如 {example}：",
   "products.startTracking.onHandPlain": "现有库存 {quantity} 将全部放入一个批次，批次编码在开始时为我们生成：",
