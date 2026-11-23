@@ -751,6 +751,8 @@
   "inventory.moveLot.action": "转入批次",
   "inventory.moveLot.done": "已将 {quantity} 从批次 {from} 转入批次 {to}。",
   "inventory.moveLot.doneWaiting": "已将 {quantity} 从批次 {from} 转入批次 {to}。它在该批次中等待成本，因为批次 {from} 中仍有部分在等待成本。",
+  "inventory.moveLot.expiryStart": "默认与转出的批次相同。",
+  "inventory.moveLot.intro": "把这个批次的一部分转入该物品的另一个批次，可以是已有批次，也可以是新批次。库存留在原处。",
   "inventory.moveLot.note.help": "说明这些库存为何属于另一个批次，供日后追溯的人查看。",
   "inventory.moveLot.noteMissing": "请在备注中说明这些库存为何属于另一个批次。",
   "inventory.moveLot.pending": "正在转移…",

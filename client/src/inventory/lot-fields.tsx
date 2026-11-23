@@ -51,6 +51,7 @@ export function LotFields({
   expiryRef,
   dayRef,
   errors = {},
+  expiryStart,
 }: {
   /** Keeps the dialogs' field ids apart. */
   idPrefix: string;
@@ -74,6 +75,8 @@ export function LotFields({
   dayRef?: Ref<HTMLInputElement>;
   /** Said at each field in place of its help (#310). */
   errors?: LotErrors;
+  /** Where Expires started, said under it (ExpiryChoice's `start`). */
+  expiryStart?: string;
 }) {
   const intl = useIntl();
   // Type one instead: the field empties, and focus goes into it as it
@@ -228,6 +231,7 @@ export function LotFields({
           expiryRef={expiryRef}
           dayRef={dayRef}
           errors={errors}
+          start={expiryStart}
         />
       )}
     </>

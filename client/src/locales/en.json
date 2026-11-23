@@ -751,6 +751,8 @@
   "inventory.moveLot.action": "Move to lot",
   "inventory.moveLot.done": "Moved {quantity} from lot {from} to lot {to}.",
   "inventory.moveLot.doneWaiting": "Moved {quantity} from lot {from} to lot {to}. It waits for a cost there, as some of lot {from} does.",
+  "inventory.moveLot.expiryStart": "Starts as the lot it leaves has it.",
+  "inventory.moveLot.intro": "Moves part of this lot into another lot of the item, one it has or a new one. The stock stays where it is.",
   "inventory.moveLot.note.help": "Why this stock belongs in another lot, for whoever traces it later.",
   "inventory.moveLot.noteMissing": "Say in the note why this stock belongs in another lot.",
   "inventory.moveLot.pending": "Moving…",

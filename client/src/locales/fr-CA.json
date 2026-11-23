@@ -751,6 +751,8 @@
   "inventory.moveLot.action": "Déplacer vers le lot",
   "inventory.moveLot.done": "{quantity} déplacé du lot {from} vers le lot {to}.",
   "inventory.moveLot.doneWaiting": "{quantity} déplacé du lot {from} vers le lot {to}. Il y attend un coût, comme une partie du lot {from}.",
+  "inventory.moveLot.expiryStart": "Commence comme l’a le lot qu’il quitte.",
+  "inventory.moveLot.intro": "Déplace une partie de ce lot dans un autre lot de l’article, l’un des siens ou un nouveau. Le stock reste où il est.",
   "inventory.moveLot.note.help": "Pourquoi ce stock appartient à un autre lot, pour qui le retracera plus tard.",
   "inventory.moveLot.noteMissing": "Dites dans la note pourquoi ce stock appartient à un autre lot.",
   "inventory.moveLot.pending": "Déplacement…",

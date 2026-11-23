@@ -719,9 +719,11 @@ a second organization.
   line BOTTLE-A60 未按批次跟踪，因此库存没有批号。
 - **MC-328** *(ADR-094, R20)* Move to another lot. As the demo Owner, on
   Stock, open K2-60CT at its place and a lot's Actions: Move to another
-  lot… opens "Move to another lot", the lot, place and what is on hand
-  under its title, Quantity, Lot number with Make a code for us, Expires
-  as this lot's, and Note. Move without a note, or into the lot it is
+  lot… opens "Move to another lot", "Moves part of this lot into another
+  lot of the item, one it has or a new one. The stock stays where it
+  is.", the lot, place and what is on hand under its title, Quantity,
+  Lot number with Make a code for us, Expires as this lot's, "Starts as
+  the lot it leaves has it." under it, and Note. Move without a note, or into the lot it is
   in: each says why at its field, focus on the first. Move 10 into a
   new typed code: the message reads "Moved 10 each from lot … to lot
   …", with Open the lot; Stock opens the code's row at the place, both

@@ -154,6 +154,31 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     );
   });
 
+  // Review 6 and 27: what it is for, and that Expires is this lot's.
+  it('says what it is for, and that Expires starts as the lot it leaves has it', async () => {
+    const { user } = open();
+    const dialog = screen.getByRole('dialog', { name: 'Move to another lot' });
+
+    expect(dialog).toHaveTextContent(
+      'Moves part of this lot into another lot of the item, one it has or a new one. The stock stays where it is.',
+    );
+    await user.type(
+      screen.getByRole('combobox', { name: /^Lot number/ }),
+      'VC-0311',
+    );
+    expect(
+      screen.getByRole('radiogroup', { name: /^Expires/ }),
+    ).toHaveAccessibleDescription('Starts as the lot it leaves has it.');
+
+    // Not known yet chosen: its own line follows.
+    await user.click(screen.getByRole('radio', { name: 'Not known yet' }));
+    expect(
+      screen.getByRole('radiogroup', { name: /^Expires/ }),
+    ).toHaveAccessibleDescription(
+      'Starts as the lot it leaves has it. Marked “Expiry to add” until its date is added. The stock can still be used.',
+    );
+  });
+
   it('moves into a new lot typed as printed, with the first lot’s expiry, the message naming both lots; Open the lot opens the new one', async () => {
     const { user, sent, onMoved } = open();
     await fill(user, 'VC-0311');

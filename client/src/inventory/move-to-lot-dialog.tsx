@@ -230,6 +230,15 @@ export function MoveToLotDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
+            {/* What it is for, beside Move… in the same menu (review 6). */}
+            <Typography variant="body2">
+              {intl.formatMessage({
+                id: 'inventory.moveLot.intro',
+                defaultMessage:
+                  'Moves part of this lot into another lot of the item, one it has or a new one. The stock stays where it is.',
+              })}
+            </Typography>
+
             {/* Shown rather than chosen, as Move's: the lot and place
                 looked at. */}
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -307,6 +316,11 @@ export function MoveToLotDialog({
                 expiry: errors.lotExpiry,
                 day: errors.lotDay,
               }}
+              // E7: copied from this lot, and said so (review 27).
+              expiryStart={intl.formatMessage({
+                id: 'inventory.moveLot.expiryStart',
+                defaultMessage: 'Starts as the lot it leaves has it.',
+              })}
             />
 
             <TextField

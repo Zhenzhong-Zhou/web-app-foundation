@@ -25,6 +25,7 @@ export function ExpiryChoice({
   onChange,
   required = true,
   help,
+  start,
   expiryRef,
   dayRef,
   errors = {},
@@ -43,6 +44,11 @@ export function ExpiryChoice({
    * given: Start tracking lots says what its lot is then (ADR-094, S6).
    */
   help?: ReactNode;
+  /**
+   * Where the choice started, said before the choice's own line: Move to
+   * another lot's "Starts as the lot it leaves has it." (review 6, 27).
+   */
+  start?: string;
   /** For a form that focuses the first field it refused (#310). */
   expiryRef?: Ref<HTMLInputElement>;
   dayRef?: Ref<HTMLInputElement>;
@@ -50,16 +56,18 @@ export function ExpiryChoice({
 }) {
   const intl = useIntl();
   const id = useId();
-  const said =
-    errors.expiry ??
-    help ??
-    (expiry === 'unknown'
+  const own =
+    expiry === 'unknown'
       ? intl.formatMessage({
           id: 'inventory.lot.expiry.unknownHelp',
           defaultMessage:
             'Marked “Expiry to add” until its date is added. The stock can still be used.',
         })
-      : undefined);
+      : undefined;
+  const said =
+    errors.expiry ??
+    help ??
+    (start && own ? `${start} ${own}` : (start ?? own));
 
   return (
     <>
