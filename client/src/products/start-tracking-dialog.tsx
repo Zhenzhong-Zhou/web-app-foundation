@@ -20,6 +20,7 @@ import type {
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { ListError } from '../components/list-error';
 import { Reference } from '../components/reference';
 import { ExpiryChoice } from '../inventory/expiry-choice';
 import type { ExpiryKind } from '../inventory/lot-input';
@@ -174,9 +175,13 @@ export function StartTrackingDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {(error ?? question.error) && (
-              <FormError message={(error ?? question.error)!} />
-            )}
+            {error && <FormError message={error} />}
+            {/* Its places not read: why, with Try again (v16's Error
+                state; review 19). */}
+            <ListError
+              error={question.error}
+              onRetry={() => void question.reload()}
+            />
 
             {/* The question while the places are read (ADR-094's states). */}
             {!asked && !question.error && (

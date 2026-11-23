@@ -11,6 +11,7 @@ import type {
   UpdateProductDto,
 } from '../api/types.gen';
 import { ToastProvider } from '../components/toast-provider';
+import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { ProductDetailPage } from './product-detail-page';
@@ -598,6 +599,39 @@ describe('Start tracking lots', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(dialog).not.toBeInTheDocument();
     expect(sent).toEqual([]);
+  });
+
+  // Review 19: v16's Error state, with Try again.
+  it('says why its places could not be read, with Try again, which asks again', async () => {
+    const { user } = startable();
+    let asked = 0;
+    server.use(
+      http.get(
+        '/api/v1/products/product-1/variants/variant-1/lot-tracking',
+        () => {
+          asked += 1;
+          return asked === 1
+            ? apiError(503, 'The server is busy. Try again in a moment.')
+            : HttpResponse.json(QUESTION);
+        },
+      ),
+    );
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+    const dialog = await screen.findByRole('dialog');
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'The server is busy. Try again in a moment.',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Try again' }));
+
+    expect(
+      await within(dialog).findByText(/on hand goes into one lot/),
+    ).toBeVisible();
+    expect(dialog).not.toHaveTextContent('The server is busy.');
   });
 
   it('says how many runs to a reader who may not see them', async () => {

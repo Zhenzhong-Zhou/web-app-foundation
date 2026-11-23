@@ -684,6 +684,8 @@ a second organization.
   both Change items and Correct a count, and every equipment item, is
   offered none of the three, and reads no such line. Each opens "Start
   tracking lots for BOTTLE-A60": while the places are read, grey lines;
+  had they failed to read (the API stopped), why, with Try again, which
+  asks again;
   then "1,500 each on hand goes into one lot, its code made for us when
   you start, like L-…:", 900 on Main's Shelf and 600 in the Blending room,
   then "Its cost goes with it. What still waits for a cost keeps
