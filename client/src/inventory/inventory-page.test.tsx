@@ -1647,6 +1647,54 @@ describe('InventoryPage', () => {
     expect(await screen.findByRole('link', { name: 'Receive' })).toBeVisible();
   });
 
+  // ADR-094's table: a receipt lands on Stock, its row open at its place,
+  // the dialog Home opened closed for good.
+  it('lands a receipt from ?receive on its row, open at its place, the dialog closed', async () => {
+    answer();
+    function Address() {
+      const { search } = useLocation();
+      return <output aria-label="address">{search}</output>;
+    }
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory?receive']}>
+        <Routes>
+          <Route
+            path="/inventory"
+            element={
+              <>
+                <InventoryPage />
+                <Address />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'stock.move', 'locations.view'] },
+    );
+    const user = userEvent.setup();
+    const dialog = await screen.findByRole('dialog', { name: 'Receive stock' });
+    const pick = async (label: string, option: RegExp | string) => {
+      await user.click(within(dialog).getByRole('combobox', { name: label }));
+      await user.click(await screen.findByRole('option', { name: option }));
+    };
+
+    await pick('Item', /PLAIN-1/);
+    await pick('Why is there no order?', 'Opening stock');
+    await pick('Into', /Main Site/);
+    await user.type(
+      within(dialog).getByRole('textbox', { name: 'Quantity' }),
+      '5',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Receive' }));
+
+    await expect
+      .poll(() => screen.queryByRole('dialog', { name: 'Receive stock' }))
+      .toBeNull();
+    expect(screen.getByRole('status', { name: 'address' })).toHaveTextContent(
+      '?open=variant-plain%2Cvariant-plain.location-a',
+    );
+  });
+
   // Trace a lot is a top-level page: Back returns here (#341).
   it('opens Trace a lot with Back to Inventory', async () => {
     answer();

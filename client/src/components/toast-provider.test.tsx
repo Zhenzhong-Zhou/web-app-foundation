@@ -80,4 +80,45 @@ describe('ToastProvider', () => {
     );
     expect(opened).toBe(1);
   });
+
+  // ADR-094, E3: a lot made at receipt offers Copy code and Open the lot.
+  it('carries several buttons in the order given, each doing what its caller says', async () => {
+    const pressed: string[] = [];
+    function Receive() {
+      const toast = useToast();
+      return (
+        <button
+          type="button"
+          onClick={() =>
+            toast('Received 5 each of FOCUS, new lot L-2026-11-22-1.', [
+              { label: 'Copy code', onClick: () => pressed.push('copy') },
+              { label: 'Open the lot', onClick: () => pressed.push('open') },
+            ])
+          }
+        >
+          Receive
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <Receive />
+      </ToastProvider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    const message = await screen.findByRole('status');
+    const buttons = [
+      screen.getByRole('button', { name: 'Copy code' }),
+      screen.getByRole('button', { name: 'Open the lot' }),
+    ];
+    expect(message).toContainElement(buttons[0]);
+    expect(
+      buttons[0].compareDocumentPosition(buttons[1]) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    await userEvent.click(buttons[1]);
+    expect(pressed).toEqual(['open']);
+  });
 });

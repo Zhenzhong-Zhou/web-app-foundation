@@ -1,13 +1,20 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render as renderPlain, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import type { ReactElement } from 'react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Delivery, Location } from '../api/types.gen';
+import type { Delivery, Location, Partner } from '../api/types.gen';
 import { ToastProvider } from '../components/toast-provider';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
 import { ReceiveStockDialog } from './receive-stock-dialog';
+
+/** The message's Open the lot goes through the router. */
+function render(ui: ReactElement) {
+  return renderPlain(ui, { wrapper: MemoryRouter });
+}
 
 /**
  * What e2e cannot reach cheaply: the branches.
@@ -68,6 +75,11 @@ function quantityField() {
   return screen.getByRole('textbox', { name: 'Quantity' });
 }
 
+/** Why is there no order? (ADR-094, R11), asked of every receipt here. */
+function why(option = 'Opening stock') {
+  return choose('Why is there no order?', option);
+}
+
 describe('ReceiveStockDialog', () => {
   // A keyboard user types the item at once, with no Tab first (#313).
   it('starts in its first field, the item', () => {
@@ -125,6 +137,7 @@ describe('ReceiveStockDialog', () => {
     open(vi.fn(), '');
 
     await choose('Item', /PLAIN-1/);
+    await why();
     await user.type(quantityField(), '5{Enter}');
 
     const into = screen.getByRole('combobox', { name: 'Into' });
@@ -144,6 +157,9 @@ describe('ReceiveStockDialog', () => {
     expect(item).toHaveFocus();
     expect(item).toHaveAccessibleDescription('Choose an item.');
     expect(
+      screen.getByRole('combobox', { name: 'Why is there no order?' }),
+    ).toHaveAccessibleDescription('Choose why there is no order.');
+    expect(
       screen.getByRole('combobox', { name: 'Into' }),
     ).toHaveAccessibleDescription('Choose a location.');
     expect(quantityField()).toHaveAccessibleDescription('Type a quantity.');
@@ -155,12 +171,19 @@ describe('ReceiveStockDialog', () => {
     open();
 
     await choose('Item', /LOTTED-1/);
+    await why();
     await user.type(quantityField(), '5');
     await user.click(screen.getByRole('button', { name: 'Receive' }));
 
     const lot = screen.getByRole('combobox', { name: 'Lot number' });
     expect(lot).toHaveFocus();
-    expect(lot).toHaveAccessibleDescription('Type the lot number.');
+    expect(lot).toHaveAccessibleDescription(
+      'Type the lot number as printed, or make a code for us.',
+    );
+    // A first lot: none chosen, so Expires asks too.
+    expect(
+      screen.getByRole('radiogroup', { name: /^Expires/ }),
+    ).toHaveAccessibleDescription('Choose when the lot expires.');
   });
 
   it('hides the lot fields for an item that does not track lots', async () => {
@@ -206,6 +229,7 @@ describe('ReceiveStockDialog', () => {
     open();
 
     await choose('Item', /PLAIN-1/);
+    await why();
     await user.type(quantityField(), '2.5000');
     await user.click(screen.getByRole('button', { name: 'Receive' }));
 
@@ -215,7 +239,11 @@ describe('ReceiveStockDialog', () => {
      * if anything on this path called Number().
      */
     await waitFor(() => {
-      expect(body).toMatchObject({ quantity: '2.5000', reason: 'receipt' });
+      expect(body).toMatchObject({
+        quantity: '2.5000',
+        reason: 'receipt',
+        reasonDetail: 'opening',
+      });
     });
   });
 
@@ -241,6 +269,7 @@ describe('ReceiveStockDialog', () => {
     );
 
     await choose('Item', /PLAIN-1/);
+    await why();
     await user.type(quantityField(), '3000');
     await user.click(screen.getByRole('button', { name: 'Receive' }));
 
@@ -248,7 +277,7 @@ describe('ReceiveStockDialog', () => {
     // behind it is hidden from the tree.
     expect(
       await screen.findByRole('status', { hidden: true }),
-    ).toHaveTextContent(/^Received 3,000 \S+ of PLAIN-1 with no order$/);
+    ).toHaveTextContent(/^Received 3,000 \S+ of PLAIN-1 with no order\.$/);
   });
 
   it('refuses a thousands separator on the field, sending nothing', async () => {
@@ -291,6 +320,7 @@ describe('ReceiveStockDialog', () => {
     );
 
     await choose('Item', /PLAIN-1/);
+    await why();
     await user.type(quantityField(), '5');
     await user.click(screen.getByRole('button', { name: 'Receive' }));
 
@@ -331,6 +361,221 @@ describe('ReceiveStockDialog', () => {
      * is exactly how it was first reported.
      */
     expect(await screen.findByText(/no items yet/i)).toBeInTheDocument();
+  });
+
+  describe('why there is no order, and from whom (ADR-094, R11, R12)', () => {
+    const NORTHSIDE: Partner = {
+      id: 'partner-north',
+      name: 'Northside Pharmacy',
+      code: 'NP',
+      taxId: null,
+      salePriceListId: null,
+      purchasePriceListId: null,
+      documentLanguage: null,
+      documentSecondLanguage: null,
+      notes: null,
+      isActive: true,
+    };
+
+    it('offers the four reasons, and sends Other’s note and whom it came from', async () => {
+      const user = userEvent.setup();
+      let body: unknown;
+      server.use(
+        http.get('/api/v1/partners', () => HttpResponse.json([NORTHSIDE])),
+        http.post('/api/v1/stock/movements', async ({ request }) => {
+          body = await request.json();
+          return HttpResponse.json(
+            {
+              movement: { id: 'm', lotId: null },
+              needsCost: true,
+              lotCode: null,
+            },
+            { status: 201 },
+          );
+        }),
+      );
+      render(
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          tree={LOCATIONS}
+          defaultLocationId="location-a"
+          canSeePartners
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+        />,
+      );
+
+      await choose('Item', /PLAIN-1/);
+      await user.click(
+        screen.getByRole('combobox', { name: 'Why is there no order?' }),
+      );
+      expect(
+        screen.getAllByRole('option').map((option) => option.textContent),
+      ).toEqual(['Opening stock', 'Returned', 'A sample', 'Other']);
+      await user.click(screen.getByRole('option', { name: 'Other' }));
+      await user.type(
+        screen.getByRole('textbox', { name: 'Note' }),
+        'Left by the courier',
+      );
+      await choose('From', /Northside Pharmacy/);
+      await user.type(quantityField(), '5');
+      await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+      await waitFor(() =>
+        expect(body).toMatchObject({
+          reason: 'receipt',
+          reasonDetail: 'other',
+          note: 'Left by the courier',
+          recipientPartnerId: 'partner-north',
+        }),
+      );
+    });
+
+    it('asks no From of a reader who may not see partners', async () => {
+      open();
+      await choose('Item', /PLAIN-1/);
+
+      expect(screen.queryByRole('combobox', { name: 'From' })).toBeNull();
+    });
+
+    // R12: Found in a count is no receipt; Count it in… opens instead.
+    it('opens Count it in… for Found in a count with the item and place, then gives focus back to the question', async () => {
+      const onFoundInCount = vi.fn();
+      const dialog = (counting: boolean) => (
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          tree={LOCATIONS}
+          defaultLocationId="location-a"
+          counting={counting}
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+          onFoundInCount={onFoundInCount}
+        />
+      );
+      const { rerender } = render(dialog(false));
+
+      await choose('Item', /LOTTED-1/);
+      await why('Found in a count');
+
+      expect(onFoundInCount).toHaveBeenCalledWith(
+        {
+          variantId: 'variant-lotted',
+          sku: 'LOTTED-1',
+          unitOfMeasure: 'each',
+          tracksLots: true,
+        },
+        'location-a',
+      );
+      const question = screen.getByRole('combobox', {
+        name: 'Why is there no order?',
+      });
+      // Nothing is received: the question stays to answer.
+      expect(question).toHaveTextContent(/^\W*$/);
+
+      rerender(dialog(true));
+      (document.activeElement as HTMLElement | null)?.blur();
+      rerender(dialog(false));
+      expect(question).toHaveFocus();
+    });
+
+    it('offers no Found in a count to a reader who may not correct counts', async () => {
+      const user = userEvent.setup();
+      open();
+      await choose('Item', /PLAIN-1/);
+      await user.click(
+        screen.getByRole('combobox', { name: 'Why is there no order?' }),
+      );
+
+      expect(
+        screen.queryByRole('option', { name: 'Found in a count' }),
+      ).toBeNull();
+    });
+  });
+
+  // ADR-094, R3 and E3: a code made for us, named after saving.
+  it('makes a code for us, the message naming it with Copy code and Open the lot; the row opens at its place', async () => {
+    const user = userEvent.setup();
+    let body: unknown;
+    server.use(
+      http.post('/api/v1/stock/movements', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(
+          {
+            movement: { id: 'm', lotId: 'lot-made' },
+            needsCost: true,
+            lotCode: 'L-2026-10-17-1',
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    const onReceived = vi.fn(() => Promise.resolve());
+    function Landed() {
+      return <p>{`At ${useLocation().pathname}`}</p>;
+    }
+    renderPlain(
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/inventory']}>
+          <Routes>
+            <Route
+              path="/inventory"
+              element={
+                <ReceiveStockDialog
+                  open
+                  locations={LOCATIONS}
+                  tree={LOCATIONS}
+                  defaultLocationId="location-a"
+                  onClose={vi.fn()}
+                  onReceived={onReceived}
+                />
+              }
+            />
+            <Route path="*" element={<Landed />} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>,
+    );
+
+    await choose('Item', /LOTTED-1/);
+    await why();
+    await user.type(quantityField(), '5');
+    await user.click(
+      screen.getByRole('button', { name: 'Make a code for us' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    await waitFor(() =>
+      expect(body).toMatchObject({
+        lot: { makeCode: true, expiry: 'unknown' },
+      }),
+    );
+    expect(
+      await screen.findByRole('status', { hidden: true }),
+    ).toHaveTextContent(
+      'Received 5 each of LOTTED-1 with no order, new lot L-2026-10-17-1. Write this code on the delivery. It waits for a cost.',
+    );
+    expect(onReceived).toHaveBeenCalledWith({
+      variantId: 'variant-lotted',
+      locationId: 'location-a',
+    });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Copy code', hidden: true }),
+    );
+    // user-event's own clipboard, which setup() puts in the browser's place.
+    expect(await navigator.clipboard.readText()).toBe('L-2026-10-17-1');
+    await waitFor(() =>
+      expect(screen.getByRole('status', { hidden: true })).toHaveTextContent(
+        'Lot code L-2026-10-17-1 copied.',
+      ),
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'Open the lot', hidden: true }),
+    );
+    expect(await screen.findByText('At /lots/lot-made')).toBeInTheDocument();
   });
 
   describe('Which delivery is this? (ADR-093, v3)', () => {
@@ -428,6 +673,7 @@ describe('ReceiveStockDialog', () => {
         await screen.findByRole('radio', { name: 'Not on an order' }),
       );
       await user.click(screen.getByRole('button', { name: 'Continue' }));
+      await why('A sample');
       await user.type(quantityField(), '5');
       await user.click(screen.getByRole('button', { name: 'Receive' }));
 
@@ -436,6 +682,7 @@ describe('ReceiveStockDialog', () => {
           variantId: 'variant-plain',
           quantity: '5',
           reason: 'receipt',
+          reasonDetail: 'sample',
         }),
       );
       expect(onDelivery).not.toHaveBeenCalled();

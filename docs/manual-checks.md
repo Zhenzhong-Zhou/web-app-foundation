@@ -606,18 +606,65 @@ a second organization.
   chosen; Escape returns focus to Count it in…. Choose a place VITC-100
   has never been, Main's Shelf, and Save with no lot: "Choose one of its
   lots, or a new lot." at Which lot, focus on it. Choose A new lot and
-  type VC-0301, a code it has: refused at Lot number, naming VC-0301,
-  nothing saved. Type VC-0310 with an expiry, 12 and a note: "Counted in
-  12 each of VITC-100 at Shelf, new lot VC-0310. It waits for a cost."
-  with Waiting for a cost, which opens Stock value's list holding it;
-  Stock shows the shelf open under VITC-100 with its lot VC-0310. Count
-  one of its lots, VC-0402, into the same shelf: "…, lot VC-0402." with
-  Movements. Receive stock… 10 of VITC-100 with no order, into a new lot
-  VC-0500: it waits for a cost. Count 2 of VC-0500, one of its lots,
-  into another place: "…, lot VC-0500. It waits for a cost." with
+  type VC-0301, a code it has: under it "Already one of its lots.
+  Choose One of its lots for it, or type another code."; choose Doesn't
+  expire and Save: refused at Lot number, naming VC-0301, nothing saved.
+  Type VC-0310: "A new lot.", Expires starting as VITC-100's newest lot
+  had it; give a day, 12 and a note: "Counted in 12 each of VITC-100 at
+  Shelf, new lot VC-0310. It waits for a cost." with Open the lot and
+  Waiting for a cost, which opens Stock value's list holding it; Stock
+  shows the shelf open under VITC-100 with its lot VC-0310. Count one of
+  its lots, VC-0402, into the same shelf: "…, lot VC-0402." with
+  Movements. Receive stock… 10 of VITC-100 with no order, as opening
+  stock, into a new lot VC-0500: it waits for a cost. Count 2 of
+  VC-0500, one of its lots, into another place: "…, lot VC-0500. It waits for a cost." with
   Waiting for a cost, whose list holds both, the receipt and the count
   (#650); give the receipt its cost, and the count still waits for its
-  own. A role without `stock.adjust` sees no Count it in….
+  own. A role without `stock.adjust` sees no Count it in…. Count it in
+  once more with A new lot and Make a code for us: "…, new lot L-….
+  Write this code on the stock." with Copy code and Open the lot.
+- **MC-325** *(ADR-094, R3, R5, R8, R10; #160)* A new lot's fields, the
+  same in Receive stock, an order's Receive and Count it in's A new lot.
+  As the demo Owner, Receive stock… for K2-60CT, as opening stock.
+  Lot number reads "As printed on the box." with Make a code for us
+  under it, and Expires offers On a date, Not known yet and Doesn't
+  expire, the one K2-60CT's last lot had chosen; for an item with no
+  lots yet none is chosen, and Receive says "Choose when the lot
+  expires." there. Type `k2-2609`: under it "An existing lot. This adds
+  to it." and its expiry and where it is, "… each at Main › Shelf …",
+  and Expires is gone, the lot's own kept. Type `K2-9999`: "A new
+  lot.", Expires back; On a date asks The day it expires. Press Make a
+  code for us: Lot number reads "Made when you save, like
+  L-2026-…-3", today's next code from Settings' lot series, Supplier's
+  lot shows, and Expires moves to Not known yet, saying the lot is
+  marked "Expiry to add" and still usable; a choice you made first
+  stays. Type one instead: the field empties, focus in it, Supplier's
+  lot gone. Make a code again, type `Hx-2701` as the supplier's lot and
+  receive 5: "Received 5 each of K2-60CT with no order, new lot
+  L-…. Write this code on the delivery. It waits for a cost." with Copy
+  code and Open the lot. Copy code says "Lot code L-… copied." and the
+  code pastes; Open the lot opens its page, Back returning to Stock,
+  where K2-60CT's row is open at its place and lot. On an order's
+  Receive, the same fields, the message "Received … on PO-…, new lot
+  L-…. Write this code on the delivery." with Copy code, Open the lot
+  and, over Stock, Open the order; its lines read "60 of 100 received so
+  far." and "Up to 40 each still outstanding.", as the order's page
+  does (#160). In Français Créer un code pour nous, Pas encore connue,
+  N'expire pas; in 中文 生成批次编码, 尚不清楚, 不过期 and 保存时生成，例如 ….
+- **MC-326** *(ADR-094, R11, R12)* Why there is no order, and from whom.
+  As the demo Owner, Receive stock… for an item with nothing ordered:
+  after Item comes "Why is there no order?", nothing chosen, offering
+  Opening stock, Returned, A sample, Other and Found in a count; Receive
+  without one says "Choose why there is no order." there, focus on it.
+  Other shows a Note; From lists the partners, optional. Receive as
+  Returned from Northside Pharmacy: Movements reads "Received: returned".
+  Choose Found in a count: Correct the count opens over Receive stock
+  with Count it in's fields, the item's place kept; Escape returns to
+  Receive stock, focus on Why is there no order?, still unanswered;
+  counting it in instead closes both and Stock opens at the place. A
+  role without `stock.adjust` is offered no Found in a count, and one
+  without `partners.view` no From. In Français « Pourquoi n'y a-t-il
+  pas de commande? »; in 中文 为什么没有订单？ and 盘盈.
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -3727,7 +3774,7 @@ The pages, in a private window unless a check says otherwise.
   See the items, which unticks Receive, ship or transfer stock
   with it, and save. As Tom Becker, with the Network tab open, press
   Receive on PO-DEMO-11's MELATONIN line: Lot number and Expires are asked
-  for, Up to 5.0000 kg still outstanding. names the unit, nothing says the
+  for, Up to 5 kg still outstanding. names the unit, nothing says the
   dialog cannot tell whether a lot is needed, and no request is refused.
   Receive 5 with a lot number: it is recorded, and Trace a lot finds the
   lot. As the demo Owner, tick both again on Warehouse.
@@ -5231,13 +5278,15 @@ first.
 
 - **MC-R73** *(Enter in Receive stock with no location focusing a hidden
   input, #310)* As the demo Owner, on Inventory with no location chosen,
-  open Receive stock, choose an item, type 5 in Quantity and press Enter:
+  open Receive stock, choose an item and why there is no order, type 5
+  in Quantity and press Enter:
   Into says Choose a location. under it, in red, and focus is on Into's
   own box, where Space opens its list; nothing is received, and Chrome's
   console shows no "Blocked aria-hidden". Press Receive with every field
-  empty: Item, Into and Quantity each say what they need, focus in Item.
-  A lot-tracked item with no lot number says Type the lot number. there,
-  with focus on it. In 中文, Into reads 请选择库位。
+  empty: Item, Why is there no order?, Into and Quantity each say what
+  they need, focus in Item. A lot-tracked item with no lot number says
+  Type the lot number as printed, or make a code for us. there, with
+  focus on it. In 中文, Into reads 请选择库位。
 
 - **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
   #245)* As the demo Owner in English, in Chrome, give a location the code
@@ -7529,3 +7578,9 @@ first.
   supplier's lot, an expiry not known yet, lots waiting for a cost, lot
   changes and codes that start tracking lots: the demo's setup names the
   lots MC-908 and MC-909 walk.
+- 2026-11-22: ADR-094's lot fields and receiving dialogs, R3, R5, R8, R10
+  to R12, and #160's Receive half: Make a code for us and Type one
+  instead, the line under a typed code, the supplier's lot, Expires' three
+  choices, the message with Copy code and Open the lot, Receive stock's
+  why and From, and Found in a count opening Count it in…: MC-325 and
+  MC-326 added; MC-322, MC-3322 and MC-R73 rewritten.

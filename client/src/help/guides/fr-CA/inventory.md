@@ -38,10 +38,11 @@ La tuile **Expire bientôt** de l’accueil ouvre cette vue, les plus proches d�
 
 1. Appuyez sur **Recevoir du stock**.
 2. Choisissez l’article. S’il est encore à venir sur un achat, Inventaire demande d’abord **De quelle livraison s’agit-il?**, avec chaque commande, ce qui reste à venir et quand : choisissez sa commande et appuyez sur **Continuer**; la fenêtre **Recevoir** de cette commande s’ouvre, avec ce qui reste à venir déjà saisi. Choisissez **Hors commande** pour du stock arrivé sans commande, et continuez ici.
-3. Choisissez l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
-4. Saisissez la quantité, dans l’unité de l’article.
-5. Pour un article suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Chaque nouvelle réception du même lot augmente sa quantité.
-6. Appuyez sur **Recevoir**.
+3. Répondez à **Pourquoi n’y a-t-il pas de commande?** : **Stock d’ouverture**, **Retourné**, **Un échantillon** ou **Autre**, avec une note au besoin; de qui il provient va sous **Reçu de**. Du stock trouvé lors d’un comptage n’est pas une réception : **Trouvé lors d’un comptage** ouvre **Corriger le compte** avec l’article et l’emplacement.
+4. Choisissez l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
+5. Saisissez la quantité, dans l’unité de l’article.
+6. Pour un article suivi par lot, saisissez le numéro de lot tel qu’imprimé sur la boîte; dessous, le champ dit s’il s’agit d’un de ses lots, auquel la réception s’ajoute, ou d’un nouveau lot. Sans lot sur la boîte, appuyez sur **Créer un code pour nous** : le code est créé à l’enregistrement, et le message le nomme, pour l’inscrire sur la livraison, avec **Copier le code**. Pour un nouveau lot, choisissez sa **Date de péremption** : **À une date**, **Pas encore connue** ou **N’expire pas**, au départ comme le dernier lot de l’article.
+7. Appuyez sur **Recevoir**.
 
 Les marchandises envoyées par un fournisseur pour un achat sont reçues sur sa commande, pour que la commande se ferme et que le stock ne soit compté qu’une fois : ici en la choisissant, ou dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’un coût n’est pas défini dans [Valeur du stock](/costs); il figure alors sous **En attente d’un coût**.
 

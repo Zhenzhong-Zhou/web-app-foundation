@@ -28,7 +28,6 @@ import type { Location, Lot, RecordedMovementEnvelope } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
-import { useToast } from '../components/use-toast';
 import { api, hasCode } from '../lib/api';
 import { groupedNumberMessage, SEPARATOR, toApiDecimal } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -36,6 +35,9 @@ import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit, unitLabel } from '../products/units';
 import { lotExpiry } from './lot-expiry';
+import { LotFields } from './lot-fields';
+import { type LotErrors, lotErrors, lotRequest, NO_LOT } from './lot-input';
+import { useLotMessage } from './lot-received';
 import { movementsPath } from './movements-path';
 import { placePaths } from './stock-places';
 
@@ -54,8 +56,7 @@ const EMPTY = {
   locationId: '',
   which: '' as Which,
   lotId: '',
-  code: '',
-  expiresAt: '',
+  lot: NO_LOT,
   quantity: '',
   note: '',
 };
@@ -71,6 +72,7 @@ export function CountInDialog({
   item,
   locations,
   tree,
+  defaultLocationId = '',
   canSeeCosts,
   onClose,
   onCounted,
@@ -83,6 +85,8 @@ export function CountInDialog({
    * listed by its path (#631).
    */
   tree: Location[];
+  /** The place chosen already: Receive stock's, from Found in a count (R12). */
+  defaultLocationId?: string;
   /** costs.view: the message links to Waiting for a cost, else Movements. */
   canSeeCosts: boolean;
   onClose: () => void;
@@ -92,37 +96,45 @@ export function CountInDialog({
   const pathOf = useMemo(() => placePaths(tree), [tree]);
   const intl = useIntl();
   const navigate = useNavigate();
-  const toast = useToast();
+  const say = useLotMessage();
   const whichId = useId();
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState({
+    ...EMPTY,
+    locationId: defaultLocationId,
+  });
   // Said at its field: Which lot unchosen, a quantity with a separator.
   const [whichError, setWhichError] = useState<string | null>(null);
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const firstLot = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
+  const expiryRef = useRef<HTMLInputElement>(null);
+  const dayRef = useRef<HTMLInputElement>(null);
+  // The new lot's own refusals, each at its field (#310).
+  const [lotProblems, setLotProblems] = useState<LotErrors>({});
 
-  // Its lots, for One of its lots. Silent if they fail: a new lot still
-  // can be made.
-  const lots =
-    useResource<Lot[]>(
-      item.tracksLots ? `/stock/lots?variantId=${item.variantId}` : null,
-    ).data ?? [];
+  // Its lots, for One of its lots and to say a new code is one of them.
+  // Silent if they fail: a new lot still can be made.
+  const read = useResource<Lot[]>(
+    item.tracksLots ? `/stock/lots?variantId=${item.variantId}` : null,
+  ).data;
+  const lots = read ?? [];
 
   const unit = unitLabel(item.unitOfMeasure, intl);
   const place = locations.find((each) => each.id === form.locationId);
 
-  /** "Counted in 12 each of VITC-100 at Shelf C3, new lot VC-0310." */
+  /**
+   * "Counted in 12 each of VITC-100 at Shelf C3, new lot VC-0310.", the
+   * lot as the write names it, a code made for us to write on the stock.
+   */
   function said(result: RecordedMovementEnvelope) {
-    const lot = item.tracksLots ? form.which : 'none';
-    const code =
-      form.which === 'new'
-        ? form.code.trim().toUpperCase()
-        : (lots.find((each) => each.id === form.lotId)?.code ?? '');
+    const made = form.which === 'new' && form.lot.made;
+    const lot = !item.tracksLots ? 'none' : made ? 'made' : form.which;
+    const code = result.lotCode ?? '';
     const counted = intl.formatMessage(
       {
         id: 'inventory.countIn.done',
         defaultMessage:
-          '{lot, select, new {Counted in {amount} of {sku} at {place}, new lot {code}.} existing {Counted in {amount} of {sku} at {place}, lot {code}.} other {Counted in {amount} of {sku} at {place}.}}',
+          '{lot, select, made {Counted in {amount} of {sku} at {place}, new lot {code}. Write this code on the stock.} new {Counted in {amount} of {sku} at {place}, new lot {code}.} existing {Counted in {amount} of {sku} at {place}, lot {code}.} other {Counted in {amount} of {sku} at {place}.}}',
       },
       {
         lot,
@@ -142,7 +154,7 @@ export function CountInDialog({
     // a cost for whoever may set one (90a); otherwise to its Movements at
     // that place.
     const waits = result.needsCost;
-    toast(
+    say(
       waits
         ? intl.formatMessage(
             {
@@ -152,28 +164,32 @@ export function CountInDialog({
             { counted },
           )
         : counted,
-      waits && canSeeCosts
-        ? {
-            label: intl.formatMessage({
-              id: 'costs.waiting',
-              defaultMessage: 'Waiting for a cost',
-            }),
-            onClick: () => void navigate('/costs#costs', { state: OFFER_BACK }),
-          }
-        : {
-            label: intl.formatMessage({
-              id: 'layout.nav.movements',
-              defaultMessage: 'Movements',
-            }),
-            onClick: () =>
-              void navigate(
-                movementsPath({
-                  variantId: item.variantId,
-                  locationId: form.locationId,
-                }),
-                { state: OFFER_BACK },
-              ),
-          },
+      code ? { id: result.movement.lotId, code, made } : null,
+      [
+        waits && canSeeCosts
+          ? {
+              label: intl.formatMessage({
+                id: 'costs.waiting',
+                defaultMessage: 'Waiting for a cost',
+              }),
+              onClick: () =>
+                void navigate('/costs#costs', { state: OFFER_BACK }),
+            }
+          : {
+              label: intl.formatMessage({
+                id: 'layout.nav.movements',
+                defaultMessage: 'Movements',
+              }),
+              onClick: () =>
+                void navigate(
+                  movementsPath({
+                    variantId: item.variantId,
+                    locationId: form.locationId,
+                  }),
+                  { state: OFFER_BACK },
+                ),
+            },
+      ],
     );
   }
 
@@ -221,6 +237,23 @@ export function CountInDialog({
     }
     setQuantityError(null);
 
+    // The new lot's own check, focus on the first it refused (#310).
+    if (item.tracksLots && form.which === 'new') {
+      const found = lotErrors(form.lot, lots, intl, true);
+      setLotProblems(found);
+      const first = (
+        [
+          ['code', codeRef],
+          ['expiry', expiryRef],
+          ['day', dayRef],
+        ] as const
+      ).find(([field]) => found[field]);
+      if (first) {
+        first[1].current?.focus();
+        return;
+      }
+    }
+
     const lot = !item.tracksLots
       ? {}
       : form.which === 'new'
@@ -228,11 +261,7 @@ export function CountInDialog({
             // A new lot, never added to one of the same code: the server
             // refuses a code the item has, since one of its lots is
             // chosen by its id (ADR-093, 84a; #649's 46).
-            lot: {
-              code: form.code,
-              mustBeNew: true,
-              expiresAt: form.expiresAt || undefined,
-            },
+            lot: lotRequest(form.lot, lots, true),
           }
         : { lotId: form.lotId };
 
@@ -371,49 +400,31 @@ export function CountInDialog({
             )}
 
             {form.which === 'new' && (
-              <>
-                <TextField
-                  id="count-in-lot-code"
-                  label={intl.formatMessage({
-                    id: 'inventory.lot.number',
-                    defaultMessage: 'Lot number',
-                  })}
-                  required
-                  fullWidth
-                  value={form.code}
-                  onChange={(event) => change({ code: event.target.value })}
-                  inputRef={codeRef}
-                  error={taken}
-                  helperText={
-                    taken
-                      ? error
-                      : intl.formatMessage({
-                          id: 'inventory.countIn.lotNumber.help',
-                          defaultMessage:
-                            'As printed on the box, a code the item does not have yet.',
-                        })
-                  }
-                  slotProps={{ htmlInput: { maxLength: 64 } }}
-                />
-                <TextField
-                  id="count-in-lot-expires"
-                  label={intl.formatMessage({
-                    id: 'inventory.lot.expires',
-                    defaultMessage: 'Expires',
-                  })}
-                  type="date"
-                  fullWidth
-                  value={form.expiresAt}
-                  onChange={(event) =>
-                    change({ expiresAt: event.target.value })
-                  }
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  helperText={intl.formatMessage({
-                    id: 'inventory.lot.expires.help',
-                    defaultMessage: 'Leave blank if it does not expire.',
-                  })}
-                />
-              </>
+              <LotFields
+                idPrefix="count-in"
+                variantId={item.variantId}
+                unitOfMeasure={item.unitOfMeasure}
+                lots={lots}
+                knowsLots={read !== null}
+                mustBeNew
+                value={form.lot}
+                onChange={(update) => {
+                  setLotProblems({});
+                  setForm((current) => ({
+                    ...current,
+                    lot: update(current.lot),
+                  }));
+                  reset();
+                }}
+                codeRef={codeRef}
+                expiryRef={expiryRef}
+                dayRef={dayRef}
+                errors={{
+                  ...lotProblems,
+                  // A code the item has, said at the code (ADR-093's table).
+                  code: taken ? (error ?? undefined) : lotProblems.code,
+                }}
+              />
             )}
 
             <TextField

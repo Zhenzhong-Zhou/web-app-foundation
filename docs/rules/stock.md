@@ -815,6 +815,23 @@ file is kept is in the [README](README.md).
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-receipt-with-no-order-says-why-and-from-whom) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "a receipt with no order (R11)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a why that is not one of them, saying the four, and writes nothing"
+- **A new lot's Expires starts as the item's newest lot had it,** none
+  chosen for an item's first lot, and on Not known yet for a code made
+  for us, until the person chooses; a typed code the item has asks no
+  expiry, its own kept. Nothing is received until a new lot's expiry is
+  chosen, with its day for a date.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [test](../../client/src/inventory/lot-fields.test.tsx) "starts Expires as the item’s last lot had it, each of the three" ·
+  [test](../../client/src/inventory/lot-fields.test.tsx) "has none chosen for a first lot" ·
+  [test](../../client/src/inventory/lot-fields.test.tsx) "makes a code for us when saved, offering the supplier’s lot and starting Expires on Not known yet; Type one instead empties the field, focus in it" ·
+  [test](../../client/src/inventory/lot-fields.test.tsx) "says a typed code is a lot the item has, which this adds to, with its expiry and what is where, and asks no expiry"
+- **Receive stock asks why there is no order of every receipt it
+  makes,** and receives nothing until it is answered. Found in a count
+  is no receipt: it opens Count it in… with the item and the place, for
+  whoever may correct counts.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-receipt-with-no-order-says-why-and-from-whom) ·
+  [test](../../client/src/inventory/receive-stock-dialog.test.tsx) "says what each empty field needs, focusing the first" ·
+  [test](../../client/src/inventory/receive-stock-dialog.test.tsx) "opens Count it in… for Found in a count with the item and place, then gives focus back to the question"
 - **A receipt with no order may name whom it came from,** a partner of
   this organization, kept as a sample's recipient is and read under For
   on Movements and in its export. Another organization's partner is

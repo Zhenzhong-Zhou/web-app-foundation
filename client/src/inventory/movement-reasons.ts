@@ -44,8 +44,20 @@ const REASONS = defineMessages({
 });
 
 /**
- * A correction's details by name, and a voided shipment's goods back,
- * the server's `shipment_voided`, which no one chooses (#647).
+ * Why stock was received with no order (ADR-094, R11), as Receive stock
+ * asks it and the server keeps it, `other` with a note or without.
+ */
+export const RECEIPT_DETAILS = [
+  'opening',
+  'returned',
+  'sample',
+  'other',
+] as const;
+
+/**
+ * A correction's details by name, a receipt's with no order, Movements
+ * reading "Received: opening stock" (R11), and a voided shipment's goods
+ * back, the server's `shipment_voided`, which no one chooses (#647).
  */
 const DETAILS = defineMessages({
   miscount: { id: 'inventory.detail.miscount', defaultMessage: 'Miscount' },
@@ -53,6 +65,10 @@ const DETAILS = defineMessages({
   expired: { id: 'inventory.detail.expired', defaultMessage: 'Expired' },
   lost: { id: 'inventory.detail.lost', defaultMessage: 'Lost' },
   found: { id: 'inventory.detail.found', defaultMessage: 'Found' },
+  opening: { id: 'inventory.detail.opening', defaultMessage: 'Opening stock' },
+  returned: { id: 'inventory.detail.returned', defaultMessage: 'Returned' },
+  sample: { id: 'inventory.detail.sample', defaultMessage: 'A sample' },
+  other: { id: 'inventory.detail.other', defaultMessage: 'Other' },
   shipment_voided: {
     id: 'inventory.detail.shipmentVoided',
     defaultMessage: 'Shipment voided',
@@ -70,7 +86,10 @@ export function reasonLabel(reason: string, intl: IntlShape): string {
     : reason;
 }
 
-/** A correction's detail by name, likewise: Correct the count's Why. */
+/**
+ * A correction's or a receipt's detail by name, likewise: Correct the
+ * count's Why and Receive stock's Why is there no order?.
+ */
 export function reasonDetailLabel(detail: string, intl: IntlShape): string {
   return detail in DETAILS
     ? intl.formatMessage(DETAILS[detail as keyof typeof DETAILS])

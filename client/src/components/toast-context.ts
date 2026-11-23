@@ -9,7 +9,14 @@ export interface ToastAction {
   onClick: () => void;
 }
 
-export type ShowToast = (message: string, action?: ToastAction) => void;
+/**
+ * One button, or a few in their order: a lot made at receipt offers Copy
+ * code and Open the lot (ADR-094, E3).
+ */
+export type ShowToast = (
+  message: string,
+  action?: ToastAction | readonly ToastAction[],
+) => void;
 
 /**
  * A no-op by default, so a component rendered outside the provider — a

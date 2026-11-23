@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render as renderPlain, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { Delivery, Location, OrderLine } from '../api/types.gen';
@@ -8,6 +10,11 @@ import { ToastProvider } from '../components/toast-provider';
 import { orderLine } from '../test/factories';
 import { server } from '../test/setup';
 import { ReceiveLineDialog } from './receive-line-dialog';
+
+/** The message's Open the lot goes through the router. */
+function render(ui: ReactElement) {
+  return renderPlain(ui, { wrapper: MemoryRouter });
+}
 
 const DOCK: Location = {
   id: 'loc-dock',
@@ -64,7 +71,11 @@ async function receive(line: OrderLine, lotCode?: string) {
   await user.click(screen.getByLabelText(/Into/));
   await user.click(await screen.findByRole('option', { name: 'Dock' }));
   await user.type(screen.getByLabelText(/Quantity/), '4');
-  if (lotCode) await user.type(screen.getByLabelText(/Lot number/), lotCode);
+  if (lotCode) {
+    await user.type(screen.getByLabelText(/Lot number/), lotCode);
+    // A lot the dialog cannot read is asked when it expires (ADR-094, R8).
+    await user.click(screen.getByRole('radio', { name: 'Doesn’t expire' }));
+  }
   await user.click(screen.getByRole('button', { name: 'Receive' }));
 
   await expect.poll(() => sent.length).toBe(1);
@@ -78,16 +89,22 @@ describe('ReceiveLineDialog', () => {
       'OIL-0425',
     );
 
-    expect(sent.lot).toEqual({ code: 'OIL-0425' });
+    expect(sent.lot).toEqual({ code: 'OIL-0425', expiry: 'none' });
     expect(reads).toEqual([]);
   });
 
-  it('shows the unit beside what is outstanding', () => {
+  // #160: the text beside the field reads a quantity as the page does.
+  it('shows what is outstanding and received so far as the page reads them, with the unit', () => {
     render(
       <ReceiveLineDialog
         orderId="order-1"
         orderNumber="PO-000001"
-        line={orderLine({ unitOfMeasure: 'kg' })}
+        line={orderLine({
+          unitOfMeasure: 'kg',
+          quantityOrdered: '100.0000',
+          quantityFulfilled: '60.0000',
+          quantityOutstanding: '40.0000',
+        })}
         locations={[DOCK]}
         tree={[DOCK]}
         canSeeLots={false}
@@ -97,8 +114,9 @@ describe('ReceiveLineDialog', () => {
     );
 
     expect(
-      screen.getByText('Up to 40.0000 kg still outstanding.'),
+      screen.getByText('Up to 40 kg still outstanding.'),
     ).toBeInTheDocument();
+    expect(screen.getByText('60 of 100 received so far.')).toBeInTheDocument();
   });
 
   it('sends no lot, and offers none, for a line that does not track them', async () => {
@@ -106,6 +124,82 @@ describe('ReceiveLineDialog', () => {
 
     expect(sent).not.toHaveProperty('lot');
     expect(screen.queryByLabelText(/Lot number/)).not.toBeInTheDocument();
+  });
+
+  // ADR-094, R3, R5 and E3: a code made for us on an order's Receive.
+  it('makes a code for us with the supplier’s lot, the message naming it with Copy code, Open the lot and Open the order', async () => {
+    const user = userEvent.setup();
+    const line = orderLine({ tracksLots: true });
+    const sent: unknown[] = [];
+    server.use(
+      http.post(
+        `/api/v1/orders/order-1/lines/${line.id}/receipts`,
+        async ({ request }) => {
+          sent.push(await request.json());
+          return HttpResponse.json(
+            {
+              movement: { id: 'm1', lotId: 'lot-made' },
+              needsCost: false,
+              lotCode: 'L-2026-10-17-1',
+            },
+            { status: 201 },
+          );
+        },
+      ),
+    );
+    let received: unknown = null;
+    render(
+      <ToastProvider>
+        <ReceiveLineDialog
+          orderId="order-1"
+          orderNumber="PO-000001"
+          line={line}
+          locations={[DOCK]}
+          tree={[DOCK]}
+          canSeeLots
+          onClose={() => undefined}
+          onReceived={(at) => {
+            received = at;
+            return Promise.resolve();
+          }}
+          onOpenOrder={() => undefined}
+        />
+      </ToastProvider>,
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'Into' }));
+    await user.click(await screen.findByRole('option', { name: 'Dock' }));
+    await user.type(screen.getByRole('textbox', { name: 'Quantity' }), '4');
+    await user.click(
+      screen.getByRole('button', { name: 'Make a code for us' }),
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'Supplier’s lot' }),
+      'Hx-2609',
+    );
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    await expect
+      .poll(() => sent)
+      .toEqual([
+        expect.objectContaining({
+          lot: { makeCode: true, supplierLot: 'Hx-2609', expiry: 'unknown' },
+        }),
+      ]);
+    const message = await screen.findByRole('status', { hidden: true });
+    expect(message).toHaveTextContent(
+      `Received 4 each of ${line.sku} on PO-000001, new lot L-2026-10-17-1. Write this code on the delivery.`,
+    );
+    // Its buttons in their order, the close button aside.
+    expect(
+      Array.from(message.querySelectorAll('button'))
+        .map((button) => button.textContent)
+        .filter(Boolean),
+    ).toEqual(['Copy code', 'Open the lot', 'Open the order']);
+    expect(received).toEqual({
+      variantId: line.variantId,
+      locationId: 'loc-dock',
+    });
   });
 
   // ADR-093, v3: opened over Stock for a delivery chosen there.

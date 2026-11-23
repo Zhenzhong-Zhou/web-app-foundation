@@ -38,10 +38,11 @@ Home’s **Expiring soon** opens this view, soonest first, the expired on top, a
 
 1. Press **Receive stock**.
 2. Choose the item. When it is still to come on a purchase, Inventory first asks **Which delivery is this?**, listing each order with what is still to come and when: choose its order, and press **Continue**; that order’s own **Receive** opens with what is still to come filled in. Choose **Not on an order** for stock that came without one, and carry on here.
-3. Choose the location it goes **Into**. Only locations that hold stock directly are listed.
-4. Type the quantity, in the item’s unit.
-5. For an item tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
-6. Press **Receive**.
+3. Say **Why is there no order?**: **Opening stock**, **Returned**, **A sample** or **Other**, with a note if you like; whom it came from goes under **From**. Stock found in a count is no receipt: **Found in a count** opens **Correct the count** with the item and the place.
+4. Choose the location it goes **Into**. Only locations that hold stock directly are listed.
+5. Type the quantity, in the item’s unit.
+6. For an item tracked by lot, type the lot number as printed on the box; under it the field says whether it is one of the item’s lots, which this adds to, or a new lot. With no lot on the box, press **Make a code for us**: the code is made when you save, and the message names it, to write on the delivery, with **Copy code**. For a new lot, choose when it **Expires**: **On a date**, **Not known yet** or **Doesn’t expire**, starting as the item’s last lot had it.
+7. Press **Receive**.
 
 Goods a supplier sends against a purchase are received on its order, so the order closes and the stock is counted once: here by choosing it, or on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.
 

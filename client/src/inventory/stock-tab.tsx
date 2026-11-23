@@ -306,7 +306,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [receivingItem, setReceivingItem] = useState<string | null>(null);
   /** The delivery chosen for it, received on its order's line (ADR-093, v3). */
   const [delivery, setDelivery] = useState<Delivery | null>(null);
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   // The rows open, in the address so Back finds them open (ADR-093's
   // Stock table), and the row Back returns focus to, once.
   const writeAddress = useAddressWrite();
@@ -319,7 +319,17 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   );
   const [editingLot, setEditingLot] = useState<Pile | null>(null);
   const [countingIn, setCountingIn] = useState<CountInItem | null>(null);
+  // Count it in… from Receive stock's Found in a count, at its place (R12).
+  const [foundAt, setFoundAt] = useState<string | null>(null);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
+
+  function closeReceiving() {
+    setReceiving(false);
+    setReceivingItem(null);
+    // The link's state kept, so Back stays (#341); written as the row
+    // opened after a receipt is, so neither undoes the other.
+    if (asked) writeAddress({ receive: null });
+  }
 
   const refresh = async () => {
     reload();
@@ -350,6 +360,20 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     );
     if (open) next.push(key);
     writeAddress({ open: next.length ? String(next) : null });
+  };
+
+  // Received: the code's row open, at its place, its lots open (ADR-094's
+  // table), as Count it in… lands.
+  const openReceived = ({
+    variantId,
+    locationId,
+  }: {
+    variantId: string;
+    locationId: string;
+  }) => {
+    const place = openKey(variantId, locationId);
+    const next = opens.filter((each) => each !== variantId && each !== place);
+    writeAddress({ open: String([...next, variantId, place]) });
   };
 
   if (list.refused) {
@@ -945,25 +969,25 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         tree={locations}
         defaultLocationId={locationId}
         defaultVariantId={receivingItem ?? ''}
-        onClose={() => {
-          setReceiving(false);
-          setReceivingItem(null);
-          if (asked) {
-            setParams(
-              (current) => {
-                const next = new URLSearchParams(current);
-                next.delete('receive');
-                return next;
-              },
-              // The link's state kept, so Back stays (#341).
-              { replace: true, state: routed.state },
-            );
-          }
+        canSeePartners={can('partners.view')}
+        counting={!!countingIn && foundAt !== null}
+        onClose={closeReceiving}
+        onReceived={async (received) => {
+          openReceived(received);
+          await refresh();
         }}
-        onReceived={refresh}
         // Asked of whoever may see orders and receive on them.
         onDelivery={
           can('orders.view') && can('orders.receive') ? setDelivery : undefined
+        }
+        // Found in a count, for whoever may correct counts (R12).
+        onFoundInCount={
+          can('stock.adjust')
+            ? (item, locationId) => {
+                setFoundAt(locationId);
+                setCountingIn(item);
+              }
+            : undefined
         }
       />
 
@@ -980,7 +1004,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           tree={locations}
           canSeeLots
           onClose={() => setDelivery(null)}
-          onReceived={refresh}
+          onReceived={async (received) => {
+            openReceived(received);
+            await refresh();
+          }}
           onOpenOrder={() =>
             navigate(`/orders/${delivery.orderId}`, { state: OFFER_BACK })
           }
@@ -1007,9 +1034,16 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           item={countingIn}
           locations={leaves}
           tree={locations}
+          defaultLocationId={foundAt ?? ''}
           canSeeCosts={can('costs.view')}
-          onClose={() => setCountingIn(null)}
+          onClose={() => {
+            setCountingIn(null);
+            setFoundAt(null);
+          }}
           onCounted={async (locationId) => {
+            // Counted in from Found in a count: no receipt is left to make.
+            if (foundAt !== null) closeReceiving();
+            setFoundAt(null);
             openRow(openKey(countingIn.variantId, locationId), true);
             await refresh();
           }}

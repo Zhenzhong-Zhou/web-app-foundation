@@ -36,6 +36,10 @@ test('receives stock and shows it in the inventory table', async ({
   await dialog.getByLabel('Item').click();
   await page.getByRole('option', { name: new RegExp(product.sku) }).click();
 
+  // Asked of every receipt with no order (ADR-094, R11).
+  await dialog.getByLabel('Why is there no order?').click();
+  await page.getByRole('option', { name: 'Opening stock' }).click();
+
   await dialog.getByLabel('Into').click();
   await page.getByRole('option', { name: location.name }).click();
 
@@ -47,15 +51,18 @@ test('receives stock and shows it in the inventory table', async ({
    * ADR-055): trimmed as text, never parsed, so a column turned float would
    * still show here as its digits changed. Matched as the whole cell, since
    * "40.5 each" is inside "140.5 each"; On hand is the first, Free the
-   * same beside it. A row per code (ADR-093) opens to where it is.
+   * same beside it. A row per code (ADR-093) opens to where it is, and
+   * the receipt lands with it open there (ADR-094's table).
    */
-  const row = page.getByRole('row', { name: new RegExp(product.sku) });
+  const row = page.getByRole('row', { name: new RegExp(product.sku) }).first();
 
   await expect(row).toBeVisible();
   await expect(
     row.getByRole('cell', { name: '40.5 each', exact: true }).first(),
   ).toBeVisible();
-  await row.getByRole('button', { name: /^1 place: show where/ }).click();
+  await expect(
+    row.getByRole('button', { name: /^1 place: hide where/ }),
+  ).toHaveAttribute('aria-expanded', 'true');
   await expect(
     page.getByRole('row', { name: new RegExp(location.name) }),
   ).toBeVisible();
@@ -83,24 +90,31 @@ test('requires a lot for a lot-tracked variant', async ({ page, api }) => {
 
   await expect(dialog.getByLabel('Lot number')).toBeVisible();
 
+  await dialog.getByLabel('Why is there no order?').click();
+  await page.getByRole('option', { name: 'Opening stock' }).click();
+
   await dialog.getByLabel('Into').click();
   await page.getByRole('option', { name: location.name }).click();
 
   await dialog.getByLabel('Quantity').fill('12');
   await dialog.getByLabel('Lot number').fill('L2024-A');
+  // A first lot: none chosen, so its expiry is asked (ADR-094, R8).
+  await dialog.getByRole('radio', { name: 'Doesn’t expire' }).check();
   await dialog.getByRole('button', { name: 'Receive' }).click();
 
-  const row = page.getByRole('row', { name: new RegExp(product.sku) });
+  const row = page.getByRole('row', { name: new RegExp(product.sku) }).first();
 
   await expect(row).toBeVisible();
   await expect(
     row.getByRole('cell', { name: '12 each', exact: true }).first(),
   ).toBeVisible();
-  // Its place, then the place's lot, a link to its trace (ADR-093, R2).
-  await row.getByRole('button', { name: /^1 place: show where/ }).click();
-  await page
-    .getByRole('button', { name: `1 lot: show the lots at ${location.name}` })
-    .click();
+  // Landed open at its place and the place's lots, the lot a link to its
+  // trace (ADR-093, R2; ADR-094's table).
+  await expect(
+    page.getByRole('button', {
+      name: `1 lot: hide the lots at ${location.name}`,
+    }),
+  ).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByRole('link', { name: 'L2024-A' })).toBeVisible();
 });
 

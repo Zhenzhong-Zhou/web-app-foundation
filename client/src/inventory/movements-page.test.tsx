@@ -166,6 +166,15 @@ describe('MovementsPage', () => {
     expect(within(row).getByText('Corrected: found')).toBeVisible();
   });
 
+  // ADR-094, R11: why a receipt had no order, after its reason.
+  it('says why a receipt had no order after its reason, Received: opening stock', async () => {
+    const row = await rowFor(
+      movement({ reason: 'receipt', reasonDetail: 'opening' }),
+    );
+
+    expect(within(row).getByText('Received: opening stock')).toBeVisible();
+  });
+
   it('says a reason with its capital in French, its detail in lower case', async () => {
     localStorage.setItem('language', 'fr-CA');
     try {
