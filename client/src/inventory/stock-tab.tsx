@@ -967,15 +967,22 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                           defaultMessage:
                             'Nothing is low. An item with no reorder point is never low: set one on Reorder.',
                         })
-                      : byLot
-                        ? intl.formatMessage({
-                            id: 'inventory.lots.noMatch',
-                            defaultMessage: 'No lots match these filters.',
+                      : byLot && detailsToAdd && counts?.detailsToAdd === 0
+                        ? // Done: no lot lacks its details (v16's Empty
+                          // state; review 32).
+                          intl.formatMessage({
+                            id: 'inventory.lots.allDetails',
+                            defaultMessage: 'Every lot has its details.',
                           })
-                        : intl.formatMessage({
-                            id: 'inventory.stock.noMatch',
-                            defaultMessage: 'No items match these filters.',
-                          })}
+                        : byLot
+                          ? intl.formatMessage({
+                              id: 'inventory.lots.noMatch',
+                              defaultMessage: 'No lots match these filters.',
+                            })
+                          : intl.formatMessage({
+                              id: 'inventory.stock.noMatch',
+                              defaultMessage: 'No items match these filters.',
+                            })}
               </EmptyState>
             )}
           </Paper>

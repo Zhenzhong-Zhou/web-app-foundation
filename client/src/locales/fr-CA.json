@@ -703,6 +703,7 @@
   "inventory.lot.supplierLotToAdd": "Lot du fournisseur à ajouter",
   "inventory.lot.title": "Lot {code}",
   "inventory.lot.typeInstead": "Saisir un code plutôt",
+  "inventory.lots.allDetails": "Chaque lot a ses détails.",
   "inventory.lots.byItem": "Regrouper par article",
   "inventory.lots.noMatch": "Aucun lot ne correspond à ces filtres.",
   "inventory.lots.order": "Les plus proches d’abord, les périmés en tête.",

@@ -703,6 +703,7 @@
   "inventory.lot.supplierLotToAdd": "待补供应商批号",
   "inventory.lot.title": "批次 {code}",
   "inventory.lot.typeInstead": "改为照包装填写",
+  "inventory.lots.allDetails": "所有批次的信息都已补全。",
   "inventory.lots.byItem": "按物品分组",
   "inventory.lots.noMatch": "没有符合这些筛选条件的批次。",
   "inventory.lots.order": "最先到期的在前，已过期的在最上面。",

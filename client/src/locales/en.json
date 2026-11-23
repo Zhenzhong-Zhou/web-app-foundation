@@ -703,6 +703,7 @@
   "inventory.lot.supplierLotToAdd": "Supplier’s lot to add",
   "inventory.lot.title": "Lot {code}",
   "inventory.lot.typeInstead": "Type one instead",
+  "inventory.lots.allDetails": "Every lot has its details.",
   "inventory.lots.byItem": "Group by Item",
   "inventory.lots.noMatch": "No lots match these filters.",
   "inventory.lots.order": "Soonest first, the expired on top.",

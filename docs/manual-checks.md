@@ -769,7 +769,8 @@ a second organization.
   Hx-2609"; the same on the Lot view and in Where it stands, by place and
   in the usable lots. Group by Lot: Details to add, its count of lots
   after it, lists those lots alone, in the address; Back returns the Lot view as it
-  was. Group by Item offers no Details to add. With Main's Shelf chosen
+  was; once no lot lacks its details it reads "Every lot has its
+  details." with Show all stock. Group by Item offers no Details to add. With Main's Shelf chosen
   and Include empty, an item that started tracking lots and whose only
   stock there was before it is not listed.
 - **MC-331** *(ADR-094, R16, R20)* A lot change on Movements. Choose Lot

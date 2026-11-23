@@ -1871,6 +1871,34 @@ describe('InventoryPage', () => {
       ).not.toBeInTheDocument();
     });
 
+    // Review 32: Details to add's own done state.
+    it('says every lot has its details where none lacks them, with Show all stock', async () => {
+      answer();
+      server.use(
+        http.get('/api/v1/stock/by-lot/counts', () =>
+          HttpResponse.json({
+            low: 0,
+            expiring: 0,
+            expired: 0,
+            needsCost: 0,
+            detailsToAdd: 0,
+            total: 0,
+          }),
+        ),
+      );
+      renderAt('/inventory?group=lot&detailsToAdd=1', [
+        'stock.view',
+        'locations.view',
+      ]);
+
+      expect(
+        await screen.findByText('Every lot has its details.'),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Show all stock' }),
+      ).toBeVisible();
+    });
+
     it('says items that are out have no lots, with Group by Item', async () => {
       const user = userEvent.setup();
       const asked = answer();
