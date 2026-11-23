@@ -3,62 +3,74 @@ import { useEffect, useEffectEvent, useState } from 'react';
 import { INDICATOR_DELAY_MS } from './use-delayed-flag';
 
 interface Opened<T> {
-  open: boolean;
-  /** Which opening the rows are for, so an answer to an earlier is ignored. */
+  /**
+   * Its rows not asked for, as a closed row holds none; asking, or
+   * answered, with rows or a failure.
+   */
+  phase: 'none' | 'reading' | 'read';
+  /** Which reading the rows are for, so an answer to an earlier is ignored. */
   ask: number;
   rows: T | null;
-  reading: boolean;
   /** The read has taken past the wait. */
   slow: boolean;
   failure: unknown;
 }
 
-const CLOSED = {
-  open: false,
+const NONE = {
+  phase: 'none',
   rows: null,
-  reading: false,
   slow: false,
   failure: null,
 } as const;
+
+/** Its rows asked for afresh, the earlier answer dropped. */
+const asking = <T>(was: Opened<T>): Opened<T> => ({
+  ...NONE,
+  phase: 'reading',
+  ask: was.ask + 1,
+});
 
 /**
  * The rows a row opens to (ADR-093's opening row, `OpeningButton`): a
  * code's places, or a place's lots, read each time it opens, so they are
  * never older than the row above them.
  *
+ * Whether it is open is the caller's alone, as the address says it
+ * (`?open=`), and is never kept here: open, its rows are asked for; closed,
+ * it holds none, and an answer that comes after is ignored. So a row the
+ * address comes to name opens, whenever it does (ADR-094, S1).
+ *
  * `busy` once the read has taken past 250 ms, nothing before, so a quick
  * answer never flashes "Reading…"; `failure` when it could not be read,
- * with `retry`, the partial state's Try again beside the rows. Closing it
- * drops its rows, and an answer that comes after is ignored. Whenever
+ * with `retry`, the partial state's Try again beside the rows. Whenever
  * `again` changes while it is open, as when stock has moved, it reads
  * them again, the rows shown kept until the new ones come.
  */
 export function useOpenRows<T>(
   read: () => Promise<T>,
+  open: boolean,
   again?: unknown,
-  /** Open, and reading, from the start: a row the address names open. */
-  startOpen = false,
 ): {
-  open: boolean;
   rows: T | null;
   busy: boolean;
   failure: unknown;
-  toggle: () => void;
   retry: () => void;
 } {
-  const [state, setState] = useState<Opened<T>>(
-    startOpen
-      ? { ...CLOSED, open: true, reading: true, ask: 1 }
-      : { ...CLOSED, ask: 0 },
-  );
+  const [state, setState] = useState<Opened<T>>({ ...NONE, ask: 0 });
+  // Brought level with `open` as it is drawn, as React adjusts state to a
+  // prop: never a copy of it, only what its rows are.
+  if (open && state.phase === 'none') setState(asking);
+  if (!open && state.phase !== 'none') {
+    setState((was) => ({ ...NONE, ask: was.ask + 1 }));
+  }
   const [seen, setSeen] = useState(again);
   if (seen !== again) {
     setSeen(again);
-    if (state.open) {
+    if (open && state.phase !== 'none') {
       setState((was) => ({
         ...was,
+        phase: 'reading',
         ask: was.ask + 1,
-        reading: true,
         slow: false,
         failure: null,
       }));
@@ -67,44 +79,28 @@ export function useOpenRows<T>(
 
   // The read for each ask, and the wait before it says "Reading…".
   const readRows = useEffectEvent(read);
-  const { ask, open, reading } = state;
+  const { ask, phase } = state;
   useEffect(() => {
-    if (!open || !reading) return;
+    if (phase !== 'reading') return;
     const ours = (change: (was: Opened<T>) => Opened<T>) =>
       setState((was) => (was.ask === ask ? change(was) : was));
 
     const wait = setTimeout(
-      () => ours((was) => (was.reading ? { ...was, slow: true } : was)),
+      () =>
+        ours((was) => (was.phase === 'reading' ? { ...was, slow: true } : was)),
       INDICATOR_DELAY_MS,
     );
     void readRows().then(
-      (rows) => ours((was) => ({ ...was, rows, reading: false })),
-      (failure: unknown) =>
-        ours((was) => ({ ...was, failure, reading: false })),
+      (rows) => ours((was) => ({ ...was, rows, phase: 'read' })),
+      (failure: unknown) => ours((was) => ({ ...was, failure, phase: 'read' })),
     );
     return () => clearTimeout(wait);
-  }, [ask, open, reading]);
-
-  function start() {
-    setState((was) => ({
-      ...CLOSED,
-      open: true,
-      ask: was.ask + 1,
-      reading: true,
-    }));
-  }
-
-  function toggle() {
-    if (state.open) setState((was) => ({ ...CLOSED, ask: was.ask + 1 }));
-    else start();
-  }
+  }, [ask, phase]);
 
   return {
-    open: state.open,
     rows: state.rows,
-    busy: state.reading && state.slow,
+    busy: state.phase === 'reading' && state.slow,
     failure: state.failure,
-    toggle,
-    retry: start,
+    retry: () => setState(asking),
   };
 }

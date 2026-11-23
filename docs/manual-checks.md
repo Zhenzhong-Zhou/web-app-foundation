@@ -628,12 +628,12 @@ a second organization.
   Write this code on the stock." with Copy code and Open the lot.
 - **MC-325** *(ADR-094, R3, R5, R8, R10; #160)* A new lot's fields, the
   same in Receive stock, an order's Receive and Count it in's A new lot.
-  As the demo Owner, Receive stock… for K2-60CT, as opening stock.
-  Lot number reads "As printed on the box." with Make a code for us
-  under it, and Expires offers On a date, Not known yet and Doesn't
-  expire, the one K2-60CT's last lot had chosen; for an item with no
-  lots yet none is chosen, and Receive says "Choose when the lot
-  expires." there. Type `k2-2609`: under it "An existing lot. This adds
+  As the demo Owner, on Stock with K2-60CT's row closed, Receive
+  stock… for K2-60CT, as opening stock. Lot number reads "As printed
+  on the box." with Make a code for us under it, and Expires offers On
+  a date, Not known yet and Doesn't expire, the one K2-60CT's last lot
+  had chosen; for an item with no lots yet none is chosen, and Receive
+  says "Choose when the lot expires." there. Type `k2-2609`: under it "An existing lot. This adds
   to it." and its expiry and where it is, "… each at Main › Shelf …",
   and Expires is gone, the lot's own kept. Type `K2-9999`: "A new
   lot.", Expires back; On a date asks The day it expires. Press Make a
@@ -646,9 +646,10 @@ a second organization.
   receive 5: "Received 5 each of K2-60CT with no order, new lot
   L-…. Write this code on the delivery. It waits for a cost." with Copy
   code and Open the lot. Copy code says "Lot code L-… copied." and the
-  code pastes; Open the lot opens its page, Back returning to Stock,
-  where K2-60CT's row is open at its place and lot. On an order's
-  Receive, the same fields, the message "Received … on PO-…, new lot
+  code pastes. Stock, behind the message, has opened K2-60CT's row at
+  its place, the new lot shown, though the row was closed before; Open
+  the lot opens its page, Back returning to Stock as it was. On an
+  order's Receive, the same fields, the message "Received … on PO-…, new lot
   L-…. Write this code on the delivery." with Copy code, Open the lot
   and, over Stock, Open the order; its lines read "60 of 100 received so
   far." and "Up to 40 each still outstanding.", as the order's page
@@ -664,7 +665,8 @@ a second organization.
   Choose Found in a count: Correct the count opens over Receive stock
   with Count it in's fields, the item's place kept; Escape returns to
   Receive stock, focus on Why is there no order?, still unanswered;
-  counting it in instead closes both and Stock opens at the place. A
+  counting it in instead closes both and Stock opens the item's row at
+  the place, its lots shown, though the row was closed before. A
   role without `stock.adjust` is offered no Found in a count, and one
   without `partners.view` no From. In Français « Pourquoi n'y a-t-il
   pas de commande? »; in 中文 为什么没有订单？ and 盘盈.

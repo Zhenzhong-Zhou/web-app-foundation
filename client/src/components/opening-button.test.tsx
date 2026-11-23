@@ -1,10 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useOpenRows } from '../lib/use-open-rows';
 import { OpeningButton } from './opening-button';
 
-/** A row's places, as Stock opens them (ADR-093). */
+/**
+ * A row's places, as Stock opens them (ADR-093), open as its own state
+ * says, as Stock's are as the address says.
+ */
 function Places({
   read,
   again,
@@ -12,7 +16,8 @@ function Places({
   read: () => Promise<string[]>;
   again?: number;
 }) {
-  const places = useOpenRows(read, again);
+  const [open, setOpen] = useState(false);
+  const places = useOpenRows(read, open, again);
 
   return (
     <>
@@ -22,12 +27,12 @@ function Places({
           show: 'Show where Vitamin C is',
           hide: 'Hide where Vitamin C is',
         }}
-        open={places.open}
+        open={open}
         busy={places.busy}
         controls="places"
-        onClick={places.toggle}
+        onClick={() => setOpen(!open)}
       />
-      {places.open && (
+      {open && (
         <ul id="places">
           {places.rows?.map((place) => (
             <li key={place}>{place}</li>

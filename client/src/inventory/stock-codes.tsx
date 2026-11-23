@@ -280,9 +280,13 @@ export function StockCodes({
  * row, the rows open).
  */
 interface Returning {
-  /** The codes whose rows are open, and the places whose lots are (openKey). */
+  /**
+   * The codes whose rows are open, and the places whose lots are (openKey):
+   * what each row draws, never a copy (ADR-094, S1).
+   */
   opens: string[];
-  onOpen: (key: string, open: boolean) => void;
+  /** Rows opened or closed, written to the address, which draws them. */
+  onOpen: (keys: string[], open: boolean) => void;
   /** The code whose name takes focus once its row is drawn. */
   focusRow: string | null;
 }
@@ -310,13 +314,20 @@ function readPlaces(
   ).then((answer) => answer.places);
 }
 
-/** A code's places and their lots, read as its row opens (R2). */
+/**
+ * A code's places and their lots, read as its row opens (R2): open as the
+ * address names it, whenever it comes to.
+ */
 function usePlaces(row: StockCodeRow, opened: Opened, emptied = false) {
-  return useOpenRows(
-    () => readPlaces(row, opened, emptied),
-    opened.changes,
-    opened.opens.includes(row.variantId),
-  );
+  const open = opened.opens.includes(row.variantId);
+  return {
+    open,
+    ...useOpenRows(
+      () => readPlaces(row, opened, emptied),
+      open,
+      opened.changes,
+    ),
+  };
 }
 
 /**
@@ -368,20 +379,25 @@ function usePileChoice(
   /** The action the lots were opened to choose for, "Choose the lot to move". */
   const [choosing, setChoosing] = useState<MoveMode | null>(null);
   const first = useRef<HTMLButtonElement>(null);
+  // Closed, however the address came to close it, it no longer asks for a
+  // lot.
+  const [wasOpen, setWasOpen] = useState(places.open);
+  if (wasOpen !== places.open) {
+    setWasOpen(places.open);
+    if (!places.open) {
+      setChoosing(null);
+      setEmptied(false);
+    }
+  }
 
   // Focus on the first lot's Actions once the lots are drawn.
   const drawn = places.open && places.rows !== null;
   useEffect(() => {
     if (choosing && drawn) first.current?.focus();
   }, [choosing, drawn]);
-  /** The row's own button: closed, it no longer asks for a lot. */
+  /** The row's own button. */
   function toggle() {
-    if (places.open) {
-      setChoosing(null);
-      setEmptied(false);
-    }
-    opened.onOpen(row.variantId, !places.open);
-    places.toggle();
+    opened.onOpen([row.variantId], !places.open);
   }
 
   async function act(mode: MoveMode) {
@@ -403,12 +419,23 @@ function usePileChoice(
     }
     setChoosing(mode);
     setEmptied(emptied);
-    if (!places.open) {
-      opened.onOpen(row.variantId, true);
-      places.toggle();
-    } else if (emptied) {
-      places.retry();
+    // Every place's lots open to choose from, in the address as a row
+    // opened by hand is.
+    const keys = [row.variantId];
+    if (opened.seesPlaces && !opened.place) {
+      try {
+        const rows =
+          (!emptied && places.rows) || (await readPlaces(row, opened, emptied));
+        keys.push(
+          ...rows.map((each) => openKey(row.variantId, each.locationId)),
+        );
+      } catch {
+        // Its places could not be read: the row opens, which says so with
+        // Try again.
+      }
     }
+    opened.onOpen(keys, true);
+    if (places.open && emptied) places.retry();
   }
 
   return { choosing, first, act, toggle };
@@ -1032,10 +1059,9 @@ function PlacesRows({
           row={row}
           place={each}
           handlers={handlers}
-          lotsOpen={!!choosing}
-          opened={opens.includes(openKey(row.variantId, each.locationId))}
+          open={opens.includes(openKey(row.variantId, each.locationId))}
           onOpen={(open) =>
-            onOpen(openKey(row.variantId, each.locationId), open)
+            onOpen([openKey(row.variantId, each.locationId)], open)
           }
           actionsRef={index === 0 ? first : undefined}
         />
@@ -1123,15 +1149,15 @@ function FoundLine({
 
 /**
  * A place's row: its name, why it is not usable, its lots behind a
- * button, open as the address says, so Back finds them open (R11).
+ * button, open as the address says, so Back finds them open (R11), and
+ * whenever the address comes to name them (ADR-094, S1).
  */
 function PlaceTableRow({
   id,
   row,
   place,
   handlers,
-  lotsOpen,
-  opened,
+  open,
   onOpen,
   actionsRef,
 }: {
@@ -1139,24 +1165,17 @@ function PlaceTableRow({
   row: StockCodeRow;
   place: StockPlace;
   handlers: StockHandlers;
-  /** Its lots shown from the start: a lot is being chosen. */
-  lotsOpen: boolean;
-  /** Its lots open in the address, `?open=`. */
-  opened: boolean;
+  /**
+   * Its lots open in the address, `?open=`; they came with it, so opening
+   * reads nothing.
+   */
+  open: boolean;
   onOpen: (open: boolean) => void;
   /** Its first lot's Actions, or its own for a code not tracked by lot. */
   actionsRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const intl = useIntl();
   const lotsId = useId();
-  // Its lots came with it, so opening reads nothing.
-  const [open, setOpen] = useState(lotsOpen || opened);
-  // A lot asked for opens them, as React adjusts state to a prop.
-  const [asked, setAsked] = useState(lotsOpen);
-  if (lotsOpen !== asked) {
-    setAsked(lotsOpen);
-    if (lotsOpen) setOpen(true);
-  }
   const tracked = place.lots.some((lot) => lot.lotId !== null);
   const where = placeName(place);
   const words = intl.formatMessage(
@@ -1199,10 +1218,7 @@ function PlaceTableRow({
               open={open}
               busy={false}
               controls={lotsId}
-              onClick={() => {
-                setOpen(!open);
-                onOpen(!open);
-              }}
+              onClick={() => onOpen(!open)}
             />
           )}
         </TableCell>

@@ -359,29 +359,29 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     onCountIn: setCountingIn,
   };
 
-  // Codes and places in the address, not a list a person reads; a code
-  // closed closes its places too.
-  const openRow = (key: string, open: boolean) => {
+  // Codes and places in the address, not a list a person reads, in one
+  // write; a code closed closes its places too.
+  const openRows = (keys: string[], open: boolean) => {
     const next = opens.filter(
-      (each) => each !== key && !each.startsWith(`${key}.`),
+      (each) =>
+        !keys.some(
+          (key) => each === key || (!open && each.startsWith(`${key}.`)),
+        ),
     );
-    if (open) next.push(key);
+    if (open) next.push(...keys);
     writeAddress({ open: next.length ? String(next) : null });
   };
 
-  // Received: the code's row open, at its place, its lots open (ADR-094's
-  // table), as Count it in… lands.
+  // Received, moved to another lot or counted in: the code's row open, at
+  // its place, its lots open (ADR-094's table), whether its row was open
+  // or not.
   const openReceived = ({
     variantId,
     locationId,
   }: {
     variantId: string;
     locationId: string;
-  }) => {
-    const place = openKey(variantId, locationId);
-    const next = opens.filter((each) => each !== variantId && each !== place);
-    writeAddress({ open: String([...next, variantId, place]) });
-  };
+  }) => openRows([variantId, openKey(variantId, locationId)], true);
 
   if (list.refused) {
     return <RevisionRefusalPage failure={list.refused} onRetry={reload} />;
@@ -898,7 +898,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   handlers={handlers}
                   changes={changes}
                   opens={opens}
-                  onOpen={openRow}
+                  onOpen={openRows}
                   focusRow={newCode ?? focusRow}
                 />
               )
@@ -1086,7 +1086,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
             // Counted in from Found in a count: no receipt is left to make.
             if (foundAt !== null) closeReceiving();
             setFoundAt(null);
-            openRow(openKey(countingIn.variantId, locationId), true);
+            openReceived({ variantId: countingIn.variantId, locationId });
             await refresh();
           }}
         />

@@ -1823,6 +1823,105 @@ describe('InventoryPage', () => {
     );
   });
 
+  /**
+   * Which rows are open is the address's alone (ADR-094, S1): a receipt
+   * into a code already listed wrote `?open=` and its row stayed closed,
+   * the row having read the address once, as it first appeared.
+   */
+  describe('the rows the address names open', () => {
+    const CODE_OPEN = '/inventory?open=variant-1';
+    const LOTS_OPEN = '/inventory?open=variant-1%2Cvariant-1.loc-1';
+
+    /** Stock at an address, links that change it, and the address shown. */
+    function renderWithLinks(address: string) {
+      function Address() {
+        const { search } = useLocation();
+        return <output aria-label="address">{search}</output>;
+      }
+      return renderWithAuth(
+        <MemoryRouter initialEntries={[address]}>
+          <Link to={CODE_OPEN}>The code</Link>
+          <Link to={LOTS_OPEN}>Its lots</Link>
+          <Link to="/inventory">None</Link>
+          <InventoryPage />
+          <Address />
+        </MemoryRouter>,
+        { permissions: ['stock.view', 'locations.view'] },
+      );
+    }
+
+    const places = () =>
+      screen.findByRole('button', {
+        name: /^2 places: (show|hide) where Vitamin D \(60ct\) is$/,
+      });
+    const lots = () =>
+      screen.findByRole('button', {
+        name: /^2 lots: (show|hide) the lots at Main warehouse › Zone A › Shelf A$/,
+      });
+
+    it('opens a row on screen, then its place’s lots, as the address comes to name each', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderWithLinks('/inventory');
+      expect(await places()).toHaveAttribute('aria-expanded', 'false');
+
+      await user.click(screen.getByRole('link', { name: 'The code' }));
+      await vi.waitFor(async () =>
+        expect(await places()).toHaveAttribute('aria-expanded', 'true'),
+      );
+      expect(await lots()).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByText('NN-2410-07')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('link', { name: 'Its lots' }));
+      await vi.waitFor(async () =>
+        expect(await lots()).toHaveAttribute('aria-expanded', 'true'),
+      );
+      expect(screen.getByText('NN-2410-07')).toBeVisible();
+    });
+
+    it('closes a row on screen, and its place’s lots, as the address stops naming them', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderWithLinks(LOTS_OPEN);
+      expect(await screen.findByText('NN-2410-07')).toBeVisible();
+
+      await user.click(screen.getByRole('link', { name: 'The code' }));
+      await vi.waitFor(async () =>
+        expect(await lots()).toHaveAttribute('aria-expanded', 'false'),
+      );
+      expect(screen.queryByText('NN-2410-07')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('link', { name: 'None' }));
+      await vi.waitFor(async () =>
+        expect(await places()).toHaveAttribute('aria-expanded', 'false'),
+      );
+      expect(
+        screen.queryByText('Main warehouse › Zone A › Shelf A'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('puts a row opened by hand in the address, its place’s lots too, and takes both out as the row closes', async () => {
+      const user = userEvent.setup();
+      answer();
+      renderWithLinks('/inventory');
+      const address = screen.getByRole('status', { name: 'address' });
+
+      await user.click(await places());
+      expect(await lots()).toBeVisible();
+      expect(address).toHaveTextContent('?open=variant-1');
+
+      await user.click(await lots());
+      expect(await screen.findByText('NN-2410-07')).toBeVisible();
+      expect(address).toHaveTextContent('?open=variant-1%2Cvariant-1.loc-1');
+
+      await user.click(await places());
+      await vi.waitFor(async () =>
+        expect(await places()).toHaveAttribute('aria-expanded', 'false'),
+      );
+      expect(address).toBeEmptyDOMElement();
+    });
+  });
+
   // Trace a lot is a top-level page: Back returns here (#341).
   it('opens Trace a lot with Back to Inventory', async () => {
     answer();
