@@ -20,7 +20,7 @@ Une vente confirmée réserve le stock dont elle a besoin, pour que personne ne 
 
 1. Ouvrez l’achat confirmé.
 2. Sur la ligne de l’article, choisissez **Recevoir**.
-3. Choisissez où il va et combien est arrivé. Pour un article suivi par lot, saisissez le numéro de lot tel qu’imprimé sur la boîte, ou appuyez sur **Créer un code pour nous** si elle n’en montre aucun, et pour un nouveau lot choisissez sa **Date de péremption**, comme le fait **Recevoir du stock** dans Inventaire.
+3. Choisissez où il va et combien est arrivé. Pour un article suivi par lot, saisissez le numéro de lot tel qu’imprimé sur la boîte, ou appuyez sur **Créer un code pour nous** si elle n’en montre aucun, et pour un nouveau lot choisissez sa **Date de péremption**, comme le fait **Recevoir du stock** dans Inventaire, qui dit aussi, sous un article qui n’est pas suivi par lot, qu’aucun lot n’est demandé, avec **Commencer le suivi par lot…** pour qui peut le commencer.
 
 Si le reste d’une ligne ne viendra jamais, choisissez **Clore incomplète** sur la ligne : l’écart reste visible.
 

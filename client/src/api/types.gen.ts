@@ -1138,6 +1138,7 @@ export type ProductPage = {
 
 export type VariantOption = {
   id: string;
+  productId: string;
   sku: string;
   variantName: string | null;
   productName: string;
@@ -3139,6 +3140,7 @@ export type OrderPage = {
 export type DeliveryLine = {
   id: string;
   variantId: string;
+  productId: string;
   sku: string;
   tracksLots: boolean;
   unitOfMeasure: string;
@@ -3220,6 +3222,7 @@ export type OrderDocuments = {
 export type OrderLine = {
   id: string;
   variantId: string;
+  productId: string;
   sku: string;
   description: string;
   tracksLots: boolean;
@@ -3339,6 +3342,7 @@ export type AddOrderLineDto = {
 export type AddedOrderLine = {
   id: string;
   variantId: string;
+  productId: string;
   sku: string;
   description: string;
   tracksLots: boolean;

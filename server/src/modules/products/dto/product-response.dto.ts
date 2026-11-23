@@ -217,6 +217,8 @@ export class ProductImageList {
  */
 export class VariantOption {
   id!: string;
+  /** Its item, whose lot tracking Receive stock can start (review 3). */
+  productId!: string;
   sku!: string;
   variantName!: string | null;
   productName!: string;

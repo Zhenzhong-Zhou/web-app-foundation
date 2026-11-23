@@ -53,6 +53,8 @@ export class OrderPage {
 export class OrderLine {
   id!: string;
   variantId!: string;
+  /** Its item, whose lot tracking Receive can start (review 3). */
+  productId!: string;
   /** Snapshotted when the order was raised (ADR-023). */
   sku!: string;
   description!: string;
@@ -301,6 +303,8 @@ export class OrderReceiptPage {
 export class DeliveryLine {
   id!: string;
   variantId!: string;
+  /** Its item, whose lot tracking Receive can start (review 3). */
+  productId!: string;
   /** Snapshotted when the order was raised (ADR-023). */
   sku!: string;
   tracksLots!: boolean;

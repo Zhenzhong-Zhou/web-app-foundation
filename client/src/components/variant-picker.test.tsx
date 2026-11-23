@@ -200,6 +200,7 @@ describe('VariantPicker', () => {
 function item(sku: string, productName: string, type: string): VariantOption {
   return {
     id: `variant-${sku}`,
+    productId: `product-${sku}`,
     sku,
     variantName: null,
     productName,

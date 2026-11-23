@@ -787,6 +787,7 @@ export function OrderDetailPage() {
         locations={leaves}
         tree={locations}
         canSeeLots={can('stock.view')}
+        canStartTracking={can('products.update') && can('stock.adjust')}
         onClose={() => setReceiving(null)}
         onReceived={load}
       />

@@ -110,6 +110,7 @@ export class OrderReceiptsService {
         late: boolean;
         line_id: string;
         variant_id: string;
+        product_id: string;
         sku: string;
         tracks_lots: boolean;
         unit_of_measure: string;
@@ -125,6 +126,7 @@ export class OrderReceiptsService {
           coalesce(c.expected_at < ${today}::date, false) as late,
           ol.id as line_id,
           ol.variant_id,
+          pv.product_id,
           ol.sku,
           pv.tracks_lots,
           pv.unit_of_measure,
@@ -154,6 +156,7 @@ export class OrderReceiptsService {
         line: {
           id: row.line_id,
           variantId: row.variant_id,
+          productId: row.product_id,
           sku: row.sku,
           tracksLots: row.tracks_lots,
           unitOfMeasure: row.unit_of_measure,

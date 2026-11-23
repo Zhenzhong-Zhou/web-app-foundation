@@ -126,6 +126,58 @@ describe('ReceiveLineDialog', () => {
     expect(screen.queryByLabelText(/Lot number/)).not.toBeInTheDocument();
   });
 
+  // Review 3: why no lot is asked, and Start tracking lots… for whoever
+  // may start it; started, the lot fields show, the quantity kept.
+  it('says under a line not tracked that no lot is asked, and asks the lot once tracking starts from it', async () => {
+    const user = userEvent.setup();
+    const path =
+      '/api/v1/products/product-plain/variants/variant-plain/lot-tracking';
+    server.use(
+      http.get(path, () =>
+        HttpResponse.json({
+          variantId: 'variant-plain',
+          sku: 'WIDGET-1',
+          onHand: '0.0000',
+          places: [],
+          runCount: 0,
+          runs: [],
+        }),
+      ),
+      http.post(path, () => HttpResponse.json({ lot: null }, { status: 201 })),
+    );
+    render(
+      <ToastProvider>
+        <ReceiveLineDialog
+          orderId="order-1"
+          orderNumber="PO-000001"
+          line={orderLine({ tracksLots: false })}
+          locations={[DOCK]}
+          tree={[DOCK]}
+          canSeeLots={false}
+          canStartTracking
+          onClose={() => undefined}
+          onReceived={() => Promise.resolve()}
+        />
+      </ToastProvider>,
+    );
+    await user.type(screen.getByLabelText(/Quantity/), '4');
+
+    expect(
+      screen.getByText(/doesn’t track lots, so no lot is asked\./),
+    ).toHaveTextContent(
+      /^WIDGET-1 doesn’t track lots, so no lot is asked\. Start tracking lots…$/,
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Start tracking lots for WIDGET-1…' }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Start tracking lots' }),
+    );
+
+    expect(await screen.findByLabelText(/Lot number/)).toBeVisible();
+    expect(screen.getByLabelText(/Quantity/)).toHaveValue('4');
+  });
+
   // ADR-094, R3, R5 and E3: a code made for us on an order's Receive.
   it('makes a code for us with the supplier’s lot, the message naming it with Copy code, Open the lot and Open the order', async () => {
     const user = userEvent.setup();
@@ -214,6 +266,7 @@ describe('ReceiveLineDialog', () => {
       line: {
         id: 'line-12',
         variantId: 'variant-1',
+        productId: 'product-1',
         sku: 'VITC-100',
         tracksLots: false,
         unitOfMeasure: 'each',

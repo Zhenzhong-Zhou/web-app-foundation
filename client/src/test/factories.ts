@@ -23,6 +23,7 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
   return {
     id,
     variantId: 'variant-plain',
+    productId: 'product-plain',
     sku: `WIDGET-${id.slice(-1)}`,
     description: `Widget ${id.slice(-1)}`,
     tracksLots: false,

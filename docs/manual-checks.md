@@ -693,7 +693,13 @@ a second organization.
   day already past: an amber line says the stock will read as expired.
   Escape, or Cancel, closes it with nothing changed, focus back on what
   opened it: Stock's Actions, the line's Start tracking lots…, or the
-  Variants row's button. Start it as it opened: the message names the
+  Variants row's button. Receive stock… for BOTTLE-A60, and an order's
+  Receive for a line of it, read under the item "BOTTLE-A60 doesn't
+  track lots, so no lot is asked. Start tracking lots…", the line alone
+  for a role without both permissions; type a quantity, then Start
+  tracking lots… opens the same question over the dialog, Escape or
+  Cancel giving focus back to it; started, the dialog asks Lot number
+  and Expires, the quantity still there. Start it as it opened: the message names the
   lot, with Open the lot. From Stock, Stock stays, BOTTLE-A60's row open
   at both places, the lot shown at each; from the item's page, the line
   is gone, the row reads Tracked, Where it stands lists the lot, "Expiry to

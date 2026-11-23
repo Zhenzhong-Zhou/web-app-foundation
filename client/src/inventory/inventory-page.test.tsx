@@ -47,6 +47,7 @@ function delivery(variantId: string, sku: string): Delivery {
     line: {
       id: 'line-12',
       variantId,
+      productId: 'product-1',
       sku,
       tracksLots: false,
       unitOfMeasure: 'each',

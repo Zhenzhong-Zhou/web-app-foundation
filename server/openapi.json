@@ -13611,6 +13611,9 @@
           "id": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
             "type": "string"
           },
@@ -13635,6 +13638,7 @@
         },
         "required": [
           "id",
+          "productId",
           "sku",
           "variantName",
           "productName",
@@ -22083,6 +22087,9 @@
           "variantId": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
             "type": "string"
           },
@@ -22105,6 +22112,7 @@
         "required": [
           "id",
           "variantId",
+          "productId",
           "sku",
           "tracksLots",
           "unitOfMeasure",
@@ -22385,6 +22393,9 @@
           "variantId": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
             "type": "string"
           },
@@ -22472,6 +22483,7 @@
         "required": [
           "id",
           "variantId",
+          "productId",
           "sku",
           "description",
           "tracksLots",
@@ -22956,6 +22968,9 @@
           "variantId": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
           "sku": {
             "type": "string"
           },
@@ -23046,6 +23061,7 @@
         "required": [
           "id",
           "variantId",
+          "productId",
           "sku",
           "description",
           "tracksLots",

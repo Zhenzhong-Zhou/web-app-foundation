@@ -29,6 +29,7 @@ import {
   useItemLots,
 } from '../inventory/lot-input';
 import { useLotMessage } from '../inventory/lot-received';
+import { NoLotLine } from '../inventory/no-lot-line';
 import { placePaths } from '../inventory/stock-places';
 import { api } from '../lib/api';
 import {
@@ -45,6 +46,7 @@ type ReceivableLine = Pick<
   OrderLine,
   | 'id'
   | 'variantId'
+  | 'productId'
   | 'sku'
   | 'tracksLots'
   | 'unitOfMeasure'
@@ -72,6 +74,7 @@ export function ReceiveLineDialog({
   locations,
   tree,
   canSeeLots,
+  canStartTracking = false,
   onClose,
   onReceived,
   onOpenOrder,
@@ -94,6 +97,11 @@ export function ReceiveLineDialog({
   tree: Location[];
   /** stock.view, from the page: the item's lots already known. */
   canSeeLots: boolean;
+  /**
+   * products.update and stock.adjust: the line under an item not tracked
+   * ends with Start tracking lots… (review 3).
+   */
+  canStartTracking?: boolean;
   onClose: () => void;
   /** Saved: the page reads again, over Stock the item open at its place. */
   onReceived: (received: {
@@ -122,8 +130,12 @@ export function ReceiveLineDialog({
     expiry: useRef<HTMLInputElement>(null),
     day: useRef<HTMLInputElement>(null),
   };
+  // Lot tracking started from the line under the item (review 3): its lot
+  // fields show from then, what was typed kept.
+  const [started, setStarted] = useState(false);
+  const tracksLots = !!line?.tracksLots || started;
   const { lots, known } = useItemLots(
-    line?.tracksLots && canSeeLots ? line.variantId : null,
+    line && tracksLots && canSeeLots ? line.variantId : null,
   );
 
   // The confirmation says what happened (the design language's After
@@ -197,7 +209,7 @@ export function ReceiveLineDialog({
     setQuantityError(null);
 
     // The lot's own check, focus on the first it refused (#310).
-    if (line.tracksLots) {
+    if (tracksLots) {
       const found = lotErrors(form.lot, lots, intl);
       setLotProblems(found);
       const first = (['code', 'expiry', 'day'] as const).find(
@@ -210,7 +222,7 @@ export function ReceiveLineDialog({
     }
     sent.current = {
       quantity: displayWithUnit(quantity, line.unitOfMeasure, intl),
-      made: line.tracksLots && form.lot.made,
+      made: tracksLots && form.lot.made,
     };
 
     void submit(() =>
@@ -221,7 +233,7 @@ export function ReceiveLineDialog({
           quantity,
           // The lot is created with the movement, not registered in
           // advance.
-          lot: line.tracksLots ? lotRequest(form.lot, lots) : undefined,
+          lot: tracksLots ? lotRequest(form.lot, lots) : undefined,
           note: form.note || undefined,
         }),
       }),
@@ -358,7 +370,19 @@ export function ReceiveLineDialog({
                 without one on a variant that is. The line says which, so
                 receiving asks nothing of the catalogue (ADR-080), and a
                 variant's tracking never changes once it is made. */}
-            {line?.tracksLots && (
+            {line && !tracksLots && (
+              <NoLotLine
+                item={{
+                  productId: line.productId,
+                  variantId: line.variantId,
+                  sku: line.sku,
+                  unitOfMeasure: line.unitOfMeasure,
+                }}
+                mayStart={canStartTracking}
+                onStarted={() => setStarted(true)}
+              />
+            )}
+            {line && tracksLots && (
               <LotFields
                 idPrefix="receive-line"
                 variantId={line.variantId}

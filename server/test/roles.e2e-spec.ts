@@ -1196,6 +1196,7 @@ describe('Roles (e2e)', () => {
         'lines[].id',
         'lines[].isClosedShort',
         'lines[].isComplete',
+        'lines[].productId',
         'lines[].quantityCredited',
         'lines[].quantityFulfilled',
         'lines[].quantityOrdered',

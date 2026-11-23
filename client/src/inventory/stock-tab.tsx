@@ -1010,6 +1010,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         defaultLocationId={locationId}
         defaultVariantId={receivingItem ?? ''}
         canSeePartners={can('partners.view')}
+        canStartTracking={can('products.update') && can('stock.adjust')}
         counting={!!countingIn && foundAt !== null}
         onClose={closeReceiving}
         onReceived={async (received) => {
@@ -1043,6 +1044,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           locations={leaves}
           tree={locations}
           canSeeLots
+          canStartTracking={can('products.update') && can('stock.adjust')}
           onClose={() => setDelivery(null)}
           onReceived={async (received) => {
             openReceived(received);

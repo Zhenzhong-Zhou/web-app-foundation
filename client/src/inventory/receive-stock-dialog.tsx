@@ -32,6 +32,7 @@ import { LotFields } from './lot-fields';
 import { lotErrors, lotRequest, NO_LOT, useItemLots } from './lot-input';
 import { useLotMessage } from './lot-received';
 import { reasonDetailLabel, RECEIPT_DETAILS } from './movement-reasons';
+import { NoLotLine } from './no-lot-line';
 import { placePaths } from './stock-places';
 import { useDeliveries } from './use-deliveries';
 
@@ -74,6 +75,7 @@ export function ReceiveStockDialog({
   defaultVariantId = '',
   canSeePartners = false,
   counting = false,
+  canStartTracking = false,
   onClose,
   onReceived,
   onDelivery,
@@ -96,6 +98,11 @@ export function ReceiveStockDialog({
    * focus comes back to Why is there no order? (ADR-094's table).
    */
   counting?: boolean;
+  /**
+   * products.update and stock.adjust: the line under an item not tracked
+   * ends with Start tracking lots… (review 3).
+   */
+  canStartTracking?: boolean;
   onClose: () => void;
   /** Saved: the page reads again, the item open at its place and lot. */
   onReceived: (received: {
@@ -142,7 +149,14 @@ export function ReceiveStockDialog({
     lotExpiry: useRef<HTMLInputElement>(null),
     lotDay: useRef<HTMLInputElement>(null),
   };
-  const { variants, answered, failed: variantsError } = useVariants(open);
+  // Read again once lot tracking starts from the line under the item
+  // (review 3), so its lot fields show, what was typed kept.
+  const [started, setStarted] = useState(0);
+  const {
+    variants,
+    answered,
+    failed: variantsError,
+  } = useVariants(open, started);
   // The item's deliveries, once one is chosen (ADR-093, v3).
   const { deliveries, answered: deliveriesAnswered } = useDeliveries(
     open && onDelivery ? form.variantId || null : null,
@@ -596,6 +610,18 @@ export function ReceiveStockDialog({
                       expiry: errors.lotExpiry,
                       day: errors.lotDay,
                     }}
+                  />
+                )}
+                {variant && !variant.tracksLots && (
+                  <NoLotLine
+                    item={{
+                      productId: variant.productId,
+                      variantId: variant.id,
+                      sku: variant.sku,
+                      unitOfMeasure: variant.unitOfMeasure,
+                    }}
+                    mayStart={canStartTracking && variant.type !== 'equipment'}
+                    onStarted={() => setStarted((count) => count + 1)}
                   />
                 )}
 

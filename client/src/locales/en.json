@@ -686,6 +686,8 @@
   "inventory.lot.markMadeHere": "We made this code up; nothing printed it",
   "inventory.lot.markMadeHere.help": "Its code can then be corrected and its supplier’s lot added. Once saved, it stays marked, in the Activity log.",
   "inventory.lot.noExpiry": "No expiry",
+  "inventory.lot.notTracked": "{sku} doesn’t track lots, so no lot is asked.",
+  "inventory.lot.notTrackedStart": "{sku} doesn’t track lots, so no lot is asked. {start}",
   "inventory.lot.number": "Lot number",
   "inventory.lot.number.asPrinted": "As printed on the box.",
   "inventory.lot.numberMissing": "Type the lot number as printed, or make a code for us.",

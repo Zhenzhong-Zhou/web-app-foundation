@@ -555,6 +555,7 @@ export class OrdersService {
         .select({
           id: orderLines.id,
           variantId: orderLines.variantId,
+          productId: productVariants.productId,
           sku: orderLines.sku,
           productName: shown.productName,
           variantName: shown.variantName,

@@ -20,6 +20,7 @@ const BASE = '/api/v1';
 export const VARIANTS = [
   {
     id: 'variant-plain',
+    productId: 'product-plain',
     sku: 'PLAIN-1',
     variantName: null,
     productName: 'Plain Widget',
@@ -29,6 +30,7 @@ export const VARIANTS = [
   },
   {
     id: 'variant-lotted',
+    productId: 'product-lotted',
     sku: 'LOTTED-1',
     variantName: '60ct',
     productName: 'Tracked Supplement',

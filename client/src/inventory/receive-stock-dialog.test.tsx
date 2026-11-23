@@ -1,4 +1,10 @@
-import { render as renderPlain, screen, waitFor } from '@testing-library/react';
+import { ThemeProvider } from '@mui/material/styles';
+import {
+  render as renderPlain,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import type { ReactElement } from 'react';
@@ -7,8 +13,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Delivery, Location, Partner } from '../api/types.gen';
 import { ToastProvider } from '../components/toast-provider';
-import { apiError } from '../test/handlers';
+import { apiError, VARIANTS } from '../test/handlers';
 import { server } from '../test/setup';
+import { themeFor } from '../theme';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 
 /** The message's Open the lot goes through the router. */
@@ -199,6 +206,105 @@ describe('ReceiveStockDialog', () => {
     expect(
       screen.queryByRole('textbox', { name: 'Lot number' }),
     ).not.toBeInTheDocument();
+  });
+
+  // Review 3: why no lot is asked, said under the item.
+  it('says under an item not tracked that no lot is asked, offering no start to whoever may not', async () => {
+    open();
+
+    await choose('Item', /PLAIN-1/);
+
+    expect(
+      await screen.findByText(/doesn’t track lots, so no lot is asked\.$/),
+    ).toHaveTextContent(/^PLAIN-1 doesn’t track lots, so no lot is asked\.$/);
+    expect(
+      screen.queryByRole('button', { name: /^Start tracking lots/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  // Review 3: Start tracking lots… over the dialog, as Found in a count
+  // opens Count it in…; started, the lot fields show, what was typed kept.
+  it('starts lot tracking from the line over the dialog, then asks the lot, the quantity kept; Cancel gives focus back to the line', async () => {
+    const user = userEvent.setup();
+    let started = false;
+    const path =
+      '/api/v1/products/product-plain/variants/variant-plain/lot-tracking';
+    server.use(
+      http.get(path, () =>
+        HttpResponse.json({
+          variantId: 'variant-plain',
+          sku: 'PLAIN-1',
+          onHand: '0.0000',
+          places: [],
+          runCount: 0,
+          runs: [],
+        }),
+      ),
+      http.post(path, () => {
+        started = true;
+        return HttpResponse.json({ lot: null }, { status: 201 });
+      }),
+      http.get('/api/v1/products/variants', () =>
+        HttpResponse.json(
+          VARIANTS.map((each) =>
+            each.id === 'variant-plain' && started
+              ? { ...each, tracksLots: true }
+              : each,
+          ),
+        ),
+      ),
+    );
+    // The app's theme gives a dialog's button focus back as it closes.
+    render(
+      <ThemeProvider theme={themeFor('en')}>
+        <ToastProvider>
+          <ReceiveStockDialog
+            open
+            locations={LOCATIONS}
+            tree={LOCATIONS}
+            defaultLocationId="location-a"
+            canStartTracking
+            onClose={vi.fn()}
+            onReceived={vi.fn()}
+          />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+    await choose('Item', /PLAIN-1/);
+    await user.type(quantityField(), '12');
+
+    const start = await screen.findByRole('button', {
+      name: 'Start tracking lots for PLAIN-1…',
+    });
+    await user.click(start);
+    const question = await screen.findByRole('dialog', {
+      name: 'Start tracking lots for PLAIN-1',
+    });
+    await user.click(within(question).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(question).not.toBeInTheDocument());
+    await waitFor(() => expect(start).toHaveFocus());
+    await user.keyboard('{Enter}');
+    const again = await screen.findByRole('dialog', {
+      name: 'Start tracking lots for PLAIN-1',
+    });
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(again).not.toBeInTheDocument());
+    await waitFor(() => expect(start).toHaveFocus());
+
+    await user.click(start);
+    await user.click(
+      within(
+        await screen.findByRole('dialog', {
+          name: 'Start tracking lots for PLAIN-1',
+        }),
+      ).getByRole('button', { name: 'Start tracking lots' }),
+    );
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Lot number' }),
+    ).toBeVisible();
+    expect(quantityField()).toHaveValue('12');
+    expect(screen.queryByText(/doesn’t track lots/)).not.toBeInTheDocument();
   });
 
   it('shows the lot field for a lot-tracked item', async () => {
@@ -588,6 +694,7 @@ describe('ReceiveStockDialog', () => {
       line: {
         id: 'line-12',
         variantId: 'variant-plain',
+        productId: 'product-1',
         sku: 'PLAIN-1',
         tracksLots: false,
         unitOfMeasure: 'each',

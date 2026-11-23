@@ -953,6 +953,16 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses equipment, a code that tracks lots, another organization’s code, and anyone without both permissions, writing nothing (R13, R18)" ·
   [Help](../../client/src/help/guides/en/items.md#start-tracking-lots-tracking) ·
   MC-327
+- **Receiving an item not tracked says no lot is asked,** in Receive
+  stock and an order's Receive, one grey line under the item; for
+  whoever may start tracking it ends with Start tracking lots…, whose
+  question opens over the dialog, and once started the dialog asks the
+  lot, what was typed kept.
+  [test](../../client/src/inventory/receive-stock-dialog.test.tsx) "says under an item not tracked that no lot is asked, offering no start to whoever may not" ·
+  [test](../../client/src/inventory/receive-stock-dialog.test.tsx) "starts lot tracking from the line over the dialog, then asks the lot, the quantity kept; Cancel gives focus back to the line" ·
+  [test](../../client/src/orders/receive-line-dialog.test.tsx) "says under a line not tracked that no lot is asked, and asks the lot once tracking starts from it" ·
+  [Help](../../client/src/help/guides/en/inventory.md#receive-stock-receive) ·
+  MC-327
 - **Before it starts, the question reads where the code's stock is,**
   each place and how much, and the runs in progress that make the code
   or use it from a place, each to close against the lot; a reader who

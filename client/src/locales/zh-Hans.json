@@ -686,6 +686,8 @@
   "inventory.lot.markMadeHere": "此编码由我们自编，未印在任何包装上",
   "inventory.lot.markMadeHere.help": "之后即可更正其编码并补填供应商批号。保存后将一直保持标记，并记入操作日志。",
   "inventory.lot.noExpiry": "无有效期",
+  "inventory.lot.notTracked": "{sku} 未按批次跟踪，因此不需要填写批号。",
+  "inventory.lot.notTrackedStart": "{sku} 未按批次跟踪，因此不需要填写批号。{start}",
   "inventory.lot.number": "批号",
   "inventory.lot.number.asPrinted": "与包装上印刷的一致。",
   "inventory.lot.numberMissing": "请照包装上的印刷填写批号，或生成批次编码。",

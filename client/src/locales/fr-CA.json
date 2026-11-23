@@ -686,6 +686,8 @@
   "inventory.lot.markMadeHere": "Nous avons inventé ce code; rien ne l’imprime",
   "inventory.lot.markMadeHere.help": "Son code pourra alors être corrigé et son lot du fournisseur ajouté. Une fois enregistré, il le reste, dans le journal d’activité.",
   "inventory.lot.noExpiry": "Sans péremption",
+  "inventory.lot.notTracked": "{sku} n’est pas suivi par lot, donc aucun lot n’est demandé.",
+  "inventory.lot.notTrackedStart": "{sku} n’est pas suivi par lot, donc aucun lot n’est demandé. {start}",
   "inventory.lot.number": "Numéro de lot",
   "inventory.lot.number.asPrinted": "Tel qu’il est imprimé sur la boîte.",
   "inventory.lot.numberMissing": "Saisissez le numéro de lot tel qu’il est imprimé, ou créez un code pour nous.",

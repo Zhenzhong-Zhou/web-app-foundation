@@ -10,6 +10,7 @@ import { useVariants } from './use-variants';
 function option(productName: string): VariantOption {
   return {
     id: 'variant-1',
+    productId: 'product-1',
     sku: 'FOCUS-60CT',
     productName,
     variantName: null,
