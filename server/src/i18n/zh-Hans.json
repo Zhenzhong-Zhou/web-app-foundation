@@ -1091,6 +1091,8 @@
   "stock.end.countedIn": "盘点计入",
   "stock.end.countedOut": "盘点扣除",
   "stock.end.customer": "客户",
+  "stock.end.opening": "期初库存",
+  "stock.end.other": "其他",
   "stock.end.run": "生产订单",
   "stock.end.sample": "样品",
   "stock.end.supplier": "供应商",

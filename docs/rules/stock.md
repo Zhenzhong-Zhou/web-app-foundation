@@ -39,9 +39,15 @@ file is kept is in the [README](README.md).
 - **A lot whose expiry is not known yet stays usable:** it is never
   expired, in no Expired or Expiring soon, and never what expires first,
   even on a day far ahead; earliest expiry first takes it as a lot with
-  no expiry, after the dated ones, by when it arrived.
+  no expiry, after the dated ones, by when it arrived. Every screen
+  reads it "Expiry to add", never "No expiry"; Ship names each such lot
+  it will take in an amber line and still ships, the packing slip
+  reading the lot's expiry as it is when printed (D2).
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
-  [test](../../server/test/code-figures.e2e-spec.ts) "reads a lot whose expiry is not known yet as usable, never expired nor first to expire, taken as a lot with no day (ADR-094, R9)"
+  [test](../../server/test/code-figures.e2e-spec.ts) "reads a lot whose expiry is not known yet as usable, never expired nor first to expire, taken as a lot with no day (ADR-094, R9)" ·
+  [test](../../client/src/inventory/lot-expiry.test.ts) "says beside a code its day, Expiry to add while it is not known, and No expiry for one that does not expire" ·
+  [test](../../client/src/orders/ship-order-dialog.test.tsx) "warns of a lot it will take whose expiry is still to add, naming it, and still ships" ·
+  MC-332
 
 ## A code's figures
 
@@ -443,8 +449,11 @@ file is kept is in the [README](README.md).
   and To, each place by its whole path, or an end outside the warehouse
   in the screen's words, supplier, customer, run, sample, counted in or
   counted out, only for a reader who may see places, else no such
-  columns; For, the document or a sample's recipient, as the reader may
-  see it.
+  columns; a receipt's From its partner by name, as the reader may see
+  it, or with none by why it came, opening stock, customer for stock
+  brought back, other, else supplier, as Movements' From → to reads it
+  (ADR-094, D3, amending 82a); For, the document or a sample's
+  recipient, as the reader may see it, never a receipt's partner.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports when to the second in the organization’s zone, the code a row was recorded under, By’s email and the note" ·
@@ -455,8 +464,10 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)" ·
   [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "names who it came from, a partner of this organization alone, on the movement and as its export’s From, For staying the document’s (D3)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "starts a receipt at the partner it came from, a link, For reading — (D3)" ·
   [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
-  MC-319 · MC-331
+  MC-319 · MC-331 · MC-333
 - **A movement names its places only to a reader who may see places,**
   each by its path, its warehouse first; the rest get each place's id
   alone, so a row still reads as in, out or between.
@@ -837,11 +848,15 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/receive-stock-dialog.test.tsx) "says what each empty field needs, focusing the first" ·
   [test](../../client/src/inventory/receive-stock-dialog.test.tsx) "opens Count it in… for Found in a count with the item and place, then gives focus back to the question"
 - **A receipt with no order may name whom it came from,** a partner of
-  this organization, kept as a sample's recipient is and read under For
-  on Movements and in its export. Another organization's partner is
-  refused, and so is a partner on a count or on an order's receipt.
+  this organization, kept as a sample's recipient is and read as the
+  From end of its From → to on Movements and in its export's From, For
+  staying the document's (D3); the lot's Where it came from names it
+  too. Another organization's partner is refused, and so is a partner
+  on a count or on an order's receipt.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-receipt-with-no-order-says-why-and-from-whom) ·
-  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "names who it came from, a partner of this organization alone, on the movement and in its export"
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "names who it came from, a partner of this organization alone, on the movement and as its export’s From, For staying the document’s (D3)" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "says where it came from: the lot it moved from, tracking started, back from before, and a receipt with no order from whom and why" ·
+  MC-333 · MC-910
 - **A write with no lot for a code that tracks lots is refused,** saying
   lot tracking has started for that code and to reload to give its lot:
   a tab that sends none read the code before its tracking started.

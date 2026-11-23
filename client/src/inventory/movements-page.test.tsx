@@ -363,6 +363,73 @@ describe('MovementsPage', () => {
     expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
   });
 
+  // ADR-094, D3, amending ADR-093's 82a: a receipt's partner is where it
+  // came from, For staying the document's; with none, its outside end
+  // follows why it came with no order.
+  const RECEIPT = movement({
+    reason: 'receipt',
+    quantity: '24.0000',
+    fromLocationId: null,
+    fromLocationName: null,
+    fromLocationCode: null,
+    fromLocationPath: [],
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    quantityIn: '24.0000',
+    quantityOut: null,
+    change: '24.0000',
+  });
+
+  it('starts a receipt at the partner it came from, a link, For reading — (D3)', async () => {
+    const row = await rowFor(
+      {
+        ...RECEIPT,
+        reasonDetail: 'returned',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      },
+      [...EVERYONE, 'partners.view'],
+    );
+
+    const ends = cellUnder(row, 'From → to');
+    expect(ends).toHaveTextContent(
+      'Northside Pharmacy→Main warehouse › Shelf A (A)',
+    );
+    expect(
+      within(ends).getByRole('link', { name: 'Northside Pharmacy' }),
+    ).toHaveAttribute('href', `/partners/${PARTNER}`);
+    expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+  });
+
+  it.each([
+    ['none given', null, 'supplier'],
+    ['opening stock', 'opening', 'opening stock'],
+    ['stock a customer brought back', 'returned', 'customer'],
+    ['a sample', 'sample', 'supplier'],
+    ['other', 'other', 'other'],
+  ])(
+    'starts a receipt with no partner by why it came, %s (D3)',
+    async (_why, reasonDetail, end) => {
+      const row = await rowFor({ ...RECEIPT, reasonDetail });
+
+      expect(cellUnder(row, 'From → to')).toHaveTextContent(
+        `${end}→Main warehouse › Shelf A (A)`,
+      );
+      expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+    },
+  );
+
+  // ADR-094, D2: the lot's expiry as every screen words it, one not
+  // known yet "Expiry to add", never left out as one that does not expire.
+  it('says Expiry to add under a lot whose expiry is not known yet', async () => {
+    const row = await rowFor(
+      movement({ lotExpiresAt: null, lotExpiry: 'unknown' }),
+    );
+
+    expect(cellUnder(row, 'Lot')).toHaveTextContent('NN-2410-07Expiry to add');
+  });
+
   it('names who by name, their email beneath', async () => {
     const row = await rowFor(MOVEMENT);
 

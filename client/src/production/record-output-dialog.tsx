@@ -13,9 +13,9 @@ import { useIntl } from 'react-intl';
 import type { Lot, RunDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { lotExpiryPart } from '../inventory/lot-expiry';
 import { api } from '../lib/api';
 import {
-  formatDay,
   formatQuantity,
   groupedNumberMessage,
   toApiDecimal,
@@ -99,13 +99,14 @@ export function RecordOutputDialog({
       });
     }
 
-    return lot.expiresAt
+    const expiry = lotExpiryPart(lot, intl);
+    return expiry
       ? intl.formatMessage(
           {
-            id: 'production.output.batchExpiring',
-            defaultMessage: 'Batch {code}, expires {day}',
+            id: 'production.output.batchWith',
+            defaultMessage: 'Batch {code}, {expiry}',
           },
-          { code: lot.code, day: formatDay(lot.expiresAt) },
+          { code: lot.code, expiry },
         )
       : intl.formatMessage(
           { id: 'production.output.batch', defaultMessage: 'Batch {code}' },

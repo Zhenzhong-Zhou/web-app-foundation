@@ -1,4 +1,11 @@
-import type { ReleaseLicenceStatus, RunStatus } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ReleaseLicenceStatus,
+  type RunStatus,
+} from '../../../database/schema';
 import type {
   LicenceOutcome,
   LicenceStatusAtRelease,
@@ -64,6 +71,9 @@ export class ComponentLot {
   lotId!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   issued!: string;
   consumed!: string;
 }
@@ -88,6 +98,9 @@ export class IssuePlanLot {
   lotId!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   onHand!: string;
   take!: string;
   taken!: boolean;

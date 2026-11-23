@@ -83,6 +83,7 @@ export class OrderReceiptsService {
           lotId: row.lotId,
           lotCode: row.lotCode,
           lotExpiresAt: row.lotExpiresAt,
+          lotExpiry: row.lotExpiry,
           actorName: row.actorName,
           actorEmail: row.actorEmail,
         })),

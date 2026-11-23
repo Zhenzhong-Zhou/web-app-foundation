@@ -25,11 +25,12 @@ import type {
   ShipmentPlanLine,
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
+import { ExpiryChip } from '../components/expiry-chip';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
+import { LotTaken } from '../inventory/lot-taken';
 import { api, ApiError } from '../lib/api';
 import {
-  formatDay,
   formatQuantity,
   groupedNumberMessage,
   SEPARATOR,
@@ -46,6 +47,22 @@ import { rem } from '../theme/rem';
  */
 function isNothing(quantity: string): boolean {
   return /^\s*0*([.,]0*)?\s*$/.test(quantity);
+}
+
+/**
+ * The lots a line will take whose expiry is not known yet (ADR-094, D2):
+ * those the plan takes, or those given a quantity once lots are chosen.
+ */
+function expiryToAdd(
+  entry: ShipmentPlanLine | undefined,
+  picking: Record<string, string> | undefined,
+): ShipmentPlanLine['lots'] {
+  if (!entry?.tracksLots) return [];
+  return entry.lots.filter(
+    (lot) =>
+      lot.expiry === 'unknown' &&
+      (picking ? !isNothing(picking[lot.lotId] ?? '') : lot.taken),
+  );
 }
 
 /**
@@ -386,6 +403,21 @@ export function ShipOrderDialog({
                     </Alert>
                   )}
 
+                  {/* Shipped all the same: its slip reads the lot as it
+                      is when printed (ADR-094, D2). */}
+                  {expiryToAdd(entry, picking).map((lot) => (
+                    <Alert key={lot.lotId} severity="warning">
+                      {intl.formatMessage(
+                        {
+                          id: 'orders.ship.expiryToAdd',
+                          defaultMessage:
+                            'Lot {code}’s expiry has not been entered. The packing slip will show none until it is.',
+                        },
+                        { code: <Reference>{lot.code}</Reference> },
+                      )}
+                    </Alert>
+                  ))}
+
                   {entry?.tracksLots && !picking && (
                     <Stack
                       direction="row"
@@ -402,33 +434,7 @@ export function ShipOrderDialog({
                               .map((lot, index) => (
                                 <Fragment key={lot.lotId}>
                                   {index > 0 && SEPARATOR}
-                                  {lot.expiresAt
-                                    ? intl.formatMessage(
-                                        {
-                                          id: 'orders.ship.lotTakeExpiring',
-                                          defaultMessage:
-                                            '{code} (expires {day}): {quantity}',
-                                        },
-                                        {
-                                          code: (
-                                            <Reference>{lot.code}</Reference>
-                                          ),
-                                          day: formatDay(lot.expiresAt),
-                                          quantity: formatQuantity(lot.take),
-                                        },
-                                      )
-                                    : intl.formatMessage(
-                                        {
-                                          id: 'orders.ship.lotTake',
-                                          defaultMessage: '{code}: {quantity}',
-                                        },
-                                        {
-                                          code: (
-                                            <Reference>{lot.code}</Reference>
-                                          ),
-                                          quantity: formatQuantity(lot.take),
-                                        },
-                                      )}
+                                  <LotTaken lot={lot} />
                                 </Fragment>
                               ))
                           : intl.formatMessage({
@@ -490,12 +496,10 @@ export function ShipOrderDialog({
                                   {lot.code}
                                 </TableCell>
                                 <TableCell>
-                                  {lot.expiresAt
-                                    ? formatDay(lot.expiresAt)
-                                    : intl.formatMessage({
-                                        id: 'orders.ship.noExpiry',
-                                        defaultMessage: 'Does not expire',
-                                      })}
+                                  <ExpiryChip
+                                    expiresAt={lot.expiresAt}
+                                    expiry={lot.expiry}
+                                  />
                                 </TableCell>
                                 <TableCell align="right">
                                   {formatQuantity(lot.onHand)}

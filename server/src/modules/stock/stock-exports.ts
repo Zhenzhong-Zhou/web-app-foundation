@@ -287,6 +287,8 @@ const DETAIL_WORDS: Record<string, Translatable> = {
 const OUTSIDE_WORDS = {
   supplier: t({ id: 'stock.end.supplier', defaultMessage: 'supplier' }),
   customer: t({ id: 'stock.end.customer', defaultMessage: 'customer' }),
+  opening: t({ id: 'stock.end.opening', defaultMessage: 'opening stock' }),
+  other: t({ id: 'stock.end.other', defaultMessage: 'other' }),
   run: t({ id: 'stock.end.run', defaultMessage: 'run' }),
   sample: t({ id: 'stock.end.sample', defaultMessage: 'sample' }),
   countedIn: t({ id: 'stock.end.countedIn', defaultMessage: 'counted in' }),
@@ -299,10 +301,11 @@ const OUTSIDE_WORDS = {
 /**
  * Where a movement with no place at one end came from or went to, by its
  * reason, as the screen's `outsideEnd` reads it (ADR-023): a receipt from
- * a supplier, a return or a voided shipment from a customer, a run's
- * output from the run, a correction counted in; a shipment to a customer,
- * a run's use to the run, a sample to "sample" (125), a correction
- * counted out.
+ * a supplier, or by why it came with no order, opening stock, a customer
+ * for stock brought back, or other (ADR-094, D3); a return or a voided
+ * shipment from a customer, a run's output from the run, a correction
+ * counted in; a shipment to a customer, a run's use to the run, a sample
+ * to "sample" (125), a correction counted out.
  */
 function outsideEnd(
   movement: Movement,
@@ -313,7 +316,7 @@ function outsideEnd(
   }
   switch (movement.reason) {
     case 'receipt':
-      return 'supplier';
+      return receiptEnd(movement.reasonDetail);
     case 'shipment':
     case 'return':
       return 'customer';
@@ -327,6 +330,36 @@ function outsideEnd(
     default:
       return null;
   }
+}
+
+/**
+ * A receipt's outside end by why it was received (ADR-094, D3): none, on
+ * an order, or a sample, from a supplier; opening stock; stock a customer
+ * brought back; or other. A detail this release does not know reads as a
+ * supplier's, as every receipt did before.
+ */
+function receiptEnd(detail: string | null): keyof typeof OUTSIDE_WORDS {
+  switch (detail) {
+    case 'opening':
+      return 'opening';
+    case 'returned':
+      return 'customer';
+    case 'other':
+      return 'other';
+    default:
+      return 'supplier';
+  }
+}
+
+/**
+ * A receipt's partner, the end it came from (ADR-094, D3, amending
+ * ADR-093's 82a): who it came from, by name, as the reader may see it;
+ * null for every other movement, which names its partner under For.
+ */
+function receivedFrom(movement: Movement): string | null {
+  return movement.reason === 'receipt'
+    ? (movement.recipient?.name ?? null)
+    : null;
 }
 
 /** A stock card's first and last lines (88a), in its Reason column. */
@@ -420,8 +453,8 @@ export function movementLines(
  * the stock into; then the lot's supplier's lot and its expiry, each
  * marked where it is still to add, as the Lot view's (ADR-094); For,
  * the document, or the partner a sample
- * went to or a receipt with no order came from, by name, only as the
- * reader may see it (55a; 125; ADR-094, R11); By with the person's email (ADR-063); the note last, as
+ * went to, by name, only as the reader may see it (55a; 125), a
+ * receipt's partner being its From, never its For (ADR-094, D3); By with the person's email (ADR-063); the note last, as
  * typed (review 54).
  */
 export function movementColumns(options: {
@@ -462,7 +495,11 @@ export function movementColumns(options: {
       OUTSIDE_WORDS,
       of((movement) => outsideEnd(movement, side)),
     );
-    const place = of((movement) => placeInWords(movement, side));
+    const place = of((movement) =>
+      side === 'from'
+        ? (placeInWords(movement, side) ?? receivedFrom(movement))
+        : placeInWords(movement, side),
+    );
     return {
       header,
       value: (line, locale) => place(line) ?? outside.value(line, locale),
@@ -605,9 +642,14 @@ export function movementColumns(options: {
     ),
     {
       header: t({ id: 'exports.column.for', defaultMessage: 'For' }),
+      // The document, or a sample's partner; a receipt's partner is its
+      // From (ADR-094, D3).
       value: of(
         (movement) =>
-          movement.document?.number ?? movement.recipient?.name ?? null,
+          movement.document?.number ??
+          (movement.reason === 'receipt'
+            ? null
+            : (movement.recipient?.name ?? null)),
       ),
     },
     {

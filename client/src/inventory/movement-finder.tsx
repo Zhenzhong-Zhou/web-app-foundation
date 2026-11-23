@@ -3,12 +3,13 @@ import { useIntl } from 'react-intl';
 
 import type { LookupResult, VariantOption } from '../api/types.gen';
 import type { OrderStatus } from '../lib/api-names';
-import { formatDay, itemName } from '../lib/format';
+import { itemName } from '../lib/format';
 import { fulfillmentLabel, orderStatusLabel } from '../orders/status';
 import { KIND_LABELS } from '../search/lookup-kinds';
 import { lookupLongEnough } from '../search/lookup-minimum';
 import { useLookup } from '../search/use-lookup';
 import { rem } from '../theme/rem';
+import { lotExpiryPart } from './lot-expiry';
 
 /** The kinds Movements filters by; never a run or a return (126). */
 const FINDS = ['item', 'lot', 'order'] as const;
@@ -105,11 +106,9 @@ export function MovementFinder({
             { code: result.supplierLot },
           ),
         item ? itemName(item.productName, item.variantName) : result.detail,
-        result.expiresAt &&
-          intl.formatMessage(
-            { id: 'inventory.trace.expires', defaultMessage: 'expires {day}' },
-            { day: formatDay(result.expiresAt) },
-          ),
+        // Its expiry, or "expiry to add" while it is not known (ADR-094,
+        // D2); nothing for one that does not expire.
+        lotExpiryPart(result, intl),
       ]
         .filter(Boolean)
         .join(SEPARATOR);

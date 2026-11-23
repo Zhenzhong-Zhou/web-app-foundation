@@ -22,6 +22,7 @@ const RETURNS: OrderReturn[] = [
         unitOfMeasure: 'each',
         lotCode: null,
         expiresAt: null,
+        expiry: null,
         quantity: '2.0000',
       },
     ],

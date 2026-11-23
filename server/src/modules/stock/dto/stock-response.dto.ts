@@ -1,4 +1,10 @@
-import type { LotExpiry, ProductType } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ProductType,
+} from '../../../database/schema';
 
 /**
  * Stock as the API returns it (ADR-068): levels, movements, lots and the
@@ -303,5 +309,8 @@ export class LotMatch {
   id!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   sku!: string;
 }

@@ -60,13 +60,15 @@ const WAITING_HASH = '#costs';
 
 /**
  * Only an acquisition takes a cost; the server refuses the rest (ADR-048).
- * A batch's output waits for its run to close instead.
+ * A batch's output waits for its run to close instead, and stock moved in
+ * from another lot for that lot's cost, which follows it (ADR-094, D5). A
+ * kind this tab does not know is offered nothing (D4).
  */
 function takesACost(entry: NeedsCostEntry): boolean {
   return (
     entry.kind === 'opening' ||
-    entry.reason === 'receipt' ||
-    entry.reason === 'adjustment'
+    (entry.kind === 'movement' &&
+      (entry.reason === 'receipt' || entry.reason === 'adjustment'))
   );
 }
 
@@ -88,12 +90,48 @@ const WHY = defineMessages({
     id: 'costs.why.noPrice',
     defaultMessage: 'Received with no price',
   },
+  fromBefore: {
+    id: 'costs.why.fromBefore',
+    defaultMessage: 'Back from before lot tracking',
+  },
+  waiting: { id: 'costs.needsCost', defaultMessage: 'Waiting for a cost' },
 });
 
-function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): string {
+/**
+ * Why a row waits, in the words someone would fix it by. A kind or a
+ * reason this tab does not know says only that it waits, never a known
+ * case's words (ADR-094, D4): a tab opened before the next kind is added
+ * reads it so.
+ */
+function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): ReactNode {
   if (entry.kind === 'opening') return intl.formatMessage(WHY.opening);
+  if (entry.kind === 'lot_change') {
+    // Its cost is the first lot's, and follows from there (D5).
+    return entry.fromLotId && entry.fromLotCode ? (
+      <FormattedMessage
+        id="costs.why.movedIn"
+        defaultMessage="Moved in from lot {code}. Its cost follows that lot’s."
+        values={{
+          code: (
+            <Link
+              component={RouterLink}
+              to={`/lots/${entry.fromLotId}`}
+              state={OFFER_BACK}
+              underline="always"
+            >
+              <Reference>{entry.fromLotCode}</Reference>
+            </Link>
+          ),
+        }}
+      />
+    ) : (
+      intl.formatMessage(WHY.fromBefore)
+    );
+  }
+  if (entry.kind !== 'movement') return intl.formatMessage(WHY.waiting);
   if (entry.reason === 'production') return intl.formatMessage(WHY.production);
   if (entry.reason === 'adjustment') return intl.formatMessage(WHY.adjustment);
+  if (entry.reason !== 'receipt') return intl.formatMessage(WHY.waiting);
   if (entry.unitPrice && entry.currency) {
     // Written here rather than in WHY: a descriptor from defineMessages is
     // typed as taking no values.

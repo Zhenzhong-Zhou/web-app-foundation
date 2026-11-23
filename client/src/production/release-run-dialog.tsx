@@ -25,8 +25,10 @@ import type {
   ProductionRun,
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
+import { ExpiryChip } from '../components/expiry-chip';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
+import { LotTaken } from '../inventory/lot-taken';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import {
@@ -530,29 +532,7 @@ export function ReleaseRunDialog({
                             .map((lot, index) => (
                               <Fragment key={lot.lotId}>
                                 {index > 0 && SEPARATOR}
-                                {lot.expiresAt
-                                  ? intl.formatMessage(
-                                      {
-                                        id: 'orders.ship.lotTakeExpiring',
-                                        defaultMessage:
-                                          '{code} (expires {day}): {quantity}',
-                                      },
-                                      {
-                                        code: <Reference>{lot.code}</Reference>,
-                                        day: formatDay(lot.expiresAt),
-                                        quantity: formatQuantity(lot.take),
-                                      },
-                                    )
-                                  : intl.formatMessage(
-                                      {
-                                        id: 'orders.ship.lotTake',
-                                        defaultMessage: '{code}: {quantity}',
-                                      },
-                                      {
-                                        code: <Reference>{lot.code}</Reference>,
-                                        quantity: formatQuantity(lot.take),
-                                      },
-                                    )}
+                                <LotTaken lot={lot} />
                               </Fragment>
                             ))
                         : intl.formatMessage({
@@ -601,12 +581,10 @@ export function ReleaseRunDialog({
                                 <Reference>{lot.code}</Reference>
                               </TableCell>
                               <TableCell>
-                                {lot.expiresAt
-                                  ? formatDay(lot.expiresAt)
-                                  : intl.formatMessage({
-                                      id: 'orders.ship.noExpiry',
-                                      defaultMessage: 'Does not expire',
-                                    })}
+                                <ExpiryChip
+                                  expiresAt={lot.expiresAt}
+                                  expiry={lot.expiry}
+                                />
                               </TableCell>
                               <TableCell align="right">
                                 {formatQuantity(lot.onHand)}

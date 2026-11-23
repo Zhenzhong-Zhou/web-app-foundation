@@ -489,6 +489,7 @@ describe('Movements (e2e)', () => {
         'lotId',
         'lotCode',
         'lotExpiresAt',
+        'lotExpiry',
         'actorName',
         'actorEmail',
       ].sort(),

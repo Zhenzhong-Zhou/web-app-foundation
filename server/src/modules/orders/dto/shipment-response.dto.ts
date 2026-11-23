@@ -1,4 +1,7 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 import type { Locale } from '../../../common/locales';
+import { LOT_EXPIRIES, type LotExpiry } from '../../../database/schema';
 
 /**
  * An order's shipments, returns and their plans as the API returns them
@@ -15,6 +18,12 @@ export class ShipmentItem {
   /** Null for untracked stock, which moves without a lot. */
   lotCode!: string | null;
   expiresAt!: string | null;
+  /**
+   * The lot's kind of expiry, so one not known yet reads "Expiry to add"
+   * (ADR-094, R9); null with no lot.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  expiry!: LotExpiry | null;
   quantity!: string;
 }
 
@@ -81,6 +90,12 @@ export class ShipmentPlanLot {
   lotId!: string;
   code!: string;
   expiresAt!: string | null;
+  /**
+   * Which expiry it has; one not known yet reads "Expiry to add", and Ship
+   * warns of it, still shipping (ADR-094, R9).
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   /** On hand at the location. */
   onHand!: string;
   /** What earliest-expiry-first takes from this lot; "0" when none. */
@@ -128,6 +143,9 @@ export class ReturnableLot {
   lotId!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   shipped!: string;
   returned!: string;
 }

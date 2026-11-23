@@ -1621,6 +1621,7 @@ export type RunLine = {
 };
 
 export type ComponentLot = {
+  expiry: 'date' | 'unknown' | 'none';
   componentVariantId: string;
   lotId: string;
   code: string;
@@ -1655,6 +1656,7 @@ export type RunDetail = {
 };
 
 export type IssuePlanLot = {
+  expiry: 'date' | 'unknown' | 'none';
   lotId: string;
   code: string;
   expiresAt: string | null;
@@ -2099,6 +2101,7 @@ export type StockLotCounts = {
 };
 
 export type LotMatch = {
+  expiry: 'date' | 'unknown' | 'none';
   id: string;
   code: string;
   expiresAt: string | null;
@@ -3245,6 +3248,7 @@ export type OrderDetail = {
 };
 
 export type OrderReceipt = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   createdAt: string;
   productId: string;
@@ -3371,6 +3375,7 @@ export type ReceiptEnvelope = {
 };
 
 export type ShipmentItem = {
+  expiry: 'date' | 'unknown' | 'none' | null;
   sku: string;
   description: string;
   unitOfMeasure: string;
@@ -3436,6 +3441,7 @@ export type PreviewShipmentDto = {
 };
 
 export type ShipmentPlanLot = {
+  expiry: 'date' | 'unknown' | 'none';
   lotId: string;
   code: string;
   expiresAt: string | null;
@@ -3496,6 +3502,7 @@ export type OrderReturn = {
 };
 
 export type ReturnableLot = {
+  expiry: 'date' | 'unknown' | 'none';
   lotId: string;
   code: string;
   expiresAt: string | null;

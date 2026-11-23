@@ -1091,6 +1091,8 @@
   "stock.end.countedIn": "compté en plus",
   "stock.end.countedOut": "compté en moins",
   "stock.end.customer": "client",
+  "stock.end.opening": "stock d’ouverture",
+  "stock.end.other": "autre",
   "stock.end.run": "fabrication",
   "stock.end.sample": "échantillon",
   "stock.end.supplier": "fournisseur",

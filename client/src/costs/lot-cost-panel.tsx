@@ -58,22 +58,71 @@ const WORDS = defineMessages({
   return: { id: 'inventory.trace.returned', defaultMessage: 'Returned' },
   countedOut: { id: 'costs.entry.countedOut', defaultMessage: 'Counted out' },
   countedIn: { id: 'costs.entry.countedIn', defaultMessage: 'Counted in' },
+  fromBefore: {
+    id: 'costs.entry.fromBefore',
+    defaultMessage: 'Back from before lot tracking',
+  },
+  other: { id: 'costs.entry.other', defaultMessage: 'Other change' },
 });
 
 /**
  * What a valuation row was, in words, in the reader's language (ADR-054). A
  * sign test on the string, not arithmetic (ADR-025): an inbound adjustment
- * is positive, an outbound one negative.
+ * is positive, an outbound one negative, as a lot change's row in and its
+ * row out are. A late cost carried with stock moved between lots names
+ * the other lot, whichever way it went (ADR-094, D5). A kind or a reason
+ * this tab does not know reads "Other change", never its stored key
+ * (D4).
  */
 function describe(entry: LotCostEntry, intl: IntlShape): string {
+  const out = entry.quantity.startsWith('-');
+  if (entry.carried && entry.otherLotCode) {
+    return entry.carried === 'to'
+      ? intl.formatMessage(
+          {
+            id: 'costs.entry.carriedTo',
+            defaultMessage: 'Cost carried to lot {code}',
+          },
+          { code: entry.otherLotCode },
+        )
+      : intl.formatMessage(
+          {
+            id: 'costs.entry.carriedFrom',
+            defaultMessage: 'Cost from lot {code}',
+          },
+          { code: entry.otherLotCode },
+        );
+  }
+
   switch (entry.kind) {
     case 'opening':
     case 'run_close':
     case 'correction':
     case 'issued':
       return intl.formatMessage(WORDS[entry.kind]);
-    default:
+    case 'lot_change':
+      if (entry.otherLotCode) {
+        return out
+          ? intl.formatMessage(
+              {
+                id: 'costs.entry.movedTo',
+                defaultMessage: 'Moved to lot {code}',
+              },
+              { code: entry.otherLotCode },
+            )
+          : intl.formatMessage(
+              {
+                id: 'costs.entry.movedInFrom',
+                defaultMessage: 'Moved in from lot {code}',
+              },
+              { code: entry.otherLotCode },
+            );
+      }
+      return intl.formatMessage(out ? WORDS.other : WORDS.fromBefore);
+    case 'movement':
       break;
+    default:
+      return intl.formatMessage(WORDS.other);
   }
 
   switch (entry.reason) {
@@ -85,11 +134,9 @@ function describe(entry: LotCostEntry, intl: IntlShape): string {
     case 'return':
       return intl.formatMessage(WORDS[entry.reason]);
     case 'adjustment':
-      return intl.formatMessage(
-        entry.quantity.startsWith('-') ? WORDS.countedOut : WORDS.countedIn,
-      );
+      return intl.formatMessage(out ? WORDS.countedOut : WORDS.countedIn);
     default:
-      return entry.reason ?? entry.kind;
+      return intl.formatMessage(WORDS.other);
   }
 }
 
@@ -264,7 +311,9 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      {entry.kind === 'movement' || entry.kind === 'opening'
+                      {entry.kind === 'movement' ||
+                      entry.kind === 'opening' ||
+                      entry.kind === 'lot_change'
                         ? displayQuantity(entry.quantity)
                         : NO_VALUE}
                     </TableCell>

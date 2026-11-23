@@ -732,6 +732,31 @@ a second organization.
   counted in neither"; with lot K2-2609 chosen it is Out, with K2-2609B
   In. The Export has To lot after Lot: K2-2609B on that row, empty on
   every other. In 中文 批次变更：批次间转移.
+- **MC-332** *(ADR-094, R9, D2)* An expiry still to add, worded alike
+  everywhere. Take K2-60CT's first lot made here, its expiry not known
+  yet, and read it where a lot's expiry shows: Stock and the Lot view,
+  Where it stands, Movements' Lot cell, the top bar's search and
+  Movements' Find an item, lot or order, Trace a lot's list and the
+  lot's own page under its title, Count it in…'s One of its lots and
+  the lot fields' line under a typed code, a sale's Ship and Return, a
+  run's Release, and the shipped lots on the order: each reads "Expiry
+  to add" (in a line, "expiry to add"), never "No expiry" or "Does not
+  expire"; a lot that does not expire reads "—" in a column and nothing
+  in a line. Ship that lot on a sale: one amber line reads "Lot …'s
+  expiry has not been entered. The packing slip will show none until it
+  is.", the lots line "… (expiry to add): …", and Ship still ships; the
+  packing slip's Expires reads "—" until the date is added in Edit lot
+  details, and then prints it. In 中文 待补有效期.
+- **MC-333** *(ADR-094, R11, D3; amends ADR-093's 82a)* A receipt's From
+  end. On Movements, Reason Received: K2-2601, returned by Northside
+  Pharmacy, starts its From → to at "Northside Pharmacy", a link to the
+  partner, and its For reads "—"; a receipt of opening stock starts at
+  "opening stock", one returned with no partner at "customer", one under
+  other at "other", and a sample or one with no reason at "supplier", as
+  a receipt on an order does, whose For stays its order. A role without
+  `partners.view` reads the words by why instead of the partner. The
+  Export writes the same in its From column, and For only the document.
+  In 中文 期初库存, 客户, 其他.
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -1190,6 +1215,20 @@ a second organization.
   needs-cost list.
 - **MC-804** Costs and price lists are hidden from a viewer and from any role
   without the permission.
+- **MC-805** *(ADR-094, R20, D4, D5)* A cost that follows a move. On
+  K2-2609B's page, Cost's history reads its move "Moved in from lot
+  K2-2609" with its quantity, and K2-2609's "Moved to lot K2-2609B"; a
+  start lot's stock back from before reads "Back from before lot
+  tracking". On Stock value, stock moved in from a lot still waiting
+  reads "Moved in from lot …. Its cost follows that lot's.", the lot a
+  link to its page, and offers no Set cost. Set the first lot's
+  delivery's cost: the message reads "Cost saved. … of it followed the
+  stock moved to lot …", each lot named where several took a part; the
+  moved row leaves the list, both lots are valued, and their histories
+  read "Cost carried to lot …" and "Cost from lot …". A row of a kind
+  the tab does not know, in an old tab after a deploy, reads "Other
+  change" and "Waiting for a cost", never a stored key, and offers no
+  Set cost.
 
 ## 9. Recall drill (timed)
 
@@ -1238,9 +1277,12 @@ search to having the list of customers; the target is **under two minutes**.
 - **MC-908** *(ADR-094, R21)* A recall through a move between lots. On
   a lot, move part of it into another lot of the item, then ship from
   the second lot to a customer who never received the first. On the
-  first lot's trace, Who received it lists that customer, its Lot the
-  second lot's code, which opens the second lot's page; the Export lists
-  them the same. The second lot's Who received it lists only its own
+  first lot's trace, Who received it lists that customer, its Through
+  lot the second lot's code, which opens the second lot's page, Back
+  returning to the first lot's page with focus on that link; a row of
+  the lot itself reads "—" there. The Export lists them the same. The
+  second lot's Where it came from reads "Moved in from lot …", a link
+  to the first lot, and its Who received it lists only its own
   customers. Trace the ingredient the first lot was made from: its Went
   into lists both lots, through the same run, and its recall list
   reaches the same customer.
@@ -1258,6 +1300,22 @@ search to having the list of customers; the target is **under two minutes**.
   is offered alone, "Lot … · supplier's lot Hx-2609 · …". In 中文 the
   top bar's line reads 有效期至 … or 待补有效期, then 供应商批号 Hx-2609 or
   待补供应商批号.
+- **MC-910** *(ADR-094, R6, R11, R21; #617, #620)* A lot's page says
+  how many and where from. On K2-2609's trace, under its title and All
+  movements of this lot, "Received by 2 partners" (with "and some with
+  no recipient recorded" where something left with no one on record);
+  pressing it moves to Who received it, its heading focused. A lot made
+  here reads "Supplier's lot Hx-2609" or "Supplier's lot to add" under
+  its title, beside its expiry or "expiry to add". Where it came from
+  reads K2-2601 "Received from Northside Pharmacy with no order:
+  returned", a link to the partner for a role with `partners.view`, a
+  receipt of opening stock with no partner "Received with no order:
+  opening stock", and BOTTLE-A60's start lot, after Start tracking
+  lots…, "Stock on hand when lot tracking started". At 390 px Who
+  received it is a card a recipient: who, its order, Through lot where
+  it is not this lot, only what it shipped, sampled or returned, and
+  the date, nothing cut off at the edge. In 中文 … 个合作伙伴已收货,
+  开始按批次跟踪时的现有库存.
 
 ## 10. Audit
 
@@ -7682,3 +7740,9 @@ first.
   the mark, the marks and Details to add, a lot change on Movements and
   the export's To lot: MC-327 to MC-331 added; MC-203 and MC-310
   rewritten.
+- 2026-11-22: ADR-094's lot's page and what each screen reads, R6, R9,
+  R11, R20, R21 and D2 to D5, with #617 and #620: Through lot, the count
+  above, cards on a phone and where it came from; a lot change and a
+  cost carried in Cost and on Stock value; an expiry to add worded
+  alike, with Ship's amber line; a receipt's From end: MC-332, MC-333,
+  MC-805 and MC-910 added; MC-908 rewritten.

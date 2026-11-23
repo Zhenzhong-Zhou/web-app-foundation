@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
+import type { LotExpiry } from '../../database/schema';
 import { itemName, namesIn } from '../stock/item-name';
 import type { Tx } from '../stock/stock.service';
 
@@ -18,6 +19,8 @@ export interface LotItem {
   /** Null for untracked stock, which moves without a lot. */
   lotCode: string | null;
   expiresAt: string | null;
+  /** The lot's kind of expiry (ADR-094, R9); null with no lot. */
+  expiry: LotExpiry | null;
   quantity: string;
 }
 
@@ -66,6 +69,7 @@ export async function lotItemsOf(
         pv.unit_of_measure,
         l.code as lot_code,
         l.expires_at,
+        l.expiry,
         sum(sm.quantity)::text as quantity
       from stock_movements sm
       join product_variants pv on pv.id = sm.variant_id
@@ -80,7 +84,7 @@ export async function lotItemsOf(
           sql`, `,
         )})
       group by sm.reference_id, sm.sku, pr.id, pr.name, pv.id, pv.name,
-        pv.unit_of_measure, l.code, l.expires_at
+        pv.unit_of_measure, l.code, l.expires_at, l.expiry
       order by sm.sku, l.expires_at asc nulls last, l.code
     `)
   ).rows as {
@@ -91,6 +95,7 @@ export async function lotItemsOf(
     unit_of_measure: string;
     lot_code: string | null;
     expires_at: string | null;
+    expiry: LotExpiry | null;
     quantity: string;
   }[];
 
@@ -105,6 +110,7 @@ export async function lotItemsOf(
       unitOfMeasure: row.unit_of_measure,
       lotCode: row.lot_code,
       expiresAt: row.expires_at,
+      expiry: row.expiry,
       quantity: row.quantity,
     });
 

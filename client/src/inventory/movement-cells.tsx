@@ -3,6 +3,7 @@ import { defineMessages, type IntlShape, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { Movement } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
 import { LotLink } from '../components/lot-link';
@@ -51,14 +52,21 @@ const OUTSIDE = defineMessages({
     id: 'inventory.movements.end.countedOut',
     defaultMessage: 'counted out',
   },
+  opening: {
+    id: 'inventory.movements.end.opening',
+    defaultMessage: 'opening stock',
+  },
+  other: { id: 'inventory.movements.end.other', defaultMessage: 'other' },
 });
 
 /**
  * Where a movement with no place at one end came from or went to, by its
- * reason (ADR-023): a receipt from a supplier, a return or a voided
- * shipment from a customer, a run's output from the run, a correction
- * counted in; a shipment to a customer, a run's use to the run, a sample
- * to "sample", read as a shipment is (125), a correction counted out.
+ * reason (ADR-023): a receipt from a supplier, or by why it came with no
+ * order, opening stock, a customer for stock brought back, or other
+ * (ADR-094, D3); a return or a voided shipment from a customer, a run's
+ * output from the run, a correction counted in; a shipment to a
+ * customer, a run's use to the run, a sample to "sample", read as a
+ * shipment is (125), a correction counted out.
  */
 function outsideEnd(
   movement: Movement,
@@ -67,7 +75,7 @@ function outsideEnd(
   const coming = side === 'from';
   switch (movement.reason) {
     case 'receipt':
-      return 'supplier';
+      return receiptEnd(movement.reasonDetail);
     case 'shipment':
     case 'return':
       return 'customer';
@@ -80,6 +88,25 @@ function outsideEnd(
       return coming ? 'countedIn' : 'countedOut';
     default:
       return null;
+  }
+}
+
+/**
+ * A receipt's outside end by why it was received (ADR-094, D3): none, on
+ * an order, or a sample, from a supplier; opening stock; stock a customer
+ * brought back; or other. A detail this tab does not know reads as a
+ * supplier's, as every receipt did before.
+ */
+function receiptEnd(detail: string | null): keyof typeof OUTSIDE {
+  switch (detail) {
+    case 'opening':
+      return 'opening';
+    case 'returned':
+      return 'customer';
+    case 'other':
+      return 'other';
+    default:
+      return 'supplier';
   }
 }
 
@@ -368,6 +395,7 @@ export function MovementEnd({
   side: 'from' | 'to';
 }) {
   const intl = useIntl();
+  const can = useCan();
   const [id, place] =
     side === 'from'
       ? [
@@ -395,6 +423,29 @@ export function MovementEnd({
     );
   }
 
+  // A receipt's partner is where it came from (ADR-094, D3, amending
+  // ADR-093's 82a): a link for whoever may open partners, grey words for
+  // the rest.
+  const sender =
+    side === 'from' && movement.reason === 'receipt'
+      ? movement.recipient
+      : null;
+  if (sender) {
+    return can('partners.view') ? (
+      <Link
+        component={RouterLink}
+        to={`/partners/${sender.id}`}
+        state={OFFER_BACK}
+      >
+        {sender.name}
+      </Link>
+    ) : (
+      <Box component="span" sx={{ color: 'text.secondary' }}>
+        {sender.name}
+      </Box>
+    );
+  }
+
   const outside = id ? null : outsideEnd(movement, side);
   return (
     <Box component="span" sx={{ color: 'text.secondary' }}>
@@ -411,7 +462,7 @@ export function MovementEnd({
 export function MovementLot({
   movement,
 }: {
-  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt'> &
+  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt' | 'lotExpiry'> &
     Partial<Pick<Movement, 'toLotId' | 'toLotCode'>>;
 }) {
   const intl = useIntl();
@@ -445,8 +496,13 @@ export function MovementLot({
   return (
     <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
       <LotLink id={movement.lotId} code={movement.lotCode} />
-      {movement.lotExpiresAt && (
-        <ExpiryChip expiresAt={movement.lotExpiresAt} />
+      {/* Its expiry, or "Expiry to add" while it is not known (ADR-094,
+          D2); nothing for a lot that does not expire. */}
+      {(movement.lotExpiresAt || movement.lotExpiry === 'unknown') && (
+        <ExpiryChip
+          expiresAt={movement.lotExpiresAt}
+          expiry={movement.lotExpiry}
+        />
       )}
     </Stack>
   );
@@ -455,11 +511,13 @@ export function MovementLot({
 /**
  * The document it was for (55a): the order received, shipped or returned
  * on, or the run, a link to its page; a sample's recipient, a link to the
- * partner (125); only what the reader may see comes.
+ * partner (125); only what the reader may see comes. A receipt's partner
+ * is its From end, never here (ADR-094, D3).
  */
 export function MovementFor({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const { document, recipient } = movement;
+  const { document } = movement;
+  const recipient = movement.reason === 'receipt' ? null : movement.recipient;
 
   if (recipient) {
     return (

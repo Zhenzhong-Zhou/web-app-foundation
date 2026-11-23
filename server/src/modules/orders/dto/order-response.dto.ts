@@ -1,8 +1,12 @@
-import type {
-  InvoiceStatus,
-  OrderDirection,
-  OrderStatus,
-  ProductType,
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  type InvoiceStatus,
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type OrderDirection,
+  type OrderStatus,
+  type ProductType,
 } from '../../../database/schema';
 import type { ChosenSite } from '../../locations/dto/location-response.dto';
 import type { OrderFulfillment } from '../order-fulfillment';
@@ -271,6 +275,12 @@ export class OrderReceipt {
   lotCode!: string | null;
   /** `YYYY-MM-DD` (ADR-052); null with none. */
   lotExpiresAt!: string | null;
+  /**
+   * The lot's kind of expiry, so one not known yet reads "Expiry to add"
+   * (ADR-094, R9); null with no lot.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  lotExpiry!: LotExpiry | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */

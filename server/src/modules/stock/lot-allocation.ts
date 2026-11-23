@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
+import type { LotExpiry } from '../../database/schema';
 import type { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { TRACKING_STARTED } from './start-lot';
@@ -12,6 +13,8 @@ export interface LotCandidate {
   lotId: string;
   code: string;
   expiresAt: string | null;
+  /** Its kind of expiry, for "Expiry to add" (ADR-094, R9). */
+  expiry: LotExpiry;
   /** On hand at the location. A numeric(18,4) string, never a number. */
   onHand: string;
   /** What earliest-expiry-first takes from this lot. '0' when none. */
@@ -70,7 +73,7 @@ export async function lotCandidates(
     with candidates as (${scope}),
     ordered as (
       select
-        lot_id, code, expires_at, created_at, quantity, preferred,
+        lot_id, code, expires_at, expiry, created_at, quantity, preferred,
         coalesce(
           sum(quantity) over (
             order by preferred desc, expires_at asc nulls last, created_at asc, lot_id asc
@@ -84,6 +87,7 @@ export async function lotCandidates(
       lot_id,
       code,
       expires_at,
+      expiry,
       quantity::text as on_hand,
       greatest(least(quantity, ${query.quantity}::numeric - before), 0)::text as take,
       least(quantity, ${query.quantity}::numeric - before) > 0 as taken
@@ -106,6 +110,7 @@ export async function lotCandidates(
       lotId: row.lot_id as string,
       code: row.code as string,
       expiresAt: (row.expires_at as string | null) ?? null,
+      expiry: row.expiry as LotExpiry,
       onHand: row.on_hand as string,
       take: row.take as string,
       taken: row.taken as boolean,
@@ -210,7 +215,7 @@ function candidateScope(query: CandidateQuery): SQL {
 
   return sql`
     select
-      sl.lot_id, sl.quantity, l.code, l.expires_at, l.created_at,
+      sl.lot_id, sl.quantity, l.code, l.expires_at, l.expiry, l.created_at,
       ${preferred} as preferred
     from stock_levels sl
     join lots l on l.id = sl.lot_id

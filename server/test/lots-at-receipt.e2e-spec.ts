@@ -348,21 +348,44 @@ describe('A new lot at receipt (e2e)', () => {
   }
 
   describe('a receipt with no order (R11)', () => {
-    const REASONS: [string, Record<string, unknown>, string][] = [
-      ['opening stock', { reasonDetail: 'opening' }, 'stock.detail.opening'],
-      ['returned', { reasonDetail: 'returned' }, 'stock.detail.returned'],
-      ['a sample', { reasonDetail: 'sample' }, 'stock.detail.sample'],
-      ['other', { reasonDetail: 'other' }, 'stock.detail.other'],
+    // Each with the From end its export writes where no partner is
+    // named, as Movements' From → to reads it (ADR-094, D3).
+    const REASONS: [string, Record<string, unknown>, string, string][] = [
+      [
+        'opening stock',
+        { reasonDetail: 'opening' },
+        'stock.detail.opening',
+        'stock.end.opening',
+      ],
+      [
+        'returned',
+        { reasonDetail: 'returned' },
+        'stock.detail.returned',
+        'stock.end.customer',
+      ],
+      [
+        'a sample',
+        { reasonDetail: 'sample' },
+        'stock.detail.sample',
+        'stock.end.supplier',
+      ],
+      [
+        'other',
+        { reasonDetail: 'other' },
+        'stock.detail.other',
+        'stock.end.other',
+      ],
       [
         'other with a note',
         { reasonDetail: 'other', note: 'Left by the previous tenant' },
         'stock.detail.other',
+        'stock.end.other',
       ],
     ];
 
     it.each(REASONS)(
-      'records why as %s, on the movement and in its export',
-      async (_why, why, words) => {
+      'records why as %s, on the movement and in its export, its From end by why',
+      async (_why, why, words, end) => {
         const w = await world();
 
         const { movement } = written(
@@ -389,6 +412,9 @@ describe('A new lot at receipt (e2e)', () => {
           }),
         ]);
         expect(column('Note')).toEqual([why.note ?? '']);
+        expect(column('From')).toEqual([
+          said('en', end as Parameters<typeof said>[1]),
+        ]);
       },
     );
 
@@ -409,7 +435,7 @@ describe('A new lot at receipt (e2e)', () => {
     // E2: kept as a sample's recipient is, so a lot traces to its
     // supplier with or without an order; another organization's partner
     // is unknown, a 400 (#314).
-    it('names who it came from, a partner of this organization alone, on the movement and in its export', async () => {
+    it('names who it came from, a partner of this organization alone, on the movement and as its export’s From, For staying the document’s (D3)', async () => {
       const w = await world();
       const beta = await world('beta');
 
@@ -435,7 +461,9 @@ describe('A new lot at receipt (e2e)', () => {
       expect(listed.entries.map((entry) => entry.recipient)).toEqual([
         { id: w.supplier, name: 'Cascade Botanicals' },
       ]);
-      expect((await exported(w.org))('For')).toEqual(['Cascade Botanicals']);
+      const column = await exported(w.org);
+      expect(column('From')).toEqual(['Cascade Botanicals']);
+      expect(column('For')).toEqual(['']);
 
       const elsewhere = await ROUTES['Receive stock'](w, {
         lot: { makeCode: true },

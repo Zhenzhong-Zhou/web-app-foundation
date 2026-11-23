@@ -15,10 +15,10 @@ Vous pouvez aussi trouver un lot par son code ou par le lot du fournisseur avec 
 Sous le code du lot, le nom de son article ouvre la page de l’article, pour qui peut voir les articles, et **Tous les mouvements de ce lot** ouvre Mouvements sur son article, pour ce lot seul et toute son histoire, sans dates.
 
 - **Où il se trouve** : chaque emplacement qui en contient, écrit par son chemin complet depuis son entrepôt, et combien. Une personne qui ne peut pas voir les emplacements lit plutôt la quantité **Utilisable** et **Inutilisable**, sans aucun emplacement nommé.
-- **D’où il vient** : sa réception et la commande du fournisseur, ou l’ordre de fabrication qui l’a produit et sa licence.
+- **D’où il vient** : sa réception et la commande du fournisseur, ou l’ordre de fabrication qui l’a produit et sa licence. Une réception sans commande dit de qui elle vient, s’il a été indiqué, et pourquoi, par exemple « Reçu sans commande : stock d’ouverture »; du stock venu d’un autre lot nomme ce lot; et le lot créé au début du suivi par lot indique « Stock en main au début du suivi par lot ».
 - **Fabriqué à partir de** : les lots de composants qu’un ordre de fabrication a utilisés, peu importe le nombre d’étapes.
 - **Utilisé dans** : les ordres de fabrication qui l’ont utilisé, et les lots qu’ils ont produits.
-- **Qui l’a reçu** : chaque client à qui ce lot, ou ce qui en a été fabriqué, a été expédié ou donné en échantillon, et ce qui est revenu. Une partie déplacée vers un autre lot y est suivie : qui a reçu cet autre lot figure aussi, sous le code de ce lot.
+- **Qui l’a reçu** : chaque client à qui ce lot, ou ce qui en a été fabriqué, a été expédié ou donné en échantillon, et ce qui est revenu. Une partie déplacée vers un autre lot y est suivie : qui a reçu cet autre lot figure aussi, sa colonne **Par le lot** nommant ce lot, qui ouvre sa page. Sous le code du lot, une ligne dit combien de partenaires l’ont reçu; appuyez dessus pour aller à la liste. Sur un téléphone, chacun est une carte.
 
 Certaines unités ont pu partir sans destinataire enregistré : expédiées sans commande, ou données en échantillon sans nom. Elles figurent sans partenaire.
 

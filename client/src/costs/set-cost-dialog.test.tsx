@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { NeedsCostEntry } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
 import { SetCostDialog } from './set-cost-dialog';
@@ -42,13 +43,15 @@ function open(entry: NeedsCostEntry = RECEIPT, onSaved = vi.fn()) {
   const onClose = vi.fn();
 
   render(
-    <SetCostDialog
-      open
-      entry={entry}
-      baseCurrency="CAD"
-      onClose={onClose}
-      onSaved={onSaved}
-    />,
+    <ToastProvider>
+      <SetCostDialog
+        open
+        entry={entry}
+        baseCurrency="CAD"
+        onClose={onClose}
+        onSaved={onSaved}
+      />
+    </ToastProvider>,
   );
 
   return { onSaved, onClose };
@@ -88,7 +91,13 @@ describe('SetCostDialog', () => {
       http.put('/api/v1/costs/valuations/valuation-1', async ({ request }) => {
         body = await request.json();
         return HttpResponse.json({
-          cost: { value: '34.250000', held: '34.250000', issued: '0.000000' },
+          cost: {
+            valuationId: 'valuation-1',
+            value: '34.250000',
+            held: '34.250000',
+            issued: '0.000000',
+            followed: [],
+          },
         });
       }),
     );
@@ -128,7 +137,13 @@ describe('SetCostDialog', () => {
       http.put('/api/v1/costs/valuations/valuation-1', async () => {
         await answered;
         return HttpResponse.json({
-          cost: { value: '25.000000', held: '25.000000', issued: '0.000000' },
+          cost: {
+            valuationId: 'valuation-1',
+            value: '25.000000',
+            held: '25.000000',
+            issued: '0.000000',
+            followed: [],
+          },
         });
       }),
     );
@@ -151,6 +166,51 @@ describe('SetCostDialog', () => {
     answer();
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
   });
+
+  // From the write's own answer (ADR-094, D5): the part of the cost that
+  // followed stock moved to another lot, each lot named where there are
+  // several; else "Cost set".
+  it.each([
+    ['nothing followed', [], 'Cost set'],
+    [
+      'one lot',
+      [{ lotId: 'lot-b', lotCode: 'LOT-B', value: '40.000000' }],
+      'Cost saved. CA$40.00 of it followed the stock moved to lot LOT-B.',
+    ],
+    [
+      'two lots',
+      [
+        { lotId: 'lot-b', lotCode: 'LOT-B', value: '40.000000' },
+        { lotId: 'lot-c', lotCode: 'LOT-C', value: '10.000000' },
+      ],
+      'Cost saved. Part of it followed the stock moved to other lots: CA$40.00 to lot LOT-B and CA$10.00 to lot LOT-C.',
+    ],
+  ])(
+    'says what followed the stock moved to other lots: %s',
+    async (_case, followed, said) => {
+      const user = userEvent.setup();
+      server.use(
+        http.put('/api/v1/costs/valuations/valuation-1', () =>
+          HttpResponse.json({
+            cost: {
+              valuationId: 'valuation-1',
+              value: '80.000000',
+              held: '40.000000',
+              issued: '0.000000',
+              followed,
+            },
+          }),
+        ),
+      );
+      open({ ...RECEIPT, lotId: 'lot-a', lotCode: 'LOT-A' });
+
+      await user.type(field('Unit price'), '2');
+      await user.click(screen.getByRole('button', { name: 'Set cost' }));
+
+      // The toast draws each code apart, so read as one line.
+      await waitFor(() => expect(document.body).toHaveTextContent(said));
+    },
+  );
 
   it('closes on Escape when nothing is being saved', async () => {
     const user = userEvent.setup();

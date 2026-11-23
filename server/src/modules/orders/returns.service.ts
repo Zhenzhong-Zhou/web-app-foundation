@@ -10,6 +10,7 @@ import type { Locale } from '../../common/locales';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import {
+  type LotExpiry,
   orderLines,
   orderReturns,
   productVariants,
@@ -34,6 +35,7 @@ export interface ReturnableLot {
   lotId: string;
   code: string;
   expiresAt: string | null;
+  expiry: LotExpiry;
   shipped: string;
   returned: string;
 }
@@ -158,6 +160,7 @@ export class ReturnsService {
                     lotId: lot.lotId,
                     code: lot.code!,
                     expiresAt: lot.expiresAt,
+                    expiry: lot.expiry!,
                     shipped: lot.shipped,
                     returned: lot.returned,
                   },
@@ -628,6 +631,7 @@ export class ReturnsService {
           b.lot_id,
           l.code,
           l.expires_at,
+          l.expiry,
           b.shipped::text as shipped,
           coalesce(b.returned, 0)::text as returned
         from (${this.balancesSql(organizationId, orderId)}) b
@@ -639,6 +643,7 @@ export class ReturnsService {
       lot_id: string | null;
       code: string | null;
       expires_at: string | null;
+      expiry: LotExpiry | null;
       shipped: string;
       returned: string;
     }[];
@@ -648,6 +653,7 @@ export class ReturnsService {
       lotId: row.lot_id,
       code: row.code,
       expiresAt: row.expires_at,
+      expiry: row.expiry,
       shipped: row.shipped,
       returned: row.returned,
     }));

@@ -15,6 +15,7 @@ import { assertOwnIds } from '../../database/own-ids';
 import {
   boms,
   locations,
+  type LotExpiry,
   partners,
   productionOrderLines,
   productionOrders,
@@ -245,6 +246,7 @@ export class ProductionOrdersService {
           sm.lot_id,
           l.code,
           l.expires_at,
+          l.expiry,
           coalesce(
             sum(sm.quantity) filter (
               where sm.reason = 'transfer'
@@ -262,7 +264,7 @@ export class ProductionOrdersService {
           and sm.reference_type = 'production_order'
           and sm.reference_id = ${run.id}::uuid
           and sm.reason in ('transfer', 'consumption')
-        group by sm.variant_id, sm.lot_id, l.code, l.expires_at
+        group by sm.variant_id, sm.lot_id, l.code, l.expires_at, l.expiry
         order by l.expires_at asc nulls last, l.code asc
       `);
 
@@ -271,6 +273,7 @@ export class ProductionOrdersService {
         lotId: row.lot_id as string,
         code: row.code as string,
         expiresAt: (row.expires_at as string | null) ?? null,
+        expiry: row.expiry as LotExpiry,
         issued: row.issued as string,
         consumed: row.consumed as string,
       }));

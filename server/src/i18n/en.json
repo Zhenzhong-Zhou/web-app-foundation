@@ -1091,6 +1091,8 @@
   "stock.end.countedIn": "counted in",
   "stock.end.countedOut": "counted out",
   "stock.end.customer": "customer",
+  "stock.end.opening": "opening stock",
+  "stock.end.other": "other",
   "stock.end.run": "run",
   "stock.end.sample": "sample",
   "stock.end.supplier": "supplier",

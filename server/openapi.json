@@ -15746,6 +15746,14 @@
       "ComponentLot": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
           "componentVariantId": {
             "type": "string"
           },
@@ -15769,6 +15777,7 @@
           }
         },
         "required": [
+          "expiry",
           "componentVariantId",
           "lotId",
           "code",
@@ -15927,6 +15936,14 @@
       "IssuePlanLot": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
           "lotId": {
             "type": "string"
           },
@@ -15950,6 +15967,7 @@
           }
         },
         "required": [
+          "expiry",
           "lotId",
           "code",
           "expiresAt",
@@ -17847,6 +17865,14 @@
       "LotMatch": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -17864,6 +17890,7 @@
           }
         },
         "required": [
+          "expiry",
           "id",
           "code",
           "expiresAt",
@@ -22527,6 +22554,18 @@
       "OrderReceipt": {
         "type": "object",
         "properties": {
+          "lotExpiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -22625,6 +22664,7 @@
           }
         },
         "required": [
+          "lotExpiry",
           "id",
           "createdAt",
           "productId",
@@ -23036,6 +23076,18 @@
       "ShipmentItem": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "sku": {
             "type": "string"
           },
@@ -23062,6 +23114,7 @@
           }
         },
         "required": [
+          "expiry",
           "sku",
           "description",
           "unitOfMeasure",
@@ -23356,6 +23409,14 @@
       "ShipmentPlanLot": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
           "lotId": {
             "type": "string"
           },
@@ -23379,6 +23440,7 @@
           }
         },
         "required": [
+          "expiry",
           "lotId",
           "code",
           "expiresAt",
@@ -23591,6 +23653,14 @@
       "ReturnableLot": {
         "type": "object",
         "properties": {
+          "expiry": {
+            "enum": [
+              "date",
+              "unknown",
+              "none"
+            ],
+            "type": "string"
+          },
           "lotId": {
             "type": "string"
           },
@@ -23611,6 +23681,7 @@
           }
         },
         "required": [
+          "expiry",
           "lotId",
           "code",
           "expiresAt",

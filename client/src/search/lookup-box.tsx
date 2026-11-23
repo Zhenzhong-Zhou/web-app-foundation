@@ -426,19 +426,11 @@ function LotLine({ result }: { result: LookupResult }) {
 
   const parts: { key: string; part: ReactNode }[] = [];
   if (result.detail) parts.push({ key: 'sku', part: result.detail });
-  if (result.expiry === 'unknown') {
-    parts.push({
-      key: 'expiry',
-      part: intl.formatMessage({
-        id: 'inventory.lot.expiryToAdd',
-        defaultMessage: 'Expiry to add',
-      }),
-    });
-  } else if (result.expiresAt) {
+  if (result.expiry === 'unknown' || result.expiresAt) {
     parts.push({
       key: 'expiry',
       part: near ? (
-        <ExpiryChip expiresAt={result.expiresAt} />
+        <ExpiryChip expiresAt={result.expiresAt} expiry={result.expiry} />
       ) : (
         lotExpiry(result, intl)
       ),

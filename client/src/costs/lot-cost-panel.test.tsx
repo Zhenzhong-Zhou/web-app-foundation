@@ -61,4 +61,113 @@ describe('LotCostPanel', () => {
     expect(inBase).not.toHaveTextContent('USD');
     expect(inBase).toHaveTextContent(/5\.754/);
   });
+
+  /** The history's rows, after its head, as the reader sees each. */
+  async function historyOf(entries: LotCostEntry[]): Promise<HTMLElement[]> {
+    server.use(
+      http.get('/api/v1/costs/lots/lot-1', () =>
+        HttpResponse.json({ lotCost: { ...COST, entries } }),
+      ),
+    );
+    render(<LotCostPanel lotId="lot-1" />);
+    const history = await screen.findByRole('table', {
+      name: 'How its value changed',
+    });
+    return within(history).getAllByRole('row').slice(1);
+  }
+
+  const CHANGE: LotCostEntry = {
+    ...RECEIPT,
+    kind: 'lot_change',
+    reason: 'lot_change',
+    unitPrice: null,
+    currency: null,
+    exchangeRate: null,
+  };
+
+  // A lot change's two rows by the other lot, each with its quantity,
+  // and stock back from before lot tracking (ADR-094, R20, Q3a).
+  it('reads a lot change out as moved to its lot and in as moved in from it, with the quantity, and one with no first lot as back from before lot tracking', async () => {
+    const [out, into, back] = await historyOf([
+      {
+        ...CHANGE,
+        id: 'out',
+        quantity: '-50.0000',
+        value: '-100.000000',
+        otherLotId: 'lot-b',
+        otherLotCode: 'LOT-B',
+      },
+      {
+        ...CHANGE,
+        id: 'in',
+        quantity: '20.0000',
+        value: '40.000000',
+        otherLotId: 'lot-a',
+        otherLotCode: 'LOT-A',
+      },
+      { ...CHANGE, id: 'back', quantity: '5.0000', value: '10.000000' },
+    ]);
+
+    expect(out).toHaveTextContent('Moved to lot LOT-B');
+    expect(within(out).getAllByRole('cell')[2]).toHaveTextContent('-50');
+    expect(into).toHaveTextContent('Moved in from lot LOT-A');
+    expect(within(into).getAllByRole('cell')[2]).toHaveTextContent('20');
+    expect(back).toHaveTextContent('Back from before lot tracking');
+  });
+
+  // D5: a cost given late follows the stock moved, the first lot's row
+  // naming where it went and the second's where it came from, by
+  // `carried`, whichever its sign.
+  it('names the lot a late cost was carried to, and the lot it came from', async () => {
+    const carried = {
+      ...RECEIPT,
+      kind: 'correction',
+      reason: 'receipt',
+      unitPrice: null,
+      currency: null,
+      exchangeRate: null,
+    } as const;
+    const [to, from] = await historyOf([
+      {
+        ...carried,
+        id: 'to',
+        value: '-40.000000',
+        otherLotId: 'lot-b',
+        otherLotCode: 'LOT-B',
+        carried: 'to',
+      },
+      {
+        ...carried,
+        id: 'from',
+        value: '40.000000',
+        otherLotId: 'lot-a',
+        otherLotCode: 'LOT-A',
+        carried: 'from',
+      },
+    ]);
+
+    expect(to).toHaveTextContent('Cost carried to lot LOT-B');
+    expect(from).toHaveTextContent('Cost from lot LOT-A');
+    // A cost moves no units.
+    expect(within(to).getAllByRole('cell')[2]).toHaveTextContent('—');
+  });
+
+  // D4: a kind or a reason this tab does not know says only that it
+  // changed, never its stored key.
+  it('reads a kind or a reason it does not know as Other change', async () => {
+    const [kind, reason] = await historyOf([
+      {
+        ...RECEIPT,
+        id: 'kind',
+        kind: 'split_in_two' as LotCostEntry['kind'],
+      },
+      { ...RECEIPT, id: 'reason', reason: 'teleported' },
+    ]);
+
+    for (const row of [kind, reason]) {
+      expect(row).toHaveTextContent('Other change');
+    }
+    expect(kind).not.toHaveTextContent('split_in_two');
+    expect(reason).not.toHaveTextContent('teleported');
+  });
 });

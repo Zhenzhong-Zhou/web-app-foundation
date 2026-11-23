@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { LotMatch, LotSource, LotTrace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -296,6 +296,277 @@ describe('LotTracePage', () => {
   });
 });
 
+/** A window this wide, for the list's width switch; jsdom has none. */
+function widthIs(px: number) {
+  vi.stubGlobal('matchMedia', (query: string) => {
+    const min = /min-width:\s*([\d.]+)px/.exec(query);
+    const max = /max-width:\s*([\d.]+)px/.exec(query);
+    return {
+      matches: (!min || px >= Number(min[1])) && (!max || px <= Number(max[1])),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    };
+  });
+}
+
+/** The trace given, at the lot's own page. */
+function renderTraced(trace: LotTrace, permissions: string[]) {
+  server.use(
+    http.get('/api/v1/stock/lots/lot-1/trace', () => HttpResponse.json(trace)),
+  );
+  return renderWithAuth(
+    <MemoryRouter initialEntries={['/lots/lot-1']}>
+      <Routes>
+        <Route path="/lots/:id" element={<LotTracePage />} />
+      </Routes>
+    </MemoryRouter>,
+    { permissions },
+  );
+}
+
+const RECIPIENT = TRACE.recipients[0];
+
+/**
+ * The recall list through a move between lots (ADR-094, R21): one
+ * customer who received this lot, one who received a lot part of it
+ * moved into, and a sample that left with no name.
+ */
+const MOVED: LotTrace = {
+  ...TRACE,
+  recipients: [
+    {
+      ...RECIPIENT,
+      partnerId: 'partner-1',
+      partnerName: 'Northern Health',
+      lotId: 'lot-1',
+      lotCode: 'OIL-0425',
+    },
+    {
+      ...RECIPIENT,
+      partnerId: 'partner-2',
+      partnerName: 'Coastal Clinic',
+      orderId: 'so-2',
+      orderNumber: 'SO-000004',
+      lotId: 'lot-b',
+      lotCode: 'OIL-0425-B',
+      shipped: '3.0000',
+    },
+    {
+      ...RECIPIENT,
+      partnerId: null,
+      partnerName: null,
+      orderId: null,
+      orderNumber: null,
+      lotId: 'lot-1',
+      lotCode: 'OIL-0425',
+      shipped: '0.0000',
+      sampled: '2.0000',
+      leftOn: '2026-10-22',
+    },
+  ],
+};
+
+describe('LotTracePage, ADR-094', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  // R21, R11 and E2: a move names the lot it left, a link; a start lot
+  // its stock on hand as tracking started and stock back from before;
+  // a receipt with no order whom it came from and why; a kind this tab
+  // does not know only that stock came in (D4).
+  it('says where it came from: the lot it moved from, tracking started, back from before, and a receipt with no order from whom and why', async () => {
+    renderTraced(
+      {
+        ...TRACE,
+        sources: [
+          {
+            ...SOURCE,
+            kind: 'lot_change',
+            reasonDetail: 'between_lots',
+            orderId: null,
+            orderNumber: null,
+            partnerId: null,
+            supplierName: null,
+            fromLotId: 'lot-a',
+            fromLotCode: 'OIL-0425-A',
+          },
+          {
+            ...SOURCE,
+            kind: 'lot_change',
+            reasonDetail: 'lots_started',
+            orderId: null,
+            orderNumber: null,
+            partnerId: null,
+            supplierName: null,
+          },
+          {
+            ...SOURCE,
+            kind: 'lot_change',
+            reasonDetail: 'from_before',
+            orderId: null,
+            orderNumber: null,
+            partnerId: null,
+            supplierName: null,
+          },
+          {
+            ...SOURCE,
+            reasonDetail: 'opening',
+            orderId: null,
+            orderNumber: null,
+            supplierName: 'Cascade Botanicals',
+          },
+          {
+            ...SOURCE,
+            reasonDetail: 'returned',
+            orderId: null,
+            orderNumber: null,
+            partnerId: null,
+            supplierName: null,
+          },
+          {
+            ...SOURCE,
+            kind: 'teleported' as LotSource['kind'],
+            orderId: null,
+            orderNumber: null,
+            partnerId: null,
+            supplierName: null,
+          },
+        ],
+      },
+      ['stock.view', 'partners.view'],
+    );
+
+    const heading = await screen.findByRole('heading', {
+      name: 'Where it came from',
+    });
+    const lines = [
+      ...(heading.closest('div')?.parentElement?.querySelectorAll('p') ?? []),
+    ].map((line) => line.textContent?.split(' — ')[0]);
+    expect(lines).toEqual([
+      'Moved in from lot OIL-0425-A',
+      'Stock on hand when lot tracking started',
+      'Back from before lot tracking',
+      'Received from Cascade Botanicals with no order: opening stock',
+      'Received with no order: returned',
+      'Came into this lot',
+    ]);
+    expect(screen.getByRole('link', { name: 'OIL-0425-A' })).toHaveAttribute(
+      'href',
+      '/lots/lot-a',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Cascade Botanicals' }),
+    ).toHaveAttribute('href', '/partners/partner-acme');
+  });
+
+  // R6 and D2: both codes under its title, and an expiry not known yet
+  // said so, never left out as one that does not expire.
+  it('names its supplier’s lot and an expiry still to add under its title', async () => {
+    renderTraced(
+      {
+        ...TRACE,
+        lot: {
+          ...TRACE.lot,
+          isAssigned: true,
+          supplierLot: 'HX-2609',
+          expiry: 'unknown',
+        },
+      },
+      ['stock.view'],
+    );
+
+    expect(
+      await screen.findByText(
+        /OIL · Fish oil · expiry to add · Supplier’s lot HX-2609/,
+      ),
+    ).toBeVisible();
+  });
+
+  // R21's column: the lot a row came through, where it is not this one,
+  // a link to that lot's page (the interaction table's row).
+  it('says the lot each recipient received it through, this lot’s own rows none', async () => {
+    widthIs(1280);
+    renderTraced(MOVED, ['stock.view', 'partners.view']);
+
+    const table = await screen.findByRole('table', { name: 'Who received it' });
+    const heads = within(table)
+      .getAllByRole('columnheader')
+      .map((head) => head.textContent);
+    expect(heads).toEqual([
+      'Who',
+      'Order',
+      'Through lot',
+      'Shipped',
+      'Sampled',
+      'Returned',
+      'Date',
+    ]);
+    const [own, moved, unnamed] = within(table).getAllByRole('row').slice(1);
+    expect(within(own).getAllByRole('cell')[2]).toHaveTextContent(/^—$/);
+    expect(
+      within(moved).getByRole('link', { name: 'OIL-0425-B' }),
+    ).toHaveAttribute('href', '/lots/lot-b');
+    expect(within(unnamed).getAllByRole('cell')[2]).toHaveTextContent(/^—$/);
+  });
+
+  // #620: how many the recall must reach, above the list; pressed, the
+  // list's heading takes focus.
+  it('says above how many partners received it, and that some left with no recipient, leading to the list', async () => {
+    const user = userEvent.setup();
+    renderTraced(MOVED, ['stock.view']);
+
+    const count = await screen.findByRole('button', {
+      name: 'Received by 2 partners, and some with no recipient recorded',
+    });
+    await user.click(count);
+    expect(
+      screen.getByRole('heading', { name: 'Who received it' }),
+    ).toHaveFocus();
+  });
+
+  it('says above when nothing has left, and when no recipient was recorded at all', async () => {
+    const { unmount } = renderTraced({ ...TRACE, recipients: [] }, [
+      'stock.view',
+    ]);
+    expect(
+      await screen.findAllByText(
+        'Nothing from this lot has left the business.',
+      ),
+    ).toHaveLength(2);
+    unmount();
+
+    renderTraced({ ...MOVED, recipients: [MOVED.recipients[2]] }, [
+      'stock.view',
+    ]);
+    expect(
+      await screen.findByRole('button', {
+        name: 'Left with no recipient recorded',
+      }),
+    ).toBeVisible();
+  });
+
+  // #617: on a phone each recipient is a card with what it received, the
+  // numbers that matter alone, the lot it came through where not this.
+  it('lists each recipient as a card below 600 px, a sample’s by what it sampled', async () => {
+    widthIs(390);
+    renderTraced(MOVED, ['stock.view']);
+
+    const list = await screen.findByRole('list', { name: 'Who received it' });
+    expect(
+      screen.queryByRole('table', { name: 'Who received it' }),
+    ).not.toBeInTheDocument();
+    const [own, moved, unnamed] = within(list).getAllByRole('listitem');
+    expect(own).toHaveTextContent('Northern Health');
+    expect(own).toHaveTextContent('Shipped5');
+    expect(own).not.toHaveTextContent('Through lot');
+    expect(moved).toHaveTextContent('Through lotOIL-0425-B');
+    expect(unnamed).toHaveTextContent('No recipient recorded');
+    expect(unnamed).toHaveTextContent('Sampled2');
+    expect(unnamed).not.toHaveTextContent('Shipped');
+    expect(unnamed).toHaveTextContent('DateOct 22, 2026');
+  });
+});
+
 describe('LotSearchPage', () => {
   // Opened by a link that offered Back, a search keeps it (#341).
   it('keeps Back after a search, when a link inside the app opened it', async () => {
@@ -303,6 +574,7 @@ describe('LotSearchPage', () => {
       id: `lot-${code}`,
       code,
       expiresAt: null,
+      expiry: 'none',
       sku: 'FOCUS-60CT',
     });
     server.use(

@@ -27,12 +27,12 @@ import type {
   ReturnAuthorizationSummary,
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
+import { ExpiryChip } from '../components/expiry-chip';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api, ApiError } from '../lib/api';
 import {
   displayQuantity,
-  formatDay,
   groupedNumberMessage,
   NO_VALUE,
   toApiDecimal,
@@ -499,9 +499,10 @@ export function ReturnOrderDialog({
                                 <Reference>{lot.code}</Reference>
                               </TableCell>
                               <TableCell>
-                                {lot.expiresAt
-                                  ? formatDay(lot.expiresAt)
-                                  : NO_VALUE}
+                                <ExpiryChip
+                                  expiresAt={lot.expiresAt}
+                                  expiry={lot.expiry}
+                                />
                               </TableCell>
                               <TableCell align="right">
                                 {displayQuantity(lot.shipped)}

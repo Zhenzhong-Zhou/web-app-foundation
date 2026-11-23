@@ -155,7 +155,7 @@ export class LotTraceService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (
         await tx.execute(sql`
-          select l.id, l.code, l.expires_at, pv.sku
+          select l.id, l.code, l.expires_at, l.expiry, pv.sku
           from lots l
           join product_variants pv
             on pv.id = l.variant_id
@@ -169,6 +169,7 @@ export class LotTraceService {
         id: string;
         code: string;
         expires_at: string | null;
+        expiry: LotExpiry;
         sku: string;
       }[];
 
@@ -176,6 +177,7 @@ export class LotTraceService {
         id: row.id,
         code: row.code,
         expiresAt: row.expires_at,
+        expiry: row.expiry,
         sku: row.sku,
       }));
     });
