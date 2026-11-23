@@ -114,7 +114,13 @@ export class LotTrackingService {
       const code = await codeToStart(tx, organizationId, productId, variantId, {
         lock: true,
       });
-      const expiry = expiryOf(dto);
+      // Nothing said of it, not known yet: stock nobody checked is not
+      // said to last for ever, and is listed under Details to add until
+      // someone gives the day or says it does not expire (ADR-094, S6).
+      const expiry = expiryOf({
+        expiry: dto.expiry ?? (dto.expiresAt ? 'date' : 'unknown'),
+        expiresAt: dto.expiresAt,
+      });
       recordContext({ sku: code.sku });
 
       await tx.execute(sql`

@@ -17885,6 +17885,15 @@
               "null"
             ]
           },
+          "supplierLot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
           "sku": {
             "type": "string"
           }
@@ -17894,6 +17903,8 @@
           "id",
           "code",
           "expiresAt",
+          "supplierLot",
+          "isAssigned",
           "sku"
         ]
       },
@@ -17997,6 +18008,36 @@
           "locationPath",
           "isAvailable",
           "quantity"
+        ]
+      },
+      "MovedOnLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotBalance"
+            }
+          },
+          "usable": {
+            "type": "string"
+          },
+          "notUsable": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotId",
+          "code",
+          "balances",
+          "usable",
+          "notUsable"
         ]
       },
       "LotSource": {
@@ -18283,6 +18324,12 @@
           "notUsable": {
             "type": "string"
           },
+          "movedOnTo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovedOnLot"
+            }
+          },
           "sources": {
             "type": "array",
             "items": {
@@ -18313,6 +18360,7 @@
           "balances",
           "usable",
           "notUsable",
+          "movedOnTo",
           "sources",
           "madeFrom",
           "wentInto",

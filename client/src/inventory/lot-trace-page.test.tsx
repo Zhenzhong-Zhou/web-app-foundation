@@ -70,6 +70,7 @@ const TRACE: LotTrace = {
   ],
   usable: '48.0000',
   notUsable: '2.0000',
+  movedOnTo: [],
   sources: [
     SOURCE,
     {
@@ -280,6 +281,92 @@ describe('LotTracePage', () => {
     expect(screen.queryByText(/Shelf A|Quarantine/)).not.toBeInTheDocument();
     // Why, once, where the places would be (review 3, 115).
     expect(screen.getAllByText(PLACES_HIDDEN)).toHaveLength(1);
+  });
+
+  // Step 15's gap (S9): what moved on under another code is still on
+  // hand there, so a recall reading this page finds it.
+  it('lists the lots its stock moved on to under Where it is now, each a link with all it holds, by place or summed for a reader without places (S9)', async () => {
+    const moved: LotTrace = {
+      ...TRACE,
+      movedOnTo: [
+        {
+          lotId: 'lot-b',
+          code: 'OIL-0425-B',
+          balances: [
+            { ...TRACE.balances[0], quantity: '12.0000' },
+            { ...TRACE.balances[1], quantity: '3.0000' },
+          ],
+          usable: '12.0000',
+          notUsable: '3.0000',
+        },
+        {
+          lotId: 'lot-c',
+          code: 'OIL-0425-C',
+          balances: [],
+          usable: '0',
+          notUsable: '0',
+        },
+      ],
+    };
+    const shown = (permissions: string[]) => {
+      server.use(
+        http.get('/api/v1/stock/lots/lot-1/trace', () =>
+          HttpResponse.json(moved),
+        ),
+      );
+      return renderWithAuth(
+        <MemoryRouter initialEntries={['/lots/lot-1']}>
+          <Routes>
+            <Route path="/lots/:id" element={<LotTracePage />} />
+          </Routes>
+        </MemoryRouter>,
+        { permissions },
+      );
+    };
+    const rowsOf = () =>
+      within(
+        screen
+          .getByRole('heading', { name: 'Moved on to' })
+          .parentElement!.querySelector('table')!,
+      )
+        .getAllByRole('row')
+        .map((row) =>
+          [...row.querySelectorAll('th, td')].map((cell) => cell.textContent),
+        );
+
+    const { unmount } = shown(['stock.view', 'locations.view']);
+    expect(
+      await screen.findByRole('heading', { name: 'Moved on to' }),
+    ).toBeVisible();
+    expect(rowsOf()).toEqual([
+      ['Lot', 'Location', 'Quantity'],
+      ['OIL-0425-B', 'Main warehouse › Zone A › Shelf A (A)', '12 kg'],
+      ['OIL-0425-B', 'Main warehouse › QuarantineNot available', '3 kg'],
+      ['OIL-0425-C', '—', '0 kg'],
+    ]);
+    expect(
+      screen.getAllByRole('link', { name: 'OIL-0425-B' })[0],
+    ).toHaveAttribute('href', '/lots/lot-b');
+    unmount();
+
+    // No place named without locations.view: each lot's two sums.
+    shown(['stock.view']);
+    await screen.findByRole('heading', { name: 'Moved on to' });
+    expect(rowsOf()).toEqual([
+      ['Lot', 'Usable', 'Not usable'],
+      ['OIL-0425-B', '12 kg', '3 kg'],
+      ['OIL-0425-C', '0 kg', '0 kg'],
+    ]);
+    expect(screen.queryByText(/Shelf A|Quarantine/)).not.toBeInTheDocument();
+  });
+
+  it('says nothing of moved on lots where none of it moved', async () => {
+    renderTrace(['stock.view', 'locations.view']);
+
+    await screen.findByRole('heading', { name: 'Where it is now' });
+    expect(
+      screen.queryByRole('heading', { name: 'Moved on to' }),
+    ).not.toBeInTheDocument();
   });
 
   // Stock look-up's reader (ADR-080): stock, but none of the three.
@@ -575,6 +662,8 @@ describe('LotSearchPage', () => {
       code,
       expiresAt: null,
       expiry: 'none',
+      supplierLot: null,
+      isAssigned: false,
       sku: 'FOCUS-60CT',
     });
     server.use(
@@ -598,11 +687,72 @@ describe('LotSearchPage', () => {
     );
 
     await userEvent.type(
-      screen.getByRole('textbox', { name: 'Lot code' }),
+      screen.getByRole('textbox', { name: 'Lot code or supplier’s lot' }),
       '2609{Enter}',
     );
 
     expect(await screen.findByRole('link', { name: 'BF-2609' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+  });
+
+  // A match found by the supplier's lot says why, as the lookup's lot
+  // row does (ADR-094, S10); the field asks for either code.
+  it('names each match’s supplier’s lot, or that a code made here has none yet, and asks for either code', async () => {
+    const found: LotMatch[] = [
+      {
+        id: 'lot-made',
+        code: 'L-2026-11-21-1',
+        expiresAt: null,
+        expiry: 'unknown',
+        supplierLot: 'HX-2609',
+        isAssigned: true,
+        sku: 'FOCUS-60CT',
+      },
+      {
+        id: 'lot-to-add',
+        code: 'L-2026-11-21-2',
+        expiresAt: null,
+        expiry: 'none',
+        supplierLot: null,
+        isAssigned: true,
+        sku: 'FOCUS-60CT',
+      },
+      {
+        id: 'lot-printed',
+        code: 'FOC-2609-01',
+        expiresAt: null,
+        expiry: 'none',
+        supplierLot: null,
+        isAssigned: false,
+        sku: 'FOCUS-60CT',
+      },
+    ];
+    server.use(
+      http.get('/api/v1/stock/lots/search', () => HttpResponse.json(found)),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/lots?code=2609']}>
+        <Routes>
+          <Route path="/lots" element={<LotSearchPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    const field = screen.getByRole('textbox', {
+      name: 'Lot code or supplier’s lot',
+    });
+    expect(field).toHaveAccessibleDescription(
+      'Any part of either works — the batch number is usually enough. Press Enter to search.',
+    );
+    const cellOf = async (code: string) =>
+      (await screen.findByRole('link', { name: code })).closest('td');
+    expect(await cellOf('L-2026-11-21-1')).toHaveTextContent(
+      'L-2026-11-21-1Supplier’s lot HX-2609',
+    );
+    expect(await cellOf('L-2026-11-21-2')).toHaveTextContent(
+      'L-2026-11-21-2Supplier’s lot to add',
+    );
+    expect(await cellOf('FOC-2609-01')).toHaveTextContent(/^FOC-2609-01$/);
   });
 });

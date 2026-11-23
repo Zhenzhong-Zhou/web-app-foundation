@@ -64,6 +64,23 @@ export class LotBalance {
 }
 
 /**
+ * A lot this one's stock moved on to by moves alone, any number of hops
+ * (ADR-094, S9), with all it holds now, as Where it is now reads the
+ * traced lot: stock it held before the move too, since a recall reaches
+ * more, never fewer. A lot emptied since is listed with nothing.
+ */
+export class MovedOnLot {
+  lotId!: string;
+  code!: string;
+  /** Each place holding some; a place named only with `locations.view`. */
+  balances!: LotBalance[];
+  /** On hand where it can be used, as the trace's own `usable`. */
+  usable!: string;
+  /** The rest of what it holds, as the trace's own `notUsable`. */
+  notUsable!: string;
+}
+
+/**
  * How it came to exist: received, against an order or with none, made by
  * a run, with the licence the run was released under (ADR-050), or put
  * into it by a lot change (ADR-094, R21).
@@ -167,6 +184,11 @@ export class LotTrace {
   usable!: string;
   /** On hand at a place not available, or all of it once the lot expired. */
   notUsable!: string;
+  /**
+   * The lots its stock moved on to, each by its code, with what each
+   * holds now (ADR-094, S9); empty where none of it moved.
+   */
+  movedOnTo!: MovedOnLot[];
   sources!: LotSource[];
   madeFrom!: RelatedLot[];
   wentInto!: RelatedLot[];

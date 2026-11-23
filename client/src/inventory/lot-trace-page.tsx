@@ -25,7 +25,12 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import type { LotMatch, LotRecipient, LotTrace } from '../api/types.gen';
+import type {
+  LotMatch,
+  LotRecipient,
+  LotTrace,
+  MovedOnLot,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
@@ -57,13 +62,15 @@ import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { COLOR_OF_TONE } from '../theme/status';
 import { lotExpiryPart } from './lot-expiry';
+import { SupplierLotLine } from './lot-marks';
 import { inSentence, reasonDetailLabel } from './movement-reasons';
 import { movementsPath } from './movements-path';
 import { PlacesHidden } from './places-hidden';
 import { placeName } from './stock-places';
 
 /**
- * Finding a lot by the start of its code (ADR-044).
+ * Finding a lot by any part of its code or its supplier's lot (ADR-044,
+ * amended by ADR-094, R6), each match naming its supplier's lot (S10).
  *
  * A recall usually begins as a code read off a label, with no product
  * attached, so this searches every product. Links elsewhere in the app that
@@ -137,15 +144,15 @@ export function LotSearchPage() {
         <TextField
           id="lot-code"
           label={intl.formatMessage({
-            id: 'inventory.trace.lotCode',
-            defaultMessage: 'Lot code',
+            id: 'inventory.trace.lotOrSupplierLot',
+            defaultMessage: 'Lot code or supplier’s lot',
           })}
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
           helperText={intl.formatMessage({
-            id: 'inventory.trace.lotCode.help',
+            id: 'inventory.trace.lotOrSupplierLot.help',
             defaultMessage:
-              'Any part of the code works — the batch number is usually enough. Press Enter to search.',
+              'Any part of either works — the batch number is usually enough. Press Enter to search.',
           })}
           sx={{ maxWidth: rem(420) }}
           fullWidth
@@ -204,6 +211,12 @@ export function LotSearchPage() {
                     <Link component={RouterLink} to={`/lots/${lot.id}`}>
                       {lot.code}
                     </Link>
+                    {/* The supplier's lot, which finds it too, as the
+                        lookup's lot row reads it (ADR-094, S10). */}
+                    <SupplierLotLine
+                      isAssigned={lot.isAssigned}
+                      supplierLot={lot.supplierLot}
+                    />
                   </TableCell>
                   <TableCell>
                     <Reference>{lot.sku}</Reference>
@@ -442,6 +455,14 @@ export function LotTracePage() {
             alignRight={[1]}
           />
         )}
+
+        {trace.movedOnTo.length > 0 && (
+          <MovedOnTo
+            lots={trace.movedOnTo}
+            unitOfMeasure={trace.lot.unitOfMeasure}
+            seesPlaces={can('locations.view')}
+          />
+        )}
       </Section>
 
       <Section
@@ -577,6 +598,113 @@ export function LotTracePage() {
       </Section>
 
       {can('costs.view') && <LotCostPanel lotId={trace.lot.id} />}
+    </Stack>
+  );
+}
+
+/**
+ * Where its stock moved on to (ADR-094, S9): each lot reached from this
+ * one by moves alone, its code a link to its page, with all it holds now
+ * as Where it is now reads this lot: by place for a reader who may see
+ * places, else usable and not; a lot emptied since holds nothing. So a
+ * recall reading this page finds the stock still on hand under another
+ * code.
+ */
+function MovedOnTo({
+  lots,
+  unitOfMeasure,
+  seesPlaces,
+}: {
+  lots: LotTrace['movedOnTo'];
+  unitOfMeasure: string;
+  seesPlaces: boolean;
+}) {
+  const intl = useIntl();
+  const amount = (quantity: string) =>
+    displayWithUnit(quantity, unitOfMeasure, intl);
+  const lotLink = (lot: MovedOnLot) => (
+    <Link component={RouterLink} to={`/lots/${lot.lotId}`}>
+      <Reference>{lot.code}</Reference>
+    </Link>
+  );
+  const lotHead = intl.formatMessage({
+    id: 'inventory.lot',
+    defaultMessage: 'Lot',
+  });
+
+  return (
+    <Stack spacing={1} sx={{ pt: 1 }}>
+      <Typography component="h3" sx={{ fontWeight: 600 }}>
+        {intl.formatMessage({
+          id: 'inventory.trace.movedOnTo',
+          defaultMessage: 'Moved on to',
+        })}
+      </Typography>
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {intl.formatMessage({
+          id: 'inventory.trace.movedOnTo.intro',
+          defaultMessage:
+            'Lots part of this one was moved into, with all each holds now: a recall reaches these too.',
+        })}
+      </Typography>
+      {seesPlaces ? (
+        <Grid
+          head={[
+            lotHead,
+            intl.formatMessage({
+              id: 'inventory.location',
+              defaultMessage: 'Location',
+            }),
+            intl.formatMessage({
+              id: 'inventory.quantity',
+              defaultMessage: 'Quantity',
+            }),
+          ]}
+          rows={lots.flatMap((lot) =>
+            lot.balances.length === 0
+              ? [[lotLink(lot), NO_VALUE, amount('0')]]
+              : lot.balances.map((row) => [
+                  lotLink(lot),
+                  <>
+                    {placeName(row)}
+                    {!row.isAvailable && (
+                      <Chip
+                        label={intl.formatMessage({
+                          id: 'locations.notAvailable',
+                          defaultMessage: 'Not available',
+                        })}
+                        size="small"
+                        variant="outlined"
+                        sx={{ ml: 1 }}
+                      />
+                    )}
+                  </>,
+                  amount(row.quantity),
+                ]),
+          )}
+          alignRight={[2]}
+        />
+      ) : (
+        <Grid
+          head={[
+            lotHead,
+            intl.formatMessage({
+              id: 'inventory.trace.usable',
+              defaultMessage: 'Usable',
+            }),
+            intl.formatMessage({
+              id: 'inventory.trace.notUsable',
+              defaultMessage: 'Not usable',
+            }),
+          ]}
+          rows={lots.map((lot) => [
+            lotLink(lot),
+            amount(lot.usable),
+            amount(lot.notUsable),
+          ])}
+          alignRight={[1, 2]}
+        />
+      )}
     </Stack>
   );
 }

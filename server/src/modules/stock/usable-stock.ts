@@ -93,25 +93,28 @@ export function usableByLocation(
 }
 
 /**
- * One lot at each place it has a row, by the one rule above, for its
+ * Lots at each place each has a row, by the one rule above, for a lot's
  * trace (ADR-044; ADR-093, 10a; review 27): `usable` its quantity at a
  * place marked available while the lot has not expired by the
  * organization's today, null where not, and `not_usable` the rest. What
  * released runs were issued is counted by item and place, never by lot,
- * so it is not taken here as usableByLocation takes it. Rows
- * `location_id, location_name, location_code, is_available, quantity,
- * usable, not_usable`, a place emptied included at 0.
+ * so it is not taken here as usableByLocation takes it. The traced lot,
+ * and the lots its stock moved on to (ADR-094, S9), each read the same
+ * way. Rows `lot_id, location_id, location_name, location_code,
+ * is_available, quantity, usable, not_usable`, a place emptied included
+ * at 0.
  */
 export function usableInLot(
   organizationId: string,
   today: string,
-  lotId: string,
+  lotIds: string[],
 ): SQL {
   const org = sql`${organizationId}::uuid`;
   const usable = sql`${AVAILABLE} and ${notExpired(today)}`;
 
   return sql`
     select
+      sl.lot_id,
       sl.location_id,
       loc.name as location_name,
       loc.code as location_code,
@@ -127,7 +130,10 @@ export function usableInLot(
       on loc.id = sl.location_id
       and loc.organization_id = ${org}
     where sl.organization_id = ${org}
-      and sl.lot_id = ${lotId}::uuid
+      and sl.lot_id in (${sql.join(
+        lotIds.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})
   `;
 }
 

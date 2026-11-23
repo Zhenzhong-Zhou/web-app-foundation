@@ -8,8 +8,8 @@ import { LOT_EXPIRIES, type LotExpiry } from '../../../database/schema';
 /**
  * Start tracking lots (ADR-094, R14): what is known of the stock on hand,
  * for the lot made for us that takes it. Each optional: none known, the
- * lot's supplier's lot is to add, and its expiry is none, as a lot from
- * before reads, unless the question says otherwise.
+ * lot's supplier's lot is to add, and its expiry is not known yet, so
+ * stock nobody checked is not said to last for ever (S6).
  */
 export class StartLotTrackingDto {
   /**
@@ -25,7 +25,7 @@ export class StartLotTrackingDto {
   /**
    * Which expiry the lot has (R8): `date`, the day in `expiresAt`;
    * `unknown`, not known yet; or `none`. Absent, `date` with a day and
-   * `none` without.
+   * `unknown` without (S6).
    */
   @ApiProperty({ enum: LOT_EXPIRIES, required: false })
   @IsOptional()

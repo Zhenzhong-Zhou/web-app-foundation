@@ -38,7 +38,10 @@ export function ExpiryChoice({
   onChange: (next: { expiry?: ExpiryKind; expiresAt?: string }) => void;
   /** Start tracking lots' is optional (R14). */
   required?: boolean;
-  /** Said under the choices where Not known yet says nothing. */
+  /**
+   * Said under the choices, in place of Not known yet's own line where
+   * given: Start tracking lots says what its lot is then (ADR-094, S6).
+   */
   help?: ReactNode;
   /** For a form that focuses the first field it refused (#310). */
   expiryRef?: Ref<HTMLInputElement>;
@@ -49,13 +52,14 @@ export function ExpiryChoice({
   const id = useId();
   const said =
     errors.expiry ??
+    help ??
     (expiry === 'unknown'
       ? intl.formatMessage({
           id: 'inventory.lot.expiry.unknownHelp',
           defaultMessage:
             'Marked “Expiry to add” until its date is added. The stock can still be used.',
         })
-      : help);
+      : undefined);
 
   return (
     <>

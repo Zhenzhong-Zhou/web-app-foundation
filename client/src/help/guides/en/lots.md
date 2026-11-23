@@ -14,7 +14,7 @@ You can also find a lot by its code or its supplier’s lot in **Search everythi
 
 Under the lot’s code, its item’s name opens the item’s page, for someone who may see items, and **All movements of this lot** opens Movements on its item with this lot alone, over its whole life, with no dates.
 
-- **Where it is now**: each location holding some, written by its whole path from its warehouse, and how much. Someone who may not see locations reads how much is **Usable** and **Not usable** instead, with no place named.
+- **Where it is now**: each location holding some, written by its whole path from its warehouse, and how much. Someone who may not see locations reads how much is **Usable** and **Not usable** instead, with no place named. Where part of the lot was moved into another lot, **Moved on to** lists each such lot, however many moves on, with all it holds now: a recall reaches that stock too.
 - **Where it came from**: its receipt and the supplier’s order, or the run that made it and its licence. A receipt with no order says whom it came from, where it was given, and why, such as “Received with no order: opening stock”; stock moved in from another lot names that lot; and the lot made when lot tracking started reads “Stock on hand when lot tracking started”.
 - **Made from**: the component lots a run used, however many steps back.
 - **Went into**: the runs that used it, and the lots they made.
@@ -28,7 +28,7 @@ Beside **Who received it**, **Export** writes the recall list: the same rows, in
 
 ## Words you’ll meet {#words}
 
-- **Lot code**: the code printed on the box, or one given here.
+- **Lot code or supplier’s lot**: the code printed on the box or given here, or the supplier’s own lot kept beside a code made here. Either finds the lot.
 - **Steps away**: how many runs lie between this lot and the other.
 - **Not available**: a location whose stock is not for sending, such as a bin of returns waiting to be checked.
 - **Batch**: what a run makes. It is a lot like any received one.

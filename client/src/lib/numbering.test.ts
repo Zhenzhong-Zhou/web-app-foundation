@@ -199,28 +199,37 @@ describe('the common formats', () => {
   });
 });
 
-describe('roomWithin20 (ADR-094’s D1)', () => {
+describe('roomWithin20 (ADR-094’s D1 and S5)', () => {
   it('leaves the default room for 9,999,999 codes, whatever its digits', () => {
     // L-2026-11-21- prints 13 characters: 7 are left.
-    expect(roomWithin20('L-{YYYY}-{MM}-{DD}-')).toEqual({
+    expect(roomWithin20('L-{YYYY}-{MM}-{DD}-', 'daily')).toEqual({
       codes: 9_999_999n,
       short: false,
     });
   });
 
   it('counts past what a JavaScript number holds, for a short prefix', () => {
-    expect(roomWithin20('L-').codes).toBe(999_999_999_999_999_999n);
-    expect(roomWithin20('').codes).toBe(10n ** 20n - 1n);
+    expect(roomWithin20('L-', 'never').codes).toBe(999_999_999_999_999_999n);
+    expect(roomWithin20('', 'never').codes).toBe(10n ** 20n - 1n);
   });
 
-  it('is short at 999, and not at 9,999, the least a prefix may leave', () => {
-    // 17 characters printed: refused today, since a prefix prints at most 16.
-    expect(roomWithin20('ABCDEFGHIJKLMNOP-')).toEqual({
-      codes: 999n,
-      short: true,
-    });
-    expect(roomWithin20('ABCDEFGHIJKLMNO-')).toEqual({
+  // A prefix prints at most 16 characters, so 9,999 is the least room:
+  // under 10,000 warns, for a series that starts again each year or never.
+  it.each([
+    ['never', true],
+    ['yearly', true],
+    ['monthly', false],
+    ['daily', false],
+  ] as const)('is short under 10,000 starting again %s: %s', (reset, short) => {
+    expect(roomWithin20('ABCDEFGHIJKLMNO-', reset)).toEqual({
       codes: 9_999n,
+      short,
+    });
+  });
+
+  it('is not short at 99,999, whenever it starts again', () => {
+    expect(roomWithin20('ABCDEFGHIJKLMN-', 'never')).toEqual({
+      codes: 99_999n,
       short: false,
     });
   });

@@ -420,6 +420,45 @@ describe('MovementsPage', () => {
     },
   );
 
+  // S7: with no From → to column, a receipt's partner follows its
+  // reason; a partner is not a place, so places' permission hides it not.
+  it('names a receipt’s partner after its reason for a reader with no From → to, a link with partners.view (S7)', async () => {
+    const row = await rowFor(
+      {
+        ...RECEIPT,
+        fromLocationId: null,
+        toLocationName: null,
+        toLocationCode: null,
+        toLocationPath: [],
+        reasonDetail: 'returned',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      },
+      [...SALES, 'partners.view'],
+    );
+
+    const reason = cellUnder(row, 'Reason');
+    expect(reason).toHaveTextContent(
+      'Received: returned · from Northside Pharmacy',
+    );
+    expect(
+      within(reason).getByRole('link', { name: 'Northside Pharmacy' }),
+    ).toHaveAttribute('href', `/partners/${PARTNER}`);
+    expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+  });
+
+  it('leaves the reason as it was where From → to names the partner (S7)', async () => {
+    const row = await rowFor(
+      {
+        ...RECEIPT,
+        reasonDetail: 'returned',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      },
+      [...EVERYONE, 'partners.view'],
+    );
+
+    expect(cellUnder(row, 'Reason')).toHaveTextContent(/^Received: returned$/);
+  });
+
   // ADR-094, D2: the lot's expiry as every screen words it, one not
   // known yet "Expiry to add", never left out as one that does not expire.
   it('says Expiry to add under a lot whose expiry is not known yet', async () => {

@@ -650,13 +650,17 @@ function NumberingForm({
 
   /**
    * Under the next lot code: how many codes fit before one passes 20
-   * characters, for the format as typed, in amber when few do; Save still
-   * works, since a code may grow (ADR-094's D1). The count is never one, so
-   * it needs no plural, and a BigInt, which a plural cannot read.
+   * characters, for the format as typed, in amber when few do in a year or
+   * in all (ADR-094's S5); Save still works, since a code may grow (D1).
+   * The count is never one, so it needs no plural, and a BigInt, which a
+   * plural cannot read.
    */
   const room = (key: SeriesKey) => {
     if (key !== 'lot' || !validOf(key)) return null;
-    const { codes, short } = roomWithin20(drafts[key].prefix);
+    const { codes, short } = roomWithin20(
+      drafts[key].prefix,
+      drafts[key].reset,
+    );
     return (
       <Typography
         variant="caption"
@@ -877,7 +881,7 @@ function NumberingForm({
           {intl.formatMessage({
             id: 'settings.numbering.intro',
             defaultMessage:
-              'How each kind of document is numbered. A number already given never changes: a change applies from the next document made.',
+              'How each kind of document, and each lot code made for us, is numbered. A number already given never changes: a change applies from the next one made.',
           })}
         </Typography>
 
@@ -995,7 +999,7 @@ function NumberingForm({
               {
                 id: 'settings.numbering.ownDate',
                 defaultMessage:
-                  'A year, month or day in a number is the document’s own date: an invoice dated 31 December and issued in January takes the old year’s next number. “Prints as” is today’s, {day}.',
+                  'A year, month or day in a number is the document’s own date: an invoice dated 31 December and issued in January takes the old year’s next number. A lot code’s is the day it is made. “Prints as” is today’s, {day}.',
               },
               { day: formatDay(today) },
             )}

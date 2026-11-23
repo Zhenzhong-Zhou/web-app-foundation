@@ -14,7 +14,7 @@ Vous pouvez aussi trouver un lot par son code ou par le lot du fournisseur avec 
 
 Sous le code du lot, le nom de son article ouvre la page de l’article, pour qui peut voir les articles, et **Tous les mouvements de ce lot** ouvre Mouvements sur son article, pour ce lot seul et toute son histoire, sans dates.
 
-- **Où il se trouve** : chaque emplacement qui en contient, écrit par son chemin complet depuis son entrepôt, et combien. Une personne qui ne peut pas voir les emplacements lit plutôt la quantité **Utilisable** et **Inutilisable**, sans aucun emplacement nommé.
+- **Où il se trouve** : chaque emplacement qui en contient, écrit par son chemin complet depuis son entrepôt, et combien. Une personne qui ne peut pas voir les emplacements lit plutôt la quantité **Utilisable** et **Inutilisable**, sans aucun emplacement nommé. Si une partie du lot est passée dans un autre lot, **Passé ensuite à** liste chacun de ces lots, après autant de passages qu’il y en a eu, avec tout ce qu’il contient maintenant : un rappel atteint aussi ce stock.
 - **D’où il vient** : sa réception et la commande du fournisseur, ou l’ordre de fabrication qui l’a produit et sa licence. Une réception sans commande dit de qui elle vient, s’il a été indiqué, et pourquoi, par exemple « Reçu sans commande : stock d’ouverture »; du stock venu d’un autre lot nomme ce lot; et le lot créé au début du suivi par lot indique « Stock en main au début du suivi par lot ».
 - **Fabriqué à partir de** : les lots de composants qu’un ordre de fabrication a utilisés, peu importe le nombre d’étapes.
 - **Utilisé dans** : les ordres de fabrication qui l’ont utilisé, et les lots qu’ils ont produits.
@@ -28,7 +28,7 @@ Certaines unités ont pu partir sans destinataire enregistré : expédiées san
 
 ## Les mots que vous verrez {#words}
 
-- **Code de lot** : le code imprimé sur la boîte, ou un code attribué ici.
+- **Code de lot ou lot du fournisseur** : le code imprimé sur la boîte ou attribué ici, ou le lot du fournisseur gardé à côté d’un code créé ici. L’un ou l’autre retrouve le lot.
 - **Étapes** : combien d’ordres de fabrication séparent ce lot de l’autre.
 - **Non disponible** : un emplacement dont le stock n’est pas à expédier, comme un casier de retours à vérifier.
 - **Lot** : ce que produit un ordre de fabrication est aussi un lot, comme un lot reçu.

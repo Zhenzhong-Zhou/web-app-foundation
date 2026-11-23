@@ -606,6 +606,15 @@ file is kept is in the [README](README.md).
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
   MC-904
+- **Where it is now lists the lots its stock moved on to,** by moves
+  alone, any number of hops, each with all it holds now, read as Where
+  it is now reads the lot itself, stock it held before the move too: a
+  recall reaches more, never fewer. A lot reached through a run is in
+  Went into instead, and one emptied since is listed holding nothing.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "lists the lots its stock moved on to, by moves alone and any number of hops, with all each holds now, a place named only with locations.view (S9)" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "lists the lots its stock moved on to under Where it is now, each a link with all it holds, by place or summed for a reader without places (S9)" ·
+  MC-908
 
 ## Where it stands
 
@@ -850,12 +859,15 @@ file is kept is in the [README](README.md).
 - **A receipt with no order may name whom it came from,** a partner of
   this organization, kept as a sample's recipient is and read as the
   From end of its From → to on Movements and in its export's From, For
-  staying the document's (D3); the lot's Where it came from names it
-  too. Another organization's partner is refused, and so is a partner
+  staying the document's (D3); without From → to, for a reader without
+  locations.view, it follows the reason, "Received: returned · from …",
+  as a partner is not a place (S7); the lot's Where it came from names
+  it too. Another organization's partner is refused, and so is a partner
   on a count or on an order's receipt.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-receipt-with-no-order-says-why-and-from-whom) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "names who it came from, a partner of this organization alone, on the movement and as its export’s From, For staying the document’s (D3)" ·
   [test](../../client/src/inventory/lot-trace-page.test.tsx) "says where it came from: the lot it moved from, tracking started, back from before, and a receipt with no order from whom and why" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "names a receipt’s partner after its reason for a reader with no From → to, a link with partners.view (S7)" ·
   MC-333 · MC-910
 - **A write with no lot for a code that tracks lots is refused,** saying
   lot tracking has started for that code and to reload to give its lot:
@@ -924,12 +936,17 @@ file is kept is in the [README](README.md).
   place, its code from the lot series, noted as the stock on hand when
   lot tracking started, with the supplier's lot and the expiry when
   given: one lot change a place, Lots started, counted in neither In nor
-  Out. On hand, usable, Held, Free, Short and Coming read as before,
-  with an expiry not in the past; who and when are in the item's
-  History. With nothing on hand, tracking turns on alone and no lot is
-  made; from then on, every movement of the code takes a lot.
+  Out. With no expiry given, the lot's is not known yet, never Doesn't
+  expire, so it is listed under Details to add and stays usable; the
+  question starts on Not known yet, shown chosen. On hand, usable, Held,
+  Free, Short and Coming read as before, with an expiry not in the past;
+  who and when are in the item's History. With nothing on hand, tracking
+  turns on alone and no lot is made; from then on, every movement of the
+  code takes a lot.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "asks where the stock is, then puts all of it into one lot made for us, noted, every figure as before (R14, R15)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "stores the expiry as not known yet where the question gives none, every figure as before (S6, R15)" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "asks with the places and what each holds, the code it will make, the runs that close against it and that it is one way; Cancel changes nothing (R14)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "turns tracking on alone for a code with nothing on hand: no lot, no movement, and a receipt then asks for one (R13)"
 - **The code's whole cost history goes into the lot:** Stock value and
   the average are the same after, what waited for a cost still waits,
@@ -955,7 +972,8 @@ file is kept is in the [README](README.md).
   refused saying what to do; the list of what may come back offers it
   apart, with the lot it goes into. So what each lot shipped and what came back of it
   still match. Where the code started with nothing on hand, the first of
-  it back makes that lot, made for us, noted the same, its expiry none.
+  it back makes that lot, made for us, noted the same, its expiry not
+  known yet.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "takes back a sale shipped before the start by quantity, with no lot as it left, then into the start lot, at the cost it left at (Q3a)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "receives an RMA’s goods shipped before the start the same way, held to what it authorized (Q3a)" ·

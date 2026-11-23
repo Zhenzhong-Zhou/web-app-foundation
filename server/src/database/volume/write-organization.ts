@@ -912,10 +912,12 @@ export class OrganizationWriter {
     for (const [index, item] of untracked.entries()) {
       if ((index + 1) % START_TRACKING_EVERY !== 0) continue;
 
+      // Doesn't expire outright, so the seeded year reads as it did
+      // before the start's default became Not known yet (ADR-094, S6).
       await this.services.lotTracking.start(
         item.productId,
         item.variantId,
-        {},
+        { expiry: 'none' },
         this.actorId,
       );
       item.tracked = true;

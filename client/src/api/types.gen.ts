@@ -2105,6 +2105,8 @@ export type LotMatch = {
   id: string;
   code: string;
   expiresAt: string | null;
+  supplierLot: string | null;
+  isAssigned: boolean;
   sku: string;
 };
 
@@ -2129,6 +2131,14 @@ export type LotBalance = {
   locationPath: Array<string>;
   isAvailable: boolean;
   quantity: string;
+};
+
+export type MovedOnLot = {
+  lotId: string;
+  code: string;
+  balances: Array<LotBalance>;
+  usable: string;
+  notUsable: string;
 };
 
 export type LotSource = {
@@ -2186,6 +2196,7 @@ export type LotTrace = {
   balances: Array<LotBalance>;
   usable: string;
   notUsable: string;
+  movedOnTo: Array<MovedOnLot>;
   sources: Array<LotSource>;
   madeFrom: Array<RelatedLot>;
   wentInto: Array<RelatedLot>;

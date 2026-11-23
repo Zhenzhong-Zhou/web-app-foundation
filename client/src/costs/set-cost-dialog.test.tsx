@@ -175,7 +175,7 @@ describe('SetCostDialog', () => {
     [
       'one lot',
       [{ lotId: 'lot-b', lotCode: 'LOT-B', value: '40.000000' }],
-      'Cost saved. CA$40.00 of it followed the stock moved to lot LOT-B.',
+      'Cost set. CA$40.00 of it followed the stock moved to lot LOT-B.',
     ],
     [
       'two lots',
@@ -183,7 +183,7 @@ describe('SetCostDialog', () => {
         { lotId: 'lot-b', lotCode: 'LOT-B', value: '40.000000' },
         { lotId: 'lot-c', lotCode: 'LOT-C', value: '10.000000' },
       ],
-      'Cost saved. Part of it followed the stock moved to other lots: CA$40.00 to lot LOT-B and CA$10.00 to lot LOT-C.',
+      'Cost set. Part of it followed the stock moved to other lots: CA$40.00 to lot LOT-B and CA$10.00 to lot LOT-C.',
     ],
   ])(
     'says what followed the stock moved to other lots: %s',

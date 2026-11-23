@@ -39,6 +39,13 @@ interface Trace {
   }[];
   usable: string;
   notUsable: string;
+  movedOnTo: {
+    lotId: string;
+    code: string;
+    balances: Trace['balances'];
+    usable: string;
+    notUsable: string;
+  }[];
   sources: {
     kind: 'receipt' | 'production' | 'lot_change';
     reasonDetail: string | null;
@@ -404,6 +411,17 @@ describe('Lot trace (e2e)', () => {
     // Our own code still finds it; % matches itself, not everything.
     expect(await codes(made)).toEqual([`${made} CALM-30`]);
     expect(await codes('%')).toEqual([]);
+
+    // Each match names its supplier's lot and whether its code was made
+    // here, so one found by the supplier's lot says why (S10).
+    expect(
+      body<{ code: string; supplierLot: string | null; isAssigned: boolean }[]>(
+        await alpha.agent.get('/v1/stock/lots/search?code=AB-77').expect(200),
+      ).map((lot) => [lot.code, lot.supplierLot, lot.isAssigned]),
+    ).toEqual([
+      [made, 'ab-7731', true],
+      [typed, null, false],
+    ]);
   });
 
   // A recall letter goes to everyone on it (ADR-044, amended; #473's 17).
@@ -971,6 +989,111 @@ describe('Lot trace (e2e)', () => {
         supplierName: 'Herb Supply Co',
       });
       expect(supplier.partnerId).toEqual(expect.any(String));
+    });
+
+    // Step 15's gap (S9): stock moved on under another code is still on
+    // hand somewhere, and a recall reading Where it is now must find it.
+    it('lists the lots its stock moved on to, by moves alone and any number of hops, with all each holds now, a place named only with locations.view (S9)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await story(alpha);
+      const first = await trace(alpha, 'FOC-1');
+      const shelf = first.balances[0].locationId;
+      const annex = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Annex',
+      });
+      // FOC-2 held stock of its own before the move: all of it is listed.
+      await alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: first.lot.variantId,
+          toLocationId: shelf,
+          quantity: '10',
+          reason: 'receipt',
+          lot: { code: 'FOC-2' },
+        })
+        .expect(201);
+      await moveToLot(alpha, 'FOC-1', '20', { code: 'FOC-2' });
+      await moveToLot(alpha, 'FOC-2', '10', { code: 'FOC-3' });
+      await alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: first.lot.variantId,
+          lotId: await lotId('FOC-3'),
+          fromLocationId: shelf,
+          toLocationId: annex,
+          quantity: '4',
+          reason: 'transfer',
+        })
+        .expect(201);
+      // A lot moved on to and emptied since: listed, holding nothing.
+      const made = await moveToLot(alpha, 'FOC-1', '2');
+      await sellFrom(alpha, made.code, 'Eastside Clinic', '2');
+
+      const held = (found: Trace) =>
+        found.movedOnTo.map((lot) => [
+          lot.code,
+          lot.balances.map((row) => [row.locationName, row.quantity]),
+          Number(lot.usable),
+          Number(lot.notUsable),
+        ]);
+      const owners = await trace(alpha, 'FOC-1');
+      expect(owners.balances.map((row) => row.quantity)).toEqual(['45.0000']);
+      expect(held(owners)).toEqual([
+        ['FOC-2', [['Shelf', '20.0000']], 20, 0],
+        [
+          'FOC-3',
+          [
+            ['Annex', '4.0000'],
+            ['Shelf', '6.0000'],
+          ],
+          10,
+          0,
+        ],
+        [made.code, [], 0, 0],
+      ]);
+      expect(owners.movedOnTo[2].lotId).toBe(made.id);
+      expect(owners.movedOnTo[1].balances[0]).toEqual({
+        locationId: annex,
+        locationName: 'Annex',
+        locationCode: null,
+        locationPath: [],
+        isAvailable: true,
+        quantity: '4.0000',
+      });
+
+      // From the second lot, only the lot it moved on to; from the
+      // ingredient, none: a lot reached through a run is in Went into.
+      expect(held(await trace(alpha, 'FOC-2')).map(([code]) => code)).toEqual([
+        'FOC-3',
+      ]);
+      expect((await trace(alpha, 'BF-1')).movedOnTo).toEqual([]);
+
+      // The Sales template holds stock.view and not locations.view: each
+      // place by its id, the sums as the owner's.
+      await customRole(
+        app,
+        alpha.organizationId,
+        'Sales',
+        ROLE_TEMPLATES.sales.permissions,
+      );
+      const sales = await addMember(app, alpha, 'sales@example.com', 'Sales');
+      const theirs = body<Trace>(
+        await sales
+          .get(`/v1/stock/lots/${await lotId('FOC-1')}/trace`)
+          .expect(200),
+      );
+      expect(theirs.movedOnTo).toEqual(
+        owners.movedOnTo.map((lot) => ({
+          ...lot,
+          balances: lot.balances.map((row) => ({
+            ...row,
+            locationName: null,
+            locationCode: null,
+            locationPath: [],
+          })),
+        })),
+      );
     });
 
     // #627's recall half and #649's joins: each join names the

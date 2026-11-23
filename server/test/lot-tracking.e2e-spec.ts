@@ -342,6 +342,39 @@ describe('Start tracking lots (e2e)', () => {
     );
   });
 
+  // Stock nobody checked is not said to last for ever (S6): with no
+  // expiry given, the lot's is not known yet, listed under Details to
+  // add, and still usable, never expired (R15, R9).
+  it('stores the expiry as not known yet where the question gives none, every figure as before (S6, R15)', async () => {
+    const w = await world();
+    await buy(w, '300', '0.40', w.main);
+
+    const before = await standing(w);
+    const { lot } = await start(w);
+
+    const [made] = await db.select().from(lots).where(eq(lots.id, lot!.id));
+    expect(made).toMatchObject({ expiry: 'unknown', expiresAt: null });
+    expect(await standing(w)).toEqual(before);
+    expect(before).toMatchObject({
+      onHand: '300.0000',
+      usable: '300.0000',
+      expiresFirst: null,
+    });
+
+    // A day given, without its kind, as a tab may send it: that day.
+    const dated = await world('beta');
+    await buy(dated, '5', '0.40', dated.main);
+    const { lot: datedLot } = await start(dated, { expiresAt: '2099-01-31' });
+    const [madeDated] = await db
+      .select()
+      .from(lots)
+      .where(eq(lots.id, datedLot!.id));
+    expect(madeDated).toMatchObject({
+      expiry: 'date',
+      expiresAt: '2099-01-31',
+    });
+  });
+
   it('moves the code’s whole cost history into the lot: Stock value unchanged, what waited still waits, its cost landing on the lot (R17)', async () => {
     const w = await world();
     await buy(w, '100', '2.00', w.main);
@@ -1160,7 +1193,8 @@ describe('Start tracking lots (e2e)', () => {
           isAssigned: true,
           note: 'tracking_started',
           supplierLot: null,
-          expiry: 'none',
+          // Not known yet, as a start's is with nothing said (S6).
+          expiry: 'unknown',
           expiresAt: null,
         }),
       ]);

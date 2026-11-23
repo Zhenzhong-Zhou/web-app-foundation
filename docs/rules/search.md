@@ -127,7 +127,9 @@ leave how it matches to this file. How this file is kept is in the
   supplier's own lot kept beside a code made here, in the top bar,
   Movements' find box, Trace a lot and on Inventory's two views; the
   top bar and Trace a lot rank an exact match, then the start of either
-  code, before the rest.
+  code, before the rest. Each lot found names its supplier's lot, or
+  that a code made here has none yet, in the top bar and in Trace a
+  lot's results, so one found by it says why.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [ADR-056, amended](../adr/0056-search.md#amendment-november-2026--a-lot-found-by-its-suppliers-lot-adr-094) ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
@@ -135,6 +137,8 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code by any part of a lot’s supplier’s lot, capitals aside, at the place chosen alone (ADR-094, R6)" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a lot by any part of its supplier’s lot, beside the lots its own code finds (ADR-094, R6)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "finds a lot by any part of its code or its supplier’s lot, the start of either first (ADR-094, R6)" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each match’s supplier’s lot, or that a code made here has none yet, and asks for either code" ·
   [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
   MC-1556 · MC-308 · MC-909
 - **Locations, people and settings are not in the top bar's search.**

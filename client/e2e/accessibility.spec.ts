@@ -796,6 +796,35 @@ const SCREENS: Screen[] = [
         .getByRole('group', { name: 'Square logo' })
         .getByText(/^Without one, the initials \S+ show there\.$/),
   },
+  {
+    // The room line's amber (ADR-094, S5): a 16-character prefix that
+    // never starts again leaves room for 9,999 codes in all, too few.
+    name: 'Organization › Documents, Lot codes with little room, its amber line',
+    path: () => '/settings/organization?tab=documents',
+    open: async (page) => {
+      const row = page.getByRole('row', { name: /^Lot codes/ });
+      await row
+        .getByRole('combobox', { name: 'Lot codes: Starts again' })
+        .click();
+      await page.getByRole('option', { name: 'Never', exact: true }).click();
+      await row
+        .getByRole('textbox', { name: 'Lot codes: Prefix' })
+        .fill('ABCDEFGHIJKLMNO-');
+      // Typing scrolled the section's heading, and its Learn more, under
+      // the top bar, which axe reads as a target too small; the section
+      // whole below the bar, as a person reads it, its amber line in view.
+      await page
+        .getByRole('heading', { level: 2, name: 'Numbering' })
+        .evaluate((heading) => {
+          heading.scrollIntoView({ block: 'start' });
+          window.scrollBy(0, -96);
+        });
+    },
+    ready: (page) =>
+      page.getByText('Room for 9,999 codes in all within 20 characters', {
+        exact: true,
+      }),
+  },
   { name: 'members', path: () => '/members', ready: heading },
   {
     name: 'the Invite dialog',

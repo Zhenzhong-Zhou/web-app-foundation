@@ -1,5 +1,10 @@
 import { Box, Link, Stack, TableCell, Typography } from '@mui/material';
-import { defineMessages, type IntlShape, useIntl } from 'react-intl';
+import {
+  defineMessages,
+  FormattedMessage,
+  type IntlShape,
+  useIntl,
+} from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { Movement } from '../api/types.gen';
@@ -188,7 +193,7 @@ export function MovementCells({
         </>
       )}
       <TableCell>
-        <MovementReason movement={movement} />
+        <MovementReason movement={movement} places={columns.places} />
       </TableCell>
       {columns.places && (
         <TableCell>
@@ -329,13 +334,41 @@ export function Figure({
     : displayWithUnit(quantity, movement.unitOfMeasure, intl);
 }
 
-/** "Corrected: miscount", the note a correction must carry under it. */
-export function MovementReason({ movement }: { movement: Movement }) {
+/**
+ * "Corrected: miscount", the note a correction must carry under it. A
+ * receipt's partner is its From end; with no From → to column, for a
+ * reader without `locations.view`, it follows the reason, "Received:
+ * returned · from Harbour Foods": a partner is not a place, so places'
+ * permission does not hide it (ADR-094, S7).
+ */
+export function MovementReason({
+  movement,
+  places,
+}: {
+  movement: Movement;
+  /** Whether the From → to column is shown beside it. */
+  places: boolean;
+}) {
   const intl = useIntl();
+  const sender =
+    !places && movement.reason === 'receipt' ? movement.recipient : null;
 
   return (
     <>
-      <Box>{reasonWords(movement, intl)}</Box>
+      <Box>
+        {sender ? (
+          <FormattedMessage
+            id="inventory.movements.reasonFrom"
+            defaultMessage="{reason} · from {partner}"
+            values={{
+              reason: reasonWords(movement, intl),
+              partner: <Sender sender={sender} underline="always" />,
+            }}
+          />
+        ) : (
+          reasonWords(movement, intl)
+        )}
+      </Box>
       {/* Required on an adjustment, because a person asserting the
           system is wrong has to say what they found (ADR-023). This is
           where it gets read. */}
@@ -395,7 +428,6 @@ export function MovementEnd({
   side: 'from' | 'to';
 }) {
   const intl = useIntl();
-  const can = useCan();
   const [id, place] =
     side === 'from'
       ? [
@@ -424,32 +456,47 @@ export function MovementEnd({
   }
 
   // A receipt's partner is where it came from (ADR-094, D3, amending
-  // ADR-093's 82a): a link for whoever may open partners, grey words for
-  // the rest.
+  // ADR-093's 82a).
   const sender =
     side === 'from' && movement.reason === 'receipt'
       ? movement.recipient
       : null;
-  if (sender) {
-    return can('partners.view') ? (
-      <Link
-        component={RouterLink}
-        to={`/partners/${sender.id}`}
-        state={OFFER_BACK}
-      >
-        {sender.name}
-      </Link>
-    ) : (
-      <Box component="span" sx={{ color: 'text.secondary' }}>
-        {sender.name}
-      </Box>
-    );
-  }
+  if (sender) return <Sender sender={sender} />;
 
   const outside = id ? null : outsideEnd(movement, side);
   return (
     <Box component="span" sx={{ color: 'text.secondary' }}>
       {outside ? intl.formatMessage(OUTSIDE[outside]) : NO_VALUE}
+    </Box>
+  );
+}
+
+/**
+ * Whom a receipt came from (ADR-094, D3): a link for whoever may open
+ * partners, grey words for the rest.
+ */
+function Sender({
+  sender,
+  underline,
+}: {
+  sender: NonNullable<Movement['recipient']>;
+  /** Inside a sentence, as after the reason. */
+  underline?: 'always';
+}) {
+  const can = useCan();
+
+  return can('partners.view') ? (
+    <Link
+      component={RouterLink}
+      to={`/partners/${sender.id}`}
+      state={OFFER_BACK}
+      underline={underline}
+    >
+      {sender.name}
+    </Link>
+  ) : (
+    <Box component="span" sx={{ color: 'text.secondary' }}>
+      {sender.name}
     </Box>
   );
 }
@@ -676,7 +723,7 @@ export function MovementCard({
           </>
         )}
         <CardLine label={head('reason')}>
-          <MovementReason movement={movement} />
+          <MovementReason movement={movement} places={columns.places} />
         </CardLine>
         {columns.places && (
           <CardLine label={head('fromTo')}>

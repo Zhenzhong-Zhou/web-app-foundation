@@ -702,6 +702,20 @@ async function buildProbes(
     });
   }
 
+  // A lot part of which moved into another (ADR-094, S9): the walk steps
+  // through the lot change, and Where it is now reads both lots at once,
+  // by the lot index on stock_levels.
+  const [moved] = (
+    await stock.listMovements({ reason: 'lot_change' }, 'en', EVERY_PART)
+  ).entries.filter((movement) => movement.lotId && movement.toLotId);
+  if (moved?.lotId) {
+    const lotId = moved.lotId;
+    probes.push({
+      name: 'lot trace: moved on to another lot',
+      run: () => traces.trace(lotId, 'en', true),
+    });
+  }
+
   // A newcomer's Home (ADR-079): the same, with their welcome, its first
   // week read from their own audit entries by the actor's index. Only
   // while they are new: past two weeks it is one read of the membership.

@@ -312,5 +312,12 @@ export class LotMatch {
   /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
   @ApiProperty({ enum: LOT_EXPIRIES })
   expiry!: LotExpiry;
+  /**
+   * The supplier's own lot, as printed, for a code made here; else null.
+   * A match found by it says so (ADR-094, S10).
+   */
+  supplierLot!: string | null;
+  /** True when the code was made here, not printed (ADR-094). */
+  isAssigned!: boolean;
   sku!: string;
 }

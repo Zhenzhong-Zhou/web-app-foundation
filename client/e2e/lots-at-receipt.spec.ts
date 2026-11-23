@@ -605,7 +605,7 @@ async function itemFrom(page: Page, product: SeededProduct) {
   ).toBeVisible();
 }
 
-test('The item’s page, a code not tracked, Start tracking lots…: the question, its places listed, Supplier’s lot and Expires optional; Escape or Cancel, focus on the button, and Cancel changes nothing', async ({
+test('The item’s page, a code not tracked, Start tracking lots…: the question, its places listed, Supplier’s lot optional and Expires on Not known yet; Escape or Cancel, focus on the button, and Cancel changes nothing', async ({
   page,
   freshOrg,
 }) => {
@@ -645,13 +645,17 @@ test('The item’s page, a code not tracked, Start tracking lots…: the questio
   await expect(
     dialog.getByText(said('products.startTracking.oneWay')),
   ).toBeVisible();
-  // Both optional, Expires with none chosen, saying what that means.
+  // The supplier's lot optional; Expires on Not known yet, shown chosen,
+  // saying what the lot is then, never an unseen Doesn't expire (S6).
   const supplierLot = dialog.getByRole('textbox', { name: 'Supplier’s lot' });
   await expect(supplierLot).not.toHaveAttribute('required');
   const expires = dialog.getByRole('radiogroup', { name: 'Expires' });
-  await expect(expires.getByRole('radio', { checked: true })).toHaveCount(0);
+  await expect(expires.getByRole('radio', { checked: true })).toHaveCount(1);
+  await expect(
+    expires.getByRole('radio', { name: said('inventory.lot.expiry.unknown') }),
+  ).toBeChecked();
   await expect(expires).toHaveAccessibleDescription(
-    said('products.startTracking.expiry.help'),
+    said('products.startTracking.expiry.unknownHelp'),
   );
 
   await supplierLot.fill('ZN-SUP-1');

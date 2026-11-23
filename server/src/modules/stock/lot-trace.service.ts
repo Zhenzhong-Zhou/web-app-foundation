@@ -90,15 +90,24 @@ export class LotTraceService {
       // One after another: a transaction is one connection, and queries on
       // it run in turn whatever the code says, so Promise.all would only
       // pretend to be parallel.
-      const { balances, usable, notUsable } = await this.whereItIsNow(
-        tx,
-        organizationId,
-        lotId,
-        seesPlaces,
-      );
       const sources = await this.sources(tx, organizationId, lotId);
       const upstream = await this.related(tx, organizationId, lotId, 'up');
       const downstream = await this.related(tx, organizationId, lotId, 'down');
+
+      /**
+       * The lots its stock moved on to by moves alone, any number of hops
+       * (ADR-094, S9): the same stock under other codes, so a recall
+       * reading Where it is now finds what is still on hand there. Each
+       * with all it holds, stock it held before the move too: a recall
+       * reaches more, never fewer, as its recipients do.
+       */
+      const onward = downstream.filter((related) => related.depth === 0);
+      const holding = await this.whereItIsNow(
+        tx,
+        organizationId,
+        [lotId, ...onward.map((related) => related.lotId)],
+        seesPlaces,
+      );
 
       /**
        * Recipients of this lot, of everything made from it, and of every lot
@@ -114,9 +123,12 @@ export class LotTraceService {
 
       return {
         lot,
-        balances,
-        usable,
-        notUsable,
+        ...holding(lotId),
+        movedOnTo: onward.map((related) => ({
+          lotId: related.lotId,
+          code: related.code,
+          ...holding(related.lotId),
+        })),
         sources,
         madeFrom: throughRuns(upstream),
         wentInto: throughRuns(downstream),
@@ -155,7 +167,8 @@ export class LotTraceService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (
         await tx.execute(sql`
-          select l.id, l.code, l.expires_at, l.expiry, pv.sku
+          select l.id, l.code, l.expires_at, l.expiry, l.supplier_lot,
+            l.is_assigned, pv.sku
           from lots l
           join product_variants pv
             on pv.id = l.variant_id
@@ -170,6 +183,8 @@ export class LotTraceService {
         code: string;
         expires_at: string | null;
         expiry: LotExpiry;
+        supplier_lot: string | null;
+        is_assigned: boolean;
         sku: string;
       }[];
 
@@ -178,6 +193,8 @@ export class LotTraceService {
         code: row.code,
         expiresAt: row.expires_at,
         expiry: row.expiry,
+        supplierLot: row.supplier_lot,
+        isAssigned: row.is_assigned,
         sku: row.sku,
       }));
     });
@@ -260,30 +277,33 @@ export class LotTraceService {
    * two sums by the usable rule's reading for one lot, usableInLot
    * (ADR-093, 10a): usable, and not. Summed here, never in the browser
    * (ADR-055), for a reader who may not see the places (96a); read once
-   * with the places, never a copy of the rule (review 27).
+   * with the places, never a copy of the rule (review 27). The traced lot
+   * and the lots it moved on to in one read, each lot's own (ADR-094, S9).
    */
   private async whereItIsNow(
     tx: Tx,
     organizationId: string,
-    lotId: string,
+    lotIds: string[],
     seesPlaces: boolean,
   ) {
     const today = todayIn(requestTimeZone());
     const rows = (
       await tx.execute(sql`
         select
+          u.lot_id,
           u.location_id,
           u.location_name,
           u.location_code,
           u.is_available,
           u.quantity::text as quantity,
           u.quantity <> 0 as is_here,
-          coalesce(sum(u.usable) over (), 0)::text as usable,
-          coalesce(sum(u.not_usable) over (), 0)::text as not_usable
-        from (${usableInLot(organizationId, today, lotId)}) u
+          coalesce(sum(u.usable) over (partition by u.lot_id), 0)::text as usable,
+          coalesce(sum(u.not_usable) over (partition by u.lot_id), 0)::text as not_usable
+        from (${usableInLot(organizationId, today, lotIds)}) u
         order by u.location_name
       `)
     ).rows as {
+      lot_id: string;
       location_id: string;
       location_name: string;
       location_code: string | null;
@@ -303,18 +323,23 @@ export class LotTraceService {
         )
       : new Map<string, string[]>();
 
-    return {
-      balances: here.map((row) => ({
-        locationId: row.location_id,
-        locationName: seesPlaces ? row.location_name : null,
-        locationCode: seesPlaces ? row.location_code : null,
-        locationPath: pathOf.get(row.location_id) ?? [],
-        isAvailable: row.is_available,
-        quantity: row.quantity,
-      })),
-      // The same on every row; nothing anywhere, none.
-      usable: rows[0]?.usable ?? '0',
-      notUsable: rows[0]?.not_usable ?? '0',
+    return (lotId: string) => {
+      const its = rows.filter((row) => row.lot_id === lotId);
+      return {
+        balances: here
+          .filter((row) => row.lot_id === lotId)
+          .map((row) => ({
+            locationId: row.location_id,
+            locationName: seesPlaces ? row.location_name : null,
+            locationCode: seesPlaces ? row.location_code : null,
+            locationPath: pathOf.get(row.location_id) ?? [],
+            isAvailable: row.is_available,
+            quantity: row.quantity,
+          })),
+        // The same on each of its rows; nothing anywhere, none.
+        usable: its[0]?.usable ?? '0',
+        notUsable: its[0]?.not_usable ?? '0',
+      };
     };
   }
 

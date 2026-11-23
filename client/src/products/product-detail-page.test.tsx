@@ -563,9 +563,22 @@ describe('Start tracking lots', () => {
     expect(
       within(dialog).getByRole('textbox', { name: /^Supplier’s lot/ }),
     ).toHaveValue('');
-    for (const radio of within(dialog).getAllByRole('radio')) {
-      expect(radio).not.toBeChecked();
-    }
+    // Expires starts on Not known yet, shown chosen, saying what the lot
+    // is then: never an unseen Doesn't expire (S6).
+    expect(
+      within(dialog).getByRole('radio', { name: 'Not known yet' }),
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole('radio', { name: 'On a date' }),
+    ).not.toBeChecked();
+    expect(
+      within(dialog).getByRole('radio', { name: 'Doesn’t expire' }),
+    ).not.toBeChecked();
+    expect(
+      within(dialog).getByRole('radiogroup', { name: 'Expires' }),
+    ).toHaveAccessibleDescription(
+      'Listed under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
+    );
 
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(dialog).not.toBeInTheDocument();
@@ -614,7 +627,7 @@ describe('Start tracking lots', () => {
     );
   });
 
-  it('starts in one write with what is known, the message naming the lot with Open the lot, the code then reading Tracked (R15)', async () => {
+  it('starts in one write with what is known, its expiry not known yet unless changed, the message naming the lot with Open the lot, the code then reading Tracked (R15, S6)', async () => {
     const { user, sent } = startable();
     await user.click(
       await screen.findByRole('button', {
@@ -625,9 +638,6 @@ describe('Start tracking lots', () => {
     await user.type(
       await within(dialog).findByRole('textbox', { name: /^Supplier’s lot/ }),
       'Sup-77',
-    );
-    await user.click(
-      within(dialog).getByRole('radio', { name: 'Not known yet' }),
     );
     await user.click(
       within(dialog).getByRole('button', { name: 'Start tracking lots' }),

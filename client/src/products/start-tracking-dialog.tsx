@@ -60,11 +60,13 @@ export function StartTrackingDialog({
   const path = `/products/${productId}/variants/${variantId}/lot-tracking`;
   const question = useResource<LotTrackingQuestion>(path);
   const asked = question.data;
+  // Expires starts on Not known yet, shown chosen: stock nobody checked
+  // is never said to last for ever by a default no one saw (ADR-094, S6).
   const [form, setForm] = useState<{
     supplierLot: string;
-    expiry: ExpiryKind | null;
+    expiry: ExpiryKind;
     expiresAt: string;
-  }>({ supplierLot: '', expiry: null, expiresAt: '' });
+  }>({ supplierLot: '', expiry: 'unknown', expiresAt: '' });
   const [dayError, setDayError] = useState<string | undefined>();
   const dayRef = useRef<HTMLInputElement>(null);
   const message = useLotMessage();
@@ -124,13 +126,13 @@ export function StartTrackingDialog({
       return;
     }
 
-    // What is known of the stock on hand, each left out unknown: the lot
-    // then has its supplier's lot to add, and does not expire, as the
-    // stock read until now.
+    // What is known of the stock on hand: a supplier's lot left out is
+    // to add, and the expiry is the one chosen, Not known yet unless
+    // changed.
     const body: StartLotTrackingDto = stocked
       ? {
           supplierLot: form.supplierLot.trim() || undefined,
-          expiry: form.expiry ?? undefined,
+          expiry: form.expiry,
           expiresAt: form.expiry === 'date' ? form.expiresAt : undefined,
         }
       : {};
@@ -290,11 +292,11 @@ export function StartTrackingDialog({
                         setForm((current) => ({ ...current, ...next }));
                       }}
                       help={
-                        form.expiry === null
+                        form.expiry === 'unknown'
                           ? intl.formatMessage({
-                              id: 'products.startTracking.expiry.help',
+                              id: 'products.startTracking.expiry.unknownHelp',
                               defaultMessage:
-                                'Optional. Left unchosen, the lot does not expire, as the stock read until now.',
+                                'Listed under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
                             })
                           : undefined
                       }

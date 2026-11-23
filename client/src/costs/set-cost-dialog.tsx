@@ -45,7 +45,7 @@ function costSaved(cost: CorrectedCost, base: string, intl: IntlShape): string {
       {
         id: 'costs.set.followedOne',
         defaultMessage:
-          'Cost saved. {amount} of it followed the stock moved to lot {code}.',
+          'Cost set. {amount} of it followed the stock moved to lot {code}.',
       },
       { amount: formatMoney(only.value, base), code: only.lotCode },
     );
@@ -54,7 +54,7 @@ function costSaved(cost: CorrectedCost, base: string, intl: IntlShape): string {
     {
       id: 'costs.set.followedSeveral',
       defaultMessage:
-        'Cost saved. Part of it followed the stock moved to other lots: {lots}.',
+        'Cost set. Part of it followed the stock moved to other lots: {lots}.',
     },
     {
       lots: intl.formatList(

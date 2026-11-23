@@ -678,13 +678,16 @@ a second organization.
   hand goes into one lot, its code made for us when you start, like
   L-…:", 900 on Main's Shelf and 600 in the Blending room; where runs in
   progress use or make it, those runs, "Each will close against this
-  lot."; and "This cannot be undone". Supplier's lot is empty and Expires has none
-  chosen, "Optional" under it. Choose On a date with a day already past:
-  an amber line says the stock will read as expired. Escape, or Cancel,
-  closes it with nothing changed, focus back on the button. Start it with
-  Not known yet: the message names the lot, with Open the lot; the row
-  reads Tracked, and Where it stands lists the lot, "Expiry to add" in
-  its Expires. Movements shows one row a place, "Lot changed: lots
+  lot."; and "This cannot be undone". Supplier's lot is empty and Expires
+  is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
+  under Details to add until someone gives the day or says it doesn't
+  expire. The stock can still be used." under it. Choose On a date with a
+  day already past: an amber line says the stock will read as expired.
+  Escape, or Cancel, closes it with nothing changed, focus back on the
+  button. Start it as it opened: the message names the lot, with Open the
+  lot; the row reads Tracked, Where it stands lists the lot, "Expiry to
+  add" in its Expires, and the Lot view's Details to add lists it, its
+  stock still counted usable. Movements shows one row a place, "Lot changed: lots
   started", "moved 900 each into a lot, counted in neither", its Lot "—
   → L-…"; the item's History names who started it. A Receive stock left
   open on the item since before the start is told "Lot tracking has
@@ -758,7 +761,10 @@ a second organization.
   a receipt on an order does, whose For stays its order. A role without
   `partners.view` reads the words by why instead of the partner. The
   Export writes the same in its From column, and For only the document.
-  In 中文 期初库存, 客户, 其他.
+  A role with `partners.view` and without `locations.view` has no From →
+  to: the partner follows the reason, "Received: returned · from
+  Northside Pharmacy", the name a link; a partner is not a place. In 中文
+  期初库存, 客户, 其他, 收货：退回 · 来自 Northside Pharmacy.
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -1224,7 +1230,7 @@ a second organization.
   tracking". On Stock value, stock moved in from a lot still waiting
   reads "Moved in from lot …. Its cost follows that lot's.", the lot a
   link to its page, and offers no Set cost. Set the first lot's
-  delivery's cost: the message reads "Cost saved. … of it followed the
+  delivery's cost: the message reads "Cost set. … of it followed the
   stock moved to lot …", each lot named where several took a part; the
   moved row leaves the list, both lots are valued, and their histories
   read "Cost carried to lot …" and "Cost from lot …". A row of a kind
@@ -1285,9 +1291,15 @@ search to having the list of customers; the target is **under two minutes**.
   the lot itself reads "—" there. The Export lists them the same. The
   second lot's Where it came from reads "Moved in from lot …", a link
   to the first lot, and its Who received it lists only its own
-  customers. Trace the ingredient the first lot was made from: its Went
-  into lists both lots, through the same run, and its recall list
-  reaches the same customer.
+  customers. Back on the first lot's page, under Where it is now, "Moved
+  on to" lists the second lot, its code a link to its page, with all it
+  holds now by place, stock it held before the move too, and a lot moved
+  on to and emptied since reading "—" and 0; move part of the second lot
+  on to a third, and the first lot's page lists the third too. A role
+  without `locations.view` reads each lot's Usable and Not usable, no
+  place named. Trace the ingredient the first lot was made from: its
+  Went into lists both lots, through the same run, its Moved on to none,
+  and its recall list reaches the same customer. In 中文 已转至.
 - **MC-909** *(ADR-094, R6; #618)* A lot found by its supplier's lot.
   Take a lot made here that carries a supplier's lot, say `Hx-2609`.
   Type part of it, `hx-26`, in the top bar's search: Lots lists the lot,
@@ -1297,7 +1309,10 @@ search to having the list of customers; the target is **under two minutes**.
   "FOCUS-60CTNov 19, 2028"; a code made here with none reads "Supplier's
   lot to add", and a lot that does not expire shows its item's code
   alone. Typed whole, `Hx-2609` puts Lots first. The same text finds
-  the lot in Trace a lot, in Inventory's search by item and by lot, and
+  the lot in Trace a lot, its field reading "Lot code or supplier's lot",
+  whose result names "Supplier's lot Hx-2609" under the code, or
+  "Supplier's lot to add" for a code made here with none; in
+  Inventory's search by item and by lot, and
   in Movements' Find an item, lot or order, where, typed whole, the lot
   is offered alone, "Lot … · supplier's lot Hx-2609 · …". In 中文 the
   top bar's line reads 有效期至 … or 待补有效期, then 供应商批号 Hx-2609 or
@@ -3114,10 +3129,18 @@ few invoices and orders.
 - **MC-2714** *(ADR-094, R1, R2, D1)* Lot codes, the codes made for a new
   lot at receipt. Under its Prints as, L-2026-…-1 and From the next day's
   date: L-…-1, the row says "Room for 9,999,999 codes a day within 20
-  characters" in grey. Click into its prefix: Start from a common format
+  characters" in grey. The section's first line says it numbers each lot
+  code made for us too, and its date note that a lot code's date is the
+  day it is made. Click into its prefix: Start from a common format
   offers L-000001, L-2026-0001, each year, and L-2026-…-1, each day, the
   default, pressed. Pick L-000001: "Room for 999,999,999,999,999,999 codes
-  in all within 20 characters". Type `L_` in the prefix: "Capital letters,
+  in all within 20 characters". Type ABCDEFGHIJKLMNO- as its prefix, 16
+  characters printed, the most a prefix may: "Room for 9,999 codes in all
+  within 20 characters" turns amber, and Save still works. Each year,
+  with the year in a prefix of 16, ABCDEFGHIJ-{YYYY}-, stays amber, "…
+  a year"; each day, ABCD-{YYYY}-{MM}-{DD}-, 16 too, reads "Room for
+  9,999 codes a day within 20 characters" in grey, as 9,999 a day or a
+  month is no real risk. Type `L_` in the prefix: "Capital letters,
   digits and - only, and the date from the buttons, so a barcode can carry
   the code." shows in red, and an invoice prefix may still hold `_`. Back on
   the default, give it 8 digits: "The prefix and its digits print at most
@@ -7748,3 +7771,10 @@ first.
   cost carried in Cost and on Stock value; an expiry to add worded
   alike, with Ship's amber line; a receipt's From end: MC-332, MC-333,
   MC-805 and MC-910 added; MC-908 rewritten.
+- 2026-11-22: ADR-094's follow-ups, S5 to S10: a lot's page lists the
+  lots its stock moved on to, with all each holds; Trace a lot's results
+  name the supplier's lot; the room line's amber for a year's or a
+  series' that never starts again; Start tracking lots starting Expires
+  on Not known yet; a receipt's partner after its reason where there is
+  no From → to; "Cost set."; Numbering's words for lot codes: MC-327,
+  MC-333, MC-805, MC-908, MC-909 and MC-2714 rewritten.

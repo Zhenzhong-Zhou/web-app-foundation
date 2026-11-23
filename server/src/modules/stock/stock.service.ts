@@ -811,8 +811,8 @@ export class StockService {
    * tracking started (ADR-094, Q4a): the lot that took its stock on hand,
    * found by its note, or, where the code started with nothing on hand,
    * one made for us now, noted the same, with the first stock back. Its
-   * expiry is none, as a start's is when nothing is said, so the stock
-   * reads as it did before; its supplier's lot is to add.
+   * expiry is not known yet, as a start's is when nothing is said
+   * (ADR-094, S6), the stock still usable; its supplier's lot is to add.
    *
    * Two at once would each make one, so the second waits on the code's own
    * lock, then finds the first's; the lock is taken only where none is
@@ -835,7 +835,7 @@ export class StockService {
     return (
       (await found()) ??
       (await this.makeLot(tx, organizationId, variantId, {
-        ...expiryOf({}),
+        ...expiryOf({ expiry: 'unknown' }),
         supplierLot: null,
         note: TRACKING_STARTED,
       }))

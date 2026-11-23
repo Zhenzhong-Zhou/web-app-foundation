@@ -441,6 +441,7 @@ export {
   type MemberRole,
   type MissingName,
   type MovedLot,
+  type MovedOnLot,
   type Movement,
   type MovementDocument,
   type MovementLotDto,

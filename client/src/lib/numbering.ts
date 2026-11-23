@@ -147,8 +147,13 @@ export function formatNumber(
   return `${render(prefix, day)}${String(value).padStart(digits, '0')}`;
 }
 
-/** Less room than this is worth a warning, in amber (ADR-094's D1). */
-const SHORT_ROOM = 1000n;
+/**
+ * Less room than this is worth a warning, in amber, for a series that
+ * starts again each year or never (ADR-094's S5, replacing D1's 1,000): a
+ * prefix prints at most 16 characters, so the least room is 9,999, and a
+ * 16-character prefix then warns.
+ */
+const SHORT_ROOM = 10_000n;
 
 /**
  * How many numbers a prefix gives before one prints more than 20
@@ -156,15 +161,21 @@ const SHORT_ROOM = 1000n;
  * after the prefix, less one, whatever the digits; and whether that is
  * short enough to warn of. A lot's code made here grows past 20 once its
  * counter outgrows that room, as a document's number grows past its digits
- * (ADR-094's D1). A BigInt, since an empty prefix leaves room for 10^20 - 1.
+ * (ADR-094's D1). Only a series that starts again each year or never is
+ * short: 9,999 codes a day or a month is no real risk (S5). A BigInt,
+ * since an empty prefix leaves room for 10^20 - 1.
  */
-export function roomWithin20(prefix: string): {
+export function roomWithin20(
+  prefix: string,
+  reset: NumberingReset,
+): {
   codes: bigint;
   short: boolean;
 } {
   const left = Math.max(MAX_PRINTED_NUMBER - printedLength(prefix), 0);
   const codes = 10n ** BigInt(left) - 1n;
-  return { codes, short: codes < SHORT_ROOM };
+  const long = reset === 'yearly' || reset === 'never';
+  return { codes, short: long && codes < SHORT_ROOM };
 }
 
 /** Which counter a day belongs to: '', 2026, 2026-10 or 2026-10-17. */

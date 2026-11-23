@@ -8,19 +8,6 @@ import { NUMBERING } from '../test/handlers';
 import { server } from '../test/setup';
 import { NumberingSection } from './numbering-section';
 
-// The room a lot's format leaves as it is worked out, unless a test gives
-// one no format can leave today: a prefix prints at most 16 characters.
-const given = vi.hoisted(() => ({
-  room: null as { codes: bigint; short: boolean } | null,
-}));
-vi.mock('../lib/numbering', async (original) => {
-  const actual = await original<typeof import('../lib/numbering')>();
-  return {
-    ...actual,
-    roomWithin20: (prefix: string) => given.room ?? actual.roomWithin20(prefix),
-  };
-});
-
 /**
  * The Numbering section (ADR-073), as approved on the canvas: today is
  * Saturday 17 October 2026, and 452 invoices have been given.
@@ -278,8 +265,19 @@ describe('NumberingSection', () => {
   });
 
   describe('lot codes (ADR-094)', () => {
-    afterEach(() => {
-      given.room = null;
+    it('speaks for lot codes in its intro and its date note', async () => {
+      serve();
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      expect(
+        screen.getByText(
+          /^How each kind of document, and each lot code made for us, is numbered\./,
+        ),
+      ).toBeVisible();
+      expect(
+        screen.getByText(/A lot code’s is the day it is made\./),
+      ).toBeVisible();
     });
 
     const roomLine = (text: string) =>
@@ -329,13 +327,19 @@ describe('NumberingSection', () => {
       ).toBeInTheDocument();
     });
 
-    it('warns in amber with room for 999, and Save still works', async () => {
-      given.room = { codes: 999n, short: true };
-      serve();
+    // A real format, not a room fed in (S5): 16 characters printed, the
+    // most a prefix may, leave 9,999 codes, too few for a series that
+    // never starts again; as many a day are no real risk.
+    it('warns in amber with room for 9,999 in all, and Save still works; as many a day stay grey', async () => {
+      serve({
+        ...GIVEN,
+        lot: { ...GIVEN.lot, prefix: 'ABCDEFGHIJKLMNO-', reset: 'never' },
+      });
       const user = userEvent.setup();
-      render(<NumberingSection readOnly={false} />);
+      const { unmount } = render(<NumberingSection readOnly={false} />);
       await screen.findByRole('table', { name: 'Numbering' });
 
+      // A change, so Save has something to send.
       const digits = screen.getByRole('spinbutton', {
         name: 'Lot codes: Digits',
       });
@@ -343,11 +347,22 @@ describe('NumberingSection', () => {
       await user.type(digits, '3');
 
       expect(
-        roomLine('Room for 999 codes a day within 20 characters'),
+        roomLine('Room for 9,999 codes in all within 20 characters'),
       ).toHaveStyle({ color: createTheme().palette.warning.main });
       expect(
         screen.getByRole('button', { name: 'Save numbering' }),
       ).not.toHaveAttribute('aria-disabled', 'true');
+      unmount();
+
+      serve({
+        ...GIVEN,
+        lot: { ...GIVEN.lot, prefix: 'ABCD-{YYYY}-{MM}-{DD}-', reset: 'daily' },
+      });
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+      expect(
+        roomLine('Room for 9,999 codes a day within 20 characters'),
+      ).not.toHaveStyle({ color: createTheme().palette.warning.main });
     });
 
     it('refuses a code past 20 characters, or holding _, at its field', async () => {
