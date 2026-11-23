@@ -27,13 +27,14 @@ import { PageHeader } from '../components/page-header';
 import { useToast } from '../components/use-toast';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, ApiError, isRevisionRefusal, messageFor } from '../lib/api';
+import { copyToClipboard } from '../lib/clipboard';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useFailureWords } from '../lib/use-failure-words';
 import { refusalLabel } from './invitation-words';
 import { InviteDialog } from './invite-dialog';
-import { copyToClipboard, type InviteView } from './invite-view';
+import type { InviteView } from './invite-view';
 import { InvitedSection } from './invited-section';
 import { MembersSection } from './members-section';
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import type { ToastAction } from '../components/toast-context';
 import { useToast } from '../components/use-toast';
+import { copyToClipboard } from '../lib/clipboard';
 import { OFFER_BACK } from '../lib/offer-back';
 
 /** The lot a write put stock into, as its answer names it (ADR-094). */
@@ -45,12 +46,7 @@ export function useLotMessage() {
     const code = lot?.made ? lot.code : null;
 
     async function copy(text: string) {
-      let copied = true;
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        copied = false;
-      }
+      const copied = await copyToClipboard(text);
       toast(
         copied
           ? intl.formatMessage(

@@ -33,6 +33,7 @@ import { FormError } from '../components/form-error';
 import { useToast } from '../components/use-toast';
 import { useLanguage } from '../i18n/use-language';
 import { api, hasCode } from '../lib/api';
+import { copyToClipboard } from '../lib/clipboard';
 import { formatDayLong } from '../lib/format';
 import { isLocale, pickerName, SUPPORTED_LOCALES } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
@@ -43,11 +44,7 @@ import {
   dailyLimitLabel,
   refusalLabel,
 } from './invitation-words';
-import {
-  copyToClipboard,
-  type InviteView,
-  NOTE_MAX_LENGTH,
-} from './invite-view';
+import { type InviteView, NOTE_MAX_LENGTH } from './invite-view';
 import { RoleChoices } from './role-choices';
 import { articleOf, isOwnerRole, mayGiveAll, roleList } from './role-names';
 
