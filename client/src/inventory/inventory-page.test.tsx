@@ -23,6 +23,7 @@ import type {
   StockPile,
   StockPlace,
 } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { OFFER_BACK } from '../lib/offer-back';
 import { SEARCH_WAIT_MS } from '../lib/use-list-search';
 import { apiError } from '../test/handlers';
@@ -795,6 +796,143 @@ describe('InventoryPage', () => {
         }),
       ).toBeVisible();
       expect(screen.queryByText('None on hand')).not.toBeInTheDocument();
+    });
+
+    // ADR-094, T2: Stock's door to Start tracking lots, the code's row
+    // alone, never a place's or a lot's: tracking is the code's.
+    describe('Start tracking lots…', () => {
+      const UNTRACKED: StockCodeRow = { ...CODE, tracksLots: false };
+      const BOTH = ['stock.move', 'products.update', 'stock.adjust'];
+
+      it('comes last, after a divider, for a code not tracked, to whoever may change items and correct counts', async () => {
+        const { menu } = await codeActions(
+          [...BOTH, 'stock.reorder'],
+          UNTRACKED,
+        );
+
+        expect(
+          within(menu)
+            .getAllByRole('menuitem')
+            .map((item) => item.textContent),
+        ).toEqual([
+          'Move…',
+          'Ship out…',
+          'Send sample…',
+          'Correct the count…',
+          'Receive stock…',
+          'Movements',
+          'Change reorder point…',
+          'Start tracking lots…',
+        ]);
+        expect(within(menu).getAllByRole('separator')).toHaveLength(4);
+      });
+
+      it.each<[string, StockCodeRow, string[]]>([
+        ['a code tracked', CODE, BOTH],
+        ['equipment', { ...UNTRACKED, type: 'equipment' }, BOTH],
+        [
+          'a reader who may not change items',
+          UNTRACKED,
+          ['stock.move', 'stock.adjust'],
+        ],
+        [
+          'a reader who may not correct counts',
+          UNTRACKED,
+          ['stock.move', 'products.update'],
+        ],
+      ])('is not offered for %s', async (_, row, permissions) => {
+        const { menu } = await codeActions(permissions, row);
+
+        expect(
+          within(menu).getByRole('menuitem', { name: 'Movements' }),
+        ).toBeVisible();
+        expect(
+          within(menu).queryByRole('menuitem', {
+            name: 'Start tracking lots…',
+          }),
+        ).not.toBeInTheDocument();
+      });
+
+      it('opens the question for the row’s code; started, the message names the lot, and the row opens at it, at each place', async () => {
+        const path = `/api/v1/products/${PRODUCT}/variants/variant-1/lot-tracking`;
+        const sent: unknown[] = [];
+        answer([UNTRACKED]);
+        server.use(
+          http.get(path, () =>
+            HttpResponse.json({
+              variantId: 'variant-1',
+              sku: 'VITD-60',
+              onHand: '42.0000',
+              places: PLACES.map((place) => ({
+                locationId: place.locationId,
+                locationName: place.locationName,
+                locationCode: null,
+                locationPath: place.locationPath,
+                quantity: place.onHand,
+              })),
+              runCount: 0,
+              runs: [],
+            }),
+          ),
+          http.post(path, async ({ request }) => {
+            sent.push(await request.json());
+            return HttpResponse.json(
+              { lot: { id: 'lot-9', code: 'L-2026-11-23-1' } },
+              { status: 201 },
+            );
+          }),
+        );
+        function Address() {
+          const { search } = useLocation();
+          return <output aria-label="address">{search}</output>;
+        }
+        renderWithAuth(
+          <ToastProvider>
+            <MemoryRouter initialEntries={['/inventory']}>
+              <InventoryPage />
+              <Address />
+            </MemoryRouter>
+          </ToastProvider>,
+          { permissions: ['stock.view', 'locations.view', ...BOTH] },
+        );
+        const user = userEvent.setup();
+        await user.click(
+          await screen.findByRole('button', {
+            name: 'Actions for Vitamin D (60ct)',
+          }),
+        );
+        await user.click(
+          await screen.findByRole('menuitem', {
+            name: 'Start tracking lots…',
+          }),
+        );
+
+        const dialog = await screen.findByRole('dialog', {
+          name: 'Start tracking lots for VITD-60',
+        });
+        expect(
+          await within(dialog).findByText(/^42 each on hand goes into one lot/),
+        ).toBeVisible();
+        await user.click(
+          within(dialog).getByRole('button', { name: 'Start tracking lots' }),
+        );
+
+        // The item's page's message, its codes kept whole.
+        expect(
+          await screen.findByText(/^Lot tracking started for/),
+        ).toHaveTextContent(
+          'Lot tracking started for VITD-60. Its stock on hand is in lot L-2026-11-23-1.',
+        );
+        expect(dialog).not.toBeInTheDocument();
+        expect(sent).toEqual([{ expiry: 'unknown' }]);
+        await vi.waitFor(() =>
+          expect(
+            screen.getByRole('status', { name: 'address' }),
+          ).toHaveTextContent(
+            '?open=variant-1%2Cvariant-1.loc-2%2Cvariant-1.loc-1',
+          ),
+        );
+      });
     });
   });
 

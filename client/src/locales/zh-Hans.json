@@ -2027,6 +2027,7 @@
   "products.stock.make": "生产 {quantity}",
   "products.stock.makeAsk": "您的角色没有计划生产的权限。如需执行更多操作，请联系 {names}。",
   "products.stock.makeNone": "您的角色不包括计划生产。",
+  "products.stock.notTracked": "{sku} 未按批次跟踪，因此库存没有批号。{start}",
   "products.stock.notUsableWhy": "现有不可用 {quantity}：{reasons}",
   "products.stock.nothingComing": "没有在订的采购，也没有在产的生产订单",
   "products.stock.pointAsk": "您的角色没有设置库存下限的权限。如需执行更多操作，请联系 {names}。",

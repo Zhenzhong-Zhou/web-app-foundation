@@ -605,6 +605,13 @@ async function itemFrom(page: Page, product: SeededProduct) {
   ).toBeVisible();
 }
 
+/**
+ * The item's Variants table, whose Lots column is one door to Start
+ * tracking lots; Where it stands, above it, is another (ADR-094, T3).
+ */
+const variantsOf = (page: Page) =>
+  page.getByRole('region', { name: 'Variants' });
+
 test('The item’s page, a code not tracked, Start tracking lots…: the question, its places listed, Supplier’s lot optional and Expires on Not known yet; Escape or Cancel, focus on the button, and Cancel changes nothing', async ({
   page,
   freshOrg,
@@ -614,7 +621,7 @@ test('The item’s page, a code not tracked, Start tracking lots…: the questio
   await signInAs(page, freshOrg.api);
   await itemFrom(page, scene.zinc);
 
-  const start = page.getByRole('button', {
+  const start = variantsOf(page).getByRole('button', {
     name: 'Start tracking lots for E2E-ZINC…',
   });
   await start.click();
@@ -687,7 +694,7 @@ test('The question, Start tracking lots: one write; the message names the lot, w
   await signInAs(page, freshOrg.api);
   await itemFrom(page, scene.zinc);
 
-  await page
+  await variantsOf(page)
     .getByRole('button', { name: 'Start tracking lots for E2E-ZINC…' })
     .click();
   const dialog = page.getByRole('dialog', {
@@ -722,6 +729,133 @@ test('The question, Start tracking lots: one write; the message names the lot, w
   await expect(
     page.getByText(said('inventory.lot.supplierLotIs', { code: 'ZN-SUP-1' })),
   ).toBeVisible();
+});
+
+test('Stock, a code not tracked, its row’s Actions, Start tracking lots…: the question for the code; Escape or Cancel, focus on Actions; started, Stock still, the code’s row open at its lot at each place', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const code = await firstCodeToday(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page, '/inventory?search=E2E-ZINC');
+
+  // The code's row's Actions, its last choice (ADR-094, T2).
+  const actions = page.getByRole('button', { name: 'Actions for E2E Zinc' });
+  await actions.click();
+  const choice = page.getByRole('menuitem', {
+    name: 'Start tracking lots…',
+    exact: true,
+  });
+  await expect(page.getByRole('menuitem').last()).toHaveText(
+    'Start tracking lots…',
+  );
+  await choice.click();
+  const dialog = page.getByRole('dialog', {
+    name: 'Start tracking lots for E2E-ZINC',
+  });
+  await expect(
+    dialog.getByText(
+      said('products.startTracking.onHand', {
+        quantity: '42 each',
+        example: code,
+      }),
+    ),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(actions).toBeFocused();
+
+  // From the keyboard alone, from where Cancel left it: the menu, End to
+  // its last choice.
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('menuitem').first()).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(choice).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(actions).toBeFocused();
+
+  await actions.click();
+  await choice.click();
+  await dialog.getByRole('button', { name: 'Start tracking lots' }).click();
+
+  // The message as the item's page gives it; Stock still, the code's row
+  // open at both places, the lot at each.
+  await expect(dialog).toBeHidden();
+  await expect(message(page)).toContainText(
+    said('products.startTracking.done', { sku: 'E2E-ZINC', lot: code }),
+  );
+  await expect(page).toHaveURL(/\/inventory\?/);
+  for (const place of [scene.shelf, scene.other]) {
+    await expect(lotsAt(page, place.name)).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+  }
+  await expect(lotRow(page, code)).toHaveCount(2);
+});
+
+test('The item’s page, By place and lot, a code not tracked: its line’s Start tracking lots… opens the question; Escape or Cancel, focus on it; started, the line gone and the lot listed at each place', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const code = await firstCodeToday(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await itemFrom(page, scene.zinc);
+
+  // Under By place and lot, where "Lot: —" raises it (ADR-094, T3).
+  const standing = page.getByRole('region', { name: 'Where it stands' });
+  const line = standing.getByText(
+    said('products.stock.notTracked', {
+      sku: 'E2E-ZINC',
+      start: said('products.variant.startTracking'),
+    }),
+  );
+  await expect(line).toBeVisible();
+  const start = line.getByRole('button', {
+    name: 'Start tracking lots for E2E-ZINC…',
+  });
+  await start.click();
+  const dialog = page.getByRole('dialog', {
+    name: 'Start tracking lots for E2E-ZINC',
+  });
+  await expect(dialog.getByRole('listitem')).toHaveCount(2);
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(start).toBeFocused();
+
+  // From the keyboard alone, from where Cancel left it.
+  await page.keyboard.press('Enter');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(start).toBeFocused();
+
+  await start.click();
+  await dialog.getByRole('button', { name: 'Start tracking lots' }).click();
+
+  // The item's page still: the line gone, the lot at each place.
+  await expect(dialog).toBeHidden();
+  await expect(message(page)).toContainText(
+    said('products.startTracking.done', { sku: 'E2E-ZINC', lot: code }),
+  );
+  await expect(page).toHaveURL(new RegExp(`/items/${scene.zinc.id}$`));
+  await expect(line).toHaveCount(0);
+  const byPlace = standing.getByRole('table').filter({
+    has: page.getByRole('columnheader', { name: 'Expires' }),
+  });
+  for (const place of [scene.shelf, scene.other]) {
+    await expect(
+      byPlace
+        .getByRole('row')
+        .filter({ hasText: place.name })
+        .getByRole('link', { name: code, exact: true }),
+    ).toBeVisible();
+  }
 });
 
 test('Stock, a lot’s Actions, Move to another lot…: Quantity, the lot it goes to, Expires as the lot’s, a note; Escape or Cancel, focus on Actions', async ({

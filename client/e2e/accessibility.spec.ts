@@ -726,7 +726,9 @@ const SCREENS: Screen[] = [
       return { productId: tea.id };
     },
     open: async (page) => {
+      // The Variants table's, one of the item's page's two doors.
       await page
+        .getByRole('region', { name: /Variants/ })
         .getByRole('button', { name: /^Start tracking lots for .+…$/ })
         .click();
       const dialog = page.getByRole('dialog', {

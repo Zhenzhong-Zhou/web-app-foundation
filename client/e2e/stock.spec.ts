@@ -356,7 +356,8 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
   await stockFrom(page);
 
   // An item's, in three groups (ADR-093 v3): what changes its stock,
-  // Receive stock, then Movements and its reorder point.
+  // Receive stock, then Movements and its reorder point; for one not
+  // tracked by lot, a fourth, Start tracking lots… (ADR-094, T2).
   const magnesium = page.getByRole('button', {
     name: 'Actions for E2E Magnesium',
   });
@@ -369,6 +370,7 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
     'Receive stock…',
     'Movements',
     'Set a reorder point…',
+    'Start tracking lots…',
   ]);
   expect(await offers(page, 'Actions for E2E Vitamin C')).toContain(
     'Change reorder point…',

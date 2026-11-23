@@ -74,6 +74,7 @@ import { ReceiveLineDialog } from '../orders/receive-line-dialog';
 import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 import { NO_RECEIVE } from '../products/receive-line';
+import { StartTrackingDialog } from '../products/start-tracking-dialog';
 import { rem } from '../theme/rem';
 import { CountInDialog, type CountInItem } from './count-in-dialog';
 import { EditLotDialog } from './edit-lot-dialog';
@@ -328,6 +329,9 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   // Count it in… from Receive stock's Found in a count, at its place (R12).
   const [foundAt, setFoundAt] = useState<string | null>(null);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
+  const [startingTracking, setStartingTracking] = useState<StockCodeRow | null>(
+    null,
+  );
 
   function closeReceiving() {
     setReceiving(false);
@@ -357,6 +361,11 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       setReceiving(true);
     },
     onCountIn: setCountingIn,
+    // Both permissions, as its route asks (ADR-094, R13).
+    onStartTracking:
+      can('products.update') && can('stock.adjust')
+        ? setStartingTracking
+        : undefined,
   };
 
   // Codes and places in the address, not a list a person reads, in one
@@ -1098,6 +1107,27 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         onClose={() => setEditingLot(null)}
         onSaved={refresh}
       />
+
+      {/* Lot tracking started from the code's Actions (ADR-094, T2): Stock
+          reads again, the code's row open at its lot, at each place. */}
+      {startingTracking && (
+        <StartTrackingDialog
+          key={startingTracking.variantId}
+          productId={startingTracking.productId}
+          variantId={startingTracking.variantId}
+          sku={startingTracking.sku}
+          unitOfMeasure={startingTracking.unitOfMeasure}
+          onClose={() => setStartingTracking(null)}
+          onStarted={(places) => {
+            const { variantId } = startingTracking;
+            openRows(
+              [variantId, ...places.map((place) => openKey(variantId, place))],
+              true,
+            );
+            void refresh();
+          }}
+        />
+      )}
 
       {/* A point moves no stock, but the row's status, its "left · reorder
           at" line and the Low stock count come from it: read again. */}

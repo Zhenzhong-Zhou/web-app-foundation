@@ -192,6 +192,13 @@ export function ProductDetailPage() {
   // the only two ways product stays null.
   if (!product) return null;
 
+  // Its doors, the Variants table's and Where it stands' alike: never for
+  // equipment, which is counted where it stands.
+  const startTracking =
+    canStartTracking && product.type !== 'equipment'
+      ? setStartingTracking
+      : undefined;
+
   // Its category's path from the top, once the tree is read; Uncategorised
   // with none (ADR-092).
   const place = categoryPlaces(tree?.categories ?? []).find(
@@ -266,8 +273,13 @@ export function ProductDetailPage() {
       />
 
       {/* First under the title, since someone who knows the trade looks
-          there first (ADR-093, R8). */}
-      <WhereItStands key={started} product={product} />
+          there first (ADR-093, R8); Start tracking lots… under a code's
+          places too, where "Lot: —" raises it (ADR-094, T3). */}
+      <WhereItStands
+        key={started}
+        product={product}
+        onStartTracking={startTracking}
+      />
 
       {product.description && (
         <Typography variant="body1">{product.description}</Typography>
@@ -424,9 +436,7 @@ export function ProductDetailPage() {
                   }
                   onOpenEdit={() => setEditingVariant(variant)}
                   onStartTracking={
-                    canStartTracking && product.type !== 'equipment'
-                      ? () => setStartingTracking(variant)
-                      : undefined
+                    startTracking && (() => startTracking(variant))
                   }
                 />
               ))}

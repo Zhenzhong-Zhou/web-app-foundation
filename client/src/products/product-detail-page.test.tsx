@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type {
+  CodeStanding,
   ProductCategory,
   ProductDetail,
   UpdateProductDto,
@@ -696,5 +697,209 @@ describe('Start tracking lots', () => {
       'Lot tracking started for CALM-90. Each receipt now asks for its lot.',
     );
     expect(sent).toEqual([{}]);
+  });
+
+  // ADR-094, T3: a second door, under By place and lot, where "Lot: —"
+  // raises the question.
+  describe('under By place and lot', () => {
+    const READS = [
+      'stock.view',
+      'locations.view',
+      'stock.move',
+      'stock.reorder',
+    ];
+    const LINE = /doesn’t track lots, so its stock has no lot numbers\./;
+
+    /** Where it stands for a code, its stock at one place with no lot. */
+    function standing(
+      variantId: string,
+      sku: string,
+      onHand = '3000.0000',
+    ): CodeStanding {
+      const none = '0.0000';
+      return {
+        variantId,
+        sku,
+        variantName: null,
+        unitOfMeasure: 'each',
+        isActive: true,
+        onHand,
+        usable: onHand,
+        notUsable: none,
+        expired: none,
+        issued: none,
+        unavailable: none,
+        held: none,
+        free: onHand,
+        stillNeeded: none,
+        short: none,
+        coming: none,
+        comingOn: null,
+        position: onHand,
+        expiresFirst: null,
+        allExpired: false,
+        reorderPoint: null,
+        status: null,
+        source: null,
+        suggestion: null,
+        heldOrders: 0,
+        holds: [],
+        purchases: [],
+        runs: [],
+        places:
+          onHand === none
+            ? []
+            : [
+                {
+                  locationId: 'loc-a',
+                  locationName: 'Shelf A2',
+                  locationCode: null,
+                  locationPath: ['Main warehouse'],
+                  isAvailable: true,
+                  onHand,
+                  lots: [
+                    {
+                      id: `pile-${variantId}`,
+                      variantId,
+                      sku,
+                      productName: 'Calm 90ct',
+                      variantName: null,
+                      unitOfMeasure: 'each',
+                      locationId: 'loc-a',
+                      locationName: 'Shelf A2',
+                      locationCode: null,
+                      lotId: null,
+                      lotCode: null,
+                      lotExpiresAt: null,
+                      lotExpiry: null,
+                      lotIsAssigned: null,
+                      lotSupplierLot: null,
+                      quantity: onHand,
+                      emptiedOn: null,
+                    },
+                  ],
+                },
+              ],
+        lots: null,
+        latestMovements: [],
+      };
+    }
+
+    /** The item's page with Where it stands answering for its codes. */
+    function withStanding(
+      codes: CodeStanding[],
+      product: ProductDetail = UNTRACKED,
+      permissions = [...BOTH, ...READS],
+    ) {
+      server.use(
+        http.get('/api/v1/products/:id/stock', () =>
+          HttpResponse.json({ codes }),
+        ),
+      );
+      return startable(product, permissions);
+    }
+
+    /** The section Where it stands, once its places are drawn. */
+    async function whereItStands() {
+      await screen.findAllByRole('heading', { name: 'By place and lot' });
+      return screen.getByRole('region', { name: 'Where it stands' });
+    }
+
+    it('says a code not tracked has no lot numbers, its last three words the button, naming the code', async () => {
+      withStanding([standing('variant-1', 'CALM-90')]);
+      const section = await whereItStands();
+
+      const line = within(section).getByText(LINE);
+      expect(line).toHaveTextContent(
+        /^CALM-90 doesn’t track lots, so its stock has no lot numbers\. Start tracking lots…$/,
+      );
+      expect(
+        within(line).getByRole('button', {
+          name: 'Start tracking lots for CALM-90…',
+        }),
+      ).toHaveTextContent(/^Start tracking lots…$/);
+    });
+
+    it('keeps the line where the code holds nothing, since tracking can start with nothing on hand', async () => {
+      withStanding([standing('variant-1', 'CALM-90', '0.0000')]);
+
+      expect(
+        await screen.findByText(/^None on hand, nothing coming\./),
+      ).toBeVisible();
+      expect(screen.getByText(LINE)).toHaveTextContent(/^CALM-90 /);
+    });
+
+    it.each<[string, Partial<ProductDetail>, string[]]>([
+      [
+        'a code tracked',
+        {
+          variants: [{ ...UNTRACKED.variants[0]!, tracksLots: true }],
+        },
+        [...BOTH, ...READS],
+      ],
+      ['equipment', { type: 'equipment' }, [...BOTH, ...READS]],
+      [
+        'a reader who may not correct counts',
+        {},
+        ['products.view', 'products.update', ...READS],
+      ],
+      [
+        'a reader who may not change items',
+        {},
+        ['products.view', 'stock.adjust', ...READS],
+      ],
+    ])('draws no line for %s', async (_, change, permissions) => {
+      withStanding(
+        [standing('variant-1', 'CALM-90')],
+        { ...UNTRACKED, ...change },
+        permissions,
+      );
+      await whereItStands();
+
+      expect(screen.queryByText(LINE)).not.toBeInTheDocument();
+    });
+
+    // Where focus returns is the browser's to check: the theme that gives
+    // it back is not rendered here (lots-at-receipt.spec.ts).
+    it('opens the question for its own code, among several', async () => {
+      const product = {
+        ...UNTRACKED,
+        variants: [
+          { ...variant('variant-1', 'CALM-90', '90ct', []), tracksLots: true },
+          variant('variant-2', 'CALM-30', '30ct', []),
+        ],
+      };
+      const asked: string[] = [];
+      server.use(
+        http.get(
+          '/api/v1/products/product-1/variants/:variantId/lot-tracking',
+          ({ params }) => {
+            asked.push(String(params.variantId));
+            return HttpResponse.json({
+              ...QUESTION,
+              variantId: 'variant-2',
+              sku: 'CALM-30',
+            });
+          },
+        ),
+      );
+      const { user } = withStanding(
+        [standing('variant-1', 'CALM-90'), standing('variant-2', 'CALM-30')],
+        product,
+      );
+      const section = await whereItStands();
+
+      expect(within(section).getAllByText(LINE)).toHaveLength(1);
+      const button = within(section).getByRole('button', {
+        name: 'Start tracking lots for CALM-30…',
+      });
+      await user.click(button);
+
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Start tracking lots for CALM-30',
+      });
+      await within(dialog).findByText(/on hand goes into one lot/);
+      expect(asked).toEqual(['variant-2']);
+    });
   });
 });

@@ -2027,6 +2027,7 @@
   "products.stock.make": "Make {quantity}",
   "products.stock.makeAsk": "Your role does not include planning runs. To do more, ask {names}.",
   "products.stock.makeNone": "Your role does not include planning runs.",
+  "products.stock.notTracked": "{sku} doesn’t track lots, so its stock has no lot numbers. {start}",
   "products.stock.notUsableWhy": "{quantity} not usable: {reasons}",
   "products.stock.nothingComing": "nothing on order or in a run",
   "products.stock.pointAsk": "Your role does not include setting reorder points. To do more, ask {names}.",

@@ -33,12 +33,13 @@ import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit } from './units';
 
 /**
- * Start tracking lots… (ADR-094, R13 and R14), on the item's page for a
- * code not tracked: the question says how much is on hand at which
- * places, that one lot made for us takes it all, how its code is made,
- * the runs in progress that will close against it, and that it is one
- * way; it takes the supplier's lot and the expiry where they are known.
- * Confirmed, one write (R15); the message names the lot.
+ * Start tracking lots… (ADR-094, R13 and R14), for a code not tracked,
+ * from the item's Variants table, from under its By place and lot, or
+ * from the code's Actions on Stock (T2, T3): the question says how much
+ * is on hand at which places, that one lot made for us takes it all, how
+ * its code is made, the runs in progress that will close against it, and
+ * that it is one way; it takes the supplier's lot and the expiry where
+ * they are known. Confirmed, one write (R15); the message names the lot.
  */
 export function StartTrackingDialog({
   productId,
@@ -53,8 +54,12 @@ export function StartTrackingDialog({
   sku: string;
   unitOfMeasure: string;
   onClose: () => void;
-  /** Started: the page reads again, the code reading Tracked. */
-  onStarted: () => void;
+  /**
+   * Started: the page reads again, the code reading Tracked; given the
+   * places its stock was at, which its lot now holds, none with nothing
+   * on hand.
+   */
+  onStarted: (places: string[]) => void;
 }) {
   const intl = useIntl();
   const path = `/products/${productId}/variants/${variantId}/lot-tracking`;
@@ -97,7 +102,11 @@ export function StartTrackingDialog({
         started.lot ? { ...started.lot, made: false } : null,
       );
       close();
-      onStarted();
+      onStarted(
+        started.lot
+          ? (asked?.places.map((place) => place.locationId) ?? [])
+          : [],
+      );
     },
   );
 

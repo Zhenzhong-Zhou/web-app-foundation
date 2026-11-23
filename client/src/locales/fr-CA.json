@@ -2027,6 +2027,7 @@
   "products.stock.make": "Fabriquer {quantity}",
   "products.stock.makeAsk": "Votre rôle ne comprend pas la planification de la production. Pour en faire plus, demandez à {names}.",
   "products.stock.makeNone": "Votre rôle ne comprend pas la planification de la production.",
+  "products.stock.notTracked": "{sku} n’est pas suivi par lot, donc son stock n’a pas de numéros de lot. {start}",
   "products.stock.notUsableWhy": "Inutilisable : {quantity}, {reasons}",
   "products.stock.nothingComing": "rien en commande ni en production",
   "products.stock.pointAsk": "Votre rôle ne comprend pas les points de commande. Pour en faire plus, demandez à {names}.",

@@ -50,7 +50,7 @@ Goods a supplier sends against a purchase are received on its order, so the orde
 
 Each row has **Actions**, by what the row is:
 
-- An item’s row: **Move…**, **Ship out…**, **Send sample…** and **Correct the count…**; **Receive stock…**, with the item filled in; **Movements** and **Change reorder point…**. When the item is one lot at one place, the first four act on it straight. With more, the menu says a lot comes next, and the row opens to its lots under “Choose the lot to move”, each lot with its own Actions. With nothing on hand, Move, Ship out and Send sample are greyed, with why beneath; Correct the count opens its emptied places and lots; an item never stocked there says to receive it first.
+- An item’s row: **Move…**, **Ship out…**, **Send sample…** and **Correct the count…**; **Receive stock…**, with the item filled in; **Movements** and **Change reorder point…**; and, for an item that doesn’t track lots yet, **Start tracking lots…** (see [Start tracking lots](/items#tracking)). When the item is one lot at one place, the first four act on it straight. With more, the menu says a lot comes next, and the row opens to its lots under “Choose the lot to move”, each lot with its own Actions. With nothing on hand, Move, Ship out and Send sample are greyed, with why beneath; Correct the count opens its emptied places and lots; an item never stocked there says to receive it first.
 - A place’s row: its **Movements** there, a link.
 - A lot’s row: **Move…**, **Ship out…**, **Send sample…** and **Correct the count…**; **Move to another lot…**, **Edit lot details…** and **Trace lot**; **Movements**. An emptied lot says when it was emptied.
 

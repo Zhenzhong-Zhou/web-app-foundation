@@ -47,5 +47,10 @@ export function useMenuWords() {
       id: 'inventory.menu.setPoint',
       defaultMessage: 'Set a reorder point…',
     }),
+    // The item's page's words, its Variants table's (ADR-094, T2).
+    startTracking: intl.formatMessage({
+      id: 'products.variant.startTracking',
+      defaultMessage: 'Start tracking lots…',
+    }),
   };
 }

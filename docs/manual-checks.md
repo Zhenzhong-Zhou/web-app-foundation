@@ -670,22 +670,30 @@ a second organization.
   role without `stock.adjust` is offered no Found in a count, and one
   without `partners.view` no From. In Français « Pourquoi n'y a-t-il
   pas de commande? »; in 中文 为什么没有订单？ and 盘盈.
-- **MC-327** *(ADR-094, R13 to R18)* Start tracking lots. As the demo
-  Owner, on **BOTTLE-A60**'s item page, its row's Lots column offers
-  Start tracking lots…; a role without both Change items and Correct a
-  count, and every equipment item, is offered none. It opens "Start tracking lots for
-  BOTTLE-A60": while the places are read, grey lines; then "1,500 each on
-  hand goes into one lot, its code made for us when you start, like
-  L-…:", 900 on Main's Shelf and 600 in the Blending room; where runs in
+- **MC-327** *(ADR-094, R13 to R18, T2, T3)* Start tracking lots. As
+  the demo Owner, **BOTTLE-A60** offers Start tracking lots… at three
+  doors: on Stock, last in its row's Actions, after a divider, and in no
+  place's or lot's Actions; on its item page, under By place and lot, at
+  the end of the line "BOTTLE-A60 doesn't track lots, so its stock has no
+  lot numbers. Start tracking lots…", a line that stays for a code with
+  nothing on hand; and in its Variants row's Lots column. A role without
+  both Change items and Correct a count, and every equipment item, is
+  offered none of the three, and reads no such line. Each opens "Start
+  tracking lots for BOTTLE-A60": while the places are read, grey lines;
+  then "1,500 each on hand goes into one lot, its code made for us when
+  you start, like L-…:", 900 on Main's Shelf and 600 in the Blending room; where runs in
   progress use or make it, those runs, "Each will close against this
   lot."; and "This cannot be undone". Supplier's lot is empty and Expires
   is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
   under Details to add until someone gives the day or says it doesn't
   expire. The stock can still be used." under it. Choose On a date with a
   day already past: an amber line says the stock will read as expired.
-  Escape, or Cancel, closes it with nothing changed, focus back on the
-  button. Start it as it opened: the message names the lot, with Open the
-  lot; the row reads Tracked, Where it stands lists the lot, "Expiry to
+  Escape, or Cancel, closes it with nothing changed, focus back on what
+  opened it: Stock's Actions, the line's Start tracking lots…, or the
+  Variants row's button. Start it as it opened: the message names the
+  lot, with Open the lot. From Stock, Stock stays, BOTTLE-A60's row open
+  at both places, the lot shown at each; from the item's page, the line
+  is gone, the row reads Tracked, Where it stands lists the lot, "Expiry to
   add" in its Expires, and the Lot view's Details to add lists it, its
   stock still counted usable. Movements shows one row a place, "Lot changed: lots
   started", "moved 900 each into a lot, counted in neither", its Lot "—
@@ -693,12 +701,13 @@ a second organization.
   and lot: BOTTLE-A60's total and Unit cost are what they were, now on the
   lot; had 10 been received first as opening stock, they still wait,
   listed under Waiting for a cost with the lot's code, and Set cost
-  values the lot. Nothing turns it off: the row offers no Start tracking
+  values the lot. Nothing turns it off: no door offers Start tracking
   lots… again, and no screen unsets Tracked. A Receive stock left
   open on the item since before the start is told "Lot tracking has
   started for BOTTLE-A60. Reload to give its lot." An item with nothing
   on hand starts too: "Nothing is on hand, so no lot is made now.", and
-  its next receipt asks for a lot. In 中文 开始按批次跟踪…
+  its next receipt asks for a lot. In 中文 开始按批次跟踪…, and the
+  line BOTTLE-A60 未按批次跟踪，因此库存没有批号。
 - **MC-328** *(ADR-094, R20)* Move to another lot. As the demo Owner, on
   Stock, open K2-60CT at its place and a lot's Actions: Move to another
   lot… opens "Move to another lot", the lot, place and what is on hand

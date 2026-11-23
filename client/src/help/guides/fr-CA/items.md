@@ -139,7 +139,7 @@ Les codes-barres viendront plus tard. Le Code est le vôtre, ce n’est pas un c
 
 ## Commencer le suivi par lot {#tracking}
 
-Un article ajouté sans **Suivre les numéros de lot et les dates de péremption** peut commencer le suivi par lot plus tard, une fois qu’il a du stock. Sous **Lots**, son code sur la page de l’article offre **Commencer le suivi par lot…**; l’équipement ne l’offre jamais, et seule une personne qui peut modifier les articles et corriger les comptes le voit.
+Un article ajouté sans **Suivre les numéros de lot et les dates de péremption** peut commencer le suivi par lot plus tard, une fois qu’il a du stock. **Commencer le suivi par lot…** se trouve à trois endroits : dans les **Actions** de l’article, dans **Stock**; sur la page de l’article, sous **Par emplacement et lot**, au bout de la ligne qui dit que le code n’est pas suivi par lot; et dans le tableau **Variantes** de l’article, sous **Lots**. L’équipement ne l’offre jamais, et seule une personne qui peut modifier les articles et corriger les comptes le voit.
 
 1. Appuyez sur **Commencer le suivi par lot…**. La question liste les emplacements qui contiennent l’article et ce que chacun contient, et les ordres de fabrication en cours qui l’utilisent ou le fabriquent, qui seront chacun clôturés sur le nouveau lot.
 2. Donnez le **Lot du fournisseur** et la **Date de péremption** si vous les connaissez. La **Date de péremption** commence à **Pas encore connue** : le lot est donc listé sous **Détails à ajouter** jusqu’à ce que quelqu’un donne le jour ou dise qu’il n’expire pas; le stock reste utilisable entre-temps.

@@ -92,6 +92,11 @@ export interface StockHandlers {
    * never been, a place and a lot to choose (ADR-093, R26).
    */
   onCountIn: (item: CountInItem) => void;
+  /**
+   * Start tracking lots… (ADR-094, T2): given to whoever may change items
+   * and correct counts, offered on a code not tracked, never equipment.
+   */
+  onStartTracking?: (row: StockCodeRow) => void;
 }
 
 type Header = (column: StockCodeSort) => {
@@ -743,8 +748,9 @@ function Status({ row }: { row: StockCodeRow }) {
 
 /**
  * A code's one Actions button: its Movements, filtered to the code
- * (ADR-093, R11), and its reorder point by permission. A lot's own
- * actions are on its row.
+ * (ADR-093, R11), its reorder point by permission, and Start tracking
+ * lots… for a code not tracked, last (ADR-094, T2). A lot's own actions
+ * are on its row.
  */
 function CodeActions({
   row,
@@ -840,13 +846,20 @@ function CodeActions({
       : []),
   ];
 
+  // The code's, never a place's: tracking starts for all its stock at once.
+  const { onStartTracking } = handlers;
+  const tracking: Action[] =
+    onStartTracking && !row.tracksLots && row.type !== 'equipment'
+      ? [{ label: words.startTracking, onSelect: () => onStartTracking(row) }]
+      : [];
+
   return (
     <ActionsMenu
       name={intl.formatMessage(
         { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
         { item: itemName(row.productName, row.variantName) },
       )}
-      groups={[changes, receive, reads]}
+      groups={[changes, receive, reads, tracking]}
       note={
         handlers.canMove && !nothing && !onePile(row, opened)
           ? choiceNote(row, opened, intl)
