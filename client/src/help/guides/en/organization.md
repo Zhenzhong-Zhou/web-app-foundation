@@ -38,6 +38,8 @@ On **Documents**, each kind of document has its own series. A change applies fro
 2. Choose the **Digits**, and when it **Starts again**: never, each year, each month or each day.
 3. Set the **Next number**, press **Save numbering**, then **Change numbering**.
 
+The same section numbers **Lot codes**: the codes made for a new lot when it is received, L-2026-11-21-1 by default, starting again at 1 each day. Their prefix holds only capital letters, digits, - and the date, and under the next code the row says how many codes fit within 20 characters, what a barcode’s lot field holds.
+
 ## Licences at release {#licences}
 
 On **Stock**, choose what releasing a run does when the licence on its recipe is not yet in force, or has expired. A withdrawn licence is always refused.

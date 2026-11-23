@@ -2918,12 +2918,14 @@ Time — Vancouver while Los Angeles is on UTC−7 too (#343).
 Settings → Organization → Documents, as an Owner, in an organization with a
 few invoices and orders.
 
-- **MC-2701** *(ADR-073)* The Numbering section lists Invoices, Credit
-  notes, Return authorizations, Sale orders and Purchase orders, each with
-  its prefix, digits, Starts again, next number and Prints as. An
-  organization from before ADR-073 shows INV-, CN-, RMA-, SO- and PO-, six
-  digits, Never, the next number its documents reached, and Last: under it.
-  Save numbering is greyed out until something changes.
+- **MC-2701** *(ADR-073; ADR-094)* The Numbering section lists Invoices,
+  Credit notes, Return authorizations, Sale orders, Purchase orders and
+  Lot codes, each with its prefix, digits, Starts again, next number and
+  Prints as. An organization from before ADR-073 shows INV-, CN-, RMA-,
+  SO- and PO-, six digits, Never, the next number its documents reached,
+  and Last: under it; Lot codes reads L-{YYYY}-{MM}-{DD}-, one digit,
+  Each day, Prints as today's L-…-1 or the next after the last made
+  today. Save numbering is greyed out until something changes.
 - **MC-2702** *(ADR-073)* Click into the invoice prefix: Start from a
   common format offers INV-000001, INV-2026-0001, each year, and
   INV20261017-001, each day, with today's date; none uses /. Pick the
@@ -2963,10 +2965,10 @@ few invoices and orders.
   Credit dialogs offer the same for a credit note. An Admin sees the
   refusal without the link. Issued for today, it takes the next number,
   with no gap.
-- **MC-2709** *(ADR-073)* As an Admin or a Viewer, Numbering is a table of
-  each document, Starts again and Next to be given, says whether invoices
-  and credit notes are kept in date order, and An Owner can change it, with
-  no fields and no Save.
+- **MC-2709** *(ADR-073; ADR-094)* As an Admin or a Viewer, Numbering is a
+  table of each document and Lot codes, Starts again and Next to be given,
+  says whether invoices and credit notes are kept in date order, and An
+  Owner can change it, with no fields and no Save.
 - **MC-2710** *(ADR-073)* On a phone (DevTools device toolbar, 390 px),
   each document is a row with its next number; tapping one opens its
   formats, date buttons and fields, each labelled on its box: Prefix,
@@ -2981,6 +2983,25 @@ few invoices and orders.
   the reference QX-000001. Typing QX-000001 in the top bar lists Invoices
   before Orders. With today's prefixes, typing SO- or PO- lists Orders
   first.
+- **MC-2714** *(ADR-094, R1, R2, D1)* Lot codes, the codes made for a new
+  lot at receipt. Under its Prints as, L-2026-…-1 and From the next day's
+  date: L-…-1, the row says "Room for 9,999,999 codes a day within 20
+  characters" in grey. Click into its prefix: Start from a common format
+  offers L-000001, L-2026-0001, each year, and L-2026-…-1, each day, the
+  default, pressed. Pick L-000001: "Room for 999,999,999,999,999,999 codes
+  in all within 20 characters". Type `L_` in the prefix: "Capital letters,
+  digits and - only, and the date from the buttons, so a barcode can carry
+  the code." shows in red, and an invoice prefix may still hold `_`. Back on
+  the default, give it 8 digits: "The prefix and its digits print at most
+  20 characters." and Save stays greyed out. Give sale orders the prefix
+  L-{YYYY}-{MM}-{DD}-: Sale orders and lot codes would print the same
+  numbers. Change the lot prefix to LOT-{YYYY}-{MM}-{DD}- and save: Change
+  the numbering? lists Lot codes with Next: LOT-…-1; History shows
+  Numbering changed with Lot codes; Receive stock's Make a code for us
+  then reads "Made when you save, like LOT-…-1", and receiving makes it.
+  Put the default back. In Français the row reads Codes de lot, « De la
+  place pour 9 999 999 codes par jour en 20 caractères au plus »; in 中文
+  批次编码，每天可生成 9,999,999 个编码而不超过 20 个字符.
 
 ## 28. Text size (ADR-075)
 
@@ -7584,3 +7605,7 @@ first.
   choices, the message with Copy code and Open the lot, Receive stock's
   why and From, and Found in a count opening Count it in…: MC-325 and
   MC-326 added; MC-322, MC-3322 and MC-R73 rewritten.
+- 2026-11-22: ADR-094's Lot codes in Settings, R1, R2 and D1: the Lot
+  codes row in Numbering, its narrower characters, its own common formats
+  and the room for codes within 20 characters: MC-2714 added; MC-2701 and
+  MC-2709 rewritten.

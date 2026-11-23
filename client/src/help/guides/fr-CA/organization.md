@@ -38,6 +38,8 @@ Sous **Documents**, chaque type de document a sa propre série. Une modification
 2. Choisissez les **Chiffres**, et quand la série **Recommence** : jamais, chaque année, chaque mois ou chaque jour.
 3. Fixez le **Prochain numéro**, appuyez sur **Enregistrer la numérotation**, puis sur **Modifier la numérotation**.
 
+Les **Codes de lot** sont numérotés ici aussi : les codes créés pour un nouveau lot à sa réception, L-2026-11-21-1 par défaut, qui recommencent à 1 chaque jour. Leur préfixe ne contient que des majuscules, des chiffres, le signe - et la date, et sous le prochain code, la ligne indique combien de codes tiennent en 20 caractères, ce que porte le champ de lot d’un code-barres.
+
 ## Licences au lancement {#licences}
 
 Sous **Stock**, choisissez ce que fait le lancement d’un ordre quand la licence de sa recette n’est pas encore en vigueur, ou a expiré. Une licence retirée est toujours refusée.

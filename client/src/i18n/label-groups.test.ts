@@ -428,6 +428,7 @@ const SELECTS: { id: string; argument: string }[] = [
   { id: 'inventory.reorder.kindLine', argument: 'rule' },
   { id: 'inventory.reorder.ruleLine', argument: 'rule' },
   { id: 'settings.numbering.format', argument: 'reset' },
+  { id: 'settings.numbering.room', argument: 'reset' },
   { id: 'orders.fulfillment.none', argument: 'direction' },
   { id: 'orders.fulfillment.part', argument: 'direction' },
   { id: 'orders.fulfillment.all', argument: 'direction' },

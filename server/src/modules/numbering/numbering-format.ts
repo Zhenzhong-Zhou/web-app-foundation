@@ -2,7 +2,11 @@ import type { NumberingReset } from '../../database/schema';
 
 /**
  * How a number is written (ADR-073): pure functions, shared by taking a
- * number, the settings and their checks, and the lookup.
+ * number, the settings and their checks, and the lookup. The client holds
+ * the same rules for the Numbering section, so it says what is wrong as it
+ * is typed (client/src/lib/numbering.ts); the two packages share no code,
+ * so each keeps them with the same tests, and this copy decides what is
+ * saved.
  *
  * A prefix is text and date tokens. It prints the document's own date in
  * place of each token, then the counter follows, padded to the width. A
