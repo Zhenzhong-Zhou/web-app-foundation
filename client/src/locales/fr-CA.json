@@ -855,6 +855,8 @@
   "inventory.receive.which": "De quelle livraison s’agit-il?",
   "inventory.receive.whichMissing": "Choisissez la livraison, ou Hors commande.",
   "inventory.receive.why": "Pourquoi n’y a-t-il pas de commande?",
+  "inventory.receive.why.help": "Stock d’ouverture, Retourné, Un échantillon ou Autre.",
+  "inventory.receive.why.helpFound": "Stock d’ouverture, Retourné, Un échantillon ou Autre. Trouvé lors d’un comptage n’est pas une réception : cela ouvre Ajouter au compte…",
   "inventory.receive.whyFound": "Trouvé lors d’un comptage",
   "inventory.receive.whyMissing": "Choisissez pourquoi il n’y a pas de commande.",
   "inventory.receivedOffOrder.done": "{lot, select, made {{quantity} de {code} reçus, hors commande, nouveau lot {lotCode}. Inscrivez ce code sur la livraison.} typed {{quantity} de {code} reçus, hors commande, lot {lotCode}.} other {{quantity} de {code} reçus, hors commande.}}{waits, select, true { Il est en attente d’un coût.} other {}}",

@@ -598,6 +598,44 @@ describe('ReceiveStockDialog', () => {
         screen.queryByRole('option', { name: 'Found in a count' }),
       ).toBeNull();
     });
+
+    // Review 36: what it offers, said under it, and Found in a count's
+    // way out for whoever has it.
+    it('says under the question what it offers, and that Found in a count is no receipt', async () => {
+      const { unmount } = render(
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          tree={LOCATIONS}
+          defaultLocationId="location-a"
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+        />,
+      );
+      expect(
+        screen.getByRole('combobox', { name: 'Why is there no order?' }),
+      ).toHaveAccessibleDescription(
+        'Opening stock, Returned, A sample or Other.',
+      );
+      unmount();
+
+      render(
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          tree={LOCATIONS}
+          defaultLocationId="location-a"
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+          onFoundInCount={vi.fn()}
+        />,
+      );
+      expect(
+        screen.getByRole('combobox', { name: 'Why is there no order?' }),
+      ).toHaveAccessibleDescription(
+        'Opening stock, Returned, A sample or Other. Found in a count is not a receipt: it opens Count it in…',
+      );
+    });
   });
 
   // ADR-094, R3 and E3: a code made for us, named after saving.

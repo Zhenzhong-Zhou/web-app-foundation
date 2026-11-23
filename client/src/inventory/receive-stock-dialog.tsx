@@ -501,7 +501,22 @@ export function ReceiveStockDialog({
                   }}
                   inputRef={controls.why}
                   error={!!errors.why}
-                  helperText={errors.why}
+                  // What it offers, and why Found in a count is no
+                  // receipt, as v15's board says (review 36).
+                  helperText={
+                    errors.why ??
+                    (onFoundInCount
+                      ? intl.formatMessage({
+                          id: 'inventory.receive.why.helpFound',
+                          defaultMessage:
+                            'Opening stock, Returned, A sample or Other. Found in a count is not a receipt: it opens Count it in…',
+                        })
+                      : intl.formatMessage({
+                          id: 'inventory.receive.why.help',
+                          defaultMessage:
+                            'Opening stock, Returned, A sample or Other.',
+                        }))
+                  }
                 >
                   {RECEIPT_DETAILS.map((detail) => (
                     <MenuItem key={detail} value={detail}>

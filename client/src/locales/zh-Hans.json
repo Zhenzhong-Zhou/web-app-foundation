@@ -855,6 +855,8 @@
   "inventory.receive.which": "这是哪一批到货？",
   "inventory.receive.whichMissing": "请选择到货批次，或选择“不属于任何订单”。",
   "inventory.receive.why": "为什么没有订单？",
+  "inventory.receive.why.help": "期初库存、退回、样品或其他。",
+  "inventory.receive.why.helpFound": "期初库存、退回、样品或其他。盘盈不是收货：选择它会打开盘盈入库…",
   "inventory.receive.whyFound": "盘盈",
   "inventory.receive.whyMissing": "请选择没有订单的原因。",
   "inventory.receivedOffOrder.done": "{lot, select, made {已收货 {code} {quantity}，不属于任何订单，新批次 {lotCode}。请将此编码写在这批货上。} typed {已收货 {code} {quantity}，不属于任何订单，批次 {lotCode}。} other {已收货 {code} {quantity}，不属于任何订单。}}{waits, select, true {该库存正在等待成本。} other {}}",

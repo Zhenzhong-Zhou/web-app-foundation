@@ -855,6 +855,8 @@
   "inventory.receive.which": "Which delivery is this?",
   "inventory.receive.whichMissing": "Choose the delivery, or Not on an order.",
   "inventory.receive.why": "Why is there no order?",
+  "inventory.receive.why.help": "Opening stock, Returned, A sample or Other.",
+  "inventory.receive.why.helpFound": "Opening stock, Returned, A sample or Other. Found in a count is not a receipt: it opens Count it in…",
   "inventory.receive.whyFound": "Found in a count",
   "inventory.receive.whyMissing": "Choose why there is no order.",
   "inventory.receivedOffOrder.done": "{lot, select, made {Received {quantity} of {code} with no order, new lot {lotCode}. Write this code on the delivery.} typed {Received {quantity} of {code} with no order, lot {lotCode}.} other {Received {quantity} of {code} with no order.}}{waits, select, true { It waits for a cost.} other {}}",

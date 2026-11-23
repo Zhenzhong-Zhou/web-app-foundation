@@ -662,7 +662,9 @@ a second organization.
 - **MC-326** *(ADR-094, R11, R12)* Why there is no order, and from whom.
   As the demo Owner, Receive stock… for an item with nothing ordered:
   after Item comes "Why is there no order?", nothing chosen, offering
-  Opening stock, Returned, A sample, Other and Found in a count; Receive
+  Opening stock, Returned, A sample, Other and Found in a count, saying
+  under it "… Found in a count is not a receipt: it opens Count it
+  in…", the four alone for a role without `stock.adjust`; Receive
   without one says "Choose why there is no order." there, focus on it.
   Other shows a Note; From lists the partners, optional. Receive as
   Returned from Northside Pharmacy: Movements reads "Received: returned".
