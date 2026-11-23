@@ -658,6 +658,7 @@
   "inventory.lot.alreadyOne": "已是该物品的批次。请选择“已有批次”，或填写其他编码。",
   "inventory.lot.atPlace": "{place} {quantity}",
   "inventory.lot.changesEverywhere": "此修改会作用于该批次的所有库存，而不仅是 {location} 的库存。",
+  "inventory.lot.changesEverywhereItIs": "此修改会作用于该批次在所有库位的库存。",
   "inventory.lot.codeAssignedHere": "编码由本系统分配",
   "inventory.lot.codeEditable": "此编码未印在包装上，因此可在此更正输入错误。",
   "inventory.lot.codeMissing": "请输入批次编码。",

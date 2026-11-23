@@ -23,6 +23,18 @@ import { useSubmit } from '../lib/use-submit';
 import { ExpiryChoice } from './expiry-choice';
 import type { ExpiryKind } from './lot-input';
 
+/** What Edit lot details reads of a lot: a pile's lot fields and place. */
+export type EditedLot = Pick<
+  StockPile,
+  | 'lotId'
+  | 'lotCode'
+  | 'lotSupplierLot'
+  | 'lotExpiry'
+  | 'lotExpiresAt'
+  | 'lotIsAssigned'
+  | 'locationName'
+>;
+
 /**
  * Edit lot details (ADR-094): when it expires, one of three (R8); its
  * supplier's lot, for a code made here (R5); its code, when the code was
@@ -40,7 +52,11 @@ export function EditLotDialog({
   onClose,
   onSaved,
 }: {
-  row: StockPile | null;
+  /**
+   * The lot, as a pile carries it; its place null where none was chosen,
+   * as on the lot's own page (review 1).
+   */
+  row: EditedLot | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -274,14 +290,19 @@ export function EditLotDialog({
             {/* Not a warning about this dialog — a reminder of what it reaches.
                 One lot is one run, wherever its units sit. */}
             <Alert severity="info">
-              {intl.formatMessage(
-                {
-                  id: 'inventory.lot.changesEverywhere',
-                  defaultMessage:
-                    'This changes the lot everywhere, not only the units at {location}.',
-                },
-                { location: row?.locationName ?? '' },
-              )}
+              {row?.locationName
+                ? intl.formatMessage(
+                    {
+                      id: 'inventory.lot.changesEverywhere',
+                      defaultMessage:
+                        'This changes the lot everywhere, not only the units at {location}.',
+                    },
+                    { location: row.locationName },
+                  )
+                : intl.formatMessage({
+                    id: 'inventory.lot.changesEverywhereItIs',
+                    defaultMessage: 'This changes the lot everywhere it is.',
+                  })}
             </Alert>
           </Stack>
         </DialogContent>

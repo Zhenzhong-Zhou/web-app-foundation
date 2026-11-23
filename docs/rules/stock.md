@@ -905,12 +905,14 @@ file is kept is in the [README](README.md).
   again; a day exactly for a date, a correction that contradicts it
   refused, nothing changed. A day alone, as a tab opened before sends
   it, reads a date; an expiry not named stays as it is. Correcting a
-  lot needs stock.move.
+  lot needs stock.move, from a pile's Actions or the lot's own page.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
   [test](../../server/test/stock.e2e-spec.ts) "moves a lot between the three expiries, a day taken away and given again (ADR-094, R8)" ·
   [test](../../server/test/stock.e2e-spec.ts) "refuses an expiry it cannot read, saying what to do, and changes nothing (ADR-094, R8)" ·
   [test](../../server/test/stock.e2e-spec.ts) "corrects the expiry on any lot" ·
   [test](../../server/test/stock.e2e-spec.ts) "refuses a Viewer, which lacks stock.move" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "edits the lot’s details from its own page for whoever may move stock, reading it again after" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "offers no Edit lot details to whoever may not move stock" ·
   [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
   MC-329
 - **A lot made here takes its supplier's lot when it is known,** as

@@ -658,6 +658,7 @@
   "inventory.lot.alreadyOne": "Already one of its lots. Choose One of its lots for it, or type another code.",
   "inventory.lot.atPlace": "{quantity} at {place}",
   "inventory.lot.changesEverywhere": "This changes the lot everywhere, not only the units at {location}.",
+  "inventory.lot.changesEverywhereItIs": "This changes the lot everywhere it is.",
   "inventory.lot.codeAssignedHere": "code assigned here",
   "inventory.lot.codeEditable": "Nobody printed this code, so a typo can be corrected here.",
   "inventory.lot.codeMissing": "Type the lot’s code.",

@@ -1,6 +1,7 @@
 import {
   Alert,
   Box,
+  Button,
   Chip,
   Link,
   Paper,
@@ -52,6 +53,7 @@ import {
   SEPARATOR,
 } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
+import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryStatus } from '../lib/use-expiry-status';
@@ -61,8 +63,10 @@ import { LicenceAtRelease } from '../licences/licence-at-release';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { COLOR_OF_TONE } from '../theme/status';
+import { EditLotDialog } from './edit-lot-dialog';
 import { lotExpiryPart } from './lot-expiry';
 import { SupplierLotLine } from './lot-marks';
+import { useMenuWords } from './menu-words';
 import { inSentence, reasonDetailLabel } from './movement-reasons';
 import { movementsPath } from './movements-path';
 import { PlacesHidden } from './places-hidden';
@@ -263,6 +267,10 @@ export function LotTracePage() {
   const receivedBy = useRef<HTMLHeadingElement>(null);
   // Carried from the list to the lot's own page, beside its title (#479).
   const expiry = useExpiryStatus(trace?.lot.expiresAt ?? null);
+  // Edit lot details, on the lot itself, one lot and no place to choose,
+  // for whoever may move stock, as a pile's Actions offer it (review 1).
+  const [editing, setEditing] = useState(false);
+  const words = useMenuWords();
 
   if (error) {
     return (
@@ -314,6 +322,13 @@ export function LotTracePage() {
             expiry
               ? { label: expiry.label, color: COLOR_OF_TONE[expiry.tone] }
               : undefined
+          }
+          actions={
+            can('stock.move') && (
+              <Button onClick={openDialog(() => setEditing(true))}>
+                {words.editLot}
+              </Button>
+            )
           }
           // The item's name its way to the item's page, with products.view
           // (review 6).
@@ -598,6 +613,25 @@ export function LotTracePage() {
       </Section>
 
       {can('costs.view') && <LotCostPanel lotId={trace.lot.id} />}
+
+      <EditLotDialog
+        key={editing ? 'editing' : 'closed'}
+        row={
+          editing
+            ? {
+                lotId: trace.lot.id,
+                lotCode: trace.lot.code,
+                lotSupplierLot: trace.lot.supplierLot,
+                lotExpiry: trace.lot.expiry,
+                lotExpiresAt: trace.lot.expiresAt,
+                lotIsAssigned: trace.lot.isAssigned,
+                locationName: null,
+              }
+            : null
+        }
+        onClose={() => setEditing(false)}
+        onSaved={reload}
+      />
     </Stack>
   );
 }

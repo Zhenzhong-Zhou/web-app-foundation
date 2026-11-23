@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -567,6 +567,59 @@ describe('LotTracePage, ADR-094', () => {
         /OIL · Fish oil · expiry to add · Supplier’s lot HX-2609/,
       ),
     ).toBeVisible();
+  });
+
+  // Review 1: Edit lot details on the lot's own page, one lot and no place
+  // to choose, for whoever may move stock.
+  it('edits the lot’s details from its own page for whoever may move stock, reading it again after', async () => {
+    let sent: unknown = null;
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/stock/lots/lot-1/trace', () => {
+        reads += 1;
+        return HttpResponse.json({
+          ...TRACE,
+          lot: { ...TRACE.lot, isAssigned: true, expiry: 'unknown' },
+        });
+      }),
+      http.patch('/api/v1/stock/lots/lot-1', async ({ request }) => {
+        sent = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/lots/lot-1']}>
+        <Routes>
+          <Route path="/lots/:id" element={<LotTracePage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'stock.move'] },
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Edit lot details…' }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: /^Lot OIL-0425/ });
+    expect(dialog).toHaveTextContent('This changes the lot everywhere it is.');
+    await user.type(
+      within(dialog).getByRole('textbox', { name: 'Supplier’s lot' }),
+      'HX-2609',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    expect(sent).toMatchObject({ supplierLot: 'HX-2609', expiry: 'unknown' });
+    await waitFor(() => expect(reads).toBe(2));
+  });
+
+  it('offers no Edit lot details to whoever may not move stock', async () => {
+    renderTraced(TRACE, ['stock.view']);
+
+    await screen.findByRole('heading', { name: /^Lot OIL-0425/ });
+    expect(
+      screen.queryByRole('button', { name: 'Edit lot details…' }),
+    ).not.toBeInTheDocument();
   });
 
   // R21's column: the lot a row came through, where it is not this one,

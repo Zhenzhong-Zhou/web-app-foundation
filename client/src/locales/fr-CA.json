@@ -658,6 +658,7 @@
   "inventory.lot.alreadyOne": "C’est déjà un de ses lots. Choisissez Un de ses lots, ou saisissez un autre code.",
   "inventory.lot.atPlace": "{quantity} à {place}",
   "inventory.lot.changesEverywhere": "Cette modification s’applique au lot dans tous les emplacements, pas seulement à {location}.",
+  "inventory.lot.changesEverywhereItIs": "Cette modification s’applique au lot dans tous les emplacements où il se trouve.",
   "inventory.lot.codeAssignedHere": "code attribué ici",
   "inventory.lot.codeEditable": "Ce code n’est imprimé sur aucune boîte; vous pouvez donc corriger une faute de frappe ici.",
   "inventory.lot.codeMissing": "Saisissez le code du lot.",

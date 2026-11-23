@@ -736,7 +736,10 @@ a second organization.
   supplier's lot added in the same save; the Activity log then reads
   "Lot's code marked as made up here", and the lot offers no tick again.
   An Admin, without the permission, sees no tick and the code's line
-  says only to move the stock to the correct lot.
+  says only to move the stock to the correct lot. A lot's own page,
+  from Open the lot or Trace a lot, has Edit lot details… beside its
+  title, saying "This changes the lot everywhere it is."; saved, the
+  page reads the lot again. A Viewer sees no such button.
 - **MC-330** *(ADR-094, R5, R9)* A lot's marks and Details to add. On
   Stock, a lot whose expiry is not known yet reads "Expiry to add" where
   its expiry shows, and a lot made here with no supplier's lot reads
