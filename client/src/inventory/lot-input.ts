@@ -98,6 +98,39 @@ export function chosenExpiry(
 }
 
 /**
+ * A lot's expiry as a pile gives it (ADR-094, R8): its kind, or from a
+ * tab's read of before the kind, a day meaning a date and none no expiry.
+ */
+export function expiryKindOf(lot: {
+  lotExpiry: ExpiryKind | null;
+  lotExpiresAt: string | null;
+}): ExpiryKind {
+  return lot.lotExpiry ?? (lot.lotExpiresAt ? 'date' : 'none');
+}
+
+/** The day a write sends: only for On a date, never left over from it. */
+export function dayFor(
+  expiry: ExpiryKind | null | undefined,
+  day: string,
+): string | undefined {
+  return expiry === 'date' ? day : undefined;
+}
+
+/** On a date with no day: what its field says. */
+export function dayError(
+  expiry: ExpiryKind | null | undefined,
+  day: string,
+  intl: IntlShape,
+): string | undefined {
+  return expiry === 'date' && !day
+    ? intl.formatMessage({
+        id: 'inventory.lot.dayMissing',
+        defaultMessage: 'Type the day the lot expires.',
+      })
+    : undefined;
+}
+
+/**
  * What the lot fields still need, in the app's language: a code typed or
  * made, and for a new lot when it expires, with its day for a date. An
  * existing lot keeps its own expiry, so none is asked; `mustBeNew`, as
@@ -124,11 +157,8 @@ export function lotErrors(
       id: 'inventory.lot.expiryMissing',
       defaultMessage: 'Choose when the lot expires.',
     });
-  } else if (expiry === 'date' && !input.expiresAt) {
-    errors.day = intl.formatMessage({
-      id: 'inventory.lot.dayMissing',
-      defaultMessage: 'Type the day the lot expires.',
-    });
+  } else {
+    errors.day = dayError(expiry, input.expiresAt, intl);
   }
   return errors;
 }
@@ -145,7 +175,7 @@ export function lotRequest(
   mustBeNew = false,
 ): MovementLotDto {
   const expiry = chosenExpiry(input, lots) ?? undefined;
-  const expiresAt = expiry === 'date' ? input.expiresAt : undefined;
+  const expiresAt = dayFor(expiry, input.expiresAt);
   if (input.made) {
     return {
       makeCode: true,

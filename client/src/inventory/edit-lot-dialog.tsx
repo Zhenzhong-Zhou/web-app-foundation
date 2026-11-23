@@ -21,7 +21,7 @@ import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { ExpiryChoice } from './expiry-choice';
-import type { ExpiryKind } from './lot-input';
+import { dayError, dayFor, type ExpiryKind, expiryKindOf } from './lot-input';
 
 /** What Edit lot details reads of a lot: a pile's lot fields and place. */
 export type EditedLot = Pick<
@@ -66,8 +66,7 @@ export function EditLotDialog({
   const [form, setForm] = useState({
     code: row?.lotCode ?? '',
     supplierLot: row?.lotSupplierLot ?? '',
-    expiry: (row?.lotExpiry ??
-      (row?.lotExpiresAt ? 'date' : 'none')) as ExpiryKind,
+    expiry: row ? expiryKindOf(row) : ('none' as ExpiryKind),
     // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
     expiresAt: row?.lotExpiresAt ?? '',
     madeHere: false,
@@ -121,13 +120,7 @@ export function EditLotDialog({
               defaultMessage: 'Type the lot’s code.',
             })
           : undefined,
-      day:
-        form.expiry === 'date' && !form.expiresAt
-          ? intl.formatMessage({
-              id: 'inventory.lot.dayMissing',
-              defaultMessage: 'Type the day the lot expires.',
-            })
-          : undefined,
+      day: dayError(form.expiry, form.expiresAt, intl),
     };
     setErrors(found);
     const first = found.code ? codeRef : found.day ? dayRef : null;
@@ -143,7 +136,7 @@ export function EditLotDialog({
       // Empty takes it away again, "Supplier's lot to add" (R5).
       supplierLot: madeHere ? form.supplierLot.trim() : undefined,
       expiry: form.expiry,
-      expiresAt: form.expiry === 'date' ? form.expiresAt : undefined,
+      expiresAt: dayFor(form.expiry, form.expiresAt),
       madeHere: form.madeHere ? true : undefined,
     };
     void submit(() =>

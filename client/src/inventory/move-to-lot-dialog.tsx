@@ -34,8 +34,9 @@ import { displayWithUnit, unitLabel } from '../products/units';
 import { LotFields } from './lot-fields';
 import {
   chosenExpiry,
+  dayFor,
   existingLot,
-  type ExpiryKind,
+  expiryKindOf,
   lotErrors,
   type LotInput,
   NO_LOT,
@@ -77,8 +78,7 @@ export function MoveToLotDialog({
     lot: {
       ...NO_LOT,
       supplierLot: row.lotSupplierLot ?? '',
-      expiry: (row.lotExpiry ??
-        (row.lotExpiresAt ? 'date' : 'none')) as ExpiryKind,
+      expiry: expiryKindOf(row),
       expiresAt: row.lotExpiresAt ?? '',
     },
     note: '',
@@ -216,7 +216,7 @@ export function MoveToLotDialog({
     if (quantity === null) return;
 
     const expiry = chosenExpiry(form.lot, lots) ?? undefined;
-    const expiresAt = expiry === 'date' ? form.lot.expiresAt : undefined;
+    const expiresAt = dayFor(expiry, form.lot.expiresAt);
     // Made for us, its supplier's lot as the field says, empty to add
     // later; or typed, which takes none (E7).
     const newLot: MoveToNewLotDto = form.lot.made

@@ -22,7 +22,12 @@ import { FormError } from '../components/form-error';
 import { ListError } from '../components/list-error';
 import { Reference } from '../components/reference';
 import { ExpiryChoice } from '../inventory/expiry-choice';
-import { type ExpiryKind, useNextLotCode } from '../inventory/lot-input';
+import {
+  dayError as dayMissing,
+  dayFor,
+  type ExpiryKind,
+  useNextLotCode,
+} from '../inventory/lot-input';
 import { useLotMessage } from '../inventory/lot-received';
 import { placeName } from '../inventory/stock-places';
 import { api } from '../lib/api';
@@ -118,13 +123,9 @@ export function StartTrackingDialog({
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!asked) return;
-    if (stocked && form.expiry === 'date' && !form.expiresAt) {
-      setDayError(
-        intl.formatMessage({
-          id: 'inventory.lot.dayMissing',
-          defaultMessage: 'Type the day the lot expires.',
-        }),
-      );
+    const missing = dayMissing(form.expiry, form.expiresAt, intl);
+    if (stocked && missing) {
+      setDayError(missing);
       dayRef.current?.focus();
       return;
     }
@@ -136,7 +137,7 @@ export function StartTrackingDialog({
       ? {
           supplierLot: form.supplierLot.trim() || undefined,
           expiry: form.expiry,
-          expiresAt: form.expiry === 'date' ? form.expiresAt : undefined,
+          expiresAt: dayFor(form.expiry, form.expiresAt),
         }
       : {};
     void submit(() =>
