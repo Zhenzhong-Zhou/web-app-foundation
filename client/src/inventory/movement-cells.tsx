@@ -99,11 +99,14 @@ function outsideEnd(
 /**
  * A receipt's outside end by why it was received (ADR-094, D3): none, on
  * an order, or a sample, from a supplier; opening stock; stock a customer
- * brought back; or other. A detail this tab does not know reads as a
- * supplier's, as every receipt did before.
+ * brought back; or other. A detail this tab does not know says nothing,
+ * since it cannot know where that stock came from (D4).
  */
-function receiptEnd(detail: string | null): keyof typeof OUTSIDE {
+function receiptEnd(detail: string | null): keyof typeof OUTSIDE | null {
   switch (detail) {
+    case null:
+    case 'sample':
+      return 'supplier';
     case 'opening':
       return 'opening';
     case 'returned':
@@ -111,7 +114,7 @@ function receiptEnd(detail: string | null): keyof typeof OUTSIDE {
     case 'other':
       return 'other';
     default:
-      return 'supplier';
+      return null;
   }
 }
 

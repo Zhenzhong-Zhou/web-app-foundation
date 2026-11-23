@@ -420,6 +420,16 @@ describe('MovementsPage', () => {
     },
   );
 
+  // D4: a detail an open tab does not know yet says nothing it cannot
+  // know, never "supplier" (review 70).
+  it('starts a receipt with a detail this tab does not know at —, never supplier (D4)', async () => {
+    const row = await rowFor({ ...RECEIPT, reasonDetail: 'consigned' });
+
+    expect(cellUnder(row, 'From → to')).toHaveTextContent(
+      '—→Main warehouse › Shelf A (A)',
+    );
+  });
+
   // S7: with no From → to column, a receipt's partner follows its
   // reason; a partner is not a place, so places' permission hides it not.
   it('names a receipt’s partner after its reason for a reader with no From → to, a link with partners.view (S7)', async () => {

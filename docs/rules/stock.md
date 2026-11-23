@@ -452,7 +452,8 @@ file is kept is in the [README](README.md).
   columns; a receipt's From its partner by name, as the reader may see
   it, or with none by why it came, opening stock, customer for stock
   brought back, other, else supplier, as Movements' From → to reads it
-  (ADR-094, D3, amending 82a); For, the document or a sample's
+  (ADR-094, D3, amending 82a), where a why that a tab opened before a
+  deploy does not know yet reads —, never supplier (D4); For, the document or a sample's
   recipient, as the reader may see it, never a receipt's partner.
   [ADR-093, amended](../adr/0093-inventory-and-movements.md#decided-before-building) ·
   [test](../../server/test/movements.e2e-spec.ts) "exports one code’s stock card oldest first, its opening first and its closing last" ·
@@ -464,6 +465,7 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)" ·
   [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "starts a receipt with a detail this tab does not know at —, never supplier (D4)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "names who it came from, a partner of this organization alone, on the movement and as its export’s From, For staying the document’s (D3)" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "starts a receipt at the partner it came from, a link, For reading — (D3)" ·
   [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
