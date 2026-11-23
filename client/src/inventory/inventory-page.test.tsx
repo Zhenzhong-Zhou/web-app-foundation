@@ -1926,6 +1926,66 @@ describe('InventoryPage', () => {
     ).toBeInTheDocument();
   });
 
+  // Found in a count, counted in: Receive stock opens empty the next time,
+  // as it does after a receipt (review 68).
+  it('opens Receive stock empty again after Found in a count is counted in', async () => {
+    const user = userEvent.setup();
+    answer();
+    renderAt('/inventory', [
+      'stock.view',
+      'stock.move',
+      'stock.adjust',
+      'locations.view',
+    ]);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Receive stock' }),
+    );
+    const free = await screen.findByRole('dialog', { name: 'Receive stock' });
+    await user.click(within(free).getByRole('combobox', { name: 'Item' }));
+    await user.click(await screen.findByRole('option', { name: /PLAIN-1/ }));
+    await user.click(
+      within(free).getByRole('combobox', { name: 'Why is there no order?' }),
+    );
+    await user.click(
+      await screen.findByRole('option', { name: 'Found in a count' }),
+    );
+
+    const count = await screen.findByRole('dialog', {
+      name: 'Correct the count',
+    });
+    await user.click(
+      within(count).getByRole('combobox', { name: /^Location/ }),
+    );
+    await user.click((await screen.findAllByRole('option'))[0]!);
+    await user.type(
+      within(count).getByRole('textbox', { name: /^Quantity/ }),
+      '12',
+    );
+    await user.type(
+      within(count).getByRole('textbox', { name: /^What happened/ }),
+      'Behind the cartons',
+    );
+    await user.click(
+      within(count).getByRole('button', { name: 'Save correction' }),
+    );
+    await waitFor(() => expect(count).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Receive stock' }),
+      ).not.toBeInTheDocument(),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Receive stock' }));
+    const again = await screen.findByRole('dialog', { name: 'Receive stock' });
+    expect(within(again).getByRole('combobox', { name: 'Item' })).toHaveValue(
+      '',
+    );
+    expect(
+      within(again).getByRole('combobox', { name: 'Why is there no order?' }),
+    ).toHaveTextContent(/^\W*$/);
+  });
+
   // Home's Receive stock opens the dialog, not only the list (#502).
   it('opens Receive stock from ?receive; closing keeps the list, Back returns Home', async () => {
     answer();

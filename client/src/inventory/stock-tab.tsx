@@ -328,6 +328,9 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [countingIn, setCountingIn] = useState<CountInItem | null>(null);
   // Count it in… from Receive stock's Found in a count, at its place (R12).
   const [foundAt, setFoundAt] = useState<string | null>(null);
+  // Counted in from it: Receive stock starts again empty, as it does after
+  // a receipt, since closing it from here skips its own reset (review 68).
+  const [countedIn, setCountedIn] = useState(0);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
   const [startingTracking, setStartingTracking] = useState<StockCodeRow | null>(
     null,
@@ -1000,7 +1003,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       )}
 
       <ReceiveStockDialog
-        key={receivingItem ?? 'any'}
+        key={`${receivingItem ?? 'any'}-${countedIn}`}
         open={receiving || (asked && leaves.length > 0)}
         locations={leaves}
         tree={locations}
@@ -1093,7 +1096,10 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           }}
           onCounted={async (locationId) => {
             // Counted in from Found in a count: no receipt is left to make.
-            if (foundAt !== null) closeReceiving();
+            if (foundAt !== null) {
+              closeReceiving();
+              setCountedIn((count) => count + 1);
+            }
             setFoundAt(null);
             openReceived({ variantId: countingIn.variantId, locationId });
             await refresh();

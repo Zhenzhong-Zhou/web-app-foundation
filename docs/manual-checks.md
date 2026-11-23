@@ -666,7 +666,8 @@ a second organization.
   with Count it in's fields, the item's place kept; Escape returns to
   Receive stock, focus on Why is there no order?, still unanswered;
   counting it in instead closes both and Stock opens the item's row at
-  the place, its lots shown, though the row was closed before. A
+  the place, its lots shown, though the row was closed before; Receive
+  stock opened again then starts empty, no item, place or answer kept. A
   role without `stock.adjust` is offered no Found in a count, and one
   without `partners.view` no From. In Français « Pourquoi n'y a-t-il
   pas de commande? »; in 中文 为什么没有订单？ and 盘盈.
