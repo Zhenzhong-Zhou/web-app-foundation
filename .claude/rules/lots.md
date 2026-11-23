@@ -7,8 +7,9 @@ paths:
   - "server/src/modules/numbering/lot-codes.ts"
   - "server/src/database/schema/lots.ts"
   - "server/test/{lot-changes,lot-trace,lot-tracking,lots-at-receipt}.e2e-spec.ts"
-  - "client/src/inventory/{lot-input.ts,lot-received.ts,lot-expiry.ts,lot-fields.tsx,lot-marks.tsx,lot-taken.tsx,edit-lot-dialog.tsx,move-to-lot-dialog.tsx}"
-  - "client/src/costs/lot-cost-panel.tsx"
+  - "client/src/inventory/{lot-input.ts,lot-received.ts,lot-expiry.ts,lot-fields.tsx,lot-marks.tsx,lot-taken.tsx,edit-lot-dialog.tsx,move-to-lot-dialog.tsx,expiry-choice.tsx,no-lot-line.tsx,supplier-lot-part.ts}"
+  - "client/src/products/start-tracking-dialog.tsx"
+  - "client/src/costs/{lot-cost-panel,stock-value-page}.tsx"
   - "client/e2e/lots-at-receipt.spec.ts"
 ---
 
