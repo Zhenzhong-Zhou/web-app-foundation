@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import type { LotChangeDetail } from '../../common/movement-reasons';
+import { readableQuantity } from '../../common/readable-quantity';
 import { recordContext } from '../../core/audit/audit-context';
 import { lots, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -13,6 +15,7 @@ import { t } from '../../i18n/translate';
 import type { MoveToLotDto, MoveToNewLotDto } from './dto/move-to-lot.dto';
 import type { LotChanged, MovedLot } from './dto/stock-response.dto';
 import { movementOf } from './movement-view';
+import { openRunIssued } from './open-run';
 import { StockService, type Tx } from './stock.service';
 
 /** The lot the stock leaves, as the move reads it. */
@@ -24,6 +27,7 @@ type FirstLot = {
   expiry: (typeof lots.$inferSelect)['expiry'];
   expiresAt: string | null;
   supplierLot: string | null;
+  note: (typeof lots.$inferSelect)['note'];
 };
 
 /**
@@ -59,6 +63,8 @@ export class LotChangesService {
           }),
         );
       }
+
+      await refuseIssuedToOpenRun(tx, organizationId, from, dto.locationId);
 
       if (dto.toLotId && dto.lot) {
         throw new BadRequestException(
@@ -119,6 +125,51 @@ export class LotChangesService {
 }
 
 /**
+ * Refuses a move out of a lot issued to a run still open at that place
+ * (review 73): the run's close takes from the lots it was issued there, so
+ * it would find the moved units missing. Named by its reference, or by what
+ * it plans to make when it has none.
+ */
+async function refuseIssuedToOpenRun(
+  tx: Tx,
+  organizationId: string,
+  from: FirstLot,
+  locationId: string,
+): Promise<void> {
+  const found = await tx.execute(
+    openRunIssued(organizationId, {
+      variantId: sql`${from.variantId}::uuid`,
+      locationId: sql`${locationId}::uuid`,
+      lotId: sql`${from.id}::uuid`,
+      lotNote: sql`${from.note}::text`,
+    }),
+  );
+  const run = found.rows[0] as
+    { reference: string | null; quantity_planned: string } | undefined;
+  if (!run) return;
+
+  throw new ConflictException(
+    run.reference
+      ? t(
+          {
+            id: 'stock.lotChangeIssuedToRun',
+            defaultMessage:
+              'Lot {code} here was issued to run {run}, which is still open. Close or cancel the run first, then move what is left to another lot.',
+          },
+          { code: from.code, run: run.reference },
+        )
+      : t(
+          {
+            id: 'stock.lotChangeIssuedToUnnamedRun',
+            defaultMessage:
+              'Lot {code} here was issued to a run still open, {quantity} planned. Close or cancel the run first, then move what is left to another lot.',
+          },
+          { code: from.code, quantity: readableQuantity(run.quantity_planned) },
+        ),
+  );
+}
+
+/**
  * The lot the stock leaves, by the path's id: 404 for another
  * organization's. Its code is read `for share`, as every movement reads it
  * (recordWithin), first, so the move takes its locks in a receipt's order.
@@ -137,6 +188,7 @@ async function firstLot(
       expiry: lots.expiry,
       expiresAt: lots.expiresAt,
       supplierLot: lots.supplierLot,
+      note: lots.note,
     })
     .from(lots)
     .innerJoin(

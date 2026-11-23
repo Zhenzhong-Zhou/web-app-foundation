@@ -30,6 +30,7 @@ const PILE: StockPile = {
   lotSupplierLot: 'SUP-88',
   quantity: '100.0000',
   emptiedOn: null,
+  issuedToRun: null,
 };
 
 const LOTS: Lot[] = [

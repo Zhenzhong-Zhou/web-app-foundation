@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { isZero } from '../lib/decimal';
-import { itemName } from '../lib/format';
+import { displayQuantity, itemName } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
@@ -74,6 +74,30 @@ export function StockActions({
         })
     : undefined;
 
+  // A lot issued here to a run still open: its close takes it, so it may
+  // not move into another lot until the run is closed or cancelled, as the
+  // server refuses (review 73). It is named as the run's page names it.
+  const run = row.issuedToRun;
+  const issued = run
+    ? intl.formatMessage(
+        {
+          id: 'inventory.menu.issuedToRun',
+          defaultMessage: 'Issued to run {run}, still open',
+        },
+        {
+          run:
+            run.reference ??
+            intl.formatMessage(
+              {
+                id: 'production.plannedTitle',
+                defaultMessage: '{quantity} planned',
+              },
+              { quantity: displayQuantity(run.quantityPlanned) },
+            ),
+        },
+      )
+    : undefined;
+
   // What changes stock: moving, shipping out and sampling, and, by
   // stock.adjust, correcting the count. Receiving, shipping and moving
   // record what happened in the world; a correction overrides the record
@@ -122,7 +146,7 @@ export function StockActions({
               {
                 label: words.moveToLot,
                 onSelect: () => onMoveToLot(row),
-                unavailable: nothing,
+                unavailable: nothing ?? issued,
               },
             ]
           : []),

@@ -1100,6 +1100,8 @@
   "stock.giveEitherExistingLot": "请选择已有批次或新建一个批次，不要同时选择两者。",
   "stock.heldForConfirmedOrders": "已确认的订单",
   "stock.heldForOtherOrders": "其他订单",
+  "stock.lotChangeIssuedToRun": "此处的批次 {code} 已领用给生产订单 {run}，该订单仍未关闭。请先关闭或取消该订单，再将剩余库存转入其他批次。",
+  "stock.lotChangeIssuedToUnnamedRun": "此处的批次 {code} 已领用给一个仍未关闭的生产订单（计划 {quantity}）。请先关闭或取消该订单，再将剩余库存转入其他批次。",
   "stock.lotChangeNeedsLot": "请选择要转入的批次：该物品的其他批次，或新批次。",
   "stock.lotChangeNeedsNote": "请在备注中说明这些库存为何属于另一个批次。",
   "stock.lotChangeNotItsLot": "该批次不属于 {sku}。请选择它的其他批次，或新批次。",

@@ -127,6 +127,15 @@ export class StockLotCounts {
   total!: number;
 }
 
+/** A run still open that a pile was issued to (review 73). */
+export class IssuedRun {
+  id!: string;
+  /** What people call the run; null for one with no reference. */
+  reference!: string | null;
+  /** Names a run with no reference: "1,000 planned". */
+  quantityPlanned!: string;
+}
+
 /**
  * One pile: a code at one place, in one lot when it tracks lots, as the
  * row's menu, Move, Edit lot and History read it.
@@ -164,6 +173,12 @@ export class StockPile {
    * null while it holds stock (ADR-093: "Emptied 14 Nov").
    */
   emptiedOn!: string | null;
+  /**
+   * The run still open that its lot was issued to here, whose close takes
+   * it: Move to another lot is refused while it is open (review 73). Null
+   * otherwise, and with no lot.
+   */
+  issuedToRun!: IssuedRun | null;
 }
 
 /** One place holding a code, and its lots there, soonest first. */

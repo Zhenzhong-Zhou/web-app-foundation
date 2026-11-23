@@ -623,4 +623,101 @@ describe('Move to another lot (e2e)', () => {
     });
     expect(made.toLot.code).toMatch(/^L-\d{4}-\d{2}-\d{2}-1$/);
   });
+
+  it('refuses a move out of a lot issued to a run still open, naming the run, until it is cancelled, and its pile says why (review 73)', async () => {
+    const w = await world();
+    const a = await buy(w, '100', '2.00', 'A');
+    const output = await createVariant(w.org.agent, {
+      type: 'good',
+      name: 'Immune blend',
+      variant: { sku: 'IMM-60', unitOfMeasure: 'each', tracksLots: true },
+    });
+    const bomId = body<{ bom: { id: string } }>(
+      await w.org.agent
+        .post('/v1/boms')
+        .send({
+          outputVariantId: output,
+          outputQuantity: '100',
+          lines: [{ componentVariantId: w.code, quantity: '30' }],
+        })
+        .expect(201),
+    ).bom.id;
+    await w.org.agent.post(`/v1/boms/${bomId}/promote`).expect(204);
+
+    /** A run at the Annex, its 30 of lot A issued there from Main. */
+    async function released(reference: string | null) {
+      const runId = body<{ productionOrder: { id: string } }>(
+        await w.org.agent
+          .post('/v1/production-orders')
+          .send({
+            outputVariantId: output,
+            bomId,
+            locationId: w.annex,
+            quantityPlanned: '100',
+            ...(reference ? { reference } : {}),
+          })
+          .expect(201),
+      ).productionOrder.id;
+      await w.org.agent
+        .post(`/v1/production-orders/${runId}/release`)
+        .send({ sourceLocationId: w.main })
+        .expect(200);
+      return runId;
+    }
+
+    const runId = await released('B-2611');
+    const refused = await w.org.agent
+      .post(path(a.id))
+      .send({
+        locationId: w.annex,
+        quantity: '5',
+        lot: { code: 'B' },
+        note: 'Two runs in one delivery',
+      })
+      .expect(409);
+    expect(message(refused)).toBe(
+      said('en', 'stock.lotChangeIssuedToRun', { code: 'A', run: 'B-2611' }),
+    );
+    expect(await lotOf('B')).toBeUndefined();
+    expect(await pileOf(a.id, w.annex)).toBe('30.0000');
+
+    // Its pile says why; the same lot at Main, never issued, does not.
+    const { places } = body<{
+      places: {
+        locationId: string;
+        lots: { lotId: string; issuedToRun: unknown }[];
+      }[];
+    }>(await w.org.agent.get(`/v1/stock/by-code/${w.code}/places`).expect(200));
+    const issuedAt = (at: string) =>
+      places.find((place) => place.locationId === at)!.lots[0].issuedToRun;
+    expect(issuedAt(w.annex)).toEqual({
+      id: runId,
+      reference: 'B-2611',
+      quantityPlanned: '100.0000',
+    });
+    expect(issuedAt(w.main)).toBeNull();
+    await move(w, a.id, { quantity: '5', lot: { code: 'C' } });
+
+    // A run with no reference is named by what it plans.
+    await w.org.agent
+      .post(`/v1/production-orders/${runId}/cancel`)
+      .send({ reason: 'Planned twice' })
+      .expect(200);
+    await released(null);
+    const unnamed = await w.org.agent
+      .post(path(a.id))
+      .send({
+        locationId: w.annex,
+        quantity: '5',
+        toLotId: (await lotOf('C')).id,
+        note: 'Two runs in one delivery',
+      })
+      .expect(409);
+    expect(message(unnamed)).toBe(
+      said('en', 'stock.lotChangeIssuedToUnnamedRun', {
+        code: 'A',
+        quantity: '100',
+      }),
+    );
+  });
 });

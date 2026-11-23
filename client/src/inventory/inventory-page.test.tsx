@@ -116,6 +116,7 @@ function pile(
     lotSupplierLot: null,
     quantity: '10.0000',
     emptiedOn: null,
+    issuedToRun: null,
   };
 }
 
@@ -1205,6 +1206,68 @@ describe('InventoryPage', () => {
 
     // ADR-094, R20: a correction of which lot the stock is in, for
     // whoever may correct counts.
+    // A lot issued here to a run still open: its close takes it, so it
+    // stays in its lot until the run is closed or cancelled (review 73).
+    it('greys Move to another lot… for a lot issued to a run still open, naming the run', async () => {
+      const user = userEvent.setup();
+      answer();
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({
+            places: [
+              {
+                ...PLACES[1]!,
+                lots: [
+                  {
+                    ...PLACES[1]!.lots[0]!,
+                    issuedToRun: {
+                      id: 'run-1',
+                      reference: null,
+                      quantityPlanned: '1000.0000',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        ),
+      );
+      renderAt('/inventory', [
+        'stock.view',
+        'locations.view',
+        'stock.move',
+        'stock.adjust',
+      ]);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', {
+          name: '1 lot: show the lots at Main warehouse › Zone A › Shelf A',
+        }),
+      );
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      );
+      const menu = await screen.findByRole('menu');
+
+      const choice = within(menu).getByRole('menuitem', {
+        name: /^Move to another lot…/,
+      });
+      expect(choice).toHaveAttribute('aria-disabled', 'true');
+      expect(choice).toHaveTextContent(
+        'Issued to run 1,000 planned, still open',
+      );
+      // The rest of what it holds still moves, ships and is corrected.
+      expect(
+        within(menu).getByRole('menuitem', { name: /^Move…/ }),
+      ).not.toHaveAttribute('aria-disabled');
+    });
+
     it('offers no Move to another lot… to whoever may only move stock', async () => {
       const menu = await lotActions(['stock.move']);
       expect(

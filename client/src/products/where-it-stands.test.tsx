@@ -219,6 +219,7 @@ describe('Where it stands (ADR-093, R8)', () => {
       lotSupplierLot: null,
       quantity: '70.0000',
       emptiedOn: null,
+      issuedToRun: null,
     };
     renderStanding(
       [
@@ -466,6 +467,7 @@ describe('Where it stands (ADR-093, R8)', () => {
                   lotSupplierLot: null,
                   quantity: '70.0000',
                   emptiedOn: null,
+                  issuedToRun: null,
                 },
               ],
             },

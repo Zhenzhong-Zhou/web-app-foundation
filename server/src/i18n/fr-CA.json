@@ -1100,6 +1100,8 @@
   "stock.giveEitherExistingLot": "Indiquez un lot existant ou un nouveau lot, mais pas les deux",
   "stock.heldForConfirmedOrders": "des commandes confirmées",
   "stock.heldForOtherOrders": "d’autres commandes",
+  "stock.lotChangeIssuedToRun": "Le lot {code} ici a été prélevé pour l’ordre de fabrication {run}, encore ouvert. Fermez ou annulez d’abord l’ordre, puis déplacez ce qui reste dans un autre lot.",
+  "stock.lotChangeIssuedToUnnamedRun": "Le lot {code} ici a été prélevé pour un ordre de fabrication encore ouvert, {quantity} prévu. Fermez ou annulez d’abord l’ordre, puis déplacez ce qui reste dans un autre lot.",
   "stock.lotChangeNeedsLot": "Choisissez le lot où le déplacer : un autre de ses lots, ou un nouveau lot.",
   "stock.lotChangeNeedsNote": "Indiquez dans la note pourquoi ce stock appartient à un autre lot.",
   "stock.lotChangeNotItsLot": "Ce lot n’est pas un lot de {sku}. Choisissez un autre de ses lots, ou un nouveau lot.",

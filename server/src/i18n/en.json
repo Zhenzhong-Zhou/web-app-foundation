@@ -1100,6 +1100,8 @@
   "stock.giveEitherExistingLot": "Give either an existing lot or a new one, not both",
   "stock.heldForConfirmedOrders": "confirmed orders",
   "stock.heldForOtherOrders": "other orders",
+  "stock.lotChangeIssuedToRun": "Lot {code} here was issued to run {run}, which is still open. Close or cancel the run first, then move what is left to another lot.",
+  "stock.lotChangeIssuedToUnnamedRun": "Lot {code} here was issued to a run still open, {quantity} planned. Close or cancel the run first, then move what is left to another lot.",
   "stock.lotChangeNeedsLot": "Choose the lot to move it into: another of its lots, or a new one.",
   "stock.lotChangeNeedsNote": "Say in the note why this stock belongs in another lot.",
   "stock.lotChangeNotItsLot": "That lot is not one of {sku}’s. Choose another of its lots, or a new one.",

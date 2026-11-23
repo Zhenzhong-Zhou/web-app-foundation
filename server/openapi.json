@@ -17489,6 +17489,28 @@
           "total"
         ]
       },
+      "IssuedRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityPlanned": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "quantityPlanned"
+        ]
+      },
       "StockPile": {
         "type": "object",
         "properties": {
@@ -17578,6 +17600,16 @@
               "string",
               "null"
             ]
+          },
+          "issuedToRun": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssuedRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -17597,7 +17629,8 @@
           "lotIsAssigned",
           "lotSupplierLot",
           "quantity",
-          "emptiedOn"
+          "emptiedOn",
+          "issuedToRun"
         ]
       },
       "StockPlace": {
@@ -17751,6 +17784,16 @@
               "null"
             ]
           },
+          "issuedToRun": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssuedRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "productId": {
             "type": "string"
           },
@@ -17802,6 +17845,7 @@
           "lotSupplierLot",
           "quantity",
           "emptiedOn",
+          "issuedToRun",
           "productId",
           "type",
           "coverFileId",

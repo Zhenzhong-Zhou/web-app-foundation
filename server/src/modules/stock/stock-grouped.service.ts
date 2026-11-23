@@ -52,6 +52,7 @@ import type {
   StockPlacesDto,
 } from './dto/list-stock-grouped.dto';
 import type {
+  IssuedRun,
   StockCodeCounts,
   StockCodePage,
   StockCodePlaces,
@@ -62,6 +63,7 @@ import type {
 } from './dto/stock-grouped-response.dto';
 import { namesIn, productNameOrder } from './item-name';
 import { lotMatches } from './lot-search';
+import { openRunIssued } from './open-run';
 import { pathsOf } from './place-paths';
 import {
   quickFiltersOf,
@@ -418,6 +420,7 @@ type PileRow = {
   lot_supplier_lot: string | null;
   quantity: string;
   emptied_at: Date | string | null;
+  issued_to_run: IssuedRun | null;
   /** The places' read alone: on hand at the pile's place. */
   place_on_hand?: string;
 };
@@ -1266,7 +1269,22 @@ function pileColumns(organizationId: string, locale: Locale | null): SQL {
     -- An emptied pile's last change, the one that left none; its day is
     -- the organization's, worked out by dayIn (ADR-072).
     case when ${stockLevels.quantity} = 0
-      then ${stockLevels.updatedAt} end as emptied_at
+      then ${stockLevels.updatedAt} end as emptied_at,
+    -- The open run its lot was issued to here, whose close takes it
+    -- (review 73): Move to another lot is greyed for it.
+    case when ${stockLevels.lotId} is not null then (
+      select json_build_object(
+        'id', r.id,
+        'reference', r.reference,
+        'quantityPlanned', r.quantity_planned
+      )
+      from (${openRunIssued(organizationId, {
+        variantId: sql`${stockLevels.variantId}`,
+        locationId: sql`${stockLevels.locationId}`,
+        lotId: sql`${stockLevels.lotId}`,
+        lotNote: sql`${lots.note}`,
+      })}) r
+    ) end as issued_to_run
   `;
 }
 
@@ -1290,6 +1308,7 @@ function pileOf(row: PileRow, seesPlaces: boolean, timeZone: string) {
     lotSupplierLot: row.lot_supplier_lot,
     quantity: row.quantity,
     emptiedOn: row.emptied_at ? dayIn(timeZone, row.emptied_at) : null,
+    issuedToRun: row.issued_to_run,
   };
 }
 

@@ -126,6 +126,7 @@ describe('LotFields', () => {
               lotSupplierLot: null,
               quantity: '120.0000',
               emptiedOn: null,
+              issuedToRun: null,
             },
           ],
         },

@@ -705,6 +705,7 @@
   "inventory.menu.changePoint": "修改库存下限…",
   "inventory.menu.correct": "更正库存数量…",
   "inventory.menu.editLot": "编辑批次信息…",
+  "inventory.menu.issuedToRun": "已领用给生产订单 {run}，仍未关闭",
   "inventory.menu.lotsHereNext": "{lots, plural, other {此处有 # 个批次}}：接下来请选择批次",
   "inventory.menu.lotsNext": "{lots, plural, other {# 个批次}}，{places, plural, other {分布在 # 个库位}}：接下来请选择批次",
   "inventory.menu.move": "移库…",

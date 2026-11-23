@@ -1011,6 +1011,16 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lot-changes.e2e-spec.ts) "refuses more than is there, the same lot, another item’s lot, another organization’s lot or place, no lot, no note, and anyone without stock.adjust, writing nothing (R20, #314)" ·
   [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
   MC-328
+- **A lot issued to a run still open stays in its lot at the run's
+  place,** since the run's close takes from the lots it was issued
+  there: a move is refused, naming the run by its reference, or by what
+  it plans when it has none, until the run is closed or cancelled; the
+  same lot elsewhere moves. Its Actions grey Move to another lot…,
+  saying "Issued to run …, still open".
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "refuses a move out of a lot issued to a run still open, naming the run, until it is cancelled, and its pile says why (review 73)" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "greys Move to another lot… for a lot issued to a run still open, naming the run" ·
+  MC-328
 - **A new lot starts as the first lot is:** its expiry, and for a code
   made for us its supplier's lot, unless the move gives either; a code
   typed from the box takes no supplier's lot, being the supplier's own,

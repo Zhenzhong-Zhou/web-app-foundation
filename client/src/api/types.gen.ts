@@ -2026,6 +2026,12 @@ export type StockCodeCounts = {
   total: number;
 };
 
+export type IssuedRun = {
+  id: string;
+  reference: string | null;
+  quantityPlanned: string;
+};
+
 export type StockPile = {
   id: string;
   variantId: string;
@@ -2044,6 +2050,7 @@ export type StockPile = {
   lotSupplierLot: string | null;
   quantity: string;
   emptiedOn: string | null;
+  issuedToRun: IssuedRun | null;
 };
 
 export type StockPlace = {
@@ -2078,6 +2085,7 @@ export type StockLotRow = {
   lotSupplierLot: string | null;
   quantity: string;
   emptiedOn: string | null;
+  issuedToRun: IssuedRun | null;
   productId: string;
   type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;

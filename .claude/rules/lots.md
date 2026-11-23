@@ -2,7 +2,7 @@
 paths:
   - "server/src/modules/stock/{lot-changes,lot-tracking,lot-trace,lots}.service.ts"
   - "server/src/modules/stock/{lot-tracking,lot-trace}.controller.ts"
-  - "server/src/modules/stock/{start-lot,lot-search,lot-allocation}.ts"
+  - "server/src/modules/stock/{start-lot,lot-search,lot-allocation,open-run}.ts"
   - "server/src/modules/stock/dto/{movement-lot,move-to-lot,start-lot-tracking,update-lot,lot-trace-response,lot-tracking-response}.dto.ts"
   - "server/src/modules/numbering/lot-codes.ts"
   - "server/src/database/schema/lots.ts"
@@ -39,12 +39,13 @@ states (ADR-087).
   their own kind** (`lot-changes.service.ts`): the stock card counts it
   in neither In nor Out, `changeOf` by its reason, and both pools are
   locked `inLotOrder` after the variant row.
+- **A lot issued to an open run is not moved** (`open-run.ts`, one
+  query for the refusal and the pile's `issuedToRun`).
 - **A late cost follows stock moved on,** by what the lot held when it
   moved (`revaluation.ts`, D5): never a variance, and the row
   in takes no cost by hand. A cost and a move lock in the same order.
-  Each pool's rest is worked out after its hops (`plan`), less the units
-  the cost already counted there, so stock moved away and back is
-  counted once; then `write` writes the rows in order.
+  `plan` works a pool's rest out after its hops, less what it counted
+  there already; `write` then writes the rows.
 - **Start tracking locks the variant `for update`,** and `recordWithin`
   reads it `for share`, so no receipt races it; the start lot is found
   by its note's key, `tracking_started` (`start-lot.ts`), never by words.

@@ -705,6 +705,7 @@
   "inventory.menu.changePoint": "Change reorder point…",
   "inventory.menu.correct": "Correct the count…",
   "inventory.menu.editLot": "Edit lot details…",
+  "inventory.menu.issuedToRun": "Issued to run {run}, still open",
   "inventory.menu.lotsHereNext": "{lots, plural, one {# lot} other {# lots}} here: you choose the lot next",
   "inventory.menu.lotsNext": "{lots, plural, one {# lot} other {# lots}} in {places, plural, one {# place} other {# places}}: you choose the lot next",
   "inventory.menu.move": "Move…",

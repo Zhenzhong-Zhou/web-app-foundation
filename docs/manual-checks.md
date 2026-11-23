@@ -719,8 +719,10 @@ a second organization.
   lots there. Typing a code the item has says "An existing lot. This
   adds to it.", asking no expiry. A lot some of whose stock waits for a
   cost says the moved stock waits there too. Escape closes it, focus back
-  on Actions. A role without `stock.adjust` is offered none. In 中文
-  转入其他批次….
+  on Actions. A role without `stock.adjust` is offered none. A lot
+  issued to a released run, at the run's place, greys Move to another
+  lot… with "Issued to run …, still open"; the same lot elsewhere
+  moves. In 中文 转入其他批次….
 - **MC-329** *(ADR-094, R5, R7 and R8)* Edit lot details. As the demo
   Owner, a lot's Edit lot details… starts Expires on the lot's own, one
   of On a date (its day under it), Not known yet or Doesn't expire; move

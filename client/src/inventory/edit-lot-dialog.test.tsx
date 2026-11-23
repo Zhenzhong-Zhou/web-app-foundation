@@ -29,6 +29,7 @@ const TYPED: StockPile = {
   lotSupplierLot: null,
   quantity: '100.0000',
   emptiedOn: null,
+  issuedToRun: null,
 };
 
 /** One made here, its expiry and supplier's lot still to add. */

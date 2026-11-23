@@ -776,6 +776,7 @@ describe('Start tracking lots', () => {
                       lotSupplierLot: null,
                       quantity: onHand,
                       emptiedOn: null,
+                      issuedToRun: null,
                     },
                   ],
                 },

@@ -371,6 +371,7 @@ export {
   type InvoicesControllerVoidV1Responses,
   type InvoiceSummary,
   type InvoiceTax,
+  type IssuedRun,
   type IssueInvoiceDto,
   type IssuePlan,
   type IssuePlanLine,

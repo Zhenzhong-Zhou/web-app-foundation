@@ -705,6 +705,7 @@
   "inventory.menu.changePoint": "Modifier le point de commande…",
   "inventory.menu.correct": "Corriger le compte…",
   "inventory.menu.editLot": "Modifier le lot…",
+  "inventory.menu.issuedToRun": "Prélevé pour l’ordre de fabrication {run}, encore ouvert",
   "inventory.menu.lotsHereNext": "{lots, plural, one {# lot} other {# lots}} ici : vous choisirez le lot ensuite",
   "inventory.menu.lotsNext": "{lots, plural, one {# lot} other {# lots}} dans {places, plural, one {# emplacement} other {# emplacements}} : vous choisirez le lot ensuite",
   "inventory.menu.move": "Déplacer…",
