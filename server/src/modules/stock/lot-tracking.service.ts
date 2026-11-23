@@ -15,6 +15,7 @@ import type {
 } from './dto/lot-tracking-response.dto';
 import type { StartLotTrackingDto } from './dto/start-lot-tracking.dto';
 import { pathsOf } from './place-paths';
+import { TRACKING_STARTED } from './start-lot';
 import { expiryOf, StockService, type Tx } from './stock.service';
 
 /** A code as the start reads it. */
@@ -136,7 +137,7 @@ export class LotTrackingService {
       const lot = await this.stock.makeLot(tx, organizationId, variantId, {
         ...expiry,
         supplierLot: dto.supplierLot || null,
-        note: 'tracking_started',
+        note: TRACKING_STARTED,
       });
 
       /**
