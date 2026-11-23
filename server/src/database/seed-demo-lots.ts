@@ -46,7 +46,7 @@ import { daysFromNow } from './seed-demo-variety';
  */
 
 /** What seed-demo.ts has made that this builds on. */
-export interface LotAnchors {
+interface LotAnchors {
   actorId: string;
   shelfId: string;
   blendingId: string;

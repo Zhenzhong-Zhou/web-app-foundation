@@ -7,7 +7,7 @@ import { copyToClipboard } from '../lib/clipboard';
 import { OFFER_BACK } from '../lib/offer-back';
 
 /** The lot a write put stock into, as its answer names it (ADR-094). */
-export interface ReceivedLot {
+interface ReceivedLot {
   id: string | null;
   code: string | null;
   /** Made for us when saved: its code is to be written on the goods. */

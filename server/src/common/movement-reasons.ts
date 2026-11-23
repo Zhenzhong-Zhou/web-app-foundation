@@ -22,13 +22,7 @@ export type ReceiptDetail = (typeof RECEIPT_DETAILS)[number];
  * it left before the code's lot tracking started, a return or a voided
  * shipment's goods, put into that first lot (Q3a).
  */
-export const LOT_CHANGE_DETAILS = [
-  'lots_started',
-  'between_lots',
-  'from_before',
-] as const;
-
-export type LotChangeDetail = (typeof LOT_CHANGE_DETAILS)[number];
+export type LotChangeDetail = 'lots_started' | 'between_lots' | 'from_before';
 
 /**
  * A voided shipment's goods back, an adjustment's detail (ADR-041): a key

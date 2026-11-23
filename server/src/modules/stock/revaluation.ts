@@ -428,7 +428,7 @@ async function write(tx: Tx, late: Late, plan: Plan): Promise<Spread> {
 }
 
 /** The lot a late value followed stock to, and what of it ended there. */
-export interface FollowedLot {
+interface FollowedLot {
   lotId: string;
   lotCode: string;
   value: string;

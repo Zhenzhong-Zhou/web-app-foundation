@@ -8,7 +8,7 @@ import {
 } from '../../common/search';
 
 /** A lot's two codes, as the query names them: `lots`, or an alias's columns. */
-export interface LotCodes {
+interface LotCodes {
   code: SQLWrapper;
   supplierLot: SQLWrapper;
 }
