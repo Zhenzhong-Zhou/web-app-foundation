@@ -745,7 +745,8 @@ a second organization.
   lots there. Typing a code the item has says "An existing lot. This
   adds to it.", asking no expiry. A lot some of whose stock waits for a
   cost says the moved stock waits there too, with Waiting for a cost,
-  which opens Stock value there, for whoever may see costs. Escape closes it, focus back
+  which opens Stock value there, for whoever may see costs. On a phone
+  it fills the screen, as Start tracking lots does, its buttons pinned. Escape closes it, focus back
   on Actions. A role without `stock.adjust` is offered none. A lot
   issued to a released run, at the run's place, greys Move to another
   lot… with "Issued to run …, still open"; the same lot elsewhere

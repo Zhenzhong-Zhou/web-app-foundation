@@ -8,6 +8,8 @@ import {
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -65,6 +67,9 @@ export function StartTrackingDialog({
   onStarted: (places: string[]) => void;
 }) {
   const intl = useIntl();
+  // The whole screen on a phone, as #564's dialogs (review 83).
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const path = `/products/${productId}/variants/${variantId}/lot-tracking`;
   const question = useResource<LotTrackingQuestion>(path);
   const asked = question.data;
@@ -154,6 +159,7 @@ export function StartTrackingDialog({
       onClose={submitting ? undefined : close}
       fullWidth
       maxWidth="sm"
+      fullScreen={phone}
     >
       {/* The body scrolls and the buttons stay in view (#564). */}
       <Box

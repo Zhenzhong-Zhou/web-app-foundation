@@ -6,6 +6,8 @@ import {
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -68,6 +70,9 @@ export function MoveToLotDialog({
   onMoved: (moved: { variantId: string; locationId: string }) => void;
 }) {
   const intl = useIntl();
+  // The whole screen on a phone, as #564's dialogs (review 83).
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const { lots, known } = useItemLots(row.variantId);
   const [form, setForm] = useState<{
     quantity: string;
@@ -251,6 +256,7 @@ export function MoveToLotDialog({
       onClose={submitting ? undefined : close}
       fullWidth
       maxWidth="sm"
+      fullScreen={phone}
     >
       {/* The body scrolls and the buttons stay in view (#564). */}
       <Box

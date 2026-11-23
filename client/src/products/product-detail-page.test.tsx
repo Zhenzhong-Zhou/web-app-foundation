@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type {
   CodeStanding,
@@ -599,6 +599,29 @@ describe('Start tracking lots', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(dialog).not.toBeInTheDocument();
     expect(sent).toEqual([]);
+  });
+
+  // Review 83: the whole screen on a phone, as #564's dialogs.
+  it('fills the screen on a phone', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: /max-width/.test(query),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    const { user } = startable();
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: 'Start tracking lots for CALM-90',
+      }),
+    ).toHaveClass('MuiDialog-paperFullScreen');
+    vi.unstubAllGlobals();
   });
 
   // Review 19: v16's Error state, with Try again.

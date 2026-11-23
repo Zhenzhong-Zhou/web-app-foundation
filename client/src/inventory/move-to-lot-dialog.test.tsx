@@ -159,6 +159,22 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     );
   });
 
+  // Review 83: the whole screen on a phone, as #564's dialogs.
+  it('fills the screen on a phone', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: /max-width/.test(query),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    open();
+
+    expect(
+      screen.getByRole('dialog', { name: 'Move to another lot' }),
+    ).toHaveClass('MuiDialog-paperFullScreen');
+    vi.unstubAllGlobals();
+  });
+
   // Review 6 and 27: what it is for, and that Expires is this lot's.
   it('says what it is for, and that Expires starts as the lot it leaves has it', async () => {
     const { user } = open();
