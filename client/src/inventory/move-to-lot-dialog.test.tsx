@@ -291,4 +291,29 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
       }),
     ).toBeEnabled();
   });
+
+  // Review 25: the most it may move, said under Quantity, and too much
+  // refused there, not by the server above the form.
+  it('says the most it may move, and refuses more at the field, sending nothing', async () => {
+    const { user, sent } = open();
+    const quantity = screen.getByRole('textbox', { name: /^Quantity/ });
+    expect(quantity).toHaveAccessibleDescription('In each. At most 100.');
+
+    await user.type(quantity, '120');
+    await user.type(
+      screen.getByRole('combobox', { name: /^Lot number/ }),
+      'VC-0311',
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: /^Note/ }),
+      'Two runs in one delivery',
+    );
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+
+    expect(quantity).toHaveAccessibleDescription(
+      'At most 100 each, what this lot holds here.',
+    );
+    expect(quantity).toHaveFocus();
+    expect(sent).toEqual([]);
+  });
 });

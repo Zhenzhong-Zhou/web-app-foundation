@@ -20,7 +20,12 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
-import { groupedNumberMessage, toApiDecimal } from '../lib/format';
+import { toScaled } from '../lib/decimal';
+import {
+  displayQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit, unitLabel } from '../products/units';
 import { LotFields } from './lot-fields';
@@ -143,7 +148,23 @@ export function MoveToLotDialog({
           })
         : quantity === null
           ? groupedNumberMessage()
-          : undefined,
+          : // More than the lot holds here, said at the field before the
+            // server's general refusal (review 25).
+            (toScaled(quantity) ?? 0n) > (toScaled(row.quantity) ?? 0n)
+            ? intl.formatMessage(
+                {
+                  id: 'inventory.moveLot.tooMuch',
+                  defaultMessage: 'At most {amount}, what this lot holds here.',
+                },
+                {
+                  amount: displayWithUnit(
+                    row.quantity,
+                    row.unitOfMeasure,
+                    intl,
+                  ),
+                },
+              )
+            : undefined,
       // The lot it is in already, as the server says it.
       lotCode:
         lotFound.code ??
@@ -284,10 +305,13 @@ export function MoveToLotDialog({
                 errors.quantity ??
                 intl.formatMessage(
                   {
-                    id: 'inventory.quantity.inUnit',
-                    defaultMessage: 'In {unit}. Up to 4 decimal places.',
+                    id: 'inventory.moveLot.quantity.help',
+                    defaultMessage: 'In {unit}. At most {amount}.',
                   },
-                  { unit: unitLabel(row.unitOfMeasure, intl) },
+                  {
+                    unit: unitLabel(row.unitOfMeasure, intl),
+                    amount: displayQuantity(row.quantity),
+                  },
                 )
               }
             />

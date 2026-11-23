@@ -733,8 +733,10 @@ a second organization.
   is.", the lot, place and what is on hand under its title, Quantity,
   Lot number with Make a code for us, Expires as this lot's, "Starts as
   the lot it leaves has it." under it, Note, and "Its cost moves with it,
-  at this lot's average. Stock value stays the same." Move without a note, or into the lot it is
-  in: each says why at its field, focus on the first. Move 10 into a
+  at this lot's average. Stock value stays the same." Quantity says "At
+  most …", what the lot holds there. More than that, a move without a
+  note, or into the lot it is in: each says why at its field, focus on
+  the first. Move 10 into a
   new typed code: the message reads "Moved 10 each from lot … to lot
   …", with Open the lot; Stock opens the code's row at the place, both
   lots there. Typing a code the item has says "An existing lot. This
