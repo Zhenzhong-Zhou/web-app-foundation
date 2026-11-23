@@ -42,6 +42,9 @@ states (ADR-087).
 - **A late cost follows stock moved on,** by what the lot held when it
   moved (`revaluation.ts`, D5): never a variance, and the row
   in takes no cost by hand. A cost and a move lock in the same order.
+  Each pool's rest is worked out after its hops (`plan`), less the units
+  the cost already counted there, so stock moved away and back is
+  counted once; then `write` writes the rows in order.
 - **Start tracking locks the variant `for update`,** and `recordWithin`
   reads it `for share`, so no receipt races it; the start lot is found
   by its note's key, `tracking_started` (`start-lot.ts`), never by words.

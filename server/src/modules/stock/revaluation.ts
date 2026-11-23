@@ -79,11 +79,35 @@ interface Carried {
   carried: string;
 }
 
-/** What is left after the last lot change, split as ADR-048 splits it. */
-interface Rest {
-  part: 'rest';
+/** What is left of the acquisition and its value after the last lot change. */
+interface Last {
+  part: 'last';
+  taken: string;
+  left_value: string;
+}
+
+/** The pools a late value may reach, and what it has counted in each. */
+interface Reach {
+  /** Each pool's id by its lot, locked in lot order. */
+  pools: Map<string | null, string>;
+  /**
+   * By pool, the units already counted as still there for this late value,
+   * so stock moved away and back is not counted twice (plan).
+   */
+  claimed: Map<string, string>;
+}
+
+/** What a late value comes to in one pool, worked out before it is written. */
+interface Plan {
+  acquisition: Acquisition;
+  arriving: Arriving;
+  poolId: string;
+  /** The change to stock still in the pool. */
   held: string;
+  /** The change recorded against stock already gone from it. */
   issued: string;
+  /** Each lot change that carried a part, and what that part comes to. */
+  moves: { carried: Carried; hop: Plan }[];
 }
 
 /** A pool's lot, as a condition its index can serve. */
@@ -105,7 +129,7 @@ async function lockReach(
   tx: Tx,
   late: Late,
   starts: { lotId: string | null; after: string }[],
-): Promise<Map<string | null, string>> {
+): Promise<Reach> {
   const found = await tx.execute(sql`
     with recursive reach (lot_id, after_id) as (
       select s.lot_id, s.after_id
@@ -147,12 +171,27 @@ async function lockReach(
       await lockPool(tx, late.organizationId, late.variantId, lotId),
     );
   }
-  return pools;
+  return { pools, claimed: new Map() };
 }
 
 /**
  * Spreads a late value over what became of its acquisition's units in one
- * pool (ADR-048; ADR-094, D5), and writes it.
+ * pool (ADR-048; ADR-094, D5), and writes it: worked out first (plan), then
+ * written (write), each pool's rows in the order they always were.
+ */
+async function spread(
+  tx: Tx,
+  late: Late,
+  reach: Reach,
+  acquisition: Acquisition,
+  arriving: Arriving,
+): Promise<Spread> {
+  return write(tx, late, await plan(tx, late, reach, acquisition, arriving));
+}
+
+/**
+ * Works out what a late value comes to in one pool, and in each pool it
+ * follows stock to, before anything is written.
  *
  * Each lot change out of the pool after the acquisition arrived is taken in
  * order. Of the units it moved, the acquisition's are the moved quantity
@@ -160,37 +199,31 @@ async function lockReach(
  * pool held then; "still in the pool" is ADR-048's reading, as many as the
  * pool held, up to what had arrived of the acquisition and not yet moved.
  * Those units carry their share of the value, by the acquisition's unit, to
- * the lot change's row in, and what is left goes on to the next. What
- * remains after the last splits between the pool and `issued` on what is
- * left of the acquisition, as many as the pool holds now. So the part a move
- * took depends only on what happened up to the move, and a move never turns
- * a cost into a variance.
+ * the lot change's row in, and what is left goes on to the next. So the part
+ * a move took depends only on what happened up to the move, and a move never
+ * turns a cost into a variance.
  *
- * The part carried is a late value for the row in, so it spreads again in
- * that pool, the row in its acquisition; each hop is a later row, so it
- * ends.
- *
- * The rows: one arriving with the value less what is issued, `arriving`'s
- * reference on it, always, as it is also what clears a needs-cost flag; the
- * issued part, if any; and for each lot change that carried a part, a row
- * out of this pool for it, naming that change's row in, whose own pool's
- * arriving row names the same row in. So each pool's history adds up and
- * says where the rest went, the part carried is never `issued`, and only
- * the rows naming the acquisition itself are what it carries in all.
- * Arithmetic stays in Postgres (ADR-025).
+ * The part carried is a late value for the row in, so it is worked out again
+ * in that pool, the row in its acquisition; each hop is a later row, so it
+ * ends. Only then is the rest worked out: what remains after the last move
+ * splits between the pool and `issued` on what is left of the acquisition,
+ * as many as the pool holds now, less the units this late value has already
+ * counted there. Stock moved away and back is the row in's, so the units it
+ * holds are never also counted for the acquisition it left, whose own were
+ * shipped meanwhile.
  */
-async function spread(
+async function plan(
   tx: Tx,
   late: Late,
-  pools: Map<string | null, string>,
+  reach: Reach,
   acquisition: Acquisition,
   arriving: Arriving,
-): Promise<Spread> {
+): Promise<Plan> {
   const { organizationId, variantId } = late;
   const poolId =
-    pools.get(acquisition.lotId) ??
+    reach.pools.get(acquisition.lotId) ??
     (await lockPool(tx, organizationId, variantId, acquisition.lotId));
-  pools.set(acquisition.lotId, poolId);
+  reach.pools.set(acquisition.lotId, poolId);
 
   const quantity = sql`${acquisition.quantity}::numeric`;
   const walked = await tx.execute(sql`
@@ -257,39 +290,94 @@ async function spread(
       limit 1
     )
     select 'move' as part, w.n, w.in_id, w.to_lot_id, w.moved, w.carried,
-           null::numeric as held, null::numeric as issued
+           null::numeric as taken, null::numeric as left_value
     from walk w
     where w.n > 0
       and w.carried <> 0
     union all
-    select 'rest', null, null, null, null, null, r.held,
-           l.left_value - r.held
+    select 'last', null, null, null, null, null, l.taken, l.left_value
     from last l
-    cross join lateral (
-      select case
-               when ${quantity} - l.taken > 0 then
-                 round(
-                   l.left_value * least(p.quantity, ${quantity} - l.taken)
-                     / (${quantity} - l.taken),
-                   6
-                 )
-               else round(0, 6)
-             end as held
-      from valuation_pools p
-      where p.id = ${poolId}::uuid
-    ) r
     order by n nulls last
   `);
 
-  const rows = walked.rows as unknown as (Carried | Rest)[];
-  const rest = rows.find((row): row is Rest => row.part === 'rest')!;
-  const moves = rows.filter((row): row is Carried => row.part === 'move');
+  const rows = walked.rows as unknown as (Carried | Last)[];
+  const last = rows.find((row): row is Last => row.part === 'last')!;
+
+  const moves: Plan['moves'] = [];
+  for (const carried of rows) {
+    if (carried.part !== 'move') continue;
+    moves.push({
+      carried,
+      hop: await plan(
+        tx,
+        late,
+        reach,
+        {
+          lotId: carried.to_lot_id,
+          rows: sql`h.id = ${carried.in_id}::uuid`,
+          quantity: carried.moved,
+          value: carried.carried,
+        },
+        { referenceType: 'stock_valuation', referenceId: carried.in_id },
+      ),
+    });
+  }
+
+  const left = sql`${quantity} - ${last.taken}::numeric`;
+  const claimed = sql`${reach.claimed.get(poolId) ?? '0'}::numeric`;
+  const split = await tx.execute(sql`
+    select r.held, ${last.left_value}::numeric - r.held as issued,
+           ${claimed} + r.units as claimed
+    from (
+      select u.units,
+             case
+               when ${left} > 0 then
+                 round(${last.left_value}::numeric * u.units / (${left}), 6)
+               else round(0, 6)
+             end as held
+      from (
+        select greatest(least(p.quantity - ${claimed}, ${left}), 0) as units
+        from valuation_pools p
+        where p.id = ${poolId}::uuid
+      ) u
+    ) r
+  `);
+  const rest = split.rows[0] as {
+    held: string;
+    issued: string;
+    claimed: string;
+  };
+  reach.claimed.set(poolId, rest.claimed);
+
+  return {
+    acquisition,
+    arriving,
+    poolId,
+    held: rest.held,
+    issued: rest.issued,
+    moves,
+  };
+}
+
+/**
+ * Writes what plan worked out. The rows: one arriving with the value less
+ * what is issued, `arriving`'s reference on it, always, as it is also what
+ * clears a needs-cost flag; the issued part, if any; and for each lot change
+ * that carried a part, a row out of this pool for it, naming that change's
+ * row in, whose own pool's arriving row names the same row in. So each
+ * pool's history adds up and says where the rest went, the part carried is
+ * never `issued`, and only the rows naming the acquisition itself are what
+ * it carries in all. Arithmetic stays in Postgres (ADR-025).
+ */
+async function write(tx: Tx, late: Late, plan: Plan): Promise<Spread> {
+  const { organizationId, variantId } = late;
+  const { acquisition, arriving, poolId } = plan;
 
   // The pool takes what stays in it: the value, less what moved on and
   // what had gone.
   await tx.execute(sql`
     update valuation_pools
-    set value = value + ${rest.held}::numeric
+    set value = value + ${plan.held}::numeric
     where id = ${poolId}::uuid
   `);
 
@@ -301,7 +389,7 @@ async function spread(
     values (
       ${organizationId}::uuid, ${variantId}::uuid,
       ${acquisition.lotId}::uuid, ${late.kind}, 0,
-      ${acquisition.value}::numeric - ${rest.issued}::numeric,
+      ${acquisition.value}::numeric - ${plan.issued}::numeric,
       ${arriving.unitPrice ?? null}::numeric, ${arriving.currency ?? null},
       ${arriving.exchangeRate ?? null}::numeric, ${arriving.referenceType},
       ${arriving.referenceId}::uuid, ${late.actorId}::uuid
@@ -314,14 +402,14 @@ async function spread(
        reference_type, reference_id, actor_id)
     select
       ${organizationId}::uuid, ${variantId}::uuid,
-      ${acquisition.lotId}::uuid, 'issued', 0, ${rest.issued}::numeric,
+      ${acquisition.lotId}::uuid, 'issued', 0, ${plan.issued}::numeric,
       ${arriving.referenceType}, ${arriving.referenceId}::uuid,
       ${late.actorId}::uuid
-    where ${rest.issued}::numeric <> 0
+    where ${plan.issued}::numeric <> 0
   `);
 
   const followed: Followed[] = [];
-  for (const move of moves) {
+  for (const { carried, hop } of plan.moves) {
     await tx.execute(sql`
       insert into stock_valuations
         (organization_id, variant_id, lot_id, kind, quantity, value,
@@ -329,30 +417,19 @@ async function spread(
       values (
         ${organizationId}::uuid, ${variantId}::uuid,
         ${acquisition.lotId}::uuid, ${late.kind}, 0,
-        -${move.carried}::numeric, 'stock_valuation', ${move.in_id}::uuid,
-        ${late.actorId}::uuid
+        -${carried.carried}::numeric, 'stock_valuation',
+        ${carried.in_id}::uuid, ${late.actorId}::uuid
       )
     `);
 
-    const hop = await spread(
-      tx,
-      late,
-      pools,
-      {
-        lotId: move.to_lot_id,
-        rows: sql`h.id = ${move.in_id}::uuid`,
-        quantity: move.moved,
-        value: move.carried,
-      },
-      { referenceType: 'stock_valuation', referenceId: move.in_id },
-    );
+    const spent = await write(tx, late, hop);
     followed.push(
-      { lotId: move.to_lot_id, held: hop.held, issued: hop.issued },
-      ...hop.followed,
+      { lotId: carried.to_lot_id, held: spent.held, issued: spent.issued },
+      ...spent.followed,
     );
   }
 
-  return { held: rest.held, issued: rest.issued, followed };
+  return { held: plan.held, issued: plan.issued, followed };
 }
 
 /** The lot a late value followed stock to, and what of it ended there. */
@@ -546,7 +623,7 @@ export async function postRunCost(
     kind: 'run_close',
     actorId,
   };
-  const pools = await lockReach(
+  const reach = await lockReach(
     tx,
     late,
     rows.map((row) => ({ lotId: row.lot_id, after: row.valuation_ids[0] })),
@@ -556,7 +633,7 @@ export async function postRunCost(
     await spread(
       tx,
       late,
-      pools,
+      reach,
       {
         lotId: row.lot_id,
         rows: sql`h.id in ${row.valuation_ids}`,
@@ -840,7 +917,7 @@ export async function correctCost(
     kind: 'correction',
     actorId,
   };
-  const pools = await lockReach(tx, late, [
+  const reach = await lockReach(tx, late, [
     { lotId: target.lot_id, after: valuationId },
   ]);
 
@@ -880,7 +957,7 @@ export async function correctCost(
   const spent = await spread(
     tx,
     late,
-    pools,
+    reach,
     {
       lotId: target.lot_id,
       rows: sql`h.id = ${valuationId}::uuid`,
