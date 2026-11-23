@@ -447,6 +447,12 @@ async function byLotFollowed(
   lotId: string | null,
   spent: Spread,
 ): Promise<Pick<CorrectedCost, 'held' | 'issued' | 'followed'>> {
+  // Nothing followed stock to another lot: the first pool's parts as they
+  // are, with no read (review 64).
+  if (spent.followed.length === 0) {
+    return { held: spent.held, issued: spent.issued, followed: [] };
+  }
+
   const parts = [{ lotId, held: spent.held, issued: spent.issued }].concat(
     spent.followed,
   );
