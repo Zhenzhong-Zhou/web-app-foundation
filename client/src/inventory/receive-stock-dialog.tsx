@@ -187,8 +187,10 @@ export function ReceiveStockDialog({
     open && variant?.tracksLots ? variant.id : null,
   );
   // From: whoever it came from, retired partners left out (R11, E2).
+  // Read once From shows, never while the delivery question stands in
+  // the fields' place (review 63).
   const { partners, answered: partnersAnswered } = usePartners(
-    open && canSeePartners,
+    open && canSeePartners && !waiting && !question,
   );
   const senders = partners.filter((partner) => partner.isActive);
 

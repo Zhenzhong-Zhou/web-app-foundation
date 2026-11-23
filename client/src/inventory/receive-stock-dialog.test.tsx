@@ -794,6 +794,47 @@ describe('ReceiveStockDialog', () => {
       expect(onDelivery).toHaveBeenCalledWith(DELIVERY);
     });
 
+    // Review 63: whom it came from is read once From shows, not while the
+    // question stands in the fields' place.
+    it('reads the partners only once From shows, after Not on an order', async () => {
+      const user = userEvent.setup();
+      let partnersRead = 0;
+      server.use(
+        http.get('/api/v1/orders/deliveries', () =>
+          HttpResponse.json([DELIVERY]),
+        ),
+        http.get('/api/v1/partners', () => {
+          partnersRead += 1;
+          return HttpResponse.json([]);
+        }),
+      );
+      render(
+        <ReceiveStockDialog
+          open
+          locations={LOCATIONS}
+          tree={LOCATIONS}
+          defaultLocationId="location-a"
+          defaultVariantId="variant-plain"
+          canSeePartners
+          onClose={vi.fn()}
+          onReceived={vi.fn()}
+          onDelivery={vi.fn()}
+        />,
+      );
+
+      await screen.findByRole('radiogroup', {
+        name: 'Which delivery is this?',
+      });
+      expect(partnersRead).toBe(0);
+
+      await user.click(screen.getByRole('radio', { name: 'Not on an order' }));
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(
+        await screen.findByRole('combobox', { name: /^From/ }),
+      ).toBeVisible();
+      await waitFor(() => expect(partnersRead).toBe(1));
+    });
+
     // An item's own Receive stock…: its one order chosen already.
     it('has the one order chosen already from an item’s Receive stock…', async () => {
       asking({ defaultVariantId: 'variant-plain' });
