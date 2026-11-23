@@ -71,6 +71,7 @@ import { inSentence, reasonDetailLabel } from './movement-reasons';
 import { movementsPath } from './movements-path';
 import { PlacesHidden } from './places-hidden';
 import { placeName } from './stock-places';
+import { supplierLotPart } from './supplier-lot-part';
 
 /**
  * Finding a lot by any part of its code or its supplier's lot (ADR-044,
@@ -349,19 +350,7 @@ export function LotTracePage() {
             // Its expiry, or "expiry to add" (ADR-094, D2); then its
             // supplier's lot, the code it is also found by (R6).
             lotExpiryPart(trace.lot, intl),
-            trace.lot.supplierLot
-              ? intl.formatMessage(
-                  {
-                    id: 'inventory.lot.supplierLotIs',
-                    defaultMessage: 'Supplier’s lot {code}',
-                  },
-                  { code: trace.lot.supplierLot },
-                )
-              : trace.lot.isAssigned &&
-                intl.formatMessage({
-                  id: 'inventory.lot.supplierLotToAdd',
-                  defaultMessage: 'Supplier’s lot to add',
-                }),
+            supplierLotPart(trace.lot, intl),
           ]
             .filter(Boolean)
             .flatMap((part, index) =>

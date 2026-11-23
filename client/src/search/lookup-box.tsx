@@ -27,6 +27,7 @@ import { ExpiryChip } from '../components/expiry-chip';
 import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { lotExpiry } from '../inventory/lot-expiry';
+import { supplierLotPart } from '../inventory/supplier-lot-part';
 import { BarButton } from '../layout/bar-button';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
@@ -436,26 +437,8 @@ function LotLine({ result }: { result: LookupResult }) {
       ),
     });
   }
-  if (result.supplierLot) {
-    parts.push({
-      key: 'supplierLot',
-      part: intl.formatMessage(
-        {
-          id: 'inventory.lot.supplierLotIs',
-          defaultMessage: 'Supplier’s lot {code}',
-        },
-        { code: result.supplierLot },
-      ),
-    });
-  } else if (result.isAssigned) {
-    parts.push({
-      key: 'supplierLot',
-      part: intl.formatMessage({
-        id: 'inventory.lot.supplierLotToAdd',
-        defaultMessage: 'Supplier’s lot to add',
-      }),
-    });
-  }
+  const supplier = supplierLotPart(result, intl);
+  if (supplier) parts.push({ key: 'supplierLot', part: supplier });
 
   return (
     <Typography
