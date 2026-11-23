@@ -347,6 +347,133 @@ test('Receive stock, Why is there no order?, Found in a count: Count it in… op
   await expect(why).toBeFocused();
 });
 
+test('Receive stock, Receive: saved; the message names the new lot, with Copy code and Open the lot; Stock, the row open at its lot', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const code = await firstCodeToday(freshOrg.api);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page);
+  const dialog = await receiveStock(page, scene);
+  await dialog.getByRole('button', { name: 'Make a code for us' }).click();
+  await dialog
+    .getByRole('textbox', { name: 'Supplier’s lot' })
+    .fill('SUP-7781');
+
+  await dialog.getByRole('button', { name: 'Receive', exact: true }).click();
+
+  // Its number taken as it was saved (R3), to be written on the delivery;
+  // received with no price, so waiting for a cost.
+  await expect(dialog).toBeHidden();
+  await expect(message(page)).toContainText(
+    said('inventory.receivedOffOrder.done', {
+      lot: 'made',
+      quantity: '12 each',
+      code: 'E2E-FISH',
+      lotCode: code,
+      waits: 'true',
+    }),
+  );
+
+  // Landed on Stock, the row open at the shelf and its lots: the new one.
+  await expect(placesOf(page, 'E2E Fish Oil')).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(lotsAt(page, scene.shelf.name)).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(
+    lotRow(page, code)
+      .getByRole('cell', { name: '12 each', exact: true })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    lotRow(page, code).getByText(
+      said('inventory.lot.supplierLotIs', { code: 'SUP-7781' }),
+    ),
+  ).toBeVisible();
+
+  await message(page).getByRole('button', { name: 'Copy code' }).click();
+  await expect(message(page)).toContainText(
+    said('inventory.lot.copied', { code }),
+  );
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(code);
+
+  await message(page).getByRole('button', { name: 'Open the lot' }).click();
+  await expect(page).toHaveURL(/\/lots\/[0-9a-f-]+$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(code);
+});
+
+test('Receive stock, Found in a count, a code already listed: counted in, Stock opens its row at the place, the new lot shown', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const code = await firstCodeToday(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await stockFrom(page);
+  // Listed, its row closed.
+  await expect(placesOf(page, 'E2E Fish Oil')).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+
+  await page.getByRole('button', { name: 'Receive stock' }).first().click();
+  const receive = page.getByRole('dialog', { name: 'Receive stock' });
+  await receive.getByLabel('Item').click();
+  await page.getByRole('option', { name: /E2E-FISH/ }).click();
+  await receive.getByLabel('Into').click();
+  await page.getByRole('option', { name: scene.shelf.name }).click();
+  await receive.getByLabel('Why is there no order?').click();
+  await page.getByRole('option', { name: 'Found in a count' }).click();
+
+  const count = page.getByRole('dialog', { name: 'Correct the count' });
+  await count.getByRole('textbox', { name: 'Quantity' }).fill('3');
+  await count
+    .getByRole('textbox', { name: 'What happened' })
+    .fill('E2E found on the top shelf');
+  await count.getByRole('radio', { name: 'A new lot' }).check();
+  await count.getByRole('button', { name: 'Make a code for us' }).click();
+  await count.getByRole('button', { name: 'Save correction' }).click();
+
+  // No receipt is left to make: both close (R12).
+  await expect(count).toBeHidden();
+  await expect(receive).toBeHidden();
+  await expect(message(page)).toContainText(
+    said('inventory.countIn.done', {
+      lot: 'made',
+      amount: '3 each',
+      sku: 'E2E-FISH',
+      place: scene.shelf.name,
+      code,
+    }),
+  );
+
+  // The row the address now names, open at the shelf and its lots (S1).
+  await expect(placesOf(page, 'E2E Fish Oil')).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(lotsAt(page, scene.shelf.name)).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(
+    lotRow(page, code)
+      .getByRole('cell', { name: '3 each', exact: true })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    lotRow(page, 'FO-0101')
+      .getByRole('cell', { name: '20 each', exact: true })
+      .first(),
+  ).toBeVisible();
+});
+
 test('An order’s Receive, the same lot fields: Make a code for us as Receive stock’s; Escape, focus on Receive; received, the message names the new lot with Copy code and Open the lot', async ({
   page,
   freshOrg,
@@ -707,6 +834,65 @@ test('Move to another lot, Move to lot: one write; the message names both lots, 
   await expect(
     lotRow(page, 'FO-0101-B')
       .getByRole('cell', { name: '5 each', exact: true })
+      .first(),
+  ).toBeVisible();
+});
+
+test('The Lot view, a lot’s Actions, Move to another lot…: moved; Group by Item, the row open at the lot’s place, both lots there', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  // On the Lot view, so no place's row is open on Stock.
+  await stockFrom(page, '/inventory?group=lot&search=E2E-FISH');
+
+  await page
+    .getByRole('button', {
+      name: `Actions for lot FO-0101 at ${scene.shelf.name}`,
+    })
+    .click();
+  await page
+    .getByRole('menuitem', { name: 'Move to another lot…', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Move to another lot' });
+  await dialog.getByRole('textbox', { name: 'Quantity' }).fill('6');
+  await dialog.getByRole('combobox', { name: 'Lot number' }).fill('FO-0101-C');
+  await dialog
+    .getByRole('textbox', { name: 'Note' })
+    .fill('E2E relabelled on arrival');
+  await dialog.getByRole('button', { name: 'Move to lot' }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(message(page)).toContainText(
+    said('inventory.moveLot.doneWaiting', {
+      quantity: '6 each',
+      from: 'FO-0101',
+      to: 'FO-0101-C',
+    }),
+  );
+
+  // Grouped by item: the code's row open at the shelf, both lots there.
+  await page
+    .getByRole('group', { name: 'Group by' })
+    .getByRole('button', { name: 'Item' })
+    .click();
+  await expect(placesOf(page, 'E2E Fish Oil')).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(lotsAt(page, scene.shelf.name)).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(
+    lotRow(page, 'FO-0101')
+      .getByRole('cell', { name: '14 each', exact: true })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    lotRow(page, 'FO-0101-C')
+      .getByRole('cell', { name: '6 each', exact: true })
       .first(),
   ).toBeVisible();
 });

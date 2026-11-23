@@ -58,6 +58,17 @@ interface Screen {
   broken?: string;
   /** The rail folded on this device, as a person may keep it. */
   folded?: boolean;
+  /**
+   * What this screen alone needs, beside the seed, so the other screens
+   * draw as they did: its ids, as `Seed.more`.
+   */
+  more?: (api: APIRequestContext, seed: Seed) => Promise<More>;
+}
+
+/** What a screen's `more` added. */
+interface More {
+  productId?: string;
+  orderId?: string;
 }
 
 interface Seed {
@@ -70,9 +81,13 @@ interface Seed {
   bareProductId: string;
   /** Where the product's lot is. */
   locationId: string;
+  /** Who the seed's purchase is from. */
+  partnerId: string;
   /** A role made from the Warehouse template, held by nobody. */
   roleId: string;
   viewerId: string;
+  /** What the screen's `more` added, if anything. */
+  more: More;
 }
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
@@ -384,6 +399,68 @@ const SCREENS: Screen[] = [
     ready: (page) => page.getByText('Where it is now'),
   },
   {
+    // Move to another lot (ADR-094, R20), from the lot's Actions.
+    name: 'inventory, Move to another lot…',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page.getByRole('button', { name: /^1 place: show where / }).click();
+      await page
+        .getByRole('button', { name: /^1 lot: show the lots at / })
+        .click();
+      await page
+        .getByRole('button', { name: /^Actions for lot A11Y-LOT-1 at / })
+        .click();
+      await page
+        .getByRole('menuitem', { name: 'Move to another lot…', exact: true })
+        .click();
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Move to another lot' })
+        .getByRole('textbox', { name: 'Note' }),
+  },
+  {
+    // A new lot whose code is made for us (ADR-094, R3): Supplier's lot
+    // shown, Expires on Not known yet.
+    name: 'inventory, Receive stock, Make a code for us',
+    path: () => '/inventory',
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Actions for E2E Widget / })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Receive stock…' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Receive stock' });
+      await dialog.getByRole('radio', { name: 'Not on an order' }).check();
+      await dialog.getByRole('button', { name: 'Continue' }).click();
+      await dialog.getByRole('button', { name: 'Make a code for us' }).click();
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Receive stock' })
+        .getByRole('textbox', { name: 'Supplier’s lot' }),
+  },
+  {
+    // Edit lot details for a code made here (ADR-094, R5, R7): its code
+    // open to correct, Supplier's lot to add, Expires' three choices.
+    name: 'inventory, Edit lot details…, a code made here',
+    path: () => '/inventory?group=lot',
+    more: async (api, seed) => {
+      await madeLot(api, seed);
+      return {};
+    },
+    open: async (page) => {
+      await page.getByRole('button', { name: /^Actions for lot L-/ }).click();
+      await page
+        .getByRole('menuitem', { name: 'Edit lot details…', exact: true })
+        .click();
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: /^Lot L-/ })
+        .getByRole('radiogroup', { name: 'Expires' }),
+  },
+  {
     // Found stock (#628): Correct the count with a place and Which lot,
     // neither chosen.
     name: 'inventory, Count it in…',
@@ -531,6 +608,47 @@ const SCREENS: Screen[] = [
     ready: (page) =>
       page.getByText('Nothing has been received on this order yet.'),
   },
+  {
+    // Ship a lot whose expiry is to add (ADR-094, D2): the amber line
+    // naming it, measured in both modes.
+    name: 'an order, Ship with a lot whose expiry is to add',
+    path: (seed) => `/orders/${seed.more.orderId}`,
+    more: async (api, seed) => {
+      const oil = await createProduct(api, {
+        name: 'E2E Made Oil',
+        tracksLots: true,
+      });
+      await madeLot(api, seed, oil.variantId);
+      const { order } = await created<{ order: { id: string } }>(
+        await api.post('/v1/orders', {
+          data: {
+            partnerId: seed.partnerId,
+            direction: 'sale',
+            lines: [
+              {
+                variantId: oil.variantId,
+                quantityOrdered: '2',
+                unitPrice: '9.50',
+                currency: 'CAD',
+              },
+            ],
+          },
+        }),
+      );
+      const confirmed = await api.patch(`/v1/orders/${order.id}`, {
+        data: { status: 'confirmed' },
+      });
+      expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
+      return { orderId: order.id };
+    },
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Ship', exact: true }).click();
+      await page.getByRole('dialog').getByLabel('Ship from').click();
+      await page.getByRole('option').first().click();
+    },
+    ready: (page) =>
+      page.getByRole('dialog').getByText(/expiry has not been entered\./),
+  },
   { name: 'invoices', path: () => '/invoices', ready: heading },
   { name: 'credit notes', path: () => '/credit-notes', ready: heading },
   { name: 'returns', path: () => '/return-authorizations', ready: heading },
@@ -596,6 +714,33 @@ const SCREENS: Screen[] = [
     name: 'an item with none on hand, Where it stands',
     path: (seed) => `/items/${seed.bareProductId}`,
     ready: (page) => page.getByRole('button', { name: 'Set a reorder point' }),
+  },
+  {
+    // Start tracking lots (ADR-094, R14) for a code with stock, a day
+    // already past chosen: the amber line that it will read as expired.
+    name: 'an item, Start tracking lots… with a day already past',
+    path: (seed) => `/items/${seed.more.productId}`,
+    more: async (api, seed) => {
+      const tea = await createProduct(api, { name: 'E2E Loose Tea' });
+      await receive(api, seed, tea.variantId, '10');
+      return { productId: tea.id };
+    },
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Start tracking lots for .+…$/ })
+        .click();
+      const dialog = page.getByRole('dialog', {
+        name: /^Start tracking lots for /,
+      });
+      await dialog.getByRole('radio', { name: 'On a date' }).check();
+      await dialog
+        .getByRole('textbox', { name: 'The day it expires' })
+        .fill(daysFromNow(-10));
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: /^Start tracking lots for / })
+        .getByText(/^That day has passed: /),
   },
   {
     name: 'an item, Edit',
@@ -799,9 +944,48 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
     lotId: movement.lotId,
     bareProductId: bare.id,
     locationId: location.id,
+    partnerId: partner.id,
     roleId: role.id,
     viewerId: await roleIdNamed(api, 'Viewer'),
+    more: {},
   };
+}
+
+/** Received into the seed's place with no order, as opening stock. */
+async function receive(
+  api: APIRequestContext,
+  seed: Seed,
+  variantId: string,
+  quantity: string,
+  lot?: { makeCode: true; expiry: 'unknown' },
+): Promise<void> {
+  await created(
+    await api.post('/v1/stock/movements', {
+      data: {
+        variantId,
+        toLocationId: seed.locationId,
+        quantity,
+        reason: 'receipt',
+        reasonDetail: 'opening',
+        lot,
+      },
+    }),
+  );
+}
+
+/**
+ * A lot made here with nothing known yet, no supplier's lot and its
+ * expiry to add (ADR-094, R5, R9): of the seed's item, or of a new one.
+ */
+async function madeLot(
+  api: APIRequestContext,
+  seed: Seed,
+  variantId = seed.variantId,
+): Promise<void> {
+  await receive(api, seed, variantId, '6', {
+    makeCode: true,
+    expiry: 'unknown',
+  });
 }
 
 /** A page's requests in flight, and when the last one began or ended. */
@@ -887,7 +1071,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
           // A seed, a screen and an axe pass: longer than one flow.
           test.setTimeout(60_000);
 
-          const data = await seed(freshOrg.api, freshOrg.email);
+          const seeded = await seed(freshOrg.api, freshOrg.email);
+          const data = {
+            ...seeded,
+            more: (await screen.more?.(freshOrg.api, seeded)) ?? {},
+          };
           await signInAs(page, freshOrg.api);
 
           if (screen.version) {
