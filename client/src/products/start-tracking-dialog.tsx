@@ -242,6 +242,14 @@ export function StartTrackingDialog({
                         </Typography>
                       ))}
                     </Box>
+                    {/* What happens to its cost (v16's board; review 16). */}
+                    <Typography>
+                      {intl.formatMessage({
+                        id: 'products.startTracking.cost',
+                        defaultMessage:
+                          'Its cost goes with it. What still waits for a cost keeps waiting, on this lot.',
+                      })}
+                    </Typography>
                   </Stack>
                 ) : (
                   <Typography>

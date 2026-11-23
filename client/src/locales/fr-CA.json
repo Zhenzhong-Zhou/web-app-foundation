@@ -2001,6 +2001,7 @@
   "products.sort.name": "Nom",
   "products.sort.stock": "En stock, le moins d’abord",
   "products.startTracking.action": "Commencer le suivi par lot",
+  "products.startTracking.cost": "Son coût le suit. Ce qui attend encore un coût continue d’attendre, dans ce lot.",
   "products.startTracking.done": "Suivi par lot commencé pour {sku}. Son stock est dans le lot {lot}.",
   "products.startTracking.doneEmpty": "Suivi par lot commencé pour {sku}. Chaque réception demande maintenant son lot.",
   "products.startTracking.expiry.unknownHelp": "Listé dans Stock, par lot, sous Détails à ajouter jusqu’à ce que quelqu’un donne la date ou indique qu’il n’expire pas. Le stock reste utilisable.",

@@ -555,6 +555,10 @@ describe('Start tracking lots', () => {
       '2,000 each at Main warehouse › Shelf A2',
       '1,000 each at Back room',
     ]);
+    // Its cost, as v16's board says it (review 16).
+    expect(dialog).toHaveTextContent(
+      'Its cost goes with it. What still waits for a cost keeps waiting, on this lot.',
+    );
     expect(dialog).toHaveTextContent(
       'Runs in progress that use or make it: B-104 and a run with no reference. Each will close against this lot.',
     );

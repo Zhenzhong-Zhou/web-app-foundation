@@ -2001,6 +2001,7 @@
   "products.sort.name": "名称",
   "products.sort.stock": "现有，从少到多",
   "products.startTracking.action": "开始按批次跟踪",
+  "products.startTracking.cost": "它的成本随之转入。仍在等待成本的部分会继续等待，记在这个批次上。",
   "products.startTracking.done": "{sku} 已开始按批次跟踪。其现有库存在批次 {lot} 中。",
   "products.startTracking.doneEmpty": "{sku} 已开始按批次跟踪。此后每次收货都会要求填写批次。",
   "products.startTracking.expiry.unknownHelp": "在库存页按批次查看时列在“待补信息”下，直到有人补上日期或说明它不过期。库存仍可使用。",

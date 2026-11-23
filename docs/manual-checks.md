@@ -685,7 +685,9 @@ a second organization.
   offered none of the three, and reads no such line. Each opens "Start
   tracking lots for BOTTLE-A60": while the places are read, grey lines;
   then "1,500 each on hand goes into one lot, its code made for us when
-  you start, like L-…:", 900 on Main's Shelf and 600 in the Blending room; where runs in
+  you start, like L-…:", 900 on Main's Shelf and 600 in the Blending room,
+  then "Its cost goes with it. What still waits for a cost keeps
+  waiting, on this lot."; where runs in
   progress use or make it, those runs, "Each will close against this
   lot."; and "This cannot be undone". Supplier's lot is empty and Expires
   is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
