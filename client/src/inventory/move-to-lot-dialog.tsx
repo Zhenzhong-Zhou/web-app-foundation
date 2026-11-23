@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { useNavigate } from 'react-router-dom';
 
 import type {
   LotChanged,
@@ -16,6 +17,7 @@ import type {
   MoveToNewLotDto,
   StockPile,
 } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
@@ -26,6 +28,7 @@ import {
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit, unitLabel } from '../products/units';
 import { LotFields } from './lot-fields';
@@ -90,6 +93,8 @@ export function MoveToLotDialog({
   };
   const sent = useRef({ quantity: '', made: false });
   const message = useLotMessage();
+  const can = useCan();
+  const navigate = useNavigate();
 
   const { submitting, error, reset, submit } = useSubmit<LotChanged>(
     (moved) => {
@@ -116,6 +121,20 @@ export function MoveToLotDialog({
               words,
             ),
         { id: moved.toLot.id, code: moved.toLot.code, made: sent.current.made },
+        // Waiting, linked to Stock value's Waiting for a cost for whoever
+        // may set one, as Count it in's is (v16's board; review 26).
+        moved.needsCost && can('costs.view')
+          ? [
+              {
+                label: intl.formatMessage({
+                  id: 'costs.waiting',
+                  defaultMessage: 'Waiting for a cost',
+                }),
+                onClick: () =>
+                  void navigate('/costs#costs', { state: OFFER_BACK }),
+              },
+            ]
+          : [],
       );
       close();
       onMoved({ variantId: row.variantId, locationId: row.locationId });

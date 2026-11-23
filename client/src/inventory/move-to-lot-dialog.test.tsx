@@ -73,7 +73,12 @@ function Opened({ onMoved }: { onMoved: () => void }) {
 function open({
   toLot = { id: 'lot-new', code: 'VC-0311' },
   needsCost = false,
-}: { toLot?: { id: string; code: string }; needsCost?: boolean } = {}) {
+  permissions = ['stock.view', 'stock.move', 'stock.adjust'],
+}: {
+  toLot?: { id: string; code: string };
+  needsCost?: boolean;
+  permissions?: string[];
+} = {}) {
   const sent: Record<string, unknown>[] = [];
   const onMoved = vi.fn();
   server.use(
@@ -114,7 +119,7 @@ function open({
         </Routes>
       </MemoryRouter>
     </ToastProvider>,
-    { permissions: ['stock.view', 'stock.move', 'stock.adjust'] },
+    { permissions },
   );
   return { user: userEvent.setup(), sent, onMoved };
 }
@@ -225,9 +230,14 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Move to lot' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent(
       'Moved 30 each from lot L-2026-11-20-1 to lot VC-0310. It waits for a cost there, as some of lot L-2026-11-20-1 does.',
     );
+    // No link for a reader who may not see costs.
+    expect(
+      within(status).queryByRole('button', { name: 'Waiting for a cost' }),
+    ).not.toBeInTheDocument();
     expect(sent).toEqual([
       {
         locationId: 'loc-a2',
@@ -236,6 +246,24 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
         toLotId: 'lot-b',
       },
     ]);
+  });
+
+  // Review 26: waiting, linked to Waiting for a cost for whoever may see
+  // costs, as Count it in's is.
+  it('links stock that waits for a cost to Waiting for a cost, for whoever may see costs', async () => {
+    const { user } = open({
+      toLot: { id: 'lot-b', code: 'VC-0310' },
+      needsCost: true,
+      permissions: ['stock.view', 'stock.move', 'stock.adjust', 'costs.view'],
+    });
+    await fill(user, 'VC-0310');
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+
+    const status = await screen.findByRole('status');
+    await user.click(
+      within(status).getByRole('button', { name: 'Waiting for a cost' }),
+    );
+    expect(await screen.findByText('At /costs')).toBeVisible();
   });
 
   it('makes a code for us, starting with the first lot’s supplier’s lot, with Copy code', async () => {
