@@ -19,9 +19,10 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
+import type { ExpiryKind } from '../lib/api-names';
 import { useSubmit } from '../lib/use-submit';
 import { ExpiryChoice } from './expiry-choice';
-import { dayError, dayFor, type ExpiryKind, expiryKindOf } from './lot-input';
+import { dayError, dayFor, expiryKindOf } from './lot-input';
 
 /** What Edit lot details reads of a lot: a pile's lot fields and place. */
 export type EditedLot = Pick<

@@ -1,6 +1,6 @@
 import type { IntlShape } from 'react-intl';
 
-import type { Lot } from '../api/types.gen';
+import type { ExpiryKind } from '../lib/api-names';
 import { formatDay } from '../lib/format';
 
 /**
@@ -12,7 +12,7 @@ import { formatDay } from '../lib/format';
  */
 type ExpiringLot = {
   expiresAt: string | null;
-  expiry: Lot['expiry'] | null;
+  expiry: ExpiryKind | null;
 };
 
 /**

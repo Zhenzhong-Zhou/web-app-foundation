@@ -10,8 +10,8 @@ import {
 import { type ReactNode, type Ref, useId } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { ExpiryKind } from '../lib/api-names';
 import { organizationToday } from '../lib/time-zone';
-import type { ExpiryKind } from './lot-input';
 
 /**
  * A day worth a second look, said in amber under it, never refused (review

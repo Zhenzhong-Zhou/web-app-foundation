@@ -1,11 +1,9 @@
 import type { IntlShape } from 'react-intl';
 
 import type { Lot, MovementLotDto, NumberingEnvelope } from '../api/types.gen';
+import type { ExpiryKind } from '../lib/api-names';
 import { formatNumber } from '../lib/numbering';
 import { useResource } from '../lib/use-resource';
-
-/** A lot's expiry: a date, not known yet, or none (ADR-094, R8). */
-export type ExpiryKind = Lot['expiry'];
 
 /**
  * The lot as the form holds it (ADR-094): a code typed as printed, or one

@@ -25,12 +25,12 @@ import { ExpiryChoice } from '../inventory/expiry-choice';
 import {
   dayError as dayMissing,
   dayFor,
-  type ExpiryKind,
   useNextLotCode,
 } from '../inventory/lot-input';
 import { useLotMessage } from '../inventory/lot-received';
 import { placeName } from '../inventory/stock-places';
 import { api } from '../lib/api';
+import type { ExpiryKind } from '../lib/api-names';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit } from './units';

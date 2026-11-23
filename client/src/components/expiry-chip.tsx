@@ -1,8 +1,7 @@
 import { Box } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import type { Lot } from '../api/types.gen';
-import type { CalendarDay } from '../lib/api-names';
+import type { CalendarDay, ExpiryKind } from '../lib/api-names';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { useExpiryStatus } from '../lib/use-expiry-status';
 import { StatusChip } from './status-chip';
@@ -29,7 +28,7 @@ export function ExpiryChip({
    * required, so leaving it out never reads a lot not known yet as "No
    * expiry" (D2; review 55).
    */
-  expiry: Lot['expiry'] | null;
+  expiry: ExpiryKind | null;
   today?: CalendarDay;
 }) {
   const intl = useIntl();
