@@ -36,6 +36,7 @@ export function StockActions({
   onSelect,
   onLeave,
   onEditLot,
+  onMoveToLot,
   buttonRef,
 }: {
   row: Pile;
@@ -46,6 +47,12 @@ export function StockActions({
   /** Leaving for its Movements: Stock keeps the code's row for Back. */
   onLeave?: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
+  /**
+   * Move to another lot… (ADR-094, R20), for whoever may correct counts:
+   * part of the lot into another of the item's lots. Left out where the
+   * page offers none.
+   */
+  onMoveToLot?: (row: Pile) => void;
   /** For a row that moves focus to it: "Choose the lot". */
   buttonRef?: Ref<HTMLButtonElement>;
 }) {
@@ -99,14 +106,25 @@ export function StockActions({
       ]
     : [];
 
-  // The lot itself: its details, for whoever may move stock, and where it
-  // came from and everyone who has it (ADR-044). None for a code not
-  // tracked by lot, where they would be a dead end.
+  // The lot itself: its details, for whoever may move stock; part of it
+  // into another lot, for whoever may correct counts, a correction of
+  // which lot the stock is in (ADR-094, R20); and where it came from and
+  // everyone who has it (ADR-044). None for a code not tracked by lot,
+  // where they would be a dead end.
   const lotId = row.lotId;
   const lot: Action[] = lotId
     ? [
         ...(canMove
           ? [{ label: words.editLot, onSelect: () => onEditLot(row) }]
+          : []),
+        ...(canAdjust && onMoveToLot
+          ? [
+              {
+                label: words.moveToLot,
+                onSelect: () => onMoveToLot(row),
+                unavailable: nothing,
+              },
+            ]
           : []),
         {
           label: intl.formatMessage({

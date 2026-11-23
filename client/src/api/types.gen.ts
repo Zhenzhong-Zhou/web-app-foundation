@@ -2006,6 +2006,7 @@ export type StockCodeRow = {
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   needsCost: boolean;
   stocked: boolean;
+  tracksLots: boolean;
   here: StockHere | null;
 };
 

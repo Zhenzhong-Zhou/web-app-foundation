@@ -17372,6 +17372,9 @@
           "stocked": {
             "type": "boolean"
           },
+          "tracksLots": {
+            "type": "boolean"
+          },
           "here": {
             "anyOf": [
               {
@@ -17412,6 +17415,7 @@
           "status",
           "needsCost",
           "stocked",
+          "tracksLots",
           "here"
         ]
       },

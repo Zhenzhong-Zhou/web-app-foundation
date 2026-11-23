@@ -75,7 +75,7 @@ L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les c
 4. Saisissez le **Code** : votre propre code pour cet article, unique dans l’organisation, par exemple RM-VITC pour une matière première. Ce n’est pas un code-barres.
 5. Choisissez son unité, ce dans quoi son stock est compté.
 6. S’il existe en plusieurs formats, indiquez le format ou la particularité de cette variante, par exemple 60ct.
-7. Activez **Suivre les numéros de lot et les dates de péremption** si chaque livraison porte un code de lot. Ce choix ne peut pas être modifié par la suite, et l’équipement ne l’offre jamais.
+7. Activez **Suivre les numéros de lot et les dates de péremption** si chaque livraison porte un code de lot. Il peut commencer plus tard, avec **Commencer le suivi par lot…** sur la page de l’article, mais ne s’arrête jamais; l’équipement ne l’offre jamais.
 8. Appuyez sur **Ajouter un article**.
 
 La page du nouvel article s’ouvre à la place du formulaire : Retour ramène donc aux Articles.

@@ -2,18 +2,12 @@ import {
   Autocomplete,
   Box,
   Button,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
-  Radio,
-  RadioGroup,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useForkRef } from '@mui/material/utils';
-import { type ReactNode, type Ref, useCallback, useId, useRef } from 'react';
+import { type ReactNode, type Ref, useCallback, useRef } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Lot, NumberingEnvelope, StockCodePlaces } from '../api/types.gen';
@@ -21,11 +15,11 @@ import { SEPARATOR } from '../lib/format';
 import { formatNumber } from '../lib/numbering';
 import { useResource } from '../lib/use-resource';
 import { displayWithUnit } from '../products/units';
+import { ExpiryChoice } from './expiry-choice';
 import { lotExpiry } from './lot-expiry';
 import {
   chosenExpiry,
   existingLot,
-  type ExpiryKind,
   type LotErrors,
   type LotInput,
 } from './lot-input';
@@ -82,7 +76,6 @@ export function LotFields({
   errors?: LotErrors;
 }) {
   const intl = useIntl();
-  const expiryId = useId();
   // Type one instead: the field empties, and focus goes into it as it
   // comes back.
   const typing = useRef(false);
@@ -227,80 +220,14 @@ export function LotFields({
       )}
 
       {asksExpiry && (
-        <FormControl error={!!errors.expiry}>
-          <FormLabel id={expiryId} required>
-            {intl.formatMessage({
-              id: 'inventory.lot.expires',
-              defaultMessage: 'Expires',
-            })}
-          </FormLabel>
-          <RadioGroup
-            row
-            aria-labelledby={expiryId}
-            aria-describedby={
-              errors.expiry || expiry === 'unknown'
-                ? `${expiryId}-help`
-                : undefined
-            }
-            value={expiry ?? ''}
-            onChange={(event) =>
-              set({ expiry: event.target.value as ExpiryKind })
-            }
-          >
-            <FormControlLabel
-              value="date"
-              control={<Radio slotProps={{ input: { ref: expiryRef } }} />}
-              label={intl.formatMessage({
-                id: 'inventory.lot.expiry.date',
-                defaultMessage: 'On a date',
-              })}
-            />
-            <FormControlLabel
-              value="unknown"
-              control={<Radio />}
-              label={intl.formatMessage({
-                id: 'inventory.lot.expiry.unknown',
-                defaultMessage: 'Not known yet',
-              })}
-            />
-            <FormControlLabel
-              value="none"
-              control={<Radio />}
-              label={intl.formatMessage({
-                id: 'inventory.lot.expiry.none',
-                defaultMessage: 'Doesn’t expire',
-              })}
-            />
-          </RadioGroup>
-          {(errors.expiry || expiry === 'unknown') && (
-            <FormHelperText id={`${expiryId}-help`}>
-              {errors.expiry ??
-                intl.formatMessage({
-                  id: 'inventory.lot.expiry.unknownHelp',
-                  defaultMessage:
-                    'Marked “Expiry to add” until its date is added. The stock can still be used.',
-                })}
-            </FormHelperText>
-          )}
-        </FormControl>
-      )}
-
-      {asksExpiry && expiry === 'date' && (
-        <TextField
-          id={`${idPrefix}-lot-expires`}
-          label={intl.formatMessage({
-            id: 'inventory.lot.expiresDay',
-            defaultMessage: 'The day it expires',
-          })}
-          type="date"
-          required
-          fullWidth
-          value={value.expiresAt}
-          onChange={(event) => set({ expiresAt: event.target.value })}
-          inputRef={dayRef}
-          error={!!errors.day}
-          helperText={errors.day}
-          slotProps={{ inputLabel: { shrink: true } }}
+        <ExpiryChoice
+          idPrefix={idPrefix}
+          expiry={expiry}
+          expiresAt={value.expiresAt}
+          onChange={set}
+          expiryRef={expiryRef}
+          dayRef={dayRef}
+          errors={errors}
         />
       )}
     </>

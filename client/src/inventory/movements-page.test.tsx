@@ -175,6 +175,84 @@ describe('MovementsPage', () => {
     expect(within(row).getByText('Received: opening stock')).toBeVisible();
   });
 
+  // ADR-094, R16 and R20: a lot change at one place, its two lots, which
+  // the code and its place count in neither In nor Out.
+  const LOT_CHANGE = movement({
+    reason: 'lot_change',
+    reasonDetail: 'between_lots',
+    quantity: '30.0000',
+    note: 'Two runs in one delivery',
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    lotId: 'lot-a',
+    lotCode: 'LOT-A',
+    toLotId: 'lot-b',
+    toLotCode: 'LOT-B',
+    quantityIn: null,
+    quantityOut: null,
+    change: null,
+  });
+
+  it('reads a lot change with both its lots, LOT-A → LOT-B, each a link, its reason and why', async () => {
+    const row = await rowFor(LOT_CHANGE);
+
+    expect(within(row).getByText('Lot changed: between lots')).toBeVisible();
+    expect(within(row).getByText('Two runs in one delivery')).toBeVisible();
+    const lot = cellUnder(row, 'Lot')!;
+    expect(lot).toHaveTextContent('LOT-A→intoLOT-B');
+    expect(within(lot).getByRole('link', { name: 'LOT-A' })).toHaveAttribute(
+      'href',
+      '/lots/lot-a',
+    );
+    expect(within(lot).getByRole('link', { name: 'LOT-B' })).toHaveAttribute(
+      'href',
+      '/lots/lot-b',
+    );
+    // Several items: no In or Out, how many moved into a lot.
+    expect(cellUnder(row, 'Change')).toHaveTextContent(
+      'moved 30 each into a lot',
+    );
+  });
+
+  it('counts a lot change in neither In nor Out for its code, and Out of the lot it left, a lot started with none before it', async () => {
+    answer([
+      LOT_CHANGE,
+      movement({
+        id: 'movement-2',
+        reason: 'lot_change',
+        reasonDetail: 'lots_started',
+        quantity: '3000.0000',
+        toLocationId: 'location-shelf-a',
+        toLocationName: 'Shelf A',
+        toLocationCode: 'A',
+        toLocationPath: ['Main warehouse'],
+        lotId: null,
+        lotCode: null,
+        lotExpiresAt: null,
+        lotExpiry: null,
+        toLotId: 'lot-l',
+        toLotCode: 'L-2026-11-22-1',
+        quantityIn: null,
+        quantityOut: null,
+        change: null,
+      }),
+    ]);
+    renderAt(`/movements?variantId=${ITEM}`);
+
+    expect(
+      await screen.findByText('moved 30 each into a lot, counted in neither'),
+    ).toBeVisible();
+    expect(
+      screen.getByText('moved 3,000 each into a lot, counted in neither'),
+    ).toBeVisible();
+    expect(screen.getByText('Lot changed: lots started')).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: 'L-2026-11-22-1' }).closest('td'),
+    ).toHaveTextContent('—→intoL-2026-11-22-1');
+  });
+
   it('says a reason with its capital in French, its detail in lower case', async () => {
     localStorage.setItem('language', 'fr-CA');
     try {
@@ -235,6 +313,7 @@ describe('MovementsPage', () => {
       'Used in a run',
       'Sampled',
       'Returned',
+      'Lot changed',
     ]);
 
     // The field shows the one chosen with its capital too (136a).

@@ -75,7 +75,7 @@ The tree, with each category’s items, opens from **Manage categories** at the 
 4. Type the **Code**: your own code for this item, unique in your organization, such as RM-VITC for a raw material. It is not a barcode.
 5. Choose its unit, what its stock is counted in.
 6. If it comes in more than one size, give this one’s size or variation, such as 60ct.
-7. Turn on **Track lot numbers and expiry** if each delivery has a lot code. This cannot be changed later, and equipment never offers it.
+7. Turn on **Track lot numbers and expiry** if each delivery has a lot code. It can be started later, with **Start tracking lots…** on the item’s page, but never turned off; equipment never offers it.
 8. Press **Add item**.
 
 The new item’s page opens in the form’s place, so Back returns to Items.

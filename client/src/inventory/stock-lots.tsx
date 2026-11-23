@@ -24,6 +24,7 @@ import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { EmptiedLine } from './emptied-line';
+import { SupplierLotLine } from './lot-marks';
 import { PlacePath } from './place-path';
 import { PileActions, type StockHandlers } from './stock-codes';
 import { withPlaceNumbers } from './stock-places';
@@ -131,13 +132,20 @@ export function StockLots({
                   ) : (
                     NO_VALUE
                   )}
+                  <SupplierLotLine
+                    isAssigned={row.lotIsAssigned}
+                    supplierLot={row.lotSupplierLot}
+                  />
                   <EmptiedLine pile={row} />
                   {/* Without places, why it is not usable, never where
                       (A6). */}
                   {!seesPlaces && !row.isAvailable && <NotUsable />}
                 </TableCell>
                 <TableCell>
-                  <ExpiryChip expiresAt={row.lotExpiresAt} />
+                  <ExpiryChip
+                    expiresAt={row.lotExpiresAt}
+                    expiry={row.lotExpiry}
+                  />
                 </TableCell>
                 {seesPlaces && (
                   <TableCell>
@@ -196,10 +204,17 @@ export function StockLots({
                     <LotLink id={row.lotId} code={row.lotCode} />
                   )}
                   <EmptiedLine pile={row} />
-                  <ExpiryChip expiresAt={row.lotExpiresAt} />
+                  <ExpiryChip
+                    expiresAt={row.lotExpiresAt}
+                    expiry={row.lotExpiry}
+                  />
                   <Box sx={{ flex: 1 }} />
                   <PileActions pile={row} handlers={handlers} />
                 </Stack>
+                <SupplierLotLine
+                  isAssigned={row.lotIsAssigned}
+                  supplierLot={row.lotSupplierLot}
+                />
                 {seesPlaces ? (
                   <Where row={row} index={index} />
                 ) : (

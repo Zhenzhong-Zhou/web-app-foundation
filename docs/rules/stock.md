@@ -188,10 +188,13 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)"
 - **A code's opened row lists, with Include empty, its emptied piles
   too,** but not the emptied pile with no lot of a code that now tracks
-  lots: its stock from before is in a lot.
+  lots: its stock from before is in a lot. At one place chosen, a code
+  whose only pile there is that one is not listed either. Each row says
+  whether its code tracks lots, its own, never told by its piles.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "says whether a code was ever stocked here, and the day each emptied pile was emptied" ·
-  [test](../../server/test/stock-grouped.e2e-spec.ts) "leaves out, with Include empty, the emptied pile with no lot of a code that now tracks lots (ADR-094)"
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "leaves out, with Include empty, the emptied pile with no lot of a code that now tracks lots (ADR-094)" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "lists at one place, with Include empty, no code whose only pile there is the emptied one with no lot of a code that now tracks lots, and says each code’s own tracking (ADR-094)"
 - **A place's name goes only to a reader who may see places;** the rest
   read the lots and their figures without it. Stock and Where it stands
   write it as its path, the places above it by name, its warehouse
@@ -432,9 +435,9 @@ file is kept is in the [README](README.md).
   stable code (receipt, shipment, transfer, adjustment, production,
   consumption, sample, return or lot_change), never translated, so
   exports in two languages can be put together (138b); From,
-  To, Lot, Supplier's lot, Expiry, For and By; Email, the person's; and
-  the note last,
-  as typed. One code's range starts with its opening balance and ends
+  To, Lot, To lot, the lot a lot change puts the stock into, empty on
+  every other movement, Supplier's lot, Expiry, For and By; Email, the
+  person's; and the note last, as typed. One code's range starts with its opening balance and ends
   with its closing, each by its day, beside the range's In and Out.
   Reason in the screen's words with its detail, "Corrected: found". From
   and To, each place by its whole path, or an end outside the warehouse
@@ -450,9 +453,10 @@ file is kept is in the [README](README.md).
   [test](../../server/test/movements.e2e-spec.ts) "exports each reason’s code after its words, the same in every language" ·
   [test](../../server/test/movements.e2e-spec.ts) "exports what the reader may see: no From or To for Sales, a run’s For empty" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists and counts Details to add as the lots it shows, each read and export with the lot’s expiry and supplier’s lot (ADR-094, R9)" ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
   [test](../../client/e2e/movements-page.spec.ts) "a Sales reader: no From → to and no place named; a link with ?locationId= reads Everywhere; the export without From and To; a lot’s page with no shelf" ·
   [Help](../../client/src/help/guides/en/movements.md#export-the-list-export) ·
-  MC-319
+  MC-319 · MC-331
 - **A movement names its places only to a reader who may see places,**
   each by its path, its warehouse first; the rest get each place's id
   alone, so a row still reads as in, out or between.

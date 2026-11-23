@@ -74,6 +74,12 @@ export class StockCodeRow {
    * for an item never received there, with nothing to correct (ADR-093).
    */
   stocked!: boolean;
+  /**
+   * Whether the code tracks lots now (ADR-094): its own, read live, since
+   * a code with nothing on hand holds no lot to tell it by, as Count it
+   * in… must.
+   */
+  tracksLots!: boolean;
   /** Its figures at the place chosen, or null with none chosen. */
   here!: StockHere | null;
 }

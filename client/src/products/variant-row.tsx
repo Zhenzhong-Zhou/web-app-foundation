@@ -70,6 +70,7 @@ export function VariantRow({
   onCommitSku,
   onToggleActive,
   onOpenEdit,
+  onStartTracking,
 }: {
   variant: Variant;
   canEdit: boolean;
@@ -80,6 +81,11 @@ export function VariantRow({
   onCommitSku: () => void;
   onToggleActive: () => void;
   onOpenEdit: () => void;
+  /**
+   * Start tracking lots… (ADR-094, R13): given for a code not tracked, to
+   * whoever may change items and correct counts, never for equipment.
+   */
+  onStartTracking?: () => void;
 }) {
   const intl = useIntl();
   const [open, setOpen] = useState(false);
@@ -144,15 +150,36 @@ export function VariantRow({
         <TableCell align="right">{variant.caseQuantity ?? NO_VALUE}</TableCell>
 
         <TableCell>
-          {/* Read-only. Set once at creation, because flipping it on a variant
-              with stock leaves every row violating the invariant in one
-              direction or the other. */}
-          {variant.tracksLots
-            ? intl.formatMessage({
-                id: 'products.variant.tracked',
-                defaultMessage: 'Tracked',
-              })
-            : NO_VALUE}
+          {/* Never a switch: turned on here only by Start tracking lots,
+              which puts the code's stock into a lot in the same write, and
+              never turned off (ADR-094, R13 to R18). */}
+          {variant.tracksLots ? (
+            intl.formatMessage({
+              id: 'products.variant.tracked',
+              defaultMessage: 'Tracked',
+            })
+          ) : onStartTracking ? (
+            // Its name says which code, beside the other rows' (#594).
+            <Button
+              variant="text"
+              size="small"
+              aria-label={intl.formatMessage(
+                {
+                  id: 'products.variant.startTrackingOf',
+                  defaultMessage: 'Start tracking lots for {sku}…',
+                },
+                { sku: variant.sku },
+              )}
+              onClick={openDialog(() => onStartTracking())}
+            >
+              {intl.formatMessage({
+                id: 'products.variant.startTracking',
+                defaultMessage: 'Start tracking lots…',
+              })}
+            </Button>
+          ) : (
+            NO_VALUE
+          )}
         </TableCell>
 
         <TableCell align="center">

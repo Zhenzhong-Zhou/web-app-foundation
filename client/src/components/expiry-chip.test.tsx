@@ -31,4 +31,18 @@ describe('ExpiryChip', () => {
 
     expect(screen.getByText('—')).toBeInTheDocument();
   });
+
+  // ADR-094, R9: an expiry not known yet is the lot's mark until added.
+  it('says Expiry to add for an expiry not known yet, and the date or a dash for the other two', () => {
+    const { rerender } = render(
+      <ExpiryChip expiresAt={null} expiry="unknown" today={TODAY} />,
+    );
+    expect(screen.getByText('Expiry to add')).toBeInTheDocument();
+
+    rerender(<ExpiryChip expiresAt={null} expiry="none" today={TODAY} />);
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(<ExpiryChip expiresAt="2028-05-29" expiry="date" today={TODAY} />);
+    expect(screen.getByText(/2028/)).toBeInTheDocument();
+  });
 });

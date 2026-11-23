@@ -503,12 +503,26 @@ describe('Move to another lot (e2e)', () => {
       otherLotCode: null,
     });
 
-    // The export says which lot change it was.
+    // The export says which lot change it was, and both its lots: Lot the
+    // one it left, To lot the one it entered, empty on any other row.
     const csv = await w.org.agent
       .get('/v1/stock/movements/export')
       .query({ variantId: w.code })
       .expect(200);
     expect(csv.text).toContain('Lot changed: between lots');
+    const [header, ...lines] = csv.text
+      .replace(/^\uFEFF/, '')
+      .trimEnd()
+      .split('\r\n')
+      .map((line) => line.split(','));
+    const lot = header.indexOf('Lot');
+    expect(header[lot + 1]).toBe('To lot');
+    const byReason = (code: string) =>
+      lines
+        .filter((line) => line[header.indexOf('Reason code')] === code)
+        .map((line) => line.slice(lot, lot + 2));
+    expect(byReason('lot_change')).toEqual([['NL-2611-A', 'NL-2611-B']]);
+    expect(byReason('receipt')).toEqual([['NL-2611-A', '']]);
   });
 
   it('refuses more than is there, the same lot, another item’s lot, another organization’s lot or place, no lot, no note, and anyone without stock.adjust, writing nothing (R20, #314)', async () => {

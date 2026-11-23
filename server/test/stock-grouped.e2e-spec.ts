@@ -1290,8 +1290,9 @@ describe('Inventory, grouped (e2e)', () => {
       'en',
     );
     const movedLot = moved[0].indexOf('Lot');
-    expect(moved[0].slice(movedLot, movedLot + 3)).toEqual([
+    expect(moved[0].slice(movedLot, movedLot + 4)).toEqual([
       'Lot',
+      'To lot',
       'Supplier’s lot',
       'Expiry',
     ]);
@@ -1354,5 +1355,56 @@ describe('Inventory, grouped (e2e)', () => {
       ['SHELF', [['B-1', '4.0000']]],
     ]);
     expect(await placesOf('')).toEqual([['SHELF', [['B-1', '4.0000']]]]);
+  });
+
+  it('lists at one place, with Include empty, no code whose only pile there is the emptied one with no lot of a code that now tracks lots, and says each code’s own tracking (ADR-094)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const back = await site(agent, 'BACK');
+    const bottle = await item(agent, 'BOTTLE');
+    const cap = await item(agent, 'CAP');
+    const countedOut = (variantId: string) =>
+      agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId,
+          reason: 'adjustment',
+          reasonDetail: 'damaged',
+          note: 'Broken in the move',
+          fromLocationId: shelf,
+          quantity: '10',
+        })
+        .expect(201);
+    // Both emptied at SHELF with no lot; BOTTLE then tracks lots, and its
+    // stock is now at BACK alone, in a lot.
+    for (const code of [bottle, cap]) {
+      await receive(agent, code, shelf, '10');
+      await countedOut(code);
+    }
+    await db
+      .update(productVariants)
+      .set({ tracksLots: true })
+      .where(eq(productVariants.id, bottle));
+    await receive(agent, bottle, back, '4', { code: 'B-1' });
+
+    const codesAt = async (query: string) =>
+      body<{ entries: { sku: string; tracksLots: boolean }[] }>(
+        await agent.get(`/v1/stock/by-code${query}`).expect(200),
+      ).entries.map((row) => [row.sku, row.tracksLots]);
+    // CAP's emptied pile still lists it there; BOTTLE's, from before its
+    // lots, does not, since it would open to nothing.
+    expect(await codesAt(`?locationId=${shelf}&includeEmpty=true`)).toEqual([
+      ['CAP', false],
+    ]);
+    expect(await codesAt(`?locationId=${back}&includeEmpty=true`)).toEqual([
+      ['BOTTLE', true],
+    ]);
+    // Everywhere, every code, each saying whether it tracks lots, a code
+    // with nothing in a lot too.
+    expect(await codesAt('?includeEmpty=true')).toEqual([
+      ['BOTTLE', true],
+      ['CAP', false],
+    ]);
   });
 });

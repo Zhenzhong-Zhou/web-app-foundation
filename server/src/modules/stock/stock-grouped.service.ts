@@ -86,7 +86,18 @@ function presentOf(
   organizationId: string,
 ): SQL | undefined {
   const org = sql`${organizationId}::uuid`;
-  const kept = query.includeEmpty === 'true' ? sql`` : sql`and sl.quantity > 0`;
+  // An emptied pile with no lot of a code that now tracks lots is not
+  // kept: its stock from before is in a lot, as its opened row reads it
+  // (placesOf), so it would list a code with nothing to open (ADR-094).
+  const kept =
+    query.includeEmpty === 'true'
+      ? sql`and (sl.quantity > 0 or sl.lot_id is not null or not exists (
+          select 1 from product_variants tracked
+          where tracked.organization_id = ${org}
+            and tracked.id = sl.variant_id
+            and tracked.tracks_lots
+        ))`
+      : sql`and sl.quantity > 0`;
 
   if (query.locationId) {
     return sql`${productVariants.id} in (
@@ -378,6 +389,7 @@ type CodeRow = FigureRow & {
   lots: number;
   needs_cost: boolean;
   stocked: boolean;
+  tracks_lots: boolean;
   here_on_hand: string | null;
   here_lots: number | null;
   here_expires_first: string | null;
@@ -636,6 +648,7 @@ export class StockGroupedService {
         ${shown.productName} as product_name,
         ${shown.variantName} as variant_name,
         ${productVariants.unitOfMeasure} as unit_of_measure,
+        ${productVariants.tracksLots} as tracks_lots,
         coalesce(pl.places, 0) as places,
         coalesce(pl.lots, 0) as lots,
         ${figureColumns()},
@@ -681,6 +694,7 @@ export class StockGroupedService {
         ...figuresOf(row),
         needsCost: row.needs_cost,
         stocked: row.stocked,
+        tracksLots: row.tracks_lots,
         here: locationId
           ? {
               onHand: row.here_on_hand!,

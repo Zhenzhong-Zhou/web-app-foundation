@@ -1399,6 +1399,7 @@ describe('Stock (e2e)', () => {
         'From',
         'To',
         'Lot',
+        'To lot',
         'Supplier’s lot',
         'Expiry',
         'For',

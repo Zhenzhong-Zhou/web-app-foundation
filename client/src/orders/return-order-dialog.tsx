@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 
 import type {
   Location,
+  ReturnableFromBefore,
   ReturnableLine,
   ReturnAuthorizationDetail,
   ReturnAuthorizationLine,
@@ -49,11 +50,17 @@ function isNothing(quantity: string | undefined): boolean {
   return /^\s*0*([.,]0*)?\s*$/.test(quantity ?? '');
 }
 
-/** A tracked line sends its lots, an untracked one a quantity (ADR-043). */
-/** Null where a quantity was typed with a thousands separator (ADR-054). */
-type ReturnLinePayload =
-  | { lineId: string; lots: { lotId: string; quantity: string | null }[] }
-  | { lineId: string; quantity: string | null };
+/**
+ * A line's part of the return: an untracked line's quantity (ADR-043); a
+ * tracked line's lots, and beside them or alone a quantity, what shipped
+ * with no lot before its lot tracking started (ADR-094, Q3a). A quantity
+ * is null where it was typed with a thousands separator (ADR-054).
+ */
+type ReturnLinePayload = {
+  lineId: string;
+  lots?: { lotId: string; quantity: string | null }[];
+  quantity?: string | null;
+};
 
 /**
  * Takes a customer return against a sales order (ADR-043).
@@ -226,8 +233,13 @@ export function ReturnOrderDialog({
             lotId,
             quantity: toApiDecimal(quantity),
           }));
-
-        return lots.length > 0 ? [{ lineId: line.lineId, lots }] : [];
+        const before = line.fromBefore ? quantities[line.lineId] : undefined;
+        const part: ReturnLinePayload = {
+          lineId: line.lineId,
+          ...(lots.length > 0 ? { lots } : {}),
+          ...(isNothing(before) ? {} : { quantity: toApiDecimal(before!) }),
+        };
+        return part.lots || part.quantity !== undefined ? [part] : [];
       }
 
       const quantity = quantities[line.lineId];
@@ -243,10 +255,10 @@ export function ReturnOrderDialog({
     event.preventDefault();
 
     // A thousands separator anywhere is refused rather than guessed.
-    const grouped = sending.some((line) =>
-      'lots' in line
-        ? line.lots.some((lot) => lot.quantity === null)
-        : line.quantity === null,
+    const grouped = sending.some(
+      (line) =>
+        line.lots?.some((lot) => lot.quantity === null) ||
+        line.quantity === null,
     );
     if (grouped) {
       setNumberError(groupedNumberMessage());
@@ -528,6 +540,19 @@ export function ReturnOrderDialog({
                               </TableCell>
                             </TableRow>
                           ))}
+                          {line.fromBefore && (
+                            <FromBeforeRow
+                              sku={line.sku}
+                              fromBefore={line.fromBefore}
+                              value={quantities[line.lineId] ?? ''}
+                              onChange={(value) =>
+                                setQuantities((current) => ({
+                                  ...current,
+                                  [line.lineId]: value,
+                                }))
+                              }
+                            />
+                          )}
                         </TableBody>
                       </Table>
                     </TableContainer>
@@ -620,5 +645,75 @@ export function ReturnOrderDialog({
         />
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * What of a tracked line shipped with no lot before its lot tracking
+ * started (ADR-094, Q3a): it comes back by quantity, and the row says
+ * which lot it goes into, the one that took the code's stock as tracking
+ * started, or one made for us as the first of it comes back (Q4a).
+ */
+function FromBeforeRow({
+  sku,
+  fromBefore,
+  value,
+  onChange,
+}: {
+  sku: string;
+  fromBefore: ReturnableFromBefore;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const intl = useIntl();
+
+  return (
+    <TableRow>
+      <TableCell>
+        {intl.formatMessage({
+          id: 'orders.return.fromBefore',
+          defaultMessage: 'Shipped before lot tracking',
+        })}
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {fromBefore.lotCode
+            ? intl.formatMessage(
+                {
+                  id: 'orders.return.fromBeforeInto',
+                  defaultMessage: 'Goes into lot {code}',
+                },
+                { code: <Reference>{fromBefore.lotCode}</Reference> },
+              )
+            : intl.formatMessage({
+                id: 'orders.return.fromBeforeIntoNew',
+                defaultMessage: 'Goes into a lot made for us as it comes back',
+              })}
+        </Typography>
+      </TableCell>
+      <TableCell>{NO_VALUE}</TableCell>
+      <TableCell align="right">{displayQuantity(fromBefore.shipped)}</TableCell>
+      <TableCell align="right">
+        {displayQuantity(fromBefore.returned)}
+      </TableCell>
+      <TableCell align="right" sx={{ width: rem(140) }}>
+        <TextField
+          size="small"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          slotProps={{
+            htmlInput: {
+              inputMode: 'decimal',
+              maxLength: 19,
+              'aria-label': intl.formatMessage(
+                {
+                  id: 'orders.return.fromBeforeLabel',
+                  defaultMessage: 'Return {sku} shipped before lot tracking',
+                },
+                { sku },
+              ),
+            },
+          }}
+        />
+      </TableCell>
+    </TableRow>
   );
 }

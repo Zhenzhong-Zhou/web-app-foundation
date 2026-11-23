@@ -555,6 +555,7 @@
   "exports.column.tax": "Tax",
   "exports.column.taxId": "Tax ID",
   "exports.column.to": "To",
+  "exports.column.toLot": "To lot",
   "exports.column.total": "Total",
   "exports.column.tracksLots": "Tracks lots",
   "exports.column.type": "Type",

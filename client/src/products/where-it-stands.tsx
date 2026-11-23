@@ -34,7 +34,9 @@ import { Reference } from '../components/reference';
 import { TableOrCards } from '../components/table-or-cards';
 import type { MovementColumns } from '../inventory/describe-movement';
 import { EditLotDialog } from '../inventory/edit-lot-dialog';
+import { SupplierLotLine } from '../inventory/lot-marks';
 import { type MoveMode, MoveStockDialog } from '../inventory/move-stock-dialog';
+import { MoveToLotDialog } from '../inventory/move-to-lot-dialog';
 import {
   MovementCard,
   MovementCells,
@@ -159,6 +161,7 @@ function Standing({ product }: { product: ProductDetail }) {
     row: StockPile;
   } | null>(null);
   const [editingLot, setEditingLot] = useState<StockPile | null>(null);
+  const [movingToLot, setMovingToLot] = useState<StockPile | null>(null);
   // The places read once a lot's Move, Ship out, Send sample or Correct
   // the count first opens, then kept, never on a visit that moves nothing
   // (review 47); the dialog waits for their answer.
@@ -224,6 +227,7 @@ function Standing({ product }: { product: ProductDetail }) {
         setMoving({ mode, row });
       },
       onEditLot: setEditingLot,
+      onMoveToLot: setMovingToLot,
     },
   };
   // One code: the section's title inside its card, beside its actions
@@ -303,6 +307,14 @@ function Standing({ product }: { product: ProductDetail }) {
         onClose={() => setEditingLot(null)}
         onSaved={reload}
       />
+
+      {movingToLot && (
+        <MoveToLotDialog
+          row={movingToLot}
+          onClose={() => setMovingToLot(null)}
+          onMoved={() => void reload()}
+        />
+      )}
     </Box>
   );
 }
@@ -317,6 +329,7 @@ interface Handlers {
     canAdjust: boolean;
     onMove: (mode: MoveMode, row: StockPile) => void;
     onEditLot: (row: StockPile) => void;
+    onMoveToLot: (row: StockPile) => void;
   };
 }
 
@@ -914,6 +927,7 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
       canAdjust={lot.canAdjust}
       onSelect={lot.onMove}
       onEditLot={lot.onEditLot}
+      onMoveToLot={lot.onMoveToLot}
     />
   );
 
@@ -960,9 +974,16 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
                       ) : (
                         NO_VALUE
                       )}
+                      <SupplierLotLine
+                        isAssigned={pile.lotIsAssigned}
+                        supplierLot={pile.lotSupplierLot}
+                      />
                     </TableCell>
                     <TableCell>
-                      <ExpiryChip expiresAt={pile.lotExpiresAt} />
+                      <ExpiryChip
+                        expiresAt={pile.lotExpiresAt}
+                        expiry={pile.lotExpiry}
+                      />
                     </TableCell>
                     <TableCell align="right">
                       {displayWithUnit(pile.quantity, code.unitOfMeasure, intl)}
@@ -997,7 +1018,14 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
                   {pile.lotId && pile.lotCode && (
                     <LotLink id={pile.lotId} code={pile.lotCode} />
                   )}
-                  <ExpiryChip expiresAt={pile.lotExpiresAt} />
+                  <SupplierLotLine
+                    isAssigned={pile.lotIsAssigned}
+                    supplierLot={pile.lotSupplierLot}
+                  />
+                  <ExpiryChip
+                    expiresAt={pile.lotExpiresAt}
+                    expiry={pile.lotExpiry}
+                  />
                 </Stack>
                 <span>
                   {displayWithUnit(pile.quantity, code.unitOfMeasure, intl)}
@@ -1130,7 +1158,11 @@ function UsableLots({ code }: { code: CodeStanding }) {
             ) : (
               <span>{NO_VALUE}</span>
             )}
-            <ExpiryChip expiresAt={lot.expiresAt} />
+            <ExpiryChip expiresAt={lot.expiresAt} expiry={lot.expiry} />
+            <SupplierLotLine
+              isAssigned={lot.isAssigned}
+              supplierLot={lot.supplierLot}
+            />
             <span>
               {displayWithUnit(lot.quantity, code.unitOfMeasure, intl)}
             </span>

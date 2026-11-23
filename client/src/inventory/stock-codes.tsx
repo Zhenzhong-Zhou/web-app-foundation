@@ -51,6 +51,7 @@ import { displayWithUnit } from '../products/units';
 import { WIDE_ONLY } from '../theme/media';
 import type { CountInItem } from './count-in-dialog';
 import { EmptiedLine } from './emptied-line';
+import { SupplierLotLine } from './lot-marks';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import { movementsPath } from './movements-path';
@@ -81,6 +82,8 @@ export interface StockHandlers {
    */
   onLeave: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
+  /** Move to another lot… (ADR-094, R20). */
+  onMoveToLot: (row: Pile) => void;
   onReorder: (item: ReorderItem) => void;
   /** Receive stock, the dialog with this item filled in (ADR-093 v3). */
   onReceive: (variantId: string) => void;
@@ -974,7 +977,7 @@ function PlacesRows({
   const found = offersFound(handlers, seesPlaces, choosing) && (
     <TableRow sx={{ bgcolor: 'action.hover' }} {...SPANNING_ROW}>
       <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
-        <FoundLine row={row} places={places} handlers={handlers} />
+        <FoundLine row={row} handlers={handlers} />
       </TableCell>
       <WideOnlyCells />
     </TableRow>
@@ -1067,17 +1070,12 @@ function offersFound(
  */
 function FoundLine({
   row,
-  places,
   handlers,
 }: {
   row: StockCodeRow;
-  places: StockPlace[];
   handlers: StockHandlers;
 }) {
   const intl = useIntl();
-  const tracksLots = places.some((each) =>
-    each.lots.some((lot) => lot.lotId !== null),
-  );
 
   return (
     <Stack
@@ -1108,7 +1106,9 @@ function FoundLine({
             variantId: row.variantId,
             sku: row.sku,
             unitOfMeasure: row.unitOfMeasure,
-            tracksLots,
+            // The code's own, never told by a lot row: one started with
+            // nothing on hand has none (ADR-094).
+            tracksLots: row.tracksLots,
           })
         }
       >
@@ -1342,6 +1342,10 @@ function LotTableRow({
         ) : (
           NO_VALUE
         )}
+        <SupplierLotLine
+          isAssigned={lot.lotIsAssigned}
+          supplierLot={lot.lotSupplierLot}
+        />
         <EmptiedLine pile={lot} />
         {notAvailable && <NotUsableHere />}
       </TableCell>
@@ -1354,7 +1358,7 @@ function LotTableRow({
       <WideOnlyCells />
       <TableCell />
       <TableCell>
-        <ExpiryChip expiresAt={lot.lotExpiresAt} />
+        <ExpiryChip expiresAt={lot.lotExpiresAt} expiry={lot.lotExpiry} />
       </TableCell>
       <TableCell padding="checkbox">
         <PileActions pile={lot} handlers={handlers} buttonRef={actionsRef} />
@@ -1381,6 +1385,7 @@ export function PileActions({
       onSelect={handlers.onMove}
       onLeave={handlers.onLeave}
       onEditLot={handlers.onEditLot}
+      onMoveToLot={handlers.onMoveToLot}
       buttonRef={buttonRef}
     />
   );
@@ -1477,13 +1482,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
                 opened.handlers,
                 opened.seesPlaces,
                 choice.choosing,
-              ) && (
-                <FoundLine
-                  row={row}
-                  places={places.rows}
-                  handlers={opened.handlers}
-                />
-              )}
+              ) && <FoundLine row={row} handlers={opened.handlers} />}
           </Stack>
         )}
       </Stack>
@@ -1572,8 +1571,15 @@ function OpenedCard({
                 {lot.lotId && lot.lotCode && (
                   <LotLink id={lot.lotId} code={lot.lotCode} />
                 )}
+                <SupplierLotLine
+                  isAssigned={lot.lotIsAssigned}
+                  supplierLot={lot.lotSupplierLot}
+                />
                 <EmptiedLine pile={lot} />
-                <ExpiryChip expiresAt={lot.lotExpiresAt} />
+                <ExpiryChip
+                  expiresAt={lot.lotExpiresAt}
+                  expiry={lot.lotExpiry}
+                />
                 {!showPlaces && !each.isAvailable && <NotUsableHere />}
               </Stack>
               <span>

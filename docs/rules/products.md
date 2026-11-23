@@ -113,9 +113,10 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses equipment, a code that tracks lots, another organization’s code, and anyone without both permissions, writing nothing (R13, R18)" ·
   [test](../../server/test/products.e2e-spec.ts) "creates a variant even when the product has no variation" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "never offers lot tracking for equipment, saying how equipment counts" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "offers it never for equipment" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/items.md#add-an-item-add) ·
-  MC-203
+  MC-203 · MC-327
 
 ## Variants
 

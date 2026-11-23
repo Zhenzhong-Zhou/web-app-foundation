@@ -415,14 +415,14 @@ export function CreateProductDialog({
                     defaultMessage: 'Track lot numbers and expiry',
                   })}
                 />
-                {/* What it means, and that it is set once: flipping it on a
-                    variant with stock leaves every row violating the
-                    invariant in one direction or the other (ADR-023). */}
+                {/* What it means, and that it is one way: it can start later
+                    by Start tracking lots, never be turned off (ADR-094,
+                    R13 and R18). */}
                 <FormHelperText id="product-lots-help" sx={{ mt: 0 }}>
                   {intl.formatMessage({
                     id: 'products.tracksLots.help',
                     defaultMessage:
-                      'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It cannot be changed later.',
+                      'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It can be started later, from the item’s page, but never turned off.',
                   })}
                 </FormHelperText>
               </Box>

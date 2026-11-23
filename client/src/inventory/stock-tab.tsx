@@ -78,6 +78,7 @@ import { rem } from '../theme/rem';
 import { CountInDialog, type CountInItem } from './count-in-dialog';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
+import { MoveToLotDialog } from './move-to-lot-dialog';
 import { PlaceFilter } from './place-filter';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
@@ -133,6 +134,7 @@ const ADDRESS_FILTERS = {
   expiring: flag,
   expired: flag,
   needsCost: flag,
+  detailsToAdd: flag,
   includeEmpty: flag,
   locationId: id,
   productId: id,
@@ -163,6 +165,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     expiring,
     expired,
     needsCost,
+    detailsToAdd,
     includeEmpty,
     productId,
     categoryId,
@@ -221,6 +224,8 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     expiringWithin: expiring ? String(expiringWithin) : undefined,
     expired: expired ? 'true' : undefined,
     needsCost: needsCost ? 'true' : undefined,
+    // The Lot view's alone: lots with a detail still to add (ADR-094, R9).
+    detailsToAdd: detailsToAdd && byLot ? 'true' : undefined,
     type: type || undefined,
     categoryId: categoryId || undefined,
     locationId: locationId || undefined,
@@ -318,6 +323,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     null,
   );
   const [editingLot, setEditingLot] = useState<Pile | null>(null);
+  const [movingToLot, setMovingToLot] = useState<Pile | null>(null);
   const [countingIn, setCountingIn] = useState<CountInItem | null>(null);
   // Count it in… from Receive stock's Found in a count, at its place (R12).
   const [foundAt, setFoundAt] = useState<string | null>(null);
@@ -344,6 +350,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     onMove: (mode, row) => setMoving({ mode, row }),
     onLeave: (variantId) => leftFrom(routed.key, variantId),
     onEditLot: setEditingLot,
+    onMoveToLot: setMovingToLot,
     onReorder: setReordering,
     onReceive: (variantId) => {
       setReceivingItem(variantId);
@@ -444,6 +451,23 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       pressed: needsCost,
       onToggle: () => setFilters({ needsCost: !needsCost }),
     },
+    // The lots not yet finished, an expiry or a supplier's lot to add
+    // (ADR-094, R9, E5): the Lot view's, as its marks are a lot's.
+    ...(byLot
+      ? [
+          {
+            id: 'details-to-add',
+            label: intl.formatMessage({
+              id: 'inventory.quick.detailsToAdd',
+              defaultMessage: 'Details to add',
+            }),
+            count: counts?.detailsToAdd,
+            of,
+            pressed: detailsToAdd,
+            onToggle: () => setFilters({ detailsToAdd: !detailsToAdd }),
+          },
+        ]
+      : []),
     {
       id: 'emptied',
       label: intl.formatMessage({
@@ -604,6 +628,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     expiring ||
     expired ||
     needsCost ||
+    (byLot && detailsToAdd) ||
     !!type ||
     !!categoryId ||
     !!locationId ||
@@ -617,6 +642,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     !expiring &&
     !expired &&
     !needsCost &&
+    !(byLot && detailsToAdd) &&
     !type &&
     !categoryId &&
     !locationId &&
@@ -634,6 +660,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       expiring: null,
       expired: null,
       needsCost: null,
+      detailsToAdd: null,
       type: null,
       categoryId: null,
       locationId: null,
@@ -746,6 +773,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                 expiring: null,
                 expired: null,
                 needsCost: null,
+                detailsToAdd: null,
                 includeEmpty: null,
               })
             }
@@ -1023,6 +1051,20 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={refresh}
+        />
+      )}
+
+      {/* Moved to another lot (ADR-094, R20): Stock reads again, the
+          code's row open at the place, both lots there. */}
+      {movingToLot && (
+        <MoveToLotDialog
+          key={movingToLot.id}
+          row={movingToLot}
+          onClose={() => setMovingToLot(null)}
+          onMoved={(moved) => {
+            openReceived(moved);
+            void refresh();
+          }}
         />
       )}
 

@@ -555,6 +555,7 @@
   "exports.column.tax": "税额",
   "exports.column.taxId": "税号",
   "exports.column.to": "到",
+  "exports.column.toLot": "转入批次",
   "exports.column.total": "合计",
   "exports.column.tracksLots": "是否按批次管理",
   "exports.column.type": "类型",

@@ -40,12 +40,14 @@ export function movementHeadCount(columns: MovementColumns): number {
 
 /**
  * A move between two places counted in neither In nor Out, as one code
- * across every place reads it (85a): its row says how many moved, once,
- * across both columns, which the sums leave out (118a).
+ * across every place reads it (85a), and a lot change, as the code and
+ * its place read it (ADR-094, R16): its row says how many moved, once,
+ * across both columns, which the sums leave out (118a). With its lot
+ * chosen, a lot change is Out of one and In to the other.
  */
 export function movedInNeither(movement: Movement): boolean {
   return (
-    movement.reason === 'transfer' &&
+    (movement.reason === 'transfer' || movement.reason === 'lot_change') &&
     movement.quantityIn === null &&
     movement.quantityOut === null
   );

@@ -203,9 +203,12 @@ a second organization.
   item that has it.
 - **MC-203** Add item offers Track lot numbers and expiry for every type
   but Equipment, a line under it saying each delivery and run then
-  records its lot and expiry, and that it cannot be changed later; choosing Equipment takes it away and says instead that
-  equipment is not tracked by lot and is not stock value. Once added, no
-  screen turns lot tracking on or off.
+  records its lot and expiry, and that it can be started later, from the
+  item's page, but never turned off; Add variant says the same under its
+  switch. Choosing Equipment takes it away and says instead that
+  equipment is not tracked by lot and is not stock value. Once added, the
+  item's page turns lot tracking on only by Start tracking lots… (MC-327),
+  and no screen turns it off.
 - **MC-204** Locations: a site with bins under it. Stock goes only into a
   place with nothing under it; a place holding stock cannot take children,
   so moving a location under one that holds stock is refused.
@@ -665,6 +668,70 @@ a second organization.
   role without `stock.adjust` is offered no Found in a count, and one
   without `partners.view` no From. In Français « Pourquoi n'y a-t-il
   pas de commande? »; in 中文 为什么没有订单？ and 盘盈.
+- **MC-327** *(ADR-094, R13 to R16)* Start tracking lots. As the demo
+  Owner, on **BOTTLE-A60**'s item page, its row's Lots column offers
+  Start tracking lots…; a role without both Change items and Correct a
+  count, and every equipment item, is offered none. It opens "Start tracking lots for
+  BOTTLE-A60": while the places are read, grey lines; then "1,500 each on
+  hand goes into one lot, its code made for us when you start, like
+  L-…:", 900 on Main's Shelf and 600 in the Blending room; where runs in
+  progress use or make it, those runs, "Each will close against this
+  lot."; and "This cannot be undone". Supplier's lot is empty and Expires has none
+  chosen, "Optional" under it. Choose On a date with a day already past:
+  an amber line says the stock will read as expired. Escape, or Cancel,
+  closes it with nothing changed, focus back on the button. Start it with
+  Not known yet: the message names the lot, with Open the lot; the row
+  reads Tracked, and Where it stands lists the lot, "Expiry to add" in
+  its Expires. Movements shows one row a place, "Lot changed: lots
+  started", "moved 900 each into a lot, counted in neither", its Lot "—
+  → L-…"; the item's History names who started it. A Receive stock left
+  open on the item since before the start is told "Lot tracking has
+  started for BOTTLE-A60. Reload to give its lot." An item with nothing
+  on hand starts too: "Nothing is on hand, so no lot is made now.", and
+  its next receipt asks for a lot. In 中文 开始按批次跟踪…
+- **MC-328** *(ADR-094, R20)* Move to another lot. As the demo Owner, on
+  Stock, open K2-60CT at its place and a lot's Actions: Move to another
+  lot… opens "Move to another lot", the lot, place and what is on hand
+  under its title, Quantity, Lot number with Make a code for us, Expires
+  as this lot's, and Note. Move without a note, or into the lot it is
+  in: each says why at its field, focus on the first. Move 10 into a
+  new typed code: the message reads "Moved 10 each from lot … to lot
+  …", with Open the lot; Stock opens the code's row at the place, both
+  lots there. Typing a code the item has says "An existing lot. This
+  adds to it.", asking no expiry. A lot some of whose stock waits for a
+  cost says the moved stock waits there too. Escape closes it, focus back
+  on Actions. A role without `stock.adjust` is offered none. In 中文
+  转入其他批次….
+- **MC-329** *(ADR-094, R5, R7 and R8)* Edit lot details. As the demo
+  Owner, a lot's Edit lot details… starts Expires on the lot's own, one
+  of On a date (its day under it), Not known yet or Doesn't expire; move
+  it between the three and save: Stock reads the new one, "Expiry to
+  add" for Not known yet. A lot made here offers its code and Supplier's
+  lot; emptied, it reads "Supplier's lot to add" again. A printed code
+  is greyed, and the Owner reads under it to tick "We made this code up;
+  nothing printed it", whose tick lets the code be corrected and the
+  supplier's lot added in the same save; the Activity log then reads
+  "Lot's code marked as made up here", and the lot offers no tick again.
+  An Admin, without the permission, sees no tick and the code's line
+  says only to move the stock to the correct lot.
+- **MC-330** *(ADR-094, R5, R9)* A lot's marks and Details to add. On
+  Stock, a lot whose expiry is not known yet reads "Expiry to add" where
+  its expiry shows, and a lot made here with no supplier's lot reads
+  "Supplier's lot to add" under its code, one with it "Supplier's lot
+  Hx-2609"; the same on the Lot view and in Where it stands, by place and
+  in the usable lots. Group by Lot: Details to add, its count of lots
+  after it, lists those lots alone, in the address; Back returns the Lot view as it
+  was. Group by Item offers no Details to add. With Main's Shelf chosen
+  and Include empty, an item that started tracking lots and whose only
+  stock there was before it is not listed.
+- **MC-331** *(ADR-094, R16, R20)* A lot change on Movements. Choose Lot
+  changed in the Reason filter: each row reads its two lots, "K2-2609 →
+  K2-2609B", each a link to its lot, its reason "Lot changed: between
+  lots" and its note; across every item, "moved 80 each into a lot". For
+  K2-60CT alone it is counted in neither, "moved 80 each into a lot,
+  counted in neither"; with lot K2-2609 chosen it is Out, with K2-2609B
+  In. The Export has To lot after Lot: K2-2609B on that row, empty on
+  every other. In 中文 批次变更：批次间转移.
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -835,7 +902,8 @@ a second organization.
   next"; its Move… opens the row to its lots under "Choose the lot to
   move", focus on the first lot's Actions; an item that is one lot at one
   place moves straight. A lot's menu: Move…, Ship out…, Send sample…,
-  Correct the count…; Edit lot details…, Trace lot; Movements. A place's
+  Correct the count…; Edit lot details…, Move to another lot…, Trace lot;
+  Movements, Move to another lot… only with `stock.adjust`. A place's
   row has a Movements link, not a menu. With Include empty, an emptied
   lot reads "Emptied" and its day, and its Move…, Ship out… and Send
   sample… are greyed, "Nothing in this lot" beneath, still reached by the
@@ -7609,3 +7677,8 @@ first.
   codes row in Numbering, its narrower characters, its own common formats
   and the room for codes within 20 characters: MC-2714 added; MC-2701 and
   MC-2709 rewritten.
+- 2026-11-22: ADR-094's lot actions on screen, R5, R7, R9, R13 to R16 and
+  R20: Start tracking lots, Move to another lot, Edit lot details with
+  the mark, the marks and Details to add, a lot change on Movements and
+  the export's To lot: MC-327 to MC-331 added; MC-203 and MC-310
+  rewritten.

@@ -416,8 +416,9 @@ export function movementLines(
  * (118a, 114); after Reason, the reason's code, never translated (138b);
  * From and To, each place
  * by its whole path, only for a reader who may see places, else no such
- * columns (ADR-080; 96a); Lot, then its supplier's lot and its expiry,
- * each marked where it is still to add, as the Lot view's (ADR-094); For,
+ * columns (ADR-080; 96a); Lot, then To lot, the lot a lot change puts
+ * the stock into; then the lot's supplier's lot and its expiry, each
+ * marked where it is still to add, as the Lot view's (ADR-094); For,
  * the document, or the partner a sample
  * went to or a receipt with no order came from, by name, only as the
  * reader may see it (55a; 125; ADR-094, R11); By with the person's email (ADR-063); the note last, as
@@ -592,6 +593,13 @@ export function movementColumns(options: {
         ]
       : []),
     { header: HEADERS.lot, value: of((movement) => movement.lotCode) },
+    // The lot a lot change puts the stock into, Lot being the one it
+    // leaves, as the screen reads "LOT-A → LOT-B" (ADR-094); empty for
+    // every other movement.
+    {
+      header: t({ id: 'exports.column.toLot', defaultMessage: 'To lot' }),
+      value: of((movement) => movement.toLotCode),
+    },
     ...lotDetailColumns<MovementLine>((line) =>
       'movement' in line && line.movement.lotId !== null ? line.movement : null,
     ),

@@ -15,6 +15,7 @@ export const MOVEMENT_REASONS = [
   'consumption',
   'sample',
   'return',
+  'lot_change',
 ] as const;
 
 /** What a correction says it was, chosen when the count is corrected. */
@@ -41,6 +42,15 @@ const REASONS = defineMessages({
   },
   sample: { id: 'inventory.reason.sample', defaultMessage: 'Sampled' },
   return: { id: 'inventory.reason.return', defaultMessage: 'Returned' },
+  /**
+   * Stock put from one lot into another at one place, counted in neither
+   * In nor Out (ADR-094, 4a): as lot tracking starts, between two of the
+   * item's lots, or stock back from before tracking into its first lot.
+   */
+  lot_change: {
+    id: 'inventory.reason.lotChange',
+    defaultMessage: 'Lot changed',
+  },
 });
 
 /**
@@ -56,8 +66,9 @@ export const RECEIPT_DETAILS = [
 
 /**
  * A correction's details by name, a receipt's with no order, Movements
- * reading "Received: opening stock" (R11), and a voided shipment's goods
- * back, the server's `shipment_voided`, which no one chooses (#647).
+ * reading "Received: opening stock" (R11), a voided shipment's goods
+ * back, the server's `shipment_voided`, which no one chooses (#647), and
+ * which lot change it was, "Lot changed: lots started" (ADR-094, 4a).
  */
 const DETAILS = defineMessages({
   miscount: { id: 'inventory.detail.miscount', defaultMessage: 'Miscount' },
@@ -72,6 +83,18 @@ const DETAILS = defineMessages({
   shipment_voided: {
     id: 'inventory.detail.shipmentVoided',
     defaultMessage: 'Shipment voided',
+  },
+  lots_started: {
+    id: 'inventory.detail.lotsStarted',
+    defaultMessage: 'Lots started',
+  },
+  between_lots: {
+    id: 'inventory.detail.betweenLots',
+    defaultMessage: 'Between lots',
+  },
+  from_before: {
+    id: 'inventory.detail.fromBefore',
+    defaultMessage: 'From before lot tracking',
   },
 });
 

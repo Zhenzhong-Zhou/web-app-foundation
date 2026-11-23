@@ -412,6 +412,7 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
     'Send sample…',
     'Correct the count…',
     'Edit lot details…',
+    'Move to another lot…',
     'Trace lot',
     'Movements',
   ]);

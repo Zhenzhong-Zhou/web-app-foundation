@@ -140,7 +140,7 @@ describe('CreateProductDialog', () => {
     expect(
       screen.getByRole('switch', { name: 'Track lot numbers and expiry' }),
     ).toHaveAccessibleDescription(
-      'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It cannot be changed later.',
+      'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It can be started later, from the item’s page, but never turned off.',
     );
   });
 

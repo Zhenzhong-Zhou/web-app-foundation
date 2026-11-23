@@ -31,6 +31,10 @@ export function useMenuWords() {
       id: 'inventory.menu.editLot',
       defaultMessage: 'Edit lot details…',
     }),
+    moveToLot: intl.formatMessage({
+      id: 'inventory.menu.moveToLot',
+      defaultMessage: 'Move to another lot…',
+    }),
     movements: intl.formatMessage({
       id: 'layout.nav.movements',
       defaultMessage: 'Movements',

@@ -555,6 +555,7 @@
   "exports.column.tax": "Taxes",
   "exports.column.taxId": "Numéro de taxe",
   "exports.column.to": "À",
+  "exports.column.toLot": "Vers le lot",
   "exports.column.total": "Total",
   "exports.column.tracksLots": "Suivi par lot",
   "exports.column.type": "Type",

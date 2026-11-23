@@ -41,6 +41,7 @@ import type { NameAt } from './name-rows';
 import { ProductGallery } from './product-gallery';
 import { productTypeSingular } from './product-types';
 import type { Variant } from './products-page';
+import { StartTrackingDialog } from './start-tracking-dialog';
 import { TranslationsDialog } from './translations-dialog';
 import { VariantRow } from './variant-row';
 import { WhereItStands } from './where-it-stands';
@@ -100,10 +101,18 @@ export function ProductDetailPage() {
     null,
   );
   const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
+  const [startingTracking, setStartingTracking] = useState<Variant | null>(
+    null,
+  );
+  // Each start of tracking, so Where it stands reads its lots afresh.
+  const [started, setStarted] = useState(0);
 
   const showSkeleton = useDelayedFlag(loading);
 
   const canEdit = can('products.update');
+  // Start tracking lots changes the code and moves its stock into a lot:
+  // both permissions, as its route asks (ADR-094, R13).
+  const canStartTracking = canEdit && can('stock.adjust');
 
   async function patchProduct(body: Record<string, unknown>) {
     setSaving('product');
@@ -258,7 +267,7 @@ export function ProductDetailPage() {
 
       {/* First under the title, since someone who knows the trade looks
           there first (ADR-093, R8). */}
-      <WhereItStands product={product} />
+      <WhereItStands key={started} product={product} />
 
       {product.description && (
         <Typography variant="body1">{product.description}</Typography>
@@ -414,6 +423,11 @@ export function ProductDetailPage() {
                     })
                   }
                   onOpenEdit={() => setEditingVariant(variant)}
+                  onStartTracking={
+                    canStartTracking && product.type !== 'equipment'
+                      ? () => setStartingTracking(variant)
+                      : undefined
+                  }
                 />
               ))}
             </TableBody>
@@ -452,6 +466,21 @@ export function ProductDetailPage() {
           language={language}
           onClose={() => setEditingItem(false)}
           onSaved={reload}
+        />
+      )}
+
+      {startingTracking && (
+        <StartTrackingDialog
+          key={startingTracking.id}
+          productId={id!}
+          variantId={startingTracking.id}
+          sku={startingTracking.sku}
+          unitOfMeasure={startingTracking.unitOfMeasure}
+          onClose={() => setStartingTracking(null)}
+          onStarted={() => {
+            setStarted((count) => count + 1);
+            void reload();
+          }}
         />
       )}
 

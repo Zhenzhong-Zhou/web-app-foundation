@@ -10,6 +10,7 @@ import { NUMBER_COLUMN } from '../components/number-column';
 import { Reference } from '../components/reference';
 import { NameAndEmail } from '../components/who-and-when';
 import { itemName, NO_VALUE } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
@@ -221,15 +222,24 @@ export function MovementChange({ movement }: { movement: Movement }) {
   const { change, quantity, unitOfMeasure } = movement;
 
   if (change === null) {
+    const moved = displayWithUnit(quantity, unitOfMeasure, intl);
     return (
       <Box component="span" sx={{ color: 'text.secondary' }}>
-        {intl.formatMessage(
-          {
-            id: 'inventory.movements.moved',
-            defaultMessage: 'moved {quantity}',
-          },
-          { quantity: displayWithUnit(quantity, unitOfMeasure, intl) },
-        )}
+        {movement.reason === 'lot_change'
+          ? intl.formatMessage(
+              {
+                id: 'inventory.movements.movedIntoLot',
+                defaultMessage: 'moved {quantity} into a lot',
+              },
+              { quantity: moved },
+            )
+          : intl.formatMessage(
+              {
+                id: 'inventory.movements.moved',
+                defaultMessage: 'moved {quantity}',
+              },
+              { quantity: moved },
+            )}
       </Box>
     );
   }
@@ -248,22 +258,31 @@ export function MovementChange({ movement }: { movement: Movement }) {
  */
 export function MovedInNeither({ movement }: { movement: Movement }) {
   const intl = useIntl();
+  const quantity = displayWithUnit(
+    movement.quantity,
+    movement.unitOfMeasure,
+    intl,
+  );
 
   return (
     <Box component="span" sx={{ color: 'text.secondary' }}>
-      {intl.formatMessage(
-        {
-          id: 'inventory.movements.movedNeither',
-          defaultMessage: 'moved {quantity}, counted in neither',
-        },
-        {
-          quantity: displayWithUnit(
-            movement.quantity,
-            movement.unitOfMeasure,
-            intl,
-          ),
-        },
-      )}
+      {/* A lot change, "moved 3,000 each into a lot, counted in neither"
+          (ADR-094, R16). */}
+      {movement.reason === 'lot_change'
+        ? intl.formatMessage(
+            {
+              id: 'inventory.movements.movedIntoLotNeither',
+              defaultMessage: 'moved {quantity} into a lot, counted in neither',
+            },
+            { quantity },
+          )
+        : intl.formatMessage(
+            {
+              id: 'inventory.movements.movedNeither',
+              defaultMessage: 'moved {quantity}, counted in neither',
+            },
+            { quantity },
+          )}
     </Box>
   );
 }
@@ -384,12 +403,43 @@ export function MovementEnd({
   );
 }
 
-/** The lot's code, a link to its trace, its expiry under it. */
+/**
+ * The lot's code, a link to its trace, its expiry under it; a lot change
+ * both its lots, "LOT-A → LOT-B", the one it left first, none as lot
+ * tracking starts (ADR-094), each a link.
+ */
 export function MovementLot({
   movement,
 }: {
-  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt'>;
+  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt'> &
+    Partial<Pick<Movement, 'toLotId' | 'toLotCode'>>;
 }) {
+  const intl = useIntl();
+  if (movement.toLotId && movement.toLotCode) {
+    return (
+      <Stack
+        direction="row"
+        spacing={0.5}
+        useFlexGap
+        sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
+      >
+        {movement.lotId && movement.lotCode ? (
+          <LotLink id={movement.lotId} code={movement.lotCode} />
+        ) : (
+          NO_VALUE
+        )}
+        {/* Heard as a word, the arrow being only seen. */}
+        <span aria-hidden="true">{ARROW}</span>
+        <Box component="span" sx={HIDDEN}>
+          {intl.formatMessage({
+            id: 'inventory.movements.intoLot',
+            defaultMessage: 'into',
+          })}
+        </Box>
+        <LotLink id={movement.toLotId} code={movement.toLotCode} />
+      </Stack>
+    );
+  }
   if (!movement.lotId || !movement.lotCode) return NO_VALUE;
 
   return (

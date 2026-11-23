@@ -86,6 +86,7 @@ const CODE: StockCodeRow = {
   status: 'low',
   needsCost: false,
   stocked: true,
+  tracksLots: true,
   here: null,
 };
 
@@ -188,6 +189,7 @@ function answer(entries: StockCodeRow[] = [CODE]) {
         expiring: 1,
         expired: 1,
         needsCost: 0,
+        detailsToAdd: 4,
         total: 3,
       });
     }),
@@ -846,6 +848,35 @@ describe('InventoryPage', () => {
       ).toHaveFocus();
     });
 
+    // ADR-094: the code's own tracking, never told by its lot rows: a
+    // code not tracked whose rows the page reads with lots still counts
+    // in with no lot, as one started with nothing on hand asks for one.
+    it('counts in by the code’s own lot tracking, not by whether a place shows a lot', async () => {
+      const user = userEvent.setup();
+      answer([{ ...CODE, tracksLots: false }]);
+      renderAt('/inventory', [
+        'stock.view',
+        'locations.view',
+        'stock.move',
+        'stock.adjust',
+      ]);
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 places: show where Vitamin D (60ct) is',
+        }),
+      );
+      await user.click(
+        await screen.findByRole('button', { name: 'Count it in VITD-60…' }),
+      );
+
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Correct the count',
+      });
+      expect(
+        within(dialog).queryByRole('radiogroup', { name: /^Which lot/ }),
+      ).not.toBeInTheDocument();
+    });
+
     it('offers it only to whoever may correct counts', async () => {
       const user = userEvent.setup();
       answer();
@@ -1027,10 +1058,44 @@ describe('InventoryPage', () => {
         'Send sample…',
         'Correct the count…',
         'Edit lot details…',
+        'Move to another lot…',
         'Trace lot',
         'Movements',
       ]);
       expect(within(menu).getAllByRole('separator')).toHaveLength(2);
+    });
+
+    // ADR-094, R20: a correction of which lot the stock is in, for
+    // whoever may correct counts.
+    it('offers no Move to another lot… to whoever may only move stock', async () => {
+      const menu = await lotActions(['stock.move']);
+      expect(
+        within(menu).queryByRole('menuitem', {
+          name: 'Move to another lot…',
+        }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('opens Move to another lot… on the lot, Escape back on its Actions', async () => {
+      const user = userEvent.setup();
+      server.use(http.get('/api/v1/stock/lots', () => HttpResponse.json([])));
+      const menu = await lotActions(['stock.move', 'stock.adjust']);
+      await user.click(
+        within(menu).getByRole('menuitem', { name: 'Move to another lot…' }),
+      );
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Move to another lot',
+      });
+      expect(dialog).toHaveTextContent(
+        'VITD-60 · lot NN-2410-07 at Shelf A — 10 each on hand',
+      );
+      await user.keyboard('{Escape}');
+      expect(dialog).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', {
+          name: 'Actions for lot NN-2410-07 at Shelf A',
+        }),
+      ).toHaveFocus();
     });
   });
 
@@ -1539,6 +1604,69 @@ describe('InventoryPage', () => {
       expect(screen.queryByText('Quarantine')).not.toBeInTheDocument();
       // Its code with the type as a word, as Stock's rows (review 63).
       expect(screen.getByText('VITD-60 · Product')).toBeVisible();
+    });
+
+    // ADR-094, R5, R9: a lot not yet finished is marked where it shows,
+    // and Details to add lists them all, in the address.
+    it('marks a lot whose expiry or supplier’s lot is still to add, and lists them by Details to add, the Lot view’s alone', async () => {
+      const user = userEvent.setup();
+      const asked = answer();
+      const row = (over: Partial<StockPile>) => ({
+        ...pile('1', 'L-2026-11-20-1', null, 'Shelf A'),
+        productId: PRODUCT,
+        type: 'good',
+        coverFileId: null,
+        locationPath: [],
+        isAvailable: true,
+        places: 1,
+        ...over,
+      });
+      server.use(
+        http.get('/api/v1/stock/by-lot', ({ request }) => {
+          asked.lots.push(new URL(request.url).searchParams);
+          return HttpResponse.json({
+            entries: [
+              row({ lotExpiry: 'unknown', lotIsAssigned: true }),
+              row({
+                id: '2',
+                lotId: 'lot-2',
+                lotCode: 'L-2026-11-20-2',
+                lotIsAssigned: true,
+                lotSupplierLot: 'SUP-88',
+              }),
+            ],
+            nextCursor: null,
+          });
+        }),
+      );
+      renderAt('/inventory?group=lot', ['stock.view', 'locations.view']);
+
+      expect(await screen.findByText('Expiry to add')).toBeVisible();
+      expect(screen.getByText('Supplier’s lot to add')).toBeVisible();
+      expect(screen.getByText('Supplier’s lot SUP-88')).toBeVisible();
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Details to add · 4 lots' }),
+      );
+      await expect
+        .poll(() => asked.lots.at(-1)?.get('detailsToAdd'))
+        .toBe('true');
+      expect(
+        screen.getByRole('button', { name: 'Details to add · 4 lots' }),
+      ).toHaveAttribute('aria-pressed', 'true');
+
+      // A row per code has none.
+      await user.click(
+        within(screen.getByRole('group', { name: 'Group by' })).getByRole(
+          'button',
+          { name: 'Item' },
+        ),
+      );
+      await expect.poll(() => asked.codes.length).toBeGreaterThan(0);
+      expect(asked.codes.at(-1)?.get('detailsToAdd')).toBeNull();
+      expect(
+        screen.queryByRole('button', { name: /^Details to add/ }),
+      ).not.toBeInTheDocument();
     });
 
     it('says items that are out have no lots, with Group by Item', async () => {
