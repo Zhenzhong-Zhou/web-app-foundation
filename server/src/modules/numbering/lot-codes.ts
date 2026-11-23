@@ -23,7 +23,13 @@ export async function openLotSeries(
   await tx
     .insert(documentNumbering)
     .values({ organizationId, documentType: 'lot', ...DEFAULT_NUMBERING.lot })
-    .onConflictDoNothing();
+    // The series' own key, so no other conflict is ever swallowed.
+    .onConflictDoNothing({
+      target: [
+        documentNumbering.organizationId,
+        documentNumbering.documentType,
+      ],
+    });
 }
 
 /**
