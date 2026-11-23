@@ -259,7 +259,9 @@ export class ProductionOrdersService {
             0
           )::text as consumed
         from stock_movements sm
-        join lots l on l.id = sm.lot_id
+        join lots l
+          on l.id = sm.lot_id
+         and l.organization_id = ${organizationId}::uuid
         where sm.organization_id = ${organizationId}::uuid
           and sm.reference_type = 'production_order'
           and sm.reference_id = ${run.id}::uuid
