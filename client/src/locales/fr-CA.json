@@ -680,6 +680,7 @@
   "inventory.lot.expiryToAddPart": "date de péremption à ajouter",
   "inventory.lot.isExisting": "Un lot existant. Cette réception s’y ajoute.",
   "inventory.lot.isNew": "Un nouveau lot.",
+  "inventory.lot.madeCode": "Numéro de lot",
   "inventory.lot.madeWhenSaved": "Créé à l’enregistrement, par exemple {example}",
   "inventory.lot.madeWhenSavedPlain": "Créé à l’enregistrement",
   "inventory.lot.makeCode": "Créer un code pour nous",

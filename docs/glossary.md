@@ -174,7 +174,7 @@ as the catalogues word it.
 
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
-| Lot number | Numéro de lot | 批号 | As printed on the box, typed when receiving. |
+| Lot number | Numéro de lot | 批号 | As printed on the box, typed when receiving; the field of a code made here reads 批次编码 in Chinese, as Make a code for us does. |
 | Lot code | Code de lot | 批次编码 | What a trace searches by: the code printed on the box, or one made here. A lot is found by its code or its supplier's lot, **Lot code or supplier's lot**, Code de lot ou lot du fournisseur, 批次编码或供应商批号 (ADR-094). |
 | Supplier's lot | Lot du fournisseur | 供应商批号 | The supplier's own code for a lot, as the supplier printed it, kept beside a code made here; empty it reads Supplier's lot to add, Lot du fournisseur à ajouter, 待补供应商批号 (ADR-094, R5). |
 | Make a code for us / Type one instead | Créer un code pour nous / Saisir un code plutôt | 生成批次编码 / 改为照包装填写 | A new lot's code made when the write is saved, like L-2026-11-21-1, "Made when you save", « Créé à l’enregistrement », 保存时生成; at most 20 characters of capitals, digits and hyphens, so a barcode can carry it. Copy code, Copier le code, 复制编码 (ADR-094, R2, R3). |

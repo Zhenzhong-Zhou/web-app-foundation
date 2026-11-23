@@ -2,10 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
-import { createIntl } from 'react-intl';
+import { createIntl, IntlProvider } from 'react-intl';
 import { describe, expect, it } from 'vitest';
 
 import type { Lot, StockCodePlaces } from '../api/types.gen';
+import zh from '../locales/zh-Hans.json';
 import { server } from '../test/setup';
 import { LotFields } from './lot-fields';
 import {
@@ -298,6 +299,23 @@ describe('LotFields', () => {
       expiry: 'date',
       expiresAt: '2027-06-30',
     });
+  });
+
+  // Review 7: 批号 is the printed number; a code made here is 批次编码,
+  // its field as its button.
+  it('names a code made here 批次编码 in Chinese, a printed one 批号', async () => {
+    knownLots();
+    const user = userEvent.setup();
+    render(
+      <IntlProvider locale="zh-Hans" messages={zh} defaultLocale="en">
+        <Harness />
+      </IntlProvider>,
+    );
+
+    expect(await screen.findByRole('combobox', { name: '批号' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: '生成批次编码' }));
+
+    expect(screen.getByRole('textbox', { name: '批次编码' })).toBeVisible();
   });
 
   // Count it in's new lot (ADR-093, 84a): a code the item has is refused.

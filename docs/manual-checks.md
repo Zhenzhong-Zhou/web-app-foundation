@@ -656,7 +656,8 @@ a second organization.
   and, over Stock, Open the order; its lines read "60 of 100 received so
   far." and "Up to 40 each still outstanding.", as the order's page
   does (#160). In Français Créer un code pour nous, Pas encore connue,
-  N'expire pas; in 中文 生成批次编码, 尚不清楚, 不过期 and 保存时生成，例如 ….
+  N'expire pas; in 中文 生成批次编码, 尚不清楚, 不过期 and 保存时生成，例如 …,
+  the field then named 批次编码, never the printed 批号.
 - **MC-326** *(ADR-094, R11, R12)* Why there is no order, and from whom.
   As the demo Owner, Receive stock… for an item with nothing ordered:
   after Item comes "Why is there no order?", nothing chosen, offering

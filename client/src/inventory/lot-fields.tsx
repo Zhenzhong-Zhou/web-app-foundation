@@ -120,7 +120,15 @@ export function LotFields({
   return (
     <>
       {value.made ? (
-        <MadeCode id={`${idPrefix}-lot-code`} label={label} />
+        <MadeCode
+          id={`${idPrefix}-lot-code`}
+          // Our own code, which Chinese names 批次编码 as its button does,
+          // never the printed 批号 (review 7).
+          label={intl.formatMessage({
+            id: 'inventory.lot.madeCode',
+            defaultMessage: 'Lot number',
+          })}
+        />
       ) : mustBeNew ? (
         <TextField
           id={`${idPrefix}-lot-code`}
