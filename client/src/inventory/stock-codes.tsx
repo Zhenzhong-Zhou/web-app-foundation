@@ -707,7 +707,8 @@ function ExpiresFirst({ row, here }: { row: StockCodeRow; here: boolean }) {
       </Typography>
     );
   }
-  return <ExpiryChip expiresAt={expiresAt} />;
+  // A day, or none: a lot not known yet is never first to expire (R9).
+  return <ExpiryChip expiresAt={expiresAt} expiry={null} />;
 }
 
 /** Coming, with its soonest day; a run has none. */

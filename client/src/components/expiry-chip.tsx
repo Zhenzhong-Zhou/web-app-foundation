@@ -24,8 +24,12 @@ export function ExpiryChip({
   today,
 }: {
   expiresAt: CalendarDay | null;
-  /** The lot's kind of expiry, where the read sends it (ADR-094, R8). */
-  expiry?: Lot['expiry'] | null;
+  /**
+   * The lot's kind of expiry (ADR-094, R8), null where the read has none:
+   * required, so leaving it out never reads a lot not known yet as "No
+   * expiry" (D2; review 55).
+   */
+  expiry: Lot['expiry'] | null;
   today?: CalendarDay;
 }) {
   const intl = useIntl();

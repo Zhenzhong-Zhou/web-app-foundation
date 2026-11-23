@@ -7,12 +7,12 @@ import { formatDay } from '../lib/format';
  * A lot's expiry as the screens word it, the one place they do (ADR-094,
  * D2), with `ExpiryChip` for a column of them: a day, not known yet,
  * which reads "Expiry to add" and never "No expiry" (R9), or none. Its
- * kind where the read sends it; without, a lot with no day reads as one
- * that does not expire, as every lot did before.
+ * kind is required, null where a read has none, when a lot with no day
+ * reads as one that does not expire, as every lot did before (review 55).
  */
 type ExpiringLot = {
   expiresAt: string | null;
-  expiry?: Lot['expiry'] | null;
+  expiry: Lot['expiry'] | null;
 };
 
 /**

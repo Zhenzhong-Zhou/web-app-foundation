@@ -21,9 +21,11 @@ describe('a lot’s expiry in words', () => {
     expect(lotExpiry(DATED, intl)).toBe('Expires Oct 1, 2026');
     expect(lotExpiry(UNKNOWN, intl)).toBe('Expiry to add');
     expect(lotExpiry(NONE, intl)).toBe('No expiry');
-    // A read that sends no kind: a lot with no day does not expire, as
-    // every lot read before ADR-094.
-    expect(lotExpiry({ expiresAt: null }, intl)).toBe('No expiry');
+    // A read that has no kind, given as null: a lot with no day does not
+    // expire, as every lot read before ADR-094.
+    expect(lotExpiry({ expiresAt: null, expiry: null }, intl)).toBe(
+      'No expiry',
+    );
   });
 
   it('says as part of a line its day or expiry to add, and nothing for one that does not expire', () => {
