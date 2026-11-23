@@ -128,6 +128,7 @@ export class Movement {
   /** The lot's expiry day, `YYYY-MM-DD` (ADR-052); null with none. */
   lotExpiresAt!: string | null;
   /** Which expiry the lot has, as Stock's piles send it (ADR-094, R8). */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
   lotExpiry!: LotExpiry | null;
   /** Whether the lot's code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;
@@ -294,6 +295,7 @@ export class Lot {
    * Which expiry it has (ADR-094, R8): a day, not known yet, or none,
    * the choice a new lot's Expires starts on.
    */
+  @ApiProperty({ enum: LOT_EXPIRIES })
   expiry!: LotExpiry;
   /** True when the code was made here, not printed (ADR-094). */
   isAssigned!: boolean;

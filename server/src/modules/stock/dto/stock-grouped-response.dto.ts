@@ -1,4 +1,10 @@
-import type { LotExpiry, ProductType } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ProductType,
+} from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 
 /**
@@ -159,6 +165,7 @@ export class StockPile {
    * Which expiry the lot has (ADR-094, R8): a day, not known yet, which
    * reads "Expiry to add", or none; null with no lot.
    */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
   lotExpiry!: LotExpiry | null;
   /** Whether the code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;

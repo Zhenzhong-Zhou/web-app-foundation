@@ -1,4 +1,10 @@
-import type { LotExpiry, ReorderSource } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ReorderSource,
+} from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 import type { StockPlace } from './stock-grouped-response.dto';
 import type { Movement } from './stock-response.dto';
@@ -63,6 +69,7 @@ export class UsableLot {
    * Which expiry the lot has, as Stock's piles send it (ADR-094, R8);
    * null with no lot.
    */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
   expiry!: LotExpiry | null;
   /** Whether its code was made here, not printed; null with no lot. */
   isAssigned!: boolean | null;

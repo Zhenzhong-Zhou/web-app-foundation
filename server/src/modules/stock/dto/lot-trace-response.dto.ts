@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import type { LotExpiry, ReleaseLicenceStatus } from '../../../database/schema';
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ReleaseLicenceStatus,
+} from '../../../database/schema';
 
 /**
  * A lot's trace as the API returns it (ADR-068, ADR-039, ADR-044): where
@@ -28,6 +32,7 @@ export class TracedLot {
   code!: string;
   expiresAt!: string | null;
   /** Which expiry it has: a day, not known yet, or none (ADR-094, R8). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
   expiry!: LotExpiry;
   /** True when the code was made here, not printed (ADR-094). */
   isAssigned!: boolean;

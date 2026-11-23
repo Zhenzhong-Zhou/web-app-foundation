@@ -1866,6 +1866,7 @@ export type MovementRecipient = {
 };
 
 export type Movement = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   variantId: string;
   productId: string;
@@ -1890,7 +1891,6 @@ export type Movement = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
-  lotExpiry: 'unknown' | 'date' | 'none' | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
   toLotId: string | null;
@@ -1929,10 +1929,10 @@ export type StockVariant = {
 };
 
 export type Lot = {
+  expiry: 'date' | 'unknown' | 'none';
   id: string;
   code: string;
   expiresAt: string | null;
-  expiry: 'unknown' | 'date' | 'none';
   isAssigned: boolean;
   supplierLot: string | null;
 };
@@ -2033,6 +2033,7 @@ export type IssuedRun = {
 };
 
 export type StockPile = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   variantId: string;
   sku: string;
@@ -2045,7 +2046,6 @@ export type StockPile = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
-  lotExpiry: 'unknown' | 'date' | 'none' | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
   quantity: string;
@@ -2068,6 +2068,7 @@ export type StockCodePlaces = {
 };
 
 export type StockLotRow = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   variantId: string;
   sku: string;
@@ -2080,7 +2081,6 @@ export type StockLotRow = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
-  lotExpiry: 'unknown' | 'date' | 'none' | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
   quantity: string;
@@ -2119,10 +2119,10 @@ export type LotMatch = {
 };
 
 export type TracedLot = {
+  expiry: 'date' | 'unknown' | 'none';
   id: string;
   code: string;
   expiresAt: string | null;
-  expiry: 'unknown' | 'date' | 'none';
   isAssigned: boolean;
   supplierLot: string | null;
   variantId: string;
@@ -2353,10 +2353,10 @@ export type ComingRun = {
 };
 
 export type UsableLot = {
+  expiry: 'date' | 'unknown' | 'none' | null;
   lotId: string | null;
   lotCode: string | null;
   expiresAt: string | null;
-  expiry: 'unknown' | 'date' | 'none' | null;
   isAssigned: boolean | null;
   supplierLot: string | null;
   quantity: string;
@@ -2440,6 +2440,7 @@ export type LotTrackingStarted = {
 };
 
 export type LookupResult = {
+  expiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   title: string;
   detail: string | null;
@@ -2447,7 +2448,6 @@ export type LookupResult = {
   direction: 'sale' | 'purchase' | null;
   fulfillment: 'none' | 'all' | 'part' | null;
   expiresAt: string | null;
-  expiry: 'unknown' | 'date' | 'none' | null;
   supplierLot: string | null;
   isAssigned: boolean | null;
   productId: string | null;
