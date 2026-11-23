@@ -15,7 +15,6 @@ import { useIntl } from 'react-intl';
 import type {
   LotTrackingQuestion,
   LotTrackingStarted,
-  NumberingEnvelope,
   StartLotTrackingDto,
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
@@ -23,11 +22,10 @@ import { FormError } from '../components/form-error';
 import { ListError } from '../components/list-error';
 import { Reference } from '../components/reference';
 import { ExpiryChoice } from '../inventory/expiry-choice';
-import type { ExpiryKind } from '../inventory/lot-input';
+import { type ExpiryKind, useNextLotCode } from '../inventory/lot-input';
 import { useLotMessage } from '../inventory/lot-received';
 import { placeName } from '../inventory/stock-places';
 import { api } from '../lib/api';
-import { formatNumber } from '../lib/numbering';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit } from './units';
@@ -393,22 +391,4 @@ function RunsLine({ question }: { question: LotTrackingQuestion }) {
           )}
     </Typography>
   );
-}
-
-/**
- * The code the lot series would make now, as Make a code for us shows it
- * (ADR-094, R3): another lot made first takes it. Null without the
- * numbering, which a role may not read.
- */
-function useNextLotCode(): string | null {
-  const { data } = useResource<NumberingEnvelope>('/organization/numbering');
-  const series = data?.numbering.lot;
-  return series && data
-    ? formatNumber(
-        series.prefix,
-        series.digits,
-        series.next[series.reset],
-        data.numbering.today,
-      )
-    : null;
 }

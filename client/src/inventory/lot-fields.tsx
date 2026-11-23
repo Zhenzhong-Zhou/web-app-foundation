@@ -10,9 +10,8 @@ import { useForkRef } from '@mui/material/utils';
 import { type ReactNode, type Ref, useCallback, useRef } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Lot, NumberingEnvelope, StockCodePlaces } from '../api/types.gen';
+import type { Lot, StockCodePlaces } from '../api/types.gen';
 import { SEPARATOR } from '../lib/format';
-import { formatNumber } from '../lib/numbering';
 import { useResource } from '../lib/use-resource';
 import { displayWithUnit } from '../products/units';
 import { ExpiryChoice } from './expiry-choice';
@@ -22,6 +21,7 @@ import {
   existingLot,
   type LotErrors,
   type LotInput,
+  useNextLotCode,
 } from './lot-input';
 import { placeName } from './stock-places';
 
@@ -254,17 +254,7 @@ export function LotFields({
  */
 function MadeCode({ id, label }: { id: string; label: string }) {
   const intl = useIntl();
-  const { data } = useResource<NumberingEnvelope>('/organization/numbering');
-  const series = data?.numbering.lot;
-  const example =
-    series && data
-      ? formatNumber(
-          series.prefix,
-          series.digits,
-          series.next[series.reset],
-          data.numbering.today,
-        )
-      : null;
+  const example = useNextLotCode();
 
   return (
     <TextField

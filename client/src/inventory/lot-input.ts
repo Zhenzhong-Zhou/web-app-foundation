@@ -1,6 +1,7 @@
 import type { IntlShape } from 'react-intl';
 
-import type { Lot, MovementLotDto } from '../api/types.gen';
+import type { Lot, MovementLotDto, NumberingEnvelope } from '../api/types.gen';
+import { formatNumber } from '../lib/numbering';
 import { useResource } from '../lib/use-resource';
 
 /** A lot's expiry: a date, not known yet, or none (ADR-094, R8). */
@@ -46,6 +47,25 @@ export function useItemLots(variantId: string | null): {
     variantId ? `/stock/lots?variantId=${variantId}` : null,
   );
   return { lots: data ?? [], known: data !== null };
+}
+
+/**
+ * The code the lot series would make now, "L-2026-11-21-3", as Make a
+ * code for us and Start tracking lots show it (ADR-094, R3): another lot
+ * made first takes it. Null without the numbering, which a role may not
+ * read.
+ */
+export function useNextLotCode(): string | null {
+  const { data } = useResource<NumberingEnvelope>('/organization/numbering');
+  const series = data?.numbering.lot;
+  return series && data
+    ? formatNumber(
+        series.prefix,
+        series.digits,
+        series.next[series.reset],
+        data.numbering.today,
+      )
+    : null;
 }
 
 /**
