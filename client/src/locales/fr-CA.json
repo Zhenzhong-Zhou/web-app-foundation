@@ -2461,6 +2461,7 @@
   "settings.numbering.last": "Dernier : {number}",
   "settings.numbering.loading": "Chargement de la numérotation",
   "settings.numbering.lot": "Codes de lot",
+  "settings.numbering.lotLimit": "Pour les codes que nous créons : jusqu’à 20 caractères de A à Z, de 0 à 9 et des traits d’union, pour qu’un code-barres puisse les porter. Un code saisi depuis une boîte reste tel qu’imprimé.",
   "settings.numbering.next": "Prochain numéro",
   "settings.numbering.nextGiven": "Prochain à attribuer",
   "settings.numbering.notInOrder": "Les factures et les notes de crédit ne suivent pas l’ordre des dates.",

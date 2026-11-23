@@ -2461,6 +2461,7 @@
   "settings.numbering.last": "上一个：{number}",
   "settings.numbering.loading": "正在加载编号",
   "settings.numbering.lot": "批次编码",
+  "settings.numbering.lotLimit": "仅适用于我们自编的编码：最多 20 个字符，只用 A 到 Z、0 到 9 和连字符，以便条形码能够承载。照包装填写的编码保持原样。",
   "settings.numbering.next": "下一个编号",
   "settings.numbering.nextGiven": "下一个将给出的编号",
   "settings.numbering.notInOrder": "发票和贷项通知单不按日期顺序编号。",

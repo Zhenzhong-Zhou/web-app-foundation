@@ -3116,7 +3116,10 @@ few invoices and orders.
   SO- and PO-, six digits, Never, the next number its documents reached,
   and Last: under it; Lot codes reads L-{YYYY}-{MM}-{DD}-, one digit,
   Each day, Prints as today's L-…-1 or the next after the last made
-  today. Save numbering is greyed out until something changes.
+  today, and under it "For the codes we make: up to 20 characters of A
+  to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed
+  from a box stays as printed.", on a phone too. Save numbering is
+  greyed out until something changes.
 - **MC-2702** *(ADR-073)* Click into the invoice prefix: Start from a
   common format offers INV-000001, INV-2026-0001, each year, and
   INV20261017-001, each day, with today's date; none uses /. Pick the

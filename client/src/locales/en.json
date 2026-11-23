@@ -2461,6 +2461,7 @@
   "settings.numbering.last": "Last: {number}",
   "settings.numbering.loading": "Loading numbering",
   "settings.numbering.lot": "Lot codes",
+  "settings.numbering.lotLimit": "For the codes we make: up to 20 characters of A to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed from a box stays as printed.",
   "settings.numbering.next": "Next number",
   "settings.numbering.nextGiven": "Next to be given",
   "settings.numbering.notInOrder": "Invoices and credit notes are not kept in date order.",

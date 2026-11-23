@@ -683,6 +683,30 @@ function NumberingForm({
     );
   };
 
+  /**
+   * Under the lot codes' row, always: whose codes the 20 characters bind,
+   * so a code typed from a box is not thought refused (v15's Q2a card;
+   * review 39).
+   */
+  const limit = (key: SeriesKey) =>
+    key === 'lot' ? (
+      <Typography
+        variant="caption"
+        sx={{
+          display: 'block',
+          mt: 0.5,
+          maxWidth: rem(240),
+          color: 'text.secondary',
+        }}
+      >
+        {intl.formatMessage({
+          id: 'settings.numbering.lotLimit',
+          defaultMessage:
+            'For the codes we make: up to 20 characters of A to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed from a box stays as printed.',
+        })}
+      </Typography>
+    ) : null;
+
   /** Under the prefix being edited: the formats, the date, what is wrong. */
   const helper = (key: SeriesKey) => {
     const problem = problemOf(key);
@@ -931,8 +955,11 @@ function NumberingForm({
                   </Stack>
                   {printsAs(key)}
                 </Button>
-                {key === 'lot' && validOf(key) && (
-                  <Box sx={{ px: 2, pb: 1.5 }}>{room(key)}</Box>
+                {key === 'lot' && (
+                  <Box sx={{ px: 2, pb: 1.5 }}>
+                    {room(key)}
+                    {limit(key)}
+                  </Box>
                 )}
                 {/* A row in error stays open, so its reason shows. */}
                 {(editing === key || !validOf(key)) && (
@@ -977,6 +1004,7 @@ function NumberingForm({
                     <TableCell>
                       {printsAs(key)}
                       {room(key)}
+                      {limit(key)}
                     </TableCell>
                   </TableRow>,
                   editing === key || !validOf(key) ? (

@@ -303,6 +303,21 @@ describe('NumberingSection', () => {
       ).not.toHaveStyle({ color: createTheme().palette.warning.main });
     });
 
+    // Review 39: whose codes the 20 characters bind, always said.
+    it('says under the lot codes that the 20 characters bind the codes we make, not one typed from a box', async () => {
+      serve();
+      render(<NumberingSection readOnly={false} />);
+
+      const rows = within(
+        await screen.findByRole('table', { name: 'Numbering' }),
+      );
+      expect(
+        within(rows.getByRole('row', { name: /^Lot codes/ })).getByText(
+          'For the codes we make: up to 20 characters of A to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed from a box stays as printed.',
+        ),
+      ).toBeVisible();
+    });
+
     it('says the room in all for a format that never resets, past what a number holds', async () => {
       serve();
       const user = userEvent.setup();

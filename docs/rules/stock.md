@@ -817,7 +817,9 @@ file is kept is in the [README](README.md).
   MC-325
 - **The lot series prints capitals, digits, hyphens and the date, in 20
   characters with its digits,** what a barcode's lot field holds, set in
-  Organization › Documents › Lot codes: a prefix holding anything else,
+  Organization › Documents › Lot codes, which says so under its row,
+  and that a code typed from a box stays as printed: a prefix holding
+  anything else,
   or printing more than 20 with its digits, is refused there, and one a
   document's series could print the same as. Under the next code the row
   says how many codes fit within 20 characters, a day, a month, a year or
@@ -832,6 +834,7 @@ file is kept is in the [README](README.md).
   [test](../../client/src/settings/numbering-section.test.tsx) "shows the next code made today, with the room for codes a day within 20 characters" ·
   [test](../../client/src/settings/numbering-section.test.tsx) "warns in amber with room for 9,999 in all, and Save still works; as many a day stay grey" ·
   [test](../../server/test/numbering.e2e-spec.ts) "makes a code past 20 characters once its counter outgrows its digits, and refuses no receipt for it" ·
+  [test](../../client/src/settings/numbering-section.test.tsx) "says under the lot codes that the 20 characters bind the codes we make, not one typed from a box" ·
   [Help](../../client/src/help/guides/en/organization.md#numbering-numbering) ·
   MC-2701
 - **A made code is stored as made here, a typed one as printed,** never
