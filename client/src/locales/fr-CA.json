@@ -2013,6 +2013,7 @@
   "products.startTracking.runCount": "{count, plural, one {# ordre de fabrication en cours l’utilise ou le fabrique. Il sera clôturé sur ce lot.} other {# ordres de fabrication en cours l’utilisent ou le fabriquent. Chacun sera clôturé sur ce lot.}}",
   "products.startTracking.runUnnamed": "un ordre sans référence",
   "products.startTracking.runs": "Ordres de fabrication en cours qui l’utilisent ou le fabriquent : {runs}. Chacun sera clôturé sur ce lot.",
+  "products.startTracking.splitLater": "Répartissez-le plus tard en vrais lots avec Déplacer vers un autre lot…",
   "products.startTracking.supplierLot.help": "Facultatif. Tel que le fournisseur l’a imprimé, si le stock vient d’une seule livraison; il peut être ajouté plus tard.",
   "products.startTracking.title": "Commencer le suivi par lot pour {sku}",
   "products.stock.allMovements": "Tous les mouvements de {code}",

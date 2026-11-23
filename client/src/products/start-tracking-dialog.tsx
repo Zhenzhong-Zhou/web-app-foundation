@@ -250,6 +250,15 @@ export function StartTrackingDialog({
                           'Its cost goes with it. What still waits for a cost keeps waiting, on this lot.',
                       })}
                     </Typography>
+                    {/* One lot now, real lots later (v15's board; review
+                        17). */}
+                    <Typography>
+                      {intl.formatMessage({
+                        id: 'products.startTracking.splitLater',
+                        defaultMessage:
+                          'Split it into real lots later with Move to another lot…',
+                      })}
+                    </Typography>
                   </Stack>
                 ) : (
                   <Typography>

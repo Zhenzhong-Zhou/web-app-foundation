@@ -559,6 +559,10 @@ describe('Start tracking lots', () => {
     expect(dialog).toHaveTextContent(
       'Its cost goes with it. What still waits for a cost keeps waiting, on this lot.',
     );
+    // And how to split it into real lots later (review 17).
+    expect(dialog).toHaveTextContent(
+      'Split it into real lots later with Move to another lot…',
+    );
     expect(dialog).toHaveTextContent(
       'Runs in progress that use or make it: B-104 and a run with no reference. Each will close against this lot.',
     );

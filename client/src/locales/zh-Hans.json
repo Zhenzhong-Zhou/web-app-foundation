@@ -2013,6 +2013,7 @@
   "products.startTracking.runCount": "{count, plural, other {有 # 个进行中的生产订单使用或生产此物品，每个都将按此批次完工。}}",
   "products.startTracking.runUnnamed": "无编号的生产订单",
   "products.startTracking.runs": "使用或生产此物品的进行中生产订单：{runs}。每个都将按此批次完工。",
+  "products.startTracking.splitLater": "之后可用“转入其他批次…”把它拆分成实际批次。",
   "products.startTracking.supplierLot.help": "可选。如果现有库存来自同一批到货，按供应商印刷的填写；也可以稍后补填。",
   "products.startTracking.title": "开始按批次跟踪 {sku}",
   "products.stock.allMovements": "{code} 的全部库存变动",

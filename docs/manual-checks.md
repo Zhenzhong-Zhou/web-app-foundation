@@ -687,7 +687,8 @@ a second organization.
   then "1,500 each on hand goes into one lot, its code made for us when
   you start, like L-…:", 900 on Main's Shelf and 600 in the Blending room,
   then "Its cost goes with it. What still waits for a cost keeps
-  waiting, on this lot."; where runs in
+  waiting, on this lot." and "Split it into real lots later with Move
+  to another lot…"; where runs in
   progress use or make it, those runs, "Each will close against this
   lot."; and "This cannot be undone". Supplier's lot is empty and Expires
   is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed

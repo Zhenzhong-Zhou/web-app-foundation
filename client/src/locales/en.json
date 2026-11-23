@@ -2013,6 +2013,7 @@
   "products.startTracking.runCount": "{count, plural, one {# run in progress uses or makes it. It will close against this lot.} other {# runs in progress use or make it. Each will close against this lot.}}",
   "products.startTracking.runUnnamed": "a run with no reference",
   "products.startTracking.runs": "Runs in progress that use or make it: {runs}. Each will close against this lot.",
+  "products.startTracking.splitLater": "Split it into real lots later with Move to another lot…",
   "products.startTracking.supplierLot.help": "Optional. As the supplier printed it, where the stock on hand came in one delivery; it can be added later.",
   "products.startTracking.title": "Start tracking lots for {sku}",
   "products.stock.allMovements": "All movements of {code}",
