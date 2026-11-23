@@ -851,10 +851,13 @@ file is kept is in the [README](README.md).
   exactly for a date, a write that contradicts it refused. A write
   naming no kind, as a tab opened before sends it, reads a date with a
   day and none without. A lot that exists keeps its expiry when more of
-  its code arrives.
+  its code arrives. A day already past, or more than 10 years away, is
+  warned of in amber at the field, wherever an expiry is asked, and
+  never refused.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "stores each of the three expiries, and a day alone or none as a tab opened before sends them" ·
-  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a new lot it cannot read, saying what to do, and writes nothing"
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a new lot it cannot read, saying what to do, and writes nothing" ·
+  [test](../../client/src/inventory/lot-fields.test.tsx) "warns at the day of one already past, or more than 10 years away, and refuses neither"
 - **A receipt with no order says why: opening stock, returned, a sample
   or other,** other with a note or without, or nothing, as a tab opened
   before sends it; anything else is refused, naming the four. Movements'

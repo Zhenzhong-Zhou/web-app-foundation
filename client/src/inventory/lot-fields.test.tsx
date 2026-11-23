@@ -318,6 +318,41 @@ describe('LotFields', () => {
     expect(screen.getByRole('textbox', { name: '批次编码' })).toBeVisible();
   });
 
+  // Review 10: every dialog's Expires warns of a day past, or more than
+  // 10 years away, in amber at the field, and refuses neither.
+  it('warns at the day of one already past, or more than 10 years away, and refuses neither', async () => {
+    knownLots([]);
+    const user = userEvent.setup();
+    let value = NO_LOT;
+    render(
+      <Harness
+        onValue={(next) => {
+          value = next;
+        }}
+      />,
+    );
+    await user.type(code(), 'VC-0311');
+    await user.click(screen.getByRole('radio', { name: 'On a date' }));
+    const day = screen.getByLabelText(/^The day it expires/);
+
+    await user.type(day, '2020-01-01');
+    expect(day).toHaveAccessibleDescription(
+      'That day has passed: the stock will read as expired, and no longer count as usable.',
+    );
+    expect(lotErrors(value, [], intl)).toEqual({});
+
+    await user.clear(day);
+    await user.type(day, '2099-01-01');
+    expect(day).toHaveAccessibleDescription(
+      'This date is more than 10 years away. Check the year.',
+    );
+    expect(lotErrors(value, [], intl)).toEqual({});
+
+    await user.clear(day);
+    await user.type(day, '2028-06-30');
+    expect(day).not.toHaveAccessibleDescription();
+  });
+
   // Count it in's new lot (ADR-093, 84a): a code the item has is refused.
   it('says, for a lot that must be new, that a code it has is one to choose among its lots', async () => {
     const askedFor = knownLots();

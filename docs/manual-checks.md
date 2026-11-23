@@ -691,7 +691,10 @@ a second organization.
   is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
   on Stock, by lot, under Details to add until someone gives the day or
   says it doesn't expire. The stock can still be used." under it. Choose On a date with a
-  day already past: an amber line says the stock will read as expired.
+  day already past: an amber line says the stock will read as expired;
+  one more than 10 years away, "This date is more than 10 years away.
+  Check the year."; neither stops it. Receive stock, an order's Receive,
+  Count it in, Move to another lot and Edit lot details warn the same.
   Escape, or Cancel, closes it with nothing changed, focus back on what
   opened it: Stock's Actions, the line's Start tracking lots…, or the
   Variants row's button. Receive stock… for BOTTLE-A60, and an order's

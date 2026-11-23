@@ -10,7 +10,21 @@ import {
 import { type ReactNode, type Ref, useId } from 'react';
 import { useIntl } from 'react-intl';
 
+import { organizationToday } from '../lib/time-zone';
 import type { ExpiryKind } from './lot-input';
+
+/**
+ * A day worth a second look, said in amber under it, never refused (review
+ * 10): one already past, whose stock reads as expired at once; or one more
+ * than 10 years away, most often a year mistyped.
+ */
+function dayWarning(day: string): 'past' | 'far' | null {
+  if (!day) return null;
+  const today = organizationToday();
+  if (day < today) return 'past';
+  const tenYears = `${Number(today.slice(0, 4)) + 10}${today.slice(4)}`;
+  return day > tenYears ? 'far' : null;
+}
 
 /**
  * When a lot expires, one of three (ADR-094, R8): On a date, which asks
@@ -68,6 +82,7 @@ export function ExpiryChoice({
     errors.expiry ??
     help ??
     (start && own ? `${start} ${own}` : (start ?? own));
+  const warning = expiry === 'date' ? dayWarning(expiresAt) : null;
 
   return (
     <>
@@ -133,8 +148,28 @@ export function ExpiryChoice({
           }
           inputRef={dayRef}
           error={!!errors.day}
-          helperText={errors.day}
-          slotProps={{ inputLabel: { shrink: true } }}
+          helperText={
+            errors.day ??
+            (warning === 'past'
+              ? intl.formatMessage({
+                  id: 'inventory.lot.expiry.pastDay',
+                  defaultMessage:
+                    'That day has passed: the stock will read as expired, and no longer count as usable.',
+                })
+              : warning === 'far'
+                ? intl.formatMessage({
+                    id: 'inventory.lot.expiry.farDay',
+                    defaultMessage:
+                      'This date is more than 10 years away. Check the year.',
+                  })
+                : undefined)
+          }
+          slotProps={{
+            inputLabel: { shrink: true },
+            formHelperText: {
+              sx: errors.day || !warning ? {} : { color: 'warning.main' },
+            },
+          }}
         />
       )}
     </>

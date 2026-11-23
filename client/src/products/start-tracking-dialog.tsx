@@ -27,7 +27,6 @@ import { useLotMessage } from '../inventory/lot-received';
 import { placeName } from '../inventory/stock-places';
 import { api } from '../lib/api';
 import { formatNumber } from '../lib/numbering';
-import { organizationToday } from '../lib/time-zone';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { displayWithUnit } from './units';
@@ -116,10 +115,6 @@ export function StartTrackingDialog({
   }
 
   const stocked = (asked?.places.length ?? 0) > 0;
-  const past =
-    form.expiry === 'date' &&
-    !!form.expiresAt &&
-    form.expiresAt < organizationToday();
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -312,18 +307,6 @@ export function StartTrackingDialog({
                       dayRef={dayRef}
                       errors={{ day: dayError }}
                     />
-                    {past && (
-                      <Typography
-                        variant="body2"
-                        sx={{ color: 'warning.main' }}
-                      >
-                        {intl.formatMessage({
-                          id: 'products.startTracking.pastDay',
-                          defaultMessage:
-                            'That day has passed: the stock will read as expired, and no longer count as usable.',
-                        })}
-                      </Typography>
-                    )}
                   </>
                 )}
               </>
