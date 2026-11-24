@@ -639,6 +639,14 @@ describe('OrderDetailPage lines', () => {
       });
     });
 
+    // A blank panel reads as a fault (#675).
+    it('says so on the Returns tab when the sale has no return', async () => {
+      serveSale();
+      renderPage(SALE_PERMISSIONS, '/orders/order-1?tab=returns');
+
+      expect(await screen.findByText('No returns yet')).toBeVisible();
+    });
+
     // A voided invoice no longer bills the shipment; it can be billed again.
     it('ignores a voided invoice', async () => {
       serveSale([invoice({ status: 'voided' })]);

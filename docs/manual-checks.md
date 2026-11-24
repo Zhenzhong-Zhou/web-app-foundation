@@ -5254,6 +5254,11 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R108** *(A sale's Returns tab was a blank panel with no return,
+  #675)* Open a confirmed sale with no return and choose its Returns tab:
+  under the heading Returns, one line reads No returns yet. Take a return
+  and the line gives way to it. In Français the line reads "Aucun retour
+  pour l’instant"; in 中文, "暂无退货".
 - **MC-R107** *(Release's Pick components from and Plan a run's Made at
   listed every place by its bare name, parents and retired places among
   them, #666)* With Headquarters Office › Back Area › CA Product, open
@@ -7872,5 +7877,7 @@ first.
   rewritten.
 - 2026-11-24: A packing slip's Shipped from, the site above the shelf the
   goods left, at its address or the registered one, #672: MC-R106 added.
+- 2026-11-24: A sale's Returns tab says No returns yet when it has none,
+  #675: MC-R108 added.
 - 2026-11-24: Release's Pick components from and Plan a run's Made at, only
   active places that can hold stock, each as its path, #666: MC-R107 added.

@@ -37,9 +37,9 @@ import { returnReasonLabel } from './return-reasons';
 /**
  * What came back against this order, newest first, lot by lot (ADR-043).
  *
- * Hidden entirely until there is one: most orders never have a return, and
- * an empty section on every sale would be noise. Refetched when `refreshKey`
- * changes after a return is taken.
+ * The order's Returns tab: with none, one line says so, since a blank panel
+ * reads as a fault (#675). Refetched when `refreshKey` changes after a
+ * return is taken.
  *
  * Each return names the RMA it counted against, if any (ADR-047). One that
  * counts against none offers Link to RMA while an RMA on this order is
@@ -108,7 +108,7 @@ export function ReturnsList({
   }, [orderId, refreshKey, linked, canSeeRmas, intl]);
 
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!returns?.length) return null;
+  if (!returns) return null;
 
   const openRmas = rmas.filter((rma) => rma.status === 'open');
 
@@ -120,6 +120,15 @@ export function ReturnsList({
           defaultMessage: 'Returns',
         })}
       </Typography>
+
+      {returns.length === 0 && (
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {intl.formatMessage({
+            id: 'orders.returns.empty',
+            defaultMessage: 'No returns yet',
+          })}
+        </Typography>
+      )}
 
       {returns.map((entry) => {
         const rma = rmas.find((row) => row.id === entry.returnAuthorizationId);

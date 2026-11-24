@@ -1584,6 +1584,7 @@
   "orders.returnReason.wrongItem": "mauvais article",
   "orders.returns.against": "Sur {rma}",
   "orders.returns.counted": "Retour pris en compte dans {rma}",
+  "orders.returns.empty": "Aucun retour pour l’instant",
   "orders.returns.link": "Lier",
   "orders.returns.linkIntro": "Reçu le {date} : {items}. Ce retour ne peut être compté qu’une seule fois, pour une seule autorisation de retour.",
   "orders.returns.linkTitle": "Lier ce retour à une autorisation de retour",
