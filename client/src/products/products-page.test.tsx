@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import {
@@ -23,6 +23,7 @@ import { LicencesPage } from '../licences/licences-page';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { ProductsPage } from './products-page';
+import { SeveralAtOnce } from './several-at-once';
 
 function product(name: string): ProductSummary {
   return {
@@ -1316,25 +1317,23 @@ describe('ProductsPage', () => {
       ).toBeNull();
     });
 
-    it('says to untick some past 500, before either runs', async () => {
-      const user = userEvent.setup();
-      readsOf(() =>
-        pageOf(
-          Array.from({ length: 501 }, (_, index) => product(`Item ${index}`)),
-          countsOf({ good: 501 }),
-        ),
+    // The bar alone, given 501 ticked: drawing 501 rows and ticking each
+    // took most of 15 seconds on a slow runner (#680).
+    it('says to untick some past 500, before either runs', () => {
+      const items = Array.from({ length: 501 }, (_, index) =>
+        product(`Item ${index}`),
       );
-      renderWithAuth(
-        <MemoryRouter initialEntries={['/items']}>
-          <ProductsPage />
-        </MemoryRouter>,
-        CHANGER,
+      const bar501 = (ticked: ProductSummary[]) => (
+        <SeveralAtOnce
+          ticked={ticked}
+          shown={items.length}
+          categories={[]}
+          onTickAll={() => undefined}
+          onClear={() => undefined}
+          onChanged={() => undefined}
+        />
       );
-      await screen.findByRole('link', { name: 'Item 0' });
-
-      await user.click(
-        screen.getByRole('checkbox', { name: 'Select every item shown' }),
-      );
+      const { rerender } = render(bar501(items));
 
       expect(
         within(bar()!).getByText('Up to 500 at once. Untick some to go on.'),
@@ -1346,12 +1345,10 @@ describe('ProductsPage', () => {
         within(bar()!).getByRole('button', { name: 'Discontinue' }),
       ).toBeDisabled();
 
-      await tick('Item 0');
+      rerender(bar501(items.slice(1)));
       expect(
         within(bar()!).getByRole('button', { name: 'Set category' }),
       ).toBeEnabled();
-      // 501 rows drawn and ticked take most of the 5 seconds alone, and
-      // more with the other suites running beside it.
-    }, 15_000);
+    });
   });
 });
