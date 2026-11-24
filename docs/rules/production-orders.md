@@ -14,7 +14,8 @@ file is kept is in the [README](README.md).
 - **A run makes one item, at one place, in a quantity above zero.** The
   item and Made at are required; components are issued to Made at and the
   output is received there. The quantity takes up to four decimal places.
-  Nothing moves until the run is released.
+  Nothing moves until the run is released. Made at offers only an active
+  place that can hold stock, each written as its path.
   [ADR-030](../adr/0030-who-supplies-a-component-is-a-property-of-the-run.md#decision--the-manufacturers-facility-is-a-site-in-the-locations-tree-with-locationspartner_id-marking-it-as-theirs) ·
   [test](../../server/test/production-orders.e2e-spec.ts) "creates a draft" ·
   [test](../../server/test/production-orders.e2e-spec.ts) "refuses what planning refuses, and another organization’s recipe" ·
@@ -117,16 +118,17 @@ file is kept is in the [README](README.md).
   [test](../../client/src/production/release-run-dialog.test.tsx) "says the item’s recipes could not be loaded, and offers them again on Try again" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/production.md#if-something-is-refused-refused) ·
-  MC-3319 · MC-R87
+  MC-3319 · MC-R87 · MC-R107
 - **Components come from one place for the whole run, and any line can
   name its own.** A place marked not for use, such as retention or
-  quarantine, is refused, and the dialog does not offer one.
+  quarantine, is refused, and the dialog does not offer one; it offers
+  only an active place that can hold stock, each written as its path.
   [ADR-032](../adr/0032-production-runs.md#decision--the-picking-source-is-on-the-line-not-the-run) ·
   [ADR-042](../adr/0042-samples-and-stock-that-is-not-for-sending.md#decision--unavailable-locations-hold-stock-that-is-not-for-sending) ·
   [test](../../server/test/production-orders.e2e-spec.ts) "honours a per-line source override" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/production.md#release-a-run-release) ·
-  MC-205
+  MC-205 · MC-R107
 - **A component the maker supplies is recorded on the run but never
   moves, and is never consumed.** It has no source.
   [ADR-030](../adr/0030-who-supplies-a-component-is-a-property-of-the-run.md#decision--supply_type-on-the-line-defaulted-by-the-bom-actual-on-the-run) ·

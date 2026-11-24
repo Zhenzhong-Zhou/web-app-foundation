@@ -9,7 +9,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
@@ -22,6 +22,7 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
 import { VariantPicker } from '../components/variant-picker';
+import { placePaths } from '../inventory/stock-places';
 import { api, withQuery } from '../lib/api';
 import {
   displayQuantity,
@@ -34,6 +35,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
+import { leavesOf } from '../locations/tree';
 import { displayWithUnit } from '../products/units';
 import { RecipesFailed } from './recipes-failed';
 import { useRecipes } from './use-recipes';
@@ -90,7 +92,11 @@ export function CreateRunDialog({
   // Set when the quantity is typed with a thousands separator (ADR-054).
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const { variants, answered, failed } = useVariants(open);
-  const [locations, setLocations] = useState<Location[]>([]);
+  // Every location, parents and retired ones too, so each place offered
+  // reads as its path; stock sits only at an active leaf (ADR-024, #666).
+  const [tree, setTree] = useState<Location[]>([]);
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
+  const locations = leavesOf(tree).filter((row) => row.isActive);
   const { partners, answered: partnersAnswered } = usePartners(
     open && canSeePartners,
   );
@@ -133,7 +139,7 @@ export function CreateRunDialog({
 
     void api<Location[]>('/locations')
       .then((locationRows) => {
-        if (!ignore) setLocations(locationRows);
+        if (!ignore) setTree(locationRows);
       })
       .catch(() => undefined);
 
@@ -422,7 +428,7 @@ export function CreateRunDialog({
             >
               {locations.map((row) => (
                 <MenuItem key={row.id} value={row.id}>
-                  {row.name}
+                  {pathOf(row.id)}
                 </MenuItem>
               ))}
             </TextField>

@@ -53,7 +53,14 @@ function serve(licenceCheck: LicenceCheck) {
   server.use(
     http.get('/api/v1/locations', () =>
       HttpResponse.json([
-        { id: 'loc-shelf', name: 'SHELF', isAvailable: true },
+        {
+          id: 'loc-shelf',
+          name: 'SHELF',
+          code: null,
+          parentId: null,
+          isAvailable: true,
+          isActive: true,
+        },
       ]),
     ),
     http.get('/api/v1/production-orders/:id/issue-plan', ({ request }) => {
@@ -172,6 +179,76 @@ describe('ReleaseRunDialog licence', () => {
     await expect.poll(() => plans.length).toBe(1);
     expect(screen.queryByText(/licence/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Release' })).toBeEnabled();
+  });
+});
+
+/**
+ * Pick components from offers only a place that can hold stock and may be
+ * picked from: an active leaf (ADR-024), not kept apart (ADR-042), each as
+ * its path, as Receive stock does (#666).
+ */
+describe('ReleaseRunDialog places', () => {
+  it('offers only active, available places that hold stock, each as its path', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v1/locations', () =>
+        HttpResponse.json(
+          [
+            {
+              id: 'loc-hq',
+              name: 'Headquarters Office',
+              code: null,
+              parentId: null,
+            },
+            {
+              id: 'loc-back',
+              name: 'Back Area',
+              code: null,
+              parentId: 'loc-hq',
+            },
+            {
+              id: 'loc-ca',
+              name: 'CA Product',
+              code: 'CA',
+              parentId: 'loc-back',
+            },
+            {
+              id: 'loc-old',
+              name: 'Old Shelf',
+              code: null,
+              parentId: 'loc-back',
+            },
+            {
+              id: 'loc-qc',
+              name: 'Quarantine',
+              code: null,
+              parentId: 'loc-back',
+            },
+          ].map((place) => ({
+            ...place,
+            isActive: place.id !== 'loc-old',
+            isAvailable: place.id !== 'loc-qc',
+          })),
+        ),
+      ),
+    );
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={RUN}
+        canOverrideLicence={false}
+        canAttachRecipe
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    await user.click(await screen.findByLabelText(/Pick components from/));
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Headquarters Office › Back Area › CA Product (CA)',
+    ]);
   });
 });
 

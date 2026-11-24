@@ -5254,6 +5254,15 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R107** *(Release's Pick components from and Plan a run's Made at
+  listed every place by its bare name, parents and retired places among
+  them, #666)* With Headquarters Office › Back Area › CA Product, open
+  Plan a run's Made at, then a draft run's Release, Pick components from:
+  each lists "Headquarters Office › Back Area › CA Product", never "Back
+  Area" or "Headquarters Office" alone, and no retired place. Pick
+  components from also leaves out a place marked not for use, such as
+  quarantine. Two sites each with a "Shelf A" read apart.
+
 - **MC-R106** *(A packing slip's From printed the shelf the goods left,
   not where they came from, #672)* Ship an order from a shelf inside a
   site, then open its packing slip: Shipped from reads the site's name and
@@ -7863,3 +7872,5 @@ first.
   rewritten.
 - 2026-11-24: A packing slip's Shipped from, the site above the shelf the
   goods left, at its address or the registered one, #672: MC-R106 added.
+- 2026-11-24: Release's Pick components from and Plan a run's Made at, only
+  active places that can hold stock, each as its path, #666: MC-R107 added.
