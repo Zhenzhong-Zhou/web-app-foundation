@@ -726,14 +726,19 @@ const SCREENS: Screen[] = [
       return { productId: tea.id };
     },
     open: async (page) => {
-      // The Variants table's, one of the item's page's two doors.
-      await page
+      // The Variants table's, one of the item's page's two doors. A click
+      // that opens no dialog, as Firefox on CI showed (#685), is tried
+      // again until the dialog is open.
+      const door = page
         .getByRole('region', { name: /Variants/ })
-        .getByRole('button', { name: /^Start tracking lots for .+…$/ })
-        .click();
+        .getByRole('button', { name: /^Start tracking lots for .+…$/ });
       const dialog = page.getByRole('dialog', {
         name: /^Start tracking lots for /,
       });
+      await expect(async () => {
+        if (!(await dialog.isVisible())) await door.click();
+        await expect(dialog).toBeVisible({ timeout: 2_000 });
+      }).toPass();
       await dialog.getByRole('radio', { name: 'On a date' }).check();
       await dialog
         .getByRole('textbox', { name: 'The day it expires' })
