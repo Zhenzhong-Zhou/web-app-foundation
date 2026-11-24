@@ -23294,6 +23294,80 @@
           "items"
         ]
       },
+      "SlipAddress": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country"
+        ]
+      },
+      "SlipShippedFrom": {
+        "type": "object",
+        "properties": {
+          "siteName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlipAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "siteName",
+          "address"
+        ]
+      },
       "SlipOrder": {
         "type": "object",
         "properties": {
@@ -23417,6 +23491,9 @@
           "fromLocationName": {
             "type": "string"
           },
+          "shippedFrom": {
+            "$ref": "#/components/schemas/SlipShippedFrom"
+          },
           "organizationName": {
             "type": "string"
           },
@@ -23469,6 +23546,7 @@
           "voidedAt",
           "voidReason",
           "fromLocationName",
+          "shippedFrom",
           "organizationName",
           "language",
           "secondLanguage",

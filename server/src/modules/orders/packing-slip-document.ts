@@ -7,6 +7,7 @@ import type {
   Printable,
 } from '../../core/documents/documents.service';
 import { formatDay, NO_VALUE } from '../../core/documents/format';
+import { addressParts } from '../../core/documents/parties';
 import {
   addressLines,
   banner,
@@ -119,37 +120,48 @@ export function packingSlipDocument(
           ]),
         ],
       ),
+      // The site, at its address; never the shelf, which is ours alone
+      // (ADR-071, amended, #672).
       block(
-        doc.label(t({ id: 'documents.shipment', defaultMessage: 'Shipment' })),
+        doc.label(
+          t({ id: 'documents.shippedFrom', defaultMessage: 'Shipped from' }),
+        ),
         [
-          doc.label(
-            t(
-              { id: 'documents.fromLocation', defaultMessage: 'From {place}' },
-              { place: slip.fromLocationName },
-            ),
-          ),
-          slip.carrier &&
-            doc.label(
-              t(
-                {
-                  id: 'documents.carrier',
-                  defaultMessage: 'Carrier: {carrier}',
-                },
-                { carrier: slip.carrier },
-              ),
-            ),
-          slip.trackingNumber &&
-            doc.label(
-              t(
-                {
-                  id: 'documents.tracking',
-                  defaultMessage: 'Tracking: {number}',
-                },
-                { number: slip.trackingNumber },
-              ),
-            ),
+          slip.shippedFrom.siteName,
+          ...addressLines(addressParts(slip.shippedFrom.address)),
         ],
       ),
+      ...(slip.carrier || slip.trackingNumber
+        ? [
+            block(
+              doc.label(
+                t({ id: 'documents.shipment', defaultMessage: 'Shipment' }),
+              ),
+              [
+                slip.carrier &&
+                  doc.label(
+                    t(
+                      {
+                        id: 'documents.carrier',
+                        defaultMessage: 'Carrier: {carrier}',
+                      },
+                      { carrier: slip.carrier },
+                    ),
+                  ),
+                slip.trackingNumber &&
+                  doc.label(
+                    t(
+                      {
+                        id: 'documents.tracking',
+                        defaultMessage: 'Tracking: {number}',
+                      },
+                      { number: slip.trackingNumber },
+                    ),
+                  ),
+              ],
+            ),
+          ]
+        : []),
     ]),
   );
 

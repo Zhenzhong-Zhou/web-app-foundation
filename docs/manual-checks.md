@@ -5254,6 +5254,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R106** *(A packing slip's From printed the shelf the goods left,
+  not where they came from, #672)* Ship an order from a shelf inside a
+  site, then open its packing slip: Shipped from reads the site's name and
+  the site's address, or the registered address while the site has none,
+  and the shelf's name is nowhere on the slip. The order's shipment and
+  Movements still name the shelf. In Français the heading reads "Expédié
+  de"; in 中文, "发货地".
+
 - **MC-R105** *(A voided shipment's goods back read "Adjustment: shipment
   voided", in English in every language, #647)* Void a shipment, then open
   Movements with Reason Corrected: its goods back read "Corrected:
@@ -7853,3 +7861,5 @@ first.
   "moved … to another lot", the filter's one option Lot changes, and a
   move's Activity log entry naming both lots: MC-327, MC-328 and MC-331
   rewritten.
+- 2026-11-24: A packing slip's Shipped from, the site above the shelf the
+  goods left, at its address or the registered one, #672: MC-R106 added.

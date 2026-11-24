@@ -3419,6 +3419,20 @@ export type Shipment = {
   items: Array<ShipmentItem>;
 };
 
+export type SlipAddress = {
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+};
+
+export type SlipShippedFrom = {
+  siteName: string | null;
+  address: SlipAddress | null;
+};
+
 export type SlipOrder = {
   id: string;
   number: string;
@@ -3445,6 +3459,7 @@ export type PackingSlip = {
   voidedAt: string | null;
   voidReason: string | null;
   fromLocationName: string;
+  shippedFrom: SlipShippedFrom;
   organizationName: string;
   language: 'en' | 'fr-CA' | 'zh-Hans';
   secondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
