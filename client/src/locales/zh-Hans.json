@@ -1584,6 +1584,7 @@
   "orders.returnReason.wrongItem": "发错货",
   "orders.returns.against": "关联 {rma}",
   "orders.returns.counted": "退货已计入 {rma}",
+  "orders.returns.empty": "暂无退货",
   "orders.returns.link": "关联",
   "orders.returns.linkIntro": "收货于 {date}：{items}。每次退货只能计入一个退货授权，且仅计一次。",
   "orders.returns.linkTitle": "将此退货关联到退货授权",

@@ -1584,6 +1584,7 @@
   "orders.returnReason.wrongItem": "wrong item",
   "orders.returns.against": "Against {rma}",
   "orders.returns.counted": "Return counted against {rma}",
+  "orders.returns.empty": "No returns yet",
   "orders.returns.link": "Link",
   "orders.returns.linkIntro": "Received {date}: {items}. A return is counted against one RMA, once.",
   "orders.returns.linkTitle": "Link this return to an RMA",
