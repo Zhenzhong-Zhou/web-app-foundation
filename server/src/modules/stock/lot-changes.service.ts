@@ -48,8 +48,11 @@ export class LotChangesService {
   move(lotId: string, dto: MoveToLotDto, actorId: string): Promise<LotChanged> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const from = await firstLot(tx, organizationId, lotId);
+      // Its reason, and which lot change it was, read as its action in the
+      // Activity log, "Moved to another lot" (U1).
       recordContext({
         reason: 'lot_change',
+        lotChange: 'between_lots' satisfies LotChangeDetail,
         sku: from.sku,
         lotId: { id: from.id, label: from.code },
       });
@@ -95,6 +98,8 @@ export class LotChangesService {
           }),
         );
       }
+      // The Activity log names both lots, this after the one it left (U1).
+      recordContext({ toLotId: { id: to.id, label: to.code } });
 
       const moved = await this.stock.recordWithin(
         tx,

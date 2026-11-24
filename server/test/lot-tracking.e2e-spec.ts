@@ -617,7 +617,7 @@ describe('Start tracking lots (e2e)', () => {
       .get('/v1/stock/movements/export')
       .query({ variantId: w.code })
       .expect(200);
-    expect(csv.text).toContain('Lot changed: lots started');
+    expect(csv.text).toContain(',Lot tracking started,lot_change,');
   });
 
   it('turns tracking on alone for a code with nothing on hand: no lot, no movement, and a receipt then asks for one (R13)', async () => {
@@ -950,6 +950,12 @@ describe('Start tracking lots (e2e)', () => {
           referenceType: null,
         },
       ]);
+      // The export reads it as its action, as Movements does (U1).
+      const csv = await w.org.agent
+        .get('/v1/stock/movements/export')
+        .query({ variantId: w.code })
+        .expect(200);
+      expect(csv.text).toContain(',Back from before lot tracking,lot_change,');
 
       // Its value follows by the lot change's rows: 10 at 2.00, as it left.
       expect(await lotChangeValues(w)).toEqual([

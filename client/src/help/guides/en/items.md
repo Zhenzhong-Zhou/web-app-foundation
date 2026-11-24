@@ -145,7 +145,7 @@ An item added without **Track lot numbers and expiry** can start tracking lots l
 2. Give the **Supplier’s lot** and **Expires** if you know them. **Expires** starts on **Not known yet**, so the lot is listed on Stock, by lot, under **Details to add** until someone gives the day or says it doesn’t expire; the stock can still be used meanwhile.
 3. Press **Start tracking lots**.
 
-All the stock on hand goes into one lot, its code made for us, and the code reads **Tracked** from then on: nothing turns it off, and each receipt asks for its lot. An item with nothing on hand starts too, and no lot is made until stock comes. The stock stays where it is, so every figure is as before, and [Movements](/movements) shows one row for each place, **Lots started**, counted in neither In nor Out.
+All the stock on hand goes into one lot, its code made for us, and the code reads **Tracked** from then on: nothing turns it off, and each receipt asks for its lot. An item with nothing on hand starts too, and no lot is made until stock comes. The stock stays where it is, so every figure is as before, and [Movements](/movements) shows one row for each place, **Lot tracking started**, its stock put into the lot, counted in neither In nor Out.
 
 The lot’s cost history holds the item’s earlier entries, so [Stock value](/costs) is the same, and what waited for a cost still waits, its cost landing on the lot. Stock that comes back from before, such as a return of a sale shipped earlier, goes into this lot.
 

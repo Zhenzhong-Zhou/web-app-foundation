@@ -28,6 +28,7 @@ import {
 } from './describe-movement';
 import {
   inSentence,
+  lotChangeLabel,
   MOVEMENT_HEADINGS,
   reasonDetailLabel,
   reasonLabel,
@@ -244,37 +245,91 @@ export function MovementWhen({
 }
 
 /**
+ * How a move counted as neither In nor Out says what moved, by what it
+ * was (ADR-094, U1): a lot change as its action, "put 900 each into a
+ * lot" as lot tracking starts or stock comes back from before, "moved 80
+ * each to another lot" between two; any other move, or a lot change this
+ * tab does not know, "moved 20 each". Each with ", counted in neither"
+ * where the row says so (118a).
+ */
+function movedWords(movement: Movement, neither: boolean, intl: IntlShape) {
+  const quantity = displayWithUnit(
+    movement.quantity,
+    movement.unitOfMeasure,
+    intl,
+  );
+  const lotChange =
+    movement.reason === 'lot_change' ? movement.reasonDetail : null;
+
+  if (lotChange === 'lots_started' || lotChange === 'from_before') {
+    return neither
+      ? intl.formatMessage(
+          {
+            id: 'inventory.movements.putIntoLotNeither',
+            defaultMessage: 'put {quantity} into a lot, counted in neither',
+          },
+          { quantity },
+        )
+      : intl.formatMessage(
+          {
+            id: 'inventory.movements.putIntoLot',
+            defaultMessage: 'put {quantity} into a lot',
+          },
+          { quantity },
+        );
+  }
+  if (lotChange === 'between_lots') {
+    return neither
+      ? intl.formatMessage(
+          {
+            id: 'inventory.movements.movedToLotNeither',
+            defaultMessage:
+              'moved {quantity} to another lot, counted in neither',
+          },
+          { quantity },
+        )
+      : intl.formatMessage(
+          {
+            id: 'inventory.movements.movedToLot',
+            defaultMessage: 'moved {quantity} to another lot',
+          },
+          { quantity },
+        );
+  }
+  return neither
+    ? intl.formatMessage(
+        {
+          id: 'inventory.movements.movedNeither',
+          defaultMessage: 'moved {quantity}, counted in neither',
+        },
+        { quantity },
+      )
+    : intl.formatMessage(
+        {
+          id: 'inventory.movements.moved',
+          defaultMessage: 'moved {quantity}',
+        },
+        { quantity },
+      );
+}
+
+/**
  * The change with its unit, "−4 each", "+24 each": the server's signed
  * change, which the export writes too, so the two never differ (review
  * 24); a move counted as neither, between two places across every place,
  * in grey words, "moved 20 each", never a bare number, which reads as
- * stock added (118a). Read without padding zeros, never parsed, since a
- * numeric through a JavaScript number is the loss ADR-025 exists to
- * avoid.
+ * stock added (118a), a lot change as its action (`movedWords`). Read
+ * without padding zeros, never parsed, since a numeric through a
+ * JavaScript number is the loss ADR-025 exists to avoid.
  */
 export function MovementChange({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const { change, quantity, unitOfMeasure } = movement;
+  const { change, unitOfMeasure } = movement;
 
   if (change === null) {
-    const moved = displayWithUnit(quantity, unitOfMeasure, intl);
     return (
       <Box component="span" sx={{ color: 'text.secondary' }}>
-        {movement.reason === 'lot_change'
-          ? intl.formatMessage(
-              {
-                id: 'inventory.movements.movedIntoLot',
-                defaultMessage: 'moved {quantity} into a lot',
-              },
-              { quantity: moved },
-            )
-          : intl.formatMessage(
-              {
-                id: 'inventory.movements.moved',
-                defaultMessage: 'moved {quantity}',
-              },
-              { quantity: moved },
-            )}
+        {movedWords(movement, false, intl)}
       </Box>
     );
   }
@@ -289,35 +344,16 @@ export function MovementChange({ movement }: { movement: Movement }) {
 
 /**
  * How many a move counted in neither In nor Out moved, once, in grey
- * across both columns: "moved 20 each, counted in neither" (118a).
+ * across both columns: "moved 20 each, counted in neither" (118a); a lot
+ * change as its action, "put 3,000 each into a lot, counted in neither"
+ * (ADR-094, R16, U1).
  */
 export function MovedInNeither({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const quantity = displayWithUnit(
-    movement.quantity,
-    movement.unitOfMeasure,
-    intl,
-  );
 
   return (
     <Box component="span" sx={{ color: 'text.secondary' }}>
-      {/* A lot change, "moved 3,000 each into a lot, counted in neither"
-          (ADR-094, R16). */}
-      {movement.reason === 'lot_change'
-        ? intl.formatMessage(
-            {
-              id: 'inventory.movements.movedIntoLotNeither',
-              defaultMessage: 'moved {quantity} into a lot, counted in neither',
-            },
-            { quantity },
-          )
-        : intl.formatMessage(
-            {
-              id: 'inventory.movements.movedNeither',
-              defaultMessage: 'moved {quantity}, counted in neither',
-            },
-            { quantity },
-          )}
+      {movedWords(movement, true, intl)}
     </Box>
   );
 }
@@ -384,8 +420,17 @@ export function MovementReason({
   );
 }
 
-/** A movement's reason in words, with its detail where it has one. */
+/**
+ * A movement's reason in words, with its detail where it has one; a lot
+ * change by its action alone, "Lot tracking started", "Moved to another
+ * lot" or "Back from before lot tracking" (ADR-094, U1).
+ */
 function reasonWords(movement: Movement, intl: IntlShape): string {
+  const action =
+    movement.reason === 'lot_change'
+      ? lotChangeLabel(movement.reasonDetail, intl)
+      : null;
+  if (action) return action;
   const reason = reasonLabel(movement.reason, intl);
   return movement.reasonDetail
     ? intl.formatMessage(
@@ -407,10 +452,20 @@ function reasonWords(movement: Movement, intl: IntlShape): string {
 /**
  * From → to on two lines (82a): where it came from, then "→" and where
  * it went, each place by its path cut in its middle (`PlacePath`, 93a),
- * an end outside the warehouse in grey words. Only for a reader who may
- * see places; the server sends the rest none (96a).
+ * an end outside the warehouse in grey words. A lot change's place once,
+ * with no arrow: both its ends are that one place, the stock having
+ * stayed there (ADR-094, U1). Only for a reader who may see places; the
+ * server sends the rest none (96a).
  */
 export function MovementEnds({ movement }: { movement: Movement }) {
+  if (movement.reason === 'lot_change') {
+    return (
+      <Stack sx={{ minWidth: 0 }}>
+        <MovementEnd movement={movement} side="from" />
+      </Stack>
+    );
+  }
+
   return (
     <Stack sx={{ minWidth: 0 }}>
       <MovementEnd movement={movement} side="from" />

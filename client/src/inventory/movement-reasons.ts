@@ -46,10 +46,32 @@ const REASONS = defineMessages({
    * Stock put from one lot into another at one place, counted in neither
    * In nor Out (ADR-094, 4a): as lot tracking starts, between two of the
    * item's lots, or stock back from before tracking into its first lot.
+   * The three as one kind, the filter's and its chip's name; a row reads
+   * its own action's (`lotChangeLabel`, U1), so no row says it.
    */
   lot_change: {
-    id: 'inventory.reason.lotChange',
-    defaultMessage: 'Lot changed',
+    id: 'inventory.reason.lotChanges',
+    defaultMessage: 'Lot changes',
+  },
+});
+
+/**
+ * Which lot change a movement is, its detail, each read as the action
+ * that made it, the name its menu, its dialog or the Activity log gives
+ * it, in place of "Lot changed: …" (ADR-094, U1).
+ */
+const LOT_CHANGES = defineMessages({
+  lots_started: {
+    id: 'inventory.lotChange.lotsStarted',
+    defaultMessage: 'Lot tracking started',
+  },
+  between_lots: {
+    id: 'inventory.lotChange.betweenLots',
+    defaultMessage: 'Moved to another lot',
+  },
+  from_before: {
+    id: 'inventory.lotChange.fromBefore',
+    defaultMessage: 'Back from before lot tracking',
   },
 });
 
@@ -66,9 +88,8 @@ export const RECEIPT_DETAILS = [
 
 /**
  * A correction's details by name, a receipt's with no order, Movements
- * reading "Received: opening stock" (R11), a voided shipment's goods
- * back, the server's `shipment_voided`, which no one chooses (#647), and
- * which lot change it was, "Lot changed: lots started" (ADR-094, 4a).
+ * reading "Received: opening stock" (R11), and a voided shipment's goods
+ * back, the server's `shipment_voided`, which no one chooses (#647).
  */
 const DETAILS = defineMessages({
   miscount: { id: 'inventory.detail.miscount', defaultMessage: 'Miscount' },
@@ -83,18 +104,6 @@ const DETAILS = defineMessages({
   shipment_voided: {
     id: 'inventory.detail.shipmentVoided',
     defaultMessage: 'Shipment voided',
-  },
-  lots_started: {
-    id: 'inventory.detail.lotsStarted',
-    defaultMessage: 'Lots started',
-  },
-  between_lots: {
-    id: 'inventory.detail.betweenLots',
-    defaultMessage: 'Between lots',
-  },
-  from_before: {
-    id: 'inventory.detail.fromBefore',
-    defaultMessage: 'From before lot tracking',
   },
 });
 
@@ -117,6 +126,20 @@ export function reasonDetailLabel(detail: string, intl: IntlShape): string {
   return detail in DETAILS
     ? intl.formatMessage(DETAILS[detail as keyof typeof DETAILS])
     : detail;
+}
+
+/**
+ * A lot change by its action, "Moved to another lot" (ADR-094, U1); null
+ * for a detail this tab does not know, which reads as its reason and
+ * detail, as any other does.
+ */
+export function lotChangeLabel(
+  detail: string | null,
+  intl: IntlShape,
+): string | null {
+  return detail !== null && detail in LOT_CHANGES
+    ? intl.formatMessage(LOT_CHANGES[detail as keyof typeof LOT_CHANGES])
+    : null;
 }
 
 /**

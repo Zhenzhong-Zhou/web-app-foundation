@@ -34,6 +34,8 @@ export const REFERENCE_KINDS = {
   categoryId: 'product_category',
   parentId: 'product_category',
   lotId: 'lot',
+  // The lot a move between lots put the stock into (ADR-094, U1).
+  toLotId: 'lot',
   actorId: 'person',
   resourceId: 'record',
 } as const;

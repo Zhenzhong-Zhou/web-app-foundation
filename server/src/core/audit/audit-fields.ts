@@ -1,4 +1,7 @@
-import { MOVEMENT_REASON_WORDS } from '../../common/movement-reasons';
+import {
+  LOT_CHANGE_WORDS,
+  MOVEMENT_REASON_WORDS,
+} from '../../common/movement-reasons';
 import { PRODUCT_TYPE_WORDS } from '../../common/product-types';
 import type {
   IdleSignOutScope,
@@ -707,6 +710,13 @@ export const AUDIT_FIELDS = {
     // Movements' own words, as its export names them (136a).
     read: { set: MOVEMENT_REASON_WORDS },
   },
+  // Which lot change a move was, read as its action in place of its
+  // reason, "Reason: Moved to another lot", as its row on Movements reads
+  // (ADR-094, U1; audit-words.ts).
+  lotChange: {
+    name: t({ id: 'audit.field.lotChange', defaultMessage: 'Reason' }),
+    read: { set: LOT_CHANGE_WORDS },
+  },
   source: {
     name: t({ id: 'audit.field.source', defaultMessage: 'Bought or made' }),
     read: { set: SOURCE_WORDS },
@@ -936,6 +946,12 @@ export const AUDIT_FIELDS = {
   },
   lotId: {
     name: t({ id: 'audit.field.lotId', defaultMessage: 'Lot' }),
+    read: 'reference',
+  },
+  // The lot a move between lots put the stock into, after the lot it
+  // left (ADR-094, U1).
+  toLotId: {
+    name: t({ id: 'audit.field.toLotId', defaultMessage: 'To lot' }),
     read: 'reference',
   },
   actorId: {

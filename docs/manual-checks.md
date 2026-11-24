@@ -716,8 +716,9 @@ a second organization.
   at both places, the lot shown at each; from the item's page, the line
   is gone, the row reads Tracked, Where it stands lists the lot, "Expiry to
   add" in its Expires, and the Lot view's Details to add lists it, its
-  stock still counted usable. Movements shows one row a place, "Lot changed: lots
-  started", "moved 900 each into a lot, counted in neither", its Lot
+  stock still counted usable. Movements shows one row a place, "Lot
+  tracking started", "put 900 each into a lot, counted in neither", its
+  place once in From → to with no arrow, its Lot
   "L-…" alone, with no dash for a first; the item's History names who started it. Stock value, By item
   and lot: BOTTLE-A60's total and Unit cost are what they were, now on the
   lot; had 10 been received first as opening stock, they still wait,
@@ -742,7 +743,8 @@ a second organization.
   the first. Move 10 into a
   new typed code: the message reads "Moved 10 each from lot … to lot
   …", with Open the lot; Stock opens the code's row at the place, both
-  lots there. Typing a code the item has says "An existing lot. This
+  lots there. The Activity log's entry names both, "Lot: K2-2609 · To
+  lot: …", each a link to its lot, its reason "Moved to another lot". Typing a code the item has says "An existing lot. This
   adds to it.", asking no expiry. A lot some of whose stock waits for a
   cost says the moved stock waits there too, with Waiting for a cost,
   which opens Stock value there, for whoever may see costs. On a phone
@@ -777,14 +779,21 @@ a second organization.
   details." with Show all stock. Group by Item offers no Details to add. With Main's Shelf chosen
   and Include empty, an item that started tracking lots and whose only
   stock there was before it is not listed.
-- **MC-331** *(ADR-094, R16, R20)* A lot change on Movements. Choose Lot
-  changed in the Reason filter: each row reads its two lots, "K2-2609 →
-  K2-2609B", each a link to its lot, its reason "Lot changed: between
-  lots" and its note; across every item, "moved 80 each into a lot". For
-  K2-60CT alone it is counted in neither, "moved 80 each into a lot,
-  counted in neither"; with lot K2-2609 chosen it is Out, with K2-2609B
-  In. The Export has To lot after Lot: K2-2609B on that row, empty on
-  every other. In 中文 批次变更：批次间转移.
+- **MC-331** *(ADR-094, R16, R20, U1)* A lot change on Movements, read
+  as its action. Choose Lot changes in the Reason filter, its chip
+  "Reason: Lot changes": every kind of lot change is listed, and no row
+  reads "Lot changed". The move's row reads its two lots, "K2-2609 →
+  K2-2609B", each a link to its lot, its reason "Moved to another lot"
+  and its note, and its place once in From → to, with no arrow; across
+  every item, "moved 80 each to another lot". For K2-60CT alone it is
+  counted in neither, "moved 80 each to another lot, counted in
+  neither"; with lot K2-2609 chosen it is Out, with K2-2609B In. A
+  start's row reads "Lot tracking started", "put … into a lot", and
+  stock back from before "Back from before lot tracking", each naming
+  the lot it entered alone. The Export has To lot after Lot: K2-2609B on
+  that row, empty on every other, its Reason "Moved to another lot", its
+  Reason code lot_change, and both From and To. In 中文 转入其他批次, the
+  filter 批次变更.
 - **MC-332** *(ADR-094, R9, D2)* An expiry still to add, worded alike
   everywhere. Take K2-60CT's first lot made here, its expiry not known
   yet, and read it where a lot's expiry shows: Stock and the Lot view,
@@ -7838,3 +7847,9 @@ first.
   before tracking, a recall's Moved on to and a cost that follows a move; the
   glossary's lot words; and French's "en stock" for what was on hand: MC-327
   extended with Stock value after the start and its one way.
+- 2026-11-23: ADR-094's lot change read as its action, U1: Lot tracking
+  started, Moved to another lot and Back from before lot tracking on
+  Movements and in its export, the place once, "put … into a lot" and
+  "moved … to another lot", the filter's one option Lot changes, and a
+  move's Activity log entry naming both lots: MC-327, MC-328 and MC-331
+  rewritten.

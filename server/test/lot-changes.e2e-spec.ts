@@ -284,12 +284,38 @@ describe('Move to another lot (e2e)', () => {
     expect(await total(w)).toBe('320.000000');
     expect(await figures(w)).toEqual(before);
 
-    // Who and when, in the Activity log, as every movement is.
+    // Who and when, in the Activity log, as every movement is: both lots,
+    // the one it went to after the one it left, each a link, its reason
+    // as its action (U1).
     const log = await w.org.agent
       .get('/v1/audit')
       .query({ resourceId: moved.movement.id })
       .expect(200);
-    expect(JSON.stringify(log.body)).toContain('stock.movement_recorded');
+    const [entry] = body<{
+      entries: { action: string; details: unknown[] }[];
+    }>(log).entries;
+    expect(entry.action).toBe('stock.movement_recorded');
+    expect(entry.details).toEqual([
+      { field: 'Code', changed: false, from: null, value: { text: 'VITC-90' } },
+      {
+        field: 'Lot',
+        changed: false,
+        from: null,
+        value: { text: 'NL-2611-A', link: { kind: 'lot', id: first.id } },
+      },
+      {
+        field: 'To lot',
+        changed: false,
+        from: null,
+        value: { text: 'NL-2611-B', link: { kind: 'lot', id: second.id } },
+      },
+      {
+        field: 'Reason',
+        changed: false,
+        from: null,
+        value: { text: 'Moved to another lot' },
+      },
+    ]);
 
     // Stock moved takes no cost of its own: its first lot's follows it
     // (ADR-094, D5).
@@ -509,7 +535,7 @@ describe('Move to another lot (e2e)', () => {
       .get('/v1/stock/movements/export')
       .query({ variantId: w.code })
       .expect(200);
-    expect(csv.text).toContain('Lot changed: between lots');
+    expect(csv.text).toContain(',Moved to another lot,lot_change,');
     const [header, ...lines] = csv.text
       .replace(/^\uFEFF/, '')
       .trimEnd()

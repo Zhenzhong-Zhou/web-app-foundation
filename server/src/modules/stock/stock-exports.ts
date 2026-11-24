@@ -2,7 +2,7 @@ import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import type { Locale } from '../../common/locales';
 import {
-  type LotChangeDetail,
+  LOT_CHANGE_WORDS,
   MOVEMENT_REASON_WORDS,
   type ReceiptDetail,
   SHIPMENT_VOIDED,
@@ -239,32 +239,11 @@ const RECEIPT_DETAIL_WORDS: Record<ReceiptDetail, Translatable> = {
 };
 
 /**
- * Which lot change it was (ADR-094, 4a): the code's stock on hand put into
- * its first lot as its lot tracking started (R16), part of a lot moved
- * into another (R20), or stock come back from before its lot tracking
- * started put into that first lot (Q3a).
- */
-const LOT_CHANGE_DETAIL_WORDS: Record<LotChangeDetail, Translatable> = {
-  lots_started: t({
-    id: 'stock.detail.lotsStarted',
-    defaultMessage: 'lots started',
-  }),
-  between_lots: t({
-    id: 'stock.detail.betweenLots',
-    defaultMessage: 'between lots',
-  }),
-  from_before: t({
-    id: 'stock.detail.fromBefore',
-    defaultMessage: 'from before lot tracking',
-  }),
-};
-
-/**
  * What a correction says it was, chosen when the count is corrected, or a
- * voided shipment's goods back (#647), why a receipt had no order, and
- * which lot change it was, as the screen says each after the reason; any
- * other detail is written as recorded, free text under its reason
- * (ADR-023).
+ * voided shipment's goods back (#647), and why a receipt had no order, as
+ * the screen says each after the reason; any other detail is written as
+ * recorded, free text under its reason (ADR-023). A lot change reads as
+ * its action instead (`LOT_CHANGE_WORDS`).
  */
 const DETAIL_WORDS: Record<string, Translatable> = {
   miscount: t({ id: 'stock.detail.miscount', defaultMessage: 'miscount' }),
@@ -277,7 +256,6 @@ const DETAIL_WORDS: Record<string, Translatable> = {
     defaultMessage: 'shipment voided',
   }),
   ...RECEIPT_DETAIL_WORDS,
-  ...LOT_CHANGE_DETAIL_WORDS,
 };
 
 /**
@@ -359,6 +337,20 @@ function receiptEnd(detail: string | null): keyof typeof OUTSIDE_WORDS {
 function receivedFrom(movement: Movement): string | null {
   return movement.reason === 'receipt'
     ? (movement.recipient?.name ?? null)
+    : null;
+}
+
+/**
+ * A lot change's action, by which it was (ADR-094, U1); null for any
+ * other movement, and for a lot change's detail this release does not
+ * know, which reads as its reason and detail.
+ */
+function lotChangeOf(movement: Movement): Translatable | null {
+  const detail = movement.reasonDetail;
+  return movement.reason === 'lot_change' &&
+    detail !== null &&
+    Object.hasOwn(LOT_CHANGE_WORDS, detail)
+    ? LOT_CHANGE_WORDS[detail as keyof typeof LOT_CHANGE_WORDS]
     : null;
 }
 
@@ -594,6 +586,10 @@ export function movementColumns(options: {
         if (!('movement' in line)) {
           return translate(BALANCE_WORDS[line.total], locale);
         }
+        // A lot change as its action, "Moved to another lot", as the
+        // screen reads it (ADR-094, U1).
+        const action = lotChangeOf(line.movement);
+        if (action) return translate(action, locale);
         const reason = reasonOf.value(line, locale);
         const detail = detailOf.value(line, locale);
         // As the screen writes it, "Corrected: found" (100a).

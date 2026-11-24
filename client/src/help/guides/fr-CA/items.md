@@ -145,7 +145,7 @@ Un article ajouté sans **Suivre les numéros de lot et les dates de péremption
 2. Donnez le **Lot du fournisseur** et la **Date de péremption** si vous les connaissez. La **Date de péremption** commence à **Pas encore connue** : le lot est donc listé dans Stock, par lot, sous **Détails à ajouter** jusqu’à ce que quelqu’un donne le jour ou dise qu’il n’expire pas; le stock reste utilisable entre-temps.
 3. Appuyez sur **Commencer le suivi par lot**.
 
-Tout le stock va dans un seul lot, son code créé pour nous, et le code indique **Suivi** dès lors : rien ne l’arrête, et chaque réception demande son lot. Un article sans stock commence aussi, et aucun lot n’est créé avant l’arrivée de stock. Le stock reste où il est, de sorte que tous les chiffres sont comme avant, et [Mouvements](/movements) montre une ligne par emplacement, **Suivi par lot commencé**, ni en entrée ni en sortie.
+Tout le stock va dans un seul lot, son code créé pour nous, et le code indique **Suivi** dès lors : rien ne l’arrête, et chaque réception demande son lot. Un article sans stock commence aussi, et aucun lot n’est créé avant l’arrivée de stock. Le stock reste où il est, de sorte que tous les chiffres sont comme avant, et [Mouvements](/movements) montre une ligne par emplacement, **Suivi par lot commencé**, son stock mis dans le lot, ni en entrée ni en sortie.
 
 L’historique de coût du lot contient les entrées antérieures de l’article : la [Valeur du stock](/costs) est la même, et ce qui attendait un coût l’attend toujours, son coût tombant sur le lot. Du stock qui revient d’avant, comme le retour d’une vente expédiée plus tôt, va dans ce lot.
 

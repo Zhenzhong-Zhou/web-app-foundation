@@ -192,6 +192,57 @@ describe('wordEntry, a movement’s reason', () => {
     ]);
     expect(reason('adjustment', 'zh-Hans')).toEqual([['原因', '调整']]);
   });
+
+  // ADR-094, U1: a move between lots names both, the lot it went to
+  // after the lot it left, each a link, and its reason as its action,
+  // the name its row on Movements reads.
+  it('reads a move between lots as Moved to another lot, naming the lot it went to after the lot it left', () => {
+    const LOT_B = '01a20b34-085b-7f2e-b451-29688f02b7c3';
+    const words = (locale: Locale) =>
+      wordEntry(
+        {
+          action: AUDIT_ACTIONS.STOCK_MOVEMENT_RECORDED,
+          resourceType: 'stock_movement',
+          // As jsonb keeps it: its keys by length.
+          payload: {
+            sku: 'K2-60CT',
+            lotId: { id: ID, label: 'K2-2609' },
+            reason: 'lot_change',
+            toLotId: { id: LOT_B, label: 'K2-2609B' },
+            lotChange: 'between_lots',
+          },
+        },
+        { locale, timeZone: 'UTC', readerId: null },
+      ).details;
+
+    const details = words('en');
+    expect(details.map((detail) => [detail.field, detail.value?.text])).toEqual(
+      [
+        ['Code', 'K2-60CT'],
+        ['Lot', 'K2-2609'],
+        ['To lot', 'K2-2609B'],
+        ['Reason', 'Moved to another lot'],
+      ],
+    );
+    expect(details[1].value?.link).toEqual({ kind: 'lot', id: ID });
+    expect(details[2].value?.link).toEqual({ kind: 'lot', id: LOT_B });
+    expect(words('fr-CA').at(-1)?.value?.text).toBe(
+      'Déplacé vers un autre lot',
+    );
+    expect(words('zh-Hans').at(-1)?.value?.text).toBe('转入其他批次');
+  });
+
+  // The filter's one option for the three kinds of lot change, as an
+  // export of Movements records it.
+  it('names a filter on lot changes as the filter does, Lot changes', () => {
+    const { details } = wordEntry(
+      entry({ list: 'movements', filters: { reason: 'lot_change' } }),
+      IN_ENGLISH,
+    );
+    expect(
+      details.find((detail) => detail.field === 'Filters')?.value?.text,
+    ).toBe('Reason Lot changes');
+  });
 });
 
 describe('wordEntry, a day', () => {

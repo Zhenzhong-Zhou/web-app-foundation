@@ -445,7 +445,8 @@ file is kept is in the [README](README.md).
   every other movement, Supplier's lot, Expiry, For and By; Email, the
   person's; and the note last, as typed. One code's range starts with its opening balance and ends
   with its closing, each by its day, beside the range's In and Out.
-  Reason in the screen's words with its detail, "Corrected: found". From
+  Reason in the screen's words with its detail, "Corrected: found", a
+  lot change as its action, "Moved to another lot" (ADR-094, U1). From
   and To, each place by its whole path, or an end outside the warehouse
   in the screen's words, supplier, customer, run, sample, counted in or
   counted out, only for a reader who may see places, else no such
@@ -981,7 +982,7 @@ file is kept is in the [README](README.md).
   place, a retired one too, which the stock never leaves, its code from
   the lot series, noted as the stock on hand when lot tracking started,
   with the supplier's lot and the expiry when given: one lot change a
-  place, Lots started, counted in neither In nor Out. With no expiry
+  place, Lot tracking started, counted in neither In nor Out. With no expiry
   given, the lot's is not known yet, never Doesn't expire, so it is
   listed under Details to add and stays usable; the question starts on
   Not known yet, shown chosen. On hand, usable, Held,
@@ -1110,12 +1111,33 @@ file is kept is in the [README](README.md).
   [test](../../server/test/costs.e2e-spec.ts) "carries a batch’s cost at close to its output moved to another lot before it" ·
   [test](../../server/test/costs.e2e-spec.ts) "gives a cost and a move at once, neither waiting on the other (two at once)"
 - **Movements names both lots of a lot change,** the lot it leaves and
-  the lot it enters, and each lot's cost history names the other; the
-  export reads "Lot changed: between lots". Lots started, and stock back
-  from before, name the lot entered alone, there being no first.
+  the lot it enters, and each lot's cost history names the other. Lot
+  tracking started, and stock back from before, name the lot entered
+  alone, there being no first.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
   [test](../../server/test/lot-changes.e2e-spec.ts) "reads a lot change’s second lot back on Movements, Out of the first and In to the second, and the other lot in each lot’s cost history (R20)" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "counts a lot change in neither In nor Out for its code, and Out of the lot it left, a lot started with none before it"
+- **A lot change reads as the action that made it,** never "Lot
+  changed": its reason Lot tracking started, Moved to another lot or Back
+  from before lot tracking, on Movements, an item's Latest movements and
+  the export's Reason, its Reason code still lot_change; its change "put
+  900 each into a lot" for the first and the last, "moved 80 each to
+  another lot" between two, with ", counted in neither" for one code;
+  its place written once in From → to, with no arrow, since the stock
+  did not move, the export keeping both From and To. The Reason filter
+  keeps one option for the three, Lot changes, which no row says. A
+  move's entry in the Activity log names both lots, To lot after the
+  lot it left, each a link, its reason Moved to another lot.
+  [ADR-094](../adr/0094-lots-at-receipt.md#decision--a-lot-change-is-one-movement-counted-in-neither-in-nor-out) ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "reads a move between lots as Moved to another lot, its place once, both its lots each a link, and why" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "reads lot tracking started and stock back from before as their actions, each put into a lot at its place, written once" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers the three kinds of lot change as one Reason, Lot changes, its chip saying so" ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "moves part of a lot at one place into another of its lots, its value carried at the first lot’s average, both pools summing, the code’s figures as before (R20, Q1a)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "takes back a sale shipped before the start by quantity, with no lot as it left, then into the start lot, at the cost it left at (Q3a)" ·
+  [test](../../server/src/core/audit/audit-words.spec.ts) "reads a move between lots as Moved to another lot, naming the lot it went to after the lot it left" ·
+  [test](../../server/src/core/audit/audit-words.spec.ts) "names a filter on lot changes as the filter does, Lot changes" ·
+  [Help](../../client/src/help/guides/en/movements.md#words-youll-meet-words) ·
+  MC-331
 
 ## Counting in found stock
 
