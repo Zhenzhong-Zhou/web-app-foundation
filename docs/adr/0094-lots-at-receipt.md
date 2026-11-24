@@ -515,3 +515,344 @@ tests and `--quick`, and #676's own checks run the rest. The panel walked
 the reviews numbered 100 findings, 53 fixed here in 52 commits, the
 rest closed or filed. The steps ran about 1,410 minutes in all, the
 53 fixes 437 of them.
+
+## Amendment (November 2026) — the branch after: a late cost follows each unit once, Stock value by the page, a lot's former code (#678, #664, #665)
+
+The as-built above left five things for the next branch: #678, the
+temporary trigger's drop, #664, #665 and #669's 78. The branch is
+`fix-678-after-094`, from `main` at 20619bb2, planned in the chat on 24
+November 2026 as one pull request, its costs half built first with a
+stop before the lots half (S1b). Its boards are the canvas's rows
+"第十九版 · v19" (five boards), "第二十版 · v20" and "第二十一版 · v21".
+
+### Requirements, as confirmed
+
+The maintainer confirmed these on 24 November 2026, before drafting,
+with the assumptions and what is not included, and answered 1a to 8a;
+then E1a to E6a, after the choices were checked against production
+practice; then S1b, H1a and M1a. A step is the brief's.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | #678: a late cost follows the costed receipt's units through each lot in time order, each unit carried once; for a cost set, a cost corrected and a batch's cost at its run's close | The issue's case fails first: 10 with no price, 6 shipped, 4 moved A → B → A → C, costed at 10.00; then C holds 40.00 for 4, 60.00 is issued, 100.00 in all. ADR-048's two examples and review 76's case keep their figures | 6 |
+| R2 | Every test of a cost that follows stock checks three things: no lot holds more than its units at the cost given; held and issued add up to the cost given; each pool's value is the sum of its ledger rows, `issued` aside. One test over generated orders of receiving, shipping, moving and returning, written with fast-check (E5a) | One helper holds the three checks; the generated test runs on a fixed seed in verify and CI, and with a new seed in the weekly flake hunt, which reports its seed | 7 |
+| R3 | The branch's first migration drops the trigger `lots_expiry_from_date` and its function | A list of every released write to `lots`, each naming the expiry's kind and its day; a server test where a day with the kind `none` is refused; the migrations' linter passes; the schema's comment and the lots rules say so | 3, 5 |
+| R4 | #664: the waiting set is worked out more cheaply, by query alone; "waiting" means the same on Stock, Stock value and Home | The tests of what waits pass unchanged; the plan check holds at both sizes | 9 |
+| R5 | The four reads timed again at large on the Mac, the median of three rounds, on ADR-094's seed | Stock's counts (371), the Lot view's counts (368), Home (384) and Home for a newcomer (303) each under 300 ms; every budget at small. One still over 300 stops the step: the next remedy is an ADR of its own | 4, 12 |
+| R6 | Stock value's pools read by the page, with a find box and a sort by Value, the total worked out by the server (3a, E4a) | A server test of the pages, the find, the sort and the total; the export still whole; a browser test; the first page, a find and the sort timed at large, the sort dropped if it misses its budget | 10, 11, 12 |
+| R7 | Timed at large beside them: review 73's read, review 54's condition, a cost given with five moves (review 60), the trace's moved step (review 65); #626 and #630 judged in the same pass | Their figures in ADR-051's amendment, each inside its budget or on the Watch with a trigger; a comment on #626 and on #630 | 4, 12, 23 |
+| R8 | #665: a lot's former codes are kept when Edit lot details corrects its code, with when, by whom and why; the reason is asked only when the code changes (E2a) | A migration, the table in the organization's export; a server test corrects a code twice and reads two former codes; a save with a changed code and no reason is refused at its field | 14, 15 |
+| R9 | The former code is shown: beside the lot's title with every one listed under Former codes; under the code on Stock by lot and the Lot view; on a search hit; on Movements, for a row from before the correction (M1a); on the recall list and in its export, "shipped as", for what left before it (4a, E3a) | A browser test for each place; three languages; the canvas's rows v19 and v21 | 16, 17, 21 |
+| R10 | Every lot search finds a lot by a former code: Stock, the Lot view, the top bar, Movements' find box, Trace a lot, and Stock value's find box | A server test for each search, the current code first; an index led by the organization; the plan check; each inside its budget at large; the volume seed holds former codes | 16, 20, 23 |
+| R11 | A former code typed again for the same item is never given to another lot (5a) | A server test for each route that makes or renames a lot; a component test of the field and its Use button; a made code passes over a former code | 15, 17 |
+| R12 | #669's 78: one start lot a code, held by a partial unique index | The migration stops, naming any code with two; a server test where two writes at once end with one start lot | 14 |
+| R13 | Dependencies at the start and before the reviews; the server's typescript-eslint 8.73.0, then both minimatch overrides and ADR-019's line removed (6a) | `npm outdated` in both folders, the 7-day rule package by package; an install without the overrides, then `npm ls minimatch` showing 11.0.5 or later everywhere | 2, 25 |
+| R14 | Seeds, Help in three languages, the rules files, the manual checks and the glossary, with what they describe | `seed:demo` holds a lot with a former code and a return that took the lot's average; each rule in the commit that changes it | 20, 22 |
+| R15 | The handoff tidied; the session's lessons written into `docs/conventions.md`, `docs/engineering.md` and the planning skill, as one docs commit | The handoff's patch in the first commit; the skill packed and uploaded after the merge | 1, 24 |
+| R16 | #661: a return with no shipped cost lands at its pool's unit cost when the pool has one, and otherwise waits and can be given a cost on its own row (1a, E1a) | The issue's two ways in, each a failing test first; the row says where its value came from; `takesCost` is the server's (#669's 58) | 8 |
+| R17 | #677: what a lot keeps of a late cost is its share, in proportion (2a) | The corrected example, to the cent: 60 at 2.00 and 40 with no price, 90 shipped, the 40 costed at 2.00; the 10 left hold 20.00 | 6 |
+| R18 | The reviews, then the as-built | Each requirement marked met, changed or deferred | 26, 27 |
+| R19 | The riders (7a, 8a): #654 with #618's rest; #627's rest with #669's 87; #544's, #473's and #296's lines for Stock value | Each closed by its commit, or commented with what is left | 9, 11, 18 |
+| R20 | The Activity log's "Lot updated" keeps each field the save changed, before and after (#687, H1a) | #687's pull request, by the fix runner before this branch's code, or this branch's step if it stops; a server test reads both codes from the entry | 19 |
+| R21 | What is assumed of live data is checked, read only (E6a) | One SQL file in a read-only transaction, run by hand before the merge: no cost given after a round trip between lots, no code with two start lots, and how many "Lot updated" entries there are | 3, 28 |
+| R22 | A stop between the two halves (S1b) | After step 12: the full verify, the figures, and the maintainer's own look at Stock value on the dev app, before step 14 starts | 13 |
+
+- **Assumptions:**
+  - No new ADR: this amendment holds the plan, with dated amendments
+    in ADR-044, ADR-048 and ADR-056, and ADR-051's with the as-built's
+    figures.
+  - No stored value is repaired: the live organization holds no real
+    costs yet (R21 checks it).
+  - No former code is filled in from the past: correcting a code
+    became possible on 24 November 2026, and the Activity log kept no
+    old code (below).
+  - A former code is an added field in each answer that names a lot;
+    the API revision rises for Stock value's pages alone.
+  - #669's other items ride only where a step already changes their
+    file, each named in the brief.
+- **Not included:** the fix runner's picks; expired lots (#333, #331,
+  #442, #670); #671, #674 and #652, with the next branch that changes
+  orders; #667 and #668; the counts kept ready (ADR-051's next remedy);
+  a cost carried through production (Open decisions); lot labels
+  (#441); a former code on a printed document or as an export's column.
+
+### Checked before drafting
+
+On 24 November 2026, from `scripts/adr-check.mjs 094` on
+`fix-678-after-094` at b472ae89: the areas `costs`, `stock`, `search`,
+`home`, `orders`, `return-authorizations`, `database`, `api`, `i18n`,
+`ui`, `help` and `ops`, and the issues 678, 664, 665, 669, 661, 677,
+652 and 654; 163 open issues, 100 whole in the file. Of those, 33 were
+read whole, every one named and every one on costs, lots, Stock value,
+the lookup and paging; the other 67 were searched for this branch's
+words and files, each matching line read. With them, ADR-094's own
+review, all 100 findings; the Deferred lines of ADR-044, ADR-048,
+ADR-056 and ADR-094; ADR-051's Watch; and Open decisions.
+
+- **Fired, and taken here:**
+  - #678, #664 with its four comments, #665 and #669's 78; the
+    trigger's drop, as the as-built above says.
+  - ADR-051's Watch, three lines: Inventory's by-code counts, fired on
+    22 November; Valuation, whose trigger, a valuation that no longer
+    fits a screen, is met at large with about 14,500 pools; and Lot
+    search, which former codes join.
+  - #661 and #677, by the maintainer's choice (1a, 2a): both are in
+    the walk R1 rewrites.
+  - #654, whose trigger named ADR-094's branch and was missed there:
+    R10 changes the top bar's search again.
+  - The riders of R19, each because this branch changes its file.
+- **Not fired, and left:**
+  - #652, an orders rules file: this branch changes no rule of orders.
+  - #669's 4, 5, 8, 11 to 15, 56, 59, 61, 62, 85, 88 and 100: each
+    waits for its own screen or words. Its 57, a reference type of its
+    own for a part carried, relabels the value ledger's rows, and is
+    its own decision.
+  - #648, #604 and #328: R6 comes near each file and changes none of
+    their lines.
+  - #646, #640, #611, #609, #631's other lines, #649, #641, #509,
+    #504, #299, #154, #261, #308's rest, #226, #314, #160 and #479: no
+    file of theirs changes here.
+  - ADR-048's Deferred, and Open decisions' cost correction carried
+    through production, period close, barcodes and generated run
+    codes: no trigger met.
+- **Found while checking:**
+  - #677's example is wrong as filed: 40 shipped leaves 60, and its
+    32.00 needs 90 shipped. R17 holds the corrected figures.
+  - ADR-051's Watch says a valuation too large for a screen gets "an
+    export"; #664's comment says pages. The export exists and stays;
+    the screen is paged (3a).
+  - #661 has a second way in: a "Returned" receipt on Stock with no
+    order (ADR-094's review 75).
+  - **The Activity log keeps neither the old code nor the new one**
+    when a lot's code is corrected: the route names no fields and the
+    save hands over nothing of what was there. #665's text, and the
+    chat on 23 November, said it kept both. Filed as #687.
+  - Row v19 drew "was" on Stock, the Lot view and the lot's page, and
+    not on Movements, where the Activity log and the row then named
+    one lot by two codes (M1a, row v21).
+
+### A late cost follows each unit once, in proportion
+
+One rule replaces two readings (R1, R17; ADR-048 amended).
+
+- **The walk is in time order.** A late value, a cost set, a cost
+  corrected or a batch's cost at its run's close, follows its
+  acquisition's units through the pool's history, row by row. Each row
+  out of the pool after the units arrived takes them in proportion:
+  the row's quantity times the acquisition's units still in the pool,
+  over what the pool then held.
+- **What a row takes goes where the stock went.** An issue, a
+  shipment, a consumption, a sample or an outbound adjustment, puts
+  its share to `issued`. A lot change carries its share to its row in,
+  where the same walk goes on. Stock that comes back by a later lot
+  change is a later row in, and carries only what its own units carry,
+  so a unit is never counted twice (#678).
+- **What is still in a pool holds the rest,** which is its share and
+  never more (#677). ADR-048 read "still in the pool" as every unit
+  the pool holds, up to the quantity costed; that left a mixed lot
+  dearer than it was bought at.
+- **A return is a new arrival at its own cost,** not the acquisition's
+  units come back: its cost was settled when it shipped.
+- **Rounding** to six places, the remainder going to the last part, so
+  the parts add up to the value given.
+- **Three examples, to the cent.** 10 with no price, 6 shipped, 4
+  moved A → B → A → C, costed at 10.00: 60.00 issued, C holds 40.00.
+  A lot holding 60 at 2.00 and 40 with no price, 90 shipped at 1.20,
+  the 40 costed at 2.00: 8.00 held and 72.00 issued, the 10 left
+  holding 20.00, where they held 32.00. And ADR-048's two examples of
+  a late cost that follows stock keep their figures.
+
+### A return with no shipped cost
+
+- A return comes back at the cost it shipped at, as before. Two cases
+  have none: a shipment from before costs were kept, and a "Returned"
+  receipt recorded on Stock with no order (#661).
+- **Such a return lands at its pool's unit cost when the pool has
+  one,** stock on hand with nothing waiting, and its row says so. Set
+  cost may correct it.
+- **Otherwise it waits, and can be given a cost on its own row,** as a
+  receipt with no price is. Before, Set cost refused it, so it waited
+  for ever and its pool gave no average (R16).
+- Which rows take a cost is the server's to say, `takesCost` on each
+  row, so the client keeps no copy of the rule (#669's 58).
+
+### The waiting set, and Stock value by the page
+
+- **The waiting set by query alone (R4):** plain waiting rows are read
+  directly, and the walk that finds when a moved row stops waiting
+  starts only from rows that came by a lot change. No flag is stored:
+  a kept figure can drift, and ADR-051 keeps that remedy for an ADR of
+  its own.
+- **`GET /v1/costs/valuation` answers a page (R6):** 50 pools, at most
+  100 a request, by a cursor, with a find by an item's name or code or
+  a lot's code, a former code too, and a sort by item or by value.
+  `total`, `currency` and `provisional` speak for every pool, whatever
+  page or find is read. Each pool names its item in the reader's
+  language (#296).
+- **The API revision rises from 6 to 7:** a tab opened before would
+  take the first page for the whole list. Every tab open at the deploy
+  reloads once.
+- **The export is unchanged,** every row and the same columns: it is
+  the way to read everything at once.
+- **The screen:** the find box, the Value header, Show 50 more with
+  its failed page (#544), and Back to the row left (#473).
+
+### A lot's former codes
+
+- **Kept in a table of their own, `lot_former_codes` (R8):** the lot,
+  the code it had, until when, who changed it and why. Written in the
+  save that corrects the code, in Edit lot details, the one place a
+  code changes. Only a code made here can be corrected, as before.
+- **The reason is asked when the code changes, and only then (E2a).**
+  It is kept with the former code and shown on the lot's page; it is
+  free text, so it stays out of the Activity log's payload (ADR-018).
+- **Shown where the lot is named (R9):** the latest beside the lot's
+  title, "was {code}", and every one under Former codes; one grey line
+  under the code on Stock by lot and the Lot view; on a search hit
+  found by it. A lot never corrected shows nothing.
+- **On Movements, a row from before the correction says the code the
+  lot had then (M1a),** as a changed item code reads there. The
+  Activity log's older entries keep the code as it was; this is what
+  lets the two be read together.
+- **In a recall, what left before the correction says "shipped as
+  {code}" (E3a),** on the page and in the export, since those boxes
+  carry the old code. No column is added.
+- **Searched by the one matcher (R10),** `lot-search.ts`: a former
+  code matched as typed is an exact match, after the current code. Its
+  index is led by the organization, as the two lot indexes are.
+
+### An old code is never given to another lot
+
+Within one item (R11; a code is unique within an item, ADR-023):
+
+- Typed for a new lot, in Receive stock, an order's Receive, Count it
+  in… or Move to another lot, a former code is refused at its field,
+  naming the lot that had it, with Use {code}, which takes that lot
+  and keeps what else was typed. The refusal carries an error code,
+  since its screen offers a way out.
+- Typed for another lot in Edit lot details, it is refused with no
+  button. A lot may take its own former code back.
+- A made code passes over a former code, as over a code in use.
+
+Left alone, a box still labelled with the old code would start a
+second lot under it, and a recall would miss half the run.
+
+### The Activity log keeps what changed
+
+"Lot updated" records who, when and which lot, and no values (#687).
+It is to keep each field the save changed, before and after: the code,
+the supplier's lot, the expiry's kind and its day, each a catalogue
+value ADR-018 allows; and to name the lot's item. The fix runner
+builds it before this branch's code (H1a), so that no code corrected
+on the live application meanwhile loses its old code; this branch
+builds on it, and builds it at step 19 if the runner stops (R20).
+
+The log and the former codes are both needed. The log is the evidence
+nobody can edit, kept two years; the former codes are read every day,
+searched, and kept as long as the lot, since a recall may come later
+than two years.
+
+### The top bar's close matches
+
+The top bar shows what matches as typed, alone, when anything does;
+its close matches only when nothing does, under "Close matches", each
+row no longer marked on its own: the rule Movements' find box has
+since ADR-093 (#654, ADR-056 amended). A list cut at the box's edge
+says how many more are below (#618).
+
+### How it behaves
+
+The wireflow and the states are the canvas's rows v19 to v21: a lot's
+former code; why a code changes, and an old code typed again; Stock
+value by the page; the top bar's close matches; the three cost rules
+with their figures; the Activity log's entry; and "was" on Movements.
+The states are the design language's, drawn only where they differ: a
+refusal at its field with its one button; a find that matches nothing;
+a next page that failed. Each row below is a browser test (step 21).
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Edit lot details, Lot number | Change the code | "Why is the code changing?" shows, and is required | the dialog | Put the code back: the question goes |
+| Edit lot details | Save, the code changed | One write; the message names both codes, with Open the lot | where the dialog was opened, the lot reading "was {code}" | — |
+| Receive stock, an order's Receive, Count it in…, Move to another lot; Lot number | Type another lot's former code | Refused at the field, naming that lot, with Use {code} | the dialog | Use {code}: the field takes it, its lot's line shows, what else was typed kept |
+| Stock, the Lot view, the top bar, Movements' find box, Trace a lot | Type a former code | The lot, saying "was {code}" | the list, or the lot | As each list has it |
+| Stock value, Find an item or a lot | Type | The pools that match and how many; the total as it was | Stock value, the find in the address | Clear the search |
+| Stock value, the Value header | Press | Largest first; again, smallest first | Stock value, the sort in the address | Back: the order before |
+| Stock value | Show 50 more | The next page, focus on its first new row; a failed page says so, with Try again | Stock value | Back from a lot: the row left |
+| The top bar | Type a whole code that matches | Only what matches | the list | — |
+| The top bar | Type text nothing matches as typed | The close matches, under their heading | the list | — |
+| Stock value, a return that waits with no shipped cost | Set cost | Saved, "Cost set." | Stock value | — |
+
+### Held to production practice
+
+- **A late cost's share.** SAP's moving average keeps a late price
+  difference in stock for the units still on hand and posts the rest
+  as a difference, which is ADR-048's first reading; its own help
+  names the stock priced too high that follows. Business Central
+  forwards a changed cost to what left. In proportion is the second
+  kind, and it is exact wherever a pool was bought at one cost. No
+  single standard exists.
+- **A return with no cost to come back at** takes the current cost in
+  Odoo; asking a person every time is stricter than practice.
+- **A change that keeps what was there, and why.** US 21 CFR 11.10(e)
+  asks that a change never obscure what was recorded; EU GMP's Annex
+  11 asks for the reason. The application claims neither rule; they
+  are the practice it copies for a lot's code.
+- **Tests over generated cases** are the usual remedy where two bugs
+  in a row came from examples chosen by hand: review 76's, then #678.
+
+### Considered and not done
+
+- **ADR-048's reading kept, as SAP has it (2b):** the total is right,
+  and stock can read dearer than it cost.
+- **Two pull requests (S1a):** the textbook answer for a change to a
+  cost rule. One branch with a stop gives most of it while the
+  application holds no real costs, without a second merge.
+- **The pages added with no revision raise (3b):** an unbounded read
+  would stay on the API, and an old tab would show a wrong total.
+- **Whether a pool waits, kept as a flag:** a stored figure can drift
+  from its rows.
+- **Such a return always waiting for a cost typed by hand (1a
+  alone),** and an empty lot taking its last unit cost: the first is
+  stricter than practice, the second a rule for a rare case.
+- **A former code filled in from the Activity log:** it kept none.
+- **An old code allowed again with a warning (5b):** one run would
+  split across two lots.
+- **An orders rules file here (7b):** no rule of orders changes.
+
+### Deferred, added by the branch after
+
+- **"Shipped as" on a printed document.** Trigger: the first reprint
+  whose code does not match the boxes.
+- **A former code as an export's column.** Trigger: someone asking for
+  it in a spreadsheet.
+- **The counts kept ready,** an ADR of its own. Trigger: ADR-051's,
+  past 300 ms at large in two runs, once more.
+- **A reason for a changed code chosen from a list.** Trigger: the
+  first organization whose quality person reviews them.
+- **A reference type of its own for a part carried (#669's 57).**
+  Trigger: the next reader that has to join to tell the two apart.
+
+### Consequences of the branch after
+
+- **Migrations:** 0085 drops the trigger and its function; then the
+  former codes' table with its index, and the start lot's partial
+  unique index. After each, `npm run migrate:all`, then each volume
+  database.
+- **The API revision at 7:** the merge goes in at an hour when few
+  tabs are open, as #676's did.
+- **Amended with this:** ADR-048 (a late cost's share, and a return
+  with no shipped cost), ADR-044 (a former code in the lot search, and
+  a recall's "shipped as"), ADR-056 (the top bar's close matches, and
+  a former code searched); ADR-051 with the as-built, its figures and
+  its Watch's Valuation line.
+- **The order:** this amendment and the handoff → the dependencies →
+  the inventory, with the read-only check → the figures before → the
+  trigger's drop → the walk → its generated test → a return with no
+  shipped cost → the waiting set → Stock value's pages, server then
+  screen → the figures after → the stop → the former codes' table and
+  the start lot's index → the writes and refusals → the searches,
+  Movements and the recall → the screens → the top bar → the Activity
+  log → the seeds → the browser tests → Help, the rules files and the
+  docs → the figures after → the lessons → the dependencies again →
+  the reviews → the as-built.
