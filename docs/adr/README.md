@@ -113,7 +113,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-073] | Each organization's document numbering | accepted | 2026-10-17 | [ADR-046], [ADR-047], [ADR-056], [ADR-071] | [ADR-094] |
 | [ADR-074] | Run numbers, and batch codes from them (deferred) | deferred | 2026-10-17 | | [ADR-094] |
 | [ADR-075] | Text size: the person's choice, and text that grows | accepted | 2026-10-18 | [ADR-055] | |
-| [ADR-076] | The audit log in words: no ids, references named, every field translated | accepted | 2026-10-19 | [ADR-018], [ADR-038], [ADR-054], [ADR-057] | |
+| [ADR-076] | The audit log in words: no ids, references named, every field translated | accepted | 2026-10-19 | [ADR-018], [ADR-038], [ADR-054], [ADR-057] | [ADR-094] |
 | [ADR-077] | Invitations: how a person joins an organization | accepted | 2026-10-19 | [ADR-006], [ADR-069] | [ADR-078], [ADR-079], [ADR-080], [ADR-083] |
 | [ADR-078] | Registration: open, or by invitation | accepted | 2026-10-20 | [ADR-006], [ADR-070], [ADR-077] | [ADR-079] |
 | [ADR-079] | A newcomer's first sign-in: a welcome on Home, and help on every page | accepted | 2026-10-20 | [ADR-016], [ADR-058], [ADR-063], [ADR-069], [ADR-077], [ADR-078] | [ADR-080], [ADR-091] |
@@ -131,7 +131,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-091] | Home, redesigned: a few large tiles that open their lists | accepted | 2026-11-04 | [ADR-051], [ADR-055], [ADR-057], [ADR-058], [ADR-069], [ADR-079], [ADR-090] | [ADR-092], [ADR-093] |
 | [ADR-092] | Items: everything the company keeps, by type and category | accepted | 2026-11-09 | [ADR-048], [ADR-051], [ADR-054], [ADR-056], [ADR-068], [ADR-090], [ADR-091] | [ADR-093] |
 | [ADR-093] | Inventory and Movements: one row per code, where it stands on the item's page, and a stock card | accepted | 2026-11-14 | [ADR-044], [ADR-045], [ADR-051], [ADR-057], [ADR-085], [ADR-090], [ADR-091], [ADR-092] | [ADR-094] |
-| [ADR-094] | Lots at receipt: a code made for us, the supplier's lot later, tracking started with stock | accepted | 2026-11-21 | [ADR-023], [ADR-044], [ADR-048], [ADR-056], [ADR-073], [ADR-074], [ADR-093] | |
+| [ADR-094] | Lots at receipt: a code made for us, the supplier's lot later, tracking started with stock | accepted | 2026-11-21 | [ADR-023], [ADR-044], [ADR-048], [ADR-056], [ADR-073], [ADR-074], [ADR-076], [ADR-093] | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md

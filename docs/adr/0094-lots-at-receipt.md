@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-11-21
 areas: [costs, numbering, stock]
-amends: [ADR-023, ADR-044, ADR-048, ADR-056, ADR-073, ADR-074, ADR-093]
+amends: [ADR-023, ADR-044, ADR-048, ADR-056, ADR-073, ADR-074, ADR-076, ADR-093]
 ---
 
-# ADR-094 — Lots at receipt: a code made for us, the supplier's lot later, tracking started with stock (amends ADR-023, ADR-044, ADR-048, ADR-056, ADR-073, ADR-074 and ADR-093)
+# ADR-094 — Lots at receipt: a code made for us, the supplier's lot later, tracking started with stock (amends ADR-023, ADR-044, ADR-048, ADR-056, ADR-073, ADR-074, ADR-076 and ADR-093)
 
 ## Context
 
@@ -523,8 +523,8 @@ temporary trigger's drop, #664, #665 and #669's 78. The branch is
 `fix-678-after-094`, from `main` at 20619bb2, planned in the chat on 24
 November 2026 as one pull request, its costs half built first with a
 stop before the lots half (S1b). Its boards are the canvas's rows
-"第十九版 · v19" (five boards), "第二十版 · v20", "第二十一版 · v21" and
-"第二十二版 · v22" (three boards).
+"第十九版 · v19" (five boards), "第二十版 · v20", "第二十一版 · v21",
+"第二十二版 · v22" (three boards) and "第二十三版 · v23".
 
 ### Requirements, as confirmed
 
@@ -532,8 +532,10 @@ The maintainer confirmed these on 24 November 2026, before drafting,
 with the assumptions and what is not included, and answered 1a to 8a;
 then E1a to E6a, after the choices were checked against production
 practice; then S1b, H1a and M1a; then, the same day, the readings the
-inventory (step 3) left, under "Settled after the inventory" below. A
-step is the brief's.
+inventory (step 3) left, under "Settled after the inventory" below;
+and R23, added that afternoon from the dev application, where #687's
+fix first showed a "Lot updated" entry beside a long one. A step is
+the brief's.
 
 | R | What | Done when | Step |
 | --- | --- | --- | --- |
@@ -559,6 +561,7 @@ step is the brief's.
 | R20 | The Activity log's "Lot updated" keeps each field the save changed, before and after (#687, H1a) | #687's pull request, by the fix runner before this branch's code, or this branch's step if it stops; a server test reads both codes from the entry | 19 |
 | R21 | What is assumed of live data is checked, read only (E6a) | One SQL file in a read-only transaction, run by hand before the merge: no cost given after a round trip between lots, no code with two start lots, how many "Lot updated" entries there are, and how many late costs were given, by kind | 3, 7, 28 |
 | R22 | A stop between the two halves (S1b) | After step 12: the full verify, the figures, and the maintainer's own look at Stock value on the dev app, before step 14 starts | 13 |
+| R23 | The Activity log shows an entry's changes one a line when it has more than one, on its page and in a record's History; nothing is cut, and nothing is shown on hover alone (ADR-076 amended) | A component test of one change, of three and of seven; a browser test; the page at 320 px wide with no sideways scroll; the canvas's row v23 | 19, 21 |
 
 - **Assumptions:**
   - No new ADR: this amendment holds the plan, with dated amendments
@@ -779,6 +782,12 @@ builds it before this branch's code (H1a), so that no code corrected
 on the live application meanwhile loses its old code; this branch
 builds on it, and builds it at step 19 if the runner stops (R20).
 
+**An entry with several changes reads one change a line (R23).** One
+sentence with a dot between changes wrapped into lines nobody could
+match to their fields, and "Lot updated" may now hold four. The rule,
+its fold for a long entry and why no tooltip are ADR-076's amendment
+of the same day; the board is row v23.
+
 The log and the former codes are both needed. The log is the evidence
 nobody can edit, kept two years; the former codes are read every day,
 searched, and kept as long as the lot, since a recall may come later
@@ -794,12 +803,13 @@ says how many more are below (#618).
 
 ### How it behaves
 
-The wireflow and the states are the canvas's rows v19 to v22: a lot's
+The wireflow and the states are the canvas's rows v19 to v23: a lot's
 former code; why a code changes, and an old code typed again; Stock
 value by the page; the top bar's close matches; the three cost rules
 with their figures; the Activity log's entry; "was" on Movements; and,
 on v22, a return that brings back its share, the recall's rows split
-by code, and Record output's refusal.
+by code, and Record output's refusal; on v23, the Activity log's
+changes one a line.
 The states are the design language's, drawn only where they differ: a
 refusal at its field with its one button; a find that matches nothing;
 a next page that failed. Each row below is a browser test (step 21).
@@ -817,6 +827,7 @@ a next page that failed. Each row below is a browser test (step 21).
 | The top bar | Type text nothing matches as typed | The close matches, under their heading | the list | — |
 | Stock value, a return that waits with no shipped cost | Set cost | Saved, "Cost set." | Stock value | — |
 | A run's Record output, Lot number | Type another lot's former code, Record | Refused at the field, naming that lot, with no button | the dialog | Type another code |
+| The Activity log, an entry with seven changes or more | Show all changes | The rest open in place, focus staying on the button, which now reads Show fewer | the Activity log | Show fewer |
 
 ### Held to production practice
 
@@ -867,6 +878,9 @@ a next page that failed. Each row below is a browser test (step 21).
 - **A former code filled in from the Activity log:** it kept none.
 - **An old code allowed again with a warning (5b):** one run would
   split across two lots.
+- **A long entry's changes behind a tooltip, or cut with an
+  ellipsis:** hover cannot be reached by touch and cannot be copied,
+  and what changed is the point of the log.
 - **An orders rules file here (7b):** no rule of orders changes.
 
 ### Deferred, added by the branch after
@@ -884,8 +898,8 @@ a next page that failed. Each row below is a browser test (step 21).
 - **A return after the late cost.** It comes back at what its
   shipment's own rows say, without the share a late cost has since
   put to `issued` for it, as on `main` before this branch; an issue of
-  its own, filed on 24 November 2026. Trigger: the first organization
-  with real costs, or that issue's turn.
+  its own (#693). Trigger: the first organization with real costs, or
+  that issue's turn.
 - **Use {code} in Record output.** Trigger: its lot field moving to
   the shared one.
 
@@ -925,8 +939,9 @@ above is changed in place, since nothing of it was built.
 - **Amended with this:** ADR-048 (a late cost's share, and a return
   with no shipped cost), ADR-044 (a former code in the lot search, and
   a recall's "shipped as"), ADR-056 (the top bar's close matches, and
-  a former code searched); ADR-051 with the as-built, its figures and
-  its Watch's Valuation line.
+  a former code searched), ADR-076 (an entry's changes, one a line);
+  ADR-051 with the as-built, its figures and its Watch's Valuation
+  line.
 - **The order:** this amendment and the handoff → the dependencies →
   the inventory, with the read-only check → the figures before → the
   trigger's drop → the walk → its generated test → a return with no

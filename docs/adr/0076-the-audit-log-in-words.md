@@ -3,6 +3,7 @@ status: accepted
 date: 2026-10-19
 areas: [audit, i18n]
 amends: [ADR-018, ADR-038, ADR-054, ADR-057]
+amended-by: [ADR-094]
 ---
 
 # ADR-076 — The audit log in words: no ids, references named, every field translated (amends ADR-018, ADR-038, ADR-054 and ADR-057)
@@ -220,3 +221,30 @@ now reads as its generic name, a dash, then its city: "Pacific Time
 (Canada) — Vancouver", in every language, never with brackets doubled.
 Its tests check that shape, not today's wording, since the data renames
 zones, and with the season too.
+
+## Amendment (November 2026) — an entry's changes, one a line (ADR-094's amendment)
+
+An entry's details were one sentence, each joined to the next by a dot.
+With several changes it wrapped into lines nobody could match to their
+fields: "Numbering changed" for the lot codes, three settings before
+and after and then another field; and "Lot updated", which keeps up to
+four fields since #687. Decided on 24 November 2026, with ADR-094's
+branch after; the board is the canvas's row "第二十三版 · v23".
+
+- **One change reads as before,** on one line with the entry's other
+  details.
+- **More than one change, and each has its own line:** the field, then
+  before → after. Details that are not changes, the code and the lot an
+  entry names, stay together on the first line.
+- **The arrow and the new value stay together.** Where they do not fit
+  beside the old value they move to the next line as one, so a long
+  change reads as two lines, before and after.
+- **Seven changes or more fold:** the first five, then a button, "Show
+  all {count} changes", which opens the rest in place and then reads
+  "Show fewer". A button, never a hover.
+- **Nothing is cut and nothing is shown on hover alone.** What changed
+  is the point of the log; text on hover cannot be reached by touch, is
+  awkward by keyboard and cannot be copied.
+- **The words stay the server's,** and the CSV is unchanged: this is
+  how the two screens lay out what they are given, the Activity log's
+  page and a record's History.
