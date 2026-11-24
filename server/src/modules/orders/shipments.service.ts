@@ -2,9 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
+import { sellerOf, siteOf } from '../../core/documents/parties';
 import { shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { siteAbove } from '../locations/sites';
 import type { PackingSlip, Shipment } from './dto/shipment-response.dto';
 import { lotItemsOf, withLotItems } from './lot-items';
 
@@ -82,6 +84,7 @@ export class ShipmentsService {
             s.void_reason,
             s.language,
             s.second_language,
+            s.from_location_id,
             o.number,
             o.reference,
             o.direction,
@@ -114,6 +117,7 @@ export class ShipmentsService {
         void_reason: string | null;
         language: Locale;
         second_language: Locale | null;
+        from_location_id: string;
         number: string;
         reference: string | null;
         direction: string;
@@ -137,6 +141,14 @@ export class ShipmentsService {
           }),
         );
 
+      // Where the goods left, as a customer reads it: the site that holds
+      // the place, at its address, or the registered one while it has none
+      // (ADR-071, amended, #672). The shelf stays in fromLocationName.
+      const above = await siteAbove(tx, organizationId, row.from_location_id);
+      const site = await siteOf(tx, organizationId, above?.id ?? null);
+      const address =
+        site?.address ?? (await sellerOf(tx, organizationId)).address;
+
       // The base names: a document, in its own languages (ADR-056, #161).
       const items = await lotItemsOf(
         tx,
@@ -159,6 +171,7 @@ export class ShipmentsService {
         language: row.language,
         secondLanguage: row.second_language,
         fromLocationName: row.from_location_name,
+        shippedFrom: { siteName: site?.name ?? null, address },
         organizationName: row.organization_name,
         order: {
           id: orderId,

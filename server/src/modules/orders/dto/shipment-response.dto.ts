@@ -60,6 +60,30 @@ export class SlipShipTo {
   country!: string | null;
 }
 
+/** An address as a document prints it, one part per line. */
+export class SlipAddress {
+  line1!: string | null;
+  line2!: string | null;
+  city!: string | null;
+  region!: string | null;
+  postalCode!: string | null;
+  country!: string | null;
+}
+
+/**
+ * Where the goods left, as the slip prints it (ADR-071, amended, #672): the
+ * site that holds the place they left, never the shelf itself.
+ */
+export class SlipShippedFrom {
+  /** Null when nothing above the place is a site. */
+  siteName!: string | null;
+  /**
+   * The site's address, or the registered address while it has none; null
+   * when neither is set.
+   */
+  address!: SlipAddress | null;
+}
+
 /** Everything a packing slip prints, from one read (ADR-041). */
 export class PackingSlip {
   id!: string;
@@ -69,7 +93,9 @@ export class PackingSlip {
   note!: string | null;
   voidedAt!: Date | null;
   voidReason!: string | null;
+  /** The exact place the stock left, as the shipment records it. */
   fromLocationName!: string;
+  shippedFrom!: SlipShippedFrom;
   organizationName!: string;
   /** What it prints in, fixed when it shipped (ADR-054). */
   language!: Locale;

@@ -490,6 +490,71 @@ describe('Shipments (e2e)', () => {
       ]);
     });
 
+    /**
+     * Shipped from is the site above the shelf the goods left, at its
+     * address, or the registered one while it has none (ADR-071, amended,
+     * #672): a customer reads where the goods came from, never a shelf's
+     * name. The shipment still records the shelf.
+     */
+    it('prints the site the goods left from, never the shelf', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .put('/v1/organization/address')
+        .send({ line1: '100 Main St', city: 'Vancouver', country: 'CA' })
+        .expect(204);
+      const s = await scenario(alpha);
+      const site = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Burnaby Warehouse',
+      });
+      const shelf = await createLocation(alpha.agent, {
+        type: 'shelf',
+        name: 'CA Product',
+        parentId: site,
+      });
+      await receive(alpha, s.bottle, shelf, '20');
+
+      const ship = async () => {
+        const shipment = body<{ shipment: ShipmentResponse }>(
+          await alpha.agent
+            .post(`/v1/orders/${s.order.id}/shipments`)
+            .send({
+              fromLocationId: shelf,
+              lines: [{ lineId: s.bottleLine, quantity: '5' }],
+            })
+            .expect(201),
+        ).shipment;
+        const slip = body<PackingSlip>(
+          await alpha.agent
+            .get(`/v1/orders/${s.order.id}/shipments/${shipment.id}`)
+            .expect(200),
+        );
+        return {
+          slip,
+          words: wordsOf(
+            packingSlipDocument(slip, documentText('en', null, 'CA')),
+          ),
+        };
+      };
+
+      // No address of its own yet: the registered one.
+      const first = await ship();
+      expect(first.slip.fromLocationName).toBe('CA Product');
+      expect(first.words).toContain('SHIPPED FROM');
+      expect(first.words).toContain('Burnaby Warehouse');
+      expect(first.words).toContain('100 Main St');
+      expect(first.words).not.toContain('CA Product');
+
+      await alpha.agent
+        .put(`/v1/locations/${site}/address`)
+        .send({ line1: '42 Production Way', city: 'Burnaby', country: 'CA' })
+        .expect(204);
+      const second = await ship();
+      expect(second.words).toContain('42 Production Way');
+      expect(second.words).not.toContain('100 Main St');
+      expect(second.words).not.toContain('CA Product');
+    });
+
     it('does not print another organization shipment', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');

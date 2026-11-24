@@ -3,9 +3,9 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 
-import { locations } from '../../database/schema';
+import { locations, shipments } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import type { Tx } from '../stock/stock.service';
 
@@ -124,31 +124,52 @@ export async function siteStillInUse(
 }
 
 /**
- * The site an order's goods last left from: the nearest site at or above
- * the location of its latest shipment that still stands, when that site is
- * still in use. Null when nothing shipped, or nothing above it is a site.
- *
- * Raw SQL with every table aliased, since the walk up the tree refers to
- * its own rows (engineering.md, Server).
+ * The site an order's goods last left from: the site above the location of
+ * its latest shipment that still stands, when that site is still in use.
+ * Null when nothing shipped, or nothing above it is a site.
  */
 export async function siteShippedFrom(
   tx: Tx,
   organizationId: string,
   orderId: string,
 ): Promise<string | null> {
+  const [latest] = await tx
+    .select({ fromLocationId: shipments.fromLocationId })
+    .from(shipments)
+    .where(
+      and(
+        eq(shipments.organizationId, organizationId),
+        eq(shipments.orderId, orderId),
+        isNull(shipments.voidedAt),
+      ),
+    )
+    .orderBy(desc(shipments.createdAt), desc(shipments.id))
+    .limit(1);
+  if (!latest) return null;
+
+  const site = await siteAbove(tx, organizationId, latest.fromLocationId);
+  return site?.isActive ? site.id : null;
+}
+
+/**
+ * The site a place is in: the nearest site at or above it, retired or not.
+ * Null when nothing above it is a site. A packing slip prints it as where
+ * the goods left (#672); an RMA starts from it.
+ *
+ * Raw SQL with every table aliased, since the walk up the tree refers to
+ * its own rows (engineering.md, Server).
+ */
+export async function siteAbove(
+  tx: Tx,
+  organizationId: string,
+  locationId: string,
+): Promise<{ id: string; isActive: boolean } | null> {
   const result = await tx.execute<{ id: string; is_active: boolean }>(sql`
     with recursive up (id, parent_id, type, is_active, depth) as (
       select l.id, l.parent_id, l.type, l.is_active, 0
       from locations l
-      where l.id = (
-        select s.from_location_id
-        from shipments s
-        where s.organization_id = ${organizationId}::uuid
-          and s.order_id = ${orderId}::uuid
-          and s.voided_at is null
-        order by s.created_at desc, s.id desc
-        limit 1
-      )
+      where l.organization_id = ${organizationId}::uuid
+        and l.id = ${locationId}::uuid
       union all
       select p.id, p.parent_id, p.type, p.is_active, up.depth + 1
       from up
@@ -163,7 +184,7 @@ export async function siteShippedFrom(
   `);
 
   const [site] = result.rows;
-  return site?.is_active ? site.id : null;
+  return site ? { id: site.id, isActive: site.is_active } : null;
 }
 
 /**
