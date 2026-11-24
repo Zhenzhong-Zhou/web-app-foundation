@@ -523,18 +523,21 @@ temporary trigger's drop, #664, #665 and #669's 78. The branch is
 `fix-678-after-094`, from `main` at 20619bb2, planned in the chat on 24
 November 2026 as one pull request, its costs half built first with a
 stop before the lots half (S1b). Its boards are the canvas's rows
-"第十九版 · v19" (five boards), "第二十版 · v20" and "第二十一版 · v21".
+"第十九版 · v19" (five boards), "第二十版 · v20", "第二十一版 · v21" and
+"第二十二版 · v22" (three boards).
 
 ### Requirements, as confirmed
 
 The maintainer confirmed these on 24 November 2026, before drafting,
 with the assumptions and what is not included, and answered 1a to 8a;
 then E1a to E6a, after the choices were checked against production
-practice; then S1b, H1a and M1a. A step is the brief's.
+practice; then S1b, H1a and M1a; then, the same day, the readings the
+inventory (step 3) left, under "Settled after the inventory" below. A
+step is the brief's.
 
 | R | What | Done when | Step |
 | --- | --- | --- | --- |
-| R1 | #678: a late cost follows the costed receipt's units through each lot in time order, each unit carried once; for a cost set, a cost corrected and a batch's cost at its run's close | The issue's case fails first: 10 with no price, 6 shipped, 4 moved A → B → A → C, costed at 10.00; then C holds 40.00 for 4, 60.00 is issued, 100.00 in all. ADR-048's two examples and review 76's case keep their figures | 6 |
+| R1 | #678: a late cost follows the costed receipt's units through each lot in time order, each unit carried once; for a cost set, a cost corrected and a batch's cost at its run's close | The issue's case fails first: 10 with no price, 6 shipped, 4 moved A → B → A → C, costed at 10.00; then C holds 40.00 for 4, 60.00 is issued, 100.00 in all. A shipment voided before its cost came leaves nothing issued: 10 with no price, 6 shipped and voided, costed at 10.00, 100.00 held. ADR-048's two examples and review 76's case keep their figures | 6 |
 | R2 | Every test of a cost that follows stock checks three things: no lot holds more than its units at the cost given; held and issued add up to the cost given; each pool's value is the sum of its ledger rows, `issued` aside. One test over generated orders of receiving, shipping, moving and returning, written with fast-check (E5a) | One helper holds the three checks; the generated test runs on a fixed seed in verify and CI, and with a new seed in the weekly flake hunt, which reports its seed | 7 |
 | R3 | The branch's first migration drops the trigger `lots_expiry_from_date` and its function | A list of every released write to `lots`, each naming the expiry's kind and its day; a server test where a day with the kind `none` is refused; the migrations' linter passes; the schema's comment and the lots rules say so | 3, 5 |
 | R4 | #664: the waiting set is worked out more cheaply, by query alone; "waiting" means the same on Stock, Stock value and Home | The tests of what waits pass unchanged; the plan check holds at both sizes | 9 |
@@ -542,9 +545,9 @@ practice; then S1b, H1a and M1a. A step is the brief's.
 | R6 | Stock value's pools read by the page, with a find box and a sort by Value, the total worked out by the server (3a, E4a) | A server test of the pages, the find, the sort and the total; the export still whole; a browser test; the first page, a find and the sort timed at large, the sort dropped if it misses its budget | 10, 11, 12 |
 | R7 | Timed at large beside them: review 73's read, review 54's condition, a cost given with five moves (review 60), the trace's moved step (review 65); #626 and #630 judged in the same pass | Their figures in ADR-051's amendment, each inside its budget or on the Watch with a trigger; a comment on #626 and on #630 | 4, 12, 23 |
 | R8 | #665: a lot's former codes are kept when Edit lot details corrects its code, with when, by whom and why; the reason is asked only when the code changes (E2a) | A migration, the table in the organization's export; a server test corrects a code twice and reads two former codes; a save with a changed code and no reason is refused at its field | 14, 15 |
-| R9 | The former code is shown: beside the lot's title with every one listed under Former codes; under the code on Stock by lot and the Lot view; on a search hit; on Movements, for a row from before the correction (M1a); on the recall list and in its export, "shipped as", for what left before it (4a, E3a) | A browser test for each place; three languages; the canvas's rows v19 and v21 | 16, 17, 21 |
+| R9 | The former code is shown: beside the lot's title with every one listed under Former codes; under the code on Stock by lot and the Lot view; on a search hit; on Movements, for a row from before the correction (M1a); on the recall list and in its export, "shipped as", for what left before it, a row split by the code its stock left under (4a, E3a); on Stock value's rows | A browser test for each place; three languages; the canvas's rows v19, v21 and v22 | 16, 17, 21 |
 | R10 | Every lot search finds a lot by a former code: Stock, the Lot view, the top bar, Movements' find box, Trace a lot, and Stock value's find box | A server test for each search, the current code first; an index led by the organization; the plan check; each inside its budget at large; the volume seed holds former codes | 16, 20, 23 |
-| R11 | A former code typed again for the same item is never given to another lot (5a) | A server test for each route that makes or renames a lot; a component test of the field and its Use button; a made code passes over a former code | 15, 17 |
+| R11 | A former code typed again for the same item is never given to another lot (5a), a run's Record output included | A server test for each route that makes or renames a lot; a component test of the field and its Use button; a made code passes over a former code, and Numbering's taken-number check reads former codes | 15, 17 |
 | R12 | #669's 78: one start lot a code, held by a partial unique index | The migration stops, naming any code with two; a server test where two writes at once end with one start lot | 14 |
 | R13 | Dependencies at the start and before the reviews; the server's typescript-eslint 8.73.0, then both minimatch overrides and ADR-019's line removed (6a) | `npm outdated` in both folders, the 7-day rule package by package; an install without the overrides, then `npm ls minimatch` showing 11.0.5 or later everywhere | 2, 25 |
 | R14 | Seeds, Help in three languages, the rules files, the manual checks and the glossary, with what they describe | `seed:demo` holds a lot with a former code and a return that took the lot's average; each rule in the commit that changes it | 20, 22 |
@@ -552,9 +555,9 @@ practice; then S1b, H1a and M1a. A step is the brief's.
 | R16 | #661: a return with no shipped cost lands at its pool's unit cost when the pool has one, and otherwise waits and can be given a cost on its own row (1a, E1a) | The issue's two ways in, each a failing test first; the row says where its value came from; `takesCost` is the server's (#669's 58) | 8 |
 | R17 | #677: what a lot keeps of a late cost is its share, in proportion (2a) | The corrected example, to the cent: 60 at 2.00 and 40 with no price, 90 shipped, the 40 costed at 2.00; the 10 left hold 20.00 | 6 |
 | R18 | The reviews, then the as-built | Each requirement marked met, changed or deferred | 26, 27 |
-| R19 | The riders (7a, 8a): #654 with #618's rest; #627's rest with #669's 87; #544's, #473's and #296's lines for Stock value | Each closed by its commit, or commented with what is left | 9, 11, 18 |
+| R19 | The riders (7a, 8a): #654 with #618's rest; #627's rest with #669's 87, the organization named in every join of the costs reads, eight in all; #544's, #473's and #296's lines for Stock value | Each closed by its commit, or commented with what is left | 9, 11, 18 |
 | R20 | The Activity log's "Lot updated" keeps each field the save changed, before and after (#687, H1a) | #687's pull request, by the fix runner before this branch's code, or this branch's step if it stops; a server test reads both codes from the entry | 19 |
-| R21 | What is assumed of live data is checked, read only (E6a) | One SQL file in a read-only transaction, run by hand before the merge: no cost given after a round trip between lots, no code with two start lots, and how many "Lot updated" entries there are | 3, 28 |
+| R21 | What is assumed of live data is checked, read only (E6a) | One SQL file in a read-only transaction, run by hand before the merge: no cost given after a round trip between lots, no code with two start lots, how many "Lot updated" entries there are, and how many late costs were given, by kind | 3, 7, 28 |
 | R22 | A stop between the two halves (S1b) | After step 12: the full verify, the figures, and the maintainer's own look at Stock value on the dev app, before step 14 starts | 13 |
 
 - **Assumptions:**
@@ -651,16 +654,31 @@ One rule replaces two readings (R1, R17; ADR-048 amended).
   never more (#677). ADR-048 read "still in the pool" as every unit
   the pool holds, up to the quantity costed; that left a mixed lot
   dearer than it was bought at.
-- **A return is a new arrival at its own cost,** not the acquisition's
-  units come back: its cost was settled when it shipped.
+- **A return brings back what its shipment took.** A return, or a
+  voided shipment's stock coming back, comes back at the cost it
+  shipped at. In the walk, when the shipment it reverses took units of
+  the acquisition, the row in takes back its part of them: the units
+  the shipment took, times the quantity coming back over the quantity
+  shipped. Those units count as in the pool again from that row on, so
+  their share is held, or goes wherever they go next, and is not
+  `issued`. A void's shipment is the one it names; an order's return
+  reads its order's shipments from the lot, as its shipped cost does.
+  A return whose shipment took none of the acquisition's units, and a
+  "Returned" receipt with no order, bring nothing back: a new arrival
+  at its own cost.
 - **Rounding** to six places, the remainder going to the last part, so
   the parts add up to the value given.
-- **Three examples, to the cent.** 10 with no price, 6 shipped, 4
+- **Five examples, to the cent.** 10 with no price, 6 shipped, 4
   moved A → B → A → C, costed at 10.00: 60.00 issued, C holds 40.00.
   A lot holding 60 at 2.00 and 40 with no price, 90 shipped at 1.20,
   the 40 costed at 2.00: 8.00 held and 72.00 issued, the 10 left
-  holding 20.00, where they held 32.00. And ADR-048's two examples of
-  a late cost that follows stock keep their figures.
+  holding 20.00, where they held 32.00. 10 with no price, 6 shipped,
+  that shipment voided, costed at 10.00: 100.00 held, nothing issued;
+  with 3 of the 6 returned instead, 70.00 held and 30.00 issued. The
+  mixed lot again, 9 of its 90 returned at 1.20 before the cost comes:
+  the return takes back 7.20 of the 72.00, so 64.80 is issued and the
+  19 on hand hold 38.00, 2.00 each. And ADR-048's two examples of a
+  late cost that follows stock keep their figures.
 
 ### A return with no shipped cost
 
@@ -682,7 +700,9 @@ One rule replaces two readings (R1, R17; ADR-048 amended).
   directly, and the walk that finds when a moved row stops waiting
   starts only from rows that came by a lot change. No flag is stored:
   a kept figure can drift, and ADR-051 keeps that remedy for an ADR of
-  its own.
+  its own. Every join in the costs reads names the organization, the
+  five in a lot's and a run's cost with the waiting list's three
+  (ADR-003).
 - **`GET /v1/costs/valuation` answers a page (R6):** 50 pools, at most
   100 a request, by a cursor, with a find by an item's name or code or
   a lot's code, a former code too, and a sort by item or by value.
@@ -708,18 +728,25 @@ One rule replaces two readings (R1, R17; ADR-048 amended).
   free text, so it stays out of the Activity log's payload (ADR-018).
 - **Shown where the lot is named (R9):** the latest beside the lot's
   title, "was {code}", and every one under Former codes; one grey line
-  under the code on Stock by lot and the Lot view; on a search hit
-  found by it. A lot never corrected shows nothing.
+  under the code on Stock by lot and the Lot view, and on Stock
+  value's rows; on a search hit found by it. A lot never corrected
+  shows nothing. The item's own page, By place and lot, is not one of
+  these places.
 - **On Movements, a row from before the correction says the code the
   lot had then (M1a),** as a changed item code reads there. The
   Activity log's older entries keep the code as it was; this is what
   lets the two be read together.
 - **In a recall, what left before the correction says "shipped as
   {code}" (E3a),** on the page and in the export, since those boxes
-  carry the old code. No column is added.
+  carry the old code. No column is added: the words stand in the
+  Through lot cell on the page, and after today's code in the export's
+  Lot cell. A recipient's row is split by the code its stock left
+  under, so each row names one code.
 - **Searched by the one matcher (R10),** `lot-search.ts`: a former
-  code matched as typed is an exact match, after the current code. Its
-  index is led by the organization, as the two lot indexes are.
+  code matched as typed is an exact match, after the current code;
+  any part of it matches, as with a lot's own code, and close matches
+  stay on today's code. Its index is led by the organization, as the
+  two lot indexes are.
 
 ### An old code is never given to another lot
 
@@ -730,9 +757,14 @@ Within one item (R11; a code is unique within an item, ADR-023):
   naming the lot that had it, with Use {code}, which takes that lot
   and keeps what else was typed. The refusal carries an error code,
   since its screen offers a way out.
-- Typed for another lot in Edit lot details, it is refused with no
-  button. A lot may take its own former code back.
-- A made code passes over a former code, as over a code in use.
+- Typed for another lot in Edit lot details, or for a run's output in
+  Record output, it is refused with no button. A lot may take its own
+  former code back.
+- The lot field knows every former code of the item's lots, the codes
+  alone, so it refuses while the code is typed; the server's refusal
+  is what holds.
+- A made code passes over a former code, as over a code in use, and
+  Numbering's taken-number check reads former codes too.
 
 Left alone, a box still labelled with the old code would start a
 second lot under it, and a recall would miss half the run.
@@ -762,10 +794,12 @@ says how many more are below (#618).
 
 ### How it behaves
 
-The wireflow and the states are the canvas's rows v19 to v21: a lot's
+The wireflow and the states are the canvas's rows v19 to v22: a lot's
 former code; why a code changes, and an old code typed again; Stock
 value by the page; the top bar's close matches; the three cost rules
-with their figures; the Activity log's entry; and "was" on Movements.
+with their figures; the Activity log's entry; "was" on Movements; and,
+on v22, a return that brings back its share, the recall's rows split
+by code, and Record output's refusal.
 The states are the design language's, drawn only where they differ: a
 refusal at its field with its one button; a find that matches nothing;
 a next page that failed. Each row below is a browser test (step 21).
@@ -782,6 +816,7 @@ a next page that failed. Each row below is a browser test (step 21).
 | The top bar | Type a whole code that matches | Only what matches | the list | — |
 | The top bar | Type text nothing matches as typed | The close matches, under their heading | the list | — |
 | Stock value, a return that waits with no shipped cost | Set cost | Saved, "Cost set." | Stock value | — |
+| A run's Record output, Lot number | Type another lot's former code, Record | Refused at the field, naming that lot, with no button | the dialog | Type another code |
 
 ### Held to production practice
 
@@ -794,6 +829,11 @@ a next page that failed. Each row below is a browser test (step 21).
   single standard exists.
 - **A return with no cost to come back at** takes the current cost in
   Odoo; asking a person every time is stricter than practice.
+- **A return tied to its sale.** Business Central's exact cost
+  reversing values a return at its original sale's cost, and a cost
+  added to that sale later changes the return too. A return that
+  brings back its share is the same rule for a cost that comes after
+  the return; one that comes before it is Deferred below.
 - **A change that keeps what was there, and why.** US 21 CFR 11.10(e)
   asks that a change never obscure what was recorded; EU GMP's Annex
   11 asks for the reason. The application claims neither rule; they
@@ -805,6 +845,15 @@ a next page that failed. Each row below is a browser test (step 21).
 
 - **ADR-048's reading kept, as SAP has it (2b):** the total is right,
   and stock can read dearer than it cost.
+- **A return as a new arrival whatever it shipped at,** this
+  amendment's first wording: a shipment voided before its cost came
+  would leave its share issued for a sale that never happened, and
+  the stock back on hand at nothing. ADR-048's reading had that case
+  right, by counting every unit the pool holds.
+- **A recall row left whole, saying "shipped as" when any part left
+  before,** and **Use {code} in Record output:** the first names a
+  code some of the boxes do not carry; the second needs the shared
+  lot field there first.
 - **Two pull requests (S1a):** the textbook answer for a change to a
   cost rule. One branch with a stop gives most of it while the
   application holds no real costs, without a second merge.
@@ -832,6 +881,38 @@ a next page that failed. Each row below is a browser test (step 21).
   first organization whose quality person reviews them.
 - **A reference type of its own for a part carried (#669's 57).**
   Trigger: the next reader that has to join to tell the two apart.
+- **A return after the late cost.** It comes back at what its
+  shipment's own rows say, without the share a late cost has since
+  put to `issued` for it, as on `main` before this branch; an issue of
+  its own, filed on 24 November 2026. Trigger: the first organization
+  with real costs, or that issue's turn.
+- **Use {code} in Record output.** Trigger: its lot field moving to
+  the shared one.
+
+### Settled after the inventory
+
+Step 3's inventory left eleven readings, F1 to F11, in the branch's
+working folder. The maintainer answered the eight that were choices on
+24 November 2026, before step 4 ran, each the first option; the text
+above is changed in place, since nothing of it was built.
+
+- **A return or a void of stock that shipped before its cost came
+  (F9):** it brings back its share. The first wording, a new arrival
+  at its own cost, was the chat's mistake.
+- **The organization in every join of the costs reads (F11):** eight,
+  not `needsCost`'s three alone.
+- **A recall row split by the code its stock left under (F1).**
+- **The lot field knows every former code (F2),** so the refusal shows
+  while typing, as row v19 draws it.
+- **"was {code}" on Stock value's rows (F4),** as row v19 draws it.
+- **A fourth count in the read-only check (F10):** late costs given,
+  by kind, since the three counts do not see #677's case.
+- **Numbering's taken-number check reads former codes (F6).**
+- **A run's Record output refuses a former code (F7),** with no
+  button.
+- **Read as the inventory read them, with no choice:** the lookup's
+  new field is an empty column for every other kind (F3); the item's
+  page gains nothing (F5); how a former code matches (F8).
 
 ### Consequences of the branch after
 

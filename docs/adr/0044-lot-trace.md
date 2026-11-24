@@ -86,4 +86,5 @@ Quantities per downstream batch stay deferred.
 - **Who received it names the code on the boxes.** A shipment that
   left before the correction reads "shipped as {code}", on the page
   and in the export, with no column added: in a recall the customer is
-  told the code they can see.
+  told the code they can see. A recipient's row is split by the code
+  its stock left under, so each row names one code.
