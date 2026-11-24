@@ -250,9 +250,11 @@ test.describe('a list’s header under the top bar', () => {
 
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(boxOf(table)).not.toHaveAttribute('data-stuck');
+    // The share goes in an effect's clean-up, which may follow the paint
+    // that drops the attribute (#683).
+    await expect.poll(async () => (await headOf(table)).share).toBe('');
     const head = await headOf(table);
     expect(head.line).toBe('none');
-    expect(head.share).toBe('');
     expect(head.top).toBeGreaterThan(head.bar + 50);
   });
 
