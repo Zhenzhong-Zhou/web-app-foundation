@@ -1819,6 +1819,83 @@ describe('Stock (e2e)', () => {
       ]);
     });
 
+    /** Lot updated's payloads for a lot, oldest first. */
+    async function updatesOf(id: string) {
+      const rows = await db
+        .select({ payload: auditLog.payload })
+        .from(auditLog)
+        .where(eq(auditLog.resourceId, id))
+        .orderBy(auditLog.id);
+      return rows.map((row) => row.payload);
+    }
+
+    it('keeps a corrected code in Lot updated, the old and the new, naming the lot and its item (#687)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
+
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: 'LOT-7' })
+        .expect(204);
+
+      expect(await updatesOf(lot.id)).toEqual([
+        {
+          sku: ctx.variant.sku,
+          lotId: { id: lot.id, label: 'LOT-7' },
+          lotCode: { from: lot.code, to: 'LOT-7' },
+        },
+      ]);
+
+      // As a changed item code reads: Lot code: OLD → NEW.
+      const log = await ctx.agent
+        .get('/v1/audit?action=stock.lot_updated')
+        .expect(200);
+      const [entry] = body<{
+        entries: {
+          details: {
+            field: string;
+            changed: boolean;
+            from: { text: string } | null;
+            value: { text: string } | null;
+          }[];
+        }[];
+      }>(log).entries;
+      expect(
+        entry.details.map((detail) => [
+          detail.field,
+          detail.from?.text ?? null,
+          detail.value?.text ?? null,
+        ]),
+      ).toEqual([
+        ['Code', null, ctx.variant.sku],
+        ['Lot', null, 'LOT-7'],
+        ['Lot code', lot.code, 'LOT-7'],
+      ]);
+    });
+
+    it('keeps only what a save changed in Lot updated: the expiry alone (#687)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: 'L2026-A',
+        expiresAt: '2027-01-01',
+      });
+
+      // The code and the supplier's lot sent as they are, as a form does.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: 'L2026-A', supplierLot: '', expiry: 'unknown' })
+        .expect(204);
+
+      expect(await updatesOf(lot.id)).toEqual([
+        {
+          sku: ctx.variant.sku,
+          lotId: { id: lot.id, label: 'L2026-A' },
+          expiry: { from: 'date', to: 'unknown' },
+          expiresAt: { from: '2027-01-01', to: null },
+        },
+      ]);
+    });
+
     it('never unmarks a code made here, saying it stays marked (ADR-094, R7)', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
       const made = await receiveWithLot(ctx, { makeCode: true });

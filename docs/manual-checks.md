@@ -767,7 +767,10 @@ a second organization.
   says only to move the stock to the correct lot. A lot's own page,
   from Open the lot or Trace a lot, has Edit lot details… beside its
   title, saying "This changes the lot everywhere it is."; saved, the
-  page reads the lot again. A Viewer sees no such button.
+  page reads the lot again. A Viewer sees no such button. Correct a code
+  made here, then open its Lot updated entry in the Activity log: it
+  names the item's code and the lot, and reads "Lot code: OLD → NEW",
+  both codes; a save of the expiry alone reads the expiry alone.
 - **MC-330** *(ADR-094, R5, R9)* A lot's marks and Details to add. On
   Stock, a lot whose expiry is not known yet reads "Expiry to add" where
   its expiry shows, and a lot made here with no supplier's lot reads
@@ -5254,6 +5257,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R109** *(Lot updated kept no values, so a corrected lot code was
+  kept nowhere, #687)* Correct the code of a lot made here in Edit lot
+  details, then open the Activity log: Lot updated names the item's Code
+  and the Lot, and reads "Lot code: OLD → NEW". Change only its expiry
+  to Not known yet: the entry reads "Expires: On a date → Not known yet"
+  and the day it had, and no code. In Français "Code de lot"; in 中文
+  "批次编码".
 - **MC-R108** *(A sale's Returns tab was a blank panel with no return,
   #675)* Open a confirmed sale with no return and choose its Returns tab:
   under the heading Returns, one line reads No returns yet. Take a return
@@ -7881,3 +7891,5 @@ first.
   #675: MC-R108 added.
 - 2026-11-24: Release's Pick components from and Plan a run's Made at, only
   active places that can hold stock, each as its path, #666: MC-R107 added.
+- 2026-11-24: Lot updated keeps what Edit lot details changed, from and
+  to, #687: MC-329 extended, MC-R109 added.
