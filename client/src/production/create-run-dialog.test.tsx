@@ -17,6 +17,23 @@ const VARIANT = {
   tracksLots: true,
 };
 
+/**
+ * Headquarters Office › Back Area › its places: two parents that hold no
+ * stock, a retired shelf and one kept apart (ADR-042).
+ */
+const PLACES = [
+  { id: 'loc-hq', name: 'Headquarters Office', code: null, parentId: null },
+  { id: 'loc-back', name: 'Back Area', code: null, parentId: 'loc-hq' },
+  { id: 'loc-ca', name: 'CA Product', code: 'CA', parentId: 'loc-back' },
+  { id: 'loc-old', name: 'Old Shelf', code: null, parentId: 'loc-back' },
+  { id: 'loc-qc', name: 'Quarantine', code: null, parentId: 'loc-back' },
+].map((place) => ({
+  ...place,
+  type: place.parentId ? 'bin' : 'warehouse',
+  isActive: place.id !== 'loc-old',
+  isAvailable: place.id !== 'loc-qc',
+}));
+
 describe('CreateRunDialog', () => {
   /**
    * The select shows the active recipe as soon as an item is chosen. Sending
@@ -31,7 +48,13 @@ describe('CreateRunDialog', () => {
       http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
       http.get('/api/v1/locations', () =>
         HttpResponse.json([
-          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+          {
+            id: 'loc-wip',
+            name: 'WIP',
+            type: 'bin',
+            parentId: null,
+            isActive: true,
+          },
         ]),
       ),
       http.get('/api/v1/partners', () => HttpResponse.json([])),
@@ -101,7 +124,13 @@ describe('CreateRunDialog', () => {
       http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
       http.get('/api/v1/locations', () =>
         HttpResponse.json([
-          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+          {
+            id: 'loc-wip',
+            name: 'WIP',
+            type: 'bin',
+            parentId: null,
+            isActive: true,
+          },
         ]),
       ),
       http.get('/api/v1/partners', () => HttpResponse.json([])),
@@ -231,7 +260,13 @@ describe('CreateRunDialog', () => {
       http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
       http.get('/api/v1/locations', () =>
         HttpResponse.json([
-          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+          {
+            id: 'loc-wip',
+            name: 'WIP',
+            type: 'bin',
+            parentId: null,
+            isActive: true,
+          },
         ]),
       ),
       http.get('/api/v1/partners', () => HttpResponse.json([])),
@@ -294,7 +329,13 @@ describe('CreateRunDialog', () => {
       http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
       http.get('/api/v1/locations', () =>
         HttpResponse.json([
-          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+          {
+            id: 'loc-wip',
+            name: 'WIP',
+            type: 'bin',
+            parentId: null,
+            isActive: true,
+          },
         ]),
       ),
       http.get('/api/v1/partners', () => HttpResponse.json([])),
@@ -368,7 +409,13 @@ describe('CreateRunDialog', () => {
       http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
       http.get('/api/v1/locations', () =>
         HttpResponse.json([
-          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+          {
+            id: 'loc-wip',
+            name: 'WIP',
+            type: 'bin',
+            parentId: null,
+            isActive: true,
+          },
         ]),
       ),
       http.get('/api/v1/partners', () => {
@@ -400,6 +447,35 @@ describe('CreateRunDialog', () => {
       await screen.findByRole('option', { name: 'WIP' }),
     ).toBeInTheDocument();
     expect(askedForPartners).toBe(false);
+  });
+
+  /**
+   * Made at offers only a place that can hold stock, an active leaf
+   * (ADR-024), each as its path, as Receive stock does (#666).
+   */
+  it('offers only active places that hold stock, each as its path', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () => HttpResponse.json(PLACES)),
+      http.get('/api/v1/partners', () => HttpResponse.json([])),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByLabelText(/Made at/));
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Headquarters Office › Back Area › CA Product (CA)',
+      'Headquarters Office › Back Area › Quarantine',
+    ]);
   });
 
   /**
