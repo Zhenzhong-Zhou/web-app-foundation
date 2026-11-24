@@ -15,13 +15,20 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Fragment, type SubmitEvent, useEffect, useState } from 'react';
+import {
+  Fragment,
+  type SubmitEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 
 import type {
   IssuePlan,
   IssuePlanLine,
   LicenceCheck,
+  Location,
   ProductionRun,
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
@@ -29,6 +36,7 @@ import { ExpiryChip } from '../components/expiry-chip';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { LotTaken } from '../inventory/lot-taken';
+import { placePaths } from '../inventory/stock-places';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import {
@@ -41,6 +49,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { leavesOf } from '../locations/tree';
 import { withUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { RecipesFailed } from './recipes-failed';
@@ -67,12 +76,6 @@ function chosenValues(
     chosen: formatQuantity(chosen),
     needed: withUnit(needed, unit, intl),
   };
-}
-
-interface LocationSummary {
-  id: string;
-  name: string;
-  isAvailable: boolean;
 }
 
 /**
@@ -105,7 +108,15 @@ export function ReleaseRunDialog({
 }) {
   const intl = useIntl();
   const [sourceLocationId, setSource] = useState('');
-  const [locations, setLocations] = useState<LocationSummary[]>([]);
+  // Every location, parents and retired ones too, so each place offered
+  // reads as its path (#666).
+  const [tree, setTree] = useState<Location[]>([]);
+  const pathOf = useMemo(() => placePaths(tree), [tree]);
+  // Stock sits only at a leaf (ADR-024), and retained or quarantined stock
+  // is not raw material (ADR-042).
+  const locations = leavesOf(tree).filter(
+    (row) => row.isActive && row.isAvailable,
+  );
 
   /**
    * A draft planned without a recipe can be given one here, where the need
@@ -252,10 +263,9 @@ export function ReleaseRunDialog({
 
     let ignore = false;
 
-    void api<LocationSummary[]>('/locations')
+    void api<Location[]>('/locations')
       .then((rows) => {
-        // Retained or quarantined stock is not raw material (ADR-042).
-        if (!ignore) setLocations(rows.filter((row) => row.isAvailable));
+        if (!ignore) setTree(rows);
       })
       .catch(() => undefined);
 
@@ -437,7 +447,7 @@ export function ReleaseRunDialog({
             >
               {locations.map((row) => (
                 <MenuItem key={row.id} value={row.id}>
-                  {row.name}
+                  {pathOf(row.id)}
                 </MenuItem>
               ))}
             </TextField>

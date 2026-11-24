@@ -113,7 +113,13 @@ test('plans, releases by lot, records output and closes a run', async ({
   await page.getByRole('option', { name: /E2E-FOCUS/ }).click();
   await plan.getByLabel('Quantity to make').fill('1000');
   await plan.getByLabel('Made at').click();
-  await page.getByRole('option', { name: /E2E Blending/ }).click();
+  // Only a place that can hold stock, each as its path (ADR-024, #666).
+  await expect(
+    page.getByRole('option', { name: 'E2E Plant', exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('option', { name: 'E2E Plant › E2E Blending (E2E-BLEND)' })
+    .click();
   await plan.getByLabel('Reference').fill('E2E-RUN-1');
 
   // The recipe comes after the item, and Plan run waits for it: pressed
@@ -175,7 +181,12 @@ test('plans, releases by lot, records output and closes a run', async ({
 
   const release = page.getByRole('dialog');
   await release.getByLabel('Pick components from').click();
-  await page.getByRole('option', { name: /E2E Shelf/ }).click();
+  await expect(
+    page.getByRole('option', { name: 'E2E Plant', exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('option', { name: 'E2E Plant › E2E Shelf (E2E-SHELF)' })
+    .click();
 
   /**
    * The preview is the point: 30 kg needed, 20 in each lot, so earliest
