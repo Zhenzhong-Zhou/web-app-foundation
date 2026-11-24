@@ -1411,3 +1411,23 @@ and changes three things said above:
 - **124a** is a permission of its own, the Owner's alone at first,
   where this ADR's as-built said an Owner and #629's comment an Owner
   or Admin.
+
+## Amendment (November 2026) — a receipt's sender, a lot change's row and Stock's open rows (ADR-094, as built)
+
+ADR-094's branch (#676) changed three things Movements' as-built says
+above:
+
+- **82a, From → to:** a receipt with no order names who it came from,
+  or the words for why it came, as its From end, on the page and in
+  the export; For names a document alone. A reader with no places, who
+  has no From → to, reads the sender after the reason, "Received:
+  returned · from {partner}"; the export stays without it there.
+- **A lot change's row** reads as the action that made it, "Lot
+  tracking started", "Moved to another lot" or "Back from before lot
+  tracking", its place written once with no arrow, counted in neither
+  In nor Out; the Reason filter keeps one option for the three, "Lot
+  changes". A move between two lots names both, "LOT-A → LOT-B".
+- **Stock's open rows come from the address alone:** `?open=` is read
+  on every render and written from the address as it stands, so a
+  receipt into a code already listed opens its row, and a quick second
+  click keeps the first.

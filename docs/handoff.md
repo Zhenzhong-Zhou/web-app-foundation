@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 21 November 2026
+# web-app-foundation — handoff, 23 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,23 +13,29 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 21 November 2026:
+On 23 November 2026:
 
 - **Lots at receipt, ADR-094** ([#629]), with
-  [its ADR](adr/0094-lots-at-receipt.md): planned on 21 November in
-  the chat, on `adr-094-lots-at-receipt` from `main` at 9002a93d. Its
-  requirements were confirmed before drafting (R1 to R25), its
-  questions and the check's decisions chosen as recommended, each
-  choice checked against production practice first. A lot's code made
-  by the organization's own format, the supplier's lot beside it; an
-  expiry that may be not known yet; a receipt with no order saying why
-  and from whom; lot tracking started for a code that holds stock; and
-  part of a lot moved to another, its cost and its trace with it. Its
-  boards are the canvas's row "库存与库存变动 第十五版 · v15 (ADR-094,
-  #629)", after v3 and v10. With it: [#650], and the riders its R24
-  lists. Its brief is in the ignored `tmp/adr-094-lots-at-receipt/`,
-  with ADR-093's panel files and its review in `from-093/`, where
-  review 22's minor findings stay. **Next:** the brief's step 2.
+  [its ADR and as-built](adr/0094-lots-at-receipt.md): planned on 21
+  November and built from 21 to 23 November on
+  `adr-094-lots-at-receipt`, from `main` at 9002a93d, by its brief,
+  versions 1 to 11, in the ignored `tmp/adr-094-lots-at-receipt/`: 83
+  commits and its as-built, pull request [#676], its own checks green.
+  A lot's code made by the organization's own format, the supplier's
+  lot beside it; an expiry that may be not known yet; a receipt with
+  no order saying why and from whom; lot tracking started for a code
+  that holds stock, from four doors; part of a lot moved to another,
+  its trace and its cost with it, a late cost following the stock; and
+  a lot change read on Movements as the action that made it. With it:
+  [#650], [#647], [#617] and [#620] closed, and the other riders its
+  R24 lists in part. The API revision rises to 6, so every tab open at
+  the deploy reloads once. Its boards are the canvas's rows v15 to
+  v18. The reviews found 100; the branch fixed 53, and [#669] holds
+  what they left. Filed while building: [#661], [#664], [#665], [#677]
+  and [#678]. Filed from walking the app on 23 November, none of them
+  this branch's: [#666] to [#668], [#670] to [#672], [#674] and
+  [#675]. **Left:** the merge and what follows it (Still to do, by
+  hand). **Next:** its next branch (Still to do, in code).
 - **Movements, ADR-093's second branch,** `adr-093-movements`, from
   `main` at 0ebaac68, planned on 18 and 19 November (R24 to R35, 81a
   to 94a) and built on 19 and 20 November by its brief, v7, in the
@@ -544,6 +550,22 @@ On 21 November 2026:
 
 ## Still to do, by hand
 
+- **Before [#676]'s merge:** MC-319 to MC-324 and MC-409, owed since
+  [#655], and MC-325 to MC-333, MC-2701, MC-2714 and MC-3328, walked
+  by hand on the branch; the eight picture pairs its description names
+  dragged in; the every-browser run by hand read on its last commit,
+  where [#643], [#530] and [#679] are known and none is the branch's.
+- **After [#676]'s merge:** a merge commit, at an hour when few tabs
+  are open, since each is refused once and reloads; the deploy's
+  checks, `/api/health` naming the merge with `apiRevision: 6`, and
+  migrations 0083 and 0084 on the live database, then MC-3424; `npm
+  run migrate:all` and each volume database; `/triage`; whatever a
+  later ADR reads in `tmp/adr-094-lots-at-receipt/` moved out, then
+  the prune and the clean-up; Project knowledge re-synced;
+  Dependabot's [#662] and [#663] rebased and merged; and one line for
+  the planning skill, "for each action, list every place the need
+  arises, not only where the control sits", which this branch's four
+  doors to Start tracking lots taught.
 - **After [#655]'s merge,** done on 21 November: the merge, as a
   merge commit; the deploy's checks, `/api/health` naming 99891ea2
   with `apiRevision: 5`; the planning skill packed from `main` and
@@ -809,14 +831,23 @@ request or a set of them:
       dependencies its Dates name with [#521]'s check, and the
       Performance run of 23 November, built as [#655], merged on 21
       November; then [#629], lots at receipt,
-      [ADR-094](adr/0094-lots-at-receipt.md), planned on 21 November on
-      `adr-094-lots-at-receipt`; each person choosing their main
+      [ADR-094](adr/0094-lots-at-receipt.md), built from 21 to 23
+      November as [#676]; then its next branch, from `main` after the
+      merge: [#678] first, a late cost counted twice once stock has
+      moved to another lot, back, and on again; its first migration
+      dropping the temporary trigger `lots_expiry_from_date` and its
+      function; [#664], the waiting set made cheaper and the four
+      reads timed again; [#665], a lot's former code; and [#669]'s 78,
+      one start lot a code, held by a unique index; beside it, the fix
+      runner's picks [#666], [#672], [#675] and [#679]; each person
+      choosing their main
       action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac; then Orders,
       built to the design language, its findings from ADR-091's panel,
       [#159] among them;
    7. expired lots: [#333] with [#331] and [#442], a new lot's expiry
-      and its batch code; lot labels ([#441], `later`) after it. First
+      and its batch code, and [#670]'s pick list, Ship taking from a
+      whole site; lot labels ([#441], `later`) after it. First
       instead, if real stock goes into the app sooner. Then, decided on
       10 November, demo data from an earlier inventory project through
       the app's own CSV import ([#552]), its own ADR: items, partners,
@@ -1158,6 +1189,8 @@ Not repeated here; each list has one home:
 [#607]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/607
 [#608]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/608
 [#616]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/616
+[#617]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/617
+[#620]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/620
 [#625]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/625
 [#626]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/626
 [#628]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/628
@@ -1177,6 +1210,7 @@ Not repeated here; each list has one home:
 [#643]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/643
 [#644]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/644
 [#646]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/646
+[#647]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/647
 [#650]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/650
 [#653]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/653
 [#654]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/654
@@ -1186,3 +1220,19 @@ Not repeated here; each list has one home:
 [#658]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/658
 [#659]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/659
 [#660]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/660
+[#661]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/661
+[#662]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/662
+[#663]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/663
+[#664]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/664
+[#665]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/665
+[#666]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/666
+[#668]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/668
+[#669]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/669
+[#670]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/670
+[#672]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/672
+[#674]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/674
+[#675]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/675
+[#676]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/676
+[#677]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/677
+[#678]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/678
+[#679]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/679

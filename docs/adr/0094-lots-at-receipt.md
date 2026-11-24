@@ -358,3 +358,160 @@ names a made code. Each row below is a browser test (step 22).
   → the seeds → the screens → the browser tests → Help, the rules files
   and the docs → the figures after → the dependencies again → the
   reviews → the as-built.
+
+## Amendment (November 2026) — as built (#676)
+
+The branch, `adr-094-lots-at-receipt`, built from 21 to 23 November
+2026 from `main` at 9002a93d, by its brief, versions 1 to 11, in the
+ignored `tmp/adr-094-lots-at-receipt/`: 83 commits, then this
+as-built, pull request #676. Where building settled or changed the
+decisions above:
+
+### The requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R1 | Met (0db21bc9, 05f579ed, 84cf7859): the `lot` series for every organization and at registration; one registered while a deploy runs gets the default at its first code or save. Lot codes is Numbering's sixth row, saved with the others in one Activity log entry |
+| R2 | Changed (05f579ed, 84cf7859, 36154128): a format that could print more than 20 characters is refused when saved, on the server and in the client's copy; a made code may still pass 20 once its counter outgrows its digits, as a document's number does (1a). The row says the room left, "Room for 9,999,999 codes a day within 20 characters", amber under 10,000 for a series that starts again each year or never (D1, S5) |
+| R3 | Met (5171efa3, cc2bba29, 914d86c7): the three routes and dialogs; a clash takes the next number and never merges. Copy code is offered for a made code alone, Open the lot for any |
+| R4 | Met (5171efa3): the route reads `mustBeNew`, never the reason. `lot.isAssigned` left the request, with two accepted lines, since no screen ever sent it; a typed code with a supplier's lot is refused |
+| R5 | Met (5171efa3, f26b6bac, cc2bba29, fc7abf31, 914d86c7) |
+| R6 | Met (038ffd63, 36154128): one matcher for every lot search, an exact match first, then the start of either code; Trace a lot's results name the supplier's lot (S10). At large the lookup with a lot's whole code reads 246 ms. #618's clipped list is still open |
+| R7 | Met (0db21bc9, f26b6bac, fc7abf31, 0cb81ddf): its own audit action, "Lot's code marked as made up here"; the role editor warns that the mark lets a code drift from the boxes |
+| R8 | Changed (cec738df, 5171efa3, f26b6bac, cc2bba29, 43014944): Expires starts as the item's newest lot had it, on none for a first lot and on Not known yet for a made code and in Start tracking (S6). Every expiry field warns of a day already past or more than 10 years away, and refuses neither (review 10) |
+| R9 | Met (4bd8aafa, fc7abf31, 6f2b1cbc): one wording, "Expiry to add", on every screen (D2); Ship warns in amber and still ships; the packing slip prints as before |
+| R10 | Met (cc2bba29) |
+| R11 | Changed (5171efa3, cc2bba29, 6f2b1cbc, 36154128): why is required on screen. The sender is the From end of Movements' From → to and of its export, For naming the document alone (D3, amending ADR-093's 82a); a reader with no places reads it after the reason (S7), and the export stays without it there (T5) |
+| R12 | Met (cc2bba29, 0681f159): Receive stock opens empty again once the count is saved (review 68) |
+| R13 | Changed (09d633b8, fc7abf31, 396a30c3, 0b119ccc, ac111249): four doors, not one: the item's Variants table, the code row's Actions on Stock (T2), a line under By place and lot (T3), and a line in Receive stock and an order's Receive for an item not tracked (review 3). Stock at a retired place goes into the lot too (review 74) |
+| R14 | Met (fc7abf31, 0b4045eb, f6d3e647, 28d6b949, d98f1144): the question also lists the runs that will close against the lot, says what happens to the cost, and points to Move to another lot for splitting later |
+| R15 | Met (09d633b8): every movement reads the code's row for share, so a receipt racing the start ends in the lot; a cost given and a run's close take the same lock first |
+| R16 | Changed (09d633b8, fc7abf31, 1ec58737, 82d6f4fc): the row reads as its action, "Lot tracking started", its place written once, "put 3,000 each into a lot, counted in neither"; the Reason filter keeps one option, "Lot changes" (U1) |
+| R17 | Met (09d633b8): four reads matched by the movement's lot and now read the value row's own |
+| R18 | Met (09d633b8, 5b2c39dd) |
+| R19 | Changed (6a0cb7e1): "a released run's unused stock" matched no code path. What comes back from before is a return, an authorized return's receipt or a void, each two movements in one save: as it left, then a lot change into the start lot (Q3a), which is made then where the code started with nothing; and a run released before tracking closes against the start lot (Q2a) |
+| R20 | Changed (62e7c8c9, 1b34628d, 98e7455d, 991a4f61): a late cost follows the moved stock (D5, below); a move out of a lot issued to a run still open is refused, the run named (review 73); a new typed code must be new and takes no supplier's lot |
+| R21 | Met (ba6da9eb, 6f2b1cbc, 36154128): the recall list's Through lot; the lot's page lists Moved on to, with what each lot still holds (S9) |
+| R22 | Met (25126c96) |
+| R23 | Met (6c9bcb42, 5b2c39dd; the canvas's rows v16 to v18): the volume seed gives a supplier's lot to 1 lot in 43, since only a made code carries one (R5), and leaves 1 lot in 50 waiting for a cost |
+| R24 | Met as chosen: #647, #617, #620 and #650 closed; #618, #160, #282, #649, #627, #306 and #308 in part, each named in the pull request with what is left |
+| R25 | Met (the first commit) |
+
+### Decided while building
+
+The chat's answers, each by its label, drawn on the canvas's rows v16
+to v18:
+
+- **The inventory's four (Q1a to Q4a, step 4):** a move's value is two
+  rows of their own kind; a run released before tracking closes
+  against the start lot; stock back from before is recorded as it
+  left, then moved into the lot; that lot is the start lot itself, its
+  note a key, `tracking_started`.
+- **A third detail, `from_before`,** beside `lots_started` and
+  `between_lots`: stock back from before tracking, into the start lot.
+  It takes no cost by hand; a cost given later to its delivery follows
+  it in.
+- **A temporary trigger (Q5a):** `lots_expiry_from_date`, before each
+  insert or update of a lot, sets the expiry's kind from its date, so
+  the release still serving during the deploy writes rows the new
+  check accepts. The next branch's first migration drops it and its
+  function.
+- **The API revision rises from 5 to 6 (Q6):** an open tab on Stock
+  value read a lot change's waiting row as "Received with no price".
+  So the assumption above, no revision raise, did not hold, and the
+  accepted line for the new reason was never needed. Every tab open at
+  the deploy reloads once.
+- **A screen says only neutral words for a kind it does not know
+  (D4):** "Other change", never a guess. The rule is in
+  `docs/conventions.md`.
+- **A late cost follows stock moved to another lot (D5, b),**
+  replacing the variance above and the Deferred line "A late cost
+  carried across a move between lots": for each lot change out of the
+  pool after the costed receipt arrived, in order, the receipt's units
+  among those moved are the moved quantity times the receipt's units
+  still in the pool over what the pool then held; they carry their
+  share to the row in, through further lots; what is left splits as
+  ADR-048 has it. The row in takes no cost by hand, and stops waiting
+  once nothing that waited in the first lot before the move still
+  waits, worked out when read. A lot holding 60 at 2.00 and 40 with no
+  price, 50 moved, then costed at 2.00: 40.00 follows, each lot holds
+  100.00 for 50, Stock value 200.00, where it read 240.00.
+- **Stock moved away and back is counted once (review 76),** as the
+  part that came back; every test of a cost that follows stock checks
+  that no lot holds more than its units at the cost given.
+- **Stock's open rows come from the address alone (S1):** a receipt
+  into a code already listed left its row closed. Two quick clicks
+  could then reopen the first place's lots, found by the full verify
+  and fixed (2618b1ec).
+- **Receiving an item not tracked says so (review 3):** "{sku} doesn't
+  track lots, so no lot is asked.", with Start tracking lots… opening
+  over the dialog, which keeps what was typed.
+- **A lot's former code,** shown and searched after a correction, is
+  not built here (T4, #665).
+
+### Built differently, in small
+
+- A Save in Edit lot details that changes nothing writes no "Lot
+  updated".
+- A lot's own page offers Edit lot details… (review 1).
+- A made code is 批次编码 in Chinese, never 批号; French keeps "suivi
+  par lot" and "en stock" (T6).
+- Details to add's Back follows #341: a filter replaces the address.
+- A move's Activity log entry names both lots; its details are listed
+  in the order kept, To lot after the lot it left.
+- The line under By place and lot is a button drawn as a link, named
+  as the Variants table's button is.
+- The browser test of a move starts from the Lot view, since a lot's
+  Actions on Stock need its place's row open.
+
+### The interaction table, added rows
+
+| Where | You do | What happens | You land | Back |
+| --- | --- | --- | --- | --- |
+| Stock, a code row's Actions | Start tracking lots… | The question, as from the item's page | the dialog | Escape or Cancel: focus on Actions |
+| The item's page, under By place and lot | Start tracking lots… | The question | the dialog | Escape or Cancel: focus on the line's button |
+| Receive stock or an order's Receive, an item not tracked | Start tracking lots… | The question over the dialog; afterwards the dialog shows the lot fields, what was typed kept | the receiving dialog | Escape or Cancel: focus on the line's button |
+| A lot's page | Edit lot details… | The dialog, as from a lot's Actions | the dialog | Escape: focus on the button |
+
+### Found, and left
+
+- **A late cost counts stock twice after it moved to another lot,
+  back, and on again (#678):** the first step of the next branch.
+- **A mixed lot valued above its cost by ADR-048's own rule (#677):**
+  older than this branch; it needs a decision.
+- **A return that waits for a cost cannot be given one (#661).**
+- **Four reads past 300 ms at large (#664),** in ADR-051's amendment;
+  review 73's read on every pile and review 54's condition were not
+  timed at large.
+- **What the reviews left (#669),** each by its number, among them the
+  API's `recipientPartnerId` holding a receipt's sender (56) and one
+  start lot a code held by a unique index (78).
+- **Two Linux WebKit tests on the Mac (#643),** the dev server's crash
+  on GitHub's every-browser run (#530) and one flaky keyboard test
+  (#679): none from this branch.
+
+### Deferred, added
+
+- **A made code stopped at 20 characters.** Trigger: lot labels
+  (#441), when a barcode must carry it.
+- **A line on the recall list that reconciles what was made, shipped
+  and is left.** Trigger: the first mock recall.
+- **The partner named on an order's receipt and shipment at
+  Movements' outside ends.** Trigger: someone asking who, without
+  opening the order.
+- **The receiving dialogs' line for an item not tracked, hidden for an
+  organization with no lot at all.** Trigger: such an organization
+  finding it noise.
+- **The 10 years of the expiry warning as a setting.** Trigger: a
+  product that keeps longer.
+
+### Checked
+
+At 2618b1ec, the full verify: 1,532 server e2e tests, 1,705 client
+unit tests, 767 in Chromium and 171 in Firefox, and 169 of 171 in
+Linux WebKit, the two misses #643's. Step 26b (82d6f4fc) ran its own
+tests and `--quick`, and #676's own checks run the rest. The panel walked
+`receive`, `stock` and `trace` with seven people at the five widths;
+the reviews numbered 100 findings, 53 fixed here in 52 commits, the
+rest closed or filed. The steps ran about 1,410 minutes in all, the
+53 fixes 437 of them.
