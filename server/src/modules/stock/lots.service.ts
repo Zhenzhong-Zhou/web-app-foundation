@@ -7,9 +7,14 @@ import {
 } from '@nestjs/common';
 import { and, desc, eq } from 'drizzle-orm';
 
-import { recordUnchanged } from '../../core/audit/audit-context';
+import {
+  type FieldValues,
+  recordContext,
+  recordUnchanged,
+} from '../../core/audit/audit-context';
+import type { AuditField } from '../../core/audit/audit-fields';
 import { isUniqueViolation } from '../../database/errors';
-import { lots } from '../../database/schema';
+import { lots, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { ListLotsDto } from './dto/list-lots.dto';
@@ -145,6 +150,29 @@ export class LotsService {
       if (!changed) recordUnchanged();
       if (!changed && !marked) return { marked };
 
+      if (changed) {
+        // Lot updated names the lot and its item, as a lot change does, and
+        // keeps each field the save changed, from and to: a corrected code
+        // is kept nowhere else (#687). Codes and a day, never the note.
+        const [variant] = await tx
+          .select({ sku: productVariants.sku })
+          .from(productVariants)
+          .where(
+            and(
+              eq(productVariants.id, lot.variantId),
+              eq(productVariants.organizationId, organizationId),
+            ),
+          );
+        recordContext({
+          sku: variant?.sku,
+          lotId: { id: lot.id, label: changes.code ?? lot.code },
+          ...fromTo('lotCode', lot.code, changes.code),
+          ...fromTo('supplierLot', lot.supplierLot, changes.supplierLot),
+          ...fromTo('expiry', lot.expiry, changes.expiry),
+          ...fromTo('expiresAt', lot.expiresAt, changes.expiresAt),
+        });
+      }
+
       try {
         await tx
           .update(lots)
@@ -176,6 +204,14 @@ export class LotsService {
       return { marked };
     });
   }
+}
+
+/**
+ * A field Edit lot details changed, `{ from, to }` under its audit key, or
+ * nothing where it stayed as it was.
+ */
+function fromTo(key: AuditField, from: unknown, to: unknown): FieldValues {
+  return to === undefined || to === from ? {} : { [key]: { from, to } };
 }
 
 /**

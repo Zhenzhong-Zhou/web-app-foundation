@@ -6,6 +6,7 @@ import { PRODUCT_TYPE_WORDS } from '../../common/product-types';
 import type {
   IdleSignOutScope,
   LicencePolicy,
+  LotExpiry,
   NumberingReset,
   OrderDirection,
   OrderStatus,
@@ -109,6 +110,16 @@ const SCOPE_WORDS: Record<IdleSignOutScope, Translatable> = {
 const RAIL_WORDS: Record<OrganizationRail, Translatable> = {
   dark: t({ id: 'audit.value.rail.dark', defaultMessage: 'Dark' }),
   light: t({ id: 'audit.value.rail.light', defaultMessage: 'Light' }),
+};
+
+/** expiry: a lot's, one of three (ADR-094, R8), as Edit lot details says it. */
+const LOT_EXPIRY_WORDS: Record<LotExpiry, Translatable> = {
+  date: t({ id: 'audit.value.expiry.date', defaultMessage: 'On a date' }),
+  unknown: t({
+    id: 'audit.value.expiry.unknown',
+    defaultMessage: 'Not known yet',
+  }),
+  none: t({ id: 'audit.value.expiry.none', defaultMessage: 'Doesn’t expire' }),
 };
 
 /** paper */
@@ -480,6 +491,23 @@ export const AUDIT_FIELDS = {
   expiresAt: {
     name: t({ id: 'audit.field.expiresAt', defaultMessage: 'Expires' }),
     read: 'day',
+  },
+  // A lot's expiry, its kind beside its day, and its codes, from and to,
+  // as Edit lot details changed them (ADR-094, #687): codes, not notes.
+  expiry: {
+    name: t({ id: 'audit.field.expiry', defaultMessage: 'Expires' }),
+    read: { set: LOT_EXPIRY_WORDS },
+  },
+  lotCode: {
+    name: t({ id: 'audit.field.lotCode', defaultMessage: 'Lot code' }),
+    read: 'text',
+  },
+  supplierLot: {
+    name: t({
+      id: 'audit.field.supplierLot',
+      defaultMessage: 'Supplier’s lot',
+    }),
+    read: 'text',
   },
   dueDate: {
     name: t({ id: 'audit.field.dueDate', defaultMessage: 'Due date' }),

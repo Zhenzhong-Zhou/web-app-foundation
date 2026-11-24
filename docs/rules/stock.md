@@ -948,6 +948,12 @@ file is kept is in the [README](README.md).
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-suppliers-lot-beside-our-code) ·
   [test](../../server/test/stock.e2e-spec.ts) "marks an older code as made here once, its own entry in the Activity log, and then it may be corrected (ADR-094, R7)" ·
   [test](../../server/test/stock.e2e-spec.ts) "marks and corrects in one save, an entry for each (ADR-094, R7)"
+- **Lot updated keeps what the save changed, from and to,** each of the
+  lot code, the supplier's lot, the expiry and its day that moved, and
+  names the item's code and the lot, as a lot change does; so a
+  corrected code is kept, the old and the new.
+  [test](../../server/test/stock.e2e-spec.ts) "keeps a corrected code in Lot updated, the old and the new, naming the lot and its item (#687)" ·
+  [test](../../server/test/stock.e2e-spec.ts) "keeps only what a save changed in Lot updated: the expiry alone (#687)"
 
 ## Starting lot tracking
 
