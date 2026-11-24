@@ -74,10 +74,12 @@ import { ReceiveLineDialog } from '../orders/receive-line-dialog';
 import { categoryPlaces } from '../products/item-list';
 import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 import { NO_RECEIVE } from '../products/receive-line';
+import { StartTrackingDialog } from '../products/start-tracking-dialog';
 import { rem } from '../theme/rem';
 import { CountInDialog, type CountInItem } from './count-in-dialog';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
+import { MoveToLotDialog } from './move-to-lot-dialog';
 import { PlaceFilter } from './place-filter';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type ReorderItem, ReorderPointDialog } from './reorder-point-dialog';
@@ -133,6 +135,7 @@ const ADDRESS_FILTERS = {
   expiring: flag,
   expired: flag,
   needsCost: flag,
+  detailsToAdd: flag,
   includeEmpty: flag,
   locationId: id,
   productId: id,
@@ -163,6 +166,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     expiring,
     expired,
     needsCost,
+    detailsToAdd,
     includeEmpty,
     productId,
     categoryId,
@@ -221,6 +225,8 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     expiringWithin: expiring ? String(expiringWithin) : undefined,
     expired: expired ? 'true' : undefined,
     needsCost: needsCost ? 'true' : undefined,
+    // The Lot view's alone: lots with a detail still to add (ADR-094, R9).
+    detailsToAdd: detailsToAdd && byLot ? 'true' : undefined,
     type: type || undefined,
     categoryId: categoryId || undefined,
     locationId: locationId || undefined,
@@ -306,7 +312,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
   const [receivingItem, setReceivingItem] = useState<string | null>(null);
   /** The delivery chosen for it, received on its order's line (ADR-093, v3). */
   const [delivery, setDelivery] = useState<Delivery | null>(null);
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   // The rows open, in the address so Back finds them open (ADR-093's
   // Stock table), and the row Back returns focus to, once.
   const writeAddress = useAddressWrite();
@@ -318,8 +324,25 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     null,
   );
   const [editingLot, setEditingLot] = useState<Pile | null>(null);
+  const [movingToLot, setMovingToLot] = useState<Pile | null>(null);
   const [countingIn, setCountingIn] = useState<CountInItem | null>(null);
+  // Count it in… from Receive stock's Found in a count, at its place (R12).
+  const [foundAt, setFoundAt] = useState<string | null>(null);
+  // Counted in from it: Receive stock starts again empty, as it does after
+  // a receipt, since closing it from here skips its own reset (review 68).
+  const [countedIn, setCountedIn] = useState(0);
   const [reordering, setReordering] = useState<ReorderItem | null>(null);
+  const [startingTracking, setStartingTracking] = useState<StockCodeRow | null>(
+    null,
+  );
+
+  function closeReceiving() {
+    setReceiving(false);
+    setReceivingItem(null);
+    // The link's state kept, so Back stays (#341); written as the row
+    // opened after a receipt is, so neither undoes the other.
+    if (asked) writeAddress({ receive: null });
+  }
 
   const refresh = async () => {
     reload();
@@ -334,23 +357,52 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     onMove: (mode, row) => setMoving({ mode, row }),
     onLeave: (variantId) => leftFrom(routed.key, variantId),
     onEditLot: setEditingLot,
+    onMoveToLot: setMovingToLot,
     onReorder: setReordering,
     onReceive: (variantId) => {
       setReceivingItem(variantId);
       setReceiving(true);
     },
     onCountIn: setCountingIn,
+    // Both permissions, as its route asks (ADR-094, R13).
+    onStartTracking:
+      can('products.update') && can('stock.adjust')
+        ? setStartingTracking
+        : undefined,
   };
 
-  // Codes and places in the address, not a list a person reads; a code
-  // closed closes its places too.
-  const openRow = (key: string, open: boolean) => {
-    const next = opens.filter(
-      (each) => each !== key && !each.startsWith(`${key}.`),
-    );
-    if (open) next.push(key);
-    writeAddress({ open: next.length ? String(next) : null });
-  };
+  // Codes and places in the address, not a list a person reads, in one
+  // write; a code closed closes its places too.
+  // From the rows open as the address holds them when it is written, not
+  // as last shown, so a second click before the page reads again keeps
+  // the first's change.
+  const openRows = (keys: string[], open: boolean) =>
+    writeAddress({
+      open: (previous) => {
+        const next = (previous ?? '')
+          .split(',')
+          .filter(Boolean)
+          .filter(
+            (each) =>
+              !keys.some(
+                (key) => each === key || (!open && each.startsWith(`${key}.`)),
+              ),
+          );
+        if (open) next.push(...keys);
+        return next.length ? String(next) : null;
+      },
+    });
+
+  // Received, moved to another lot or counted in: the code's row open, at
+  // its place, its lots open (ADR-094's table), whether its row was open
+  // or not.
+  const openReceived = ({
+    variantId,
+    locationId,
+  }: {
+    variantId: string;
+    locationId: string;
+  }) => openRows([variantId, openKey(variantId, locationId)], true);
 
   if (list.refused) {
     return <RevisionRefusalPage failure={list.refused} onRetry={reload} />;
@@ -420,6 +472,23 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       pressed: needsCost,
       onToggle: () => setFilters({ needsCost: !needsCost }),
     },
+    // The lots not yet finished, an expiry or a supplier's lot to add
+    // (ADR-094, R9, E5): the Lot view's, as its marks are a lot's.
+    ...(byLot
+      ? [
+          {
+            id: 'details-to-add',
+            label: intl.formatMessage({
+              id: 'inventory.quick.detailsToAdd',
+              defaultMessage: 'Details to add',
+            }),
+            count: counts?.detailsToAdd,
+            of,
+            pressed: detailsToAdd,
+            onToggle: () => setFilters({ detailsToAdd: !detailsToAdd }),
+          },
+        ]
+      : []),
     {
       id: 'emptied',
       label: intl.formatMessage({
@@ -580,6 +649,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     expiring ||
     expired ||
     needsCost ||
+    (byLot && detailsToAdd) ||
     !!type ||
     !!categoryId ||
     !!locationId ||
@@ -593,6 +663,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
     !expiring &&
     !expired &&
     !needsCost &&
+    !(byLot && detailsToAdd) &&
     !type &&
     !categoryId &&
     !locationId &&
@@ -610,6 +681,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       expiring: null,
       expired: null,
       needsCost: null,
+      detailsToAdd: null,
       type: null,
       categoryId: null,
       locationId: null,
@@ -722,6 +794,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                 expiring: null,
                 expired: null,
                 needsCost: null,
+                detailsToAdd: null,
                 includeEmpty: null,
               })
             }
@@ -846,7 +919,7 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                   handlers={handlers}
                   changes={changes}
                   opens={opens}
-                  onOpen={openRow}
+                  onOpen={openRows}
                   focusRow={newCode ?? focusRow}
                 />
               )
@@ -903,15 +976,22 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
                           defaultMessage:
                             'Nothing is low. An item with no reorder point is never low: set one on Reorder.',
                         })
-                      : byLot
-                        ? intl.formatMessage({
-                            id: 'inventory.lots.noMatch',
-                            defaultMessage: 'No lots match these filters.',
+                      : byLot && detailsToAdd && counts?.detailsToAdd === 0
+                        ? // Done: no lot lacks its details (v16's Empty
+                          // state; review 32).
+                          intl.formatMessage({
+                            id: 'inventory.lots.allDetails',
+                            defaultMessage: 'Every lot has its details.',
                           })
-                        : intl.formatMessage({
-                            id: 'inventory.stock.noMatch',
-                            defaultMessage: 'No items match these filters.',
-                          })}
+                        : byLot
+                          ? intl.formatMessage({
+                              id: 'inventory.lots.noMatch',
+                              defaultMessage: 'No lots match these filters.',
+                            })
+                          : intl.formatMessage({
+                              id: 'inventory.stock.noMatch',
+                              defaultMessage: 'No items match these filters.',
+                            })}
               </EmptyState>
             )}
           </Paper>
@@ -939,31 +1019,32 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
       )}
 
       <ReceiveStockDialog
-        key={receivingItem ?? 'any'}
+        key={`${receivingItem ?? 'any'}-${countedIn}`}
         open={receiving || (asked && leaves.length > 0)}
         locations={leaves}
         tree={locations}
         defaultLocationId={locationId}
         defaultVariantId={receivingItem ?? ''}
-        onClose={() => {
-          setReceiving(false);
-          setReceivingItem(null);
-          if (asked) {
-            setParams(
-              (current) => {
-                const next = new URLSearchParams(current);
-                next.delete('receive');
-                return next;
-              },
-              // The link's state kept, so Back stays (#341).
-              { replace: true, state: routed.state },
-            );
-          }
+        canSeePartners={can('partners.view')}
+        canStartTracking={can('products.update') && can('stock.adjust')}
+        counting={!!countingIn && foundAt !== null}
+        onClose={closeReceiving}
+        onReceived={async (received) => {
+          openReceived(received);
+          await refresh();
         }}
-        onReceived={refresh}
         // Asked of whoever may see orders and receive on them.
         onDelivery={
           can('orders.view') && can('orders.receive') ? setDelivery : undefined
+        }
+        // Found in a count, for whoever may correct counts (R12).
+        onFoundInCount={
+          can('stock.adjust')
+            ? (item, locationId) => {
+                setFoundAt(locationId);
+                setCountingIn(item);
+              }
+            : undefined
         }
       />
 
@@ -979,8 +1060,12 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           locations={leaves}
           tree={locations}
           canSeeLots
+          canStartTracking={can('products.update') && can('stock.adjust')}
           onClose={() => setDelivery(null)}
-          onReceived={refresh}
+          onReceived={async (received) => {
+            openReceived(received);
+            await refresh();
+          }}
           onOpenOrder={() =>
             navigate(`/orders/${delivery.orderId}`, { state: OFFER_BACK })
           }
@@ -999,6 +1084,20 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         />
       )}
 
+      {/* Moved to another lot (ADR-094, R20): Stock reads again, the
+          code's row open at the place, both lots there. */}
+      {movingToLot && (
+        <MoveToLotDialog
+          key={movingToLot.id}
+          row={movingToLot}
+          onClose={() => setMovingToLot(null)}
+          onMoved={(moved) => {
+            openReceived(moved);
+            void refresh();
+          }}
+        />
+      )}
+
       {/* Found stock counted in (ADR-093, R26): Stock reads again, the
           code's row open at the place it was counted into, its lots too. */}
       {countingIn && (
@@ -1007,10 +1106,20 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
           item={countingIn}
           locations={leaves}
           tree={locations}
+          defaultLocationId={foundAt ?? ''}
           canSeeCosts={can('costs.view')}
-          onClose={() => setCountingIn(null)}
+          onClose={() => {
+            setCountingIn(null);
+            setFoundAt(null);
+          }}
           onCounted={async (locationId) => {
-            openRow(openKey(countingIn.variantId, locationId), true);
+            // Counted in from Found in a count: no receipt is left to make.
+            if (foundAt !== null) {
+              closeReceiving();
+              setCountedIn((count) => count + 1);
+            }
+            setFoundAt(null);
+            openReceived({ variantId: countingIn.variantId, locationId });
             await refresh();
           }}
         />
@@ -1022,6 +1131,27 @@ export function StockTab({ tabs }: { tabs: ReactNode }) {
         onClose={() => setEditingLot(null)}
         onSaved={refresh}
       />
+
+      {/* Lot tracking started from the code's Actions (ADR-094, T2): Stock
+          reads again, the code's row open at its lot, at each place. */}
+      {startingTracking && (
+        <StartTrackingDialog
+          key={startingTracking.variantId}
+          productId={startingTracking.productId}
+          variantId={startingTracking.variantId}
+          sku={startingTracking.sku}
+          unitOfMeasure={startingTracking.unitOfMeasure}
+          onClose={() => setStartingTracking(null)}
+          onStarted={(places) => {
+            const { variantId } = startingTracking;
+            openRows(
+              [variantId, ...places.map((place) => openKey(variantId, place))],
+              true,
+            );
+            void refresh();
+          }}
+        />
+      )}
 
       {/* A point moves no stock, but the row's status, its "left · reorder
           at" line and the Low stock count come from it: read again. */}

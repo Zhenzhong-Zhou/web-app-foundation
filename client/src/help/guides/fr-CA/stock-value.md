@@ -13,6 +13,8 @@ Le stock reçu sans information suffisante pour calculer sa valeur figure sous *
 3. Pour une autre devise que celle de base, saisissez le **Taux de change**, ou laissez-le vide pour utiliser le taux en dossier pour le jour de l’arrivée.
 4. Appuyez sur **Fixer le coût**.
 
+Un coût donné à une livraison suit la partie de celle-ci qui est passée à un autre lot, de sorte que les deux lots sont évalués, et **Fixer le coût** dit à quels lots une partie a suivi. Du stock venu d’un lot qui attend encore indique « Venu du lot », son coût suivant celui de ce lot, et n’offre pas de **Fixer le coût** à lui.
+
 Un lot fabriqué par un ordre encore ouvert attend plutôt son ordre : **Voir l’ordre de fabrication** y mène, et le lot prend son coût à la clôture de l’ordre.
 
 > Seule une personne qui peut modifier les coûts voit **Fixer le coût**.

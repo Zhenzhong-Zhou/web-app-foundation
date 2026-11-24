@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { StockPile } from '../api/types.gen';
 import { type Action, ActionsMenu } from '../components/actions-menu';
 import { isZero } from '../lib/decimal';
-import { itemName } from '../lib/format';
+import { displayQuantity, itemName } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
@@ -36,6 +36,7 @@ export function StockActions({
   onSelect,
   onLeave,
   onEditLot,
+  onMoveToLot,
   buttonRef,
 }: {
   row: Pile;
@@ -46,6 +47,12 @@ export function StockActions({
   /** Leaving for its Movements: Stock keeps the code's row for Back. */
   onLeave?: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
+  /**
+   * Move to another lot… (ADR-094, R20), for whoever may correct counts:
+   * part of the lot into another of the item's lots. Left out where the
+   * page offers none.
+   */
+  onMoveToLot?: (row: Pile) => void;
   /** For a row that moves focus to it: "Choose the lot". */
   buttonRef?: Ref<HTMLButtonElement>;
 }) {
@@ -65,6 +72,30 @@ export function StockActions({
           id: 'inventory.menu.nothingHere',
           defaultMessage: 'Nothing at this place',
         })
+    : undefined;
+
+  // A lot issued here to a run still open: its close takes it, so it may
+  // not move into another lot until the run is closed or cancelled, as the
+  // server refuses (review 73). It is named as the run's page names it.
+  const run = row.issuedToRun;
+  const issued = run
+    ? intl.formatMessage(
+        {
+          id: 'inventory.menu.issuedToRun',
+          defaultMessage: 'Issued to run {run}, still open',
+        },
+        {
+          run:
+            run.reference ??
+            intl.formatMessage(
+              {
+                id: 'production.plannedTitle',
+                defaultMessage: '{quantity} planned',
+              },
+              { quantity: displayQuantity(run.quantityPlanned) },
+            ),
+        },
+      )
     : undefined;
 
   // What changes stock: moving, shipping out and sampling, and, by
@@ -99,14 +130,25 @@ export function StockActions({
       ]
     : [];
 
-  // The lot itself: its details, for whoever may move stock, and where it
-  // came from and everyone who has it (ADR-044). None for a code not
-  // tracked by lot, where they would be a dead end.
+  // The lot itself: its details, for whoever may move stock; part of it
+  // into another lot, for whoever may correct counts, a correction of
+  // which lot the stock is in (ADR-094, R20); and where it came from and
+  // everyone who has it (ADR-044). None for a code not tracked by lot,
+  // where they would be a dead end.
   const lotId = row.lotId;
   const lot: Action[] = lotId
     ? [
         ...(canMove
           ? [{ label: words.editLot, onSelect: () => onEditLot(row) }]
+          : []),
+        ...(canAdjust && onMoveToLot
+          ? [
+              {
+                label: words.moveToLot,
+                onSelect: () => onMoveToLot(row),
+                unavailable: nothing ?? issued,
+              },
+            ]
           : []),
         {
           label: intl.formatMessage({

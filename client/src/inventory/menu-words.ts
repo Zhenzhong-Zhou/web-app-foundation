@@ -31,6 +31,10 @@ export function useMenuWords() {
       id: 'inventory.menu.editLot',
       defaultMessage: 'Edit lot details…',
     }),
+    moveToLot: intl.formatMessage({
+      id: 'inventory.menu.moveToLot',
+      defaultMessage: 'Move to another lot…',
+    }),
     movements: intl.formatMessage({
       id: 'layout.nav.movements',
       defaultMessage: 'Movements',
@@ -42,6 +46,11 @@ export function useMenuWords() {
     setPoint: intl.formatMessage({
       id: 'inventory.menu.setPoint',
       defaultMessage: 'Set a reorder point…',
+    }),
+    // The item's page's words, its Variants table's (ADR-094, T2).
+    startTracking: intl.formatMessage({
+      id: 'products.variant.startTracking',
+      defaultMessage: 'Start tracking lots…',
     }),
   };
 }

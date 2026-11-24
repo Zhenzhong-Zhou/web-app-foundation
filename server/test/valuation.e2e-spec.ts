@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { todayIn } from '../src/common/today';
 import {
   type Database,
+  type Transaction,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
@@ -72,7 +73,10 @@ describe('Stock valuation (e2e)', () => {
   });
 
   async function setup(slugish: string, base: string | null = 'CAD') {
-    const { agent, organizationId } = await registerOrganization(app, slugish);
+    const { agent, organizationId, userId } = await registerOrganization(
+      app,
+      slugish,
+    );
 
     if (base) {
       await agent
@@ -90,6 +94,7 @@ describe('Stock valuation (e2e)', () => {
     return {
       agent,
       organizationId,
+      userId,
       shelf: await location('Shelf'),
       bin: await location('Returns'),
       supplier: await partner('Cascade Botanicals', 'CASC'),
@@ -571,6 +576,175 @@ describe('Stock valuation (e2e)', () => {
         .patch('/v1/organization')
         .send({ baseCurrency: 'USD' })
         .expect(204);
+    });
+  });
+
+  /**
+   * What the tables hold a lot change to (ADR-094, Q1a), before a route
+   * writes one: a movement at one place, out of one lot and into another,
+   * and two value rows, one out of a pool and one into another, the row
+   * in free to wait for a cost while it carries its share. Written by hand,
+   * so the books stay as the routes left them: what is taken is undone,
+   * and what is refused writes nothing.
+   */
+  describe('a lot change, as the tables hold it', () => {
+    async function twoLots() {
+      const s = await setup('alpha');
+      const vitc = await variant(s, 'VITC', true);
+      await buy(s, vitc, '10', cad('2'), { code: 'A' });
+      await buy(s, vitc, '5', cad('3'), { code: 'B' });
+      const a = await lotIdOf(db, 'A');
+      const b = await lotIdOf(db, 'B');
+
+      const change = (
+        overrides: Partial<typeof stockMovements.$inferInsert> = {},
+      ): typeof stockMovements.$inferInsert => ({
+        organizationId: s.organizationId,
+        variantId: vitc,
+        sku: 'VITC',
+        lotId: a,
+        toLotId: b,
+        fromLocationId: s.shelf,
+        toLocationId: s.shelf,
+        quantity: '4',
+        reason: 'lot_change',
+        actorId: s.userId,
+        ...overrides,
+      });
+
+      const share = (
+        movementId: string,
+        overrides: Partial<typeof stockValuations.$inferInsert> = {},
+      ): typeof stockValuations.$inferInsert => ({
+        organizationId: s.organizationId,
+        variantId: vitc,
+        lotId: a,
+        kind: 'lot_change',
+        movementId,
+        quantity: '-4',
+        value: '-8',
+        actorId: s.userId,
+        ...overrides,
+      });
+
+      return { s, vitc, a, b, change, share };
+    }
+
+    /** The writes, then undone, so nothing stays. */
+    async function undone(write: (tx: Transaction) => Promise<void>) {
+      await expect(
+        db.transaction(async (tx) => {
+          await write(tx);
+          tx.rollback();
+        }),
+      ).rejects.toThrow('Rollback');
+    }
+
+    it('takes one out of a pool and one into another, the row in waiting while it carries its share', async () => {
+      const { b, change, share } = await twoLots();
+
+      await undone(async (tx) => {
+        const [moved] = await tx
+          .insert(stockMovements)
+          .values(change())
+          .returning({ id: stockMovements.id });
+        await tx.insert(stockValuations).values([
+          share(moved.id),
+          share(moved.id, {
+            lotId: b,
+            quantity: '4',
+            value: '8',
+            needsCost: true,
+          }),
+        ]);
+      });
+    });
+
+    it('takes the stock with no lot into the first one, as tracking starts', async () => {
+      const { a, change } = await twoLots();
+
+      await undone(async (tx) => {
+        await tx
+          .insert(stockMovements)
+          .values(change({ lotId: null, toLotId: a }));
+      });
+    });
+
+    it('refuses a third value row for one lot change', async () => {
+      const { b, change, share } = await twoLots();
+
+      await expect(
+        db.transaction(async (tx) => {
+          const [moved] = await tx
+            .insert(stockMovements)
+            .values(change())
+            .returning({ id: stockMovements.id });
+          await tx.insert(stockValuations).values(share(moved.id));
+          await tx
+            .insert(stockValuations)
+            .values(share(moved.id, { lotId: b, quantity: '4', value: '8' }));
+          await tx
+            .insert(stockValuations)
+            .values(share(moved.id, { lotId: b, quantity: '1', value: '2' }));
+        }),
+      ).rejects.toMatchObject({
+        cause: { constraint: 'stock_valuations_lot_change_key' },
+      });
+    });
+
+    it('refuses a lot change between two places, into the lot it leaves, or into no lot', async () => {
+      const { s, a, change } = await twoLots();
+
+      const refusals: [Partial<typeof stockMovements.$inferInsert>, string][] =
+        [
+          [{ toLocationId: s.bin }, 'stock_movements_lot_change_shape_check'],
+          [{ fromLocationId: null }, 'stock_movements_lot_change_shape_check'],
+          [{ toLotId: a }, 'stock_movements_lot_change_shape_check'],
+          [{ toLotId: null }, 'stock_movements_to_lot_check'],
+        ];
+      for (const [overrides, constraint] of refusals) {
+        await expect(
+          db.insert(stockMovements).values(change(overrides)),
+        ).rejects.toMatchObject({ cause: { constraint } });
+      }
+    });
+
+    it('refuses a lot to enter on any other movement, and keeps a transfer between two places', async () => {
+      const { s, change } = await twoLots();
+
+      await expect(
+        db
+          .insert(stockMovements)
+          .values(change({ reason: 'transfer', toLocationId: s.bin })),
+      ).rejects.toMatchObject({
+        cause: { constraint: 'stock_movements_to_lot_check' },
+      });
+      await expect(
+        db
+          .insert(stockMovements)
+          .values(change({ reason: 'transfer', toLotId: null })),
+      ).rejects.toMatchObject({
+        cause: { constraint: 'stock_movements_distinct_locations_check' },
+      });
+    });
+
+    it('keeps any other row waiting for a cost at nothing', async () => {
+      const { s, vitc, a, share } = await twoLots();
+      const receipt = await buy(s, vitc, '1', undefined, { code: 'A' });
+
+      await expect(
+        db.insert(stockValuations).values(
+          share(receipt, {
+            kind: 'movement',
+            quantity: '1',
+            value: '2',
+            needsCost: true,
+            lotId: a,
+          }),
+        ),
+      ).rejects.toMatchObject({
+        cause: { constraint: 'stock_valuations_needs_cost_is_zero_check' },
+      });
     });
   });
 });

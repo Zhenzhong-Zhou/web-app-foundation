@@ -49,6 +49,12 @@ const CATALOGUE: RoleCatalogue = {
     permission('products.view', 'See the product catalogue'),
     permission('locations.view', 'See warehouses, zones and bins'),
     permission('stock.view', 'See what is on hand and where'),
+    permission('stock.move', 'Receive, ship or transfer stock', ['stock.view']),
+    permission(
+      'stock.lot_made_here',
+      'Mark a lot’s code as made up here, so it can be corrected',
+      ['stock.move'],
+    ),
     permission('orders.view', 'See purchase and sales orders'),
     permission('orders.view_prices', 'See prices on orders', ['orders.view']),
     permission(
@@ -155,6 +161,20 @@ describe('the role editor', () => {
     expect(box('Receive stock against an order')).not.toBeChecked();
     expect(screen.getByRole('status')).toHaveTextContent(
       'Also unticked “Receive stock against an order”, which needs “See purchase and sales orders”.',
+    );
+  });
+
+  // Review 38: what marking a code risks, under its box.
+  it('says under Mark a lot’s code that a renamed code may not match the boxes in a recall', async () => {
+    const user = userEvent.setup();
+    renderEditor('/settings/roles/new');
+
+    await user.click(await screen.findByRole('button', { name: /^Stock/ }));
+
+    expect(
+      box('Mark a lot’s code as made up here, so it can be corrected'),
+    ).toHaveAccessibleDescription(
+      /It lets the code be renamed, so a recall may no longer match the boxes\.$/,
     );
   });
 

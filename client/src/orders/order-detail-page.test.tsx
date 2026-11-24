@@ -1087,6 +1087,7 @@ describe('OrderDetailPage receipts', () => {
     lotId: null,
     lotCode: null,
     lotExpiresAt: null,
+    lotExpiry: null,
     actorName: 'Sam Lee',
     actorEmail: 'sam@example.com',
   };

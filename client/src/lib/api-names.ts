@@ -6,6 +6,7 @@ import type {
   Invitation,
   InvoiceSummary,
   LookupResponse,
+  Lot,
   LotCostEntry,
   NumberingSeries,
   OrderSummary,
@@ -42,6 +43,9 @@ import type {
 export type CalendarDay = string;
 
 export type BomStatus = Bom['status'];
+
+/** A lot's expiry: a date, not known yet, or none (ADR-094, R8). */
+export type ExpiryKind = Lot['expiry'];
 
 /**
  * Where an invitation's link stands (ADR-077): emailed or copied and live,

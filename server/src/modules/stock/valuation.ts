@@ -1,7 +1,9 @@
 import { type SQL, sql } from 'drizzle-orm';
 
+import type { LotChangeDetail } from '../../common/movement-reasons';
 import { todayOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
+import { openNeedsCost } from '../costs/open-needs-cost';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
 
@@ -67,6 +69,17 @@ export async function valueMovement(
   const inbound = movement.fromLocationId === null;
   const outbound = movement.toLocationId === null;
 
+  // The lot change that starts a code's lot tracking carries no value of
+  // its own: its value went into the lot with the pool and its rows,
+  // relabelled in the same transaction (ADR-094; LotTrackingService.start).
+  // Any other lot change carries its share from one pool into the other.
+  if (movement.reason === 'lot_change') {
+    if (movement.reasonDetail === ('lots_started' satisfies LotChangeDetail)) {
+      return false;
+    }
+    return valueLotChange(tx, organizationId, movement);
+  }
+
   // A transfer. The pool is not per location, so nothing about its value
   // changed.
   if (!inbound && !outbound) return false;
@@ -111,6 +124,109 @@ export async function valueMovement(
   `);
 
   return valued.needsCost;
+}
+
+/**
+ * The order every write that holds more than one of a code's pools takes
+ * them in: the pool with no lot first, then by the lot's id. A move between
+ * lots takes its two so (valueLotChange), and a late value every pool it
+ * may reach (revaluation.ts), so neither holds one the other waits for.
+ */
+export function inLotOrder(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return -1;
+  if (b === null) return 1;
+  return a < b ? -1 : 1;
+}
+
+/**
+ * Locks a code's pools, each lot's, in lot order (inLotOrder), and gives
+ * each pool's id by its lot: the one rule that keeps a move and a late
+ * cost from each holding a pool the other waits for (review 50).
+ */
+export async function lockPools(
+  tx: Tx,
+  organizationId: string,
+  variantId: string,
+  lotIds: (string | null)[],
+): Promise<Map<string | null, string>> {
+  const pools = new Map<string | null, string>();
+  for (const lotId of [...new Set(lotIds)].sort(inLotOrder)) {
+    pools.set(lotId, await lockPool(tx, organizationId, variantId, lotId));
+  }
+  return pools;
+}
+
+/**
+ * A lot change carries the value its stock has today (ADR-094, Q1a): the
+ * first pool's share at its average, out of that pool and into the
+ * second, two value rows of their own. Where the first pool has stock
+ * still waiting for a cost, the row in waits too, carrying its share, so
+ * Stock value lists the moved stock until what it waited for is costed
+ * (openNeedsCost); the first pool's average is low while it waits. That
+ * cost, given later, follows the stock moved (ADR-094, D5; revaluation.ts),
+ * so the row in takes none of its own.
+ *
+ * Both pools are locked in the order of their lots (inLotOrder), as the
+ * piles are (recordWithin): a move from A to B and one from B to A at two
+ * places at once would otherwise each hold one pool and wait for the
+ * other.
+ */
+async function valueLotChange(
+  tx: Tx,
+  organizationId: string,
+  movement: Movement,
+): Promise<boolean> {
+  const pools = await lockPools(tx, organizationId, movement.variantId, [
+    movement.lotId,
+    movement.toLotId,
+  ]);
+  const leaves = pools.get(movement.lotId)!;
+  const enters = pools.get(movement.toLotId)!;
+
+  const { value } = await takeFromPool(tx, leaves, movement.quantity);
+
+  const waiting = openNeedsCost(
+    organizationId,
+    sql`(${movement.variantId}::uuid)`,
+  );
+  const found = await tx.execute(sql`
+    select exists (
+      select 1
+      from (${waiting}) o
+      where o.lot_id is not distinct from ${movement.lotId}::uuid
+    ) as waits
+  `);
+  const needsCost = (found.rows[0] as { waits: boolean }).waits;
+
+  for (const [poolId, sign] of [
+    [leaves, -1],
+    [enters, 1],
+  ] as const) {
+    await tx.execute(sql`
+      update valuation_pools
+      set quantity = quantity + ${sign}::integer * ${movement.quantity}::numeric,
+          value = value + ${sign}::integer * ${value}::numeric
+      where id = ${poolId}::uuid
+    `);
+  }
+
+  await tx.execute(sql`
+    insert into stock_valuations
+      (organization_id, variant_id, lot_id, kind, movement_id, quantity, value,
+       needs_cost, actor_id)
+    values
+      (${organizationId}::uuid, ${movement.variantId}::uuid,
+       ${movement.lotId}::uuid, 'lot_change', ${movement.id}::uuid,
+       -${movement.quantity}::numeric, -${value}::numeric, false,
+       ${movement.actorId}::uuid),
+      (${organizationId}::uuid, ${movement.variantId}::uuid,
+       ${movement.toLotId}::uuid, 'lot_change', ${movement.id}::uuid,
+       ${movement.quantity}::numeric, ${value}::numeric, ${needsCost},
+       ${movement.actorId}::uuid)
+  `);
+
+  return needsCost;
 }
 
 /**
@@ -204,7 +320,7 @@ async function valueInbound(
 
       return (
         shipped ??
-        (await atPoolAverage(tx, poolId, movement.quantity)) ??
+        (await atPoolAverage(tx, organizationId, poolId, movement)) ??
         unvalued(null)
       );
     }
@@ -212,7 +328,8 @@ async function valueInbound(
     default: {
       // An inbound adjustment. A voided shipment's reversal comes back at
       // the cost it left at; found stock rides at its pool's average, since
-      // it was bought at the price its pool already carries.
+      // it was bought at the price its pool already carries, and waits for
+      // a cost while that pool does.
       const reversed =
         movement.referenceType === 'shipment' && movement.referenceId
           ? await shippedAt(
@@ -225,7 +342,7 @@ async function valueInbound(
 
       return (
         reversed ??
-        (await atPoolAverage(tx, poolId, movement.quantity)) ??
+        (await atPoolAverage(tx, organizationId, poolId, movement)) ??
         unvalued(null)
       );
     }
@@ -283,9 +400,15 @@ async function purchased(
 }
 
 /**
- * The unit cost at which this pool's stock left on the given shipments,
- * applied to what is coming back. Null when none of it was valued — a
- * shipment from before valuation began.
+ * The unit cost at which this stock left on the given shipments, applied to
+ * what is coming back. Null when none of it was valued — a shipment from
+ * before valuation began.
+ *
+ * The shipments' movements are matched by their own lot, the one the stock
+ * comes back with, and the value taken from their value rows, whatever lot
+ * those carry now: stock shipped with no lot before its code's lot tracking
+ * started comes back with no lot, though its value rows have since taken
+ * the start lot's (ADR-094, Q3a).
  */
 async function shippedAt(
   tx: Tx,
@@ -303,7 +426,8 @@ async function shippedAt(
     where v.organization_id = ${organizationId}::uuid
       and v.kind = 'movement'
       and v.variant_id = ${movement.variantId}::uuid
-      and v.lot_id is not distinct from ${movement.lotId}::uuid
+      and m.organization_id = ${organizationId}::uuid
+      and m.lot_id is not distinct from ${movement.lotId}::uuid
       and m.reason = 'shipment'
       and m.reference_type = 'shipment'
       and m.reference_id in (${shipmentIds})
@@ -314,17 +438,37 @@ async function shippedAt(
   return row ? derived(row.value) : null;
 }
 
-/** The pool's current unit cost, or null for an empty pool. */
+/**
+ * The pool's current unit cost: null for an empty pool, and null while any
+ * of its stock still waits for a cost, the whole or a part (ADR-048, amended
+ * by ADR-094; #650). Those units sit in the pool at nothing, so its average
+ * is low, 0 where all of it waits: stock taken in at it would read as
+ * costed, and the cost given later would be spread over it as well. "Still
+ * waiting" is `openNeedsCost`'s, the rows Stock value's Waiting for a cost
+ * lists.
+ */
 async function atPoolAverage(
   tx: Tx,
+  organizationId: string,
   poolId: string,
-  quantity: string,
+  movement: Movement,
 ): Promise<Valued | null> {
+  const waiting = openNeedsCost(
+    organizationId,
+    sql`(${movement.variantId}::uuid)`,
+  );
+
   const result = await tx.execute(sql`
-    select round(${quantity}::numeric * value / quantity, 6) as value
-    from valuation_pools
-    where id = ${poolId}::uuid
-      and quantity > 0
+    select round(${movement.quantity}::numeric * p.value / p.quantity, 6)
+             as value
+    from valuation_pools p
+    where p.id = ${poolId}::uuid
+      and p.quantity > 0
+      and not exists (
+        select 1
+        from (${waiting}) o
+        where o.lot_id is not distinct from p.lot_id
+      )
   `);
 
   const [row] = result.rows as { value: string }[];

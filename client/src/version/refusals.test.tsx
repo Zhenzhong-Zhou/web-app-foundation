@@ -56,14 +56,17 @@ describe('a dialog’s save refused', () => {
   function open() {
     renderWithAuth(
       <ThemeProvider theme={themeFor('en')}>
-        <ReceiveStockDialog
-          open
-          locations={LOCATIONS}
-          tree={LOCATIONS}
-          defaultLocationId="location-a"
-          onClose={vi.fn()}
-          onReceived={vi.fn()}
-        />
+        {/* The message's Open the lot goes through the router. */}
+        <MemoryRouter>
+          <ReceiveStockDialog
+            open
+            locations={LOCATIONS}
+            tree={LOCATIONS}
+            defaultLocationId="location-a"
+            onClose={vi.fn()}
+            onReceived={vi.fn()}
+          />
+        </MemoryRouter>
       </ThemeProvider>,
     );
   }
@@ -74,6 +77,11 @@ describe('a dialog’s save refused', () => {
     open();
     await user.click(screen.getByRole('combobox', { name: 'Item' }));
     await user.click(await screen.findByRole('option', { name: /PLAIN-1/ }));
+    // Asked of every receipt with no order (ADR-094, R11).
+    await user.click(
+      screen.getByRole('combobox', { name: 'Why is there no order?' }),
+    );
+    await user.click(screen.getByRole('option', { name: 'Opening stock' }));
     await user.type(screen.getByRole('textbox', { name: 'Quantity' }), '5');
     await user.click(screen.getByRole('button', { name: 'Receive' }));
     return screen.findByRole('alert', { name: 'Error' });

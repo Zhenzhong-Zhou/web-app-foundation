@@ -1,4 +1,7 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 import type { Locale } from '../../../common/locales';
+import { LOT_EXPIRIES, type LotExpiry } from '../../../database/schema';
 
 /**
  * An order's shipments, returns and their plans as the API returns them
@@ -15,6 +18,12 @@ export class ShipmentItem {
   /** Null for untracked stock, which moves without a lot. */
   lotCode!: string | null;
   expiresAt!: string | null;
+  /**
+   * The lot's kind of expiry, so one not known yet reads "Expiry to add"
+   * (ADR-094, R9); null with no lot.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  expiry!: LotExpiry | null;
   quantity!: string;
 }
 
@@ -81,6 +90,12 @@ export class ShipmentPlanLot {
   lotId!: string;
   code!: string;
   expiresAt!: string | null;
+  /**
+   * Which expiry it has; one not known yet reads "Expiry to add", and Ship
+   * warns of it, still shipping (ADR-094, R9).
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   /** On hand at the location. */
   onHand!: string;
   /** What earliest-expiry-first takes from this lot; "0" when none. */
@@ -128,8 +143,28 @@ export class ReturnableLot {
   lotId!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
   shipped!: string;
   returned!: string;
+}
+
+/**
+ * What of a tracked line shipped with no lot, before its code's lot
+ * tracking started, and how much of it has come back (ADR-094, Q3a): it
+ * comes back by quantity, into the lot named here.
+ */
+export class ReturnableFromBefore {
+  shipped!: string;
+  returned!: string;
+  /**
+   * The lot it goes into: the one that took the code's stock as its lot
+   * tracking started. Null where the code started with nothing on hand:
+   * that lot is made for us when the first of it comes back.
+   */
+  lotId!: string | null;
+  lotCode!: string | null;
 }
 
 /** One shipped line, as the return dialog offers it. */
@@ -142,4 +177,9 @@ export class ReturnableLine {
   quantityReturned!: string;
   /** Only lots that shipped on this order; empty when untracked. */
   lots!: ReturnableLot[];
+  /**
+   * What shipped with no lot before the code's lot tracking started; null
+   * where none did, and for a code not tracked, which returns by quantity.
+   */
+  fromBefore!: ReturnableFromBefore | null;
 }

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -15,6 +16,8 @@ import {
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
+import { reportFault } from '../../common/faults/tracker';
+import { AuditService } from '../../core/audit/audit.service';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
@@ -29,15 +32,18 @@ import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
+import { MoveToLotDto } from './dto/move-to-lot.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
 import type {
   Lot,
+  LotChanged,
   MovementPage,
   MovementPeriod,
   RecordedMovementEnvelope,
   StockVariant,
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
+import { LotChangesService } from './lot-changes.service';
 import { LotsService } from './lots.service';
 import { cardOf, movementOf, type MovementSight } from './movement-view';
 import { StockService } from './stock.service';
@@ -59,11 +65,15 @@ import { StockReadsService } from './stock-reads.service';
  */
 @Controller({ path: 'stock', version: '1' })
 export class StockController {
+  private readonly logger = new Logger(StockController.name);
+
   constructor(
     private readonly stock: StockService,
     private readonly reads: StockReadsService,
     private readonly lots: LotsService,
+    private readonly lotChanges: LotChangesService,
     private readonly permissions: PermissionsService,
+    private readonly audit: AuditService,
   ) {}
 
   @Post('movements')
@@ -87,7 +97,11 @@ export class StockController {
      * answers a different question with a different retention.
      */
     const recorded = await this.stock.record(dto, user.userId);
-    return { movement: movementOf(recorded), needsCost: recorded.needsCost };
+    return {
+      movement: movementOf(recorded),
+      needsCost: recorded.needsCost,
+      lotCode: recorded.lotCode,
+    };
   }
 
   @Get('movements')
@@ -184,10 +198,61 @@ export class StockController {
     resourceId: (_response, request) => request.params.id,
   })
   async updateLot(
+    @CurrentUser() user: RequestContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateLotDto,
   ): Promise<void> {
-    await this.lots.updateLot(id, dto);
+    // Marking a code as made here lets it be renamed, so a recall may no
+    // longer match the boxes: a permission of its own, beside stock.move,
+    // asked before anything is read (ADR-094, R7).
+    if (dto.madeHere) {
+      await this.permissions.demand(user, [PERMISSIONS.STOCK_LOT_MADE_HERE]);
+    }
+
+    const { marked } = await this.lots.updateLot(id, dto);
+
+    /**
+     * The mark is its own entry in the Activity log, beside Lot updated
+     * where the same save changed more (R7). Written here, as the
+     * interceptor writes one: the mark has happened, so a failed entry is
+     * logged rather than reported as a failed save.
+     */
+    if (!marked) return;
+    try {
+      await this.audit.record({
+        actorId: user.userId,
+        action: AUDIT_ACTIONS.STOCK_LOT_MARKED_MADE_HERE,
+        resourceType: 'lot',
+        resourceId: id,
+        ip: user.ip,
+        userAgent: user.userAgent,
+      });
+    } catch (error) {
+      this.logger.error(`Audit write failed: ${String(error)}`);
+      reportFault(error, { failed: 'an audit write' });
+    }
+  }
+
+  /**
+   * Move to another lot (ADR-094, R20): part of a lot at one place into
+   * another of the item's lots, or a new one, for whoever may correct
+   * counts. A movement, recorded in the Activity log as every movement is.
+   */
+  @Post('lots/:id/lot-changes')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.STOCK_ADJUST)
+  @Audited({
+    action: AUDIT_ACTIONS.STOCK_MOVEMENT_RECORDED,
+    resourceType: 'stock_movement',
+    resourceId: (response: { movement: { id: string } }) =>
+      response.movement.id,
+  })
+  moveToLot(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MoveToLotDto,
+    @CurrentUser() user: RequestContext,
+  ): Promise<LotChanged> {
+    return this.lotChanges.move(id, dto, user.userId);
   }
 
   /**

@@ -25,6 +25,7 @@ import type {
   ProductDetail,
   ProductStock,
   StockPile,
+  Variant,
 } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExpiryChip } from '../components/expiry-chip';
@@ -34,7 +35,9 @@ import { Reference } from '../components/reference';
 import { TableOrCards } from '../components/table-or-cards';
 import type { MovementColumns } from '../inventory/describe-movement';
 import { EditLotDialog } from '../inventory/edit-lot-dialog';
+import { SupplierLotLine } from '../inventory/lot-marks';
 import { type MoveMode, MoveStockDialog } from '../inventory/move-stock-dialog';
+import { MoveToLotDialog } from '../inventory/move-to-lot-dialog';
 import {
   MovementCard,
   MovementCells,
@@ -135,15 +138,34 @@ const WORDS = defineMessages({
  * the reader may not see (ADR-080); each action
  * by its own permission, a main action the role cannot use naming whom to
  * ask. `#stock` and `#held` in the address put focus on the section, or
- * on Held, as Stock's "10 left" and "20 short" open it.
+ * on Held, as Stock's "10 left" and "20 short" open it. A code not
+ * tracked by lot ends with a line that offers Start tracking lots… to
+ * whoever may start it (ADR-094, T3).
  */
-export function WhereItStands({ product }: { product: ProductDetail }) {
+export function WhereItStands({
+  product,
+  onStartTracking,
+}: {
+  product: ProductDetail;
+  /**
+   * Start tracking lots… for a code not tracked: given as the Variants
+   * table's button is, to whoever may change items and correct counts,
+   * never for equipment.
+   */
+  onStartTracking?: (variant: Variant) => void;
+}) {
   const can = useCan();
   if (!can('stock.view')) return null;
-  return <Standing product={product} />;
+  return <Standing product={product} onStartTracking={onStartTracking} />;
 }
 
-function Standing({ product }: { product: ProductDetail }) {
+function Standing({
+  product,
+  onStartTracking,
+}: {
+  product: ProductDetail;
+  onStartTracking?: (variant: Variant) => void;
+}) {
   const intl = useIntl();
   const can = useCan();
   const navigate = useNavigate();
@@ -159,6 +181,7 @@ function Standing({ product }: { product: ProductDetail }) {
     row: StockPile;
   } | null>(null);
   const [editingLot, setEditingLot] = useState<StockPile | null>(null);
+  const [movingToLot, setMovingToLot] = useState<StockPile | null>(null);
   // The places read once a lot's Move, Ship out, Send sample or Correct
   // the count first opens, then kept, never on a visit that moves nothing
   // (review 47); the dialog waits for their answer.
@@ -224,7 +247,17 @@ function Standing({ product }: { product: ProductDetail }) {
         setMoving({ mode, row });
       },
       onEditLot: setEditingLot,
+      onMoveToLot: setMovingToLot,
     },
+  };
+  // Start tracking lots… for a code whose variant tracks no lots, where
+  // the reader may start it (T3).
+  const startTrackingOf = (code: CodeStanding) => {
+    if (!onStartTracking) return undefined;
+    const variant = product.variants.find(
+      (each) => each.id === code.variantId && !each.tracksLots,
+    );
+    return variant && (() => onStartTracking(variant));
   };
   // One code: the section's title inside its card, beside its actions
   // (v2's board); several, the section's title above them, each card
@@ -252,6 +285,7 @@ function Standing({ product }: { product: ProductDetail }) {
             heldId={code === heldAt ? 'held' : undefined}
             handlers={handlers}
             placesHidden={code.variantId === hiddenAt}
+            onStartTracking={startTrackingOf(code)}
           />
         ))}
       </Stack>
@@ -303,6 +337,14 @@ function Standing({ product }: { product: ProductDetail }) {
         onClose={() => setEditingLot(null)}
         onSaved={reload}
       />
+
+      {movingToLot && (
+        <MoveToLotDialog
+          row={movingToLot}
+          onClose={() => setMovingToLot(null)}
+          onMoved={() => void reload()}
+        />
+      )}
     </Box>
   );
 }
@@ -317,6 +359,7 @@ interface Handlers {
     canAdjust: boolean;
     onMove: (mode: MoveMode, row: StockPile) => void;
     onEditLot: (row: StockPile) => void;
+    onMoveToLot: (row: StockPile) => void;
   };
 }
 
@@ -343,6 +386,7 @@ function CodeBlock({
   heldId,
   handlers,
   placesHidden = false,
+  onStartTracking,
 }: {
   code: CodeStanding;
   /** The item's one code: its card holds the section's title. */
@@ -351,6 +395,8 @@ function CodeBlock({
   handlers: Handlers;
   /** Says why no place is named, under its lots (review 3, 115). */
   placesHidden?: boolean;
+  /** Start tracking lots…, where it tracks no lots and the reader may. */
+  onStartTracking?: () => void;
 }) {
   const intl = useIntl();
   const qty = (value: string) =>
@@ -469,6 +515,12 @@ function CodeBlock({
             {code.lots && <UsableLots code={code} />}
             {placesHidden && <PlacesHidden />}
           </>
+        )}
+
+        {/* Where "Lot: —" raises the question, the way to start (T3);
+            with nothing on hand too, as tracking can start then. */}
+        {onStartTracking && (
+          <NotTrackedLine sku={code.sku} onStart={onStartTracking} />
         )}
 
         <LatestMovements code={code} />
@@ -914,6 +966,7 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
       canAdjust={lot.canAdjust}
       onSelect={lot.onMove}
       onEditLot={lot.onEditLot}
+      onMoveToLot={lot.onMoveToLot}
     />
   );
 
@@ -960,9 +1013,16 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
                       ) : (
                         NO_VALUE
                       )}
+                      <SupplierLotLine
+                        isAssigned={pile.lotIsAssigned}
+                        supplierLot={pile.lotSupplierLot}
+                      />
                     </TableCell>
                     <TableCell>
-                      <ExpiryChip expiresAt={pile.lotExpiresAt} />
+                      <ExpiryChip
+                        expiresAt={pile.lotExpiresAt}
+                        expiry={pile.lotExpiry}
+                      />
                     </TableCell>
                     <TableCell align="right">
                       {displayWithUnit(pile.quantity, code.unitOfMeasure, intl)}
@@ -997,7 +1057,14 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
                   {pile.lotId && pile.lotCode && (
                     <LotLink id={pile.lotId} code={pile.lotCode} />
                   )}
-                  <ExpiryChip expiresAt={pile.lotExpiresAt} />
+                  <SupplierLotLine
+                    isAssigned={pile.lotIsAssigned}
+                    supplierLot={pile.lotSupplierLot}
+                  />
+                  <ExpiryChip
+                    expiresAt={pile.lotExpiresAt}
+                    expiry={pile.lotExpiry}
+                  />
                 </Stack>
                 <span>
                   {displayWithUnit(pile.quantity, code.unitOfMeasure, intl)}
@@ -1009,6 +1076,58 @@ function ByPlace({ code, lot }: { code: CodeStanding; lot: Handlers['lot'] }) {
         }
       />
     </Stack>
+  );
+}
+
+/**
+ * "VITC-100 doesn't track lots, so its stock has no lot numbers. Start
+ * tracking lots…", its last words the button that opens the question,
+ * named for its code as the Variants table's is (ADR-094, T3).
+ */
+function NotTrackedLine({
+  sku,
+  onStart,
+}: {
+  sku: string;
+  onStart: () => void;
+}) {
+  const intl = useIntl();
+
+  return (
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      {intl.formatMessage(
+        {
+          id: 'products.stock.notTracked',
+          defaultMessage:
+            '{sku} doesn’t track lots, so its stock has no lot numbers. {start}',
+        },
+        {
+          sku: <Reference key="sku">{sku}</Reference>,
+          start: (
+            <Link
+              key="start"
+              component="button"
+              type="button"
+              underline="always"
+              aria-label={intl.formatMessage(
+                {
+                  id: 'products.variant.startTrackingOf',
+                  defaultMessage: 'Start tracking lots for {sku}…',
+                },
+                { sku },
+              )}
+              onClick={openDialog(onStart)}
+              sx={{ verticalAlign: 'baseline' }}
+            >
+              {intl.formatMessage({
+                id: 'products.variant.startTracking',
+                defaultMessage: 'Start tracking lots…',
+              })}
+            </Link>
+          ),
+        },
+      )}
+    </Typography>
   );
 }
 
@@ -1130,7 +1249,11 @@ function UsableLots({ code }: { code: CodeStanding }) {
             ) : (
               <span>{NO_VALUE}</span>
             )}
-            <ExpiryChip expiresAt={lot.expiresAt} />
+            <ExpiryChip expiresAt={lot.expiresAt} expiry={lot.expiry} />
+            <SupplierLotLine
+              isAssigned={lot.isAssigned}
+              supplierLot={lot.supplierLot}
+            />
             <span>
               {displayWithUnit(lot.quantity, code.unitOfMeasure, intl)}
             </span>

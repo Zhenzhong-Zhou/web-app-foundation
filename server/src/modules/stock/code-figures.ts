@@ -26,7 +26,8 @@ import { expiredByItem, onHandByItem, onHandByUse } from './usable-stock';
  * - `position`: Left on screen, ADR-085's position, usable plus coming
  *   less still needed;
  * - `expires_first`: the soonest expiry of the usable stock, lots not
- *   expired at places marked available; null when none expires;
+ *   expired at places marked available; null when none expires, a lot
+ *   whose expiry is not known yet never it (ADR-094, Q5a);
  * - `all_expired`: whether every unit on hand has expired, wherever it
  *   sits, a place not available too (expiredByItem; #611, review 13);
  * - `reorder_point` and `status`, out, low, enough or discontinued
@@ -236,7 +237,9 @@ function stillNeededOf(organizationId: string, variants: SQL): SQL {
 
 /**
  * The soonest expiry of the usable stock per item, lots not expired at
- * places marked available: rows `variant_id, expires_first`.
+ * places marked available: rows `variant_id, expires_first`. Only a lot
+ * with a day: one whose expiry is not known yet has none, so it is never
+ * what expires first (ADR-094, Q5a).
  */
 export function expiresFirstOf(
   organizationId: string,

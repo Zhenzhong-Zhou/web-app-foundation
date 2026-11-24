@@ -259,7 +259,13 @@ export function MovementsPage() {
   const fromRows = inPicker
     ? undefined
     : rows?.find((row) => row.variantId === variantId);
-  const [named, setNamed] = useState<VariantOption | null>(null);
+  // By its names alone: whether it tracks lots is not told by a row,
+  // whose stock may be from before its lots (ADR-094), and the chip reads
+  // nothing of it.
+  const [named, setNamed] = useState<Omit<
+    VariantOption,
+    'tracksLots' | 'productId'
+  > | null>(null);
   if (fromRows && named?.id !== fromRows.variantId) {
     setNamed({
       id: fromRows.variantId,
@@ -268,7 +274,6 @@ export function MovementsPage() {
       variantName: fromRows.variantName,
       type: fromRows.type,
       unitOfMeasure: fromRows.unitOfMeasure,
-      tracksLots: fromRows.lotId !== null,
     });
   }
   const unlisted = variantId && named?.id === variantId ? named : null;

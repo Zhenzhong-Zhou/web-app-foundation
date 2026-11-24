@@ -1,6 +1,6 @@
 import type { LoggerService } from '@nestjs/common';
 
-import type { ProductType } from '../schema';
+import type { LotExpiry, ProductType } from '../schema';
 import type { Random } from './random';
 import { inWeek, type Volume, WEEKS } from './scale';
 import type { Services } from './services';
@@ -30,9 +30,12 @@ export interface Anchors {
  * back: every quantity sent is a string, as the API takes it (ADR-025).
  */
 interface Item {
+  productId: string;
   variantId: string;
   tracked: boolean;
   kind: Kind;
+  /** A good may be equipment, which never tracks lots (ADR-092). */
+  type: ProductType;
   homeBinId: string;
   /** Cents, so a price is formatted without a float. */
   priceCents: number;
@@ -52,6 +55,11 @@ interface Item {
   expired: number;
   /** Receipts so far, which decide by position which are put away apart. */
   receipts: number;
+  /**
+   * The lot its last receipt went into, which a later lot change may move
+   * stock into (ADR-094): another of the item's lots, never a new one.
+   */
+  lastLotId: string | null;
 }
 
 interface Recipe {
@@ -159,6 +167,36 @@ const PAST_EVERY = 100;
 const DAY_STRIDE = 53;
 
 /**
+ * Lots as ADR-094 makes them (R23), each by position and never from the
+ * random source, so the rest of the year is the year it was:
+ *
+ * - one received lot in `MADE_HERE_EVERY`, from its third, has a code the
+ *   lot series made, and every second of those carries a supplier's lot,
+ *   `SUP-nnnnnn`: the app lets only a code made here carry one (R5), so
+ *   they are one lot in 40, and the other made codes read "Supplier's lot
+ *   to add";
+ * - one in `EXPIRY_NOT_KNOWN_EVERY`, from its eleventh, has an expiry not
+ *   known yet, read "Expiry to add";
+ * - one purchase line of a tracked good in `WAITING_EVERY` is bought with
+ *   no price, so its lot waits for a cost (ADR-048), and part of every
+ *   second such lot is moved into another lot, which leaves a lot waiting
+ *   that came from it: about one lot in 50 waits in all. A material is
+ *   never bought so: a pool with stock waiting gives no average (#650), and
+ *   a run draws on it, so the batches made from it would wait on it too;
+ * - part of one other tracked receipt in `LOT_CHANGE_EVERY` is moved too,
+ *   a quarter of what is at the home bin, into a new lot or the item's
+ *   previous one by turns: about one movement in 200 is a lot change;
+ * - in week `START_WEEK` every `START_TRACKING_EVERY`th untracked good
+ *   starts tracking lots, so its later receipts carry one.
+ */
+const MADE_HERE_EVERY = 20;
+const EXPIRY_NOT_KNOWN_EVERY = 50;
+const WAITING_EVERY = 60;
+const LOT_CHANGE_EVERY = 13;
+const START_TRACKING_EVERY = 10;
+const START_WEEK = 26;
+
+/**
  * Writes one organization's year (ADR-051), a week at a time.
  *
  * In the order a business does things, so every step is one the services
@@ -188,6 +226,10 @@ export class OrganizationWriter {
 
   private sequence = 0;
   private lotCount = 0;
+  private goodsLines = 0;
+  private trackedReceipts = 0;
+  private waitingReceipts = 0;
+  private lotMoves = 0;
   private calls = 0;
   private skippedSales = 0;
 
@@ -213,6 +255,7 @@ export class OrganizationWriter {
 
     for (let week = 0; week < WEEKS; week++) {
       await this.shipPending();
+      if (week === START_WEEK) await this.startTracking();
       await this.buy(inWeek(this.volume.purchaseOrders, week));
       await this.make(inWeek(this.volume.productionRuns, week));
       await this.sell(inWeek(this.volume.saleOrders, week));
@@ -446,9 +489,11 @@ export class OrganizationWriter {
           : goodsBins[i % goodsBins.length];
 
       const item: Item = {
+        productId: product.id,
         variantId: product.variants[0].id,
         tracked,
         kind,
+        type,
         homeBinId,
         priceCents: this.random.int(500, 8_000),
         onHand: 0,
@@ -456,6 +501,7 @@ export class OrganizationWriter {
         elsewhere: 0,
         expired: 0,
         receipts: 0,
+        lastLotId: null,
       };
 
       this.items.push(item);
@@ -555,12 +601,23 @@ export class OrganizationWriter {
           partnerId: this.random.pick(this.suppliers),
           direction: 'purchase',
           reference: `PO-${this.next()}`,
-          lines: items.map((item) => ({
-            variantId: item.variantId,
-            quantityOrdered: String(this.purchaseQuantity(item)),
-            unitPrice: money(Math.round(item.priceCents * 0.45)),
-            currency,
-          })),
+          lines: items.map((item) => {
+            const quantityOrdered = String(this.purchaseQuantity(item));
+
+            // Bought with the price to follow: its lot waits for a cost.
+            const waits =
+              item.kind === 'good' &&
+              item.tracked &&
+              ++this.goodsLines % WAITING_EVERY === 14;
+            if (waits) return { variantId: item.variantId, quantityOrdered };
+
+            return {
+              variantId: item.variantId,
+              quantityOrdered,
+              unitPrice: money(Math.round(item.priceCents * 0.45)),
+              currency,
+            };
+          }),
         },
         this.actorId,
       );
@@ -577,7 +634,7 @@ export class OrganizationWriter {
         const item = this.itemFor(line.variantId);
         const quantity = line.quantityOrdered;
 
-        const lot = item.tracked ? this.newLot(120, 900) : undefined;
+        const lot = item.tracked ? this.receivedLot(120, 900) : undefined;
         const receipt = await this.services.receipts.receive(
           order.id,
           line.id,
@@ -627,6 +684,22 @@ export class OrganizationWriter {
           item.elsewhere += apart;
         }
         this.calls += 2;
+
+        // A lot already expired is never moved into or out of, and what
+        // moves out of a lot waiting for a cost leaves a lot waiting.
+        if (lot && receipt.lotId && !this.isExpired(lot)) {
+          const previous = item.lastLotId;
+          item.lastLotId = receipt.lotId;
+
+          if (this.movesPart(line.unitPrice === null)) {
+            await this.moveToAnotherLot(
+              item,
+              receipt.lotId,
+              previous,
+              Number(quantity) - apart,
+            );
+          }
+        }
       }
     }
   }
@@ -778,6 +851,83 @@ export class OrganizationWriter {
         this.pending.push({ orderId: order.id, binId, parts: rest });
       }
     }
+  }
+
+  /**
+   * Whether this tracked receipt has part of its lot moved into another
+   * (ADR-094, R20), by position: every second one that waits for a cost,
+   * and one of every `LOT_CHANGE_EVERY` of the rest.
+   */
+  private movesPart(waiting: boolean): boolean {
+    this.trackedReceipts += 1;
+    if (waiting) return this.waitingReceipts++ % 2 === 0;
+    return this.trackedReceipts % LOT_CHANGE_EVERY === 6;
+  }
+
+  /**
+   * A quarter of what a receipt put at the item's home bin moved into the
+   * item's previous lot or into a new one, by turns. New codes are typed,
+   * `LM-nnnnnn`, from a counter of their own: the shared sequence stays as
+   * it was, so every other number in the year is the number it was.
+   */
+  private async moveToAnotherLot(
+    item: Item,
+    lotId: string,
+    previousLotId: string | null,
+    atHome: number,
+  ) {
+    if (atHome < 1) return;
+
+    this.lotMoves += 1;
+    const intoPrevious = previousLotId !== null && this.lotMoves % 2 === 0;
+
+    await this.services.lotChanges.move(
+      lotId,
+      {
+        locationId: item.homeBinId,
+        quantity: String(Math.max(1, Math.floor(atHome / 4))),
+        ...(intoPrevious
+          ? { toLotId: previousLotId }
+          : { lot: { code: `LM-${pad(this.lotMoves, 6)}` } }),
+        note: 'Part of this delivery belongs to another lot',
+      },
+      this.actorId,
+    );
+    this.calls++;
+  }
+
+  /**
+   * Lot tracking starts for every `START_TRACKING_EVERY`th untracked good
+   * (ADR-094, R15), the code's stock and cost history moving into one lot.
+   * From here its receipts carry a lot, and counts and hand-outs, which
+   * are for untracked stock, leave it alone.
+   */
+  private async startTracking() {
+    const untracked = this.items.filter(
+      (item) =>
+        item.kind === 'good' && item.type !== 'equipment' && !item.tracked,
+    );
+    let started = 0;
+
+    for (const [index, item] of untracked.entries()) {
+      if ((index + 1) % START_TRACKING_EVERY !== 0) continue;
+
+      // Doesn't expire outright, so the seeded year reads as it did
+      // before the start's default became Not known yet (ADR-094, S6).
+      await this.services.lotTracking.start(
+        item.productId,
+        item.variantId,
+        { expiry: 'none' },
+        this.actorId,
+      );
+      item.tracked = true;
+      started++;
+    }
+
+    this.calls += started;
+    this.logger.log(
+      `Lot tracking started on ${started} goods, in week ${START_WEEK + 1}`,
+    );
   }
 
   /** Last week's second parts. Whatever is left at year end stays open. */
@@ -1126,6 +1276,39 @@ export class OrganizationWriter {
     const expires = new Date();
     expires.setUTCDate(expires.getUTCDate() + days);
     return { code, expiresAt: expires.toISOString().slice(0, 10) };
+  }
+
+  /**
+   * A lot arriving with a receipt (ADR-094, R23): the lot `newLot` makes,
+   * or by its position one whose code the lot series makes, carrying a
+   * supplier's lot on every second such code, or one whose expiry is not
+   * known yet. A batch's lot is the run's own and never one of these.
+   */
+  private receivedLot(
+    minDays: number,
+    maxDays: number,
+  ): {
+    code?: string;
+    makeCode?: boolean;
+    supplierLot?: string;
+    expiry?: LotExpiry;
+    expiresAt?: string;
+  } {
+    const lot = this.newLot(minDays, maxDays);
+    const position = this.lotCount;
+
+    if (position % MADE_HERE_EVERY === 3) {
+      const withSupplierLot = Math.floor(position / MADE_HERE_EVERY) % 2 === 1;
+      return {
+        makeCode: true,
+        ...(withSupplierLot ? { supplierLot: `SUP-${pad(position, 6)}` } : {}),
+        ...(lot.expiresAt ? { expiresAt: lot.expiresAt } : {}),
+      };
+    }
+    if (position % EXPIRY_NOT_KNOWN_EVERY === 11) {
+      return { code: lot.code, expiry: 'unknown' };
+    }
+    return lot;
   }
 
   /** A lot already expired on the seed's day, which no sale may hold. */

@@ -96,13 +96,14 @@ source: the rest of the year is the year it was.
 
 Movements for one shelf and the lists beside it (ADR-093) need no rows of
 their own: every receipt, put-away, sale, run and count is a movement at a
-bin, so a shelf holds about 1,700 of them at small (50 to 1,950 a bin) and
-about 3,500 at large (200 to 6,700), the dock apart, which every receipt
+bin, so a shelf holds about 1,400 of them at small (50 to 2,000 a bin) and
+about 3,000 at large (200 to 6,800), the dock apart, which every receipt
 passes through. A lot-tracked sale line draws on two lots or more about one
-time in ten (981 of 10,201 at small, 9,594 of 81,303 at large), each
+time in eight (1,240 of 9,635 at small, 11,133 of 86,820 at large), each
 movement with its own lot, so an order's movements of one quantity are told
-apart by it. Counted on the busiest organization of each volume, as
-seeded on 16 November (small) and 17 November (large).
+apart by it; the lot changes below split lots, which is why it was one in
+ten. Counted on the busiest organization of each volume, as seeded on 22
+November, when the lots of ADR-094 were added.
 
 One lot in five expires within the year after the seed's day, spread
 evenly over it, and one in a hundred has expired already, also by position
@@ -110,6 +111,25 @@ evenly over it, and one in a hundred has expired already, also by position
 Expires first, have rows whenever the volume is read that year, GitHub's
 cached one included. The expired are never drawn on by the seed's sales,
 since no sale may hold them.
+
+Lots as ADR-094 makes them, each by position and never from the random
+source, so the rest of the year is the year it was: one lot received in
+20, from its third, has a code the lot series made (`L-2026-11-22-1`), and
+every second of those carries a supplier's lot (`SUP-000123`), since the
+app lets only a code made here carry one, so about one lot in 40; the
+others read "Supplier's lot to add". One lot in 50 has its expiry not
+known yet, "Expiry to add", so Details to add lists about one lot in 22.
+One purchase line of a tracked good in 60 is bought with no price, so its
+lot waits for a cost (never a material's, which a run draws on: a pool
+with stock waiting gives no average, #650), and part of every second such
+lot is moved into another lot, which leaves a lot waiting that came from
+it: about one lot in 50 waits in all, and Stock value's Waiting for a cost
+lists lot changes. Part of about one other tracked receipt in 13 is moved
+too, a quarter of what is at its home bin, into a new lot (`LM-…`) or the
+item's previous one by turns, and in week 27 every tenth untracked good
+starts tracking lots, so its later receipts carry one: about one movement
+in 200 is a lot change. Its lot codes, `LV-…` and `LM-…`, are typed as
+printed.
 
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles

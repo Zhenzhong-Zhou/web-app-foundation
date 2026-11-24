@@ -111,6 +111,12 @@ Movements (ADR-093).
   short, then buy what is low, from Home's Low stock to a purchase
   order filled in, then when a received order's goods came in, and how
   many the item had at the start of this month.
+- **Lots (ADR-094):** start tracking lots for an item that holds stock
+  and has never had lot numbers; then move part of a lot to a new lot.
+  The senior moves part of a lot after the reading tasks; the warehouse
+  worker does both after its own tasks; the first-week buyer starts
+  tracking after hers. Each says every place they looked for the action
+  and did not find it.
 
 ## buy
 
@@ -125,7 +131,9 @@ Movements (ADR-093).
 - **Personas:** the warehouse worker, the first-week buyer (Mei).
 - **Tasks:** receive a delivery against its purchase order, recording
   each lot and its expiry; receive less than was ordered; find where the
-  goods went.
+  goods went; receive a delivery whose box has no lot number, letting
+  the application make the code, its expiry not known yet; later, add
+  the supplier's lot number and the expiry to that lot (ADR-094).
 
 ## make
 
@@ -160,7 +168,9 @@ Movements (ADR-093).
 - **Starts on:** the lookup in the top bar.
 - **Personas:** the operations lead, customer service.
 - **Tasks:** follow a lot to every customer who received it; find the
-  lots a made lot was made from.
+  lots a made lot was made from; recall a lot part of which was moved to
+  another lot: every customer who received any of it, through either
+  lot, and where what is left of it is now (ADR-094).
 
 ## on-the-road
 

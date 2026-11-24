@@ -23,14 +23,14 @@ Sous 600 px, chaque code est une carte avec **En stock** et **Libre**, qui disen
 ## Trouver du stock {#find}
 
 - Les filtres rapides, sur leur propre rangée au-dessus de la recherche (sur un téléphone, dans **Filtres**), montrent seulement ce qu’ils nomment, chacun avec son total et ce qu’il compte, comme **Stock bas · 4 codes** : **Stock bas** (les épuisés aussi), **Épuisé**, **Expire bientôt** (les périmés aussi), **Périmés** et **En attente d’un coût**. Un total est le nombre de lignes que le filtre montre, les autres filtres restant actifs : appuyez sur l’un et la liste a cette longueur.
-- **Type**, **Catégorie** et **Emplacement** réduisent la liste, et **Rechercher des articles, des codes ou des lots** trouve un code, le nom d’un article ou le code d’un lot. Un message dit quand rien ne correspond, avec **Afficher tout le stock**.
+- **Type**, **Catégorie** et **Emplacement** réduisent la liste, et **Rechercher des articles, des codes ou des lots** trouve un code, le nom d’un article, ou le code d’un lot ou le lot du fournisseur. Un message dit quand rien ne correspond, avec **Afficher tout le stock**.
 - Appuyez sur **En stock** ou **Expire en premier** en tête d’une colonne pour trier selon elle, et de nouveau pour inverser; le nom est le tri par défaut. Un code sans rien qui expire vient en dernier dans les deux sens. Libre n’est pas un tri.
 - Choisissez un emplacement sous **Emplacement** et la liste montre ce qui s’y trouve : **En stock ici**, **Lots ici** et **Expire en premier ici** sont ceux de cet emplacement, tandis que **Libre, tous les emplacements** et **Réservé, tous les emplacements** comptent tous les emplacements, puisqu’une vente réserve un article, pas une tablette. Le code d’un lot cherché avec un emplacement choisi trouve ce lot à cet emplacement seulement.
 - Chaque filtre, le regroupement et le tri sont dans l’adresse : un rechargement et le retour arrière les conservent. **Exporter** écrit les lignes que la liste montre, avec ses filtres, dans les mots de l’écran et dans votre langue.
 
 ## Regrouper par lot {#lots}
 
-Choisir **Lot** sous **Regrouper par** change la liste en une ligne par lot à chaque emplacement : le lot qui expire en premier en haut, les périmés au-dessus, les emplacements d’un lot ensemble, chacun disant « 1 sur 2 emplacements » pour que ses lignes se lisent comme un seul lot. Appuyez sur **Article**, **Emplacement** ou **Quantité** en tête d’une colonne pour trier selon elle, de nouveau pour inverser; **Date de péremption** remet l’ordre habituel. Ses filtres sont **Stock bas**, **Expire bientôt**, **Périmés** et **En attente d’un coût**; il n’y a pas de filtre **Épuisé**, puisqu’un article épuisé n’a pas de lots, et le choisir dit « Les articles épuisés n’ont pas de lots. » avec **Regrouper par article** pour revenir.
+Choisir **Lot** sous **Regrouper par** change la liste en une ligne par lot à chaque emplacement : le lot qui expire en premier en haut, les périmés au-dessus, les emplacements d’un lot ensemble, chacun disant « 1 sur 2 emplacements » pour que ses lignes se lisent comme un seul lot. Appuyez sur **Article**, **Emplacement** ou **Quantité** en tête d’une colonne pour trier selon elle, de nouveau pour inverser; **Date de péremption** remet l’ordre habituel. Ses filtres sont **Stock bas**, **Expire bientôt**, **Périmés**, **En attente d’un coût** et **Détails à ajouter**, les lots dont la date de péremption ou le lot du fournisseur reste à ajouter; il n’y a pas de filtre **Épuisé**, puisqu’un article épuisé n’a pas de lots, et le choisir dit « Les articles épuisés n’ont pas de lots. » avec **Regrouper par article** pour revenir. Un lot dont la date de péremption n’est pas encore connue indique **Date de péremption à ajouter** partout où sa date s’affiche, et reste utilisable : il n’est jamais compté parmi les périmés ni ceux qui expirent bientôt. Un lot créé ici indique **Lot du fournisseur à ajouter** sous son code tant que le lot du fournisseur n’est pas donné.
 
 La tuile **Expire bientôt** de l’accueil ouvre cette vue, les plus proches d’abord, les périmés en tête, et compte ces lignes.
 
@@ -38,10 +38,11 @@ La tuile **Expire bientôt** de l’accueil ouvre cette vue, les plus proches d�
 
 1. Appuyez sur **Recevoir du stock**.
 2. Choisissez l’article. S’il est encore à venir sur un achat, Inventaire demande d’abord **De quelle livraison s’agit-il?**, avec chaque commande, ce qui reste à venir et quand : choisissez sa commande et appuyez sur **Continuer**; la fenêtre **Recevoir** de cette commande s’ouvre, avec ce qui reste à venir déjà saisi. Choisissez **Hors commande** pour du stock arrivé sans commande, et continuez ici.
-3. Choisissez l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
-4. Saisissez la quantité, dans l’unité de l’article.
-5. Pour un article suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Chaque nouvelle réception du même lot augmente sa quantité.
-6. Appuyez sur **Recevoir**.
+3. Répondez à **Pourquoi n’y a-t-il pas de commande?** : **Stock d’ouverture**, **Retourné**, **Un échantillon** ou **Autre**, avec une note au besoin; de qui il provient va sous **Reçu de**. Du stock trouvé lors d’un comptage n’est pas une réception : **Trouvé lors d’un comptage** ouvre **Corriger le compte** avec l’article et l’emplacement.
+4. Choisissez l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
+5. Saisissez la quantité, dans l’unité de l’article.
+6. Pour un article suivi par lot, saisissez le numéro de lot tel qu’imprimé sur la boîte; dessous, le champ dit s’il s’agit d’un de ses lots, auquel la réception s’ajoute, ou d’un nouveau lot. Sans lot sur la boîte, appuyez sur **Créer un code pour nous** : le code est créé à l’enregistrement, et le message le nomme, pour l’inscrire sur la livraison, avec **Copier le code**. Pour un nouveau lot, choisissez sa **Date de péremption** : **À une date**, **Pas encore connue** ou **N’expire pas**, au départ comme le dernier lot de l’article, ou à **Pas encore connue** pour un code créé pour nous. Le lot du fournisseur d’un code créé ici peut être donné alors ou plus tard, dans **Modifier le lot…**. Pour un article qui n’est pas suivi par lot, une ligne sous lui dit qu’aucun lot n’est demandé; pour qui peut commencer le suivi, elle se termine par **Commencer le suivi par lot…**, qui pose sa question par-dessus la fenêtre, et une fois le suivi commencé, les champs du lot s’affichent, ce que vous avez saisi gardé. Les **Actions** de l’article dans **Stock**, la ligne sous **Par emplacement et lot** sur sa page et son tableau **Variantes** l’offrent aussi : voir [Commencer le suivi par lot](/items#tracking).
+7. Appuyez sur **Recevoir**.
 
 Les marchandises envoyées par un fournisseur pour un achat sont reçues sur sa commande, pour que la commande se ferme et que le stock ne soit compté qu’une fois : ici en la choisissant, ou dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’un coût n’est pas défini dans [Valeur du stock](/costs); il figure alors sous **En attente d’un coût**.
 
@@ -49,9 +50,9 @@ Les marchandises envoyées par un fournisseur pour un achat sont reçues sur sa 
 
 Chaque ligne a ses **Actions**, selon ce qu’elle est :
 
-- La ligne d’un article : **Déplacer…**, **Sortie de stock…**, **Envoyer un échantillon…** et **Corriger le compte…**; **Recevoir du stock…**, l’article déjà choisi; **Mouvements** et **Modifier le point de commande…**. Quand l’article est un seul lot à un seul emplacement, les quatre premières agissent dessus directement. Sinon, le menu dit qu’un lot est à choisir ensuite, et la ligne s’ouvre sur ses lots sous « Choisissez le lot à déplacer », chaque lot avec ses propres Actions. Sans rien en stock, Déplacer, Sortie de stock et Envoyer un échantillon sont grisés, la raison en dessous; Corriger le compte ouvre ses emplacements et ses lots vidés; un article jamais en stock à cet endroit dit de le recevoir d’abord.
+- La ligne d’un article : **Déplacer…**, **Sortie de stock…**, **Envoyer un échantillon…** et **Corriger le compte…**; **Recevoir du stock…**, l’article déjà choisi; **Mouvements** et **Modifier le point de commande…**; et, pour un article pas encore suivi par lot, **Commencer le suivi par lot…** (voir [Commencer le suivi par lot](/items#tracking)). Quand l’article est un seul lot à un seul emplacement, les quatre premières agissent dessus directement. Sinon, le menu dit qu’un lot est à choisir ensuite, et la ligne s’ouvre sur ses lots sous « Choisissez le lot à déplacer », chaque lot avec ses propres Actions. Sans rien en stock, Déplacer, Sortie de stock et Envoyer un échantillon sont grisés, la raison en dessous; Corriger le compte ouvre ses emplacements et ses lots vidés; un article jamais en stock à cet endroit dit de le recevoir d’abord.
 - La ligne d’un emplacement : ses **Mouvements** à cet endroit, un lien.
-- La ligne d’un lot : **Déplacer…**, **Sortie de stock…**, **Envoyer un échantillon…** et **Corriger le compte…**; **Modifier le lot…** et **Tracer le lot**; **Mouvements**. Un lot vidé dit quand il l’a été.
+- La ligne d’un lot : **Déplacer…**, **Sortie de stock…**, **Envoyer un échantillon…** et **Corriger le compte…**; **Déplacer vers un autre lot…**, **Modifier le lot…** et **Tracer le lot**; **Mouvements**. Un lot vidé dit quand il l’a été.
 
 Ce que fait chacune :
 
@@ -59,8 +60,10 @@ Ce que fait chacune :
 - **Sortie de stock…** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
 - **Envoyer un échantillon…** : un don, avec la personne à qui il a été remis, pour qu’un rappel puisse le retrouver.
 - **Corriger le compte…** : combien la tablette contient de plus ou de moins que ce qui est enregistré, pourquoi, et ce qui s’est passé.
-- **Ajouter au compte…**, à la fin des emplacements et des lots ouverts d’un article, sous « Du stock trouvé là où il n’a jamais été? » : du stock trouvé à un emplacement, ou dans un lot, que l’article n’a jamais eu. Choisissez l’emplacement et, pour un article suivi par lot, **Un de ses lots** ou **Un nouveau lot**, son numéro tel qu’imprimé sur la boîte et que l’article n’a pas encore. Un nouveau lot, ou un article encore sans coût, est en attente d’un coût dans [Valeur du stock](/costs).
-- **Modifier le lot…**, **Tracer le lot** et **Mouvements** : le lot, où il est allé, et ses mouvements.
+- **Ajouter au compte…**, à la fin des emplacements et des lots ouverts d’un article, sous « Du stock trouvé là où il n’a jamais été? » : du stock trouvé à un emplacement, ou dans un lot, que l’article n’a jamais eu. Choisissez l’emplacement et, pour un article suivi par lot, **Un de ses lots** ou **Un nouveau lot**, son numéro tel qu’imprimé sur la boîte et que l’article n’a pas encore. Ce que vous ajoutez au compte est en attente d’un coût dans [Valeur du stock](/costs) s’il entre dans un nouveau lot, si l’article n’a encore aucun coût, ou tant qu’une partie du stock qu’il rejoint attend encore le sien.
+- **Déplacer vers un autre lot…** : une partie d’un lot, à un emplacement, vers un autre lot du même article, un qu’il a ou un nouveau, saisi ou créé pour nous, avec une note qui dit pourquoi. Un nouveau lot reprend la date de péremption et le lot du fournisseur du premier lot, à modifier s’il s’agit vraiment d’une autre production. Le mouvement n’est ni une entrée ni une sortie, et le coût suit le stock : un coût donné plus tard à une livraison suit la partie qui est passée à un autre lot, et du stock qui attend encore un coût l’attend aussi dans le nouveau lot. La traçabilité du lot le suit, de sorte qu’un rappel du premier lot atteint aussi ceux qui ont reçu le second.
+- **Modifier le lot…** : le lot du fournisseur, ajouté quand on le connaît, et la **Date de péremption**, qu’on passe de **À une date** à **Pas encore connue** ou **N’expire pas**. Un code imprimé sur les boîtes est grisé; une personne qui peut l’indiquer coche **Nous avons inventé ce code; rien ne l’imprime** quand rien ne l’imprimait, pour que le code puisse être corrigé et le lot du fournisseur ajouté. Une fois enregistré, il reste indiqué, dans le journal d’activité. C’est aussi un bouton sur la page du lot.
+- **Tracer le lot** et **Mouvements** : où le lot est allé, et ses mouvements.
 - **Modifier le point de commande…** : le point de commande de l’article, plus bas.
 
 > Toute personne qui peut voir le stock voit **Mouvements** et **Tracer le lot**. Seule une personne qui peut déplacer du stock voit **Recevoir du stock** et ce qui change le stock, et seule une personne qui peut corriger les comptes voit **Corriger le compte…** et **Ajouter au compte…**.
@@ -117,6 +120,7 @@ Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s
 - **Libre** : du stock qui peut être promis, donné en échantillon ou utilisé en production.
 - **Non disponible** : un emplacement dont le stock n’est pas à expédier, comme un casier de retours à vérifier.
 - **Expire bientôt** : un lot qui expire dans le nombre de jours fixé par votre organisation.
+- **Date de péremption à ajouter** : un lot dont la date de péremption n’est pas encore connue. Il reste utilisable, et n’est jamais compté parmi les périmés ni ceux qui expirent bientôt.
 - **Périmés** : les lots dont la date de péremption est passée. Comme filtre, la liste n’affiche que ceux-là, les dates de péremption les plus anciennes d’abord, jusqu’à ce que vous le retiriez.
 
 ## Si quelque chose est refusé {#refused}
@@ -126,6 +130,7 @@ Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s
 - Le stock réservé pour une vente confirmée ne peut pas servir à autre chose. Expédiez-le sur cette vente, ou prenez seulement ce qui est libre.
 - Du stock périmé, ou remis à un ordre de fabrication, est sur la tablette mais ne réserve rien pour personne. En prendre quand une autre commande a besoin du stock utilisable est refusé, avec le nombre d’unités périmées ou remises, et un lien vers la page de l’article, où ses emplacements montrent lesquelles.
 - Un code de lot imprimé sur les boîtes ne peut pas être renommé. Déplacez plutôt le stock vers le bon lot.
+- Un déplacement vers un autre lot demande une note, et un lot du même article autre que celui qu’il quitte. Le refus dit lequel.
 - Un article a un seul point de commande. Modifiez celui qu’il a : le refus y mène.
 - Un point de commande et ses quantités sont supérieurs à zéro, et un maximum est supérieur au point.
 

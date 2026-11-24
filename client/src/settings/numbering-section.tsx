@@ -41,8 +41,10 @@ import {
   lettersOf,
   nextPeriodStart,
   type NumberingFormat,
+  type PrefixKind,
   type PrefixProblem,
   prefixProblem,
+  roomWithin20,
 } from '../lib/numbering';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -55,9 +57,14 @@ const SERIES = [
   'returnAuthorization',
   'saleOrder',
   'purchaseOrder',
+  'lot',
 ] as const;
 
 type SeriesKey = (typeof SERIES)[number];
+
+/** The codes of lots made here take narrower characters (ADR-094). */
+const kindOf = (key: SeriesKey): PrefixKind =>
+  key === 'lot' ? 'lot' : 'document';
 
 /** The letters a common format keeps when a prefix starts otherwise. */
 const LETTERS: Record<SeriesKey, string> = {
@@ -66,6 +73,7 @@ const LETTERS: Record<SeriesKey, string> = {
   returnAuthorization: 'RMA',
   saleOrder: 'SO',
   purchaseOrder: 'PO',
+  lot: 'L',
 };
 
 const RESETS: NumberingReset[] = ['never', 'yearly', 'monthly', 'daily'];
@@ -97,6 +105,7 @@ const SERIES_NAME = defineMessages({
     id: 'settings.numbering.purchaseOrder',
     defaultMessage: 'Purchase orders',
   },
+  lot: { id: 'settings.numbering.lot', defaultMessage: 'Lot codes' },
 });
 
 const RESET_LABEL = defineMessages({
@@ -117,6 +126,11 @@ const PROBLEM = defineMessages({
     id: 'settings.numbering.problem.characters',
     defaultMessage:
       'Capital letters, digits, -, _ and / only, and the date from the buttons.',
+  },
+  lotCharacters: {
+    id: 'settings.numbering.problem.lotCharacters',
+    defaultMessage:
+      'Capital letters, digits and - only, and the date from the buttons, so a barcode can carry the code.',
   },
   start: {
     id: 'settings.numbering.problem.start',
@@ -343,7 +357,12 @@ function NumberingForm({
     (/^\d+$/.test(drafts[key].next ?? '') && Number(drafts[key].next) >= 1);
   const problemOf = (key: SeriesKey): PrefixProblem | null =>
     digitsValid(key)
-      ? prefixProblem(drafts[key].prefix, digitsOf(key), drafts[key].reset)
+      ? prefixProblem(
+          drafts[key].prefix,
+          digitsOf(key),
+          drafts[key].reset,
+          kindOf(key),
+        )
       : null;
   const validOf = (key: SeriesKey) =>
     digitsValid(key) && nextValid(key) && problemOf(key) === null;
@@ -380,6 +399,8 @@ function NumberingForm({
     void submit(() =>
       api('/organization/numbering', {
         method: 'PUT',
+        // Every series, the lot codes' too: the server keeps one not sent
+        // as it stands only for a tab opened before them (ADR-094).
         body: JSON.stringify({
           ...Object.fromEntries(
             SERIES.map((key) => [
@@ -627,10 +648,72 @@ function NumberingForm({
     );
   };
 
+  /**
+   * Under the next lot code: how many codes fit before one passes 20
+   * characters, for the format as typed, in amber when few do in a year or
+   * in all (ADR-094's S5); Save still works, since a code may grow (D1).
+   * The count is never one, so it needs no plural, and a BigInt, which a
+   * plural cannot read.
+   */
+  const room = (key: SeriesKey) => {
+    if (key !== 'lot' || !validOf(key)) return null;
+    const { codes, short } = roomWithin20(
+      drafts[key].prefix,
+      drafts[key].reset,
+    );
+    return (
+      <Typography
+        variant="caption"
+        sx={{
+          display: 'block',
+          mt: 0.5,
+          maxWidth: rem(240),
+          color: short ? 'warning.main' : 'text.secondary',
+        }}
+      >
+        {intl.formatMessage(
+          {
+            id: 'settings.numbering.room',
+            defaultMessage:
+              'Room for {count} codes {reset, select, daily {a day} monthly {a month} yearly {a year} other {in all}} within 20 characters',
+          },
+          { count: intl.formatNumber(codes), reset: drafts[key].reset },
+        )}
+      </Typography>
+    );
+  };
+
+  /**
+   * Under the lot codes' row, always: whose codes the 20 characters bind,
+   * so a code typed from a box is not thought refused (v15's Q2a card;
+   * review 39).
+   */
+  const limit = (key: SeriesKey) =>
+    key === 'lot' ? (
+      <Typography
+        variant="caption"
+        sx={{
+          display: 'block',
+          mt: 0.5,
+          maxWidth: rem(240),
+          color: 'text.secondary',
+        }}
+      >
+        {intl.formatMessage({
+          id: 'settings.numbering.lotLimit',
+          defaultMessage:
+            'For the codes we make: up to 20 characters of A to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed from a box stays as printed.',
+        })}
+      </Typography>
+    ) : null;
+
   /** Under the prefix being edited: the formats, the date, what is wrong. */
   const helper = (key: SeriesKey) => {
     const problem = problemOf(key);
-    const formats = commonFormats(lettersOf(drafts[key].prefix, LETTERS[key]));
+    const formats = commonFormats(
+      lettersOf(drafts[key].prefix, LETTERS[key]),
+      kindOf(key),
+    );
     const year = today.slice(0, 4);
     const yearLabel = (value: string) =>
       intl.formatMessage(
@@ -822,7 +905,7 @@ function NumberingForm({
           {intl.formatMessage({
             id: 'settings.numbering.intro',
             defaultMessage:
-              'How each kind of document is numbered. A number already given never changes: a change applies from the next document made.',
+              'How each kind of document, and each lot code made for us, is numbered. A number already given never changes: a change applies from the next one made.',
           })}
         </Typography>
 
@@ -872,6 +955,12 @@ function NumberingForm({
                   </Stack>
                   {printsAs(key)}
                 </Button>
+                {key === 'lot' && (
+                  <Box sx={{ px: 2, pb: 1.5 }}>
+                    {room(key)}
+                    {limit(key)}
+                  </Box>
+                )}
                 {/* A row in error stays open, so its reason shows. */}
                 {(editing === key || !validOf(key)) && (
                   <Stack spacing={2} sx={{ px: 2, pb: 2 }}>
@@ -912,7 +1001,11 @@ function NumberingForm({
                     <TableCell>{digitsField(key)}</TableCell>
                     <TableCell>{resetField(key)}</TableCell>
                     <TableCell>{nextField(key)}</TableCell>
-                    <TableCell>{printsAs(key)}</TableCell>
+                    <TableCell>
+                      {printsAs(key)}
+                      {room(key)}
+                      {limit(key)}
+                    </TableCell>
                   </TableRow>,
                   editing === key || !validOf(key) ? (
                     <TableRow key={`${key}-helper`}>
@@ -934,7 +1027,7 @@ function NumberingForm({
               {
                 id: 'settings.numbering.ownDate',
                 defaultMessage:
-                  'A year, month or day in a number is the document’s own date: an invoice dated 31 December and issued in January takes the old year’s next number. “Prints as” is today’s, {day}.',
+                  'A year, month or day in a number is the document’s own date: an invoice dated 31 December and issued in January takes the old year’s next number. A lot code’s is the day it is made. “Prints as” is today’s, {day}.',
               },
               { day: formatDay(today) },
             )}

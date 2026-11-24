@@ -48,7 +48,7 @@ Premier sous le titre d’un article, **État du stock** montre chacun de ses co
 - **Réservé**, les ventes qui retiennent du stock, chacune un lien, la plus ancienne d’abord, avec ce que chacune retient de ce qu’elle demande.
 - **À venir**, les bons de commande et les ordres de fabrication qui doivent encore apporter du stock, chacun avec son jour.
 - **Il en reste**, avec son calcul en mots simples : « 30 utilisables + 0 à venir − 20 pour les commandes ».
-- **Par emplacement et lot**, chaque emplacement écrit depuis son entrepôt, avec ses lots, les plus proches d’abord, le code de chaque lot un lien vers son suivi, et les **Actions** de chaque lot, comme dans Stock.
+- **Par emplacement et lot**, chaque emplacement écrit depuis son entrepôt, avec ses lots, les plus proches d’abord, le code de chaque lot un lien vers son suivi, et les **Actions** de chaque lot, comme dans Stock. Un lot dont la date de péremption n’est pas encore connue indique **Date de péremption à ajouter**, et un lot créé ici sans lot du fournisseur indique **Lot du fournisseur à ajouter**.
 - **Derniers mouvements**, les cinq plus récents du code, comme une fiche de stock avec **Entrée**, **Sortie** et **Solde**, qui se terminent par **Tous les mouvements de** ce code, ce qui ouvre [Mouvements](/movements) pour lui. Un code que rien n’a touché n’en a pas.
 
 Les actions, sur la carte du code à côté de son titre, sont **Modifier le point de commande**, et **Acheter** ou **Fabriquer** avec la quantité dans son unité, comme « Acheter 30 unités » ou « Fabriquer 1 000 bouteilles », chacune montrée selon ce que votre rôle permet; sinon, une ligne dit à qui demander. **Acheter** et **Fabriquer** ouvrent leur formulaire rempli avec la commande suggérée et n’enregistrent rien avant que vous ne le créiez. Un code sans stock ni arrivage dit « Rien en stock, rien à venir. » avec **Fixer un point de commande** et **Recevoir du stock**.
@@ -75,7 +75,7 @@ L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les c
 4. Saisissez le **Code** : votre propre code pour cet article, unique dans l’organisation, par exemple RM-VITC pour une matière première. Ce n’est pas un code-barres.
 5. Choisissez son unité, ce dans quoi son stock est compté.
 6. S’il existe en plusieurs formats, indiquez le format ou la particularité de cette variante, par exemple 60ct.
-7. Activez **Suivre les numéros de lot et les dates de péremption** si chaque livraison porte un code de lot. Ce choix ne peut pas être modifié par la suite, et l’équipement ne l’offre jamais.
+7. Activez **Suivre les numéros de lot et les dates de péremption** si chaque livraison porte un code de lot. Il peut commencer plus tard, avec **Commencer le suivi par lot…** sur la page de l’article, mais ne s’arrête jamais; l’équipement ne l’offre jamais.
 8. Appuyez sur **Ajouter un article**.
 
 La page du nouvel article s’ouvre à la place du formulaire : Retour ramène donc aux Articles.
@@ -136,6 +136,18 @@ Deux marchés peuvent aussi partager une licence et un flacon, chaque recette av
 Quand une formule change avec le temps, elle garde son article et son code : appuyez sur **Nouvelle version** dans sa recette, changez ce qu’elle utilise, puis appuyez sur **Mettre en vigueur**.
 
 Les codes-barres viendront plus tard. Le Code est le vôtre, ce n’est pas un code-barres.
+
+## Commencer le suivi par lot {#tracking}
+
+Un article ajouté sans **Suivre les numéros de lot et les dates de péremption** peut commencer le suivi par lot plus tard, avec du stock ou sans. **Commencer le suivi par lot…** se trouve à quatre endroits : dans les **Actions** de l’article, dans **Stock**; sur la page de l’article, sous **Par emplacement et lot**, au bout de la ligne qui dit que le code n’est pas suivi par lot; dans le tableau **Variantes** de l’article, sous **Lots**; et dans **Recevoir du stock** et le **Recevoir** d’une ligne de commande, au bout de la ligne sous l’article qui dit qu’aucun lot n’est demandé. L’équipement ne l’offre jamais, et seule une personne qui peut modifier les articles et corriger les comptes le voit.
+
+1. Appuyez sur **Commencer le suivi par lot…**. La question liste les emplacements qui contiennent l’article et ce que chacun contient, et les ordres de fabrication en cours qui l’utilisent ou le fabriquent, qui seront chacun clôturés sur le nouveau lot.
+2. Donnez le **Lot du fournisseur** et la **Date de péremption** si vous les connaissez. La **Date de péremption** commence à **Pas encore connue** : le lot est donc listé dans Stock, par lot, sous **Détails à ajouter** jusqu’à ce que quelqu’un donne le jour ou dise qu’il n’expire pas; le stock reste utilisable entre-temps.
+3. Appuyez sur **Commencer le suivi par lot**.
+
+Tout le stock va dans un seul lot, son code créé pour nous, et le code indique **Suivi** dès lors : rien ne l’arrête, et chaque réception demande son lot. Un article sans stock commence aussi, et aucun lot n’est créé avant l’arrivée de stock. Le stock reste où il est, de sorte que tous les chiffres sont comme avant, et [Mouvements](/movements) montre une ligne par emplacement, **Suivi par lot commencé**, son stock mis dans le lot, ni en entrée ni en sortie.
+
+L’historique de coût du lot contient les entrées antérieures de l’article : la [Valeur du stock](/costs) est la même, et ce qui attendait un coût l’attend toujours, son coût tombant sur le lot. Du stock qui revient d’avant, comme le retour d’une vente expédiée plus tôt, va dans ce lot.
 
 ## Les mots que vous verrez {#words}
 

@@ -1,8 +1,14 @@
 import { Box, Link, Stack, TableCell, Typography } from '@mui/material';
-import { defineMessages, type IntlShape, useIntl } from 'react-intl';
+import {
+  defineMessages,
+  FormattedMessage,
+  type IntlShape,
+  useIntl,
+} from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { Movement } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { CardLine } from '../components/card-line';
 import { ExpiryChip } from '../components/expiry-chip';
 import { LotLink } from '../components/lot-link';
@@ -10,6 +16,7 @@ import { NUMBER_COLUMN } from '../components/number-column';
 import { Reference } from '../components/reference';
 import { NameAndEmail } from '../components/who-and-when';
 import { itemName, NO_VALUE } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
@@ -21,6 +28,7 @@ import {
 } from './describe-movement';
 import {
   inSentence,
+  lotChangeLabel,
   MOVEMENT_HEADINGS,
   reasonDetailLabel,
   reasonLabel,
@@ -50,14 +58,21 @@ const OUTSIDE = defineMessages({
     id: 'inventory.movements.end.countedOut',
     defaultMessage: 'counted out',
   },
+  opening: {
+    id: 'inventory.movements.end.opening',
+    defaultMessage: 'opening stock',
+  },
+  other: { id: 'inventory.movements.end.other', defaultMessage: 'other' },
 });
 
 /**
  * Where a movement with no place at one end came from or went to, by its
- * reason (ADR-023): a receipt from a supplier, a return or a voided
- * shipment from a customer, a run's output from the run, a correction
- * counted in; a shipment to a customer, a run's use to the run, a sample
- * to "sample", read as a shipment is (125), a correction counted out.
+ * reason (ADR-023): a receipt from a supplier, or by why it came with no
+ * order, opening stock, a customer for stock brought back, or other
+ * (ADR-094, D3); a return or a voided shipment from a customer, a run's
+ * output from the run, a correction counted in; a shipment to a
+ * customer, a run's use to the run, a sample to "sample", read as a
+ * shipment is (125), a correction counted out.
  */
 function outsideEnd(
   movement: Movement,
@@ -66,7 +81,7 @@ function outsideEnd(
   const coming = side === 'from';
   switch (movement.reason) {
     case 'receipt':
-      return 'supplier';
+      return receiptEnd(movement.reasonDetail);
     case 'shipment':
     case 'return':
       return 'customer';
@@ -77,6 +92,28 @@ function outsideEnd(
       return 'sample';
     case 'adjustment':
       return coming ? 'countedIn' : 'countedOut';
+    default:
+      return null;
+  }
+}
+
+/**
+ * A receipt's outside end by why it was received (ADR-094, D3): none, on
+ * an order, or a sample, from a supplier; opening stock; stock a customer
+ * brought back; or other. A detail this tab does not know says nothing,
+ * since it cannot know where that stock came from (D4).
+ */
+function receiptEnd(detail: string | null): keyof typeof OUTSIDE | null {
+  switch (detail) {
+    case null:
+    case 'sample':
+      return 'supplier';
+    case 'opening':
+      return 'opening';
+    case 'returned':
+      return 'customer';
+    case 'other':
+      return 'other';
     default:
       return null;
   }
@@ -160,7 +197,7 @@ export function MovementCells({
         </>
       )}
       <TableCell>
-        <MovementReason movement={movement} />
+        <MovementReason movement={movement} places={columns.places} />
       </TableCell>
       {columns.places && (
         <TableCell>
@@ -208,28 +245,91 @@ export function MovementWhen({
 }
 
 /**
+ * How a move counted as neither In nor Out says what moved, by what it
+ * was (ADR-094, U1): a lot change as its action, "put 900 each into a
+ * lot" as lot tracking starts or stock comes back from before, "moved 80
+ * each to another lot" between two; any other move, or a lot change this
+ * tab does not know, "moved 20 each". Each with ", counted in neither"
+ * where the row says so (118a).
+ */
+function movedWords(movement: Movement, neither: boolean, intl: IntlShape) {
+  const quantity = displayWithUnit(
+    movement.quantity,
+    movement.unitOfMeasure,
+    intl,
+  );
+  const lotChange =
+    movement.reason === 'lot_change' ? movement.reasonDetail : null;
+
+  if (lotChange === 'lots_started' || lotChange === 'from_before') {
+    return neither
+      ? intl.formatMessage(
+          {
+            id: 'inventory.movements.putIntoLotNeither',
+            defaultMessage: 'put {quantity} into a lot, counted in neither',
+          },
+          { quantity },
+        )
+      : intl.formatMessage(
+          {
+            id: 'inventory.movements.putIntoLot',
+            defaultMessage: 'put {quantity} into a lot',
+          },
+          { quantity },
+        );
+  }
+  if (lotChange === 'between_lots') {
+    return neither
+      ? intl.formatMessage(
+          {
+            id: 'inventory.movements.movedToLotNeither',
+            defaultMessage:
+              'moved {quantity} to another lot, counted in neither',
+          },
+          { quantity },
+        )
+      : intl.formatMessage(
+          {
+            id: 'inventory.movements.movedToLot',
+            defaultMessage: 'moved {quantity} to another lot',
+          },
+          { quantity },
+        );
+  }
+  return neither
+    ? intl.formatMessage(
+        {
+          id: 'inventory.movements.movedNeither',
+          defaultMessage: 'moved {quantity}, counted in neither',
+        },
+        { quantity },
+      )
+    : intl.formatMessage(
+        {
+          id: 'inventory.movements.moved',
+          defaultMessage: 'moved {quantity}',
+        },
+        { quantity },
+      );
+}
+
+/**
  * The change with its unit, "−4 each", "+24 each": the server's signed
  * change, which the export writes too, so the two never differ (review
  * 24); a move counted as neither, between two places across every place,
  * in grey words, "moved 20 each", never a bare number, which reads as
- * stock added (118a). Read without padding zeros, never parsed, since a
- * numeric through a JavaScript number is the loss ADR-025 exists to
- * avoid.
+ * stock added (118a), a lot change as its action (`movedWords`). Read
+ * without padding zeros, never parsed, since a numeric through a
+ * JavaScript number is the loss ADR-025 exists to avoid.
  */
 export function MovementChange({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const { change, quantity, unitOfMeasure } = movement;
+  const { change, unitOfMeasure } = movement;
 
   if (change === null) {
     return (
       <Box component="span" sx={{ color: 'text.secondary' }}>
-        {intl.formatMessage(
-          {
-            id: 'inventory.movements.moved',
-            defaultMessage: 'moved {quantity}',
-          },
-          { quantity: displayWithUnit(quantity, unitOfMeasure, intl) },
-        )}
+        {movedWords(movement, false, intl)}
       </Box>
     );
   }
@@ -244,26 +344,16 @@ export function MovementChange({ movement }: { movement: Movement }) {
 
 /**
  * How many a move counted in neither In nor Out moved, once, in grey
- * across both columns: "moved 20 each, counted in neither" (118a).
+ * across both columns: "moved 20 each, counted in neither" (118a); a lot
+ * change as its action, "put 3,000 each into a lot, counted in neither"
+ * (ADR-094, R16, U1).
  */
 export function MovedInNeither({ movement }: { movement: Movement }) {
   const intl = useIntl();
 
   return (
     <Box component="span" sx={{ color: 'text.secondary' }}>
-      {intl.formatMessage(
-        {
-          id: 'inventory.movements.movedNeither',
-          defaultMessage: 'moved {quantity}, counted in neither',
-        },
-        {
-          quantity: displayWithUnit(
-            movement.quantity,
-            movement.unitOfMeasure,
-            intl,
-          ),
-        },
-      )}
+      {movedWords(movement, true, intl)}
     </Box>
   );
 }
@@ -283,13 +373,41 @@ export function Figure({
     : displayWithUnit(quantity, movement.unitOfMeasure, intl);
 }
 
-/** "Corrected: miscount", the note a correction must carry under it. */
-export function MovementReason({ movement }: { movement: Movement }) {
+/**
+ * "Corrected: miscount", the note a correction must carry under it. A
+ * receipt's partner is its From end; with no From → to column, for a
+ * reader without `locations.view`, it follows the reason, "Received:
+ * returned · from Harbour Foods": a partner is not a place, so places'
+ * permission does not hide it (ADR-094, S7).
+ */
+export function MovementReason({
+  movement,
+  places,
+}: {
+  movement: Movement;
+  /** Whether the From → to column is shown beside it. */
+  places: boolean;
+}) {
   const intl = useIntl();
+  const sender =
+    !places && movement.reason === 'receipt' ? movement.recipient : null;
 
   return (
     <>
-      <Box>{reasonWords(movement, intl)}</Box>
+      <Box>
+        {sender ? (
+          <FormattedMessage
+            id="inventory.movements.reasonFrom"
+            defaultMessage="{reason} · from {partner}"
+            values={{
+              reason: reasonWords(movement, intl),
+              partner: <Sender sender={sender} underline="always" />,
+            }}
+          />
+        ) : (
+          reasonWords(movement, intl)
+        )}
+      </Box>
       {/* Required on an adjustment, because a person asserting the
           system is wrong has to say what they found (ADR-023). This is
           where it gets read. */}
@@ -302,8 +420,17 @@ export function MovementReason({ movement }: { movement: Movement }) {
   );
 }
 
-/** A movement's reason in words, with its detail where it has one. */
+/**
+ * A movement's reason in words, with its detail where it has one; a lot
+ * change by its action alone, "Lot tracking started", "Moved to another
+ * lot" or "Back from before lot tracking" (ADR-094, U1).
+ */
 function reasonWords(movement: Movement, intl: IntlShape): string {
+  const action =
+    movement.reason === 'lot_change'
+      ? lotChangeLabel(movement.reasonDetail, intl)
+      : null;
+  if (action) return action;
   const reason = reasonLabel(movement.reason, intl);
   return movement.reasonDetail
     ? intl.formatMessage(
@@ -325,10 +452,20 @@ function reasonWords(movement: Movement, intl: IntlShape): string {
 /**
  * From → to on two lines (82a): where it came from, then "→" and where
  * it went, each place by its path cut in its middle (`PlacePath`, 93a),
- * an end outside the warehouse in grey words. Only for a reader who may
- * see places; the server sends the rest none (96a).
+ * an end outside the warehouse in grey words. A lot change's place once,
+ * with no arrow: both its ends are that one place, the stock having
+ * stayed there (ADR-094, U1). Only for a reader who may see places; the
+ * server sends the rest none (96a).
  */
 export function MovementEnds({ movement }: { movement: Movement }) {
+  if (movement.reason === 'lot_change') {
+    return (
+      <Stack sx={{ minWidth: 0 }}>
+        <MovementEnd movement={movement} side="from" />
+      </Stack>
+    );
+  }
+
   return (
     <Stack sx={{ minWidth: 0 }}>
       <MovementEnd movement={movement} side="from" />
@@ -376,6 +513,14 @@ export function MovementEnd({
     );
   }
 
+  // A receipt's partner is where it came from (ADR-094, D3, amending
+  // ADR-093's 82a).
+  const sender =
+    side === 'from' && movement.reason === 'receipt'
+      ? movement.recipient
+      : null;
+  if (sender) return <Sender sender={sender} />;
+
   const outside = id ? null : outsideEnd(movement, side);
   return (
     <Box component="span" sx={{ color: 'text.secondary' }}>
@@ -384,19 +529,89 @@ export function MovementEnd({
   );
 }
 
-/** The lot's code, a link to its trace, its expiry under it. */
+/**
+ * Whom a receipt came from (ADR-094, D3): a link for whoever may open
+ * partners, grey words for the rest.
+ */
+function Sender({
+  sender,
+  underline,
+}: {
+  sender: NonNullable<Movement['recipient']>;
+  /** Inside a sentence, as after the reason. */
+  underline?: 'always';
+}) {
+  const can = useCan();
+
+  return can('partners.view') ? (
+    <Link
+      component={RouterLink}
+      to={`/partners/${sender.id}`}
+      state={OFFER_BACK}
+      underline={underline}
+    >
+      {sender.name}
+    </Link>
+  ) : (
+    <Box component="span" sx={{ color: 'text.secondary' }}>
+      {sender.name}
+    </Box>
+  );
+}
+
+/**
+ * The lot's code, a link to its trace, its expiry under it; a lot change
+ * both its lots, "LOT-A → LOT-B", the one it left first, each a link; and
+ * as lot tracking starts, or for stock back from before, the lot it
+ * entered alone, there being no first (ADR-094; review 30).
+ */
 export function MovementLot({
   movement,
 }: {
-  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt'>;
+  movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt' | 'lotExpiry'> &
+    Partial<Pick<Movement, 'toLotId' | 'toLotCode'>>;
 }) {
+  const intl = useIntl();
+  if (movement.toLotId && movement.toLotCode && !movement.lotId) {
+    return <LotLink id={movement.toLotId} code={movement.toLotCode} />;
+  }
+  if (movement.toLotId && movement.toLotCode) {
+    return (
+      <Stack
+        direction="row"
+        spacing={0.5}
+        useFlexGap
+        sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
+      >
+        {movement.lotId && movement.lotCode ? (
+          <LotLink id={movement.lotId} code={movement.lotCode} />
+        ) : (
+          NO_VALUE
+        )}
+        {/* Heard as a word, the arrow being only seen. */}
+        <span aria-hidden="true">{ARROW}</span>
+        <Box component="span" sx={HIDDEN}>
+          {intl.formatMessage({
+            id: 'inventory.movements.intoLot',
+            defaultMessage: 'into',
+          })}
+        </Box>
+        <LotLink id={movement.toLotId} code={movement.toLotCode} />
+      </Stack>
+    );
+  }
   if (!movement.lotId || !movement.lotCode) return NO_VALUE;
 
   return (
     <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
       <LotLink id={movement.lotId} code={movement.lotCode} />
-      {movement.lotExpiresAt && (
-        <ExpiryChip expiresAt={movement.lotExpiresAt} />
+      {/* Its expiry, or "Expiry to add" while it is not known (ADR-094,
+          D2); nothing for a lot that does not expire. */}
+      {(movement.lotExpiresAt || movement.lotExpiry === 'unknown') && (
+        <ExpiryChip
+          expiresAt={movement.lotExpiresAt}
+          expiry={movement.lotExpiry}
+        />
       )}
     </Stack>
   );
@@ -405,11 +620,13 @@ export function MovementLot({
 /**
  * The document it was for (55a): the order received, shipped or returned
  * on, or the run, a link to its page; a sample's recipient, a link to the
- * partner (125); only what the reader may see comes.
+ * partner (125); only what the reader may see comes. A receipt's partner
+ * is its From end, never here (ADR-094, D3).
  */
 export function MovementFor({ movement }: { movement: Movement }) {
   const intl = useIntl();
-  const { document, recipient } = movement;
+  const { document } = movement;
+  const recipient = movement.reason === 'receipt' ? null : movement.recipient;
 
   if (recipient) {
     return (
@@ -568,7 +785,7 @@ export function MovementCard({
           </>
         )}
         <CardLine label={head('reason')}>
-          <MovementReason movement={movement} />
+          <MovementReason movement={movement} places={columns.places} />
         </CardLine>
         {columns.places && (
           <CardLine label={head('fromTo')}>

@@ -24,6 +24,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { LotCost, LotCostEntry } from '../api/types.gen';
 import { LabelledValue } from '../components/labelled-value';
+import { LotLink } from '../components/lot-link';
 import {
   displayQuantity,
   formatDate,
@@ -58,22 +59,78 @@ const WORDS = defineMessages({
   return: { id: 'inventory.trace.returned', defaultMessage: 'Returned' },
   countedOut: { id: 'costs.entry.countedOut', defaultMessage: 'Counted out' },
   countedIn: { id: 'costs.entry.countedIn', defaultMessage: 'Counted in' },
+  fromBefore: {
+    id: 'costs.entry.fromBefore',
+    defaultMessage: 'Back from before lot tracking',
+  },
+  other: { id: 'costs.entry.other', defaultMessage: 'Other change' },
 });
 
 /**
  * What a valuation row was, in words, in the reader's language (ADR-054). A
  * sign test on the string, not arithmetic (ADR-025): an inbound adjustment
- * is positive, an outbound one negative.
+ * is positive, an outbound one negative, as a lot change's row in and its
+ * row out are. A late cost carried with stock moved between lots names
+ * the other lot, whichever way it went (ADR-094, D5). A kind or a reason
+ * this tab does not know reads "Other change", never its stored key
+ * (D4). The other lot is a link to its page.
  */
-function describe(entry: LotCostEntry, intl: IntlShape): string {
+function describe(entry: LotCostEntry, intl: IntlShape): ReactNode {
+  const out = entry.quantity.startsWith('-');
+  // The other lot a link to its page, with Back (v17's board; review 34).
+  const other =
+    entry.otherLotId && entry.otherLotCode ? (
+      <LotLink key="lot" id={entry.otherLotId} code={entry.otherLotCode} />
+    ) : (
+      entry.otherLotCode
+    );
+  if (entry.carried && entry.otherLotCode) {
+    return entry.carried === 'to'
+      ? intl.formatMessage(
+          {
+            id: 'costs.entry.carriedTo',
+            defaultMessage: 'Cost carried to lot {code}',
+          },
+          { code: other },
+        )
+      : intl.formatMessage(
+          {
+            id: 'costs.entry.carriedFrom',
+            defaultMessage: 'Cost from lot {code}',
+          },
+          { code: other },
+        );
+  }
+
   switch (entry.kind) {
     case 'opening':
     case 'run_close':
     case 'correction':
     case 'issued':
       return intl.formatMessage(WORDS[entry.kind]);
-    default:
+    case 'lot_change':
+      if (entry.otherLotCode) {
+        return out
+          ? intl.formatMessage(
+              {
+                id: 'costs.entry.movedTo',
+                defaultMessage: 'Moved to lot {code}',
+              },
+              { code: other },
+            )
+          : intl.formatMessage(
+              {
+                id: 'costs.entry.movedInFrom',
+                defaultMessage: 'Moved in from lot {code}',
+              },
+              { code: other },
+            );
+      }
+      return intl.formatMessage(out ? WORDS.other : WORDS.fromBefore);
+    case 'movement':
       break;
+    default:
+      return intl.formatMessage(WORDS.other);
   }
 
   switch (entry.reason) {
@@ -85,11 +142,9 @@ function describe(entry: LotCostEntry, intl: IntlShape): string {
     case 'return':
       return intl.formatMessage(WORDS[entry.reason]);
     case 'adjustment':
-      return intl.formatMessage(
-        entry.quantity.startsWith('-') ? WORDS.countedOut : WORDS.countedIn,
-      );
+      return intl.formatMessage(out ? WORDS.countedOut : WORDS.countedIn);
     default:
-      return entry.reason ?? entry.kind;
+      return intl.formatMessage(WORDS.other);
   }
 }
 
@@ -264,7 +319,9 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      {entry.kind === 'movement' || entry.kind === 'opening'
+                      {entry.kind === 'movement' ||
+                      entry.kind === 'opening' ||
+                      entry.kind === 'lot_change'
                         ? displayQuantity(entry.quantity)
                         : NO_VALUE}
                     </TableCell>

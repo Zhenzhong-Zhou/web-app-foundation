@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
+import { useIntl } from 'react-intl';
 
-import type { CalendarDay } from '../lib/api-names';
+import type { CalendarDay, ExpiryKind } from '../lib/api-names';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { useExpiryStatus } from '../lib/use-expiry-status';
 import { StatusChip } from './status-chip';
@@ -9,20 +10,43 @@ import { StatusChip } from './status-chip';
  * A lot's expiry (ADR-055). Close to it, the days left in a chip, amber
  * within 90 and red within 30 or past, with the date beside it in grey:
  * "how long" is what someone acts on, and the date is what they check it
- * against. Further off, the date alone. No expiry, a dash.
+ * against. Further off, the date alone. No expiry, a dash; one not
+ * known yet, given its kind, "Expiry to add" in grey, the lot's mark
+ * until its date is added (ADR-094, R9).
  *
  * `today` is for tests; the page passes nothing and gets the
  * organization's (ADR-072).
  */
 export function ExpiryChip({
   expiresAt,
+  expiry,
   today,
 }: {
   expiresAt: CalendarDay | null;
+  /**
+   * The lot's kind of expiry (ADR-094, R8), null where the read has none:
+   * required, so leaving it out never reads a lot not known yet as "No
+   * expiry" (D2; review 55).
+   */
+  expiry: ExpiryKind | null;
   today?: CalendarDay;
 }) {
+  const intl = useIntl();
   const status = useExpiryStatus(expiresAt, today);
 
+  if (expiry === 'unknown') {
+    return (
+      <Box
+        component="span"
+        sx={{ color: 'text.secondary', typography: 'body2' }}
+      >
+        {intl.formatMessage({
+          id: 'inventory.lot.expiryToAdd',
+          defaultMessage: 'Expiry to add',
+        })}
+      </Box>
+    );
+  }
   if (!expiresAt) return NO_VALUE;
 
   const date = formatDay(expiresAt);

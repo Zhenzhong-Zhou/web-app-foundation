@@ -26,7 +26,9 @@ const LOT: Lot = {
   id: 'lot-5',
   code: 'VC-0305',
   expiresAt: '2027-03-03',
+  expiry: 'date',
   isAssigned: false,
+  supplierLot: null,
 };
 
 const TRACKED: CountInItem = {
@@ -75,10 +77,13 @@ function open(
     needsCost = false,
     refusal,
     canSeeCosts = true,
+    lotCode = null,
   }: {
     needsCost?: boolean;
     refusal?: Response;
     canSeeCosts?: boolean;
+    /** The lot the write names, as the server answers (ADR-094). */
+    lotCode?: string | null;
   } = {},
 ) {
   const sent: Record<string, unknown>[] = [];
@@ -106,6 +111,7 @@ function open(
             createdAt: '2026-11-20T12:00:00.000Z',
           },
           needsCost,
+          lotCode,
         },
         { status: 201 },
       );
@@ -168,13 +174,17 @@ describe('CountInDialog, found stock', () => {
   });
 
   it('makes a new lot with the count, saying it waits for a cost, linked to Waiting for a cost', async () => {
-    const { user, sent, onCounted } = open(TRACKED, { needsCost: true });
+    const { user, sent, onCounted } = open(TRACKED, {
+      needsCost: true,
+      lotCode: 'VC-0310',
+    });
     await fill(user);
     await user.click(screen.getByRole('radio', { name: 'A new lot' }));
     await user.type(
       screen.getByRole('textbox', { name: /^Lot number/ }),
       'vc-0310',
     );
+    await user.click(screen.getByRole('radio', { name: 'Not known yet' }));
     await user.click(screen.getByRole('button', { name: 'Save correction' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -184,7 +194,7 @@ describe('CountInDialog, found stock', () => {
       {
         variantId: 'variant-c',
         toLocationId: 'loc-c3',
-        lot: { code: 'vc-0310' },
+        lot: { code: 'vc-0310', mustBeNew: true, expiry: 'unknown' },
         quantity: '12',
         reason: 'adjustment',
         reasonDetail: 'found',
@@ -200,7 +210,7 @@ describe('CountInDialog, found stock', () => {
   });
 
   it('counts into one of its lots by its id, linked to its Movements there', async () => {
-    const { user, sent } = open(TRACKED);
+    const { user, sent } = open(TRACKED, { lotCode: 'VC-0305' });
     await fill(user);
     await user.click(screen.getByRole('radio', { name: 'One of its lots' }));
     await user.click(screen.getByRole('combobox', { name: /^Lot/ }));
@@ -255,6 +265,7 @@ describe('CountInDialog, found stock', () => {
     await user.click(screen.getByRole('radio', { name: 'A new lot' }));
     const code = screen.getByRole('textbox', { name: /^Lot number/ });
     await user.type(code, 'VC-0305');
+    await user.click(screen.getByRole('radio', { name: 'Doesn’t expire' }));
     await user.click(screen.getByRole('button', { name: 'Save correction' }));
 
     expect(await screen.findByText(refused)).toBeVisible();
@@ -263,5 +274,66 @@ describe('CountInDialog, found stock', () => {
     expect(
       screen.queryByRole('alert', { name: 'Error' }),
     ).not.toBeInTheDocument();
+  });
+
+  // ADR-094, R3: Make a code for us here too, the message naming it.
+  it('makes a code for us for the new lot, the message saying to write it on the stock, with Copy code and Open the lot', async () => {
+    const { user, sent } = open(TRACKED, { lotCode: 'L-2026-10-17-1' });
+    await fill(user);
+    await user.click(screen.getByRole('radio', { name: 'A new lot' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Make a code for us' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Counted in 12 each of VITC-100 at Shelf C3, new lot L-2026-10-17-1. Write this code on the stock.',
+    );
+    expect(sent[0]).toMatchObject({
+      lot: { makeCode: true, expiry: 'unknown' },
+    });
+    expect(screen.getByRole('button', { name: 'Copy code' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Open the lot' }));
+    expect(await screen.findByText('At /lots/lot-new')).toBeVisible();
+  });
+
+  it('asks the day of a new lot starting On a date, as its last lot did, sending nothing', async () => {
+    const { user, sent } = open(TRACKED);
+    await fill(user);
+    await user.click(screen.getByRole('radio', { name: 'A new lot' }));
+    await user.type(
+      screen.getByRole('textbox', { name: /^Lot number/ }),
+      'VC-0310',
+    );
+    expect(
+      await screen.findByRole('radio', { name: 'On a date', checked: true }),
+    ).toBeChecked();
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    // The browser's own check holds the empty day, as it does the code.
+    expect(screen.getByLabelText(/^The day it expires/)).toBeInvalid();
+    expect(sent).toEqual([]);
+  });
+
+  // R12: from Receive stock's Found in a count, its place kept.
+  it('starts at the place it is given', () => {
+    renderWithAuth(
+      <MemoryRouter>
+        <CountInDialog
+          item={TRACKED}
+          locations={[SHELF]}
+          tree={[SHELF]}
+          defaultLocationId={SHELF.id}
+          canSeeCosts
+          onClose={vi.fn()}
+          onCounted={vi.fn()}
+        />
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'stock.move', 'stock.adjust'] },
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: /^Location/ }),
+    ).toHaveTextContent('Shelf C3 (C3)');
   });
 });

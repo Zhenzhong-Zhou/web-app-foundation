@@ -24,12 +24,19 @@ import { users } from './users';
  *
  * movement   — what a stock movement carried; one per movement, transfers
  *              excepted.
- * run_close  — the share of a batch's cost still in its pool at close.
- * correction — the share of a corrected cost still in its pool.
+ * run_close  — a batch's cost at close, less the share of units already
+ *              gone; with a lot change's row in as its reference, the part
+ *              of it that change carried, out of one pool and into the
+ *              other (ADR-094, D5).
+ * correction — the same, for a cost set or corrected later.
  * issued     — the share of either that belongs to units already gone. Kept
  *              against the pool's history and never in its balance, so a
  *              pool equals the sum of its other rows.
  * opening    — the balance valuation started from, in migration 0033.
+ * lot_change — what a lot change carried, two rows to its movement: the
+ *              share out of the first lot's pool and into the second's.
+ *              The row in waits for a cost while still carrying its share
+ *              where the first pool had stock waiting (ADR-094, Q1a).
  */
 export const VALUATION_KINDS = [
   'movement',
@@ -37,13 +44,17 @@ export const VALUATION_KINDS = [
   'correction',
   'issued',
   'opening',
+  'lot_change',
 ] as const;
 
 export type ValuationKind = (typeof VALUATION_KINDS)[number];
 
 /**
  * Value is a ledger beside the quantity ledger (ADR-048). Append-only: nothing
- * updates a row and nothing deletes one, and a correction is a new row.
+ * deletes a row, and a correction is a new row. One write updates rows:
+ * starting lot tracking gives the variant's rows its first lot's id, their
+ * values and dates untouched, in the same transaction as its pool, and the
+ * audit log records it (ADR-094).
  *
  * Stored rather than computed on read for the reasons ADR-023 gave for
  * quantity. A figure that can be recomputed cannot say why a lot's value
@@ -67,7 +78,10 @@ export const stockValuations = pgTable(
 
     kind: text('kind').notNull(),
 
-    /** The movement this row values. Set exactly when kind is `movement`. */
+    /**
+     * The movement this row values. Set exactly when kind is `movement`,
+     * or `lot_change`, a lot change's two rows.
+     */
     movementId: uuid('movement_id').references(() => stockMovements.id, {
       onDelete: 'restrict',
     }),
@@ -99,15 +113,21 @@ export const stockValuations = pgTable(
     exchangeRate: numeric('exchange_rate', { precision: 18, scale: 8 }),
 
     /**
-     * Valued at zero for want of a price, a rate or a run's close. A to-do,
-     * cleared by a later row rather than by editing this one: a correction
-     * that references it, or a run_close for the run that produced it.
+     * Valued at zero for want of a price, a rate or a run's close; a lot
+     * change's row in, at the share it carried (ADR-094). A to-do, cleared
+     * by a later row rather than by editing this one: a correction that
+     * references it, or a run_close for the run that produced it; a lot
+     * change's row in, once nothing that waited in its first lot before
+     * the move still does, its cost following it (ADR-094, D5;
+     * openNeedsCost).
      */
     needsCost: boolean('needs_cost').notNull().default(false),
 
     /**
      * What a row without a movement belongs to: `production_order` for a
-     * run's close, `stock_valuation` for the row a correction corrects.
+     * run's close, `stock_valuation` for the row a correction corrects; for
+     * the part of a late value a lot change carried, out of one pool and
+     * into the other, that change's row in (ADR-094, D5).
      */
     referenceType: text('reference_type'),
     referenceId: uuid('reference_id'),
@@ -130,7 +150,15 @@ export const stockValuations = pgTable(
     /** One valuation per movement; a second would count its value twice. */
     uniqueIndex('stock_valuations_movement_key')
       .on(t.movementId)
-      .where(sql`${t.movementId} is not null`),
+      .where(sql`${t.kind} = 'movement'`),
+
+    /**
+     * A lot change's two, for the same reason: one out of a pool, one into
+     * another (ADR-094).
+     */
+    uniqueIndex('stock_valuations_lot_change_key')
+      .on(t.movementId, sql`(${t.quantity} > 0)`)
+      .where(sql`${t.kind} = 'lot_change'`),
 
     /** A pool's history, newest first. */
     index('stock_valuations_org_pool_created_at_idx').on(
@@ -162,26 +190,29 @@ export const stockValuations = pgTable(
 
     check(
       'stock_valuations_kind_check',
-      sql`${t.kind} in ('movement', 'run_close', 'correction', 'issued', 'opening')`,
+      sql`${t.kind} in ('movement', 'run_close', 'correction', 'issued', 'opening', 'lot_change')`,
     ),
 
     check(
       'stock_valuations_movement_shape_check',
-      sql`(${t.movementId} is not null) = (${t.kind} = 'movement')`,
+      sql`(${t.movementId} is not null) = (${t.kind} in ('movement', 'lot_change'))`,
     ),
 
     /**
-     * Movements and the opening balance move quantity; everything else only
-     * revalues what is there, or what has gone.
+     * Movements, lot changes and the opening balance move quantity;
+     * everything else only revalues what is there, or what has gone.
      */
     check(
       'stock_valuations_quantity_shape_check',
-      sql`(${t.kind} in ('movement', 'opening')) = (${t.quantity} <> 0)`,
+      sql`(${t.kind} in ('movement', 'opening', 'lot_change')) = (${t.quantity} <> 0)`,
     ),
 
+    // A lot change's row in may wait while it carries the share it took
+    // out of the first pool (ADR-094, Q1a); any other waiting row is
+    // valued at nothing.
     check(
       'stock_valuations_needs_cost_is_zero_check',
-      sql`not ${t.needsCost} or ${t.value} = 0`,
+      sql`not ${t.needsCost} or ${t.value} = 0 or ${t.kind} = 'lot_change'`,
     ),
 
     check(

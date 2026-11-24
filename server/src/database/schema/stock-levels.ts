@@ -54,6 +54,12 @@ export const stockLevels = pgTable(
      * cannot see product_variants.tracks_lots, so the invariant is enforced
      * in the service and asserted in e2e — the same choice ADR-023 made, kept
      * consistent so there is one place to look when it is violated.
+     *
+     * Tracking may start later, never stop (ADR-094): a lot change then puts
+     * each place's stock with no lot into the first lot, and the row with no
+     * lot stays, at 0. Stock that left before and comes back passes through
+     * it, in by its return and out by a lot change into that lot, in one
+     * transaction (Q3a).
      */
     lotId: uuid('lot_id').references(() => lots.id, { onDelete: 'restrict' }),
 

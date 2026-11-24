@@ -10,6 +10,7 @@ import type { Locale } from '../../common/locales';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import {
+  type LotExpiry,
   orderLines,
   orderReturns,
   productVariants,
@@ -18,6 +19,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { ReturnAuthorizationReceiptsService } from '../return-authorizations/return-authorization-receipts.service';
 import { inVariantOrder } from '../stock/availability';
+import { startLotsOf } from '../stock/start-lot';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type { ReturnOrderDto } from './dto/return-order.dto';
@@ -33,8 +35,21 @@ export interface ReturnableLot {
   lotId: string;
   code: string;
   expiresAt: string | null;
+  expiry: LotExpiry;
   shipped: string;
   returned: string;
+}
+
+/**
+ * What of a tracked line shipped with no lot, before its code's lot
+ * tracking started, and the lot it goes into when it comes back (ADR-094,
+ * Q3a): the code's start lot, or none yet, made then.
+ */
+export interface ReturnableFromBefore {
+  shipped: string;
+  returned: string;
+  lotId: string | null;
+  lotCode: string | null;
 }
 
 /** One order line, with what shipped and what has already come back. */
@@ -47,6 +62,14 @@ export interface ReturnableLine {
   quantityReturned: string;
   /** Only lots that actually shipped on this order; empty when untracked. */
   lots: ReturnableLot[];
+  /** Null where none shipped so, and for a code not tracked. */
+  fromBefore: ReturnableFromBefore | null;
+}
+
+/** A part of a line coming back: a lot, or none, as it left. */
+interface ReturnPart {
+  lotId: string | null;
+  quantity: string;
 }
 
 /**
@@ -61,6 +84,12 @@ export interface ReturnableLine {
  * Shipped stays as it was. `quantity_returned` rises beside it, because
  * lowering "shipped" would erase the fact that it shipped — which is the
  * history a recall reads.
+ *
+ * A tracked code may have shipped with no lot before its lot tracking
+ * started (ADR-094, Q3a). That part comes back by quantity, held to what
+ * shipped so, as it left, with no lot, then into the code's start lot, so
+ * what each lot shipped and what came back of it still match, and no
+ * column says which was which.
  */
 @Injectable()
 export class ReturnsService {
@@ -74,9 +103,10 @@ export class ReturnsService {
 
   /**
    * What can still come back: each shipped line, and for tracked stock each
-   * lot that shipped on this order with how much of it has returned. The
-   * return dialog is built from this, so it offers exactly what the server
-   * will accept.
+   * lot that shipped on this order with how much of it has returned, and
+   * what shipped with no lot before the code's lot tracking started, with
+   * the lot it goes into. The return dialog is built from this, so it
+   * offers exactly what the server will accept.
    */
   async returnable(orderId: string): Promise<ReturnableLine[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -101,27 +131,51 @@ export class ReturnsService {
           ),
         );
 
-      const byLot = await this.lotBalances(tx, organizationId, orderId);
+      const balances = await this.balances(tx, organizationId, orderId);
+      const startLots = await startLotsOf(
+        tx,
+        organizationId,
+        lines.filter((row) => row.tracksLots).map((row) => row.line.variantId),
+      );
 
-      return lines.map(({ line, unitOfMeasure, tracksLots }) => ({
-        lineId: line.id,
-        sku: line.sku,
-        unitOfMeasure,
-        tracksLots,
-        quantityFulfilled: line.quantityFulfilled,
-        quantityReturned: line.quantityReturned,
-        lots: tracksLots
-          ? byLot
-              .filter((row) => row.variantId === line.variantId)
-              .map((lot) => ({
-                lotId: lot.lotId,
-                code: lot.code,
-                expiresAt: lot.expiresAt,
-                shipped: lot.shipped,
-                returned: lot.returned,
-              }))
-          : [],
-      }));
+      return lines.map(({ line, unitOfMeasure, tracksLots }) => {
+        const own = tracksLots
+          ? balances.filter((row) => row.variantId === line.variantId)
+          : [];
+        const before = own.find((row) => row.lotId === null);
+        const into = startLots.get(line.variantId);
+
+        return {
+          lineId: line.id,
+          sku: line.sku,
+          unitOfMeasure,
+          tracksLots,
+          quantityFulfilled: line.quantityFulfilled,
+          quantityReturned: line.quantityReturned,
+          lots: own.flatMap((lot) =>
+            lot.lotId === null
+              ? []
+              : [
+                  {
+                    lotId: lot.lotId,
+                    code: lot.code!,
+                    expiresAt: lot.expiresAt,
+                    expiry: lot.expiry!,
+                    shipped: lot.shipped,
+                    returned: lot.returned,
+                  },
+                ],
+          ),
+          fromBefore: before
+            ? {
+                shipped: before.shipped,
+                returned: before.returned,
+                lotId: into?.id ?? null,
+                lotCode: into?.code ?? null,
+              }
+            : null,
+        };
+      });
     });
   }
 
@@ -207,6 +261,9 @@ export class ReturnsService {
             {
               variantId: line.variantId,
               lotId: part.lotId,
+              // With no lot, as it left: into the start lot after, where
+              // the code tracks lots now (ADR-094, Q3a).
+              fromBefore: part.lotId === null,
               toLocationId: input.toLocationId,
               quantity: part.quantity,
               reason: 'return',
@@ -347,11 +404,13 @@ export class ReturnsService {
   }
 
   /**
-   * A tracked line's lots, checked against what shipped on this order.
+   * A tracked line's lots, checked against what shipped on this order, and
+   * a quantity for what shipped with no lot before the code's lot tracking
+   * started (ADR-094, Q3a), beside them or alone.
    *
    * Every lot must have gone out on this order for this item, and never more
-   * of it may come back than went. The total is summed in SQL, so the client
-   * never adds up decimals (ADR-025).
+   * of it may come back than went; so too what went with no lot. The total
+   * is summed in SQL, so the client never adds up decimals (ADR-025).
    */
   private async trackedParts(
     tx: Tx,
@@ -359,8 +418,8 @@ export class ReturnsService {
     orderId: string,
     line: OrderLine,
     requested: ReturnLine,
-  ): Promise<{ total: string; parts: { lotId: string; quantity: string }[] }> {
-    if (!requested.lots || requested.quantity) {
+  ): Promise<{ total: string; parts: ReturnPart[] }> {
+    if (!requested.lots && !requested.quantity) {
       throw new BadRequestException(
         t(
           {
@@ -373,7 +432,7 @@ export class ReturnsService {
       );
     }
 
-    const lotIds = requested.lots.map((lot) => lot.lotId);
+    const lotIds = (requested.lots ?? []).map((lot) => lot.lotId);
 
     if (new Set(lotIds).size !== lotIds.length) {
       throw new BadRequestException(
@@ -388,9 +447,16 @@ export class ReturnsService {
       );
     }
 
+    // The part with no lot first, as recordWithin orders a place's piles.
+    const parts: ReturnPart[] = [
+      ...(requested.quantity
+        ? [{ lotId: null, quantity: requested.quantity }]
+        : []),
+      ...(requested.lots ?? []),
+    ];
     const picked = sql.join(
-      requested.lots.map(
-        (lot) => sql`(${lot.lotId}::uuid, ${lot.quantity}::numeric)`,
+      parts.map(
+        (part) => sql`(${part.lotId}::uuid, ${part.quantity}::numeric)`,
       ),
       sql`, `,
     );
@@ -402,18 +468,18 @@ export class ReturnsService {
         select
           p.lot_id,
           coalesce(l.code, p.lot_id::text) as code,
-          b.lot_id is null as never_shipped,
+          b.variant_id is null as never_shipped,
           coalesce(b.shipped, 0) - coalesce(b.returned, 0) < p.quantity as exceeds,
           coalesce(b.shipped, 0)::text as shipped,
           coalesce(b.returned, 0)::text as returned,
           sum(p.quantity) over ()::text as total
         from picked p
-        left join balances b on b.lot_id = p.lot_id
+        left join balances b on b.lot_id is not distinct from p.lot_id
         left join lots l on l.id = p.lot_id and l.organization_id = ${organizationId}::uuid
       `)
     ).rows as {
-      lot_id: string;
-      code: string;
+      lot_id: string | null;
+      code: string | null;
       never_shipped: boolean;
       exceeds: boolean;
       shipped: string;
@@ -422,6 +488,33 @@ export class ReturnsService {
     }[];
 
     for (const row of checked) {
+      // A quantity, for a tracked line none of which shipped with no lot.
+      if (row.lot_id === null && row.never_shipped) {
+        throw new BadRequestException(
+          t(
+            {
+              id: 'orders.skuTrackedLotSend',
+              defaultMessage:
+                '{sku} is tracked by lot: send the lots that came back, not a quantity',
+            },
+            { sku: line.sku },
+          ),
+        );
+      }
+
+      if (row.lot_id === null && row.exceeds) {
+        throw new ConflictException(
+          t(
+            {
+              id: 'orders.moreSkuFromBefore',
+              defaultMessage:
+                'That is more {sku} than shipped before its lot tracking started: {shipped} shipped then, {returned} already returned. Lower it to what is left.',
+            },
+            { sku: line.sku, shipped: row.shipped, returned: row.returned },
+          ),
+        );
+      }
+
       if (row.never_shipped) {
         throw new BadRequestException(
           t(
@@ -449,7 +542,7 @@ export class ReturnsService {
       }
     }
 
-    return { total: checked[0].total, parts: requested.lots };
+    return { total: checked[0].total, parts };
   }
 
   /** Untracked stock has no lots to check, only a total against the line. */
@@ -477,7 +570,9 @@ export class ReturnsService {
   }
 
   /**
-   * Shipped and returned per lot, for one item or all of them on an order.
+   * Shipped and returned per lot, for one item or all of them on an order,
+   * a row with no lot for what shipped so: an untracked code's, or a
+   * tracked code's from before its lot tracking started (ADR-094, Q3a).
    * Read from the ledger through the order's shipments and returns, so it is
    * the movements that decide, not a counter that could drift from them.
    *
@@ -505,7 +600,6 @@ export class ReturnsService {
         sum(sm.quantity) filter (where sm.reason = 'return') as returned
       from stock_movements sm
       where sm.organization_id = ${organizationId}::uuid
-        and sm.lot_id is not null
         ${variant}
         and (
           (sm.reference_type = 'shipment' and sm.reference_id = any(array(
@@ -528,7 +622,8 @@ export class ReturnsService {
     `;
   }
 
-  private async lotBalances(tx: Tx, organizationId: string, orderId: string) {
+  /** Each line's balances, by lot, with each lot's code and expiry. */
+  private async balances(tx: Tx, organizationId: string, orderId: string) {
     const rows = (
       await tx.execute(sql`
         select
@@ -536,17 +631,19 @@ export class ReturnsService {
           b.lot_id,
           l.code,
           l.expires_at,
+          l.expiry,
           b.shipped::text as shipped,
           coalesce(b.returned, 0)::text as returned
         from (${this.balancesSql(organizationId, orderId)}) b
-        join lots l on l.id = b.lot_id and l.organization_id = ${organizationId}::uuid
+        left join lots l on l.id = b.lot_id and l.organization_id = ${organizationId}::uuid
         order by l.expires_at asc nulls last, l.code
       `)
     ).rows as {
       variant_id: string;
-      lot_id: string;
-      code: string;
+      lot_id: string | null;
+      code: string | null;
       expires_at: string | null;
+      expiry: LotExpiry | null;
       shipped: string;
       returned: string;
     }[];
@@ -556,6 +653,7 @@ export class ReturnsService {
       lotId: row.lot_id,
       code: row.code,
       expiresAt: row.expires_at,
+      expiry: row.expiry,
       shipped: row.shipped,
       returned: row.returned,
     }));

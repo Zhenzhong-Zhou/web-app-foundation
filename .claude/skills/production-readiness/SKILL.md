@@ -153,8 +153,10 @@ done; a check older than a change of host, plan or region is stale.
 
 ### Performance (ADR-051)
 
-- **The workflow.** `gh run list --workflow perf.yml -L 5`: the weekly
-  full run on `main` green, and the last release candidate's.
+- **The workflow.** `gh run list --workflow perf.yml --branch main -L 5`:
+  the weekly full run on `main` green, a pull request's plan checks left
+  out; and the last release candidate's, `gh run list --workflow perf.yml
+  --event push -L 1`, which a `v*-rc.*` tag starts.
 - **The watch list.** [ADR-051's *Watch, each with its trigger*](../../../docs/adr/0051-performance.md#watch-each-with-its-trigger) and the
   open issues on a budget (`gh issue list --search 'budget in:title'`),
   each trigger checked against the last report.

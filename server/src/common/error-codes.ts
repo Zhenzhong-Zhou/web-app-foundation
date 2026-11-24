@@ -52,8 +52,9 @@ export const ERROR_CODES = {
    */
   numberingPrefixShared: 'numbering_prefix_shared',
   /**
-   * A series would give a number a document already carries, or go below
-   * the numbers given (ADR-073): `details.series` names it, and
+   * A series would give a number a document already carries, or a code a
+   * lot made here does (ADR-094), or go below the numbers given (ADR-073):
+   * `details.series` names it, and
    * `details.lowest` is the least next number accepted, when there is one.
    */
   numberingNumberTaken: 'numbering_number_taken',
@@ -169,9 +170,10 @@ export const ERROR_CODES = {
    */
   stockNotUsable: 'stock_not_usable',
   /**
-   * Found stock counted into a new lot whose code the item already has
-   * (ADR-093, 84a): the message names the lot, and Correct the count
-   * marks the new lot's code, where one of its lots can be chosen instead.
+   * A new lot whose code the item already has, where the write says the
+   * lot must be new, as Count it in's does (ADR-093, 84a; ADR-094): the
+   * message names the lot, and Correct the count marks the new lot's
+   * code, where one of its lots can be chosen instead.
    */
   lotCodeInUse: 'lot_code_in_use',
 } as const;

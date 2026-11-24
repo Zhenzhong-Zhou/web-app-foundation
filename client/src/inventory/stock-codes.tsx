@@ -51,6 +51,7 @@ import { displayWithUnit } from '../products/units';
 import { WIDE_ONLY } from '../theme/media';
 import type { CountInItem } from './count-in-dialog';
 import { EmptiedLine } from './emptied-line';
+import { SupplierLotLine } from './lot-marks';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import { movementsPath } from './movements-path';
@@ -81,6 +82,8 @@ export interface StockHandlers {
    */
   onLeave: (variantId: string) => void;
   onEditLot: (row: Pile) => void;
+  /** Move to another lot… (ADR-094, R20). */
+  onMoveToLot: (row: Pile) => void;
   onReorder: (item: ReorderItem) => void;
   /** Receive stock, the dialog with this item filled in (ADR-093 v3). */
   onReceive: (variantId: string) => void;
@@ -89,6 +92,11 @@ export interface StockHandlers {
    * never been, a place and a lot to choose (ADR-093, R26).
    */
   onCountIn: (item: CountInItem) => void;
+  /**
+   * Start tracking lots… (ADR-094, T2): given to whoever may change items
+   * and correct counts, offered on a code not tracked, never equipment.
+   */
+  onStartTracking?: (row: StockCodeRow) => void;
 }
 
 type Header = (column: StockCodeSort) => {
@@ -277,9 +285,13 @@ export function StockCodes({
  * row, the rows open).
  */
 interface Returning {
-  /** The codes whose rows are open, and the places whose lots are (openKey). */
+  /**
+   * The codes whose rows are open, and the places whose lots are (openKey):
+   * what each row draws, never a copy (ADR-094, S1).
+   */
   opens: string[];
-  onOpen: (key: string, open: boolean) => void;
+  /** Rows opened or closed, written to the address, which draws them. */
+  onOpen: (keys: string[], open: boolean) => void;
   /** The code whose name takes focus once its row is drawn. */
   focusRow: string | null;
 }
@@ -307,13 +319,20 @@ function readPlaces(
   ).then((answer) => answer.places);
 }
 
-/** A code's places and their lots, read as its row opens (R2). */
+/**
+ * A code's places and their lots, read as its row opens (R2): open as the
+ * address names it, whenever it comes to.
+ */
 function usePlaces(row: StockCodeRow, opened: Opened, emptied = false) {
-  return useOpenRows(
-    () => readPlaces(row, opened, emptied),
-    opened.changes,
-    opened.opens.includes(row.variantId),
-  );
+  const open = opened.opens.includes(row.variantId);
+  return {
+    open,
+    ...useOpenRows(
+      () => readPlaces(row, opened, emptied),
+      open,
+      opened.changes,
+    ),
+  };
 }
 
 /**
@@ -365,20 +384,25 @@ function usePileChoice(
   /** The action the lots were opened to choose for, "Choose the lot to move". */
   const [choosing, setChoosing] = useState<MoveMode | null>(null);
   const first = useRef<HTMLButtonElement>(null);
+  // Closed, however the address came to close it, it no longer asks for a
+  // lot.
+  const [wasOpen, setWasOpen] = useState(places.open);
+  if (wasOpen !== places.open) {
+    setWasOpen(places.open);
+    if (!places.open) {
+      setChoosing(null);
+      setEmptied(false);
+    }
+  }
 
   // Focus on the first lot's Actions once the lots are drawn.
   const drawn = places.open && places.rows !== null;
   useEffect(() => {
     if (choosing && drawn) first.current?.focus();
   }, [choosing, drawn]);
-  /** The row's own button: closed, it no longer asks for a lot. */
+  /** The row's own button. */
   function toggle() {
-    if (places.open) {
-      setChoosing(null);
-      setEmptied(false);
-    }
-    opened.onOpen(row.variantId, !places.open);
-    places.toggle();
+    opened.onOpen([row.variantId], !places.open);
   }
 
   async function act(mode: MoveMode) {
@@ -400,12 +424,23 @@ function usePileChoice(
     }
     setChoosing(mode);
     setEmptied(emptied);
-    if (!places.open) {
-      opened.onOpen(row.variantId, true);
-      places.toggle();
-    } else if (emptied) {
-      places.retry();
+    // Every place's lots open to choose from, in the address as a row
+    // opened by hand is.
+    const keys = [row.variantId];
+    if (opened.seesPlaces && !opened.place) {
+      try {
+        const rows =
+          (!emptied && places.rows) || (await readPlaces(row, opened, emptied));
+        keys.push(
+          ...rows.map((each) => openKey(row.variantId, each.locationId)),
+        );
+      } catch {
+        // Its places could not be read: the row opens, which says so with
+        // Try again.
+      }
     }
+    opened.onOpen(keys, true);
+    if (places.open && emptied) places.retry();
   }
 
   return { choosing, first, act, toggle };
@@ -672,7 +707,8 @@ function ExpiresFirst({ row, here }: { row: StockCodeRow; here: boolean }) {
       </Typography>
     );
   }
-  return <ExpiryChip expiresAt={expiresAt} />;
+  // A day, or none: a lot not known yet is never first to expire (R9).
+  return <ExpiryChip expiresAt={expiresAt} expiry={null} />;
 }
 
 /** Coming, with its soonest day; a run has none. */
@@ -713,8 +749,9 @@ function Status({ row }: { row: StockCodeRow }) {
 
 /**
  * A code's one Actions button: its Movements, filtered to the code
- * (ADR-093, R11), and its reorder point by permission. A lot's own
- * actions are on its row.
+ * (ADR-093, R11), its reorder point by permission, and Start tracking
+ * lots… for a code not tracked, last (ADR-094, T2). A lot's own actions
+ * are on its row.
  */
 function CodeActions({
   row,
@@ -810,13 +847,20 @@ function CodeActions({
       : []),
   ];
 
+  // The code's, never a place's: tracking starts for all its stock at once.
+  const { onStartTracking } = handlers;
+  const tracking: Action[] =
+    onStartTracking && !row.tracksLots && row.type !== 'equipment'
+      ? [{ label: words.startTracking, onSelect: () => onStartTracking(row) }]
+      : [];
+
   return (
     <ActionsMenu
       name={intl.formatMessage(
         { id: 'inventory.actions.item', defaultMessage: 'Actions for {item}' },
         { item: itemName(row.productName, row.variantName) },
       )}
-      groups={[changes, receive, reads]}
+      groups={[changes, receive, reads, tracking]}
       note={
         handlers.canMove && !nothing && !onePile(row, opened)
           ? choiceNote(row, opened, intl)
@@ -974,7 +1018,7 @@ function PlacesRows({
   const found = offersFound(handlers, seesPlaces, choosing) && (
     <TableRow sx={{ bgcolor: 'action.hover' }} {...SPANNING_ROW}>
       <TableCell colSpan={7} sx={{ pl: UNDER_THE_NAME }}>
-        <FoundLine row={row} places={places} handlers={handlers} />
+        <FoundLine row={row} handlers={handlers} />
       </TableCell>
       <WideOnlyCells />
     </TableRow>
@@ -1029,10 +1073,9 @@ function PlacesRows({
           row={row}
           place={each}
           handlers={handlers}
-          lotsOpen={!!choosing}
-          opened={opens.includes(openKey(row.variantId, each.locationId))}
+          open={opens.includes(openKey(row.variantId, each.locationId))}
           onOpen={(open) =>
-            onOpen(openKey(row.variantId, each.locationId), open)
+            onOpen([openKey(row.variantId, each.locationId)], open)
           }
           actionsRef={index === 0 ? first : undefined}
         />
@@ -1067,17 +1110,12 @@ function offersFound(
  */
 function FoundLine({
   row,
-  places,
   handlers,
 }: {
   row: StockCodeRow;
-  places: StockPlace[];
   handlers: StockHandlers;
 }) {
   const intl = useIntl();
-  const tracksLots = places.some((each) =>
-    each.lots.some((lot) => lot.lotId !== null),
-  );
 
   return (
     <Stack
@@ -1108,7 +1146,9 @@ function FoundLine({
             variantId: row.variantId,
             sku: row.sku,
             unitOfMeasure: row.unitOfMeasure,
-            tracksLots,
+            // The code's own, never told by a lot row: one started with
+            // nothing on hand has none (ADR-094).
+            tracksLots: row.tracksLots,
           })
         }
       >
@@ -1123,15 +1163,15 @@ function FoundLine({
 
 /**
  * A place's row: its name, why it is not usable, its lots behind a
- * button, open as the address says, so Back finds them open (R11).
+ * button, open as the address says, so Back finds them open (R11), and
+ * whenever the address comes to name them (ADR-094, S1).
  */
 function PlaceTableRow({
   id,
   row,
   place,
   handlers,
-  lotsOpen,
-  opened,
+  open,
   onOpen,
   actionsRef,
 }: {
@@ -1139,24 +1179,17 @@ function PlaceTableRow({
   row: StockCodeRow;
   place: StockPlace;
   handlers: StockHandlers;
-  /** Its lots shown from the start: a lot is being chosen. */
-  lotsOpen: boolean;
-  /** Its lots open in the address, `?open=`. */
-  opened: boolean;
+  /**
+   * Its lots open in the address, `?open=`; they came with it, so opening
+   * reads nothing.
+   */
+  open: boolean;
   onOpen: (open: boolean) => void;
   /** Its first lot's Actions, or its own for a code not tracked by lot. */
   actionsRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const intl = useIntl();
   const lotsId = useId();
-  // Its lots came with it, so opening reads nothing.
-  const [open, setOpen] = useState(lotsOpen || opened);
-  // A lot asked for opens them, as React adjusts state to a prop.
-  const [asked, setAsked] = useState(lotsOpen);
-  if (lotsOpen !== asked) {
-    setAsked(lotsOpen);
-    if (lotsOpen) setOpen(true);
-  }
   const tracked = place.lots.some((lot) => lot.lotId !== null);
   const where = placeName(place);
   const words = intl.formatMessage(
@@ -1199,10 +1232,7 @@ function PlaceTableRow({
               open={open}
               busy={false}
               controls={lotsId}
-              onClick={() => {
-                setOpen(!open);
-                onOpen(!open);
-              }}
+              onClick={() => onOpen(!open)}
             />
           )}
         </TableCell>
@@ -1342,6 +1372,10 @@ function LotTableRow({
         ) : (
           NO_VALUE
         )}
+        <SupplierLotLine
+          isAssigned={lot.lotIsAssigned}
+          supplierLot={lot.lotSupplierLot}
+        />
         <EmptiedLine pile={lot} />
         {notAvailable && <NotUsableHere />}
       </TableCell>
@@ -1354,7 +1388,7 @@ function LotTableRow({
       <WideOnlyCells />
       <TableCell />
       <TableCell>
-        <ExpiryChip expiresAt={lot.lotExpiresAt} />
+        <ExpiryChip expiresAt={lot.lotExpiresAt} expiry={lot.lotExpiry} />
       </TableCell>
       <TableCell padding="checkbox">
         <PileActions pile={lot} handlers={handlers} buttonRef={actionsRef} />
@@ -1381,6 +1415,7 @@ export function PileActions({
       onSelect={handlers.onMove}
       onLeave={handlers.onLeave}
       onEditLot={handlers.onEditLot}
+      onMoveToLot={handlers.onMoveToLot}
       buttonRef={buttonRef}
     />
   );
@@ -1477,13 +1512,7 @@ function CodeCard({ row, ...opened }: { row: StockCodeRow } & Opened) {
                 opened.handlers,
                 opened.seesPlaces,
                 choice.choosing,
-              ) && (
-                <FoundLine
-                  row={row}
-                  places={places.rows}
-                  handlers={opened.handlers}
-                />
-              )}
+              ) && <FoundLine row={row} handlers={opened.handlers} />}
           </Stack>
         )}
       </Stack>
@@ -1572,8 +1601,15 @@ function OpenedCard({
                 {lot.lotId && lot.lotCode && (
                   <LotLink id={lot.lotId} code={lot.lotCode} />
                 )}
+                <SupplierLotLine
+                  isAssigned={lot.lotIsAssigned}
+                  supplierLot={lot.lotSupplierLot}
+                />
                 <EmptiedLine pile={lot} />
-                <ExpiryChip expiresAt={lot.lotExpiresAt} />
+                <ExpiryChip
+                  expiresAt={lot.lotExpiresAt}
+                  expiry={lot.lotExpiry}
+                />
                 {!showPlaces && !each.isAvailable && <NotUsableHere />}
               </Stack>
               <span>

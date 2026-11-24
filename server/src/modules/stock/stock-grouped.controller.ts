@@ -23,6 +23,7 @@ import {
   ListStockByCodeDto,
   ListStockByLotDto,
   StockFiltersDto,
+  StockLotFiltersDto,
   StockPlacesDto,
 } from './dto/list-stock-grouped.dto';
 import type {
@@ -128,7 +129,7 @@ export class StockGroupedController {
   /** The lots each of the Lot view's quick filters shows, beside its button (R3; 30a). */
   @Get('by-lot/counts')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  lotCounts(@Query() query: StockFiltersDto): Promise<StockLotCounts> {
+  lotCounts(@Query() query: StockLotFiltersDto): Promise<StockLotCounts> {
     return this.grouped.lotCounts(query);
   }
 

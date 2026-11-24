@@ -98,20 +98,25 @@ How this file is kept is in the [README](README.md).
   [test](../../client/e2e/items.spec.ts) "Add an item, Add item with the code in use: refused under Code, with the item that has it" ·
   [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused) ·
   MC-201
-- **Lot tracking is chosen when a variant is added, off unless turned on,
-  and never changes after; Add item never offers it for equipment,** and
-  says in its place how equipment counts. Turned on or off for a variant
-  that holds stock, its stock would be half with lots and half without.
-  Only the form keeps it from equipment: the server adds an equipment
-  item tracked by lot when a request asks for one.
+- **Lot tracking is chosen when a variant is added, off unless turned on;
+  Add item never offers it for equipment,** and says in its place how
+  equipment counts. A variant not tracked may start later, by Start
+  tracking lots, which puts its stock on hand into one lot; nothing
+  turns it off, and an item's update takes none, so its stock is never
+  half with lots and half without. Only the form keeps it from equipment
+  at Add item: the server adds an equipment item tracked by lot when a
+  request asks for one, while Start tracking lots refuses equipment.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--batch-tracking-is-a-property-of-the-variant-not-a-global-mode) ·
+  [ADR-023, amended](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#amendment-november-2026--tracking-may-start-later-and-a-lots-code-may-be-made-adr-094) ·
   [ADR-092](../adr/0092-items.md#decision--adding-and-changing-an-item-by-its-type) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects tracksLots in an update" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses equipment, a code that tracks lots, another organization’s code, and anyone without both permissions, writing nothing (R13, R18)" ·
   [test](../../server/test/products.e2e-spec.ts) "creates a variant even when the product has no variation" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "never offers lot tracking for equipment, saying how equipment counts" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "offers it never for equipment" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/items.md#add-an-item-add) ·
-  MC-203
+  MC-203 · MC-327
 
 ## Variants
 

@@ -88,7 +88,7 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
               <TableCell>
                 {/* Days left when it is close (ADR-055): a shipment of
                     a lot about to expire is what a customer complains of. */}
-                <ExpiryChip expiresAt={item.expiresAt} />
+                <ExpiryChip expiresAt={item.expiresAt} expiry={item.expiry} />
               </TableCell>
               <TableCell align="right">
                 {displayWithUnit(item.quantity, item.unitOfMeasure, intl)}

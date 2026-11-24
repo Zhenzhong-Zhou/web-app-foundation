@@ -4,12 +4,16 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import {
+  type LotChangeDetail,
+  RECEIPT_DETAILS,
+} from '../../common/movement-reasons';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
-import { MovementReason } from '../../database/schema';
+import type { LotExpiry, LotNote, MovementReason } from '../../database/schema';
 import {
   locations,
   lots,
@@ -20,7 +24,9 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { takeLotCode } from '../numbering/lot-codes';
 import { assertTakeable } from './availability';
+import { startLotsOf, TRACKING_STARTED } from './start-lot';
 import { PurchaseCost, valueMovement } from './valuation';
 
 /**
@@ -60,14 +66,40 @@ export type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
 export interface RecordMovementInput {
   variantId: string;
-  /** An existing lot. Mutually exclusive with `lot`. */
+  /**
+   * An existing lot. Mutually exclusive with `lot`. For a lot change, the
+   * lot it leaves: none for stock from before the code's lot tracking
+   * started (ADR-094).
+   */
   lotId?: string | null;
-  /** A lot arriving with the shipment, created if its code is new. */
+  /**
+   * The lot a lot change enters, one of the item's (ADR-094); set by
+   * server-side callers alone, as the movements route takes no lot change.
+   */
+  toLotId?: string | null;
+  /**
+   * Stock coming back as it left, with no lot (ADR-094, Q3a): a return, or
+   * a voided shipment's goods. Where the code has tracked lots since it
+   * left, it is written so, the one movement of a tracked code with no
+   * lot, and a lot change, `from_before`, then puts it into the lot that
+   * took the code's stock as its tracking started, made then if the code
+   * started with nothing on hand (Q4a). Set by the server's own callers
+   * alone: the movements route's DTO does not declare it.
+   */
+  fromBefore?: boolean;
+  /**
+   * A new lot arriving with the movement (MovementLotDto): a code typed as
+   * printed, created if new and else reused unless `mustBeNew`, or one the
+   * lot series makes for it (ADR-094).
+   */
   lot?: {
-    code: string;
+    code?: string;
+    makeCode?: boolean;
+    mustBeNew?: boolean;
+    supplierLot?: string;
+    expiry?: LotExpiry;
     /** A calendar day, YYYY-MM-DD (ADR-052). */
     expiresAt?: string;
-    isAssigned?: boolean;
   } | null;
   fromLocationId?: string | null;
   toLocationId?: string | null;
@@ -78,7 +110,10 @@ export interface RecordMovementInput {
   /** Set by server-side callers — an order, a run, a shipment — never by a client. */
   referenceType?: string | null;
   referenceId?: string | null;
-  /** A sample's recipient; becomes a `partner` reference once checked. */
+  /**
+   * A sample's recipient, or whom a receipt with no order came from;
+   * becomes a `partner` reference once checked.
+   */
   recipientPartnerId?: string | null;
   note?: string | null;
   /**
@@ -178,6 +213,30 @@ export class StockService {
       );
     }
 
+    // Why a receipt has no order is one of its keys, translated when read,
+    // or none, as a tab opened before sends it (ADR-094, R11).
+    if (
+      input.reason === 'receipt' &&
+      input.reasonDetail != null &&
+      !(RECEIPT_DETAILS as readonly string[]).includes(input.reasonDetail)
+    ) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.receiptWhyUnknown',
+          defaultMessage:
+            'Choose why there is no order: opening stock, returned, a sample or other.',
+        }),
+      );
+    }
+
+    /**
+     * Read `for share`, so the start of the code's lot tracking, which
+     * takes the row `for update` first, waits for this movement to commit,
+     * and a movement begun after it reads the code as it now is: a receipt
+     * racing the start never writes stock with no lot onto a tracked code
+     * (ADR-094). `for key share`, what the movement's own reference takes,
+     * would not make the start wait.
+     */
     const [variant] = await tx
       .select()
       .from(productVariants)
@@ -186,7 +245,8 @@ export class StockService {
           eq(productVariants.id, input.variantId),
           eq(productVariants.organizationId, organizationId),
         ),
-      );
+      )
+      .for('share');
 
     // The variant and the locations come from a body, or from the caller's
     // own rows, never from a path: another organization's, or one that does
@@ -200,32 +260,78 @@ export class StockService {
         }),
       );
 
-    const lotId = await this.resolveLot(tx, organizationId, variant, input);
+    // A lot change names the lot it leaves and the lot it enters, at one
+    // place; any other movement one lot, or none (ADR-094).
+    const ends =
+      input.reason === 'lot_change'
+        ? await this.lotChangeEnds(tx, organizationId, variant, input)
+        : null;
+
+    // Stock that left with no lot before the code's lot tracking started
+    // comes back so, then into the code's start lot (ADR-094, Q3a): found,
+    // or made, before any pile is locked.
+    const before =
+      !ends &&
+      input.fromBefore === true &&
+      variant.tracksLots &&
+      !input.lotId &&
+      !input.lot
+        ? await this.startLot(tx, organizationId, variant.id)
+        : null;
+    if (before && !direction.to) {
+      throw new Error('Stock from before lot tracking comes back to a place');
+    }
+
+    const lot = ends
+      ? ends.enters
+      : before
+        ? null
+        : await this.resolveLot(tx, organizationId, variant, input);
+    const lotId = ends ? ends.leaves : (lot?.id ?? null);
 
     const reference = await this.referenceFor(tx, organizationId, input);
 
     /**
-     * Locked in a deterministic order, sorted by location id.
+     * Locked in a deterministic order, sorted by location id, then by lot.
      *
      * A transfer touches two rows. Two concurrent transfers, A→B and B→A,
      * that each grab their source first will deadlock — rare in testing,
      * reliable under load. Sorting means both transactions always take the
-     * same row first, so one waits instead of dying.
+     * same row first, so one waits instead of dying. A lot change touches
+     * two piles of one place, so the lot decides between them, the pile
+     * with no lot first.
      */
     const touched = [
       ...(direction.from
-        ? [{ locationId: direction.from, delta: `-${input.quantity}` }]
+        ? [
+            {
+              locationId: direction.from,
+              lotId,
+              delta: `-${input.quantity}`,
+            },
+          ]
         : []),
       ...(direction.to
-        ? [{ locationId: direction.to, delta: input.quantity }]
+        ? [
+            {
+              locationId: direction.to,
+              lotId: ends ? ends.enters.id : lotId,
+              delta: input.quantity,
+            },
+          ]
         : []),
-    ].sort((a, b) => a.locationId.localeCompare(b.locationId));
+    ].sort(
+      (a, b) =>
+        a.locationId.localeCompare(b.locationId) ||
+        (a.lotId ?? '').localeCompare(b.lotId ?? ''),
+    );
 
-    for (const { locationId, delta } of touched) {
+    for (const { locationId, lotId: pileLotId, delta } of touched) {
       const location = await this.assertUsableLeaf(
         tx,
         organizationId,
         locationId,
+        input.reason === 'lot_change',
       );
 
       /**
@@ -254,7 +360,7 @@ export class StockService {
       await this.applyDelta(tx, organizationId, {
         variantId: input.variantId,
         locationId,
-        lotId,
+        lotId: pileLotId,
         delta,
       });
     }
@@ -268,6 +374,7 @@ export class StockService {
         // (ADR-023).
         sku: variant.sku,
         lotId,
+        toLotId: ends?.enters.id ?? null,
         fromLocationId: direction.from,
         toLocationId: direction.to,
         quantity: input.quantity,
@@ -282,7 +389,8 @@ export class StockService {
 
     // Every movement is valued here, so value and quantity have one write
     // path between them (ADR-048). Whether it waits for a cost goes back
-    // with it, for the write to say (ADR-093, 90a).
+    // with it, for the write to say (ADR-093, 90a), and so does the lot's
+    // code, a made one among them (ADR-094, R3).
     const needsCost = await valueMovement(
       tx,
       organizationId,
@@ -294,7 +402,27 @@ export class StockService {
       `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,
     );
 
-    return { ...movement, needsCost };
+    // Its value, the cost it left at, follows by the lot change's rows, out
+    // of the pool with no lot into the start lot's (valueMovement).
+    if (before) {
+      await this.recordWithin(
+        tx,
+        organizationId,
+        {
+          variantId: variant.id,
+          lotId: null,
+          toLotId: before.id,
+          fromLocationId: direction.to,
+          toLocationId: direction.to,
+          quantity: input.quantity,
+          reason: 'lot_change',
+          reasonDetail: 'from_before' satisfies LotChangeDetail,
+        },
+        actorId,
+      );
+    }
+
+    return { ...movement, needsCost, lotCode: lot?.code ?? null };
   }
 
   /**
@@ -321,6 +449,16 @@ export class StockService {
               'A transfer needs both a source and a destination location',
           }),
         );
+      }
+      return { from, to };
+    }
+
+    // A lot change stays at its place, both ends (ADR-094). Only the
+    // server's own callers record one; the movements route refuses the
+    // reason, so a wrong shape here is a bug, never a person's mistake.
+    if (input.reason === 'lot_change') {
+      if (!from || from !== to) {
+        throw new Error('A lot change stays at one place, both its ends');
       }
       return { from, to };
     }
@@ -374,8 +512,12 @@ export class StockService {
 
   /**
    * Enforces the invariant from ADR-023 — a lot is present exactly when the
-   * variant tracks lots — and returns the id to use, creating the lot when one
-   * arrived with the shipment.
+   * variant tracks lots — and returns the lot to use, its id and its code,
+   * creating it when one arrived with the movement. Tracking may start for a
+   * variant that holds stock, never stop (ADR-094): from then on, its
+   * movements take a lot, all but stock coming back as it left before,
+   * which recordWithin writes with no lot, never reaching here, and moves
+   * into the start lot in the same transaction (`fromBefore`, Q3a).
    *
    * A check constraint cannot see across tables, so this lives here and is
    * asserted in e2e. Without it a variant ends up with some lotted rows and
@@ -384,22 +526,29 @@ export class StockService {
    * Creating the lot here rather than through its own endpoint is deliberate:
    * a lot has no independent existence, it arrives printed on a box. A separate
    * call would leave an orphan row every time the movement then failed.
+   *
+   * What the lot is, the write says: one of the item's by its id, a code
+   * typed as printed, or one the lot series makes; and whether it must be
+   * new. Never the movement's reason (#649's 46).
    */
   private async resolveLot(
     tx: Tx,
     organizationId: string,
     variant: typeof productVariants.$inferSelect,
     input: RecordMovementInput,
-  ): Promise<string | null> {
+  ): Promise<{ id: string; code: string } | null> {
     const supplied = input.lotId ?? input.lot ?? null;
 
+    // A screen sends a lot exactly when the code tracks lots, as it read
+    // the code; one that sends none read it before its lot tracking
+    // started (ADR-094, R13), so it is told so, and how to give one.
     if (variant.tracksLots && !supplied) {
       throw new BadRequestException(
         t(
           {
-            id: 'stock.skuLotTrackedSo',
+            id: 'stock.lotTrackingStarted',
             defaultMessage:
-              '{sku} is lot tracked, so this movement needs a lot',
+              'Lot tracking has started for {sku}. Reload to give its lot.',
           },
           { sku: variant.sku },
         ),
@@ -435,7 +584,7 @@ export class StockService {
       // variant, and attaching another's would make a recall return the wrong
       // units.
       const [lot] = await tx
-        .select()
+        .select({ id: lots.id, code: lots.code })
         .from(lots)
         .where(
           and(
@@ -452,33 +601,90 @@ export class StockService {
             defaultMessage: 'Unknown lot for this variant',
           }),
         );
-      return lot.id;
+      return lot;
     }
 
-    const incoming = input.lot!;
+    return this.newLot(tx, organizationId, variant, input.lot!);
+  }
+
+  /**
+   * A lot arriving with a movement (MovementLotDto): one the lot series
+   * makes for us, or a code typed as printed, created if new and else
+   * reused unless it must be new. Also the lot a move to another lot
+   * makes, which is always new (ADR-094, R20).
+   */
+  async newLot(
+    tx: Tx,
+    organizationId: string,
+    variant: { id: string; sku: string },
+    incoming: NonNullable<RecordMovementInput['lot']>,
+  ): Promise<{ id: string; code: string }> {
+    const expiry = expiryOf(incoming);
+
+    if (incoming.makeCode) {
+      if (incoming.code) {
+        throw new BadRequestException(
+          t({
+            id: 'stock.lotTypedOrMade',
+            defaultMessage:
+              'Type the lot number as printed, or make a code for us, not both.',
+          }),
+        );
+      }
+      return this.makeLot(tx, organizationId, variant.id, {
+        ...expiry,
+        supplierLot: incoming.supplierLot || null,
+      });
+    }
+
+    if (!incoming.code) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.lotNumberMissing',
+          defaultMessage:
+            'Type the lot number as printed, or make a code for us.',
+        }),
+      );
+    }
+
+    // A typed code is the supplier's own, so it has no supplier's lot to
+    // add; one made for us carries it (ADR-094, R5).
+    if (incoming.supplierLot) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.supplierLotForMadeCode',
+          defaultMessage:
+            'A lot number typed from the box is the supplier’s own. Leave the supplier’s lot empty, or make a code for us.',
+        }),
+      );
+    }
+
+    const typed = {
+      organizationId,
+      variantId: variant.id,
+      code: incoming.code,
+      ...expiry,
+      // Typed as printed: a code made up here is marked so in Edit lot
+      // details, by its own permission (ADR-094, R4 and R7).
+      isAssigned: false,
+    };
 
     /**
-     * Found stock counted into a new lot (ADR-093, 84a): the lot is made
-     * with the count, and a code the item already has is refused, since
-     * one of its lots is chosen by its id. Never reused, as a second
-     * delivery is: a count that merged into a lot nobody chose would put
-     * found units under another run's expiry. DO NOTHING writes nothing
-     * when the code is taken, so the refusal comes before any write.
+     * A lot the write must make, as Count it in's new lot (ADR-093, 84a):
+     * a code the item already has is refused, since one of its lots is
+     * chosen by its id. Never reused, as a second delivery is: a count
+     * that merged into a lot nobody chose would put found units under
+     * another run's expiry. DO NOTHING writes nothing when the code is
+     * taken, so the refusal comes before any write.
      */
-    if (input.reason === 'adjustment') {
+    if (incoming.mustBeNew) {
       const [made] = await tx
         .insert(lots)
-        .values({
-          organizationId,
-          variantId: variant.id,
-          code: incoming.code,
-          expiresAt: incoming.expiresAt ?? null,
-          isAssigned: incoming.isAssigned ?? false,
-        })
+        .values(typed)
         .onConflictDoNothing({
           target: [lots.organizationId, lots.variantId, lots.code],
         })
-        .returning({ id: lots.id });
+        .returning({ id: lots.id, code: lots.code });
 
       if (!made) {
         throw new ConflictException(
@@ -495,7 +701,7 @@ export class StockService {
           ),
         );
       }
-      return made.id;
+      return made;
     }
 
     /**
@@ -507,25 +713,134 @@ export class StockService {
      * this closes. Touching updated_at is a no-op write that returns the id in
      * one statement.
      *
-     * expiresAt is deliberately not updated: a later delivery of the same run
-     * does not get to rewrite the expiry of units already on the shelf.
+     * The expiry is deliberately not updated: a later delivery of the same
+     * run does not get to rewrite the expiry of units already on the shelf.
      */
     const [lot] = await tx
       .insert(lots)
-      .values({
-        organizationId,
-        variantId: variant.id,
-        code: incoming.code,
-        expiresAt: incoming.expiresAt ?? null,
-        isAssigned: incoming.isAssigned ?? false,
-      })
+      .values(typed)
       .onConflictDoUpdate({
         target: [lots.organizationId, lots.variantId, lots.code],
         set: { updatedAt: new Date() },
       })
-      .returning();
+      .returning({ id: lots.id, code: lots.code });
 
-    return lot.id;
+    return lot;
+  }
+
+  /**
+   * The two lots of a lot change (ADR-094), each one of the item's: the
+   * lot it leaves, none for stock from before the code's lot tracking
+   * started, and the lot it enters. Only a code that tracks lots changes
+   * lot; the table's checks keep the two apart.
+   */
+  private async lotChangeEnds(
+    tx: Tx,
+    organizationId: string,
+    variant: typeof productVariants.$inferSelect,
+    input: RecordMovementInput,
+  ): Promise<{ leaves: string | null; enters: { id: string; code: string } }> {
+    if (!variant.tracksLots || !input.toLotId) {
+      throw new Error(
+        'A lot change is of a tracked code, into one of its lots',
+      );
+    }
+
+    const ids = [input.toLotId, ...(input.lotId ? [input.lotId] : [])];
+    const found = await tx
+      .select({ id: lots.id, code: lots.code })
+      .from(lots)
+      .where(
+        and(
+          inArray(lots.id, ids),
+          eq(lots.organizationId, organizationId),
+          eq(lots.variantId, variant.id),
+        ),
+      );
+
+    const enters = found.find((each) => each.id === input.toLotId);
+    if (!enters || found.length !== new Set(ids).size) {
+      throw new BadRequestException(
+        t({
+          id: 'stock.unknownLotVariant',
+          defaultMessage: 'Unknown lot for this variant',
+        }),
+      );
+    }
+
+    return { leaves: input.lotId ?? null, enters };
+  }
+
+  /**
+   * A lot made for us where the delivery shows no code (ADR-094, R3): its
+   * code taken from the lot series inside this transaction, as the write
+   * is saved, and the lot stored as made here (R4). Also the lot that
+   * takes a code's stock on hand as its lot tracking starts, its note
+   * saying so (Q4a).
+   *
+   * Never merged into a lot of the same code: a code typed for this item by
+   * a write not yet committed is one the take cannot see (takeLotCode), so
+   * the insert waits for that write and, where it committed, takes the next
+   * number rather than add to its lot.
+   */
+  async makeLot(
+    tx: Tx,
+    organizationId: string,
+    variantId: string,
+    lot: {
+      expiry: LotExpiry;
+      expiresAt: string | null;
+      supplierLot: string | null;
+      note?: LotNote | null;
+    },
+  ): Promise<{ id: string; code: string }> {
+    for (;;) {
+      const code = await takeLotCode(tx, organizationId, variantId);
+      const [made] = await tx
+        .insert(lots)
+        .values({ organizationId, variantId, code, ...lot, isAssigned: true })
+        .onConflictDoNothing({
+          target: [lots.organizationId, lots.variantId, lots.code],
+        })
+        .returning({ id: lots.id, code: lots.code });
+      if (made) return made;
+    }
+  }
+
+  /**
+   * The code's start lot, for stock coming back from before its lot
+   * tracking started (ADR-094, Q4a): the lot that took its stock on hand,
+   * found by its note, or, where the code started with nothing on hand,
+   * one made for us now, noted the same, with the first stock back. Its
+   * expiry is not known yet, as a start's is when nothing is said
+   * (ADR-094, S6), the stock still usable; its supplier's lot is to add.
+   *
+   * Two at once would each make one, so the second waits on the code's own
+   * lock, then finds the first's; the lock is taken only where none is
+   * found, and never the code's row, which every movement holds `for share`.
+   */
+  private async startLot(
+    tx: Tx,
+    organizationId: string,
+    variantId: string,
+  ): Promise<{ id: string; code: string }> {
+    const found = async () =>
+      (await startLotsOf(tx, organizationId, [variantId])).get(variantId);
+
+    const lot = await found();
+    if (lot) return lot;
+
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`start-lot:${variantId}`}, 0))`,
+    );
+    return (
+      (await found()) ??
+      (await this.makeLot(tx, organizationId, variantId, {
+        ...expiryOf({ expiry: 'unknown' }),
+        supplierLot: null,
+        note: TRACKING_STARTED,
+      }))
+    );
   }
 
   /**
@@ -536,11 +851,16 @@ export class StockService {
    * which is the other half of the same invariant. Both are needed: one stops
    * stock arriving at a branch, the other stops a leaf becoming a branch
    * underneath existing stock.
+   *
+   * A lot change may be at a retired place: nothing arrives there or leaves
+   * it, only which lot the stock is in changes, so Start tracking lots puts
+   * the stock still there into its lot too (review 74).
    */
   private async assertUsableLeaf(
     tx: Tx,
     organizationId: string,
     locationId: string,
+    staysInPlace = false,
   ): Promise<typeof locations.$inferSelect> {
     const [location] = await tx
       .select()
@@ -561,7 +881,7 @@ export class StockService {
         }),
       );
 
-    if (!location.isActive) {
+    if (!location.isActive && !staysInPlace) {
       throw new ConflictException(
         t(
           { id: 'stock.nameRetired', defaultMessage: '{name} is retired' },
@@ -670,8 +990,10 @@ export class StockService {
 
   /**
    * The movement's reference. Internal callers — orders, runs, shipments —
-   * pass their own; the public endpoint can only name a sample's recipient,
-   * which is checked against this organization before it is trusted.
+   * pass their own; the public endpoint can only name a partner: whom a
+   * sample went to, or whom a receipt with no order came from, kept as a
+   * sample's recipient is (ADR-094, R11), each checked against this
+   * organization before it is trusted.
    */
   private async referenceFor(
     tx: Tx,
@@ -685,11 +1007,15 @@ export class StockService {
       };
     }
 
-    if (input.reason !== 'sample') {
+    const namesPartner =
+      input.reason === 'sample' ||
+      (input.reason === 'receipt' && !input.referenceType);
+    if (!namesPartner) {
       throw new BadRequestException(
         t({
-          id: 'stock.sampleRecipient',
-          defaultMessage: 'Only a sample has a recipient',
+          id: 'stock.partnerSampleOrReceipt',
+          defaultMessage:
+            'Only a sample or stock received with no order names a partner. Leave the partner out of this movement.',
         }),
       );
     }
@@ -707,11 +1033,52 @@ export class StockService {
     if (!partner)
       throw new BadRequestException(
         t({
-          id: 'stock.unknownRecipient',
-          defaultMessage: 'Unknown recipient',
+          id: 'stock.unknownPartner',
+          defaultMessage:
+            'That partner is not in this organization. Choose one from the list.',
         }),
       );
 
     return { referenceType: 'partner', referenceId: partner.id };
   }
+}
+
+/**
+ * A new lot's expiry, one of three (ADR-094, R8): a day exactly for
+ * `date`, none for not known yet or none. A write that names no kind, as
+ * a tab opened before sends it, reads `date` with a day and `none`
+ * without, so today's lots with no day stay Doesn't expire. Edit lot
+ * details reads its expiry by the same rule (LotsService.updateLot).
+ */
+export function expiryOf(lot: {
+  expiry?: LotExpiry | null;
+  expiresAt?: string | null;
+}): {
+  expiry: LotExpiry;
+  expiresAt: string | null;
+} {
+  const expiresAt = lot.expiresAt ?? null;
+  const expiry = lot.expiry ?? (expiresAt ? 'date' : 'none');
+
+  if (expiry === 'date' && !expiresAt) {
+    throw new BadRequestException(
+      t({
+        id: 'stock.lotExpiryNeedsDay',
+        defaultMessage:
+          'Give the day the lot expires, or say it is not known yet or that the lot doesn’t expire.',
+      }),
+    );
+  }
+
+  if (expiry !== 'date' && expiresAt) {
+    throw new BadRequestException(
+      t({
+        id: 'stock.lotExpiryTakesNoDay',
+        defaultMessage:
+          'A lot whose expiry is not known yet, or that doesn’t expire, takes no day. Remove the day, or say the lot expires on it.',
+      }),
+    );
+  }
+
+  return { expiry, expiresAt };
 }

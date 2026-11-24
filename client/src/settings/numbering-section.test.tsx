@@ -1,3 +1,4 @@
+import { createTheme } from '@mui/material';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -138,6 +139,8 @@ describe('NumberingSection', () => {
       returnAuthorization: { prefix: 'RMA-', digits: 6, reset: 'never' },
       saleOrder: { prefix: 'SO-', digits: 6, reset: 'never' },
       purchaseOrder: { prefix: 'PO-', digits: 6, reset: 'never' },
+      // Every save sends the lot codes too (ADR-094).
+      lot: { prefix: 'L-{YYYY}-{MM}-{DD}-', digits: 1, reset: 'daily' },
       documentsInDateOrder: false,
     });
   });
@@ -261,6 +264,223 @@ describe('NumberingSection', () => {
     ).toHaveAttribute('aria-disabled', 'true');
   });
 
+  describe('lot codes (ADR-094)', () => {
+    it('speaks for lot codes in its intro and its date note', async () => {
+      serve();
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      expect(
+        screen.getByText(
+          /^How each kind of document, and each lot code made for us, is numbered\./,
+        ),
+      ).toBeVisible();
+      expect(
+        screen.getByText(/A lot code’s is the day it is made\./),
+      ).toBeVisible();
+    });
+
+    const roomLine = (text: string) =>
+      within(table()).getByText(text, { selector: '.MuiTypography-caption' });
+
+    it('shows the next code made today, with the room for codes a day within 20 characters', async () => {
+      serve();
+      render(<NumberingSection readOnly={false} />);
+
+      const rows = within(
+        await screen.findByRole('table', { name: 'Numbering' }),
+      );
+      const row = rows.getByRole('row', { name: /^Lot codes/ });
+      expect(within(row).getByText('L-2026-10-17-1')).toBeInTheDocument();
+      expect(
+        within(row).getByText('From Oct 18, 2026: L-2026-10-18-1'),
+      ).toBeInTheDocument();
+      expect(
+        within(row).getByRole('textbox', { name: 'Lot codes: Prefix' }),
+      ).toHaveValue('L-{YYYY}-{MM}-{DD}-');
+      expect(
+        roomLine('Room for 9,999,999 codes a day within 20 characters'),
+      ).not.toHaveStyle({ color: createTheme().palette.warning.main });
+    });
+
+    // Review 39: whose codes the 20 characters bind, always said.
+    it('says under the lot codes that the 20 characters bind the codes we make, not one typed from a box', async () => {
+      serve();
+      render(<NumberingSection readOnly={false} />);
+
+      const rows = within(
+        await screen.findByRole('table', { name: 'Numbering' }),
+      );
+      expect(
+        within(rows.getByRole('row', { name: /^Lot codes/ })).getByText(
+          'For the codes we make: up to 20 characters of A to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed from a box stays as printed.',
+        ),
+      ).toBeVisible();
+    });
+
+    it('says the room in all for a format that never resets, past what a number holds', async () => {
+      serve();
+      const user = userEvent.setup();
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      await user.click(
+        screen.getByRole('textbox', { name: 'Lot codes: Prefix' }),
+      );
+      // A lot's own common formats: its default is its each day.
+      expect(
+        screen.getByRole('button', { name: 'L-2026-10-17-1, each day' }),
+      ).toHaveAttribute('aria-pressed', 'true');
+      await user.click(screen.getByRole('button', { name: 'L-000001' }));
+
+      const row = within(table()).getByRole('row', { name: /^Lot codes/ });
+      expect(within(row).getByText('L-000001')).toBeInTheDocument();
+      expect(
+        roomLine(
+          'Room for 999,999,999,999,999,999 codes in all within 20 characters',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    // A real format, not a room fed in (S5): 16 characters printed, the
+    // most a prefix may, leave 9,999 codes, too few for a series that
+    // never starts again; as many a day are no real risk.
+    it('warns in amber with room for 9,999 in all, and Save still works; as many a day stay grey', async () => {
+      serve({
+        ...GIVEN,
+        lot: { ...GIVEN.lot, prefix: 'ABCDEFGHIJKLMNO-', reset: 'never' },
+      });
+      const user = userEvent.setup();
+      const { unmount } = render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      // A change, so Save has something to send.
+      const digits = screen.getByRole('spinbutton', {
+        name: 'Lot codes: Digits',
+      });
+      await user.clear(digits);
+      await user.type(digits, '3');
+
+      expect(
+        roomLine('Room for 9,999 codes in all within 20 characters'),
+      ).toHaveStyle({ color: createTheme().palette.warning.main });
+      expect(
+        screen.getByRole('button', { name: 'Save numbering' }),
+      ).not.toHaveAttribute('aria-disabled', 'true');
+      unmount();
+
+      serve({
+        ...GIVEN,
+        lot: { ...GIVEN.lot, prefix: 'ABCD-{YYYY}-{MM}-{DD}-', reset: 'daily' },
+      });
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+      expect(
+        roomLine('Room for 9,999 codes a day within 20 characters'),
+      ).not.toHaveStyle({ color: createTheme().palette.warning.main });
+    });
+
+    it('refuses a code past 20 characters, or holding _, at its field', async () => {
+      serve();
+      const user = userEvent.setup();
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      // L-2026-10-17- prints 13 characters: 8 digits make 21.
+      const digits = screen.getByRole('spinbutton', {
+        name: 'Lot codes: Digits',
+      });
+      await user.clear(digits);
+      await user.type(digits, '8');
+      const prefix = screen.getByRole('textbox', { name: 'Lot codes: Prefix' });
+      expect(prefix).toHaveAccessibleDescription(
+        'The prefix and its digits print at most 20 characters.',
+      );
+      expect(
+        screen.queryByText(/^Room for/, { selector: '.MuiTypography-caption' }),
+      ).toBeNull();
+
+      await user.clear(digits);
+      await user.type(digits, '1');
+      await user.clear(prefix);
+      await user.type(prefix, 'L_');
+      expect(prefix).toHaveAccessibleDescription(
+        'Capital letters, digits and - only, and the date from the buttons, so a barcode can carry the code.',
+      );
+      // A document's prefix may hold it.
+      const invoices = screen.getByRole('textbox', {
+        name: 'Invoices: Prefix',
+      });
+      await user.clear(invoices);
+      await user.type(invoices, 'INV_');
+      expect(invoices).not.toHaveAccessibleDescription();
+      expect(
+        screen.getByRole('button', { name: 'Save numbering' }),
+      ).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    it('marks the lot codes’ row where a refusal names them, offering the least next number', async () => {
+      serve();
+      const message =
+        'L-2026-10-17-3 is already a lot’s code. Under L-{YYYY}-{MM}-{DD}-, the next number must be 4 or more.';
+      server.use(
+        http.put('/api/v1/organization/numbering', () =>
+          HttpResponse.json(
+            {
+              message,
+              code: 'numbering_number_taken',
+              details: { series: ['lot'], lowest: 4 },
+            },
+            { status: 409 },
+          ),
+        ),
+      );
+      const user = userEvent.setup();
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      const next = screen.getByRole('spinbutton', {
+        name: 'Lot codes: Next number',
+      });
+      await user.clear(next);
+      await user.type(next, '2');
+      await user.click(screen.getByRole('button', { name: 'Save numbering' }));
+      const dialog = within(
+        screen.getByRole('dialog', { name: 'Change the numbering?' }),
+      );
+      expect(dialog.getByText('Lot codes')).toBeInTheDocument();
+      await user.click(
+        dialog.getByRole('button', { name: 'Change numbering' }),
+      );
+
+      await user.click(await screen.findByRole('button', { name: 'Use 4' }));
+      expect(next).toHaveValue(4);
+      expect(await screen.findByText('L-2026-10-17-4')).toBeInTheDocument();
+    });
+
+    it('says when a lot code and a document would print the same', async () => {
+      serve();
+      const user = userEvent.setup();
+      render(<NumberingSection readOnly={false} />);
+      await screen.findByRole('table', { name: 'Numbering' });
+
+      // A document's prefix may hold the date with no reset.
+      const sale = screen.getByRole('textbox', { name: 'Sale orders: Prefix' });
+      await user.clear(sale);
+      await user.type(sale, 'L-{{YYYY}-{{MM}-{{DD}-');
+
+      const notice =
+        'Sale orders and lot codes would print the same numbers. Give each its own prefix.';
+      expect(sale).toHaveAccessibleDescription(notice);
+      expect(
+        screen.getByRole('textbox', { name: 'Lot codes: Prefix' }),
+      ).toHaveAccessibleDescription(notice);
+      expect(
+        screen.getByRole('button', { name: 'Save numbering' }),
+      ).toHaveAttribute('aria-disabled', 'true');
+    });
+  });
+
   it('is read only, with who can change it, for everyone else', async () => {
     serve();
     render(<NumberingSection readOnly />);
@@ -307,6 +527,18 @@ describe('NumberingSection', () => {
       expect(
         screen.getByRole('textbox', { name: 'Invoices: Prefix' }),
       ).toHaveValue('INV-');
+    });
+
+    it('says the lot codes’ room under their row, outside its button (ADR-094)', async () => {
+      serve();
+      render(<NumberingSection readOnly={false} />);
+
+      const row = await screen.findByRole('button', { name: /^Lot codes/ });
+      expect(row).toHaveTextContent('L-2026-10-17-1');
+      expect(row).not.toHaveTextContent(/Room for/);
+      expect(
+        screen.getByText('Room for 9,999,999 codes a day within 20 characters'),
+      ).toBeVisible();
     });
   });
 });

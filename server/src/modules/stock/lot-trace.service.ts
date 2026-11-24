@@ -2,35 +2,57 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
+import { detailOf } from '../../common/movement-reasons';
 import { searchTerms } from '../../common/search';
 import { dayIn, todayIn } from '../../common/today';
-import type { ReleaseLicenceStatus } from '../../database/schema';
+import type { LotExpiry, ReleaseLicenceStatus } from '../../database/schema';
 import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import type { LotSourceKind } from './dto/lot-trace-response.dto';
 import { itemName, namesIn } from './item-name';
+import { lotMatches, lotRank } from './lot-search';
 import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
 import { usableInLot } from './usable-stock';
 
 /**
- * How far genealogy is followed. Real recipes are two or three levels deep —
- * an ingredient into a blend into a finished good — so ten is generous, and
- * the limit exists to stop a bad record from looping, not to cut off a real
- * chain.
+ * How far genealogy is followed, in runs. Real recipes are two or three
+ * levels deep — an ingredient into a blend into a finished good — so ten is
+ * generous, and the limit exists to stop a bad record from looping, not to
+ * cut off a real chain.
  */
 const MAX_DEPTH = 10;
 
-/** A lot related to the traced one through production. */
-export interface RelatedLot {
+/**
+ * A lot reached from the traced one, through runs and moves between lots.
+ * Depth counts the runs alone: a lot reached by moves alone is 0, and has
+ * no run.
+ */
+interface ChainedLot {
   lotId: string;
   code: string;
   sku: string;
-  /** Steps away from the traced lot: 1 is a direct ingredient or batch. */
   depth: number;
-  /** The run that connects this lot to the one before it in the chain. */
-  runId: string;
+  /** The last run on the way to it; null where only moves lead there. */
+  runId: string | null;
   runReference: string | null;
+}
+
+/** A lot related to the traced one through production. */
+export interface RelatedLot extends ChainedLot {
+  /**
+   * The run that connects this lot to the one before it in the chain, or
+   * for a lot moved out of one that a run made, that run.
+   */
+  runId: string;
+}
+
+/** The lots a run lies between, as Made from and Went into list them. */
+function throughRuns(chained: ChainedLot[]): RelatedLot[] {
+  return chained.filter(
+    (lot): lot is RelatedLot => lot.depth > 0 && lot.runId !== null,
+  );
 }
 
 /**
@@ -41,10 +63,17 @@ export interface RelatedLot {
  * says what it went into, a shipment or a sample says who has it, a return
  * says what came back. Runs are the joints between lots — what a run consumed
  * is upstream of what it produced — and following them in both directions is
- * the whole of genealogy.
+ * the whole of genealogy. A move between lots is a joint too (ADR-094, R21):
+ * the stock is the same under another code, so the trace follows it as if
+ * the two lots were one, and a recall reaches whoever received the second.
  *
  * Nothing is stored for this. There is no genealogy table to keep in step,
  * so there is nothing that can disagree with the movements it would describe.
+ *
+ * Every join names the organization, so a lot, an order or a run another
+ * organization holds is never joined, whatever a row says (#627, #649).
+ * The users a licence's override names are the exception: a person
+ * belongs to no organization, reached here through this one's run.
  */
 @Injectable()
 export class LotTraceService {
@@ -61,80 +90,101 @@ export class LotTraceService {
       // One after another: a transaction is one connection, and queries on
       // it run in turn whatever the code says, so Promise.all would only
       // pretend to be parallel.
-      const { balances, usable, notUsable } = await this.whereItIsNow(
-        tx,
-        organizationId,
-        lotId,
-        seesPlaces,
-      );
       const sources = await this.sources(tx, organizationId, lotId);
-      const madeFrom = await this.related(tx, organizationId, lotId, 'up');
-      const wentInto = await this.related(tx, organizationId, lotId, 'down');
+      const upstream = await this.related(tx, organizationId, lotId, 'up');
+      const downstream = await this.related(tx, organizationId, lotId, 'down');
 
       /**
-       * Recipients of this lot and of everything made from it. A customer who
-       * received a finished batch made from a bad ingredient is exactly who a
-       * recall has to reach, though the ingredient's own movements never
-       * mention them.
+       * The lots its stock moved on to by moves alone, any number of hops
+       * (ADR-094, S9): the same stock under other codes, so a recall
+       * reading Where it is now finds what is still on hand there. Each
+       * with all it holds, stock it held before the move too: a recall
+       * reaches more, never fewer, as its recipients do.
+       */
+      const onward = downstream.filter((related) => related.depth === 0);
+      const holding = await this.whereItIsNow(
+        tx,
+        organizationId,
+        [lotId, ...onward.map((related) => related.lotId)],
+        seesPlaces,
+      );
+
+      /**
+       * Recipients of this lot, of everything made from it, and of every lot
+       * its stock moved into (ADR-094, R21). A customer who received a
+       * finished batch made from a bad ingredient, or the part of a lot
+       * moved under another code, is exactly who a recall has to reach,
+       * though the first lot's own movements never mention them.
        */
       const recipients = await this.recipients(tx, organizationId, [
         lotId,
-        ...wentInto.map((related) => related.lotId),
+        ...downstream.map((related) => related.lotId),
       ]);
 
       return {
         lot,
-        balances,
-        usable,
-        notUsable,
+        ...holding(lotId),
+        movedOnTo: onward.map((related) => ({
+          lotId: related.lotId,
+          code: related.code,
+          ...holding(related.lotId),
+        })),
         sources,
-        madeFrom,
-        wentInto,
+        madeFrom: throughRuns(upstream),
+        wentInto: throughRuns(downstream),
         recipients,
       };
     });
   }
 
   /**
-   * Lots whose code contains what was typed, across every product. A recall
-   * usually arrives as part of a code — the batch number or date people
-   * remember, "2609" from "FOC-2609-01" — with no product attached, and the
-   * same code can exist for two products, so every match is returned with
-   * its SKU rather than guessing.
+   * Lots whose code or supplier's lot contains what was typed, across every
+   * product (ADR-044, amended by ADR-094: one rule, R6). A recall usually
+   * arrives as part of a code — the batch number or date people remember,
+   * "2609" from "FOC-2609-01", or the supplier's own lot off its letter —
+   * with no product attached, and the same code can exist for two
+   * products, so every match is returned with its SKU rather than guessing.
    *
-   * Codes that start with the text come first, so typing a prefix still puts
-   * the obvious match on top. % and _ are escaped so they match themselves.
+   * Exact, then the start of either code, then anywhere (lotRank), so
+   * typing a prefix still puts the obvious match on top. % and _ are
+   * escaped so they match themselves.
    *
-   * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx, a trigram
-   * index (ADR-056, migration 0042), serves it, led by the organization
-   * since migration 0077 (ADR-051, the amendment for #225 and #276), so it
-   * reads only this organization's matching lots. That index hands back the
-   * matches unordered, so every one is joined before the sort, and the join
+   * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx and
+   * lots_supplier_lot_trgm_idx, trigram indexes (ADR-056, migrations 0042
+   * and 0083), serve it, led by the organization since migration 0077
+   * (ADR-051, the amendment for #225 and #276), so it reads only this
+   * organization's matching lots. Those indexes hand back the matches
+   * unordered, so every one is joined before the sort, and the join
    * carries the organization: without it, Postgres read every
    * organization's variants to join this one's lots (ADR-051's plan check,
    * #187).
    */
   async search(code: string) {
     // Escaped and trimmed as every search is (ADR-056, common/search.ts).
-    const { anywhere, prefix } = searchTerms(code);
+    const terms = searchTerms(code);
+    const lot = { code: sql`l.code`, supplierLot: sql`l.supplier_lot` };
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (
         await tx.execute(sql`
-          select l.id, l.code, l.expires_at, pv.sku
+          select l.id, l.code, l.expires_at, l.expiry, l.supplier_lot,
+            l.is_assigned, pv.sku
           from lots l
           join product_variants pv
             on pv.id = l.variant_id
             and pv.organization_id = ${organizationId}::uuid
           where l.organization_id = ${organizationId}::uuid
-            and l.code ilike ${anywhere}
-          order by (l.code ilike ${prefix}) desc, l.code, pv.sku
+            and ${lotMatches(lot, terms)}
+          order by ${lotRank(lot, terms)}, l.code, pv.sku
           limit 20
         `)
       ).rows as {
         id: string;
         code: string;
         expires_at: string | null;
+        expiry: LotExpiry;
+        supplier_lot: string | null;
+        is_assigned: boolean;
         sku: string;
       }[];
 
@@ -142,6 +192,9 @@ export class LotTraceService {
         id: row.id,
         code: row.code,
         expiresAt: row.expires_at,
+        expiry: row.expiry,
+        supplierLot: row.supplier_lot,
+        isAssigned: row.is_assigned,
         sku: row.sku,
       }));
     });
@@ -163,6 +216,9 @@ export class LotTraceService {
           l.id,
           l.code,
           l.expires_at,
+          l.expiry,
+          l.is_assigned,
+          l.supplier_lot,
           l.variant_id,
           pv.product_id,
           pv.sku,
@@ -170,7 +226,8 @@ export class LotTraceService {
           ${shown.productName} as product_name,
           ${shown.variantName} as variant_name
         from lots l
-        join product_variants pv on pv.id = l.variant_id
+        join product_variants pv
+          on pv.id = l.variant_id and pv.organization_id = ${organizationId}::uuid
         join products pr
           on pr.id = pv.product_id and pr.organization_id = ${organizationId}::uuid
         where l.organization_id = ${organizationId}::uuid
@@ -180,6 +237,9 @@ export class LotTraceService {
       id: string;
       code: string;
       expires_at: string | null;
+      expiry: LotExpiry;
+      is_assigned: boolean;
+      supplier_lot: string | null;
       variant_id: string;
       product_id: string;
       sku: string;
@@ -198,6 +258,9 @@ export class LotTraceService {
       id: row.id,
       code: row.code,
       expiresAt: row.expires_at,
+      expiry: row.expiry,
+      isAssigned: row.is_assigned,
+      supplierLot: row.supplier_lot,
       variantId: row.variant_id,
       productId: row.product_id,
       sku: row.sku,
@@ -214,30 +277,33 @@ export class LotTraceService {
    * two sums by the usable rule's reading for one lot, usableInLot
    * (ADR-093, 10a): usable, and not. Summed here, never in the browser
    * (ADR-055), for a reader who may not see the places (96a); read once
-   * with the places, never a copy of the rule (review 27).
+   * with the places, never a copy of the rule (review 27). The traced lot
+   * and the lots it moved on to in one read, each lot's own (ADR-094, S9).
    */
   private async whereItIsNow(
     tx: Tx,
     organizationId: string,
-    lotId: string,
+    lotIds: string[],
     seesPlaces: boolean,
   ) {
     const today = todayIn(requestTimeZone());
     const rows = (
       await tx.execute(sql`
         select
+          u.lot_id,
           u.location_id,
           u.location_name,
           u.location_code,
           u.is_available,
           u.quantity::text as quantity,
           u.quantity <> 0 as is_here,
-          coalesce(sum(u.usable) over (), 0)::text as usable,
-          coalesce(sum(u.not_usable) over (), 0)::text as not_usable
-        from (${usableInLot(organizationId, today, lotId)}) u
+          coalesce(sum(u.usable) over (partition by u.lot_id), 0)::text as usable,
+          coalesce(sum(u.not_usable) over (partition by u.lot_id), 0)::text as not_usable
+        from (${usableInLot(organizationId, today, lotIds)}) u
         order by u.location_name
       `)
     ).rows as {
+      lot_id: string;
       location_id: string;
       location_name: string;
       location_code: string | null;
@@ -257,41 +323,56 @@ export class LotTraceService {
         )
       : new Map<string, string[]>();
 
-    return {
-      balances: here.map((row) => ({
-        locationId: row.location_id,
-        locationName: seesPlaces ? row.location_name : null,
-        locationCode: seesPlaces ? row.location_code : null,
-        locationPath: pathOf.get(row.location_id) ?? [],
-        isAvailable: row.is_available,
-        quantity: row.quantity,
-      })),
-      // The same on every row; nothing anywhere, none.
-      usable: rows[0]?.usable ?? '0',
-      notUsable: rows[0]?.not_usable ?? '0',
+    return (lotId: string) => {
+      const its = rows.filter((row) => row.lot_id === lotId);
+      return {
+        balances: here
+          .filter((row) => row.lot_id === lotId)
+          .map((row) => ({
+            locationId: row.location_id,
+            locationName: seesPlaces ? row.location_name : null,
+            locationCode: seesPlaces ? row.location_code : null,
+            locationPath: pathOf.get(row.location_id) ?? [],
+            isAvailable: row.is_available,
+            quantity: row.quantity,
+          })),
+        // The same on each of its rows; nothing anywhere, none.
+        usable: its[0]?.usable ?? '0',
+        notUsable: its[0]?.not_usable ?? '0',
+      };
     };
   }
 
   /**
-   * How the lot came into existence: received from a supplier, or made in a
-   * run. A receipt entered by hand has no order, and says so rather than
-   * being left out — a gap in the trail is itself worth knowing.
+   * How the lot came into existence: received, made in a run, or moved into
+   * it from another lot. A receipt entered by hand has no order, and says so
+   * rather than being left out — a gap in the trail is itself worth knowing;
+   * it names why it came and whom from where it was given (ADR-094, E2).
    *
    * A run says what licence it was made under, its state at release, and
    * who overrode the policy and why (ADR-050): the first questions a
    * regulator asks about a batch, answered where the recall starts.
+   *
+   * A lot change into it says which (ADR-094, R21): a move names the lot it
+   * came from, whose page goes on up the trail; the start lot's stock on
+   * hand when lot tracking started, and stock back from before it, name
+   * none, as there was no lot.
    */
   private async sources(tx: Tx, organizationId: string, lotId: string) {
     const rows = (
       await tx.execute(sql`
         select
           sm.reason,
+          sm.reason_detail,
           min(sm.created_at) as first_at,
           sum(sm.quantity)::text as quantity,
           o.id as order_id,
           o.number as order_number,
           o.reference as order_reference,
+          p.id as partner_id,
           p.name as partner_name,
+          fl.id as from_lot_id,
+          fl.code as from_lot_code,
           po.id as run_id,
           po.reference as run_reference,
           po.licence_id,
@@ -302,27 +383,47 @@ export class LotTraceService {
           u.name as licence_overridden_by_name
         from stock_movements sm
         left join orders o
-          on sm.reference_type = 'purchase_order' and o.id = sm.reference_id
-        left join partners p on p.id = o.partner_id
+          on sm.reference_type = 'purchase_order'
+          and o.id = sm.reference_id
+          and o.organization_id = ${organizationId}::uuid
+        left join partners p
+          on p.id = coalesce(
+            o.partner_id,
+            case when sm.reference_type = 'partner' then sm.reference_id end
+          )
+          and p.organization_id = ${organizationId}::uuid
+        left join lots fl
+          on sm.reason = 'lot_change'
+          and fl.id = sm.lot_id
+          and fl.organization_id = ${organizationId}::uuid
         left join production_orders po
-          on sm.reference_type = 'production_order' and po.id = sm.reference_id
+          on sm.reference_type = 'production_order'
+          and po.id = sm.reference_id
+          and po.organization_id = ${organizationId}::uuid
         left join users u on u.id = po.licence_overridden_by
         where sm.organization_id = ${organizationId}::uuid
-          and sm.lot_id = ${lotId}::uuid
-          and sm.reason in ('receipt', 'production')
-        group by sm.reason, o.id, o.number, o.reference, p.name, po.id, po.reference,
+          and (
+            (sm.lot_id = ${lotId}::uuid and sm.reason in ('receipt', 'production'))
+            or (sm.to_lot_id = ${lotId}::uuid and sm.reason = 'lot_change')
+          )
+        group by sm.reason, sm.reason_detail, o.id, o.number, o.reference,
+          p.id, p.name, fl.id, fl.code, po.id, po.reference,
           po.licence_id, po.licence_number, po.licence_authority,
           po.licence_status_at_release, po.licence_override_reason, u.name
         order by first_at
       `)
     ).rows as {
-      reason: 'receipt' | 'production';
+      reason: LotSourceKind;
+      reason_detail: string | null;
       first_at: Date;
       quantity: string;
       order_id: string | null;
       order_number: string | null;
       order_reference: string | null;
+      partner_id: string | null;
       partner_name: string | null;
+      from_lot_id: string | null;
+      from_lot_code: string | null;
       run_id: string | null;
       run_reference: string | null;
       licence_id: string | null;
@@ -335,12 +436,16 @@ export class LotTraceService {
 
     return rows.map((row) => ({
       kind: row.reason,
+      reasonDetail: detailOf(row.reason_detail),
       at: row.first_at,
       quantity: row.quantity,
       orderId: row.order_id,
       orderNumber: row.order_number,
       orderReference: row.order_reference,
+      partnerId: row.partner_id,
       supplierName: row.partner_name,
+      fromLotId: row.from_lot_id,
+      fromLotCode: row.from_lot_code,
       runId: row.run_id,
       runReference: row.run_reference,
       licenceId: row.licence_id,
@@ -353,7 +458,8 @@ export class LotTraceService {
   }
 
   /**
-   * Lots connected through production, followed as far as they go.
+   * Lots connected through production and moves between lots, followed as
+   * far as they go.
    *
    * Up: the runs that produced this lot, then what those runs consumed, then
    * the runs that produced those, and so on. Down: the runs that consumed
@@ -361,17 +467,27 @@ export class LotTraceService {
    * already found and reaches the next through two indexes — by lot, then by
    * reference — so the work grows with the size of the trace, not the ledger.
    *
+   * A move between lots is a step too (ADR-094, R21): down, into the lot it
+   * entered; up, from the lot it left, by the lot change's index on the lot
+   * it enters. It is the same stock under another code, so it adds no depth
+   * and keeps the run that led to it: a lot moved out of a batch is as many
+   * runs away as the batch, through the same run. A lot reached by moves
+   * alone is at depth 0, with no run.
+   *
    * UNION rather than UNION ALL: a lot issued in several transfers appears in
    * several movements of one run, and without deduplication each would
-   * multiply the rows of every step after it. The path array refuses a lot
-   * already on its own chain, so a bad record cannot loop.
+   * multiply the rows of every step after it. Each row is a lot at a depth
+   * through a run, so a lot reached again the same way, by a move back or
+   * by a bad record's loop of moves, adds nothing and the walk ends; a loop
+   * through runs ends at the depth limit. Each row of the traced lot itself
+   * is left out at the end.
    */
   private async related(
     tx: Tx,
     organizationId: string,
     lotId: string,
     direction: 'up' | 'down',
-  ): Promise<RelatedLot[]> {
+  ): Promise<ChainedLot[]> {
     // Down: this lot is consumed, and the run's output is the next lot.
     // Up: this lot is produced, and the run's consumption is the next lot.
     const [near, far] =
@@ -379,26 +495,51 @@ export class LotTraceService {
         ? (['consumption', 'production'] as const)
         : (['production', 'consumption'] as const);
 
+    // Down: the lot a lot change out of this one entered. Up: the lot a lot
+    // change into this one left, none as lot tracking started or for stock
+    // from before it.
+    const moved =
+      direction === 'down'
+        ? sql`
+            select lc.to_lot_id as lot_id, 0 as runs, null::uuid as run_id
+            from stock_movements lc
+            where lc.organization_id = ${organizationId}::uuid
+              and lc.lot_id = chain.lot_id
+              and lc.reason = 'lot_change'
+          `
+        : sql`
+            select lc.lot_id, 0 as runs, null::uuid as run_id
+            from stock_movements lc
+            where lc.organization_id = ${organizationId}::uuid
+              and lc.to_lot_id = chain.lot_id
+              and lc.reason = 'lot_change'
+              and lc.lot_id is not null
+          `;
+
     const rows = (
       await tx.execute(sql`
-        with recursive chain(lot_id, depth, path, run_id) as (
-          select ${lotId}::uuid, 0, array[${lotId}::uuid], null::uuid
+        with recursive chain(lot_id, depth, run_id) as (
+          select ${lotId}::uuid, 0, null::uuid
           union
-          select next.lot_id, chain.depth + 1, chain.path || next.lot_id, here.reference_id
+          select step.lot_id, chain.depth + step.runs, coalesce(step.run_id, chain.run_id)
           from chain
-          join stock_movements here
-            on here.organization_id = ${organizationId}::uuid
-           and here.lot_id = chain.lot_id
-           and here.reference_type = 'production_order'
-           and here.reason = ${near}
-          join stock_movements next
-            on next.organization_id = ${organizationId}::uuid
-           and next.reference_type = 'production_order'
-           and next.reference_id = here.reference_id
-           and next.reason = ${far}
-           and next.lot_id is not null
+          cross join lateral (
+            select next.lot_id, 1 as runs, here.reference_id as run_id
+            from stock_movements here
+            join stock_movements next
+              on next.organization_id = ${organizationId}::uuid
+             and next.reference_type = 'production_order'
+             and next.reference_id = here.reference_id
+             and next.reason = ${far}
+             and next.lot_id is not null
+            where here.organization_id = ${organizationId}::uuid
+              and here.lot_id = chain.lot_id
+              and here.reference_type = 'production_order'
+              and here.reason = ${near}
+            union all
+            ${moved}
+          ) step
           where chain.depth < ${MAX_DEPTH}
-            and not next.lot_id = any(chain.path)
         )
         select distinct on (chain.lot_id)
           chain.lot_id,
@@ -408,16 +549,19 @@ export class LotTraceService {
           pv.sku,
           po.reference as run_reference
         from chain
-        join lots l on l.id = chain.lot_id
-        join product_variants pv on pv.id = l.variant_id
-        left join production_orders po on po.id = chain.run_id
-        where chain.depth > 0
+        join lots l
+          on l.id = chain.lot_id and l.organization_id = ${organizationId}::uuid
+        join product_variants pv
+          on pv.id = l.variant_id and pv.organization_id = ${organizationId}::uuid
+        left join production_orders po
+          on po.id = chain.run_id and po.organization_id = ${organizationId}::uuid
+        where chain.lot_id <> ${lotId}::uuid
         order by chain.lot_id, chain.depth
       `)
     ).rows as {
       lot_id: string;
       depth: number;
-      run_id: string;
+      run_id: string | null;
       code: string;
       sku: string;
       run_reference: string | null;
@@ -462,22 +606,33 @@ export class LotTraceService {
           o.is_sample,
           l.id as lot_id,
           l.code as lot_code,
+          l.supplier_lot as lot_supplier_lot,
+          l.is_assigned as lot_is_assigned,
           sm.sku,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'shipment'), 0)::text as shipped,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'sample'), 0)::text as sampled,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'return'), 0)::text as returned,
           min(sm.created_at) filter (where sm.reason in ('shipment', 'sample')) as left_at
         from stock_movements sm
-        join lots l on l.id = sm.lot_id
+        join lots l
+          on l.id = sm.lot_id and l.organization_id = ${organizationId}::uuid
         left join shipments s
-          on sm.reference_type = 'shipment' and s.id = sm.reference_id
+          on sm.reference_type = 'shipment'
+          and s.id = sm.reference_id
+          and s.organization_id = ${organizationId}::uuid
         left join order_returns r
-          on sm.reference_type = 'order_return' and r.id = sm.reference_id
-        left join orders o on o.id = coalesce(s.order_id, r.order_id)
-        left join partners p on p.id = coalesce(
-          o.partner_id,
-          case when sm.reference_type = 'partner' then sm.reference_id end
-        )
+          on sm.reference_type = 'order_return'
+          and r.id = sm.reference_id
+          and r.organization_id = ${organizationId}::uuid
+        left join orders o
+          on o.id = coalesce(s.order_id, r.order_id)
+          and o.organization_id = ${organizationId}::uuid
+        left join partners p
+          on p.id = coalesce(
+            o.partner_id,
+            case when sm.reference_type = 'partner' then sm.reference_id end
+          )
+          and p.organization_id = ${organizationId}::uuid
         where sm.organization_id = ${organizationId}::uuid
           and sm.lot_id in (${ids})
           and sm.reason in ('shipment', 'sample', 'return')
@@ -485,7 +640,8 @@ export class LotTraceService {
           -- receive anything. True for samples and returns, which have no
           -- shipment row to join.
           and s.voided_at is null
-        group by p.id, p.name, o.id, o.number, o.reference, o.is_sample, l.id, l.code, sm.sku
+        group by p.id, p.name, o.id, o.number, o.reference, o.is_sample,
+          l.id, l.code, l.supplier_lot, l.is_assigned, sm.sku
         order by p.name nulls last, o.number nulls last, l.code
       `)
     ).rows as {
@@ -497,6 +653,8 @@ export class LotTraceService {
       is_sample: boolean | null;
       lot_id: string;
       lot_code: string;
+      lot_supplier_lot: string | null;
+      lot_is_assigned: boolean;
       sku: string;
       shipped: string;
       sampled: string;
@@ -515,6 +673,8 @@ export class LotTraceService {
       isSampleOrder: row.is_sample ?? false,
       lotId: row.lot_id,
       lotCode: row.lot_code,
+      lotSupplierLot: row.lot_supplier_lot,
+      lotIsAssigned: row.lot_is_assigned,
       sku: row.sku,
       shipped: row.shipped,
       sampled: row.sampled,

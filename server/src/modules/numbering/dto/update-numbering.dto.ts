@@ -71,6 +71,16 @@ export class UpdateNumberingDto {
   @Type(() => NumberingSeriesDto)
   purchaseOrder!: NumberingSeriesDto;
 
+  /**
+   * The codes of lots made here (ADR-094). Optional, as the five are not:
+   * a tab opened before lot codes were numbered sends none, and the lot
+   * series stays as it is.
+   */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NumberingSeriesDto)
+  lot?: NumberingSeriesDto;
+
   /** France's rule: no invoice or credit note dated before the latest. */
   @IsBoolean()
   documentsInDateOrder!: boolean;

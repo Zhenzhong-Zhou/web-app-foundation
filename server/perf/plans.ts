@@ -360,6 +360,11 @@ async function buildProbes(
       run: () => grouped.places(shelf.variantId, {}, 'en', true),
     },
     { name: 'stock by lot', run: () => grouped.byLot({}, 'en', true) },
+    // The item, or a lot's code or supplier's lot (ADR-094, R6).
+    {
+      name: 'stock by lot: search',
+      run: () => grouped.byLot({ search: 'LV-0001' }, 'en', true),
+    },
     {
       name: 'stock by lot: page 21',
       run: () => grouped.byLot({ before: deepLots }, 'en', true),
@@ -367,6 +372,12 @@ async function buildProbes(
     {
       name: 'stock by lot: expiring',
       run: () => grouped.byLot({ expiringWithin: 90 }, 'en', true),
+    },
+    // Details to add (ADR-094, R9): the lots with an expiry or a
+    // supplier's lot still to add, read from the lot of each row.
+    {
+      name: 'stock by lot: details to add',
+      run: () => grouped.byLot({ detailsToAdd: 'true' }, 'en', true),
     },
     { name: 'stock by lot: counts', run: () => grouped.lotCounts({}) },
     // The Lot view by its other sorts, each way (Bob's third message, 7).
@@ -483,6 +494,12 @@ async function buildProbes(
       run: () => invoices.list({ partnerId: org.customerId }),
     },
     { name: 'lot search', run: () => traces.search('LV-0001') },
+    // A lot's supplier's lot finds it as its code does (ADR-094, R6),
+    // through its own trigram index led by the organization.
+    {
+      name: 'lot search: a supplier’s lot',
+      run: () => traces.search('SUP-0001'),
+    },
     // Search (ADR-056): served by the trigram indexes for three characters
     // or more, so no allowance here; a sequential scan of a large table is a
     // failure like any other.
@@ -681,6 +698,20 @@ async function buildProbes(
     // As a reader who sees places, its places' paths read too (#639).
     probes.push({
       name: 'lot trace',
+      run: () => traces.trace(lotId, 'en', true),
+    });
+  }
+
+  // A lot part of which moved into another (ADR-094, S9): the walk steps
+  // through the lot change, and Where it is now reads both lots at once,
+  // by the lot index on stock_levels.
+  const [moved] = (
+    await stock.listMovements({ reason: 'lot_change' }, 'en', EVERY_PART)
+  ).entries.filter((movement) => movement.lotId && movement.toLotId);
+  if (moved?.lotId) {
+    const lotId = moved.lotId;
+    probes.push({
+      name: 'lot trace: moved on to another lot',
       run: () => traces.trace(lotId, 'en', true),
     });
   }

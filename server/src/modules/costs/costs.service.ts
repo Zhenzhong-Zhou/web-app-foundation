@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
+import { detailOf } from '../../common/movement-reasons';
 import {
   products,
   type ProductType,
@@ -20,6 +21,7 @@ import {
   type CostInput,
 } from '../stock/revaluation';
 import type {
+  CostCarried,
   LotCost,
   NeedsCostPage,
   RunCost,
@@ -70,6 +72,9 @@ interface EntryRow {
   needs_cost: boolean;
   reference_type: string | null;
   reference_id: string | null;
+  other_lot_id: string | null;
+  other_lot_code: string | null;
+  carried: CostCarried | null;
   created_at: Date;
   reason: string | null;
 }
@@ -107,11 +112,14 @@ interface NeedsCostRow {
   cover_file_id: string | null;
   lot_id: string | null;
   lot_code: string | null;
+  from_lot_id: string | null;
+  from_lot_code: string | null;
   quantity: string;
   unit_price: string | null;
   currency: string | null;
   created_at: Date;
   reason: string | null;
+  reason_detail: string | null;
   reference_type: string | null;
   reference_id: string | null;
 }
@@ -259,13 +267,41 @@ export class CostsService {
       const [balance] = pool.rows as unknown as BalanceRow[];
 
       // Newest first and capped: a lot's history is short, and the cap keeps
-      // a long-lived one from pulling its whole life into a page.
+      // a long-lived one from pulling its whole life into a page. A lot
+      // change's rows name the other lot (ADR-094): where the row out went,
+      // where the row in came from. So do the rows of a late cost carried
+      // by one, each naming that lot change's row in (D5; spread): in the
+      // lot that row is in, the part that came; in any other, the part
+      // carried on to it.
       const entries = await tx.execute(sql`
         select v.id, v.kind, v.quantity, v.value, v.unit_price, v.currency,
                v.exchange_rate, v.needs_cost, v.reference_type,
-               v.reference_id, v.created_at, m.reason
+               v.reference_id, v.created_at, m.reason,
+               ol.id as other_lot_id, ol.code as other_lot_code,
+               case
+                 when ri.id is null then null
+                 when ri.lot_id = v.lot_id then 'from'
+                 else 'to'
+               end as carried
         from stock_valuations v
         left join stock_movements m on m.id = v.movement_id
+        left join stock_valuations ri
+          on ri.organization_id = ${organizationId}::uuid
+         and v.reference_type = 'stock_valuation'
+         and ri.id = v.reference_id
+         and ri.kind = 'lot_change'
+        left join stock_movements rm
+          on rm.organization_id = ${organizationId}::uuid
+         and rm.id = ri.movement_id
+        left join lots ol
+          on ol.organization_id = ${organizationId}::uuid
+         and ol.id = case
+                       when v.kind = 'lot_change' and v.quantity < 0
+                         then m.to_lot_id
+                       when v.kind = 'lot_change' then m.lot_id
+                       when ri.lot_id = v.lot_id then rm.lot_id
+                       else ri.lot_id
+                     end
         where v.organization_id = ${organizationId}::uuid
           and v.variant_id = ${lot.variant_id}::uuid
           and v.lot_id = ${lotId}::uuid
@@ -294,6 +330,9 @@ export class CostsService {
           needsCost: row.needs_cost,
           referenceType: row.reference_type,
           referenceId: row.reference_id,
+          otherLotId: row.other_lot_id,
+          otherLotCode: row.other_lot_code,
+          carried: row.carried,
           createdAt: row.created_at,
         })),
       };
@@ -365,6 +404,12 @@ export class CostsService {
         ) c
       `);
 
+      /**
+       * Each output by the lot of its value row, where its cost was
+       * posted (postRunCost): output made before the code's lot tracking
+       * started has no lot of its own, and its value row has since taken
+       * the lot its stock went into (ADR-094, Q2a).
+       */
       const outputs = await tx.execute(sql`
         select l.code as lot_code,
                sum(m.quantity) as quantity,
@@ -374,33 +419,44 @@ export class CostsService {
                    and r.kind in ('run_close', 'issued')
                    and r.reference_type = 'production_order'
                    and r.reference_id = ${runId}::uuid
-                   and r.variant_id = m.variant_id
-                   and r.lot_id is not distinct from m.lot_id) as value
+                   and r.variant_id = v.variant_id
+                   and r.lot_id is not distinct from v.lot_id) as value
         from stock_movements m
-        left join lots l on l.id = m.lot_id
+        join stock_valuations v
+          on v.movement_id = m.id
+         and v.kind = 'movement'
+         and v.organization_id = ${organizationId}::uuid
+        left join lots l
+          on l.id = v.lot_id and l.organization_id = ${organizationId}::uuid
         where m.organization_id = ${organizationId}::uuid
           and m.reference_type = 'production_order'
           and m.reference_id = ${runId}::uuid
           and m.reason = 'production'
-        group by m.variant_id, m.lot_id, l.code
+        group by v.variant_id, v.lot_id, l.code
         order by l.code nulls first
       `);
 
       /**
        * Provisional when something it consumed was drawn from a pool that
        * was still waiting for a cost at the time — the consumption took an
-       * average that was missing part of its value.
+       * average that was missing part of its value. The pool is its value
+       * row's, which a component's lot tracking starting since moved into
+       * its lot with the pool's rows still waiting (ADR-094).
        */
       const waiting = await tx.execute(sql`
         with open as (${openNeedsCost(organizationId)})
         select exists (
           select 1
           from open o
+          join stock_valuations v
+            on v.variant_id = o.variant_id
+           and v.lot_id is not distinct from o.lot_id
+           and v.kind = 'movement'
+           and v.organization_id = ${organizationId}::uuid
           join stock_movements m
-            on m.variant_id = o.variant_id
-           and m.lot_id is not distinct from o.lot_id
-          where m.organization_id = ${organizationId}::uuid
-            and m.reference_type = 'production_order'
+            on m.id = v.movement_id
+           and m.organization_id = ${organizationId}::uuid
+          where m.reference_type = 'production_order'
             and m.reference_id = ${runId}::uuid
             and m.reason = 'consumption'
             and o.created_at <= m.created_at
@@ -460,9 +516,10 @@ export class CostsService {
                ${shown.productName} as product_name,
                ${shown.variantName} as variant_name,
                ${products.type} as type, ${coverOf()} as cover_file_id,
-               v.lot_id, l.code as lot_code, v.quantity, v.unit_price,
-               v.currency, v.created_at, m.reason, m.reference_type,
-               m.reference_id
+               v.lot_id, l.code as lot_code, fl.id as from_lot_id,
+               fl.code as from_lot_code, v.quantity, v.unit_price,
+               v.currency, v.created_at, m.reason, m.reason_detail,
+               m.reference_type, m.reference_id
         from open o
         join stock_valuations v on v.id = o.id
         join ${productVariants}
@@ -473,6 +530,12 @@ export class CostsService {
           and ${products.organizationId} = ${organizationId}
         left join lots l on l.id = v.lot_id
         left join stock_movements m on m.id = v.movement_id
+        -- What waits of a lot change is its row in, so the lot it came
+        -- from is the one the movement leaves (ADR-094, 3a).
+        left join lots fl
+          on fl.id = m.lot_id
+         and fl.organization_id = ${organizationId}::uuid
+         and v.kind = 'lot_change'
         where ${query.before ? sql`v.id < ${query.before}::uuid` : sql`true`}
         order by v.id desc
         limit ${limit + 1}
@@ -482,6 +545,7 @@ export class CostsService {
         id: row.id,
         kind: row.kind,
         reason: row.reason,
+        reasonDetail: detailOf(row.reason_detail),
         sku: row.sku,
         variantId: row.variant_id,
         productId: row.product_id,
@@ -491,6 +555,8 @@ export class CostsService {
         coverFileId: row.cover_file_id,
         lotId: row.lot_id,
         lotCode: row.lot_code,
+        fromLotId: row.from_lot_id,
+        fromLotCode: row.from_lot_code,
         quantity: row.quantity,
         unitPrice: row.unit_price,
         currency: row.currency,

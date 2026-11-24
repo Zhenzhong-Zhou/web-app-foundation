@@ -63,8 +63,8 @@ export async function takeNumber(
 
   const [row] = result.rows;
   if (!row) {
-    // Every organization has its five rows, from the migration or its
-    // registration; a missing one is a broken record, not a refusal.
+    // Every organization has a row for each series, from the migrations or
+    // its registration; a missing one is a broken record, not a refusal.
     throw new Error(
       `No numbering for ${documentType} in organization ${organizationId}`,
     );

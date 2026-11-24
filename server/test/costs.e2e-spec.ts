@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { SUPPORTED_LOCALES } from '../src/common/locales';
 import { todayIn } from '../src/common/today';
@@ -55,6 +55,18 @@ interface CorrectedCost {
   value: string;
   held: string;
   issued: string;
+  followed: { lotId: string; lotCode: string; value: string }[];
+}
+
+/**
+ * A signed decimal string in millionths, the ledger's places, so a test can
+ * add amounts exactly; the server adds in Postgres (ADR-025).
+ */
+function millionths(value: string): bigint {
+  const [whole, fraction = ''] = value.replace('-', '').split('.');
+  const units =
+    BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, '0').slice(0, 6));
+  return value.startsWith('-') ? -units : units;
 }
 
 /**
@@ -522,6 +534,836 @@ describe('Costs (e2e)', () => {
 
       await setCost(beta, (await valuationOf(db, receipt)).id, cad('3'), 404);
     });
+  });
+
+  /**
+   * A pool with any stock still waiting for a cost gives no average
+   * (ADR-048, amended by ADR-094, R22; #650): stock counted into it waits
+   * too, rather than riding at an average worked out over units valued at
+   * nothing, and is given its cost on its own line.
+   */
+  describe('stock counted in while its pool waits for a cost (#650)', () => {
+    /** A found count onto the shelf, as Count it in… writes it. */
+    async function countedIn(
+      s: Setup,
+      found: { variantId: string; lotId?: string; quantity: string },
+    ) {
+      const res = await s.agent
+        .post('/v1/stock/movements')
+        .send({
+          ...found,
+          toLocationId: s.shelf,
+          reason: 'adjustment',
+          reasonDetail: 'found',
+          note: 'A box found behind the cartons at the count',
+        })
+        .expect(201);
+
+      return body<{ movement: { id: string }; needsCost: boolean }>(res);
+    }
+
+    it('counts found stock into a lot whose receipt waits for a cost as waiting too, listed, and costed on its own line', async () => {
+      const s = await setup('alpha');
+      const vitc = await variant(s, 'VITC-100', 'material', true);
+
+      // Received by hand, with no price: the 100 wait for a cost.
+      const receipt = await move(s, {
+        variantId: vitc,
+        toLocationId: s.shelf,
+        quantity: '100',
+        reason: 'receipt',
+        lot: { code: 'L1' },
+      });
+      const lotId = await lotIdOf(db, 'L1');
+
+      const found = await countedIn(s, {
+        variantId: vitc,
+        lotId,
+        quantity: '12',
+      });
+
+      expect(found.needsCost).toBe(true);
+      const receiptRow = await valuationOf(db, receipt);
+      const foundRow = await valuationOf(db, found.movement.id);
+      expect(foundRow).toMatchObject({ value: '0.000000', needsCost: true });
+      expect((await needsCost(s)).map((entry) => entry.id).sort()).toEqual(
+        [receiptRow.id, foundRow.id].sort(),
+      );
+
+      // Each at 5.00: 560.00 for the 112, never 500.00 at 4.46 a unit.
+      await setCost(s, receiptRow.id, cad('5'));
+      await setCost(s, foundRow.id, cad('5'));
+
+      expect(await needsCost(s)).toEqual([]);
+      expect(await poolOf(db, vitc, lotId)).toMatchObject({
+        quantity: '112.0000',
+        value: '560.000000',
+      });
+    });
+
+    it('takes no average from a pool only part of whose stock waits, and takes one again once none does (2a)', async () => {
+      const s = await setup('alpha');
+      const scoop = await variant(s, 'SCOOP');
+
+      await buy(s, scoop, '10', cad('2'));
+      const waiting = await move(s, {
+        variantId: scoop,
+        toLocationId: s.shelf,
+        quantity: '10',
+        reason: 'receipt',
+      });
+
+      // The pool's 20.00 for 20 would give 1.00 a unit, half what any cost.
+      const found = await countedIn(s, { variantId: scoop, quantity: '5' });
+
+      expect(found.needsCost).toBe(true);
+      const foundRow = await valuationOf(db, found.movement.id);
+      expect(foundRow).toMatchObject({ value: '0.000000', needsCost: true });
+
+      await setCost(s, (await valuationOf(db, waiting)).id, cad('2'));
+      await setCost(s, foundRow.id, cad('2'));
+
+      const again = await countedIn(s, { variantId: scoop, quantity: '5' });
+
+      expect(again.needsCost).toBe(false);
+      expect(await valuationOf(db, again.movement.id)).toMatchObject({
+        value: '10.000000',
+        needsCost: false,
+      });
+    });
+  });
+
+  /**
+   * A late cost follows stock moved to another lot (ADR-094, D5). Of each lot
+   * change out of the pool after the stock arrived, the acquisition's part
+   * is the moved quantity times its units still in the pool just before,
+   * over what the pool held then; that part carries its share to the row in,
+   * which spreads it again, and what remains splits as ADR-048 splits it.
+   * Each test also checks that what was held, carried and issued adds up to
+   * the cost given, in the answer and in the rows it wrote.
+   */
+  describe('a late cost following stock moved to another lot (ADR-094, D5)', () => {
+    const tracked = (s: Setup) => variant(s, 'VITC-90', 'good', true);
+
+    /** Received by hand with no price into a lot typed as printed: it waits. */
+    async function unpriced(
+      s: Setup,
+      variantId: string,
+      quantity: string,
+      code: string,
+    ) {
+      const movementId = await move(s, {
+        variantId,
+        toLocationId: s.shelf,
+        quantity,
+        reason: 'receipt',
+        lot: { code },
+      });
+      return (await valuationOf(db, movementId)).id;
+    }
+
+    async function ship(
+      s: Setup,
+      variantId: string,
+      lotId: string,
+      quantity: string,
+    ) {
+      await move(s, {
+        variantId,
+        lotId,
+        fromLocationId: s.shelf,
+        quantity,
+        reason: 'shipment',
+      });
+    }
+
+    /** Move to another lot: one of the item's by id, or a new code. */
+    async function moveToLot(
+      s: Setup,
+      lotId: string,
+      quantity: string,
+      to: { toLotId: string } | { lot: { code: string } },
+      at = s.shelf,
+    ) {
+      const res = await s.agent
+        .post(`/v1/stock/lots/${lotId}/lot-changes`)
+        .send({
+          locationId: at,
+          quantity,
+          note: 'Two runs in one delivery',
+          ...to,
+        })
+        .expect(201);
+      return body<{
+        movement: { id: string };
+        toLot: { id: string; code: string };
+        needsCost: boolean;
+      }>(res);
+    }
+
+    /** A lot change's value row into the lot it enters. */
+    async function rowInOf(movementId: string) {
+      const rows = await db
+        .select()
+        .from(stockValuations)
+        .where(eq(stockValuations.movementId, movementId));
+      return rows.find((row) => !row.quantity.startsWith('-'))!;
+    }
+
+    async function waitingIds(s: Setup) {
+      return (await needsCost(s)).map((entry) => entry.id);
+    }
+
+    async function issuedRows() {
+      const rows = await db
+        .select({
+          lotId: stockValuations.lotId,
+          value: stockValuations.value,
+        })
+        .from(stockValuations)
+        .where(eq(stockValuations.kind, 'issued'));
+      return rows;
+    }
+
+    async function total(s: Setup) {
+      const res = await s.agent.get('/v1/costs/valuation').expect(200);
+      return body<{ valuation: { total: string } }>(res).valuation.total;
+    }
+
+    async function historyOf(s: Setup, lotId: string) {
+      const res = await s.agent.get(`/v1/costs/lots/${lotId}`).expect(200);
+      return body<{ lotCost: { entries: Record<string, unknown>[] } }>(res)
+        .lotCost.entries;
+    }
+
+    /**
+     * The rows the latest late value wrote, in its one transaction, add up
+     * to it: every part carried out of one pool arrives in another.
+     */
+    async function expectRowsToSum(change: string) {
+      const { rows } = await db.execute<{ total: string }>(sql`
+        select coalesce(sum(v.value), 0)::text as total
+        from stock_valuations v
+        where v.kind in ('correction', 'run_close', 'issued')
+          and v.created_at = (
+            select max(c.created_at)
+            from stock_valuations c
+            where c.kind in ('correction', 'run_close', 'issued')
+          )
+      `);
+      expect(millionths(rows[0].total)).toBe(millionths(change));
+    }
+
+    /** Held, issued and what followed add up to the change, as written. */
+    async function expectToAddUp(cost: CorrectedCost, change: string) {
+      const parts = [
+        cost.held,
+        cost.issued,
+        ...cost.followed.map((lot) => lot.value),
+      ];
+      expect(parts.reduce((sum, part) => sum + millionths(part), 0n)).toBe(
+        millionths(change),
+      );
+      await expectRowsToSum(change);
+    }
+
+    /**
+     * No lot of the code holds more than its units at the cost given, the
+     * highest where a test gives more than one: a part counted twice would
+     * (ADR-094, D5). The cost given is a value for a quantity, as a batch's
+     * is for its output, so a share rounded to the ledger's six places
+     * passes. Only the lots named, where a test names them.
+     */
+    async function expectNoLotOver(
+      variantId: string,
+      given: { value: string; quantity: string },
+      only?: string[],
+    ) {
+      const pools = await db.execute<{
+        lot_id: string | null;
+        quantity: string;
+        value: string;
+      }>(sql`
+        select lot_id, quantity::text, value::text
+        from valuation_pools
+        where variant_id = ${variantId}::uuid
+      `);
+      const value = millionths(given.value);
+      const quantity = millionths(given.quantity);
+      const named = pools.rows.filter(
+        (pool) => !only || only.includes(pool.lot_id!),
+      );
+      expect(named.length).toBeGreaterThan(0);
+      for (const pool of named) {
+        const most = millionths(pool.quantity) * value + 10n * quantity;
+        expect({
+          lotId: pool.lot_id,
+          over: millionths(pool.value) * quantity > most,
+        }).toEqual({ lotId: pool.lot_id, over: false });
+      }
+    }
+
+    /** A unit price as the cost given for one unit. */
+    const each = (unitPrice: string) => ({ value: unitPrice, quantity: '1' });
+
+    it('carries 40.00 of 80.00 to the 50 moved, 20 of them the receipt’s by what the lot held: each lot 100.00 for 50, nothing issued, Stock value 200.00', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      await buy(s, vitc, '60', cad('2.00'), { code: 'A' });
+      const receipt = await unpriced(s, vitc, '40', 'A');
+      const a = await lotIdOf(db, 'A');
+
+      const moved = await moveToLot(s, a, '50', { lot: { code: 'B' } });
+      const b = moved.toLot.id;
+      expect(moved.needsCost).toBe(true);
+      expect(await poolOf(db, vitc, b)).toMatchObject({
+        quantity: '50.0000',
+        value: '60.000000',
+      });
+
+      const cost = await setCost(s, receipt, cad('2.00'));
+      expect(cost).toEqual({
+        valuationId: receipt,
+        value: '80.000000',
+        held: '40.000000',
+        issued: '0.000000',
+        followed: [{ lotId: b, lotCode: 'B', value: '40.000000' }],
+      });
+      await expectToAddUp(cost, '80.000000');
+
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '50.0000',
+        value: '100.000000',
+      });
+      expect(await poolOf(db, vitc, b)).toMatchObject({
+        quantity: '50.0000',
+        value: '100.000000',
+      });
+      expect(await issuedRows()).toEqual([]);
+      // Lot B waits no longer, and nothing else does.
+      expect(await needsCost(s)).toEqual([]);
+      expect(await total(s)).toBe('200.000000');
+      await expectNoLotOver(vitc, each('2.00'));
+
+      // Each lot's history adds up and says where the rest went: the whole
+      // cost given, the part carried on to B; in B, the part that came.
+      expect((await historyOf(s, a)).slice(0, 2)).toEqual([
+        expect.objectContaining({
+          kind: 'correction',
+          value: '-40.000000',
+          carried: 'to',
+          otherLotId: b,
+          otherLotCode: 'B',
+        }),
+        expect.objectContaining({
+          kind: 'correction',
+          value: '80.000000',
+          unitPrice: '2.0000',
+          carried: null,
+          otherLotId: null,
+        }),
+      ]);
+      expect(await historyOf(s, b)).toEqual([
+        expect.objectContaining({
+          kind: 'correction',
+          value: '40.000000',
+          carried: 'from',
+          otherLotId: a,
+          otherLotCode: 'A',
+        }),
+        expect.objectContaining({
+          kind: 'lot_change',
+          value: '60.000000',
+          carried: null,
+          otherLotId: a,
+        }),
+      ]);
+    });
+
+    it('splits what stays after the move as ADR-048 does: 10 received, 5 shipped, 2 of the 5 left moved, costed at 10.00, 20.00 follows, 30.00 held, 50.00 issued', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      const receipt = await unpriced(s, vitc, '10', 'A');
+      const a = await lotIdOf(db, 'A');
+      await ship(s, vitc, a, '5');
+      const moved = await moveToLot(s, a, '2', { lot: { code: 'B' } });
+
+      const cost = await setCost(s, receipt, cad('10.00'));
+      expect(cost).toEqual({
+        valuationId: receipt,
+        value: '100.000000',
+        held: '30.000000',
+        issued: '50.000000',
+        followed: [{ lotId: moved.toLot.id, lotCode: 'B', value: '20.000000' }],
+      });
+      await expectToAddUp(cost, '100.000000');
+
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '3.0000',
+        value: '30.000000',
+      });
+      expect(await poolOf(db, vitc, moved.toLot.id)).toMatchObject({
+        quantity: '2.0000',
+        value: '20.000000',
+      });
+      // What went with the 5 shipped alone is issued; the part carried never.
+      expect(await issuedRows()).toEqual([{ lotId: a, value: '50.000000' }]);
+      await expectNoLotOver(vitc, each('10.00'));
+    });
+
+    it('values both lots of one receipt part moved and costed once, nothing issued', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      const receipt = await unpriced(s, vitc, '100', 'A');
+      const a = await lotIdOf(db, 'A');
+      const moved = await moveToLot(s, a, '30', { lot: { code: 'B' } });
+
+      const cost = await setCost(s, receipt, cad('2.00'));
+      expect(cost).toMatchObject({
+        held: '140.000000',
+        issued: '0.000000',
+        followed: [{ lotCode: 'B', value: '60.000000' }],
+      });
+      await expectToAddUp(cost, '200.000000');
+
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '70.0000',
+        value: '140.000000',
+      });
+      expect(await poolOf(db, vitc, moved.toLot.id)).toMatchObject({
+        quantity: '30.0000',
+        value: '60.000000',
+      });
+      expect(await issuedRows()).toEqual([]);
+      expect(await needsCost(s)).toEqual([]);
+      await expectNoLotOver(vitc, each('2.00'));
+    });
+
+    it('gives the second lot the same share whatever the first ships after the move', async () => {
+      /**
+       * The first example's lots, under codes of their own in each
+       * organization, the first shipping 40 after the move, or nothing.
+       */
+      async function costed(
+        slugish: string,
+        shipped: string | null,
+        [first, second]: [string, string],
+      ) {
+        const s = await setup(slugish);
+        const vitc = await tracked(s);
+        await buy(s, vitc, '60', cad('2.00'), { code: first });
+        const receipt = await unpriced(s, vitc, '40', first);
+        const a = await lotIdOf(db, first);
+        const moved = await moveToLot(s, a, '50', { lot: { code: second } });
+        if (shipped) await ship(s, vitc, a, shipped);
+
+        const cost = await setCost(s, receipt, cad('2.00'));
+        await expectToAddUp(cost, '80.000000');
+        // The lot moved to alone. The first, after its 40 shipped at the
+        // lot's average with the receipt's 40 at nothing, holds 32.00 for
+        // its 10: ADR-048 counts all 10 as the receipt's, with or without a
+        // move.
+        await expectNoLotOver(vitc, each('2.00'), [moved.toLot.id]);
+        return {
+          cost,
+          second: await poolOf(db, vitc, moved.toLot.id),
+        };
+      }
+
+      const without = await costed('alpha', null, ['A', 'B']);
+      const after = await costed('beta', '40', ['C', 'D']);
+
+      expect(after.cost.followed.map((lot) => lot.value)).toEqual([
+        '40.000000',
+      ]);
+      expect(after.cost.followed.map((lot) => lot.value)).toEqual(
+        without.cost.followed.map((lot) => lot.value),
+      );
+      expect(after.second.value).toBe(without.second.value);
+      expect(after.second.value).toBe('100.000000');
+      // The shipment changes the first lot's split alone: of the receipt's
+      // 20 left there, 10 are gone.
+      expect(after.cost).toMatchObject({
+        held: '20.000000',
+        issued: '20.000000',
+      });
+    });
+
+    it('follows a chain of two moves, each lot waiting until the first receipt is costed', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      const receipt = await unpriced(s, vitc, '100', 'A');
+      const a = await lotIdOf(db, 'A');
+      const toB = await moveToLot(s, a, '40', { lot: { code: 'B' } });
+      const toC = await moveToLot(s, toB.toLot.id, '10', {
+        lot: { code: 'C' },
+      });
+      expect(toC.needsCost).toBe(true);
+      expect((await waitingIds(s)).sort()).toEqual(
+        [
+          receipt,
+          (await rowInOf(toB.movement.id)).id,
+          (await rowInOf(toC.movement.id)).id,
+        ].sort(),
+      );
+
+      const cost = await setCost(s, receipt, cad('1.00'));
+      expect(cost).toMatchObject({
+        held: '60.000000',
+        issued: '0.000000',
+        followed: [
+          { lotCode: 'B', value: '30.000000' },
+          { lotCode: 'C', value: '10.000000' },
+        ],
+      });
+      await expectToAddUp(cost, '100.000000');
+
+      expect(await poolOf(db, vitc, toB.toLot.id)).toMatchObject({
+        quantity: '30.0000',
+        value: '30.000000',
+      });
+      expect(await poolOf(db, vitc, toC.toLot.id)).toMatchObject({
+        quantity: '10.0000',
+        value: '10.000000',
+      });
+      expect(await needsCost(s)).toEqual([]);
+      await expectNoLotOver(vitc, each('1.00'));
+    });
+
+    it('follows stock moved and moved back, the part back held in the first lot', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      const receipt = await unpriced(s, vitc, '10', 'A');
+      const a = await lotIdOf(db, 'A');
+      const out = await moveToLot(s, a, '4', { lot: { code: 'B' } });
+      await moveToLot(s, out.toLot.id, '2', { toLotId: a });
+
+      const cost = await setCost(s, receipt, cad('10.00'));
+      expect(cost).toEqual({
+        valuationId: receipt,
+        value: '100.000000',
+        held: '80.000000',
+        issued: '0.000000',
+        followed: [{ lotId: out.toLot.id, lotCode: 'B', value: '20.000000' }],
+      });
+      await expectToAddUp(cost, '100.000000');
+
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '8.0000',
+        value: '80.000000',
+      });
+      expect(await poolOf(db, vitc, out.toLot.id)).toMatchObject({
+        quantity: '2.0000',
+        value: '20.000000',
+      });
+      expect(await needsCost(s)).toEqual([]);
+      await expectNoLotOver(vitc, each('10.00'));
+    });
+
+    it('holds no more than the stock back in the first lot: 10 received, 6 shipped, the 4 left moved away and back, costed at 10.00, 40.00 held and 60.00 issued', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      const receipt = await unpriced(s, vitc, '10', 'A');
+      const a = await lotIdOf(db, 'A');
+      await ship(s, vitc, a, '6');
+      const out = await moveToLot(s, a, '4', { lot: { code: 'B' } });
+      await moveToLot(s, out.toLot.id, '4', { toLotId: a });
+
+      // The 4 back are the receipt's 4 that left; the 6 it had besides
+      // were shipped, so they are not counted again as the 4 now there.
+      const cost = await setCost(s, receipt, cad('10.00'));
+      expect(cost).toEqual({
+        valuationId: receipt,
+        value: '100.000000',
+        held: '40.000000',
+        issued: '60.000000',
+        followed: [],
+      });
+      await expectToAddUp(cost, '100.000000');
+
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '4.0000',
+        value: '40.000000',
+      });
+      expect(await poolOf(db, vitc, out.toLot.id)).toMatchObject({
+        quantity: '0.0000',
+        value: '0.000000',
+      });
+      expect(await issuedRows()).toEqual([{ lotId: a, value: '60.000000' }]);
+      expect(await total(s)).toBe('40.000000');
+      await expectNoLotOver(vitc, each('10.00'));
+    });
+
+    it('carries a correction after the move, upward and then downward, by what the lot held when it moved', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      await buy(s, vitc, '60', cad('2.00'), { code: 'A' });
+      const receipt = await unpriced(s, vitc, '40', 'A');
+      const a = await lotIdOf(db, 'A');
+
+      // Costed before the move: the move carries it at the lot's average.
+      const first = await setCost(s, receipt, cad('2.00'));
+      expect(first).toMatchObject({ held: '80.000000', followed: [] });
+      const moved = await moveToLot(s, a, '50', { lot: { code: 'B' } });
+      const b = moved.toLot.id;
+      expect(moved.needsCost).toBe(false);
+      expect(await poolOf(db, vitc, b)).toMatchObject({
+        value: '100.000000',
+      });
+
+      // 3.00: 40.00 more, half of it with the 20 of the receipt's moved.
+      const up = await setCost(s, receipt, cad('3.00'));
+      expect(up).toMatchObject({
+        value: '120.000000',
+        held: '20.000000',
+        issued: '0.000000',
+        followed: [{ lotId: b, value: '20.000000' }],
+      });
+      await expectToAddUp(up, '40.000000');
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        value: '120.000000',
+      });
+      expect(await poolOf(db, vitc, b)).toMatchObject({
+        value: '120.000000',
+      });
+      await expectNoLotOver(vitc, each('3.00'));
+
+      // 1.00: 80.00 less, measured from all it carries now, B's part too.
+      const down = await setCost(s, receipt, cad('1.00'));
+      expect(down).toMatchObject({
+        value: '40.000000',
+        held: '-40.000000',
+        issued: '0.000000',
+        followed: [{ lotId: b, value: '-40.000000' }],
+      });
+      await expectToAddUp(down, '-80.000000');
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '50.0000',
+        value: '80.000000',
+      });
+      expect(await poolOf(db, vitc, b)).toMatchObject({
+        quantity: '50.0000',
+        value: '80.000000',
+      });
+      expect(await total(s)).toBe('160.000000');
+      // The 60 bought at 2.00 are the dearest left.
+      await expectNoLotOver(vitc, each('2.00'));
+    });
+
+    it('carries a batch’s cost at close to its output moved to another lot before it', async () => {
+      const s = await setup('alpha');
+      const run = await releasedRun(s);
+
+      await s.agent
+        .post(`/v1/production-orders/${run.runId}/output`)
+        .send({ quantity: '980', lot: { code: 'FOC-1' } })
+        .expect(201);
+      const first = await lotIdOf(db, 'FOC-1');
+      const moved = await moveToLot(
+        s,
+        first,
+        '280',
+        { lot: { code: 'FOC-2' } },
+        s.wip,
+      );
+      expect(moved.needsCost).toBe(true);
+
+      await s.agent
+        .post(`/v1/production-orders/${run.runId}/close`)
+        .send({})
+        .expect(200);
+
+      // 1240 × 280 ÷ 980 follows the 280; the rest stays with the 700.
+      expect(await poolOf(db, run.output, first)).toMatchObject({
+        quantity: '700.0000',
+        value: '885.714286',
+      });
+      expect(await poolOf(db, run.output, moved.toLot.id)).toMatchObject({
+        quantity: '280.0000',
+        value: '354.285714',
+      });
+      await expectRowsToSum('1240.000000');
+      expect(await issuedRows()).toEqual([]);
+      expect(await needsCost(s)).toEqual([]);
+      await expectNoLotOver(run.output, {
+        value: '1240.000000',
+        quantity: '980',
+      });
+
+      // The batch's output still carries the whole of its cost.
+      expect(await runCost(s, run.runId)).toMatchObject({
+        materialCost: '1240.000000',
+        unitCost: '1.265306',
+        outputs: [
+          { lotCode: 'FOC-1', quantity: '980.0000', value: '1240.000000' },
+        ],
+      });
+    });
+
+    it('keeps the stock moved waiting while anything the first lot waited for still does, its pool taking no average, and not after', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      const one = await unpriced(s, vitc, '30', 'A');
+      const two = await unpriced(s, vitc, '20', 'A');
+      const a = await lotIdOf(db, 'A');
+      const moved = await moveToLot(s, a, '10', { lot: { code: 'B' } });
+      const rowIn = (await rowInOf(moved.movement.id)).id;
+
+      // The first costed: 6 of the 10 moved were its, by what the lot held.
+      const costedOne = await setCost(s, one, cad('1.00'));
+      expect(costedOne.followed).toMatchObject([{ value: '6.000000' }]);
+      await expectToAddUp(costedOne, '30.000000');
+      expect(await waitingIds(s)).toContain(rowIn);
+
+      // Its pool still gives no average (#650): stock counted in waits too.
+      const found = body<{ movement: { id: string }; needsCost: boolean }>(
+        await s.agent
+          .post('/v1/stock/movements')
+          .send({
+            variantId: vitc,
+            lotId: moved.toLot.id,
+            toLocationId: s.shelf,
+            quantity: '1',
+            reason: 'adjustment',
+            reasonDetail: 'found',
+            note: 'A box found behind the cartons at the count',
+          })
+          .expect(201),
+      );
+      expect(found.needsCost).toBe(true);
+
+      // The second costed: the other 4, and the stock moved waits no more.
+      const costedTwo = await setCost(s, two, cad('2.00'));
+      expect(costedTwo.followed).toMatchObject([{ value: '8.000000' }]);
+      await expectToAddUp(costedTwo, '40.000000');
+      expect(await waitingIds(s)).toEqual([
+        (await valuationOf(db, found.movement.id)).id,
+      ]);
+      expect(await poolOf(db, vitc, moved.toLot.id)).toMatchObject({
+        quantity: '11.0000',
+        value: '14.000000',
+      });
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '40.0000',
+        value: '56.000000',
+      });
+      await expectNoLotOver(vitc, each('2.00'));
+    });
+
+    it('refuses a cost by hand on the stock moved in, naming the lot to cost', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      await unpriced(s, vitc, '40', 'A');
+      const moved = await moveToLot(s, await lotIdOf(db, 'A'), '10', {
+        lot: { code: 'B' },
+      });
+      const rowIn = await rowInOf(moved.movement.id);
+      expect(rowIn.needsCost).toBe(true);
+
+      const res = await s.agent
+        .put(`/v1/costs/valuations/${rowIn.id}`)
+        .send(cad('2.00'))
+        .expect(409);
+      expect(body<{ message: string }>(res).message).toBe(
+        said('en', 'stock.stockMovedInFromLot', { code: 'A' }),
+      );
+      expect(
+        await db
+          .select()
+          .from(stockValuations)
+          .where(eq(stockValuations.kind, 'correction')),
+      ).toEqual([]);
+      // Refused, so no cost was given and no lot holds any.
+      await expectNoLotOver(vitc, each('0'));
+    });
+
+    /**
+     * A cost given while stock moves out of the same lot. The first lot's
+     * pool is held, so the cost stops half way, having taken the lot it
+     * may carry to; the move then waits for that lot. Each takes the lots
+     * in one order, so neither waits on the other: the cost carries to the
+     * first move, and the second takes the lot's average once it is costed.
+     * The second lot is the older, so taking the first lot's pool first
+     * would be the other order.
+     */
+    it('gives a cost and a move at once, neither waiting on the other (two at once)', async () => {
+      const s = await setup('alpha');
+      const vitc = await tracked(s);
+      await buy(s, vitc, '10', cad('1.00'), { code: 'B' });
+      await buy(s, vitc, '60', cad('2.00'), { code: 'A' });
+      const receipt = await unpriced(s, vitc, '40', 'A');
+      const a = await lotIdOf(db, 'A');
+      const b = await lotIdOf(db, 'B');
+      expect(b < a).toBe(true);
+      await moveToLot(s, a, '50', { toLotId: b });
+
+      let release!: () => void;
+      const released = new Promise<void>((resolve) => (release = resolve));
+      let held!: () => void;
+      const holding = new Promise<void>((resolve) => (held = resolve));
+      const holder = db.transaction(async (tx) => {
+        await tx.execute(sql`
+          select 1 from valuation_pools
+          where variant_id = ${vitc}::uuid and lot_id = ${a}::uuid
+          for update
+        `);
+        held();
+        await released;
+      });
+      await holding;
+
+      const costing = s.agent
+        .put(`/v1/costs/valuations/${receipt}`)
+        .send(cad('2.00'))
+        .then((res) => res);
+      await waitersReach(1);
+      const moving = s.agent
+        .post(`/v1/stock/lots/${a}/lot-changes`)
+        .send({
+          locationId: s.shelf,
+          quantity: '10',
+          toLotId: b,
+          note: 'Two runs in one delivery',
+        })
+        .then((res) => res);
+      await waitersReach(2);
+      release();
+      await holder;
+
+      const [costed, moved] = await Promise.all([costing, moving]);
+      expect(costed.status).toBe(200);
+      expect(moved.status).toBe(201);
+      expect(body<{ cost: CorrectedCost }>(costed).cost.followed).toEqual([
+        { lotId: b, lotCode: 'B', value: '40.000000' },
+      ]);
+      expect(body<{ needsCost: boolean }>(moved).needsCost).toBe(false);
+
+      // 10 at 1.00, 60 at 2.00 and 40 at 2.00: 210.00, 130.00 of it in B.
+      expect(await poolOf(db, vitc, b)).toMatchObject({
+        quantity: '70.0000',
+        value: '130.000000',
+      });
+      expect(await poolOf(db, vitc, a)).toMatchObject({
+        quantity: '40.0000',
+        value: '80.000000',
+      });
+      expect(await needsCost(s)).toEqual([]);
+      await expectNoLotOver(vitc, each('2.00'));
+    });
+
+    /** Until this many of the test database's sessions wait on a lock. */
+    async function waitersReach(count: number) {
+      for (let tries = 0; tries < 200; tries++) {
+        const { rows } = await db.execute<{ waiting: number }>(sql`
+          select count(*)::int as waiting
+          from pg_stat_activity
+          where datname = current_database() and wait_event_type = 'Lock'
+        `);
+        if (rows[0].waiting >= count) return;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      throw new Error(`Fewer than ${count} sessions wait on a lock`);
+    }
   });
 
   describe('exchange rates', () => {

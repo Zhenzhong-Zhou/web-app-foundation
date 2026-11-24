@@ -22,9 +22,12 @@ const ROW: StockPile = {
   lotId: null,
   lotCode: null,
   lotExpiresAt: null,
+  lotExpiry: null,
   lotIsAssigned: null,
+  lotSupplierLot: null,
   quantity: '12',
   emptiedOn: null,
+  issuedToRun: null,
 };
 
 // stock.takeableSkuTakenHeld, as the server words it, with the demo's codes.

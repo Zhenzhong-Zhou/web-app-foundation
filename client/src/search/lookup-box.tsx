@@ -11,7 +11,14 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,13 +26,17 @@ import type { LookupGroup, LookupResult } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
+import { lotExpiry } from '../inventory/lot-expiry';
+import { supplierLotPart } from '../inventory/supplier-lot-part';
 import { BarButton } from '../layout/bar-button';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
+import { SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
+import { useExpiryStatus } from '../lib/use-expiry-status';
 import { productTypeIcon, typeAfter } from '../products/product-types';
 import { rem } from '../theme/rem';
 import { KIND_LABELS, LIST_LABELS, listOf, pathOf } from './lookup-kinds';
@@ -327,12 +338,10 @@ function LookupField({
                     </Typography>
                   )}
                 </Stack>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center', minWidth: 0 }}
-                >
-                  {option.result.detail && (
+                {option.kind === 'lot' ? (
+                  <LotLine result={option.result} />
+                ) : (
+                  option.result.detail && (
                     <Typography
                       variant="body2"
                       noWrap
@@ -344,11 +353,8 @@ function LookupField({
                       {option.result.type &&
                         typeAfter(option.result.type, intl)}
                     </Typography>
-                  )}
-                  {option.result.expiresAt && (
-                    <ExpiryChip expiresAt={option.result.expiresAt} />
-                  )}
-                </Stack>
+                  )
+                )}
               </Stack>
             </Stack>
           )}
@@ -404,6 +410,52 @@ function optionsOf(groups: LookupGroup[], query: string): Option[] {
     const listed = results.some((result) => !result.close);
     return to && listed ? [...rows, { type: 'all', kind, to }] : rows;
   });
+}
+
+/**
+ * A lot's second line (#618; ADR-094, R5, R6 and R9): its item's code,
+ * then its expiry with its label, "Expires Nov 19, 2028", or the chip that
+ * says how near it is, or "Expiry to add" while it is not known; then its
+ * supplier's lot, which finds it too, or "Supplier's lot to add" for a
+ * code made here with none. A lot that does not expire says nothing of
+ * it, as before. The parts are dotted apart and wrap between them, so
+ * none runs into the one before it.
+ */
+function LotLine({ result }: { result: LookupResult }) {
+  const intl = useIntl();
+  const near = useExpiryStatus(result.expiresAt);
+
+  const parts: { key: string; part: ReactNode }[] = [];
+  if (result.detail) parts.push({ key: 'sku', part: result.detail });
+  if (result.expiry === 'unknown' || result.expiresAt) {
+    parts.push({
+      key: 'expiry',
+      part: near ? (
+        <ExpiryChip expiresAt={result.expiresAt} expiry={result.expiry} />
+      ) : (
+        lotExpiry(result, intl)
+      ),
+    });
+  }
+  const supplier = supplierLotPart(result, intl);
+  if (supplier) parts.push({ key: 'supplierLot', part: supplier });
+
+  return (
+    <Typography
+      component="div"
+      variant="body2"
+      sx={{ color: 'text.secondary' }}
+    >
+      {parts.map(({ key, part }, index) => (
+        <Fragment key={key}>
+          {index > 0 && SEPARATOR}
+          <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+            {part}
+          </Box>
+        </Fragment>
+      ))}
+    </Typography>
+  );
 }
 
 /** A recently opened record: its name, and what kind it is and when. */

@@ -95,6 +95,10 @@ function detailsOf(
   const entries = Object.entries(payload);
 
   for (const [key, value] of entries) {
+    // A move between lots records which lot change it was beside its
+    // reason, and reads as that action alone, "Reason: Moved to another
+    // lot", as its row on Movements does (ADR-094, U1).
+    if (key === 'reason' && 'lotChange' in payload) continue;
     const field = say(fieldOf(key)?.name ?? WORDS.detail);
 
     if (key !== 'filters' && isChange(value)) {

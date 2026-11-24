@@ -80,6 +80,7 @@ export type CurrentSession = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -335,6 +336,7 @@ export type Role = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -401,6 +403,7 @@ export type CataloguePermission = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -463,6 +466,7 @@ export type CataloguePermission = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -531,6 +535,7 @@ export type RoleTemplate = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -618,6 +623,7 @@ export type RoleDetail = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -688,6 +694,7 @@ export type CreateRoleDto = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -754,6 +761,7 @@ export type UpdateRoleDto = {
     | 'stock.move'
     | 'stock.adjust'
     | 'stock.reorder'
+    | 'stock.lot_made_here'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -789,8 +797,8 @@ export type AuditLink = {
     | 'location'
     | 'role'
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'product'
     | 'partner'
     | 'product_category'
@@ -1130,6 +1138,7 @@ export type ProductPage = {
 
 export type VariantOption = {
   id: string;
+  productId: string;
   sku: string;
   variantName: string | null;
   productName: string;
@@ -1613,6 +1622,7 @@ export type RunLine = {
 };
 
 export type ComponentLot = {
+  expiry: 'date' | 'unknown' | 'none';
   componentVariantId: string;
   lotId: string;
   code: string;
@@ -1647,6 +1657,7 @@ export type RunDetail = {
 };
 
 export type IssuePlanLot = {
+  expiry: 'date' | 'unknown' | 'none';
   lotId: string;
   code: string;
   expiresAt: string | null;
@@ -1809,18 +1820,15 @@ export type CancelledRun = {
 };
 
 export type MovementLotDto = {
-  code: string;
+  expiry?: 'date' | 'unknown' | 'none';
+  code?: string;
+  makeCode?: boolean;
+  mustBeNew?: boolean;
+  supplierLot?: string;
   expiresAt?: string;
-  isAssigned?: boolean;
 };
 
 export type RecordMovementDto = {
-  variantId: string;
-  lotId?: string;
-  lot?: MovementLotDto;
-  fromLocationId?: string;
-  toLocationId?: string;
-  quantity: string;
   reason:
     | 'receipt'
     | 'shipment'
@@ -1830,6 +1838,12 @@ export type RecordMovementDto = {
     | 'consumption'
     | 'sample'
     | 'return';
+  variantId: string;
+  lotId?: string;
+  lot?: MovementLotDto;
+  fromLocationId?: string;
+  toLocationId?: string;
+  quantity: string;
   reasonDetail?: string;
   recipientPartnerId?: string;
   note?: string;
@@ -1838,6 +1852,7 @@ export type RecordMovementDto = {
 export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
   needsCost: boolean;
+  lotCode: string | null;
 };
 
 export type MovementDocument = {
@@ -1852,6 +1867,7 @@ export type MovementRecipient = {
 };
 
 export type Movement = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   variantId: string;
   productId: string;
@@ -1876,6 +1892,10 @@ export type Movement = {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
+  lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
+  toLotId: string | null;
+  toLotCode: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
@@ -1910,15 +1930,48 @@ export type StockVariant = {
 };
 
 export type Lot = {
+  expiry: 'date' | 'unknown' | 'none';
   id: string;
   code: string;
   expiresAt: string | null;
   isAssigned: boolean;
+  supplierLot: string | null;
 };
 
 export type UpdateLotDto = {
+  expiry?: 'date' | 'unknown' | 'none';
+  madeHere?: true;
   code?: string;
+  supplierLot?: string;
   expiresAt?: string;
+};
+
+export type MoveToNewLotDto = {
+  expiry?: 'date' | 'unknown' | 'none';
+  code?: string;
+  makeCode?: boolean;
+  supplierLot?: string;
+  expiresAt?: string;
+};
+
+export type MoveToLotDto = {
+  locationId: string;
+  quantity: string;
+  toLotId?: string;
+  lot?: MoveToNewLotDto;
+  note: string;
+};
+
+export type MovedLot = {
+  id: string;
+  code: string;
+};
+
+export type LotChanged = {
+  movement: RecordedMovement;
+  fromLot: MovedLot;
+  toLot: MovedLot;
+  needsCost: boolean;
 };
 
 export type StockHere = {
@@ -1956,6 +2009,7 @@ export type StockCodeRow = {
   status: 'out' | 'low' | 'discontinued' | 'enough' | null;
   needsCost: boolean;
   stocked: boolean;
+  tracksLots: boolean;
   here: StockHere | null;
 };
 
@@ -1973,7 +2027,14 @@ export type StockCodeCounts = {
   total: number;
 };
 
+export type IssuedRun = {
+  id: string;
+  reference: string | null;
+  quantityPlanned: string;
+};
+
 export type StockPile = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   variantId: string;
   sku: string;
@@ -1987,8 +2048,10 @@ export type StockPile = {
   lotCode: string | null;
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
   quantity: string;
   emptiedOn: string | null;
+  issuedToRun: IssuedRun | null;
 };
 
 export type StockPlace = {
@@ -2006,6 +2069,7 @@ export type StockCodePlaces = {
 };
 
 export type StockLotRow = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   variantId: string;
   sku: string;
@@ -2019,8 +2083,10 @@ export type StockLotRow = {
   lotCode: string | null;
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
   quantity: string;
   emptiedOn: string | null;
+  issuedToRun: IssuedRun | null;
   productId: string;
   type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
   coverFileId: string | null;
@@ -2039,20 +2105,27 @@ export type StockLotCounts = {
   expiring: number;
   expired: number;
   needsCost: number;
+  detailsToAdd: number;
   total: number;
 };
 
 export type LotMatch = {
+  expiry: 'date' | 'unknown' | 'none';
   id: string;
   code: string;
   expiresAt: string | null;
+  supplierLot: string | null;
+  isAssigned: boolean;
   sku: string;
 };
 
 export type TracedLot = {
+  expiry: 'date' | 'unknown' | 'none';
   id: string;
   code: string;
   expiresAt: string | null;
+  isAssigned: boolean;
+  supplierLot: string | null;
   variantId: string;
   productId: string;
   sku: string;
@@ -2069,14 +2142,26 @@ export type LotBalance = {
   quantity: string;
 };
 
+export type MovedOnLot = {
+  lotId: string;
+  code: string;
+  balances: Array<LotBalance>;
+  usable: string;
+  notUsable: string;
+};
+
 export type LotSource = {
-  kind: 'production' | 'receipt';
+  kind: 'receipt' | 'production' | 'lot_change';
+  reasonDetail: string | null;
   at: string;
   quantity: string;
   orderId: string | null;
   orderNumber: string | null;
   orderReference: string | null;
+  partnerId: string | null;
   supplierName: string | null;
+  fromLotId: string | null;
+  fromLotCode: string | null;
   runId: string | null;
   runReference: string | null;
   licenceId: string | null;
@@ -2106,6 +2191,8 @@ export type LotRecipient = {
   isSampleOrder: boolean;
   lotId: string;
   lotCode: string;
+  lotSupplierLot: string | null;
+  lotIsAssigned: boolean;
   sku: string;
   shipped: string;
   sampled: string;
@@ -2118,6 +2205,7 @@ export type LotTrace = {
   balances: Array<LotBalance>;
   usable: string;
   notUsable: string;
+  movedOnTo: Array<MovedOnLot>;
   sources: Array<LotSource>;
   madeFrom: Array<RelatedLot>;
   wentInto: Array<RelatedLot>;
@@ -2266,9 +2354,12 @@ export type ComingRun = {
 };
 
 export type UsableLot = {
+  expiry: 'date' | 'unknown' | 'none' | null;
   lotId: string | null;
   lotCode: string | null;
   expiresAt: string | null;
+  isAssigned: boolean | null;
+  supplierLot: string | null;
   quantity: string;
   places: number;
 };
@@ -2311,7 +2402,46 @@ export type ProductStock = {
   codes: Array<CodeStanding>;
 };
 
+export type LotTrackingPlace = {
+  locationId: string;
+  locationName: string;
+  locationCode: string | null;
+  locationPath: Array<string>;
+  quantity: string;
+};
+
+export type LotTrackingRun = {
+  id: string;
+  reference: string | null;
+  makes: boolean;
+};
+
+export type LotTrackingQuestion = {
+  variantId: string;
+  sku: string;
+  onHand: string;
+  places: Array<LotTrackingPlace>;
+  runCount: number;
+  runs: Array<LotTrackingRun> | null;
+};
+
+export type StartLotTrackingDto = {
+  expiry?: 'date' | 'unknown' | 'none';
+  supplierLot?: string;
+  expiresAt?: string;
+};
+
+export type StartedLot = {
+  id: string;
+  code: string;
+};
+
+export type LotTrackingStarted = {
+  lot: StartedLot | null;
+};
+
 export type LookupResult = {
+  expiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   title: string;
   detail: string | null;
@@ -2319,6 +2449,8 @@ export type LookupResult = {
   direction: 'sale' | 'purchase' | null;
   fulfillment: 'none' | 'all' | 'part' | null;
   expiresAt: string | null;
+  supplierLot: string | null;
+  isAssigned: boolean | null;
   productId: string | null;
   coverFileId: string | null;
   type:
@@ -2335,8 +2467,8 @@ export type LookupResult = {
 export type LookupGroup = {
   kind:
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'partner'
     | 'creditNote'
     | 'returnAuthorization'
@@ -2378,8 +2510,8 @@ export type WelcomeDone = {
     | 'email'
     | 'jobTitle'
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'product'
     | 'photo';
   id: string | null;
@@ -2498,8 +2630,8 @@ export type RecentEntry = {
   kind:
     | 'run'
     | 'invoice'
-    | 'order'
     | 'lot'
+    | 'order'
     | 'product'
     | 'partner'
     | 'return'
@@ -2596,6 +2728,7 @@ export type Numbering = {
   returnAuthorization: NumberingSeries;
   saleOrder: NumberingSeries;
   purchaseOrder: NumberingSeries;
+  lot: NumberingSeries;
   documentsInDateOrder: boolean;
   today: string;
 };
@@ -2617,6 +2750,7 @@ export type UpdateNumberingDto = {
   returnAuthorization: NumberingSeriesDto;
   saleOrder: NumberingSeriesDto;
   purchaseOrder: NumberingSeriesDto;
+  lot?: NumberingSeriesDto;
   documentsInDateOrder: boolean;
 };
 
@@ -2643,8 +2777,15 @@ export type StockValuationEnvelope = {
 };
 
 export type LotCostEntry = {
+  carried: 'to' | 'from' | null;
   id: string;
-  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  kind:
+    | 'issued'
+    | 'lot_change'
+    | 'movement'
+    | 'run_close'
+    | 'correction'
+    | 'opening';
   reason: string | null;
   quantity: string;
   value: string;
@@ -2654,6 +2795,8 @@ export type LotCostEntry = {
   needsCost: boolean;
   referenceType: string | null;
   referenceId: string | null;
+  otherLotId: string | null;
+  otherLotCode: string | null;
   createdAt: string;
 };
 
@@ -2707,8 +2850,15 @@ export type RunCostEnvelope = {
 
 export type NeedsCostEntry = {
   id: string;
-  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  kind:
+    | 'issued'
+    | 'lot_change'
+    | 'movement'
+    | 'run_close'
+    | 'correction'
+    | 'opening';
   reason: string | null;
+  reasonDetail: string | null;
   sku: string;
   variantId: string;
   productId: string;
@@ -2718,6 +2868,8 @@ export type NeedsCostEntry = {
   coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
+  fromLotId: string | null;
+  fromLotCode: string | null;
   quantity: string;
   unitPrice: string | null;
   currency: string | null;
@@ -2737,11 +2889,18 @@ export type SetCostDto = {
   exchangeRate?: string;
 };
 
+export type FollowedCost = {
+  lotId: string;
+  lotCode: string;
+  value: string;
+};
+
 export type CorrectedCost = {
   valuationId: string;
   value: string;
   held: string;
   issued: string;
+  followed: Array<FollowedCost>;
 };
 
 export type CorrectedCostEnvelope = {
@@ -2981,6 +3140,7 @@ export type OrderPage = {
 export type DeliveryLine = {
   id: string;
   variantId: string;
+  productId: string;
   sku: string;
   tracksLots: boolean;
   unitOfMeasure: string;
@@ -3062,6 +3222,7 @@ export type OrderDocuments = {
 export type OrderLine = {
   id: string;
   variantId: string;
+  productId: string;
   sku: string;
   description: string;
   tracksLots: boolean;
@@ -3109,6 +3270,7 @@ export type OrderDetail = {
 };
 
 export type OrderReceipt = {
+  lotExpiry: 'date' | 'unknown' | 'none' | null;
   id: string;
   createdAt: string;
   productId: string;
@@ -3180,6 +3342,7 @@ export type AddOrderLineDto = {
 export type AddedOrderLine = {
   id: string;
   variantId: string;
+  productId: string;
   sku: string;
   description: string;
   tracksLots: boolean;
@@ -3225,13 +3388,17 @@ export type ReceiveLineDto = {
 
 export type ReceivedMovement = {
   id: string;
+  lotId: string | null;
 };
 
 export type ReceiptEnvelope = {
   movement: ReceivedMovement;
+  needsCost: boolean;
+  lotCode: string | null;
 };
 
 export type ShipmentItem = {
+  expiry: 'date' | 'unknown' | 'none' | null;
   sku: string;
   description: string;
   unitOfMeasure: string;
@@ -3297,6 +3464,7 @@ export type PreviewShipmentDto = {
 };
 
 export type ShipmentPlanLot = {
+  expiry: 'date' | 'unknown' | 'none';
   lotId: string;
   code: string;
   expiresAt: string | null;
@@ -3357,11 +3525,19 @@ export type OrderReturn = {
 };
 
 export type ReturnableLot = {
+  expiry: 'date' | 'unknown' | 'none';
   lotId: string;
   code: string;
   expiresAt: string | null;
   shipped: string;
   returned: string;
+};
+
+export type ReturnableFromBefore = {
+  shipped: string;
+  returned: string;
+  lotId: string | null;
+  lotCode: string | null;
 };
 
 export type ReturnableLine = {
@@ -3372,6 +3548,7 @@ export type ReturnableLine = {
   quantityFulfilled: string;
   quantityReturned: string;
   lots: Array<ReturnableLot>;
+  fromBefore: ReturnableFromBefore | null;
 };
 
 export type ReturnLotDto = {
@@ -3798,6 +3975,7 @@ export const Permission = {
   STOCK_MOVE: 'stock.move',
   STOCK_ADJUST: 'stock.adjust',
   STOCK_REORDER: 'stock.reorder',
+  STOCK_LOT_MADE_HERE: 'stock.lot_made_here',
   COSTS_VIEW: 'costs.view',
   COSTS_UPDATE: 'costs.update',
   PRICE_LISTS_VIEW: 'price_lists.view',
@@ -3851,6 +4029,7 @@ export const AuditAction = {
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
+  PRODUCT_LOT_TRACKING_STARTED: 'product.lot_tracking_started',
   PRODUCT_CATEGORY_CREATED: 'product_category.created',
   PRODUCT_CATEGORY_UPDATED: 'product_category.updated',
   PRODUCT_CATEGORY_DELETED: 'product_category.deleted',
@@ -3878,6 +4057,7 @@ export const AuditAction = {
   PARTNER_CONTACT_UPDATED: 'partner.contact.updated',
   PARTNER_CONTACT_RETIRED: 'partner.contact.retired',
   STOCK_LOT_UPDATED: 'stock.lot_updated',
+  STOCK_LOT_MARKED_MADE_HERE: 'stock.lot_marked_made_here',
   STOCK_VALUATION_COST_SET: 'stock_valuation.cost_set',
   EXCHANGE_RATE_SET: 'exchange_rate.set',
   PRODUCT_LICENCE_CREATED: 'product_licence.created',
@@ -4516,6 +4696,7 @@ export type AuditControllerListV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -4543,6 +4724,7 @@ export type AuditControllerListV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -4633,6 +4815,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -4660,6 +4843,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -4962,6 +5146,7 @@ export type WorkControllerActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -4989,6 +5174,7 @@ export type WorkControllerActivityV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -5079,6 +5265,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product.lot_tracking_started'
       | 'product_category.created'
       | 'product_category.updated'
       | 'product_category.deleted'
@@ -5106,6 +5293,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'partner.contact.updated'
       | 'partner.contact.retired'
       | 'stock.lot_updated'
+      | 'stock.lot_marked_made_here'
       | 'stock_valuation.cost_set'
       | 'exchange_rate.set'
       | 'product_licence.created'
@@ -6132,7 +6320,8 @@ export type StockControllerListMovementsV1Data = {
       | 'production'
       | 'consumption'
       | 'sample'
-      | 'return';
+      | 'return'
+      | 'lot_change';
     from?: string;
     until?: string;
     order?: 'asc' | 'desc';
@@ -6182,7 +6371,8 @@ export type StockControllerExportMovementsV1Data = {
       | 'production'
       | 'consumption'
       | 'sample'
-      | 'return';
+      | 'return'
+      | 'lot_change';
     from?: string;
     until?: string;
     order?: 'asc' | 'desc';
@@ -6246,6 +6436,22 @@ export type StockControllerUpdateLotV1Responses = {
 
 export type StockControllerUpdateLotV1Response =
   StockControllerUpdateLotV1Responses[keyof StockControllerUpdateLotV1Responses];
+
+export type StockControllerMoveToLotV1Data = {
+  body: MoveToLotDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/stock/lots/{id}/lot-changes';
+};
+
+export type StockControllerMoveToLotV1Responses = {
+  201: LotChanged;
+};
+
+export type StockControllerMoveToLotV1Response =
+  StockControllerMoveToLotV1Responses[keyof StockControllerMoveToLotV1Responses];
 
 export type StockGroupedControllerByCodeV1Data = {
   body?: never;
@@ -6380,10 +6586,11 @@ export type StockGroupedControllerByLotV1Data = {
     productId?: string;
     includeEmpty?: string;
     search?: string;
+    limit?: number;
     before?: string;
     sort?: 'expires' | 'item' | 'location' | 'quantity';
     order?: 'asc' | 'desc';
-    limit?: number;
+    detailsToAdd?: string;
   };
   url: '/v1/stock/by-lot';
 };
@@ -6411,6 +6618,7 @@ export type StockGroupedControllerLotCountsV1Data = {
     productId?: string;
     includeEmpty?: string;
     search?: string;
+    detailsToAdd?: string;
   };
   url: '/v1/stock/by-lot/counts';
 };
@@ -6441,10 +6649,11 @@ export type StockGroupedControllerExportByLotV1Data = {
     productId?: string;
     includeEmpty?: string;
     search?: string;
+    limit?: number;
     before?: string;
     sort?: 'expires' | 'item' | 'location' | 'quantity';
     order?: 'asc' | 'desc';
-    limit?: number;
+    detailsToAdd?: string;
   };
   url: '/v1/stock/by-lot/export';
 };
@@ -6704,6 +6913,40 @@ export type WhereItStandsControllerReadV1Responses = {
 
 export type WhereItStandsControllerReadV1Response =
   WhereItStandsControllerReadV1Responses[keyof WhereItStandsControllerReadV1Responses];
+
+export type LotTrackingControllerQuestionV1Data = {
+  body?: never;
+  path: {
+    id: string;
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/products/{id}/variants/{variantId}/lot-tracking';
+};
+
+export type LotTrackingControllerQuestionV1Responses = {
+  200: LotTrackingQuestion;
+};
+
+export type LotTrackingControllerQuestionV1Response =
+  LotTrackingControllerQuestionV1Responses[keyof LotTrackingControllerQuestionV1Responses];
+
+export type LotTrackingControllerStartV1Data = {
+  body: StartLotTrackingDto;
+  path: {
+    id: string;
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/products/{id}/variants/{variantId}/lot-tracking';
+};
+
+export type LotTrackingControllerStartV1Responses = {
+  201: LotTrackingStarted;
+};
+
+export type LotTrackingControllerStartV1Response =
+  LotTrackingControllerStartV1Responses[keyof LotTrackingControllerStartV1Responses];
 
 export type LookupControllerLookupV1Data = {
   body?: never;

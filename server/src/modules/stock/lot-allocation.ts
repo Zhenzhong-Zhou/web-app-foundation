@@ -1,8 +1,10 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
+import type { LotExpiry } from '../../database/schema';
 import type { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { TRACKING_STARTED } from './start-lot';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
@@ -11,6 +13,8 @@ export interface LotCandidate {
   lotId: string;
   code: string;
   expiresAt: string | null;
+  /** Its kind of expiry, for "Expiry to add" (ADR-094, R9). */
+  expiry: LotExpiry;
   /** On hand at the location. A numeric(18,4) string, never a number. */
   onHand: string;
   /** What earliest-expiry-first takes from this lot. '0' when none. */
@@ -27,7 +31,8 @@ export interface CandidateQuery {
   /**
    * Only lots that reached this location for this run. Close consumes what
    * was issued to the run, not whatever else happens to share its location
-   * (ADR-039).
+   * (ADR-039); the start lot there too, for a run released before the
+   * component's lot tracking started (ADR-094, Q2a; candidateScope).
    */
   fromRunId?: string;
   /**
@@ -50,7 +55,9 @@ export interface CandidateQuery {
  *
  * Sorted by expiry with no-expiry lots last, then by when the lot was first
  * seen, then by id, so two lots with the same date always come out in the same
- * order and a preview matches the release that follows it.
+ * order and a preview matches the release that follows it. A lot whose
+ * expiry is not known yet has no day, so it is taken as one that does not
+ * expire, after the dated ones, until #333 decides picking (ADR-094, Q5a).
  *
  * All arithmetic is in SQL. A running total over numeric(18,4) is exactly
  * what ADR-025 kept out of JavaScript; `take` is `least(on hand, still
@@ -66,7 +73,7 @@ export async function lotCandidates(
     with candidates as (${scope}),
     ordered as (
       select
-        lot_id, code, expires_at, created_at, quantity, preferred,
+        lot_id, code, expires_at, expiry, created_at, quantity, preferred,
         coalesce(
           sum(quantity) over (
             order by preferred desc, expires_at asc nulls last, created_at asc, lot_id asc
@@ -80,6 +87,7 @@ export async function lotCandidates(
       lot_id,
       code,
       expires_at,
+      expiry,
       quantity::text as on_hand,
       greatest(least(quantity, ${query.quantity}::numeric - before), 0)::text as take,
       least(quantity, ${query.quantity}::numeric - before) > 0 as taken
@@ -102,6 +110,7 @@ export async function lotCandidates(
       lotId: row.lot_id as string,
       code: row.code as string,
       expiresAt: (row.expires_at as string | null) ?? null,
+      expiry: row.expiry as LotExpiry,
       onHand: row.on_hand as string,
       take: row.take as string,
       taken: row.taken as boolean,
@@ -164,17 +173,31 @@ export async function allocateFefo(
     .map((candidate) => ({ lotId: candidate.lotId, quantity: candidate.take }));
 }
 
+/**
+ * The lots at the location a request may take. For a run's close, the lots
+ * its own transfers carried there; and where it was issued stock with no
+ * lot, released before the component's lot tracking started, the start lot
+ * at the place, which took that stock (ADR-094, Q2a): as before the start,
+ * that stock is told from no other's there.
+ */
 function candidateScope(query: CandidateQuery): SQL {
+  const issued = (lot: SQL) => sql`
+    select sm.lot_id from stock_movements sm
+    where sm.organization_id = ${query.organizationId}::uuid
+      and sm.reference_type = 'production_order'
+      and sm.reference_id = ${query.fromRunId}::uuid
+      and sm.to_location_id = ${query.locationId}::uuid
+      and sm.variant_id = ${query.variantId}::uuid
+      and ${lot}
+  `;
   const runFilter = query.fromRunId
     ? sql`
-        and sl.lot_id in (
-          select sm.lot_id from stock_movements sm
-          where sm.organization_id = ${query.organizationId}::uuid
-            and sm.reference_type = 'production_order'
-            and sm.reference_id = ${query.fromRunId}::uuid
-            and sm.to_location_id = ${query.locationId}::uuid
-            and sm.variant_id = ${query.variantId}::uuid
-            and sm.lot_id is not null
+        and (
+          sl.lot_id in (${issued(sql`sm.lot_id is not null`)})
+          or (
+            l.note = ${TRACKING_STARTED}
+            and exists (${issued(sql`sm.lot_id is null`)})
+          )
         )`
     : sql``;
 
@@ -192,7 +215,7 @@ function candidateScope(query: CandidateQuery): SQL {
 
   return sql`
     select
-      sl.lot_id, sl.quantity, l.code, l.expires_at, l.created_at,
+      sl.lot_id, sl.quantity, l.code, l.expires_at, l.expiry, l.created_at,
       ${preferred} as preferred
     from stock_levels sl
     join lots l on l.id = sl.lot_id

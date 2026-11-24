@@ -178,6 +178,19 @@ describe('what you can do here', () => {
     ]);
   });
 
+  // ADR-094, R7: the Owner's alone at first, given in the role editor,
+  // said on Your access as what it lets someone do.
+  it('says marking a lot’s code as made up here as an act of its own (ADR-094)', () => {
+    expect(
+      sentences(['stock.view', 'stock.move', 'stock.lot_made_here']),
+    ).toEqual([
+      [
+        'Stock and locations',
+        expect.stringMatching(/; mark a lot’s code as made up here\.$/),
+      ],
+    ]);
+  });
+
   it('leaves out every area out of reach', () => {
     expect(sentences(['stock.view'])).toEqual([
       [

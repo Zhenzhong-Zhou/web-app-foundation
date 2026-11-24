@@ -31,12 +31,15 @@ export const DEFAULT_NUMBERING: Record<
   return_authorization: { prefix: 'RMA-', digits: 6, reset: 'never' },
   sale_order: { prefix: 'SO-', digits: 6, reset: 'never' },
   purchase_order: { prefix: 'PO-', digits: 6, reset: 'never' },
+  // L-2026-11-21-1, again from 1 each day (ADR-094).
+  lot: { prefix: 'L-{YYYY}-{MM}-{DD}-', digits: 1, reset: 'daily' },
 };
 
 /**
- * How each organization numbers each kind of document (ADR-073): a prefix,
- * which may carry the document's date as {YYYY}, {YY}, {MM} and {DD}, a
- * minimum width, and when the series starts again.
+ * How each organization numbers each kind of document (ADR-073), and the
+ * lot codes it makes (ADR-094): a prefix, which may carry the document's
+ * date as {YYYY}, {YY}, {MM} and {DD}, a minimum width, and when the series
+ * starts again.
  *
  * A row per organization and series, written for every organization by the
  * migration and at registration, so taking a number always reads a real row.
@@ -69,7 +72,7 @@ export const documentNumbering = pgTable(
     }),
     check(
       'document_numbering_document_type_check',
-      sql`${t.documentType} in ('invoice', 'credit_note', 'return_authorization', 'sale_order', 'purchase_order')`,
+      sql`${t.documentType} in ('invoice', 'credit_note', 'return_authorization', 'sale_order', 'purchase_order', 'lot')`,
     ),
     check(
       'document_numbering_reset_check',

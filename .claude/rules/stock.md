@@ -26,7 +26,7 @@ updated with the rule it states (ADR-087).
   client formats with `displayQuantity` and adds nothing up (ADR-025).
 - **Rules across tables live in the service,** asserted in e2e, never in
   a trigger: a lot exactly when the variant tracks lots, and a movement's
-  locations leaves (ADR-023, ADR-024, ADR-025).
+  locations leaves (ADR-023 to ADR-025, ADR-094).
 - **Holds are computed, never stored.** What spends unheld stock takes
   `lockProduct`, several in `inVariantOrder`; adjustments and transfers
   are not checked (ADR-045).

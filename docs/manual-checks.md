@@ -141,6 +141,20 @@ each state of what has come or gone, #605's label: purchase orders
 done), and sales **SO-DEMO-9** not shipped, **SO-DEMO-1** partly shipped and
 **SO-DEMO-6** all shipped.
 
+For lots (ADR-094), the same again: the seed reads each back and stops if
+one is gone. **BOTTLE-A60**, the amber bottle, tracks no lots and holds 1,500
+at two places, 900 on Main's **Shelf** and 600 in the **Blending room**, so
+its page offers Start tracking lots… with both places in its question.
+**K2-60CT**, vitamin K2, holds lots of every kind: **K2-2609**, 200 bought,
+20 shipped to **Northside Pharmacy**, with 80 moved into **K2-2609B**, 30 of
+which went to **Harbour Health**, who never received K2-2609 (MC-908); the
+first two codes the lot series made, ending -1 and -2: the first received
+as opening stock, its expiry not known yet and no supplier's lot, so
+Details to add lists it with both marks, and the second a sample from the
+supplier carrying its supplier's lot **Hx-2609** (MC-909); and a receipt of
+each other reason with no order, **K2-2601** returned by Northside Pharmacy
+and **K2-2610** under other, with its note.
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -189,9 +203,12 @@ a second organization.
   item that has it.
 - **MC-203** Add item offers Track lot numbers and expiry for every type
   but Equipment, a line under it saying each delivery and run then
-  records its lot and expiry, and that it cannot be changed later; choosing Equipment takes it away and says instead that
-  equipment is not tracked by lot and is not stock value. Once added, no
-  screen turns lot tracking on or off.
+  records its lot and expiry, and that it can be started later, from the
+  item's page, but never turned off; Add variant says the same under its
+  switch. Choosing Equipment takes it away and says instead that
+  equipment is not tracked by lot and is not stock value. Once added, the
+  item's page turns lot tracking on only by Start tracking lots… (MC-327),
+  and no screen turns it off.
 - **MC-204** Locations: a site with bins under it. Stock goes only into a
   place with nothing under it; a place holding stock cannot take children,
   so moving a location under one that holds stock is refused.
@@ -559,7 +576,11 @@ a second organization.
   usable, Free, Held, Short, Expires first, Status) and a status as Low,
   Out or Enough and a unit as "each", never a stored code; the audit log's
   line for it reads the filters. Group by Lot, Export saves one row per
-  lot at each place, the same rows the list shows. In 中文 the headers and
+  lot at each place, the same rows the list shows, Supplier's lot and
+  Expiry beside Lot (ADR-094): a lot whose code was made here and whose
+  supplier's lot is still to add reads "Supplier's lot to add" there, one
+  whose expiry is not known yet "Expiry to add", and a printed code's
+  Supplier's lot and a lot that does not expire are empty. In 中文 the headers and
   the words read in Chinese. With Main's Shelf chosen under Location, the
   file's headers read On hand here, Free, every place, Held, every place
   and Expires first here, with no Not usable, and D3-1000-120's On hand is
@@ -580,21 +601,227 @@ a second organization.
   the item's row open, the place's lots open with it, focus on the
   item's name. A role made with `stock.view` alone sees the same rows,
   no order or run named under For.
-- **MC-322** *(ADR-093, R26; #628)* Stock found where it has never been,
-  as the demo Owner. Open VITC-100's places: they end with "Found some
-  where it has never been?" and Count it in…, which a screen reader
-  names "Count it in VITC-100…" (105a), and which opens Correct the
-  count with Location and Which lot, neither lot chosen; Escape returns
-  focus to Count it in…. Choose a place VITC-100 has never been, Main's
-  Shelf, and Save with no lot: "Choose one of its lots, or a new lot."
-  at Which lot, focus on it. Choose A new lot and type VC-0301, a code
-  it has: refused at Lot number, naming VC-0301, nothing saved. Type
-  VC-0310 with an expiry, 12 and a note: "Counted in 12 each of
-  VITC-100 at Shelf, new lot VC-0310. It waits for a cost." with Waiting
-  for a cost, which opens Stock value's list holding it; Stock shows the
-  shelf open under VITC-100 with its lot VC-0310. Count one of its lots,
-  VC-0402, into the same shelf: "…, lot VC-0402." with Movements. A
-  role without `stock.adjust` sees no Count it in….
+- **MC-322** *(ADR-093, R26; ADR-094, R22; #628, #650)* Stock found
+  where it has never been, as the demo Owner. Open VITC-100's places:
+  they end with "Found some where it has never been?" and Count it in…,
+  which a screen reader names "Count it in VITC-100…" (105a), and which
+  opens Correct the count with Location and Which lot, neither lot
+  chosen; Escape returns focus to Count it in…. Choose a place VITC-100
+  has never been, Main's Shelf, and Save with no lot: "Choose one of its
+  lots, or a new lot." at Which lot, focus on it. Choose A new lot and
+  type VC-0301, a code it has: under it "Already one of its lots.
+  Choose One of its lots for it, or type another code."; choose Doesn't
+  expire and Save: refused at Lot number, naming VC-0301, nothing saved.
+  Type VC-0310: "A new lot.", Expires starting as VITC-100's newest lot
+  had it; give a day, 12 and a note: "Counted in 12 each of VITC-100 at
+  Shelf, new lot VC-0310. It waits for a cost." with Open the lot and
+  Waiting for a cost, which opens Stock value's list holding it; Stock
+  shows the shelf open under VITC-100 with its lot VC-0310. Count one of
+  its lots, VC-0402, into the same shelf: "…, lot VC-0402." with
+  Movements. Receive stock… 10 of VITC-100 with no order, as opening
+  stock, into a new lot VC-0500: it waits for a cost. Count 2 of
+  VC-0500, one of its lots, into another place: "…, lot VC-0500. It waits for a cost." with
+  Waiting for a cost, whose list holds both, the receipt and the count
+  (#650); give the receipt its cost, and the count still waits for its
+  own. A role without `stock.adjust` sees no Count it in…. Count it in
+  once more with A new lot and Make a code for us: "…, new lot L-….
+  Write this code on the stock." with Copy code and Open the lot.
+- **MC-325** *(ADR-094, R3, R5, R8, R10; #160)* A new lot's fields, the
+  same in Receive stock, an order's Receive and Count it in's A new lot.
+  As the demo Owner, on Stock with K2-60CT's row closed, Receive
+  stock… for K2-60CT, as opening stock. Lot number reads "As printed
+  on the box." with Make a code for us under it, and Expires offers On
+  a date, Not known yet and Doesn't expire, the one K2-60CT's last lot
+  had chosen; for an item with no lots yet none is chosen, and Receive
+  says "Choose when the lot expires." there. Type `k2-2609`: under it "An existing lot. This adds
+  to it." and its expiry and where it is, "… each at Main › Shelf …",
+  and Expires is gone, the lot's own kept. Type `K2-9999`: "A new
+  lot.", Expires back; On a date asks The day it expires. Press Make a
+  code for us: Lot number reads "Made when you save, like
+  L-2026-…-3", today's next code from Settings' lot series, "Our own
+  code. Add the supplier's lot when you have it." under it, Supplier's
+  lot shows, and Expires moves to Not known yet, saying the lot is
+  marked "Expiry to add" and still usable; a choice you made first
+  stays, and so does a day typed under On a date as it started. Type
+  one instead: the field empties, focus in it, Supplier's
+  lot gone. Make a code again, type `Hx-2701` as the supplier's lot and
+  receive 5: "Received 5 each of K2-60CT with no order, new lot
+  L-…. Write this code on the delivery. It waits for a cost." with Copy
+  code and Open the lot, underlined words in the message's own white,
+  never a grey box. Copy code says "Lot code L-… copied." and the
+  code pastes. Stock, behind the message, has opened K2-60CT's row at
+  its place, the new lot shown, though the row was closed before; Open
+  the lot opens its page, Back returning to Stock as it was. On an
+  order's Receive, the same fields, the message "Received … on PO-…, new lot
+  L-…. Write this code on the delivery." with Copy code, Open the lot
+  and, over Stock, Open the order; its lines read "60 of 100 received so
+  far." and "Up to 40 each still outstanding.", as the order's page
+  does (#160). In Français Créer un code pour nous, Pas encore connue,
+  N'expire pas; in 中文 生成批次编码, 尚不清楚, 不过期 and 保存时生成，例如 …,
+  the field then named 批次编码, never the printed 批号.
+- **MC-326** *(ADR-094, R11, R12)* Why there is no order, and from whom.
+  As the demo Owner, Receive stock… for an item with nothing ordered:
+  after Item comes "Why is there no order?", nothing chosen, offering
+  Opening stock, Returned, A sample, Other and Found in a count, saying
+  under it "… Found in a count is not a receipt: it opens Count it
+  in…", the four alone for a role without `stock.adjust`; Receive
+  without one says "Choose why there is no order." there, focus on it.
+  Other shows a Note; From lists the partners, optional. Receive as
+  Returned from Northside Pharmacy: Movements reads "Received: returned".
+  Choose Found in a count: Correct the count opens over Receive stock
+  with Count it in's fields, the item's place kept; Escape returns to
+  Receive stock, focus on Why is there no order?, still unanswered;
+  counting it in instead closes both and Stock opens the item's row at
+  the place, its lots shown, though the row was closed before; Receive
+  stock opened again then starts empty, no item, place or answer kept. A
+  role without `stock.adjust` is offered no Found in a count, and one
+  without `partners.view` no From. In Français « Pourquoi n'y a-t-il
+  pas de commande? »; in 中文 为什么没有订单？ and 盘盈.
+- **MC-327** *(ADR-094, R13 to R18, T2, T3)* Start tracking lots. As
+  the demo Owner, **BOTTLE-A60** offers Start tracking lots… at three
+  doors: on Stock, last in its row's Actions, after a divider, and in no
+  place's or lot's Actions; on its item page, under By place and lot, at
+  the end of the line "BOTTLE-A60 doesn't track lots, so its stock has no
+  lot numbers. Start tracking lots…", a line that stays for a code with
+  nothing on hand; and in its Variants row's Lots column. A role without
+  both Change items and Correct a count, and every equipment item, is
+  offered none of the three, and reads no such line. Each opens "Start
+  tracking lots for BOTTLE-A60": while the places are read, grey lines;
+  had they failed to read (the API stopped), why, with Try again, which
+  asks again;
+  then "1,500 each on hand goes into one lot, its code made for us when
+  you start, like L-…:", 900 on Main's Shelf and 600 in the Blending room,
+  then "Its cost goes with it. What still waits for a cost keeps
+  waiting, on this lot." and "Split it into real lots later with Move
+  to another lot…"; where runs in
+  progress use or make it, those runs, "Each will close against this
+  lot."; and "This cannot be undone", in amber. Supplier's lot is empty and Expires
+  is on Not known yet, shown chosen, never an unseen Doesn't expire, "Listed
+  on Stock, by lot, under Details to add until someone gives the day or
+  says it doesn't expire. The stock can still be used." under it. Choose On a date with a
+  day already past: an amber line says the stock will read as expired;
+  one more than 10 years away, "This date is more than 10 years away.
+  Check the year."; neither stops it. Receive stock, an order's Receive,
+  Count it in, Move to another lot and Edit lot details warn the same.
+  Escape, or Cancel, closes it with nothing changed, focus back on what
+  opened it: Stock's Actions, the line's Start tracking lots…, or the
+  Variants row's button. Receive stock… for BOTTLE-A60, and an order's
+  Receive for a line of it, read under the item "BOTTLE-A60 doesn't
+  track lots, so no lot is asked. Start tracking lots…", the line alone
+  for a role without both permissions; type a quantity, then Start
+  tracking lots… opens the same question over the dialog, Escape or
+  Cancel giving focus back to it; started, the dialog asks Lot number
+  and Expires, the quantity still there. Start it as it opened: the message names the
+  lot, with Open the lot. From Stock, Stock stays, BOTTLE-A60's row open
+  at both places, the lot shown at each; from the item's page, the line
+  is gone, the row reads Tracked, Where it stands lists the lot, "Expiry to
+  add" in its Expires, and the Lot view's Details to add lists it, its
+  stock still counted usable. Movements shows one row a place, "Lot
+  tracking started", "put 900 each into a lot, counted in neither", its
+  place once in From → to with no arrow, its Lot
+  "L-…" alone, with no dash for a first; the item's History names who started it. Stock value, By item
+  and lot: BOTTLE-A60's total and Unit cost are what they were, now on the
+  lot; had 10 been received first as opening stock, they still wait,
+  listed under Waiting for a cost with the lot's code, and Set cost
+  values the lot. Nothing turns it off: no door offers Start tracking
+  lots… again, and no screen unsets Tracked. A Receive stock left
+  open on the item since before the start is told "Lot tracking has
+  started for BOTTLE-A60. Reload to give its lot." An item with nothing
+  on hand starts too: "Nothing is on hand, so no lot is made now.", and
+  its next receipt asks for a lot. In 中文 开始按批次跟踪…, and the
+  line BOTTLE-A60 未按批次跟踪，因此库存没有批号。
+- **MC-328** *(ADR-094, R20)* Move to another lot. As the demo Owner, on
+  Stock, open K2-60CT at its place and a lot's Actions: Move to another
+  lot… opens "Move to another lot", "Moves part of this lot into another
+  lot of the item, one it has or a new one. The stock stays where it
+  is.", the lot, place and what is on hand under its title, Quantity,
+  Lot number with Make a code for us, Expires as this lot's, "Starts as
+  the lot it leaves has it." under it, Note, and "Its cost moves with it,
+  at this lot's average. Stock value stays the same." Quantity says "At
+  most …", what the lot holds there. More than that, a move without a
+  note, or into the lot it is in: each says why at its field, focus on
+  the first. Move 10 into a
+  new typed code: the message reads "Moved 10 each from lot … to lot
+  …", with Open the lot; Stock opens the code's row at the place, both
+  lots there. The Activity log's entry names both, "Lot: K2-2609 · To
+  lot: …", each a link to its lot, its reason "Moved to another lot". Typing a code the item has says "An existing lot. This
+  adds to it.", asking no expiry. A lot some of whose stock waits for a
+  cost says the moved stock waits there too, with Waiting for a cost,
+  which opens Stock value there, for whoever may see costs. On a phone
+  it fills the screen, as Start tracking lots does, its buttons pinned. Escape closes it, focus back
+  on Actions. A role without `stock.adjust` is offered none. A lot
+  issued to a released run, at the run's place, greys Move to another
+  lot… with "Issued to run …, still open"; the same lot elsewhere
+  moves. In 中文 转入其他批次….
+- **MC-329** *(ADR-094, R5, R7 and R8)* Edit lot details. As the demo
+  Owner, a lot's Edit lot details… starts Expires on the lot's own, one
+  of On a date (its day under it), Not known yet or Doesn't expire; move
+  it between the three and save: Stock reads the new one, "Expiry to
+  add" for Not known yet. A lot made here offers its code and Supplier's
+  lot; emptied, it reads "Supplier's lot to add" again. A printed code
+  is greyed, and the Owner reads under it to tick "We made this code up;
+  nothing printed it", whose tick lets the code be corrected and the
+  supplier's lot added in the same save; the Activity log then reads
+  "Lot's code marked as made up here", and the lot offers no tick again.
+  An Admin, without the permission, sees no tick and the code's line
+  says only to move the stock to the correct lot. A lot's own page,
+  from Open the lot or Trace a lot, has Edit lot details… beside its
+  title, saying "This changes the lot everywhere it is."; saved, the
+  page reads the lot again. A Viewer sees no such button.
+- **MC-330** *(ADR-094, R5, R9)* A lot's marks and Details to add. On
+  Stock, a lot whose expiry is not known yet reads "Expiry to add" where
+  its expiry shows, and a lot made here with no supplier's lot reads
+  "Supplier's lot to add" under its code, one with it "Supplier's lot
+  Hx-2609"; the same on the Lot view and in Where it stands, by place and
+  in the usable lots. Group by Lot: Details to add, its count of lots
+  after it, lists those lots alone, in the address; Back returns the Lot view as it
+  was; once no lot lacks its details it reads "Every lot has its
+  details." with Show all stock. Group by Item offers no Details to add. With Main's Shelf chosen
+  and Include empty, an item that started tracking lots and whose only
+  stock there was before it is not listed.
+- **MC-331** *(ADR-094, R16, R20, U1)* A lot change on Movements, read
+  as its action. Choose Lot changes in the Reason filter, its chip
+  "Reason: Lot changes": every kind of lot change is listed, and no row
+  reads "Lot changed". The move's row reads its two lots, "K2-2609 →
+  K2-2609B", each a link to its lot, its reason "Moved to another lot"
+  and its note, and its place once in From → to, with no arrow; across
+  every item, "moved 80 each to another lot". For K2-60CT alone it is
+  counted in neither, "moved 80 each to another lot, counted in
+  neither"; with lot K2-2609 chosen it is Out, with K2-2609B In. A
+  start's row reads "Lot tracking started", "put … into a lot", and
+  stock back from before "Back from before lot tracking", each naming
+  the lot it entered alone. The Export has To lot after Lot: K2-2609B on
+  that row, empty on every other, its Reason "Moved to another lot", its
+  Reason code lot_change, and both From and To. In 中文 转入其他批次, the
+  filter 批次变更.
+- **MC-332** *(ADR-094, R9, D2)* An expiry still to add, worded alike
+  everywhere. Take K2-60CT's first lot made here, its expiry not known
+  yet, and read it where a lot's expiry shows: Stock and the Lot view,
+  Where it stands, Movements' Lot cell, the top bar's search and
+  Movements' Find an item, lot or order, Trace a lot's list and the
+  lot's own page under its title, Count it in…'s One of its lots and
+  the lot fields' line under a typed code, a sale's Ship and Return, a
+  run's Release, and the shipped lots on the order: each reads "Expiry
+  to add" (in a line, "expiry to add"), never "No expiry" or "Does not
+  expire"; a lot that does not expire reads "—" in a column and nothing
+  in a line. Ship that lot on a sale: one amber line reads "Lot …'s
+  expiry has not been entered. The packing slip will show none until it
+  is.", the lots line "… (expiry to add): …", and Ship still ships; the
+  packing slip's Expires reads "—" until the date is added in Edit lot
+  details, and then prints it. In 中文 待补有效期.
+- **MC-333** *(ADR-094, R11, D3; amends ADR-093's 82a)* A receipt's From
+  end. On Movements, Reason Received: K2-2601, returned by Northside
+  Pharmacy, starts its From → to at "Northside Pharmacy", a link to the
+  partner, and its For reads "—"; a receipt of opening stock starts at
+  "opening stock", one returned with no partner at "customer", one under
+  other at "other", and a sample or one with no reason at "supplier", as
+  a receipt on an order does, whose For stays its order. A role without
+  `partners.view` reads the words by why instead of the partner. The
+  Export writes the same in its From column, and For only the document.
+  A role with `partners.view` and without `locations.view` has no From →
+  to: the partner follows the reason, "Received: returned · from
+  Northside Pharmacy", the name a link; a partner is not a place. In 中文
+  期初库存, 客户, 其他, 收货：退回 · 来自 Northside Pharmacy.
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -629,7 +856,8 @@ a second organization.
   Owner, export Movements with VITC-100 chosen and a date range that
   ends today: the file runs oldest first, its columns When (Vancouver
   time), Code, Recorded as, Item, In, Out, Moved, Balance, Unit, Reason,
-  Reason code, From, To, Lot, Expiry, For, By, Email and Note, one value
+  Reason code, From, To, Lot, Supplier's lot, Expiry, For, By, Email and
+  Note, one value
   to each, Moved filled on a move between two places alone; its first
   line Opening balance with the balance at the range's start, its last
   Closing balance with the range's In and Out and Stock's On hand for
@@ -764,7 +992,8 @@ a second organization.
   next"; its Move… opens the row to its lots under "Choose the lot to
   move", focus on the first lot's Actions; an item that is one lot at one
   place moves straight. A lot's menu: Move…, Ship out…, Send sample…,
-  Correct the count…; Edit lot details…, Trace lot; Movements. A place's
+  Correct the count…; Edit lot details…, Move to another lot…, Trace lot;
+  Movements, Move to another lot… only with `stock.adjust`. A place's
   row has a Movements link, not a menu. With Include empty, an emptied
   lot reads "Emptied" and its day, and its Move…, Ship out… and Send
   sample… are greyed, "Nothing in this lot" beneath, still reached by the
@@ -947,6 +1176,13 @@ a second organization.
   tile opens Licences with Licences expiring pressed, one name for both.
   In Français they read Licences qui expirent and Expirées; in 中文,
   即将到期的许可证 and 已过期.
+- **MC-513** *(ADR-094, R19; Q2a)* A run released before its component
+  tracked lots. Release a run whose component does not track lots, from
+  another place than the run's, then on the component's item page start
+  tracking its lots. Close the run: it closes, its component consumed
+  from the lot made at the start, at the run's place, and from no other
+  lot there; the run's cost panel shows the component at that lot's
+  cost.
 
 ## 6. Selling
 
@@ -981,6 +1217,16 @@ a second organization.
   5 units back on SO-DEMO-1).
 - **MC-613** Duplicate a sale: a new draft with the same lines and the same
   prices, whatever the price list says now (ADR-049).
+- **MC-614** *(ADR-094, R19; Q3a, Q4a)* What comes back from before lot
+  tracking. Ship part of a sale of an item that does not track lots, ship
+  another part, then start tracking the item's lots. Return some of the
+  first part: the return offers it by quantity, naming the lot it goes
+  into; once received, Movements shows the return with no lot, then a lot
+  change from before lot tracking into that lot, and Stock value is up by
+  what it shipped at. Void the second shipment: its goods come back the
+  same way. With an item started with nothing on hand, the first return
+  makes the lot, made for us, its note the stock on hand when lot
+  tracking started; a second return goes into the same lot.
 
 ## 7. Invoicing, returns and credit
 
@@ -1034,6 +1280,21 @@ a second organization.
   needs-cost list.
 - **MC-804** Costs and price lists are hidden from a viewer and from any role
   without the permission.
+- **MC-805** *(ADR-094, R20, D4, D5)* A cost that follows a move. On
+  K2-2609B's page, Cost's history reads its move "Moved in from lot
+  K2-2609" with its quantity, and K2-2609's "Moved to lot K2-2609B"; a
+  start lot's stock back from before reads "Back from before lot
+  tracking". On Stock value, stock moved in from a lot still waiting
+  reads "Moved in from lot …. Its cost follows that lot's.", the lot a
+  link to its page, and offers no Set cost. Set the first lot's
+  delivery's cost: the message reads "Cost set. … of it followed the
+  stock moved to lot …", each lot named where several took a part; the
+  moved row leaves the list, both lots are valued, and their histories
+  read "Cost carried to lot …" and "Cost from lot …", the other lot a
+  link to its page, Back returning here. A row of a kind
+  the tab does not know, in an old tab after a deploy, reads "Other
+  change" and "Waiting for a cost", never a stored key, and offers no
+  Set cost.
 
 ## 9. Recall drill (timed)
 
@@ -1063,12 +1324,14 @@ search to having the list of customers; the target is **under two minutes**.
   "Warehouses, zones and bins are hidden: your role can't see them. An
   Owner or Admin can change that." (review 3, 115).
 - **MC-905** Record the time here and in the release notes.
-- **MC-906** *(ADR-044, amended)* On BF-2609's trace, Who received it's
+- **MC-906** *(ADR-044, amended; ADR-094)* On BF-2609's trace, Who received it's
   Export saves the recall list: each row as the table shows it, who, the
   order, the lot and its code, shipped, sampled and returned, and the
-  day it first left, also a column on the table. In 中文 the headers read
-  收货方 to 日期, and a row with nobody on record 未记录收货方. The audit
-  log's line for it names a lot's recall list.
+  day it first left, also a column on the table. After the lot, its
+  Supplier's lot: empty for a code printed by the supplier, "Supplier's
+  lot to add" for a code made here with none yet. In 中文 the headers read
+  收货方 to 日期, 供应商批号 after 批次, and a row with nobody on record
+  未记录收货方. The audit log's line for it names a lot's recall list.
 - **MC-907** *(ADR-044, amended)* Open VC-0301's trace, a lot past its
   expiry: beside its title a red chip reads "Expired 4 days ago", with
   as many days as it is, its date in the line under the title; in 中文
@@ -1077,6 +1340,57 @@ search to having the list of customers; the target is **under two minutes**.
   organization's, Cost's Paid names its currency's code, "USD 4.20 at
   1.37"; one bought in the organization's own currency reads as the
   panel's other money.
+- **MC-908** *(ADR-094, R21)* A recall through a move between lots. On
+  a lot, move part of it into another lot of the item, then ship from
+  the second lot to a customer who never received the first. On the
+  first lot's trace, Who received it lists that customer, its Through
+  lot the second lot's code, which opens the second lot's page, Back
+  returning to the first lot's page with focus on that link; a row of
+  the lot itself reads "—" there. The Export lists them the same. The
+  second lot's Where it came from reads "Moved in from lot …", a link
+  to the first lot, and its Who received it lists only its own
+  customers. Back on the first lot's page, under Where it is now, "Moved
+  on to" lists the second lot, its code a link to its page, with all it
+  holds now by place, stock it held before the move too, and a lot moved
+  on to and emptied since reading "—" and 0; move part of the second lot
+  on to a third, and the first lot's page lists the third too. A role
+  without `locations.view` reads each lot's Usable and Not usable, no
+  place named. Trace the ingredient the first lot was made from: its
+  Went into lists both lots, through the same run, its Moved on to none,
+  and its recall list reaches the same customer. In 中文 已转至.
+- **MC-909** *(ADR-094, R6; #618)* A lot found by its supplier's lot.
+  Take a lot made here that carries a supplier's lot, say `Hx-2609`.
+  Type part of it, `hx-26`, in the top bar's search: Lots lists the lot,
+  its own code above, and under it its item's code, then "Expires" and
+  the date, the chip where it is near, or "Expiry to add", then
+  "Supplier's lot Hx-2609", each part apart, never run together as
+  "FOCUS-60CTNov 19, 2028"; a code made here with none reads "Supplier's
+  lot to add", and a lot that does not expire shows its item's code
+  alone. Typed whole, `Hx-2609` puts Lots first. The same text finds
+  the lot in Trace a lot, its field reading "Lot code or supplier's lot",
+  whose result names "Supplier's lot Hx-2609" under the code, or
+  "Supplier's lot to add" for a code made here with none; in
+  Inventory's search by item and by lot, and
+  in Movements' Find an item, lot or order, where, typed whole, the lot
+  is offered alone, "Lot … · supplier's lot Hx-2609 · …". In 中文 the
+  top bar's line reads 有效期至 … or 待补有效期, then 供应商批号 Hx-2609 or
+  待补供应商批号.
+- **MC-910** *(ADR-094, R6, R11, R21; #617, #620)* A lot's page says
+  how many and where from. On K2-2609's trace, under its title and All
+  movements of this lot, "Received by 2 partners" (with "and some with
+  no recipient recorded" where something left with no one on record);
+  pressing it moves to Who received it, its heading focused. A lot made
+  here reads "Supplier's lot Hx-2609" or "Supplier's lot to add" under
+  its title, beside its expiry or "expiry to add". Where it came from
+  reads K2-2601 "Received from Northside Pharmacy with no order:
+  returned", a link to the partner for a role with `partners.view`, a
+  receipt of opening stock with no partner "Received with no order:
+  opening stock", and BOTTLE-A60's start lot, after Start tracking
+  lots…, "Stock on hand when lot tracking started". At 390 px Who
+  received it is a card a recipient: who, its order, Through lot where
+  it is not this lot, only what it shipped, sampled or returned, and
+  the date, nothing cut off at the edge. In 中文 … 个合作伙伴已收货,
+  开始按批次跟踪时的现有库存.
 
 ## 10. Audit
 
@@ -2805,12 +3119,17 @@ Time — Vancouver while Los Angeles is on UTC−7 too (#343).
 Settings → Organization → Documents, as an Owner, in an organization with a
 few invoices and orders.
 
-- **MC-2701** *(ADR-073)* The Numbering section lists Invoices, Credit
-  notes, Return authorizations, Sale orders and Purchase orders, each with
-  its prefix, digits, Starts again, next number and Prints as. An
-  organization from before ADR-073 shows INV-, CN-, RMA-, SO- and PO-, six
-  digits, Never, the next number its documents reached, and Last: under it.
-  Save numbering is greyed out until something changes.
+- **MC-2701** *(ADR-073; ADR-094)* The Numbering section lists Invoices,
+  Credit notes, Return authorizations, Sale orders, Purchase orders and
+  Lot codes, each with its prefix, digits, Starts again, next number and
+  Prints as. An organization from before ADR-073 shows INV-, CN-, RMA-,
+  SO- and PO-, six digits, Never, the next number its documents reached,
+  and Last: under it; Lot codes reads L-{YYYY}-{MM}-{DD}-, one digit,
+  Each day, Prints as today's L-…-1 or the next after the last made
+  today, and under it "For the codes we make: up to 20 characters of A
+  to Z, 0 to 9 and hyphens, so a barcode can carry them. A code typed
+  from a box stays as printed.", on a phone too. Save numbering is
+  greyed out until something changes.
 - **MC-2702** *(ADR-073)* Click into the invoice prefix: Start from a
   common format offers INV-000001, INV-2026-0001, each year, and
   INV20261017-001, each day, with today's date; none uses /. Pick the
@@ -2850,10 +3169,10 @@ few invoices and orders.
   Credit dialogs offer the same for a credit note. An Admin sees the
   refusal without the link. Issued for today, it takes the next number,
   with no gap.
-- **MC-2709** *(ADR-073)* As an Admin or a Viewer, Numbering is a table of
-  each document, Starts again and Next to be given, says whether invoices
-  and credit notes are kept in date order, and An Owner can change it, with
-  no fields and no Save.
+- **MC-2709** *(ADR-073; ADR-094)* As an Admin or a Viewer, Numbering is a
+  table of each document and Lot codes, Starts again and Next to be given,
+  says whether invoices and credit notes are kept in date order, and An
+  Owner can change it, with no fields and no Save.
 - **MC-2710** *(ADR-073)* On a phone (DevTools device toolbar, 390 px),
   each document is a row with its next number; tapping one opens its
   formats, date buttons and fields, each labelled on its box: Prefix,
@@ -2868,6 +3187,33 @@ few invoices and orders.
   the reference QX-000001. Typing QX-000001 in the top bar lists Invoices
   before Orders. With today's prefixes, typing SO- or PO- lists Orders
   first.
+- **MC-2714** *(ADR-094, R1, R2, D1)* Lot codes, the codes made for a new
+  lot at receipt. Under its Prints as, L-2026-…-1 and From the next day's
+  date: L-…-1, the row says "Room for 9,999,999 codes a day within 20
+  characters" in grey. The section's first line says it numbers each lot
+  code made for us too, and its date note that a lot code's date is the
+  day it is made. Click into its prefix: Start from a common format
+  offers L-000001, L-2026-0001, each year, and L-2026-…-1, each day, the
+  default, pressed. Pick L-000001: "Room for 999,999,999,999,999,999 codes
+  in all within 20 characters". Type ABCDEFGHIJKLMNO- as its prefix, 16
+  characters printed, the most a prefix may: "Room for 9,999 codes in all
+  within 20 characters" turns amber, and Save still works. Each year,
+  with the year in a prefix of 16, ABCDEFGHIJ-{YYYY}-, stays amber, "…
+  a year"; each day, ABCD-{YYYY}-{MM}-{DD}-, 16 too, reads "Room for
+  9,999 codes a day within 20 characters" in grey, as 9,999 a day or a
+  month is no real risk. Type `L_` in the prefix: "Capital letters,
+  digits and - only, and the date from the buttons, so a barcode can carry
+  the code." shows in red, and an invoice prefix may still hold `_`. Back on
+  the default, give it 8 digits: "The prefix and its digits print at most
+  20 characters." and Save stays greyed out. Give sale orders the prefix
+  L-{YYYY}-{MM}-{DD}-: Sale orders and lot codes would print the same
+  numbers. Change the lot prefix to LOT-{YYYY}-{MM}-{DD}- and save: Change
+  the numbering? lists Lot codes with Next: LOT-…-1; History shows
+  Numbering changed with Lot codes; Receive stock's Make a code for us
+  then reads "Made when you save, like LOT-…-1", and receiving makes it.
+  Put the default back. In Français the row reads Codes de lot, « De la
+  place pour 9 999 999 codes par jour en 20 caractères au plus »; in 中文
+  批次编码，每天可生成 9,999,999 个编码而不超过 20 个字符.
 
 ## 28. Text size (ADR-075)
 
@@ -3661,7 +4007,7 @@ The pages, in a private window unless a check says otherwise.
   See the items, which unticks Receive, ship or transfer stock
   with it, and save. As Tom Becker, with the Network tab open, press
   Receive on PO-DEMO-11's MELATONIN line: Lot number and Expires are asked
-  for, Up to 5.0000 kg still outstanding. names the unit, nothing says the
+  for, Up to 5 kg still outstanding. names the unit, nothing says the
   dialog cannot tell whether a lot is needed, and no request is refused.
   Receive 5 with a lot number: it is recorded, and Trace a lot finds the
   lot. As the demo Owner, tick both again on Warehouse.
@@ -3704,6 +4050,18 @@ The pages, in a private window unless a check says otherwise.
   tint as made roles are on Members, and Chloé Tremblay's Viewer a plain
   pill; at 390 px they wrap under his name rather than widen the card. Tom's
   own page shows the same two, a little apart.
+- **MC-3328** *(ADR-094, R7)* Marking a lot's code as made here is the
+  Owner's alone at first. Daniel Okafor (Admin), Tom Becker (Warehouse) and
+  Chloé Tremblay (Viewer) do not hold it: their Your access says nothing of
+  it. As the demo Owner, Make a role, Nothing ticked: under Stock and
+  locations, Mark a lot’s code as made up here, so it can be corrected,
+  says under it "It lets the code be renamed, so a recall may no longer
+  match the boxes."; tick it, and Receive, ship or transfer stock ticks
+  with it, with what
+  that needs, the line above the areas saying so; the summary beside the
+  boxes says the role can mark a lot’s code as made up here, in 中文
+  将批次编码标记为本公司自编, in Français indiquer qu’un code de lot a été
+  inventé ici.
 
 ## 34. Old tabs after a deploy (ADR-081)
 
@@ -3982,11 +4340,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-093's Inventory does from 4 to 5: leave a third tab
-  on Inventory before the push. Back in it once the static site is out,
-  the amber banner asks it to reload (MC-3404); Reload, once: Inventory,
-  a row per code, and no banner, and switching away and back asks nothing
-  more.
+  API revision, as ADR-094's lots at receipt does from 5 to 6: leave a
+  third tab on Stock value before the push. Back in it once the static
+  site is out, the amber banner asks it to reload (MC-3404); Reload, once:
+  Stock value, its Waiting for a cost, and no banner, and switching away
+  and back asks nothing more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -4896,6 +5254,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R105** *(A voided shipment's goods back read "Adjustment: shipment
+  voided", in English in every language, #647)* Void a shipment, then open
+  Movements with Reason Corrected: its goods back read "Corrected:
+  shipment voided"; in Français, "Corrigé : expédition annulée"; in 中文,
+  "调整：发货已作废", the Why column and the export alike. On a database
+  with a shipment voided before November 2026, that row reads the same.
+
 - **MC-R104** *(A search written a moment after a filter put the filter
   back, #636)* In Chrome's DevTools, Performance, slow the CPU 20 times.
   On Orders with Fulfilled chosen, type "acme" in the search and at once
@@ -5148,13 +5513,15 @@ first.
 
 - **MC-R73** *(Enter in Receive stock with no location focusing a hidden
   input, #310)* As the demo Owner, on Inventory with no location chosen,
-  open Receive stock, choose an item, type 5 in Quantity and press Enter:
+  open Receive stock, choose an item and why there is no order, type 5
+  in Quantity and press Enter:
   Into says Choose a location. under it, in red, and focus is on Into's
   own box, where Space opens its list; nothing is received, and Chrome's
   console shows no "Blocked aria-hidden". Press Receive with every field
-  empty: Item, Into and Quantity each say what they need, focus in Item.
-  A lot-tracked item with no lot number says Type the lot number. there,
-  with focus on it. In 中文, Into reads 请选择库位。
+  empty: Item, Why is there no order?, Into and Quantity each say what
+  they need, focus in Item. A lot-tracked item with no lot number says
+  Type the lot number as printed, or make a code for us. there, with
+  focus on it. In 中文, Into reads 请选择库位。
 
 - **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
   #245)* As the demo Owner in English, in Chrome, give a location the code
@@ -7405,3 +7772,84 @@ first.
   movements and Correct the count's Why, in English and Français, and
   the Audit log names a movement's reason in Movements' words: MC-320
   and MC-2901 extended.
+- 2026-11-21: ADR-094's schema, R7: marking a lot's code as made here,
+  a permission of its own, the Owner's alone at first and offered in the
+  role editor: MC-3328 added.
+- 2026-11-22: ADR-094's expiry not known, R9: the Lot view's export and
+  Movements' write Supplier's lot and Expiry beside Lot, "Supplier's lot
+  to add" and "Expiry to add" where each is still to add: MC-317 and
+  MC-319 extended.
+- 2026-11-22: ADR-094's #650, R22: stock counted into a lot, or an item
+  with no lots, any of whose stock still waits for a cost waits for a
+  cost too, where it took an average worked out over units at nothing:
+  MC-322 extended.
+- 2026-11-22: ADR-094's move to another lot, R20: the API revision
+  raised to 6, since Stock value's Waiting for a cost and a lot's Cost
+  now list a lot change, which a tab opened before would misread:
+  MC-3424's raise now 5 to 6, a tab left on Stock value.
+- 2026-11-22: ADR-094's what comes back from before, R19: a return, an
+  RMA's receipt and a voided shipment of stock that left before its item
+  tracked lots come back with no lot, then into the lot that took the
+  item's stock, made with the first back where the item started with
+  nothing on hand; a run released before its component tracked lots
+  closes against that lot: MC-513 and MC-614 added. #647, a voided
+  shipment's goods back in the reader's language: MC-R105 added.
+- 2026-11-22: ADR-094's trace follows a lot change, R21: a lot's recall
+  list, on the page and in its export, reaches whoever received a lot
+  its stock moved into, each row under the lot they received, and the
+  export writes each lot's Supplier's lot after its code: MC-906
+  extended, MC-908 added.
+- 2026-11-22: ADR-094's both codes found, R6, and #618: a lot is found
+  by any part of its supplier's lot as by its code, in the top bar,
+  Movements' find box, Trace a lot and Inventory's search; the top
+  bar's lot row reads its item's code, then its expiry with its label or
+  Expiry to add, then its supplier's lot or Supplier's lot to add, each
+  part apart: MC-909 added.
+- 2026-11-22: ADR-094's seeds, R23: the demo gains BOTTLE-A60's stock at two
+  places, to start tracking lots for, and K2-60CT's lots, one made here with
+  both details to add, one carrying its supplier's lot, a receipt of each
+  reason and a lot part of which moved to another, where one customer
+  received only the second; the volume seed gains lots made here, a
+  supplier's lot, an expiry not known yet, lots waiting for a cost, lot
+  changes and codes that start tracking lots: the demo's setup names the
+  lots MC-908 and MC-909 walk.
+- 2026-11-22: ADR-094's lot fields and receiving dialogs, R3, R5, R8, R10
+  to R12, and #160's Receive half: Make a code for us and Type one
+  instead, the line under a typed code, the supplier's lot, Expires' three
+  choices, the message with Copy code and Open the lot, Receive stock's
+  why and From, and Found in a count opening Count it in…: MC-325 and
+  MC-326 added; MC-322, MC-3322 and MC-R73 rewritten.
+- 2026-11-22: ADR-094's Lot codes in Settings, R1, R2 and D1: the Lot
+  codes row in Numbering, its narrower characters, its own common formats
+  and the room for codes within 20 characters: MC-2714 added; MC-2701 and
+  MC-2709 rewritten.
+- 2026-11-22: ADR-094's lot actions on screen, R5, R7, R9, R13 to R16 and
+  R20: Start tracking lots, Move to another lot, Edit lot details with
+  the mark, the marks and Details to add, a lot change on Movements and
+  the export's To lot: MC-327 to MC-331 added; MC-203 and MC-310
+  rewritten.
+- 2026-11-22: ADR-094's lot's page and what each screen reads, R6, R9,
+  R11, R20, R21 and D2 to D5, with #617 and #620: Through lot, the count
+  above, cards on a phone and where it came from; a lot change and a
+  cost carried in Cost and on Stock value; an expiry to add worded
+  alike, with Ship's amber line; a receipt's From end: MC-332, MC-333,
+  MC-805 and MC-910 added; MC-908 rewritten.
+- 2026-11-22: ADR-094's follow-ups, S5 to S10: a lot's page lists the
+  lots its stock moved on to, with all each holds; Trace a lot's results
+  name the supplier's lot; the room line's amber for a year's or a
+  series' that never starts again; Start tracking lots starting Expires
+  on Not known yet; a receipt's partner after its reason where there is
+  no From → to; "Cost set."; Numbering's words for lot codes: MC-327,
+  MC-333, MC-805, MC-908, MC-909 and MC-2714 rewritten.
+- 2026-11-22: ADR-094's Help, rules and words, R17, R18 and R23: Help in
+  three languages for Start tracking lots, Move to another lot, Edit lot
+  details, Expiry to add and Ship's amber line, a return of a sale shipped
+  before tracking, a recall's Moved on to and a cost that follows a move; the
+  glossary's lot words; and French's "en stock" for what was on hand: MC-327
+  extended with Stock value after the start and its one way.
+- 2026-11-23: ADR-094's lot change read as its action, U1: Lot tracking
+  started, Moved to another lot and Back from before lot tracking on
+  Movements and in its export, the place once, "put … into a lot" and
+  "moved … to another lot", the filter's one option Lot changes, and a
+  move's Activity log entry naming both lots: MC-327, MC-328 and MC-331
+  rewritten.

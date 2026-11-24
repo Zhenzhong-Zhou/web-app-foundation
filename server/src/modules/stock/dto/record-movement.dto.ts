@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -11,8 +12,24 @@ import {
 
 import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
-import { MOVEMENT_REASONS } from '../../../database/schema';
+import type { MovementReason } from '../../../database/schema';
 import { MovementLotDto } from './movement-lot.dto';
+
+/**
+ * The reasons this route records, listed rather than read from
+ * MOVEMENT_REASONS (#328): a lot change is written only by starting lot
+ * tracking and by a move to another lot, each with both its lots (ADR-094).
+ */
+export const RECORDED_REASONS = [
+  'receipt',
+  'shipment',
+  'transfer',
+  'adjustment',
+  'production',
+  'consumption',
+  'sample',
+  'return',
+] as const satisfies readonly MovementReason[];
 
 export class RecordMovementDto {
   @IsUUID()
@@ -50,13 +67,15 @@ export class RecordMovementDto {
   @IsPositiveDecimal()
   quantity!: string;
 
-  @IsIn([...MOVEMENT_REASONS])
-  reason!: (typeof MOVEMENT_REASONS)[number];
+  @ApiProperty({ enum: RECORDED_REASONS })
+  @IsIn([...RECORDED_REASONS])
+  reason!: (typeof RECORDED_REASONS)[number];
 
   /**
    * "damaged", "expired", "miscount". Free text under a closed reason, because
    * damage and theft are the same operation and only the explanation differs
-   * (ADR-023).
+   * (ADR-023). A receipt's is why it has no order, one of RECEIPT_DETAILS,
+   * or none (ADR-094, R11).
    */
   @IsOptional()
   @trim()
@@ -65,9 +84,11 @@ export class RecordMovementDto {
   reasonDetail?: string;
 
   /**
-   * Who a sample went to. Sample only, and checked against this organization:
-   * a recipient is what a recall finds, so it cannot be free text or another
-   * tenant's partner (ADR-042).
+   * Who a sample went to, or who a receipt with no order came from, kept
+   * as a sample's recipient is (ADR-094, R11). A sample or a receipt only,
+   * and checked against this organization: a recipient is what a recall
+   * finds, and a sender what a lot traces to, so neither can be free text
+   * or another tenant's partner (ADR-042).
    *
    * Replaces the reference fields this DTO used to accept. References are
    * the server's to set — an order, a run, a shipment — and a client naming

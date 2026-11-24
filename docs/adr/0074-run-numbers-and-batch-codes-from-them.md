@@ -2,6 +2,7 @@
 status: deferred
 date: 2026-10-17
 areas: [numbering, production-orders]
+amended-by: [ADR-094]
 ---
 
 # ADR-074 — Run numbers, and batch codes from them (deferred)
@@ -93,3 +94,12 @@ batch codes.
 
 The next production work, or the first organization asking
 for run numbers or generated batch codes, whichever comes first.
+
+## Amendment (November 2026) — a received lot's code may be made (ADR-094)
+
+"A lot received from a supplier stays typed" no longer holds without
+exception: where a delivery shows no lot, ADR-094 makes a code by the
+organization's lot format, its own series, and keeps the supplier's lot
+beside it when it is known. A printed code is still typed, and nothing
+here changes: run numbers, and batch codes from them, wait for this
+ADR's trigger.

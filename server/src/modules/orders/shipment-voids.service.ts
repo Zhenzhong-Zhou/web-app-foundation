@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 
+import { SHIPMENT_VOIDED } from '../../common/movement-reasons';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import {
@@ -43,6 +44,10 @@ export class ShipmentVoidsService {
    * Nothing is deleted. Each `shipment` movement gets a matching `adjustment`
    * back into the bin it left, referencing the same shipment and carrying the
    * reason, so the ledger shows both what was recorded and its correction.
+   * Stock shipped with no lot before its code's lot tracking started comes
+   * back with no lot, as it left, then into the lot that took the code's
+   * stock (ADR-094, Q3a; StockService.recordWithin's `fromBefore`), at
+   * the cost it left at.
    * The lines' fulfilled quantities drop by the same amounts, which is also
    * what gives the order its holds back — they are computed from what is
    * outstanding (ADR-045). The shipment row is marked voided and kept.
@@ -247,10 +252,13 @@ export class ShipmentVoidsService {
           {
             variantId: movement.variantId,
             lotId: movement.lotId,
+            // Shipped with no lot before the code's lot tracking started,
+            // it comes back so, then into the lot (ADR-094, Q3a).
+            fromBefore: movement.lotId === null,
             toLocationId: movement.fromLocationId ?? shipment.fromLocationId,
             quantity: movement.quantity,
             reason: 'adjustment',
-            reasonDetail: 'shipment voided',
+            reasonDetail: SHIPMENT_VOIDED,
             referenceType: 'shipment',
             referenceId: shipmentId,
             note: input.reason,

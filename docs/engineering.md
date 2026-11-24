@@ -435,9 +435,20 @@ twice:
    `scripts/verify.sh` in full, the push and the PR, whose description
    names the journeys walked and their personas. Pictures the brief asks
    for are left in `tmp/<branch>/pictures/`, the description naming each
-   in a table: `gh` cannot upload an image, so the maintainer drags each
-   into its cell from Finder, never from the editor's file tree, which
-   pastes the file's path instead (10 November 2026, #556).
+   pair in a table, a row a pair. The pairs the table names are also
+   copied into `tmp/<branch>/pictures/pr/before/` and
+   `tmp/<branch>/pictures/pr/after/`, each file numbered by its row,
+   `1-…` to `N-…`, and copied again when a later step retakes one; the
+   summary gives the one line that opens both folders, `open` with the
+   two paths. Nobody searches a thousand pictures for eight (23 November
+   2026, #676). `gh` cannot upload an image, so the maintainer drags
+   file N into row N's two cells from Finder, never from the editor's
+   file tree, which pastes the file's path instead (10 November 2026,
+   #556), and saves the description. It is then read back, `gh pr view
+   <PR> --json body --jq .body`, and attached in the chat, which returns
+   it whole with the as-built in it and every picture's link kept. After
+   the drag the description is never set from a file written before it,
+   which would remove the pictures.
 
 ## Process
 

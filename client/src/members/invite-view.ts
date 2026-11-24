@@ -22,16 +22,3 @@ export type InviteView =
       copied: boolean;
     }
   | { kind: 'notSent'; invitation: Invitation };
-
-/**
- * Puts a link on the clipboard, saying whether it went: a page without the
- * permission tells the person to copy the field instead.
- */
-export async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}

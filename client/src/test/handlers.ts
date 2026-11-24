@@ -20,6 +20,7 @@ const BASE = '/api/v1';
 export const VARIANTS = [
   {
     id: 'variant-plain',
+    productId: 'product-plain',
     sku: 'PLAIN-1',
     variantName: null,
     productName: 'Plain Widget',
@@ -29,6 +30,7 @@ export const VARIANTS = [
   },
   {
     id: 'variant-lotted',
+    productId: 'product-lotted',
     sku: 'LOTTED-1',
     variantName: '60ct',
     productName: 'Tracked Supplement',
@@ -58,6 +60,14 @@ export const NUMBERING = {
   returnAuthorization: series('RMA-'),
   saleOrder: series('SO-'),
   purchaseOrder: series('PO-'),
+  // A lot made for us, L-2026-10-17-1 today (ADR-094).
+  lot: {
+    prefix: 'L-{YYYY}-{MM}-{DD}-',
+    digits: 1,
+    reset: 'daily' as const,
+    next: { never: 1, yearly: 1, monthly: 1, daily: 1 },
+    last: null,
+  },
   documentsInDateOrder: false,
   today: '2026-10-17',
 };
@@ -122,8 +132,31 @@ export const handlers = [
   http.get(`${BASE}/products/categories`, () =>
     HttpResponse.json({ categories: [], uncategorised: [] }),
   ),
+  // RecordedMovementEnvelope: the lot the write named, if any, and whether
+  // the stock waits for a cost (ADR-094).
   http.post(`${BASE}/stock/movements`, () =>
-    HttpResponse.json({ movement: { id: 'movement-1' } }, { status: 201 }),
+    HttpResponse.json(
+      {
+        movement: {
+          id: 'movement-1',
+          variantId: 'variant-plain',
+          sku: 'PLAIN-1',
+          lotId: null,
+          fromLocationId: null,
+          toLocationId: 'location-a',
+          quantity: '1.0000',
+          reason: 'receipt',
+          reasonDetail: null,
+          referenceType: null,
+          referenceId: null,
+          note: null,
+          createdAt: '2026-10-17T12:00:00.000Z',
+        },
+        needsCost: false,
+        lotCode: null,
+      },
+      { status: 201 },
+    ),
   ),
   http.get('/api/v1/stock/lots', () => HttpResponse.json([])),
   http.get(`${BASE}/boms`, () => HttpResponse.json([])),

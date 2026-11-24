@@ -3,7 +3,7 @@ import { and, eq, or, type SQL, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
-import { codeMatches, searchTerms } from '../../common/search';
+import { searchTerms } from '../../common/search';
 import {
   afterKeys,
   cursorOf,
@@ -19,6 +19,7 @@ import type { Transaction } from '../../database/database.module';
 import { assertOwnIds } from '../../database/own-ids';
 import {
   locations,
+  type LotExpiry,
   lots,
   organizations,
   products,
@@ -46,10 +47,12 @@ import type {
   ListStockByCodeDto,
   ListStockByLotDto,
   StockFiltersDto,
+  StockLotFiltersDto,
   StockLotSort,
   StockPlacesDto,
 } from './dto/list-stock-grouped.dto';
 import type {
+  IssuedRun,
   StockCodeCounts,
   StockCodePage,
   StockCodePlaces,
@@ -59,6 +62,8 @@ import type {
   StockPlace,
 } from './dto/stock-grouped-response.dto';
 import { namesIn, productNameOrder } from './item-name';
+import { lotMatches } from './lot-search';
+import { openRunIssued } from './open-run';
 import { pathsOf } from './place-paths';
 import {
   quickFiltersOf,
@@ -69,6 +74,22 @@ import { onHandByItem } from './usable-stock';
 
 /** A page of Inventory, fifty codes or lots unless asked (ADR-093, R16). */
 const PAGE_SIZE = 50;
+
+/**
+ * Which piles a read lists (20a): those holding stock, and with Include
+ * empty the emptied ones too, but not, for a code that tracks lots, its
+ * emptied pile with no lot: its stock from before is in a lot now, as its
+ * opened row reads it, so the pile would list a code with nothing to open
+ * (ADR-094). One rule for the row per code and its places (review 54).
+ */
+function keptPiles(
+  includeEmpty: boolean,
+  pile: { quantity: SQL; lotId: SQL; tracksLots: SQL },
+): SQL {
+  return includeEmpty
+    ? sql`not (${pile.quantity} = 0 and ${pile.lotId} is null and ${pile.tracksLots})`
+    : sql`${pile.quantity} > 0`;
+}
 
 /**
  * The codes a row per code lists before its quick filters (A2): every
@@ -83,7 +104,16 @@ function presentOf(
   organizationId: string,
 ): SQL | undefined {
   const org = sql`${organizationId}::uuid`;
-  const kept = query.includeEmpty === 'true' ? sql`` : sql`and sl.quantity > 0`;
+  const kept = sql`and ${keptPiles(query.includeEmpty === 'true', {
+    quantity: sql`sl.quantity`,
+    lotId: sql`sl.lot_id`,
+    tracksLots: sql`exists (
+      select 1 from product_variants tracked
+      where tracked.organization_id = ${org}
+        and tracked.id = sl.variant_id
+        and tracked.tracks_lots
+    )`,
+  })}`;
 
   if (query.locationId) {
     return sql`${productVariants.id} in (
@@ -113,8 +143,9 @@ function presentOf(
  * What narrows the codes whatever the quick filters: their presence, one
  * item, its type, its category with every category under it, and the
  * search, the item as every search matches it (ADR-056) or one of its
- * lots on hand by its code, at the place chosen when one is: the list
- * keeps what is there (20a). Every join names the organization (ADR-003).
+ * lots on hand by its code or its supplier's lot (ADR-094, R6), at the
+ * place chosen when one is: the list keeps what is there (20a). Every
+ * join names the organization (ADR-003).
  */
 function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
   const org = sql`${organizationId}::uuid`;
@@ -140,7 +171,10 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
               and lt.organization_id = ${org}
             where sl.organization_id = ${org}
               and sl.quantity > 0
-              and ${codeMatches(sql`lt.code`, terms)}
+              and ${lotMatches(
+                { code: sql`lt.code`, supplierLot: sql`lt.supplier_lot` },
+                terms,
+              )}
               ${
                 query.locationId
                   ? sql`and sl.location_id = ${query.locationId}::uuid`
@@ -371,6 +405,7 @@ type CodeRow = FigureRow & {
   lots: number;
   needs_cost: boolean;
   stocked: boolean;
+  tracks_lots: boolean;
   here_on_hand: string | null;
   here_lots: number | null;
   here_expires_first: string | null;
@@ -394,9 +429,12 @@ type PileRow = {
   lot_id: string | null;
   lot_code: string | null;
   lot_expires_at: string | null;
+  lot_expiry: LotExpiry | null;
   lot_is_assigned: boolean | null;
+  lot_supplier_lot: string | null;
   quantity: string;
   emptied_at: Date | string | null;
+  issued_to_run: IssuedRun | null;
   /** The places' read alone: on hand at the pile's place. */
   place_on_hand?: string;
 };
@@ -627,6 +665,7 @@ export class StockGroupedService {
         ${shown.productName} as product_name,
         ${shown.variantName} as variant_name,
         ${productVariants.unitOfMeasure} as unit_of_measure,
+        ${productVariants.tracksLots} as tracks_lots,
         coalesce(pl.places, 0) as places,
         coalesce(pl.lots, 0) as lots,
         ${figureColumns()},
@@ -672,6 +711,7 @@ export class StockGroupedService {
         ...figuresOf(row),
         needsCost: row.needs_cost,
         stocked: row.stocked,
+        tracksLots: row.tracks_lots,
         here: locationId
           ? {
               onHand: row.here_on_hand!,
@@ -906,13 +946,13 @@ export class StockGroupedService {
 
   /**
    * How many rows each of the Lot view's quick filters shows (ADR-093, R3;
-   * 30a), with the other filters on and its own off, the four in one
+   * 30a), with the other filters on and its own off, the five in one
    * statement: lots at each place, as its rows are, never codes. Expiring
    * soon within the organization's warning days unless asked otherwise,
-   * the expired among it. No Out: a code that is out keeps no lot to list
-   * (31a).
+   * the expired among it; Details to add its own (ADR-094, R9). No Out: a
+   * code that is out keeps no lot to list (31a).
    */
-  lotCounts(query: StockFiltersDto): Promise<StockLotCounts> {
+  lotCounts(query: StockLotFiltersDto): Promise<StockLotCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { today } = await openingOf(tx, organizationId, query);
       const days =
@@ -1019,8 +1059,26 @@ function lotKeys(
 }
 
 /** The Lot view's quick filters, each counted beside its button (30a). */
-const LOT_FACETS = ['low', 'expiring', 'expired', 'needsCost'] as const;
+const LOT_FACETS = [
+  'low',
+  'expiring',
+  'expired',
+  'needsCost',
+  'detailsToAdd',
+] as const;
 type LotFacet = (typeof LOT_FACETS)[number];
+
+/**
+ * Details to add (ADR-094, R9; E5), on the joined lot: one whose expiry
+ * is not known yet, "Expiry to add", or one whose code was made here
+ * and whose supplier's lot is still to add, "Supplier's lot to add". The
+ * two marks a lot reads until it is filled, in one filter, so every
+ * unfinished lot is in one place.
+ */
+const DETAILS_TO_ADD = sql`(
+  ${lots.expiry} = 'unknown'
+  or (${lots.isAssigned} and ${lots.supplierLot} is null)
+)`;
 
 /**
  * The Lot view's filters (ADR-093, R3 and R4; 30a), one builder for its
@@ -1031,10 +1089,11 @@ type LotFacet = (typeof LOT_FACETS)[number];
  * quick filter's condition on them, `asked` the ones the reader chose:
  * Low stock by the code's status, the out among it, as Reorder counts it;
  * Expiring soon, Expired and Waiting for a cost by the row's own lot, as
- * the list of stock rows reads them (quickFiltersOf).
+ * the list of stock rows reads them (quickFiltersOf); Details to add by
+ * the row's lot too (ADR-094).
  */
 function lotFilters(
-  query: StockFiltersDto,
+  query: StockLotFiltersDto,
   organizationId: string,
   today: string,
   days: number | undefined,
@@ -1078,12 +1137,14 @@ function lotFilters(
       expiring: quick.expiring ?? sql`false`,
       expired: quick.expired,
       needsCost: quick.needsCost,
+      detailsToAdd: DETAILS_TO_ADD,
     },
     asked: {
       low: query.low === 'true',
       expiring: query.expiringWithin !== undefined,
       expired: query.expired === 'true',
       needsCost: query.needsCost === 'true',
+      detailsToAdd: query.detailsToAdd === 'true',
     },
   };
 }
@@ -1093,9 +1154,11 @@ function lotFilters(
  * in `variants`, a parenthesised list or subquery of ids: the places by
  * name, the lots soonest first, one with no expiry after those with one,
  * each a pile the row's menu, Move, Edit lot and History read. At the
- * place chosen alone; emptied piles with Include empty. Inventory's
- * opened row and Where it stands read it alike; a place's name only for
- * a reader who may see places (A6).
+ * place chosen alone; emptied piles with Include empty, but for a code
+ * that tracks lots its emptied pile with no lot, the stock from before
+ * its tracking started, which is all in a lot now (ADR-094).
+ * Inventory's opened row and Where it stands read it alike; a place's
+ * name only for a reader who may see places (A6).
  */
 export async function placesOf(
   tx: Transaction,
@@ -1134,9 +1197,11 @@ export async function placesOf(
       query.locationId
         ? sql`${stockLevels.locationId} = ${query.locationId}::uuid`
         : undefined,
-      query.includeEmpty === 'true'
-        ? undefined
-        : sql`${stockLevels.quantity} > 0`,
+      keptPiles(query.includeEmpty === 'true', {
+        quantity: sql`${stockLevels.quantity}`,
+        lotId: sql`${stockLevels.lotId}`,
+        tracksLots: sql`${productVariants.tracksLots}`,
+      }),
     )}
     order by ${stockLevels.variantId}, ${locations.name}, ${locations.id},
       ${lots.expiresAt} asc nulls last, ${lots.code}, ${stockLevels.id}
@@ -1209,12 +1274,29 @@ function pileColumns(organizationId: string, locale: Locale | null): SQL {
     ${stockLevels.lotId} as lot_id,
     ${lots.code} as lot_code,
     ${lots.expiresAt}::text as lot_expires_at,
+    ${lots.expiry} as lot_expiry,
     ${lots.isAssigned} as lot_is_assigned,
+    ${lots.supplierLot} as lot_supplier_lot,
     ${quantity(sql`${stockLevels.quantity}`)} as quantity,
     -- An emptied pile's last change, the one that left none; its day is
     -- the organization's, worked out by dayIn (ADR-072).
     case when ${stockLevels.quantity} = 0
-      then ${stockLevels.updatedAt} end as emptied_at
+      then ${stockLevels.updatedAt} end as emptied_at,
+    -- The open run its lot was issued to here, whose close takes it
+    -- (review 73): Move to another lot is greyed for it.
+    case when ${stockLevels.lotId} is not null then (
+      select json_build_object(
+        'id', r.id,
+        'reference', r.reference,
+        'quantityPlanned', r.quantity_planned
+      )
+      from (${openRunIssued(organizationId, {
+        variantId: sql`${stockLevels.variantId}`,
+        locationId: sql`${stockLevels.locationId}`,
+        lotId: sql`${stockLevels.lotId}`,
+        lotNote: sql`${lots.note}`,
+      })}) r
+    ) end as issued_to_run
   `;
 }
 
@@ -1233,9 +1315,12 @@ function pileOf(row: PileRow, seesPlaces: boolean, timeZone: string) {
     lotId: row.lot_id,
     lotCode: row.lot_code,
     lotExpiresAt: row.lot_expires_at,
+    lotExpiry: row.lot_expiry,
     lotIsAssigned: row.lot_is_assigned,
+    lotSupplierLot: row.lot_supplier_lot,
     quantity: row.quantity,
     emptiedOn: row.emptied_at ? dayIn(timeZone, row.emptied_at) : null,
+    issuedToRun: row.issued_to_run,
   };
 }
 

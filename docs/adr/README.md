@@ -60,7 +60,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-020] | Client routes fall into three categories, not two | accepted | 2026-08-31 | | |
 | [ADR-021] | Material UI as the component library | accepted | 2026-09-02 | | [ADR-055] |
 | [ADR-022] | Account events are a separate table from the audit log | accepted | 2026-09-02 | | |
-| [ADR-023] | Stock lives on variants, and quantity is a ledger | accepted | 2026-09-03 | | [ADR-025] |
+| [ADR-023] | Stock lives on variants, and quantity is a ledger | accepted | 2026-09-03 | | [ADR-025], [ADR-094] |
 | [ADR-024] | Locations are one tree, and stock sits only at leaves | accepted | 2026-09-04 | | |
 | [ADR-025] | Quantity is decimal, and the stock cache is the lock | accepted | 2026-09-08 | [ADR-023] | |
 | [ADR-026] | Customers and suppliers are one table | accepted | 2026-09-10 | | |
@@ -81,11 +81,11 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-041] | Shipping: a shipment is a document, and stock leaves by lot | accepted | 2026-09-23 | | |
 | [ADR-042] | Samples, and stock that is not for sending | accepted | 2026-09-23 | | |
 | [ADR-043] | Customer returns | accepted | 2026-09-23 | | |
-| [ADR-044] | Lot trace | accepted | 2026-09-23 | | [ADR-093] |
+| [ADR-044] | Lot trace | accepted | 2026-09-23 | | [ADR-093], [ADR-094] |
 | [ADR-045] | Reservations: available to promise, computed rather than stored | accepted | 2026-09-23 | | [ADR-093] |
 | [ADR-046] | Invoicing: an invoice bills one shipment, and is reversed, never edited | accepted | 2026-09-25 | | [ADR-071], [ADR-073] |
 | [ADR-047] | Return authorizations, and credit notes for what comes back | accepted | 2026-09-26 | | [ADR-073] |
-| [ADR-048] | Cost: value is a ledger, like quantity | accepted | 2026-09-28 | | [ADR-092] |
+| [ADR-048] | Cost: value is a ledger, like quantity | accepted | 2026-09-28 | | [ADR-092], [ADR-094] |
 | [ADR-049] | Price lists: a default that becomes the line's price | accepted | 2026-09-28 | | |
 | [ADR-050] | Licence status at release | accepted | 2026-09-30 | [ADR-040] | |
 | [ADR-051] | Performance: a volume seed, response-time budgets, plan checks | accepted | 2026-10-01 | [ADR-071] | [ADR-081], [ADR-082], [ADR-091], [ADR-092], [ADR-093] |
@@ -93,7 +93,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-053] | Backups: an encrypted nightly dump we own, at another provider, restored monthly | accepted | 2026-10-02 | | |
 | [ADR-054] | Languages: the person's language for the app, the customer's for documents | accepted | 2026-10-03 | | [ADR-071], [ADR-076], [ADR-081], [ADR-092] |
 | [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082], [ADR-090], [ADR-091] |
-| [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073], [ADR-092] |
+| [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073], [ADR-092], [ADR-094] |
 | [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-072], [ADR-076], [ADR-091], [ADR-093] |
 | [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079], [ADR-085], [ADR-091] |
 | [ADR-059] | Files: one store for every file, on R2, served through the app | accepted | 2026-10-08 | | [ADR-070] |
@@ -110,8 +110,8 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-070] | Deleting an organization | accepted | 2026-10-15 | [ADR-012], [ADR-059], [ADR-069] | [ADR-071], [ADR-078], [ADR-080] |
 | [ADR-071] | Documents as PDF, drawn on the server | accepted | 2026-10-16 | [ADR-046], [ADR-054], [ADR-055], [ADR-070] | [ADR-051], [ADR-072], [ADR-073], [ADR-080] |
 | [ADR-072] | Each organization's time zone | accepted | 2026-10-16 | [ADR-052], [ADR-057], [ADR-058], [ADR-071] | |
-| [ADR-073] | Each organization's document numbering | accepted | 2026-10-17 | [ADR-046], [ADR-047], [ADR-056], [ADR-071] | |
-| [ADR-074] | Run numbers, and batch codes from them (deferred) | deferred | 2026-10-17 | | |
+| [ADR-073] | Each organization's document numbering | accepted | 2026-10-17 | [ADR-046], [ADR-047], [ADR-056], [ADR-071] | [ADR-094] |
+| [ADR-074] | Run numbers, and batch codes from them (deferred) | deferred | 2026-10-17 | | [ADR-094] |
 | [ADR-075] | Text size: the person's choice, and text that grows | accepted | 2026-10-18 | [ADR-055] | |
 | [ADR-076] | The audit log in words: no ids, references named, every field translated | accepted | 2026-10-19 | [ADR-018], [ADR-038], [ADR-054], [ADR-057] | |
 | [ADR-077] | Invitations: how a person joins an organization | accepted | 2026-10-19 | [ADR-006], [ADR-069] | [ADR-078], [ADR-079], [ADR-080], [ADR-083] |
@@ -130,7 +130,8 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-090] | The design language: eight principles and their patterns, at every screen size | accepted | 2026-11-04 | [ADR-055], [ADR-089] | [ADR-091], [ADR-092], [ADR-093] |
 | [ADR-091] | Home, redesigned: a few large tiles that open their lists | accepted | 2026-11-04 | [ADR-051], [ADR-055], [ADR-057], [ADR-058], [ADR-069], [ADR-079], [ADR-090] | [ADR-092], [ADR-093] |
 | [ADR-092] | Items: everything the company keeps, by type and category | accepted | 2026-11-09 | [ADR-048], [ADR-051], [ADR-054], [ADR-056], [ADR-068], [ADR-090], [ADR-091] | [ADR-093] |
-| [ADR-093] | Inventory and Movements: one row per code, where it stands on the item's page, and a stock card | accepted | 2026-11-14 | [ADR-044], [ADR-045], [ADR-051], [ADR-057], [ADR-085], [ADR-090], [ADR-091], [ADR-092] | |
+| [ADR-093] | Inventory and Movements: one row per code, where it stands on the item's page, and a stock card | accepted | 2026-11-14 | [ADR-044], [ADR-045], [ADR-051], [ADR-057], [ADR-085], [ADR-090], [ADR-091], [ADR-092] | [ADR-094] |
+| [ADR-094] | Lots at receipt: a code made for us, the supplier's lot later, tracking started with stock | accepted | 2026-11-21 | [ADR-023], [ADR-044], [ADR-048], [ADR-056], [ADR-073], [ADR-074], [ADR-093] | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md
@@ -225,6 +226,7 @@ decided is in [Open decisions](open-decisions.md).
 [ADR-091]: 0091-home-redesigned.md
 [ADR-092]: 0092-items.md
 [ADR-093]: 0093-inventory-and-movements.md
+[ADR-094]: 0094-lots-at-receipt.md
 
 <!-- adr-index:end -->
 
@@ -239,11 +241,11 @@ same names. An area no ADR names has no line.
 <!-- adr-areas:start -->
 
 - `boms`: [ADR-029], [ADR-030], [ADR-040]
-- `costs`: [ADR-048]
+- `costs`: [ADR-048], [ADR-094]
 - `home`: [ADR-058], [ADR-079], [ADR-085], [ADR-091]
 - `invoices`: [ADR-046], [ADR-047], [ADR-071], [ADR-073]
 - `locations`: [ADR-024], [ADR-028], [ADR-030], [ADR-042]
-- `numbering`: [ADR-073], [ADR-074]
+- `numbering`: [ADR-073], [ADR-074], [ADR-094]
 - `orders`: [ADR-026], [ADR-027], [ADR-031], [ADR-033], [ADR-034], [ADR-035], [ADR-041], [ADR-042], [ADR-043], [ADR-045], [ADR-046], [ADR-049], [ADR-071]
 - `partners`: [ADR-026], [ADR-028], [ADR-056]
 - `price-lists`: [ADR-049]
@@ -253,7 +255,7 @@ same names. An area no ADR names has no line.
 - `recent`: [ADR-058]
 - `return-authorizations`: [ADR-047]
 - `search`: [ADR-056], [ADR-066]
-- `stock`: [ADR-023], [ADR-024], [ADR-025], [ADR-032], [ADR-039], [ADR-041], [ADR-042], [ADR-043], [ADR-044], [ADR-045], [ADR-048], [ADR-085], [ADR-093]
+- `stock`: [ADR-023], [ADR-024], [ADR-025], [ADR-032], [ADR-039], [ADR-041], [ADR-042], [ADR-043], [ADR-044], [ADR-045], [ADR-048], [ADR-085], [ADR-093], [ADR-094]
 - `tax-codes`: [ADR-046]
 - `audit`: [ADR-012], [ADR-018], [ADR-022], [ADR-038], [ADR-076]
 - `auth`: [ADR-006], [ADR-011], [ADR-014], [ADR-015], [ADR-017], [ADR-020], [ADR-022], [ADR-037], [ADR-065], [ADR-078]

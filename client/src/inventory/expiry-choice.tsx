@@ -1,0 +1,177 @@
+import {
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  TextField,
+} from '@mui/material';
+import { type ReactNode, type Ref, useId } from 'react';
+import { useIntl } from 'react-intl';
+
+import type { ExpiryKind } from '../lib/api-names';
+import { organizationToday } from '../lib/time-zone';
+
+/**
+ * A day worth a second look, said in amber under it, never refused (review
+ * 10): one already past, whose stock reads as expired at once; or one more
+ * than 10 years away, most often a year mistyped.
+ */
+function dayWarning(day: string): 'past' | 'far' | null {
+  if (!day) return null;
+  const today = organizationToday();
+  if (day < today) return 'past';
+  const tenYears = `${Number(today.slice(0, 4)) + 10}${today.slice(4)}`;
+  return day > tenYears ? 'far' : null;
+}
+
+/**
+ * When a lot expires, one of three (ADR-094, R8): On a date, which asks
+ * the day under it; Not known yet, which says the lot is marked until its
+ * date is added; or Doesn't expire. The same in the lot fields, Edit lot
+ * details and Start tracking lots.
+ */
+export function ExpiryChoice({
+  idPrefix,
+  expiry,
+  expiresAt,
+  onChange,
+  required = true,
+  help,
+  start,
+  expiryRef,
+  dayRef,
+  errors = {},
+}: {
+  /** Keeps the dialogs' field ids apart. */
+  idPrefix: string;
+  /** The choice, or null while none is made. */
+  expiry: ExpiryKind | null;
+  /** As the date input gives it, YYYY-MM-DD (ADR-052). */
+  expiresAt: string;
+  onChange: (next: { expiry?: ExpiryKind; expiresAt?: string }) => void;
+  /** Start tracking lots' is optional (R14). */
+  required?: boolean;
+  /**
+   * Said under the choices, in place of Not known yet's own line where
+   * given: Start tracking lots says what its lot is then (ADR-094, S6).
+   */
+  help?: ReactNode;
+  /**
+   * Where the choice started, said before the choice's own line: Move to
+   * another lot's "Starts as the lot it leaves has it." (review 6, 27).
+   */
+  start?: string;
+  /** For a form that focuses the first field it refused (#310). */
+  expiryRef?: Ref<HTMLInputElement>;
+  dayRef?: Ref<HTMLInputElement>;
+  errors?: { expiry?: string; day?: string };
+}) {
+  const intl = useIntl();
+  const id = useId();
+  const own =
+    expiry === 'unknown'
+      ? intl.formatMessage({
+          id: 'inventory.lot.expiry.unknownHelp',
+          defaultMessage:
+            'Marked “Expiry to add” until its date is added. The stock can still be used.',
+        })
+      : undefined;
+  const said =
+    errors.expiry ??
+    help ??
+    (start && own ? `${start} ${own}` : (start ?? own));
+  const warning = expiry === 'date' ? dayWarning(expiresAt) : null;
+
+  return (
+    <>
+      <FormControl error={!!errors.expiry}>
+        <FormLabel id={id} required={required}>
+          {intl.formatMessage({
+            id: 'inventory.lot.expires',
+            defaultMessage: 'Expires',
+          })}
+        </FormLabel>
+        <RadioGroup
+          row
+          aria-labelledby={id}
+          aria-describedby={said ? `${id}-help` : undefined}
+          value={expiry ?? ''}
+          onChange={(event) =>
+            onChange({ expiry: event.target.value as ExpiryKind })
+          }
+        >
+          <FormControlLabel
+            value="date"
+            control={<Radio slotProps={{ input: { ref: expiryRef } }} />}
+            label={intl.formatMessage({
+              id: 'inventory.lot.expiry.date',
+              defaultMessage: 'On a date',
+            })}
+          />
+          <FormControlLabel
+            value="unknown"
+            control={<Radio />}
+            label={intl.formatMessage({
+              id: 'inventory.lot.expiry.unknown',
+              defaultMessage: 'Not known yet',
+            })}
+          />
+          <FormControlLabel
+            value="none"
+            control={<Radio />}
+            label={intl.formatMessage({
+              id: 'inventory.lot.expiry.none',
+              defaultMessage: 'Doesn’t expire',
+            })}
+          />
+        </RadioGroup>
+        {said && <FormHelperText id={`${id}-help`}>{said}</FormHelperText>}
+      </FormControl>
+
+      {expiry === 'date' && (
+        <TextField
+          id={`${idPrefix}-lot-expires`}
+          label={intl.formatMessage({
+            id: 'inventory.lot.expiresDay',
+            defaultMessage: 'The day it expires',
+          })}
+          type="date"
+          required
+          fullWidth
+          value={expiresAt}
+          // A day typed is On a date chosen, though it was only where the
+          // choice started: making a code then keeps it (review 69).
+          onChange={(event) =>
+            onChange({ expiry: 'date', expiresAt: event.target.value })
+          }
+          inputRef={dayRef}
+          error={!!errors.day}
+          helperText={
+            errors.day ??
+            (warning === 'past'
+              ? intl.formatMessage({
+                  id: 'inventory.lot.expiry.pastDay',
+                  defaultMessage:
+                    'That day has passed: the stock will read as expired, and no longer count as usable.',
+                })
+              : warning === 'far'
+                ? intl.formatMessage({
+                    id: 'inventory.lot.expiry.farDay',
+                    defaultMessage:
+                      'This date is more than 10 years away. Check the year.',
+                  })
+                : undefined)
+          }
+          slotProps={{
+            inputLabel: { shrink: true },
+            formHelperText: {
+              sx: errors.day || !warning ? {} : { color: 'warning.main' },
+            },
+          }}
+        />
+      )}
+    </>
+  );
+}

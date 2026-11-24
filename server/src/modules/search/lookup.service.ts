@@ -27,6 +27,7 @@ import {
   documentNumbering,
   type DocumentType,
   invoices,
+  type LotExpiry,
   lots,
   type OrderDirection,
   orders,
@@ -49,6 +50,7 @@ import {
 import { itemMatches, itemRank } from '../products/item-search';
 import { coverOf } from '../products/product-images';
 import { itemName, namesIn } from '../stock/item-name';
+import { lotMatches, lotRank } from '../stock/lot-search';
 
 /** At most this many of each kind (ADR-056). */
 export const LOOKUP_LIMIT = 5;
@@ -77,6 +79,22 @@ export interface LookupResult {
   fulfillment: OrderFulfillment | null;
   /** A lot's, for its expiry chip. */
   expiresAt: string | null;
+  /**
+   * A lot's expiry, a date, not known yet or none (ADR-094, R9), so its
+   * row reads "Expiry to add" (#618); null for other kinds.
+   */
+  expiry: LotExpiry | null;
+  /**
+   * A lot's supplier's lot, which finds it as its code does (ADR-094,
+   * R6), so a lot found by it says so; null for other kinds and for a lot
+   * with none.
+   */
+  supplierLot: string | null;
+  /**
+   * Whether a lot's code was made here, so one with no supplier's lot
+   * reads "Supplier's lot to add" (ADR-094, R5); null for other kinds.
+   */
+  isAssigned: boolean | null;
   /** An item's product, which is the page it opens. */
   productId: string | null;
   /** An item's product's cover (ADR-066); null for every other kind. */
@@ -114,6 +132,7 @@ const KIND_OF_SERIES: Record<DocumentType, LookupKind> = {
   return_authorization: 'returnAuthorization',
   sale_order: 'order',
   purchase_order: 'order',
+  lot: 'lot',
 };
 
 /** A prefix's text before its date, and the kind it names. */
@@ -152,6 +171,9 @@ const NONE = {
   direction: sql<OrderDirection | null>`null::text`,
   fulfillment: sql<OrderFulfillment | null>`null::text`,
   expiresAt: sql<string | null>`null::text`,
+  expiry: sql<LotExpiry | null>`null::text`,
+  supplierLot: sql<string | null>`null::text`,
+  isAssigned: sql<boolean | null>`null::boolean`,
   productId: sql<string | null>`null::uuid`,
   coverFileId: sql<string | null>`null::uuid`,
   type: sql<ProductType | null>`null::text`,
@@ -290,6 +312,9 @@ export class LookupService {
               direction: orders.direction,
               fulfillment: fulfillmentOf(),
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -348,6 +373,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -392,6 +420,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -424,7 +455,7 @@ export class LookupService {
               position: positionBy(
                 close
                   ? desc(closeness(lots.code, terms))
-                  : matchRank(lots.code, terms),
+                  : lotRank(lots, terms),
                 desc(lots.id),
               ),
               id: lots.id,
@@ -435,6 +466,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: sql<string | null>`${lots.expiresAt}::text`,
+              expiry: sql<LotExpiry | null>`${lots.expiry}`,
+              supplierLot: sql<string | null>`${lots.supplierLot}`,
+              isAssigned: sql<boolean | null>`${lots.isAssigned}`,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -451,9 +485,13 @@ export class LookupService {
               and(
                 eq(lots.organizationId, organizationId),
                 excluding(lots.id, exclude),
+                // Its code or its supplier's lot (ADR-094, R6); a typo's
+                // close match in its own code alone, as an item's is looked
+                // for in its SKU and base name alone, since the close pass
+                // is the costliest query here (ADR-051).
                 close
                   ? closeMatches(lots.code, terms)
-                  : codeMatches(lots.code, terms),
+                  : lotMatches(lots, terms),
               ),
             )
             .orderBy(byPosition)
@@ -483,6 +521,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: products.id,
               // Its product's cover, as Products shows it (ADR-066).
               coverFileId: coverOf(),
@@ -532,6 +573,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -568,6 +612,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -611,6 +658,9 @@ export class LookupService {
               direction: NONE.direction,
               fulfillment: NONE.fulfillment,
               expiresAt: NONE.expiresAt,
+              expiry: NONE.expiry,
+              supplierLot: NONE.supplierLot,
+              isAssigned: NONE.isAssigned,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -685,8 +735,8 @@ export function byKind(rows: Tagged[]): Map<LookupKind, Row[]> {
 /**
  * The fixed order of kinds, with one exception: a query shaped like a
  * known number, starting with one of the organization's prefixes (the
- * longest that fits, ADR-073), or exactly a lot's code, puts that kind
- * first.
+ * longest that fits, ADR-073), or exactly a lot's code or its supplier's
+ * lot (ADR-094, R6), puts that kind first.
  */
 function ordered(
   groups: LookupGroup[],
@@ -703,7 +753,9 @@ function ordered(
       ?.results.some(
         (result) =>
           !result.close &&
-          result.title.toLowerCase() === terms.text.toLowerCase(),
+          [result.title, result.supplierLot].some(
+            (code) => code?.toLowerCase() === query,
+          ),
       )
       ? 'lot'
       : undefined);

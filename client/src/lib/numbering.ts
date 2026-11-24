@@ -5,7 +5,10 @@ import { calendarDay } from './date-range';
  * How a number is written (ADR-073), as the server writes it
  * (server/src/modules/numbering/numbering-format.ts): checked here first so
  * the Numbering section can say what is wrong as it is typed, and print the
- * next number as it will be taken. The server checks again on save.
+ * next number as it will be taken. The two packages share no code, so each
+ * keeps the rules with the same tests; the server's decides what is saved.
+ * A lot's code made here is written the same way, from narrower characters
+ * (ADR-094).
  */
 
 type Token = 'YYYY' | 'YY' | 'MM' | 'DD';
@@ -18,8 +21,21 @@ const MAX_PRINTED_NUMBER = 20;
 
 type Piece = { text: string } | { token: Token };
 
+/**
+ * What a prefix numbers: a document, or a lot's code made here (ADR-094),
+ * which a GS1 barcode's lot field must carry, so capitals, digits and
+ * hyphens alone.
+ */
+export type PrefixKind = 'document' | 'lot';
+
+const TEXT: Record<PrefixKind, RegExp> = {
+  document: /^[A-Z0-9_/-]*$/,
+  lot: /^[A-Z0-9-]*$/,
+};
+
 export type PrefixProblem =
   | 'characters'
+  | 'lotCharacters'
   | 'start'
   | 'end'
   | 'doubleSlash'
@@ -50,7 +66,8 @@ function piecesOf(prefix: string): Piece[] | null {
 const tokensOf = (pieces: Piece[]): Token[] =>
   pieces.flatMap((piece) => ('token' in piece ? [piece.token] : []));
 
-function printedLength(prefix: string): number {
+/** How many characters a prefix prints: tokens have fixed widths. */
+export function printedLength(prefix: string): number {
   return (piecesOf(prefix) ?? []).reduce(
     (sum, piece) =>
       sum + ('token' in piece ? TOKEN_WIDTH[piece.token] : piece.text.length),
@@ -58,19 +75,25 @@ function printedLength(prefix: string): number {
   );
 }
 
-/** The first thing wrong with a series, or null: the server's rules. */
+/**
+ * The first thing wrong with a series, or null: the server's rules. A lot's
+ * prefix is held to the same, 20 characters with its digits among them, but
+ * for its characters (ADR-094).
+ */
 export function prefixProblem(
   prefix: string,
   digits: number,
   reset: NumberingReset,
+  kind: PrefixKind = 'document',
 ): PrefixProblem | null {
+  const characters = kind === 'lot' ? 'lotCharacters' : 'characters';
   const pieces = piecesOf(prefix);
-  if (!pieces) return 'characters';
+  if (!pieces) return characters;
 
   const texts = pieces.flatMap((piece) =>
     'text' in piece ? [piece.text] : [],
   );
-  if (texts.some((text) => !/^[A-Z0-9_/-]*$/.test(text))) return 'characters';
+  if (texts.some((text) => !TEXT[kind].test(text))) return characters;
 
   const tokens = tokensOf(pieces);
   if (new Set(tokens).size !== tokens.length) return 'repeated';
@@ -122,6 +145,37 @@ export function formatNumber(
   day: CalendarDay,
 ): string {
   return `${render(prefix, day)}${String(value).padStart(digits, '0')}`;
+}
+
+/**
+ * Less room than this is worth a warning, in amber, for a series that
+ * starts again each year or never (ADR-094's S5, replacing D1's 1,000): a
+ * prefix prints at most 16 characters, so the least room is 9,999, and a
+ * 16-character prefix then warns.
+ */
+const SHORT_ROOM = 10_000n;
+
+/**
+ * How many numbers a prefix gives before one prints more than 20
+ * characters, in each period of its reset: 10 to the power of what is left
+ * after the prefix, less one, whatever the digits; and whether that is
+ * short enough to warn of. A lot's code made here grows past 20 once its
+ * counter outgrows that room, as a document's number grows past its digits
+ * (ADR-094's D1). Only a series that starts again each year or never is
+ * short: 9,999 codes a day or a month is no real risk (S5). A BigInt,
+ * since an empty prefix leaves room for 10^20 - 1.
+ */
+export function roomWithin20(
+  prefix: string,
+  reset: NumberingReset,
+): {
+  codes: bigint;
+  short: boolean;
+} {
+  const left = Math.max(MAX_PRINTED_NUMBER - printedLength(prefix), 0);
+  const codes = 10n ** BigInt(left) - 1n;
+  const long = reset === 'yearly' || reset === 'never';
+  return { codes, short: long && codes < SHORT_ROOM };
 }
 
 /** Which counter a day belongs to: '', 2026, 2026-10 or 2026-10-17. */
@@ -191,13 +245,19 @@ export interface NumberingFormat {
 /**
  * The three common formats (ADR-073, as approved on the canvas), each
  * keeping the series' letters so two series never share one: INV-000001,
- * INV-2026-0001 each year, INV20261017-001 each day.
+ * INV-2026-0001 each year, INV20261017-001 each day. A lot's each day is
+ * its default's shape, L-2026-10-17-1 (ADR-094), so it can be had back.
  */
-export function commonFormats(letters: string): NumberingFormat[] {
+export function commonFormats(
+  letters: string,
+  kind: PrefixKind = 'document',
+): NumberingFormat[] {
   return [
     { prefix: `${letters}-`, digits: 6, reset: 'never' },
     { prefix: `${letters}-{YYYY}-`, digits: 4, reset: 'yearly' },
-    { prefix: `${letters}{YYYY}{MM}{DD}-`, digits: 3, reset: 'daily' },
+    kind === 'lot'
+      ? { prefix: `${letters}-{YYYY}-{MM}-{DD}-`, digits: 1, reset: 'daily' }
+      : { prefix: `${letters}{YYYY}{MM}{DD}-`, digits: 3, reset: 'daily' },
   ];
 }
 

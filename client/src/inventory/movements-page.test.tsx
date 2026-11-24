@@ -166,6 +166,158 @@ describe('MovementsPage', () => {
     expect(within(row).getByText('Corrected: found')).toBeVisible();
   });
 
+  // ADR-094, R11: why a receipt had no order, after its reason.
+  it('says why a receipt had no order after its reason, Received: opening stock', async () => {
+    const row = await rowFor(
+      movement({ reason: 'receipt', reasonDetail: 'opening' }),
+    );
+
+    expect(within(row).getByText('Received: opening stock')).toBeVisible();
+  });
+
+  // ADR-094, R16 and R20: a lot change at one place, its two lots, which
+  // the code and its place count in neither In nor Out.
+  const LOT_CHANGE = movement({
+    reason: 'lot_change',
+    reasonDetail: 'between_lots',
+    quantity: '30.0000',
+    note: 'Two runs in one delivery',
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    lotId: 'lot-a',
+    lotCode: 'LOT-A',
+    toLotId: 'lot-b',
+    toLotCode: 'LOT-B',
+    quantityIn: null,
+    quantityOut: null,
+    change: null,
+  });
+
+  /** The code's stock put into its first lot as lot tracking started. */
+  const LOTS_STARTED = movement({
+    id: 'movement-2',
+    reason: 'lot_change',
+    reasonDetail: 'lots_started',
+    quantity: '3000.0000',
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    lotId: null,
+    lotCode: null,
+    lotExpiresAt: null,
+    lotExpiry: null,
+    toLotId: 'lot-l',
+    toLotCode: 'L-2026-11-22-1',
+    quantityIn: null,
+    quantityOut: null,
+    change: null,
+  });
+
+  /** Stock back from before lot tracking, put into that first lot (Q3a). */
+  const FROM_BEFORE = movement({
+    ...LOTS_STARTED,
+    id: 'movement-3',
+    reasonDetail: 'from_before',
+    quantity: '7.0000',
+  });
+
+  // ADR-094, U1: a lot change reads as the action that made it, its
+  // place written once, since the stock did not move.
+  it('reads a move between lots as Moved to another lot, its place once, both its lots each a link, and why', async () => {
+    const row = await rowFor(LOT_CHANGE);
+
+    expect(within(row).getByText('Moved to another lot')).toBeVisible();
+    expect(row).not.toHaveTextContent('Lot changed');
+    expect(within(row).getByText('Two runs in one delivery')).toBeVisible();
+    expect(cellUnder(row, 'From → to')).toHaveTextContent(
+      /^Main warehouse › Shelf A \(A\)$/,
+    );
+    const lot = cellUnder(row, 'Lot')!;
+    expect(lot).toHaveTextContent('LOT-A→intoLOT-B');
+    expect(within(lot).getByRole('link', { name: 'LOT-A' })).toHaveAttribute(
+      'href',
+      '/lots/lot-a',
+    );
+    expect(within(lot).getByRole('link', { name: 'LOT-B' })).toHaveAttribute(
+      'href',
+      '/lots/lot-b',
+    );
+    // Several items: no In or Out, how many moved to another lot.
+    expect(cellUnder(row, 'Change')).toHaveTextContent(
+      /^moved 30 each to another lot$/,
+    );
+  });
+
+  it('reads lot tracking started and stock back from before as their actions, each put into a lot at its place, written once', async () => {
+    answer([LOTS_STARTED, FROM_BEFORE]);
+    renderAt('/movements');
+
+    const started = (await screen.findByText('Lot tracking started')).closest(
+      'tr',
+    )!;
+    expect(cellUnder(started, 'Change')).toHaveTextContent(
+      /^put 3,000 each into a lot$/,
+    );
+    expect(cellUnder(started, 'From → to')).toHaveTextContent(
+      /^Main warehouse › Shelf A \(A\)$/,
+    );
+    const back = screen
+      .getByText('Back from before lot tracking')
+      .closest('tr')!;
+    expect(cellUnder(back, 'Change')).toHaveTextContent(
+      /^put 7 each into a lot$/,
+    );
+    expect(cellUnder(back, 'From → to')).toHaveTextContent(
+      /^Main warehouse › Shelf A \(A\)$/,
+    );
+    expect(screen.queryByText(/Lot changed/)).not.toBeInTheDocument();
+  });
+
+  it('counts a lot change in neither In nor Out for its code, and Out of the lot it left, a lot started with none before it', async () => {
+    answer([LOT_CHANGE, LOTS_STARTED, FROM_BEFORE]);
+    renderAt(`/movements?variantId=${ITEM}`);
+
+    expect(
+      await screen.findByText(
+        'moved 30 each to another lot, counted in neither',
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText('put 3,000 each into a lot, counted in neither'),
+    ).toBeVisible();
+    expect(
+      screen.getByText('put 7 each into a lot, counted in neither'),
+    ).toBeVisible();
+    expect(screen.getByText('Lot tracking started')).toBeVisible();
+    // The lot it entered alone, there being no first (review 30).
+    expect(
+      screen.getAllByRole('link', { name: 'L-2026-11-22-1' })[0].closest('td'),
+    ).toHaveTextContent(/^L-2026-11-22-1$/);
+  });
+
+  // ADR-094, U1: one option for the three kinds, named apart from the
+  // rows' reasons, finding what `lot_change` finds.
+  it('offers the three kinds of lot change as one Reason, Lot changes, its chip saying so', async () => {
+    const asked = answer([LOT_CHANGE]);
+    renderAt('/movements');
+
+    await userEvent.click(
+      await screen.findByRole('combobox', { name: 'Reason' }),
+    );
+    await userEvent.click(screen.getByRole('option', { name: 'Lot changes' }));
+
+    expect(addressOf()).toHaveTextContent('?reason=lot_change');
+    await waitFor(() => expect(asked.at(-1)?.get('reason')).toBe('lot_change'));
+    expect(
+      screen.getByRole('button', {
+        name: /^Remove filter: Reason: Lot changes$/,
+      }),
+    ).toBeVisible();
+  });
+
   it('says a reason with its capital in French, its detail in lower case', async () => {
     localStorage.setItem('language', 'fr-CA');
     try {
@@ -175,6 +327,26 @@ describe('MovementsPage', () => {
       expect(
         await screen.findByText(
           /^Corrigé\u00A0: erreur de comptage$/,
+          { normalizer: (text) => text },
+          { timeout: 3000 },
+        ),
+      ).toBeVisible();
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
+  // #647: a voided shipment's goods back, in the reader's language.
+  it('says a voided shipment’s goods back in Chinese, never in English', async () => {
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      answer([
+        movement({ reason: 'adjustment', reasonDetail: 'shipment_voided' }),
+      ]);
+      renderAt('/movements');
+      expect(
+        await screen.findByText(
+          '调整：发货已作废',
           { normalizer: (text) => text },
           { timeout: 3000 },
         ),
@@ -206,6 +378,7 @@ describe('MovementsPage', () => {
       'Used in a run',
       'Sampled',
       'Returned',
+      'Lot changes',
     ]);
 
     // The field shows the one chosen with its capital too (136a).
@@ -253,6 +426,122 @@ describe('MovementsPage', () => {
 
     expect(cellUnder(row, 'From → to')).toHaveTextContent('→sample');
     expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+  });
+
+  // ADR-094, D3, amending ADR-093's 82a: a receipt's partner is where it
+  // came from, For staying the document's; with none, its outside end
+  // follows why it came with no order.
+  const RECEIPT = movement({
+    reason: 'receipt',
+    quantity: '24.0000',
+    fromLocationId: null,
+    fromLocationName: null,
+    fromLocationCode: null,
+    fromLocationPath: [],
+    toLocationId: 'location-shelf-a',
+    toLocationName: 'Shelf A',
+    toLocationCode: 'A',
+    toLocationPath: ['Main warehouse'],
+    quantityIn: '24.0000',
+    quantityOut: null,
+    change: '24.0000',
+  });
+
+  it('starts a receipt at the partner it came from, a link, For reading — (D3)', async () => {
+    const row = await rowFor(
+      {
+        ...RECEIPT,
+        reasonDetail: 'returned',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      },
+      [...EVERYONE, 'partners.view'],
+    );
+
+    const ends = cellUnder(row, 'From → to');
+    expect(ends).toHaveTextContent(
+      'Northside Pharmacy→Main warehouse › Shelf A (A)',
+    );
+    expect(
+      within(ends).getByRole('link', { name: 'Northside Pharmacy' }),
+    ).toHaveAttribute('href', `/partners/${PARTNER}`);
+    expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+  });
+
+  it.each([
+    ['none given', null, 'supplier'],
+    ['opening stock', 'opening', 'opening stock'],
+    ['stock a customer brought back', 'returned', 'customer'],
+    ['a sample', 'sample', 'supplier'],
+    ['other', 'other', 'other'],
+  ])(
+    'starts a receipt with no partner by why it came, %s (D3)',
+    async (_why, reasonDetail, end) => {
+      const row = await rowFor({ ...RECEIPT, reasonDetail });
+
+      expect(cellUnder(row, 'From → to')).toHaveTextContent(
+        `${end}→Main warehouse › Shelf A (A)`,
+      );
+      expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+    },
+  );
+
+  // D4: a detail an open tab does not know yet says nothing it cannot
+  // know, never "supplier" (review 70).
+  it('starts a receipt with a detail this tab does not know at —, never supplier (D4)', async () => {
+    const row = await rowFor({ ...RECEIPT, reasonDetail: 'consigned' });
+
+    expect(cellUnder(row, 'From → to')).toHaveTextContent(
+      '—→Main warehouse › Shelf A (A)',
+    );
+  });
+
+  // S7: with no From → to column, a receipt's partner follows its
+  // reason; a partner is not a place, so places' permission hides it not.
+  it('names a receipt’s partner after its reason for a reader with no From → to, a link with partners.view (S7)', async () => {
+    const row = await rowFor(
+      {
+        ...RECEIPT,
+        fromLocationId: null,
+        toLocationName: null,
+        toLocationCode: null,
+        toLocationPath: [],
+        reasonDetail: 'returned',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      },
+      [...SALES, 'partners.view'],
+    );
+
+    const reason = cellUnder(row, 'Reason');
+    expect(reason).toHaveTextContent(
+      'Received: returned · from Northside Pharmacy',
+    );
+    expect(
+      within(reason).getByRole('link', { name: 'Northside Pharmacy' }),
+    ).toHaveAttribute('href', `/partners/${PARTNER}`);
+    expect(cellUnder(row, 'For')).toHaveTextContent(/^—$/);
+  });
+
+  it('leaves the reason as it was where From → to names the partner (S7)', async () => {
+    const row = await rowFor(
+      {
+        ...RECEIPT,
+        reasonDetail: 'returned',
+        recipient: { id: PARTNER, name: 'Northside Pharmacy' },
+      },
+      [...EVERYONE, 'partners.view'],
+    );
+
+    expect(cellUnder(row, 'Reason')).toHaveTextContent(/^Received: returned$/);
+  });
+
+  // ADR-094, D2: the lot's expiry as every screen words it, one not
+  // known yet "Expiry to add", never left out as one that does not expire.
+  it('says Expiry to add under a lot whose expiry is not known yet', async () => {
+    const row = await rowFor(
+      movement({ lotExpiresAt: null, lotExpiry: 'unknown' }),
+    );
+
+    expect(cellUnder(row, 'Lot')).toHaveTextContent('NN-2410-07Expiry to add');
   });
 
   it('names who by name, their email beneath', async () => {
@@ -387,6 +676,9 @@ describe('MovementsPage', () => {
       direction: null,
       fulfillment: null,
       expiresAt: null,
+      expiry: null,
+      supplierLot: null,
+      isAssigned: null,
       productId: null,
       coverFileId: null,
       type: null,
@@ -639,6 +931,39 @@ describe('MovementsPage', () => {
       expect(
         await screen.findByRole('button', {
           name: 'Remove filter: Lot: MCS-001',
+        }),
+      ).toBeVisible();
+    });
+
+    // A lot made here is found by its supplier's lot as by its code
+    // (ADR-094, R6): typed whole, that lot alone, saying it.
+    it('offers a lot whose whole supplier’s lot is typed alone, naming it', async () => {
+      const user = userEvent.setup();
+      answer([movement({ variantId: ITEM, lotId: LOT, lotCode: 'L-0001' })]);
+      found([
+        {
+          kind: 'lot',
+          results: [
+            result({ title: 'L-0001', supplierLot: 'Hx-2609' }),
+            result({ id: PARTNER, title: 'HX-2609-B' }),
+          ],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'hx-2609',
+      );
+      expect(await offered()).toEqual({
+        options: ['Lot L-0001 · supplier’s lot Hx-2609 · Vitamin C 500 mg'],
+        headings: ['Lots'],
+      });
+
+      await user.click(screen.getByRole('option', { name: /^Lot L-0001/ }));
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Lot: L-0001',
         }),
       ).toBeVisible();
     });

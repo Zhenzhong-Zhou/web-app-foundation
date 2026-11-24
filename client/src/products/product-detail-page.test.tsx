@@ -2,14 +2,16 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type {
+  CodeStanding,
   ProductCategory,
   ProductDetail,
   UpdateProductDto,
 } from '../api/types.gen';
 import { ToastProvider } from '../components/toast-provider';
+import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { ProductDetailPage } from './product-detail-page';
@@ -425,5 +427,551 @@ describe('ProductDetailPage', () => {
     // Where it went, not only "Item saved" (ADR-092's review, 24): the
     // tab's name.
     expect(await screen.findByText('Moved to Samples.')).toBeVisible();
+  });
+});
+
+// ADR-094, R13 to R15: a code not tracked starts on the item's page.
+describe('Start tracking lots', () => {
+  const BOTH = ['products.view', 'products.update', 'stock.adjust'];
+  const UNTRACKED = {
+    ...PRODUCT,
+    variants: [variant('variant-1', 'CALM-90', null, [])],
+  };
+  const QUESTION = {
+    variantId: 'variant-1',
+    sku: 'CALM-90',
+    onHand: '3000.0000',
+    places: [
+      {
+        locationId: 'loc-a',
+        locationName: 'Shelf A2',
+        locationCode: null,
+        locationPath: ['Main warehouse'],
+        quantity: '2000.0000',
+      },
+      {
+        locationId: 'loc-b',
+        locationName: 'Back room',
+        locationCode: null,
+        locationPath: [],
+        quantity: '1000.0000',
+      },
+    ],
+    runCount: 2,
+    runs: [
+      { id: 'run-1', reference: 'B-104', makes: true },
+      { id: 'run-2', reference: null, makes: false },
+    ],
+  };
+
+  /** The page, the question and the write answered, what it sent kept. */
+  function startable(
+    product: ProductDetail = UNTRACKED,
+    permissions = BOTH,
+    question: Record<string, unknown> = QUESTION,
+  ) {
+    const sent: Record<string, unknown>[] = [];
+    let started = false;
+    const path = '/api/v1/products/product-1/variants/variant-1/lot-tracking';
+    server.use(
+      http.get(path, () => HttpResponse.json(question)),
+      http.post(path, async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        started = true;
+        return HttpResponse.json(
+          { lot: { id: 'lot-1', code: 'L-2026-10-17-1' } },
+          { status: 201 },
+        );
+      }),
+    );
+    renderPage(product, permissions);
+    // Read again once started, the code now tracked.
+    server.use(
+      http.get('/api/v1/products/:id', () =>
+        HttpResponse.json(
+          started
+            ? {
+                ...product,
+                variants: product.variants.map((one) => ({
+                  ...one,
+                  tracksLots: true,
+                })),
+              }
+            : product,
+        ),
+      ),
+    );
+    return { user: userEvent.setup(), sent };
+  }
+
+  it('offers it for a code not tracked to whoever may change items and correct counts', async () => {
+    startable();
+    expect(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    ).toHaveTextContent(/^Start tracking lots…$/);
+  });
+
+  it('offers it to nobody without both permissions', async () => {
+    startable(UNTRACKED, ['products.view', 'products.update']);
+    expect(
+      await screen.findByRole('button', { name: 'CALM-90' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: /^Start tracking lots/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('offers it never for equipment', async () => {
+    startable({ ...UNTRACKED, type: 'equipment' });
+    expect(
+      await screen.findByRole('button', { name: 'CALM-90' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: /^Start tracking lots/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('asks with the places and what each holds, the code it will make, the runs that close against it and that it is one way; Cancel changes nothing (R14)', async () => {
+    const { user, sent } = startable();
+    const button = await screen.findByRole('button', {
+      name: 'Start tracking lots for CALM-90…',
+    });
+    await user.click(button);
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Start tracking lots for CALM-90',
+    });
+    expect(
+      await within(dialog).findByText(/on hand goes into one lot/),
+    ).toHaveTextContent(
+      '3,000 each on hand goes into one lot, its code made for us when you start, like L-2026-10-17-1:',
+    );
+    expect(
+      within(dialog)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      '2,000 each at Main warehouse › Shelf A2',
+      '1,000 each at Back room',
+    ]);
+    // Its cost, as v16's board says it (review 16).
+    expect(dialog).toHaveTextContent(
+      'Its cost goes with it. What still waits for a cost keeps waiting, on this lot.',
+    );
+    // And how to split it into real lots later (review 17).
+    expect(dialog).toHaveTextContent(
+      'Split it into real lots later with Move to another lot…',
+    );
+    expect(dialog).toHaveTextContent(
+      'Runs in progress that use or make it: B-104 and a run with no reference. Each will close against this lot.',
+    );
+    expect(dialog).toHaveTextContent(
+      'This cannot be undone: once started, lot tracking stays on, and each receipt asks for its lot.',
+    );
+    // In amber, a warning, as the boards draw it (review 18).
+    expect(
+      within(dialog)
+        .getByText(/^This cannot be undone/)
+        .closest('.MuiAlert-root'),
+    ).toHaveClass('MuiAlert-colorWarning');
+    expect(
+      within(dialog).getByRole('textbox', { name: /^Supplier’s lot/ }),
+    ).toHaveValue('');
+    // Expires starts on Not known yet, shown chosen, saying what the lot
+    // is then: never an unseen Doesn't expire (S6).
+    expect(
+      within(dialog).getByRole('radio', { name: 'Not known yet' }),
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole('radio', { name: 'On a date' }),
+    ).not.toBeChecked();
+    expect(
+      within(dialog).getByRole('radio', { name: 'Doesn’t expire' }),
+    ).not.toBeChecked();
+    expect(
+      within(dialog).getByRole('radiogroup', { name: 'Expires' }),
+    ).toHaveAccessibleDescription(
+      'Listed on Stock, by lot, under Details to add until someone gives the day or says it doesn’t expire. The stock can still be used.',
+    );
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(dialog).not.toBeInTheDocument();
+    expect(sent).toEqual([]);
+  });
+
+  // Review 83: the whole screen on a phone, as #564's dialogs.
+  it('fills the screen on a phone', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: /max-width/.test(query),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    const { user } = startable();
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: 'Start tracking lots for CALM-90',
+      }),
+    ).toHaveClass('MuiDialog-paperFullScreen');
+    vi.unstubAllGlobals();
+  });
+
+  // Review 19: v16's Error state, with Try again.
+  it('says why its places could not be read, with Try again, which asks again', async () => {
+    const { user } = startable();
+    let asked = 0;
+    server.use(
+      http.get(
+        '/api/v1/products/product-1/variants/variant-1/lot-tracking',
+        () => {
+          asked += 1;
+          return asked === 1
+            ? apiError(503, 'The server is busy. Try again in a moment.')
+            : HttpResponse.json(QUESTION);
+        },
+      ),
+    );
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+    const dialog = await screen.findByRole('dialog');
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'The server is busy. Try again in a moment.',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Try again' }));
+
+    expect(
+      await within(dialog).findByText(/on hand goes into one lot/),
+    ).toBeVisible();
+    expect(dialog).not.toHaveTextContent('The server is busy.');
+  });
+
+  it('says how many runs to a reader who may not see them', async () => {
+    const { user } = startable(UNTRACKED, BOTH, { ...QUESTION, runs: null });
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+
+    expect(
+      await screen.findByText(
+        '2 runs in progress use or make it. Each will close against this lot.',
+      ),
+    ).toBeVisible();
+  });
+
+  it('warns under a day already past that the stock will read as expired, and still starts', async () => {
+    const { user, sent } = startable();
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+    const dialog = await screen.findByRole('dialog');
+    await user.click(
+      await within(dialog).findByRole('radio', { name: 'On a date' }),
+    );
+    await user.type(
+      within(dialog).getByLabelText(/^The day it expires/),
+      '2020-01-01',
+    );
+
+    expect(dialog).toHaveTextContent(
+      'That day has passed: the stock will read as expired, and no longer count as usable.',
+    );
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Start tracking lots' }),
+    );
+    await waitFor(() =>
+      expect(sent).toEqual([{ expiry: 'date', expiresAt: '2020-01-01' }]),
+    );
+  });
+
+  it('starts in one write with what is known, its expiry not known yet unless changed, the message naming the lot with Open the lot, the code then reading Tracked (R15, S6)', async () => {
+    const { user, sent } = startable();
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+    const dialog = await screen.findByRole('dialog');
+    await user.type(
+      await within(dialog).findByRole('textbox', { name: /^Supplier’s lot/ }),
+      'Sup-77',
+    );
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Start tracking lots' }),
+    );
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Lot tracking started for CALM-90. Its stock on hand is in lot L-2026-10-17-1.',
+    );
+    expect(screen.getByRole('button', { name: 'Open the lot' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Copy code' }),
+    ).not.toBeInTheDocument();
+    expect(sent).toEqual([{ supplierLot: 'Sup-77', expiry: 'unknown' }]);
+    expect(await screen.findByText('Tracked')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: /^Start tracking lots/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('starts a code with nothing on hand, no lot made and nothing asked of one (R13)', async () => {
+    const { user, sent } = startable(UNTRACKED, BOTH, {
+      ...QUESTION,
+      onHand: '0.0000',
+      places: [],
+      runCount: 0,
+      runs: [],
+    });
+    server.use(
+      http.post(
+        '/api/v1/products/product-1/variants/variant-1/lot-tracking',
+        async ({ request }) => {
+          sent.push((await request.json()) as Record<string, unknown>);
+          return HttpResponse.json({ lot: null }, { status: 201 });
+        },
+      ),
+    );
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Start tracking lots for CALM-90…',
+      }),
+    );
+    const dialog = await screen.findByRole('dialog');
+
+    expect(
+      await within(dialog).findByText(
+        'Nothing is on hand, so no lot is made now.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(dialog).queryByRole('textbox', { name: /^Supplier’s lot/ }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Start tracking lots' }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Lot tracking started for CALM-90. Each receipt now asks for its lot.',
+    );
+    expect(sent).toEqual([{}]);
+  });
+
+  // ADR-094, T3: a second door, under By place and lot, where "Lot: —"
+  // raises the question.
+  describe('under By place and lot', () => {
+    const READS = [
+      'stock.view',
+      'locations.view',
+      'stock.move',
+      'stock.reorder',
+    ];
+    const LINE = /doesn’t track lots, so its stock has no lot numbers\./;
+
+    /** Where it stands for a code, its stock at one place with no lot. */
+    function standing(
+      variantId: string,
+      sku: string,
+      onHand = '3000.0000',
+    ): CodeStanding {
+      const none = '0.0000';
+      return {
+        variantId,
+        sku,
+        variantName: null,
+        unitOfMeasure: 'each',
+        isActive: true,
+        onHand,
+        usable: onHand,
+        notUsable: none,
+        expired: none,
+        issued: none,
+        unavailable: none,
+        held: none,
+        free: onHand,
+        stillNeeded: none,
+        short: none,
+        coming: none,
+        comingOn: null,
+        position: onHand,
+        expiresFirst: null,
+        allExpired: false,
+        reorderPoint: null,
+        status: null,
+        source: null,
+        suggestion: null,
+        heldOrders: 0,
+        holds: [],
+        purchases: [],
+        runs: [],
+        places:
+          onHand === none
+            ? []
+            : [
+                {
+                  locationId: 'loc-a',
+                  locationName: 'Shelf A2',
+                  locationCode: null,
+                  locationPath: ['Main warehouse'],
+                  isAvailable: true,
+                  onHand,
+                  lots: [
+                    {
+                      id: `pile-${variantId}`,
+                      variantId,
+                      sku,
+                      productName: 'Calm 90ct',
+                      variantName: null,
+                      unitOfMeasure: 'each',
+                      locationId: 'loc-a',
+                      locationName: 'Shelf A2',
+                      locationCode: null,
+                      lotId: null,
+                      lotCode: null,
+                      lotExpiresAt: null,
+                      lotExpiry: null,
+                      lotIsAssigned: null,
+                      lotSupplierLot: null,
+                      quantity: onHand,
+                      emptiedOn: null,
+                      issuedToRun: null,
+                    },
+                  ],
+                },
+              ],
+        lots: null,
+        latestMovements: [],
+      };
+    }
+
+    /** The item's page with Where it stands answering for its codes. */
+    function withStanding(
+      codes: CodeStanding[],
+      product: ProductDetail = UNTRACKED,
+      permissions = [...BOTH, ...READS],
+    ) {
+      server.use(
+        http.get('/api/v1/products/:id/stock', () =>
+          HttpResponse.json({ codes }),
+        ),
+      );
+      return startable(product, permissions);
+    }
+
+    /** The section Where it stands, once its places are drawn. */
+    async function whereItStands() {
+      await screen.findAllByRole('heading', { name: 'By place and lot' });
+      return screen.getByRole('region', { name: 'Where it stands' });
+    }
+
+    it('says a code not tracked has no lot numbers, its last three words the button, naming the code', async () => {
+      withStanding([standing('variant-1', 'CALM-90')]);
+      const section = await whereItStands();
+
+      const line = within(section).getByText(LINE);
+      expect(line).toHaveTextContent(
+        /^CALM-90 doesn’t track lots, so its stock has no lot numbers\. Start tracking lots…$/,
+      );
+      expect(
+        within(line).getByRole('button', {
+          name: 'Start tracking lots for CALM-90…',
+        }),
+      ).toHaveTextContent(/^Start tracking lots…$/);
+    });
+
+    it('keeps the line where the code holds nothing, since tracking can start with nothing on hand', async () => {
+      withStanding([standing('variant-1', 'CALM-90', '0.0000')]);
+
+      expect(
+        await screen.findByText(/^None on hand, nothing coming\./),
+      ).toBeVisible();
+      expect(screen.getByText(LINE)).toHaveTextContent(/^CALM-90 /);
+    });
+
+    it.each<[string, Partial<ProductDetail>, string[]]>([
+      [
+        'a code tracked',
+        {
+          variants: [{ ...UNTRACKED.variants[0]!, tracksLots: true }],
+        },
+        [...BOTH, ...READS],
+      ],
+      ['equipment', { type: 'equipment' }, [...BOTH, ...READS]],
+      [
+        'a reader who may not correct counts',
+        {},
+        ['products.view', 'products.update', ...READS],
+      ],
+      [
+        'a reader who may not change items',
+        {},
+        ['products.view', 'stock.adjust', ...READS],
+      ],
+    ])('draws no line for %s', async (_, change, permissions) => {
+      withStanding(
+        [standing('variant-1', 'CALM-90')],
+        { ...UNTRACKED, ...change },
+        permissions,
+      );
+      await whereItStands();
+
+      expect(screen.queryByText(LINE)).not.toBeInTheDocument();
+    });
+
+    // Where focus returns is the browser's to check: the theme that gives
+    // it back is not rendered here (lots-at-receipt.spec.ts).
+    it('opens the question for its own code, among several', async () => {
+      const product = {
+        ...UNTRACKED,
+        variants: [
+          { ...variant('variant-1', 'CALM-90', '90ct', []), tracksLots: true },
+          variant('variant-2', 'CALM-30', '30ct', []),
+        ],
+      };
+      const asked: string[] = [];
+      server.use(
+        http.get(
+          '/api/v1/products/product-1/variants/:variantId/lot-tracking',
+          ({ params }) => {
+            asked.push(String(params.variantId));
+            return HttpResponse.json({
+              ...QUESTION,
+              variantId: 'variant-2',
+              sku: 'CALM-30',
+            });
+          },
+        ),
+      );
+      const { user } = withStanding(
+        [standing('variant-1', 'CALM-90'), standing('variant-2', 'CALM-30')],
+        product,
+      );
+      const section = await whereItStands();
+
+      expect(within(section).getAllByText(LINE)).toHaveLength(1);
+      const button = within(section).getByRole('button', {
+        name: 'Start tracking lots for CALM-30…',
+      });
+      await user.click(button);
+
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Start tracking lots for CALM-30',
+      });
+      await within(dialog).findByText(/on hand goes into one lot/);
+      expect(asked).toEqual(['variant-2']);
+    });
   });
 });

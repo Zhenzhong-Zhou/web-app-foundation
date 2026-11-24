@@ -179,6 +179,19 @@ so the timing is the evidence for the name lookup.
   it leads with the organization (the amendment for #225 and #276,
   below): at small, lot search finds 341 candidates in its own
   organization, and its plan went from 6.0 to 0.7 ms on the Mac.
+  *Joined by the supplier's lot on 22 November 2026 (ADR-094, R6):* a
+  lot is found by any part of its code or of its supplier's lot,
+  `lots_supplier_lot_trgm_idx` led by the organization (migration 0083),
+  which the planner reads with the code's index in one bitmap OR, in
+  Trace a lot, Stock's search, the Lot view and the top bar's lookup.
+  At large, with a third of the lots given a supplier's lot for the
+  timing, the plans 3.9 ms for the lot search (3.6 before) and 16.2 for
+  the lookup's code (15.4), and at p95: the lookup with a lot's whole
+  code 246 ms (247 on 21 November, before the branch), with a whole
+  supplier's lot 211, the lot search 10 to 12. The lookup's close pass
+  reads the lot's code alone.
+  Trigger: the lookup with a lot's whole code past 300 ms at large. Then
+  its close pass first, the costliest query in it.
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
   in `zh-Hans`, at large, in its largest organization: 40 ms (4 November
   2026, #449), after 63.5 (29 October, #317) and 77.0 (1 November). Since
@@ -265,6 +278,12 @@ so the timing is the evidence for the name lookup.
   rather than worked out at each read, an ADR of its own. Stock's Low
   stock list (242 to 251 ms at large) and the Lot view's counts (248)
   share the trigger and the remedy.
+  *Fired on 22 November 2026 (ADR-094, #676):* at large, Stock's counts
+  371 ms and the Lot view's counts 368, with Home at 384, once ten
+  times more rows waited for a cost; on the same data the branch reads
+  them faster than `main` does. All 57 budgets pass at small. The
+  waiting set is made cheaper first (#664, the amendment for #676,
+  below), before the figures are kept ready.
 - **JIT off for the app's connections** (ADR-093's as-built, below).
   Trigger: a report or an export that runs for seconds, which can then
   turn it on for its own transaction alone.
@@ -1021,3 +1040,42 @@ with this as-built, pull request #558.
   on the branch (run 44874797517, the median of three rounds), held
   every budget. The weekly run after the merge reads Movements on
   `main`.
+
+## Amendment (November 2026) — lots at receipt's reads, and the counts' Watch fired (#676)
+
+ADR-094's branch, timed on the Mac at ten connections, p95 in ms, the
+median of three rounds, before on 21 November and after on 22
+November 2026. Both volume databases were seeded again on 22 November
+with ADR-094's shape: a lot in 20 made here, 1 in 43 with a supplier's
+lot, 1 in 50 with its expiry not known, 1 in 50 waiting for a cost,
+and a lot change in every 190 movements.
+
+- **Every search holds its budget at large (ADR-094's R6):** the
+  lookup with a lot's whole code 246 (247 before), the lot search 8 to
+  13, the Lot view's Details to add 120, a trace that follows lot
+  changes 25 to 29.
+- **All 57 budgets pass at small,** the size that can fail a run.
+- **Four read past 300 at large:** Stock's counts 371, the Lot view's
+  counts 368, Home 384 and Home for a newcomer 303. So the Watch's
+  trigger on Inventory's by-code counts, "past 300 ms at large in two
+  runs", has fired.
+- **The branch's code did not slow them.** On the same data `main`
+  reads the Lot view's counts in 549 and the branch in 422, and Stock
+  value's pools in 627 against 482: `main` hashes every movement of
+  the organization to find the waiting rows' movements, where the
+  branch looks each up by its key. They grew because ten times more
+  rows wait for a cost: #650's rule makes a count into such a pool
+  wait too, and the seed never sets a cost.
+- **The waiting list is slower,** 161 against 44, from working out
+  when a moved row stops waiting; inside its budget.
+- **A cost given:** 26 with five moves out of its pool, 7.5 with none,
+  5 before. Start tracking's relabel of 162 rows: 38 cold, 3 warm.
+- **Not timed at large:** the run read added to every pile Stock
+  lists (ADR-094's review 73) and Include empty's rewritten condition
+  (review 54).
+- **The plan check** holds every new query at both sizes; the two lot
+  indexes are read in one bitmap OR.
+
+The remedy is the next branch's (#664): the waiting set made cheaper
+and Stock value's pools read by the page; then the four are timed
+again.

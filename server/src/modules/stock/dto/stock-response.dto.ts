@@ -1,4 +1,10 @@
-import type { ProductType } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ProductType,
+} from '../../../database/schema';
 
 /**
  * Stock as the API returns it (ADR-068): levels, movements, lots and the
@@ -23,7 +29,7 @@ export class StockRow {
   lotId!: string | null;
   lotCode!: string | null;
   lotExpiresAt!: string | null;
-  /** Whether the code was ours to invent (MovementLotDto). */
+  /** Whether the code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;
   /** numeric(18,4) as a string, never parsed into a number (ADR-025). */
   quantity!: string;
@@ -55,7 +61,10 @@ export class MovementDocument {
   number!: string | null;
 }
 
-/** A sample's recipient (ADR-042; 125): the partner, whose page opens. */
+/**
+ * The partner a movement names (ADR-042; 125): whom a sample went to, or
+ * whom a receipt with no order came from (ADR-094, R11), whose page opens.
+ */
 export class MovementRecipient {
   id!: string;
   name!: string;
@@ -118,6 +127,20 @@ export class Movement {
   lotCode!: string | null;
   /** The lot's expiry day, `YYYY-MM-DD` (ADR-052); null with none. */
   lotExpiresAt!: string | null;
+  /** Which expiry the lot has, as Stock's piles send it (ADR-094, R8). */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  lotExpiry!: LotExpiry | null;
+  /** Whether the lot's code was made here, not printed (ADR-094). */
+  lotIsAssigned!: boolean | null;
+  /** The supplier's own lot, for a code made here (ADR-094, R5). */
+  lotSupplierLot!: string | null;
+  /**
+   * The lot a lot change puts the stock into, `lotId` being the one it
+   * leaves, none as lot tracking starts (ADR-094): "LOT-A → LOT-B". Null
+   * for any other movement.
+   */
+  toLotId!: string | null;
+  toLotCode!: string | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
@@ -129,10 +152,11 @@ export class Movement {
    */
   document!: MovementDocument | null;
   /**
-   * Whom a sample went to, as Send sample recorded it (125), which For
-   * names where a sale's names its order; null for any other movement, a
-   * sample with no recipient recorded, and a reader without
-   * `partners.view`, in the list and its export.
+   * Whom a sample went to, as Send sample recorded it (125), or whom a
+   * receipt with no order came from, kept as a sample's recipient is
+   * (ADR-094, R11), which For names where a sale's names its order; null
+   * for any other movement, one with no partner recorded, and a reader
+   * without `partners.view`, in the list and its export.
    */
   recipient!: MovementRecipient | null;
   /**
@@ -214,6 +238,36 @@ export class RecordedMovementEnvelope {
    * in an item with no cost yet, which its message says (ADR-093, 90a).
    */
   needsCost!: boolean;
+  /**
+   * The lot's code, for the message to name: one made for us when the
+   * write was saved, which the receiver writes on the delivery (ADR-094,
+   * R3); null with no lot.
+   */
+  lotCode!: string | null;
+}
+
+/** One end of a move to another lot: a lot, by its code. */
+export class MovedLot {
+  id!: string;
+  code!: string;
+}
+
+/**
+ * POST /stock/lots/:id/lot-changes: part of a lot moved into another of
+ * the item's lots (ADR-094, R20), for the message to name both and the
+ * page to open both.
+ */
+export class LotChanged {
+  /** The lot change, as the ledger stores it; its lot is the one left. */
+  movement!: RecordedMovement;
+  fromLot!: MovedLot;
+  /** The lot it went into: one of the item's, or the one the write made. */
+  toLot!: MovedLot;
+  /**
+   * The stock moved waits for a cost in its new lot, since some of the
+   * first lot's still does (ADR-094, 3a), which the message says.
+   */
+  needsCost!: boolean;
 }
 
 /**
@@ -232,19 +286,40 @@ export class StockVariant {
   isActive!: boolean;
 }
 
-/** A lot of one item, as the receive dialogs offer it. */
+/** A lot of one item, as the receive dialogs and Edit lot details offer it. */
 export class Lot {
   id!: string;
   code!: string;
   expiresAt!: string | null;
-  /** True when the receiver invented the code (MovementLotDto). */
+  /**
+   * Which expiry it has (ADR-094, R8): a day, not known yet, or none,
+   * the choice a new lot's Expires starts on.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
+  /** True when the code was made here, not printed (ADR-094). */
   isAssigned!: boolean;
+  /** The supplier's own lot, as printed, for a code made here; else null. */
+  supplierLot!: string | null;
 }
 
-/** A lot matched by the start of its code (ADR-044). */
+/**
+ * A lot matched by any part of its code or its supplier's lot, the start
+ * first (ADR-044, amended by ADR-094).
+ */
 export class LotMatch {
   id!: string;
   code!: string;
   expiresAt!: string | null;
+  /** Which expiry it has; not known yet reads "Expiry to add" (ADR-094, R9). */
+  @ApiProperty({ enum: LOT_EXPIRIES })
+  expiry!: LotExpiry;
+  /**
+   * The supplier's own lot, as printed, for a code made here; else null.
+   * A match found by it says so (ADR-094, S10).
+   */
+  supplierLot!: string | null;
+  /** True when the code was made here, not printed (ADR-094). */
+  isAssigned!: boolean;
   sku!: string;
 }

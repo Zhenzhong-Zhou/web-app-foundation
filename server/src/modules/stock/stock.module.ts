@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../../core/audit/audit.module';
 import { AuthorizationModule } from '../../core/authorization/authorization.module';
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { AdjustmentGuard } from './adjustment.guard';
 import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
+import { LotChangesService } from './lot-changes.service';
 import { LotTraceController } from './lot-trace.controller';
 import { LotTraceService } from './lot-trace.service';
+import { LotTrackingController } from './lot-tracking.controller';
+import { LotTrackingService } from './lot-tracking.service';
 import { LotsService } from './lots.service';
 import { LowStockNoticesService } from './low-stock-notices.service';
 import { LowStockNoticesTimer } from './low-stock-notices.timer';
@@ -31,9 +35,10 @@ import { WhereItStandsService } from './where-it-stands.service';
 @Module({
   // For PermissionsService, which AdjustmentGuard resolves per request.
   // The global PermissionGuard needs no import here — it is instantiated
-  // inside AuthorizationModule and registered in AppModule. And the bell,
-  // for an item fallen low (ADR-085).
-  imports: [AuthorizationModule, NotificationsModule],
+  // inside AuthorizationModule and registered in AppModule. The bell, for
+  // an item fallen low (ADR-085); and the audit log, for a lot's code
+  // marked as made here, its own entry (ADR-094).
+  imports: [AuthorizationModule, NotificationsModule, AuditModule],
   controllers: [
     StockController,
     StockGroupedController,
@@ -41,6 +46,7 @@ import { WhereItStandsService } from './where-it-stands.service';
     AvailabilityController,
     ReorderPointsController,
     WhereItStandsController,
+    LotTrackingController,
   ],
   providers: [
     StockService,
@@ -48,6 +54,8 @@ import { WhereItStandsService } from './where-it-stands.service';
     StockGroupedService,
     WhereItStandsService,
     LotsService,
+    LotTrackingService,
+    LotChangesService,
     AdjustmentGuard,
     LotTraceService,
     AvailabilityService,

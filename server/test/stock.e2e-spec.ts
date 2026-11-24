@@ -1,11 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  auditLog,
   lots,
   permissions,
   rolePermissions,
@@ -206,6 +207,25 @@ describe('Stock (e2e)', () => {
       expect(rows[0].quantity).toBe('40.0000');
       expect(rows[0].sku).toBe(variant.sku);
       expect(rows[0].lotId).toBeNull();
+    });
+
+    // Written only by starting lot tracking and by a move to another lot,
+    // each with both its lots (ADR-094).
+    it('refuses a lot change, which this route does not record', async () => {
+      const { agent, variant, locationId } = await setup('alpha');
+
+      await agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: variant.id,
+          fromLocationId: locationId,
+          toLocationId: locationId,
+          quantity: '1',
+          reason: 'lot_change',
+        })
+        .expect(400);
+
+      expect(await db.select().from(stockMovements)).toEqual([]);
     });
 
     it('accumulates rather than replacing, and the ledger keeps both', async () => {
@@ -541,7 +561,9 @@ describe('Stock (e2e)', () => {
       function found(
         variantId: string,
         toLocationId: string,
-        lot: { lotId: string } | { lot: { code: string; expiresAt?: string } },
+        lot:
+          | { lotId: string }
+          | { lot: { code: string; mustBeNew?: true; expiresAt?: string } },
       ) {
         return {
           variantId,
@@ -571,7 +593,11 @@ describe('Stock (e2e)', () => {
           .post('/v1/stock/movements')
           .send(
             found(variant.id, shelf, {
-              lot: { code: 'vc-0310', expiresAt: '2027-06-30' },
+              lot: {
+                code: 'vc-0310',
+                mustBeNew: true,
+                expiresAt: '2027-06-30',
+              },
             }),
           )
           .expect(201);
@@ -646,7 +672,11 @@ describe('Stock (e2e)', () => {
 
         const refused = await agent
           .post('/v1/stock/movements')
-          .send(found(variant.id, shelf, { lot: { code: 'vc-0305' } }))
+          .send(
+            found(variant.id, shelf, {
+              lot: { code: 'vc-0305', mustBeNew: true },
+            }),
+          )
           .expect(409);
 
         expect(body<{ message: string; code: string }>(refused)).toEqual(
@@ -1369,6 +1399,8 @@ describe('Stock (e2e)', () => {
         'From',
         'To',
         'Lot',
+        'To lot',
+        'Supplier’s lot',
         'Expiry',
         'For',
         'By',
@@ -1466,12 +1498,15 @@ describe('Stock (e2e)', () => {
   });
 
   describe('PATCH /v1/stock/lots/:id', () => {
-    /** Receives stock and returns the lot row it created. */
+    /**
+     * Receives stock and returns the lot row it created: a code typed as
+     * printed, or one made for us, so made here (ADR-094, R4).
+     */
     async function receiveWithLot(
       ctx: Awaited<ReturnType<typeof setup>>,
-      lot: { code: string; expiresAt?: string; isAssigned?: boolean },
+      lot: { code: string; expiresAt?: string } | { makeCode: true },
     ) {
-      await ctx.agent
+      const res = await ctx.agent
         .post('/v1/stock/movements')
         .send({
           variantId: ctx.variant.id,
@@ -1482,12 +1517,13 @@ describe('Stock (e2e)', () => {
         })
         .expect(201);
 
-      // By code, not "the first row" — a test with two lots would otherwise
-      // get the same one twice and pass for the wrong reason.
+      // By the lot it went into, not "the first row" — a test with two lots
+      // would otherwise get the same one twice and pass for the wrong reason.
+      const { movement } = body<{ movement: { lotId: string } }>(res);
       const [row] = await db
         .select()
         .from(lots)
-        .where(eq(lots.code, lot.code.toUpperCase()));
+        .where(eq(lots.id, movement.lotId));
 
       return row;
     }
@@ -1497,7 +1533,6 @@ describe('Stock (e2e)', () => {
       const lot = await receiveWithLot(ctx, {
         code: 'L2026-A',
         expiresAt: '2027-01-01',
-        isAssigned: false,
       });
 
       /**
@@ -1512,17 +1547,16 @@ describe('Stock (e2e)', () => {
 
       const [updated] = await db.select().from(lots);
       expect(updated.expiresAt).toBe('2027-06-30');
+      expect(updated.expiry).toBe('date');
     });
 
     it('renames a code this organization invented', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: '2062A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
+      expect(lot.isAssigned).toBe(true);
 
       // No label exists, so there is no external truth the row is disagreeing
-      // with. A typo is a typo.
+      // with. A typo is a typo, and a made code can be corrected (ADR-094, R4).
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
         .send({ code: '2026A' })
@@ -1534,10 +1568,7 @@ describe('Stock (e2e)', () => {
 
     it('refuses to rename a supplier-printed code', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: 'L2026-A',
-        isAssigned: false,
-      });
+      const lot = await receiveWithLot(ctx, { code: 'L2026-A' });
 
       /**
        * The code is on the boxes. Renaming the row would make the record
@@ -1557,11 +1588,8 @@ describe('Stock (e2e)', () => {
 
     it('refuses a rename onto a code that already exists', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      await receiveWithLot(ctx, { code: 'L2026-A', isAssigned: true });
-      const second = await receiveWithLot(ctx, {
-        code: 'L2026-B',
-        isAssigned: true,
-      });
+      await receiveWithLot(ctx, { code: 'L2026-A' });
+      const second = await receiveWithLot(ctx, { makeCode: true });
 
       // Merging two lots is a different operation with its own rules, not a
       // rename that happens to collide.
@@ -1573,10 +1601,7 @@ describe('Stock (e2e)', () => {
 
     it('uppercases a corrected code', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: '2062A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
 
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
@@ -1592,10 +1617,7 @@ describe('Stock (e2e)', () => {
     it('refuses a lot in another organization', async () => {
       const alpha = await setup('alpha', { tracksLots: true });
       const beta = await setup('beta', { tracksLots: true });
-      const lot = await receiveWithLot(beta, {
-        code: 'L2026-A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(beta, { makeCode: true });
 
       await alpha.agent
         .patch(`/v1/stock/lots/${lot.id}`)
@@ -1605,16 +1627,338 @@ describe('Stock (e2e)', () => {
 
     it('refuses a Viewer, which lacks stock.move', async () => {
       const ctx = await setup('alpha', { tracksLots: true });
-      const lot = await receiveWithLot(ctx, {
-        code: 'L2026-A',
-        isAssigned: true,
-      });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
       const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer
         .patch(`/v1/stock/lots/${lot.id}`)
         .send({ expiresAt: '2027-06-30' })
         .expect(403);
+    });
+
+    /** The lot's row as it is now. */
+    async function lotNow(id: string) {
+      const [row] = await db.select().from(lots).where(eq(lots.id, id));
+      return row;
+    }
+
+    /** The Activity log's entries for a lot, by action, oldest first. */
+    async function entriesFor(id: string) {
+      const rows = await db
+        .select({ action: auditLog.action })
+        .from(auditLog)
+        .where(eq(auditLog.resourceId, id))
+        .orderBy(auditLog.id);
+      return rows.map((row) => row.action);
+    }
+
+    it('moves a lot between the three expiries, a day taken away and given again (ADR-094, R8)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: 'L2026-A',
+        expiresAt: '2027-01-01',
+      });
+      expect(lot.expiry).toBe('date');
+
+      const edits = [
+        [{ expiry: 'unknown' }, 'unknown', null],
+        [{ expiry: 'date', expiresAt: '2027-03-01' }, 'date', '2027-03-01'],
+        [{ expiry: 'none' }, 'none', null],
+        [{ expiry: 'date', expiresAt: '2027-04-01' }, 'date', '2027-04-01'],
+        // A day taken away as a caller that names no kind sends it.
+        [{ expiresAt: null }, 'none', null],
+      ] as const;
+
+      for (const [edit, expiry, expiresAt] of edits) {
+        await ctx.agent
+          .patch(`/v1/stock/lots/${lot.id}`)
+          .send(edit)
+          .expect(204);
+
+        const now = await lotNow(lot.id);
+        expect({ expiry: now.expiry, expiresAt: now.expiresAt }).toEqual({
+          expiry,
+          expiresAt,
+        });
+      }
+    });
+
+    it('refuses an expiry it cannot read, saying what to do, and changes nothing (ADR-094, R8)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: 'L2026-A',
+        expiresAt: '2027-01-01',
+      });
+
+      const noDay = await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ expiry: 'date' })
+        .expect(400);
+      expect(body<{ message: string }>(noDay).message).toBe(
+        'Give the day the lot expires, or say it is not known yet or that the lot doesn’t expire.',
+      );
+
+      const dayToo = await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ expiry: 'unknown', expiresAt: '2027-06-30' })
+        .expect(400);
+      expect(body<{ message: string }>(dayToo).message).toBe(
+        'A lot whose expiry is not known yet, or that doesn’t expire, takes no day. Remove the day, or say the lot expires on it.',
+      );
+
+      const now = await lotNow(lot.id);
+      expect({ expiry: now.expiry, expiresAt: now.expiresAt }).toEqual({
+        expiry: 'date',
+        expiresAt: '2027-01-01',
+      });
+    });
+
+    it('adds the supplier’s lot to a lot made here, as printed, and takes it away again (ADR-094, R5)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, { makeCode: true });
+      expect(lot.supplierLot).toBeNull();
+
+      // Its case kept, as printed: a supplier's box is not ours to change.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ supplierLot: '  sup-2026/a ' })
+        .expect(204);
+      expect((await lotNow(lot.id)).supplierLot).toBe('sup-2026/a');
+
+      // Emptied, it reads Supplier's lot to add again.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ supplierLot: '' })
+        .expect(204);
+      expect((await lotNow(lot.id)).supplierLot).toBeNull();
+    });
+
+    it('refuses a supplier’s lot for a code typed from the box, saying what to do, and changes nothing (ADR-094, R5)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, { code: 'L2026-A' });
+
+      const res = await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ supplierLot: 'SUP-1', expiry: 'unknown' })
+        .expect(400);
+      expect(body<{ message: string }>(res).message).toBe(
+        'L2026-A was typed from the box, so it is the supplier’s own lot. Leave the supplier’s lot empty, or say we made this code up.',
+      );
+
+      const now = await lotNow(lot.id);
+      expect(now.supplierLot).toBeNull();
+      expect(now.expiry).toBe('none');
+      expect(await entriesFor(lot.id)).toEqual([]);
+    });
+
+    it('marks an older code as made here once, its own entry in the Activity log, and then it may be corrected (ADR-094, R7)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, { code: 'LOT7' });
+      expect(lot.isAssigned).toBe(false);
+
+      // Marked alone: the mark's entry, and no Lot updated beside it.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ madeHere: true })
+        .expect(204);
+      expect((await lotNow(lot.id)).isAssigned).toBe(true);
+      expect(await entriesFor(lot.id)).toEqual(['stock.lot_marked_made_here']);
+
+      // Marked again: nothing to mark, nothing changed, nothing logged.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ madeHere: true })
+        .expect(204);
+      expect(await entriesFor(lot.id)).toEqual(['stock.lot_marked_made_here']);
+
+      // A code made up here is a typo to correct, and takes the
+      // supplier's lot once it is known.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: 'LOT-7', supplierLot: 'CB-2026-114' })
+        .expect(204);
+      const now = await lotNow(lot.id);
+      expect({ code: now.code, supplierLot: now.supplierLot }).toEqual({
+        code: 'LOT-7',
+        supplierLot: 'CB-2026-114',
+      });
+
+      // The Activity log reads the mark in its own words.
+      const log = await ctx.agent
+        .get('/v1/audit?action=stock.lot_marked_made_here')
+        .expect(200);
+      expect(
+        body<{ entries: { actionName: string; resourceId: string }[] }>(
+          log,
+        ).entries.map((entry) => [entry.actionName, entry.resourceId]),
+      ).toEqual([['Lot’s code marked as made up here', lot.id]]);
+    });
+
+    it('marks and corrects in one save, an entry for each (ADR-094, R7)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, { code: 'LOT7' });
+
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ madeHere: true, code: 'LOT-7', supplierLot: 'CB-2026-114' })
+        .expect(204);
+
+      const now = await lotNow(lot.id);
+      expect({
+        isAssigned: now.isAssigned,
+        code: now.code,
+        supplierLot: now.supplierLot,
+      }).toEqual({
+        isAssigned: true,
+        code: 'LOT-7',
+        supplierLot: 'CB-2026-114',
+      });
+      expect(await entriesFor(lot.id)).toEqual([
+        'stock.lot_marked_made_here',
+        'stock.lot_updated',
+      ]);
+    });
+
+    it('never unmarks a code made here, saying it stays marked (ADR-094, R7)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const made = await receiveWithLot(ctx, { makeCode: true });
+
+      const res = await ctx.agent
+        .patch(`/v1/stock/lots/${made.id}`)
+        .send({ madeHere: false })
+        .expect(400);
+      // A DTO's own rule, so its sentence names no field (#574).
+      expect(body<{ message: string[] }>(res).message).toEqual([
+        'A lot’s code marked as made up here stays marked. Leave it as it is; the code itself can still be corrected.',
+      ]);
+      expect((await lotNow(made.id)).isAssigned).toBe(true);
+      expect(await entriesFor(made.id)).toEqual([]);
+    });
+
+    it('refuses the mark without stock.lot_made_here, in the reader’s words, and changes nothing (ADR-094, R7)', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, { code: 'LOT7' });
+      // Admin receives and corrects stock, and does not hold the mark: the
+      // Owner's alone at first.
+      const admin = await addMember(
+        app,
+        ctx,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+
+      const res = await admin
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ madeHere: true, expiry: 'unknown' })
+        .expect(403);
+      expect(body<{ message: string }>(res).message).toBe(
+        'Your role, Admin, doesn’t include “Mark a lot’s code as made up here, so it can be corrected”. Owner can change your roles.',
+      );
+
+      const now = await lotNow(lot.id);
+      expect({ isAssigned: now.isAssigned, expiry: now.expiry }).toEqual({
+        isAssigned: false,
+        expiry: 'none',
+      });
+      expect(await entriesFor(lot.id)).toEqual([]);
+
+      // The rest of Edit lot details is stock.move's, as before.
+      await admin
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ expiry: 'unknown' })
+        .expect(204);
+      expect((await lotNow(lot.id)).expiry).toBe('unknown');
+      expect(await entriesFor(lot.id)).toEqual(['stock.lot_updated']);
+    });
+  });
+
+  /**
+   * Migration 0084's trigger, for the minute a deploy takes (ADR-094, Q5a).
+   * The release still serving knows nothing of expiry and names expires_at
+   * alone, so these write as it does, in its own columns, and read what
+   * expiry became; without the trigger, the check tying the two refuses
+   * each write.
+   */
+  describe("a lot's expiry, written as the release still serving writes it", () => {
+    type Ctx = Awaited<ReturnType<typeof setup>>;
+
+    /** A new lot, in the columns the release still serving names. */
+    async function insertedBefore(
+      ctx: Ctx,
+      code: string,
+      expiresAt: string | null,
+    ) {
+      const { rows } = await db.execute<{ id: string }>(sql`
+        insert into lots (organization_id, variant_id, code, expires_at, is_assigned)
+        values (${ctx.organizationId}, ${ctx.variant.id}, ${code}, ${expiresAt}, false)
+        returning id`);
+      return rows[0].id;
+    }
+
+    /** Its Edit, which sets the day alone. */
+    async function dayChangedBefore(id: string, expiresAt: string | null) {
+      await db.execute(
+        sql`update lots set expires_at = ${expiresAt} where id = ${id}`,
+      );
+    }
+
+    async function expiryOf(id: string) {
+      const [row] = await db
+        .select({ expiry: lots.expiry, expiresAt: lots.expiresAt })
+        .from(lots)
+        .where(eq(lots.id, id));
+      return row;
+    }
+
+    it('reads a dated new lot as dated', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+
+      const id = await insertedBefore(ctx, 'L2026-A', '2027-01-01');
+
+      expect(await expiryOf(id)).toEqual({
+        expiry: 'date',
+        expiresAt: '2027-01-01',
+      });
+    });
+
+    it('reads a day added to a lot that had none as dated', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const id = await insertedBefore(ctx, 'L2026-A', null);
+      expect((await expiryOf(id)).expiry).toBe('none');
+
+      await dayChangedBefore(id, '2027-06-30');
+
+      expect(await expiryOf(id)).toEqual({
+        expiry: 'date',
+        expiresAt: '2027-06-30',
+      });
+    });
+
+    it('reads a day taken from a dated lot as none', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const id = await insertedBefore(ctx, 'L2026-A', '2027-01-01');
+
+      await dayChangedBefore(id, null);
+
+      expect(await expiryOf(id)).toEqual({ expiry: 'none', expiresAt: null });
+    });
+
+    it('keeps an expiry not known yet as this release writes it, until a day is given', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const [lot] = await db
+        .insert(lots)
+        .values({
+          organizationId: ctx.organizationId,
+          variantId: ctx.variant.id,
+          code: 'L2026-A',
+          expiry: 'unknown',
+        })
+        .returning({ id: lots.id });
+      expect((await expiryOf(lot.id)).expiry).toBe('unknown');
+
+      await dayChangedBefore(lot.id, '2027-06-30');
+
+      expect((await expiryOf(lot.id)).expiry).toBe('date');
     });
   });
 });

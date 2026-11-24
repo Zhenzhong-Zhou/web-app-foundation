@@ -13,6 +13,8 @@ Stock that arrived with nothing to value it by is listed under **Waiting for a c
 3. For another currency than the base, type the **Exchange rate**, or leave it blank to use the rate on file for the day it arrived.
 4. Press **Set cost**.
 
+A cost given to a delivery follows any of it that was moved to another lot, so both lots are valued, and **Set cost** says which lots part of it followed. Stock moved in from a lot that still waits reads “Moved in from lot”, its cost following that lot’s, and offers no **Set cost** of its own.
+
 A batch made by a run that is still open waits for its run instead: **Open run** goes to it, and the batch takes its cost when the run closes.
 
 > Only someone who may change costs sees **Set cost**.

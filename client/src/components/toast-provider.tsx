@@ -32,14 +32,20 @@ export function ToastProvider({
   foot?: ReactNode;
 }) {
   const [message, setMessage] = useState<string | null>(null);
-  const [action, setAction] = useState<ToastAction | null>(null);
+  const [actions, setActions] = useState<readonly ToastAction[]>([]);
   const [open, setOpen] = useState(false);
 
   // Stable across renders, so every consumer of the context does not
   // re-render each time a toast opens or closes.
   const show = useCallback<ShowToast>((next, nextAction) => {
     setMessage(next);
-    setAction(nextAction ?? null);
+    setActions(
+      nextAction === undefined
+        ? []
+        : 'label' in nextAction
+          ? [nextAction]
+          : nextAction,
+    );
     setOpen(true);
   }, []);
 
@@ -62,7 +68,7 @@ export function ToastProvider({
           open={open}
           // Longer with a button to press, held while the pointer or the
           // keyboard is on it, as MUI's snackbar does.
-          autoHideDuration={action ? 8000 : 4000}
+          autoHideDuration={actions.length ? 8000 : 4000}
           onClose={(_event, reason) => {
             // A click elsewhere is somebody carrying on, not dismissing.
             if (reason !== 'clickaway') setOpen(false);
@@ -86,8 +92,12 @@ export function ToastProvider({
           >
             {/* Finished words: their references kept whole (ADR-081). */}
             {message && <ReferencesWhole text={message} />}
-            {action && (
+            {actions.map((action) => (
               <Button
+                key={action.label}
+                // Text in the message's own colour: the app's contained
+                // default drew white on grey, 1.3:1 (review 2).
+                variant="text"
                 color="inherit"
                 size="small"
                 sx={{ ml: 1, textDecoration: 'underline' }}
@@ -98,7 +108,7 @@ export function ToastProvider({
               >
                 {action.label}
               </Button>
-            )}
+            ))}
           </Alert>
         </Snackbar>
         {foot}

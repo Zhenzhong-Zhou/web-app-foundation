@@ -5,6 +5,7 @@ paths:
   - "server/src/common/dto/search*.dto.ts"
   - "server/src/modules/products/item-search.ts"
   - "server/src/modules/partners/partner-search.ts"
+  - "server/src/modules/stock/lot-search.ts"
   - "client/src/search/**"
   - "client/src/lib/use-{list,picker}-search.ts"
   - "client/src/components/{variant,partner}-picker*.tsx"
@@ -25,10 +26,11 @@ for people; a commit that changes one of those rules updates it
   `searchTerms`; a code goes through `codeMatches`, a name through
   `nameMatches` (`search_text()`), its pinyin through `pinyinMatches`; an
   item through `itemMatches`, a partner through `partnerRecordMatches`, a
-  document by its partner through `partnerMatches`. Never an `ILIKE` of
-  its own, so what the lookup finds, its list finds too (ADR-056). Items'
-  list, counts and export read `itemSearch`'s, once a statement
-  (ADR-051, amended for #547).
+  document by its partner through `partnerMatches`, a lot by its code or
+  supplier's lot through `lotMatches` and `lotRank` (ADR-094). Never an
+  `ILIKE` of its own, so what the lookup finds, its list finds too
+  (ADR-056). Items' list, counts and export read `itemSearch`'s, once a
+  statement (ADR-051, amended for #547).
 - **Ranked by the same helpers:** `itemRank`, `partnerRank`, or
   `matchRank` and `pinyinRank` under `bestRank`, in the lookup and the
   lists that load whole. A keyset-paged list is never ordered by match,

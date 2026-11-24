@@ -356,7 +356,8 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
   await stockFrom(page);
 
   // An item's, in three groups (ADR-093 v3): what changes its stock,
-  // Receive stock, then Movements and its reorder point.
+  // Receive stock, then Movements and its reorder point; for one not
+  // tracked by lot, a fourth, Start tracking lots… (ADR-094, T2).
   const magnesium = page.getByRole('button', {
     name: 'Actions for E2E Magnesium',
   });
@@ -369,6 +370,7 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
     'Receive stock…',
     'Movements',
     'Set a reorder point…',
+    'Start tracking lots…',
   ]);
   expect(await offers(page, 'Actions for E2E Vitamin C')).toContain(
     'Change reorder point…',
@@ -412,6 +414,7 @@ test('Stock, any row, Actions: an item’s, a lot’s and a place’s link, each
     'Send sample…',
     'Correct the count…',
     'Edit lot details…',
+    'Move to another lot…',
     'Trace lot',
     'Movements',
   ]);
@@ -605,6 +608,8 @@ test('Count it in…, Save correction: a found correction into the place, a new 
   const dialog = await countIn(page, scene.shelfC.name);
   await dialog.getByRole('radio', { name: 'A new lot' }).check();
   await dialog.getByRole('textbox', { name: 'Lot number' }).fill('VC-0310');
+  // Its expiry, starting as the item's newest lot had it (ADR-094, R8).
+  await dialog.getByRole('radio', { name: 'Not known yet' }).check();
 
   await dialog.getByRole('button', { name: 'Save correction' }).click();
 

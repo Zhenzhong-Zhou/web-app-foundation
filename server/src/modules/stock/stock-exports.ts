@@ -1,10 +1,19 @@
 import { asQuantity, type ExportColumn, inWords } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import type { Locale } from '../../common/locales';
-import { MOVEMENT_REASON_WORDS } from '../../common/movement-reasons';
+import {
+  LOT_CHANGE_WORDS,
+  MOVEMENT_REASON_WORDS,
+  type ReceiptDetail,
+  SHIPMENT_VOIDED,
+} from '../../common/movement-reasons';
 import { dayIn, momentIn, todayIn, zonePlaceIn } from '../../common/today';
 import { UNIT_WORDS } from '../../common/units';
-import type { ReorderRule, ReorderSource } from '../../database/schema';
+import type {
+  LotExpiry,
+  ReorderRule,
+  ReorderSource,
+} from '../../database/schema';
 import type { Translatable } from '../../i18n/translate';
 import { t, translate } from '../../i18n/translate';
 import type { ListMovementsDto } from './dto/list-movements.dto';
@@ -35,6 +44,77 @@ const REORDER_POINT = t({
   id: 'exports.column.reorderPoint',
   defaultMessage: 'Reorder point',
 });
+
+/** A lot's details, as a pile and a movement send them (ADR-094). */
+interface LotDetails {
+  lotExpiresAt: string | null;
+  lotExpiry: LotExpiry | null;
+  lotIsAssigned: boolean | null;
+  lotSupplierLot: string | null;
+}
+
+/**
+ * Supplier's lot, for a row's lot, null with none: the supplier's own lot
+ * of a code made here, "Supplier's lot to add" until it is given, and
+ * empty for a code printed by the supplier, which is its own (ADR-094, R5).
+ */
+function supplierLotColumn<T>(
+  lotOf: (
+    row: T,
+  ) => Pick<LotDetails, 'lotSupplierLot' | 'lotIsAssigned'> | null,
+): ExportColumn<T> {
+  return {
+    header: t({
+      id: 'exports.column.supplierLot',
+      defaultMessage: 'Supplier’s lot',
+    }),
+    value: (row, locale) => {
+      const lot = lotOf(row);
+      if (!lot) return null;
+      if (lot.lotSupplierLot !== null) return lot.lotSupplierLot;
+      return lot.lotIsAssigned
+        ? translate(
+            t({
+              id: 'exports.value.supplierLotToAdd',
+              defaultMessage: 'Supplier’s lot to add',
+            }),
+            locale,
+          )
+        : null;
+    },
+  };
+}
+
+/**
+ * A lot's details beside its code, as the screen marks a lot not yet
+ * finished (ADR-094, R5 and R9), for a row's lot, null with none: its
+ * Supplier's lot; then Expiry, the day, "Expiry to add" where it is not
+ * known yet, and empty for a lot that does not expire, as the glossary's
+ * Expires is.
+ */
+function lotDetailColumns<T>(
+  lotOf: (row: T) => LotDetails | null,
+): ExportColumn<T>[] {
+  return [
+    supplierLotColumn(lotOf),
+    {
+      header: HEADERS.expiry,
+      value: (row, locale) => {
+        const lot = lotOf(row);
+        if (!lot) return null;
+        return lot.lotExpiry === 'unknown'
+          ? translate(
+              t({
+                id: 'exports.value.expiryToAdd',
+                defaultMessage: 'Expiry to add',
+              }),
+              locale,
+            )
+          : lot.lotExpiresAt;
+      },
+    },
+  ];
+}
 
 /** A unit in the reader's words, "each", « unité », 个 (#473's 29). */
 function unitInWords<T extends { unitOfMeasure: string }>(): ExportColumn<T> {
@@ -133,23 +213,37 @@ export function stockCodeColumns(here: boolean): ExportColumn<StockCodeRow>[] {
 /**
  * The Lot view's export (ADR-093): a row per lot at each place, its place
  * named only for a reader who may see places (ADR-080), its unit in the
- * reader's words.
+ * reader's words; beside the lot, its supplier's lot and its expiry, each
+ * marked where it is still to add (ADR-094).
  */
 export const STOCK_LOT_COLUMNS: ExportColumn<StockLotRow>[] = [
   { header: HEADERS.sku, value: (row) => row.sku },
   { header: HEADERS.item, value: (row) => row.productName },
   { header: VARIANT, value: (row) => row.variantName },
   { header: HEADERS.lot, value: (row) => row.lotCode },
-  { header: HEADERS.expiry, value: (row) => row.lotExpiresAt },
+  ...lotDetailColumns<StockLotRow>((row) => row),
   { header: HEADERS.location, value: (row) => row.locationName },
   asQuantity(HEADERS.quantity, (row) => row.quantity),
   unitInWords(),
 ];
 
 /**
- * What a correction says it was, chosen when the count is corrected, as
- * the screen says it after the reason; any other detail is written as
- * recorded, free text under its reason (ADR-023).
+ * Why stock was received with no order, as the screen says it after the
+ * reason, "Received: opening stock" (ADR-094, R11).
+ */
+const RECEIPT_DETAIL_WORDS: Record<ReceiptDetail, Translatable> = {
+  opening: t({ id: 'stock.detail.opening', defaultMessage: 'opening stock' }),
+  returned: t({ id: 'stock.detail.returned', defaultMessage: 'returned' }),
+  sample: t({ id: 'stock.detail.sample', defaultMessage: 'a sample' }),
+  other: t({ id: 'stock.detail.other', defaultMessage: 'other' }),
+};
+
+/**
+ * What a correction says it was, chosen when the count is corrected, or a
+ * voided shipment's goods back (#647), and why a receipt had no order, as
+ * the screen says each after the reason; any other detail is written as
+ * recorded, free text under its reason (ADR-023). A lot change reads as
+ * its action instead (`LOT_CHANGE_WORDS`).
  */
 const DETAIL_WORDS: Record<string, Translatable> = {
   miscount: t({ id: 'stock.detail.miscount', defaultMessage: 'miscount' }),
@@ -157,6 +251,11 @@ const DETAIL_WORDS: Record<string, Translatable> = {
   expired: t({ id: 'stock.detail.expired', defaultMessage: 'expired' }),
   lost: t({ id: 'stock.detail.lost', defaultMessage: 'lost' }),
   found: t({ id: 'stock.detail.found', defaultMessage: 'found' }),
+  [SHIPMENT_VOIDED]: t({
+    id: 'stock.detail.shipmentVoided',
+    defaultMessage: 'shipment voided',
+  }),
+  ...RECEIPT_DETAIL_WORDS,
 };
 
 /**
@@ -166,6 +265,8 @@ const DETAIL_WORDS: Record<string, Translatable> = {
 const OUTSIDE_WORDS = {
   supplier: t({ id: 'stock.end.supplier', defaultMessage: 'supplier' }),
   customer: t({ id: 'stock.end.customer', defaultMessage: 'customer' }),
+  opening: t({ id: 'stock.end.opening', defaultMessage: 'opening stock' }),
+  other: t({ id: 'stock.end.other', defaultMessage: 'other' }),
   run: t({ id: 'stock.end.run', defaultMessage: 'run' }),
   sample: t({ id: 'stock.end.sample', defaultMessage: 'sample' }),
   countedIn: t({ id: 'stock.end.countedIn', defaultMessage: 'counted in' }),
@@ -178,10 +279,11 @@ const OUTSIDE_WORDS = {
 /**
  * Where a movement with no place at one end came from or went to, by its
  * reason, as the screen's `outsideEnd` reads it (ADR-023): a receipt from
- * a supplier, a return or a voided shipment from a customer, a run's
- * output from the run, a correction counted in; a shipment to a customer,
- * a run's use to the run, a sample to "sample" (125), a correction
- * counted out.
+ * a supplier, or by why it came with no order, opening stock, a customer
+ * for stock brought back, or other (ADR-094, D3); a return or a voided
+ * shipment from a customer, a run's output from the run, a correction
+ * counted in; a shipment to a customer, a run's use to the run, a sample
+ * to "sample" (125), a correction counted out.
  */
 function outsideEnd(
   movement: Movement,
@@ -192,7 +294,7 @@ function outsideEnd(
   }
   switch (movement.reason) {
     case 'receipt':
-      return 'supplier';
+      return receiptEnd(movement.reasonDetail);
     case 'shipment':
     case 'return':
       return 'customer';
@@ -206,6 +308,50 @@ function outsideEnd(
     default:
       return null;
   }
+}
+
+/**
+ * A receipt's outside end by why it was received (ADR-094, D3): none, on
+ * an order, or a sample, from a supplier; opening stock; stock a customer
+ * brought back; or other. A detail this release does not know reads as a
+ * supplier's, as every receipt did before.
+ */
+function receiptEnd(detail: string | null): keyof typeof OUTSIDE_WORDS {
+  switch (detail) {
+    case 'opening':
+      return 'opening';
+    case 'returned':
+      return 'customer';
+    case 'other':
+      return 'other';
+    default:
+      return 'supplier';
+  }
+}
+
+/**
+ * A receipt's partner, the end it came from (ADR-094, D3, amending
+ * ADR-093's 82a): who it came from, by name, as the reader may see it;
+ * null for every other movement, which names its partner under For.
+ */
+function receivedFrom(movement: Movement): string | null {
+  return movement.reason === 'receipt'
+    ? (movement.recipient?.name ?? null)
+    : null;
+}
+
+/**
+ * A lot change's action, by which it was (ADR-094, U1); null for any
+ * other movement, and for a lot change's detail this release does not
+ * know, which reads as its reason and detail.
+ */
+function lotChangeOf(movement: Movement): Translatable | null {
+  const detail = movement.reasonDetail;
+  return movement.reason === 'lot_change' &&
+    detail !== null &&
+    Object.hasOwn(LOT_CHANGE_WORDS, detail)
+    ? LOT_CHANGE_WORDS[detail as keyof typeof LOT_CHANGE_WORDS]
+    : null;
 }
 
 /** A stock card's first and last lines (88a), in its Reason column. */
@@ -223,11 +369,12 @@ const BALANCE_WORDS = {
 /**
  * A move between two places counted in neither In nor Out, as one code
  * across every place reads it (85a): its quantity is the Moved column's
- * (118a, 114).
+ * (118a, 114). So is a lot change, at one place too, but with its lot
+ * chosen (ADR-094, R16).
  */
 function movedInNeither(movement: Movement): boolean {
   return (
-    movement.reason === 'transfer' &&
+    (movement.reason === 'transfer' || movement.reason === 'lot_change') &&
     movement.quantityIn === null &&
     movement.quantityOut === null
   );
@@ -294,8 +441,12 @@ export function movementLines(
  * (118a, 114); after Reason, the reason's code, never translated (138b);
  * From and To, each place
  * by its whole path, only for a reader who may see places, else no such
- * columns (ADR-080; 96a); For, the document, or a sample's recipient by
- * name, only as the reader may see it (55a; 125); By with the person's email (ADR-063); the note last, as
+ * columns (ADR-080; 96a); Lot, then To lot, the lot a lot change puts
+ * the stock into; then the lot's supplier's lot and its expiry, each
+ * marked where it is still to add, as the Lot view's (ADR-094); For,
+ * the document, or the partner a sample
+ * went to, by name, only as the reader may see it (55a; 125), a
+ * receipt's partner being its From, never its For (ADR-094, D3); By with the person's email (ADR-063); the note last, as
  * typed (review 54).
  */
 export function movementColumns(options: {
@@ -336,7 +487,11 @@ export function movementColumns(options: {
       OUTSIDE_WORDS,
       of((movement) => outsideEnd(movement, side)),
     );
-    const place = of((movement) => placeInWords(movement, side));
+    const place = of((movement) =>
+      side === 'from'
+        ? (placeInWords(movement, side) ?? receivedFrom(movement))
+        : placeInWords(movement, side),
+    );
     return {
       header,
       value: (line, locale) => place(line) ?? outside.value(line, locale),
@@ -431,6 +586,10 @@ export function movementColumns(options: {
         if (!('movement' in line)) {
           return translate(BALANCE_WORDS[line.total], locale);
         }
+        // A lot change as its action, "Moved to another lot", as the
+        // screen reads it (ADR-094, U1).
+        const action = lotChangeOf(line.movement);
+        if (action) return translate(action, locale);
         const reason = reasonOf.value(line, locale);
         const detail = detailOf.value(line, locale);
         // As the screen writes it, "Corrected: found" (100a).
@@ -467,12 +626,26 @@ export function movementColumns(options: {
         ]
       : []),
     { header: HEADERS.lot, value: of((movement) => movement.lotCode) },
-    { header: HEADERS.expiry, value: of((movement) => movement.lotExpiresAt) },
+    // The lot a lot change puts the stock into, Lot being the one it
+    // leaves, as the screen reads "LOT-A → LOT-B" (ADR-094); empty for
+    // every other movement.
+    {
+      header: t({ id: 'exports.column.toLot', defaultMessage: 'To lot' }),
+      value: of((movement) => movement.toLotCode),
+    },
+    ...lotDetailColumns<MovementLine>((line) =>
+      'movement' in line && line.movement.lotId !== null ? line.movement : null,
+    ),
     {
       header: t({ id: 'exports.column.for', defaultMessage: 'For' }),
+      // The document, or a sample's partner; a receipt's partner is its
+      // From (ADR-094, D3).
       value: of(
         (movement) =>
-          movement.document?.number ?? movement.recipient?.name ?? null,
+          movement.document?.number ??
+          (movement.reason === 'receipt'
+            ? null
+            : (movement.recipient?.name ?? null)),
       ),
     },
     {
@@ -595,10 +768,11 @@ export const REORDER_POINT_COLUMNS: ExportColumn<ReorderPointRow>[] = [
 
 /**
  * A lot's recall list, its trace's Who received it (ADR-044, amended;
- * #473's 17): each customer who received the lot or anything made from
- * it, the order, the lot, how much and the day it first left, in the
- * screen's words. A row with no recipient on record says so, as the
- * screen does.
+ * #473's 17): each customer who received the lot, anything made from it
+ * or any lot its stock moved into, the order, the lot it came through
+ * with that lot's supplier's lot (ADR-094, R21), how much and the day it
+ * first left, in the screen's words. A row with no recipient on record
+ * says so, as the screen does.
  */
 export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
   {
@@ -630,6 +804,7 @@ export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
         : row.orderNumber,
   },
   { header: HEADERS.lot, value: (row) => row.lotCode },
+  supplierLotColumn((row) => row),
   { header: HEADERS.sku, value: (row) => row.sku },
   asQuantity(
     t({ id: 'exports.column.shipped', defaultMessage: 'Shipped' }),

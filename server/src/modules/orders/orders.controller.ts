@@ -388,6 +388,10 @@ export class OrdersController {
     @CurrentUser() user: RequestContext,
   ): Promise<ReceiptEnvelope> {
     const movement = await this.receipts.receive(id, lineId, dto, user.userId);
-    return { movement: { id: movement.id } };
+    return {
+      movement: { id: movement.id, lotId: movement.lotId },
+      needsCost: movement.needsCost,
+      lotCode: movement.lotCode,
+    };
   }
 }

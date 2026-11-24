@@ -28,6 +28,7 @@ interface Delivery {
   line: {
     id: string;
     variantId: string;
+    productId: string;
     sku: string;
     tracksLots: boolean;
     unitOfMeasure: string;
@@ -92,6 +93,12 @@ describe('Deliveries a receipt may be (e2e)', () => {
     await closeShort(alpha.agent, closed);
 
     const [first, second, ...rest] = await deliveries(alpha, vitc);
+    // Its item, as the catalogue names it, whose lot tracking Receive can
+    // start (review 3).
+    const options = body<{ id: string; productId: string }[]>(
+      await alpha.agent.get('/v1/products/variants').expect(200),
+    );
+    const productId = options.find((option) => option.id === vitc)!.productId;
     expect(first).toEqual({
       orderId: sooner.id,
       number: sooner.number,
@@ -101,6 +108,7 @@ describe('Deliveries a receipt may be (e2e)', () => {
       line: {
         id: sooner.lineId,
         variantId: vitc,
+        productId,
         sku: 'VITC',
         tracksLots: false,
         unitOfMeasure: 'each',

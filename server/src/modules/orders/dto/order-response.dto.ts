@@ -1,8 +1,12 @@
-import type {
-  InvoiceStatus,
-  OrderDirection,
-  OrderStatus,
-  ProductType,
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  type InvoiceStatus,
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type OrderDirection,
+  type OrderStatus,
+  type ProductType,
 } from '../../../database/schema';
 import type { ChosenSite } from '../../locations/dto/location-response.dto';
 import type { OrderFulfillment } from '../order-fulfillment';
@@ -49,6 +53,8 @@ export class OrderPage {
 export class OrderLine {
   id!: string;
   variantId!: string;
+  /** Its item, whose lot tracking Receive can start (review 3). */
+  productId!: string;
   /** Snapshotted when the order was raised (ADR-023). */
   sku!: string;
   description!: string;
@@ -219,11 +225,21 @@ export class AddedOrderLineEnvelope {
 /** The stock movement a receipt wrote (ADR-023). */
 export class ReceivedMovement {
   id!: string;
+  /** The lot it went into, which the message opens; null with none. */
+  lotId!: string | null;
 }
 
 /** POST /orders/:id/lines/:lineId/receipts. */
 export class ReceiptEnvelope {
   movement!: ReceivedMovement;
+  /** The receipt waits for a cost, as a line with no price does (ADR-048). */
+  needsCost!: boolean;
+  /**
+   * The lot's code, for the message to name: one made for us when the
+   * write was saved, which the receiver writes on the delivery (ADR-094,
+   * R3); null with no lot.
+   */
+  lotCode!: string | null;
 }
 
 /**
@@ -261,6 +277,12 @@ export class OrderReceipt {
   lotCode!: string | null;
   /** `YYYY-MM-DD` (ADR-052); null with none. */
   lotExpiresAt!: string | null;
+  /**
+   * The lot's kind of expiry, so one not known yet reads "Expiry to add"
+   * (ADR-094, R9); null with no lot.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  lotExpiry!: LotExpiry | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
@@ -281,6 +303,8 @@ export class OrderReceiptPage {
 export class DeliveryLine {
   id!: string;
   variantId!: string;
+  /** Its item, whose lot tracking Receive can start (review 3). */
+  productId!: string;
   /** Snapshotted when the order was raised (ADR-023). */
   sku!: string;
   tracksLots!: boolean;

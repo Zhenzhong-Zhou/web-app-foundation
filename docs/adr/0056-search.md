@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-07
 areas: [partners, products, search, database, i18n, ui]
-amended-by: [ADR-073, ADR-092]
+amended-by: [ADR-073, ADR-092, ADR-094]
 ---
 
 # ADR-056 — Search: one lookup in the top bar, and a search on every list
@@ -455,3 +455,11 @@ and hides what is discontinued, and a record the lookup finds, its list
 finds too (#308's 22, Items' part). The other lists' Show all stay as
 issue #308 found them. Items still ranks as the lookup ranks while a search is
 typed, and its paging keys on that rank.
+
+## Amendment (November 2026) — a lot found by its supplier's lot (ADR-094)
+
+A lot made by the organization carries the supplier's lot beside its
+own code (ADR-094). Both find it, matched the same way, in Stock's
+search, the Lot view, the top bar's lookup and Movements' find box; the
+supplier's lot has a trigram index led by the organization, as
+migration 0077's are, and joins ADR-051's timed reads.

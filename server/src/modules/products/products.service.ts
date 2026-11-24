@@ -222,6 +222,7 @@ export class ProductsService {
       return tx
         .select({
           id: productVariants.id,
+          productId: productVariants.productId,
           sku: productVariants.sku,
           variantName: shown.variantName,
           productName: shown.productName,

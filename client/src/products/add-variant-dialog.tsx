@@ -187,14 +187,15 @@ export function AddVariantDialog({
               })}
             />
 
-            {/* Stated here because the field does not appear on any edit form:
-                flipping it on a variant that already holds stock leaves every
-                row violating the invariant in one direction or the other, so
-                it is set once (ADR-023). */}
+            {/* Stated here because the field does not appear on any edit
+                form: a code not tracked starts later by Start tracking
+                lots, which puts its stock into a lot in the same write, and
+                nothing turns it off (ADR-094, R13 and R18). */}
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'products.tracksLots.fixed',
-                defaultMessage: 'Lot tracking cannot be changed later.',
+                defaultMessage:
+                  'Lot tracking can be started later, from the item’s page, but never turned off.',
               })}
             </Typography>
           </Stack>

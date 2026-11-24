@@ -1,4 +1,10 @@
-import type { ProductType } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type ProductType,
+} from '../../../database/schema';
 import type { ReorderStatus } from '../reorder-status';
 
 /**
@@ -74,6 +80,12 @@ export class StockCodeRow {
    * for an item never received there, with nothing to correct (ADR-093).
    */
   stocked!: boolean;
+  /**
+   * Whether the code tracks lots now (ADR-094): its own, read live, since
+   * a code with nothing on hand holds no lot to tell it by, as Count it
+   * in… must.
+   */
+  tracksLots!: boolean;
   /** Its figures at the place chosen, or null with none chosen. */
   here!: StockHere | null;
 }
@@ -112,8 +124,22 @@ export class StockLotCounts {
   expiring!: number;
   expired!: number;
   needsCost!: number;
+  /**
+   * Details to add (ADR-094, R9; E5): a lot whose expiry is not known
+   * yet, or made here with no supplier's lot.
+   */
+  detailsToAdd!: number;
   /** The lots the list shows, every filter asked on: "Showing 50 of 312 lots". */
   total!: number;
+}
+
+/** A run still open that a pile was issued to (review 73). */
+export class IssuedRun {
+  id!: string;
+  /** What people call the run; null for one with no reference. */
+  reference!: string | null;
+  /** Names a run with no reference: "1,000 planned". */
+  quantityPlanned!: string;
 }
 
 /**
@@ -135,14 +161,31 @@ export class StockPile {
   lotId!: string | null;
   lotCode!: string | null;
   lotExpiresAt!: string | null;
-  /** Whether the code was ours to invent (MovementLotDto). */
+  /**
+   * Which expiry the lot has (ADR-094, R8): a day, not known yet, which
+   * reads "Expiry to add", or none; null with no lot.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  lotExpiry!: LotExpiry | null;
+  /** Whether the code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean | null;
+  /**
+   * The supplier's own lot, as printed, for a code made here; null for a
+   * printed code, one whose supplier's lot is still to add, and no lot.
+   */
+  lotSupplierLot!: string | null;
   quantity!: string;
   /**
    * The organization's day it was emptied, its last change leaving none;
    * null while it holds stock (ADR-093: "Emptied 14 Nov").
    */
   emptiedOn!: string | null;
+  /**
+   * The run still open that its lot was issued to here, whose close takes
+   * it: Move to another lot is refused while it is open (review 73). Null
+   * otherwise, and with no lot.
+   */
+  issuedToRun!: IssuedRun | null;
 }
 
 /** One place holding a code, and its lots there, soonest first. */

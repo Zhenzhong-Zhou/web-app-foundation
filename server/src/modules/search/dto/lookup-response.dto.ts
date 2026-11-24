@@ -1,4 +1,11 @@
-import type { OrderDirection, ProductType } from '../../../database/schema';
+import { ApiProperty } from '@nestjs/swagger';
+
+import {
+  LOT_EXPIRIES,
+  type LotExpiry,
+  type OrderDirection,
+  type ProductType,
+} from '../../../database/schema';
 import type { OrderFulfillment } from '../../orders/order-fulfillment';
 import type { LookupKind } from '../lookup.service';
 
@@ -19,6 +26,19 @@ export class LookupResult {
   fulfillment!: OrderFulfillment | null;
   /** A calendar day, YYYY-MM-DD (ADR-052). */
   expiresAt!: string | null;
+  /**
+   * A lot's expiry: a date, not known yet, or none (ADR-094, R9); null for
+   * other kinds.
+   */
+  @ApiProperty({ enum: LOT_EXPIRIES, nullable: true })
+  expiry!: LotExpiry | null;
+  /**
+   * A lot's supplier's lot, which finds it as its code does (ADR-094, R6);
+   * null for other kinds and for a lot with none.
+   */
+  supplierLot!: string | null;
+  /** Whether a lot's code was made here (ADR-094, R5); null for other kinds. */
+  isAssigned!: boolean | null;
   productId!: string | null;
   /** An item's product's cover (ADR-066); null for other kinds. */
   coverFileId!: string | null;

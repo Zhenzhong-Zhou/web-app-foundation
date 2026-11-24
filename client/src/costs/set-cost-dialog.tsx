@@ -7,20 +7,71 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { type IntlShape, useIntl } from 'react-intl';
 
-import type { NeedsCostEntry } from '../api/types.gen';
+import type {
+  CorrectedCost,
+  CorrectedCostEnvelope,
+  NeedsCostEntry,
+} from '../api/types.gen';
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import {
+  formatMoney,
   formatQuantity,
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+
+/**
+ * The message once a cost is saved, from the write's own answer (ADR-094,
+ * D5): where part of it followed stock moved to other lots, how much went
+ * to which, each lot named; else "Cost set".
+ */
+function costSaved(cost: CorrectedCost, base: string, intl: IntlShape): string {
+  const [only, ...more] = cost.followed;
+  if (!only) {
+    return intl.formatMessage({
+      id: 'costs.set.done',
+      defaultMessage: 'Cost set',
+    });
+  }
+  if (more.length === 0) {
+    return intl.formatMessage(
+      {
+        id: 'costs.set.followedOne',
+        defaultMessage:
+          'Cost set. {amount} of it followed the stock moved to lot {code}.',
+      },
+      { amount: formatMoney(only.value, base), code: only.lotCode },
+    );
+  }
+  return intl.formatMessage(
+    {
+      id: 'costs.set.followedSeveral',
+      defaultMessage:
+        'Cost set. Part of it followed the stock moved to other lots: {lots}.',
+    },
+    {
+      lots: intl.formatList(
+        cost.followed.map((lot) =>
+          intl.formatMessage(
+            {
+              id: 'costs.set.followedTo',
+              defaultMessage: '{amount} to lot {code}',
+            },
+            { amount: formatMoney(lot.value, base), code: lot.lotCode },
+          ),
+        ),
+        { type: 'conjunction' },
+      ),
+    },
+  );
+}
 
 /**
  * Sets or corrects what one acquisition cost (ADR-048): a receipt, a count
@@ -57,17 +108,13 @@ export function SetCostDialog({
   const [currency, setCurrency] = useState(entry?.currency ?? baseCurrency);
   const [exchangeRate, setExchangeRate] = useState('');
 
-  const { submitting, error, reset, submit } = useSubmit(
+  const { submitting, error, reset, submit } = useSubmit<CorrectedCostEnvelope>(
     async () => {
       close();
       await onSaved();
     },
-    {
-      success: intl.formatMessage({
-        id: 'costs.set.done',
-        defaultMessage: 'Cost set',
-      }),
-    },
+    // What followed is in the base currency, as every value is.
+    { success: ({ cost }) => costSaved(cost, baseCurrency, intl) },
   );
 
   const foreign = currency.trim().toUpperCase() !== baseCurrency;
@@ -92,7 +139,7 @@ export function SetCostDialog({
     setNumberError(null);
 
     void submit(() =>
-      api(`/costs/valuations/${entry.id}`, {
+      api<CorrectedCostEnvelope>(`/costs/valuations/${entry.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           unitPrice: price,

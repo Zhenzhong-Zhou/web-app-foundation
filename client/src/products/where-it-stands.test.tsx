@@ -170,6 +170,9 @@ describe('Where it stands (ADR-093, R8)', () => {
               lotId: 'lot-1',
               lotCode: 'ELD-25A',
               expiresAt: null,
+              expiry: 'none',
+              isAssigned: false,
+              supplierLot: null,
               quantity: '70.0000',
               places: 2,
             },
@@ -196,6 +199,72 @@ describe('Where it stands (ADR-093, R8)', () => {
     expect(screen.getByText('12 not usable')).toBeVisible();
   });
 
+  // ADR-094, R5 and R9: a lot not yet finished is marked here as on Stock.
+  it('marks a lot whose expiry or supplier’s lot is still to add, by place and in the usable lots', async () => {
+    const pile = {
+      id: 'pile-1',
+      variantId: 'variant-1',
+      sku: 'ELDER-250',
+      productName: 'Elderberry syrup',
+      variantName: '250 ml',
+      unitOfMeasure: 'each',
+      locationId: 'loc-1',
+      locationName: 'Shelf A',
+      locationCode: null,
+      lotId: 'lot-1',
+      lotCode: 'L-2026-11-20-1',
+      lotExpiresAt: null,
+      lotExpiry: 'unknown' as const,
+      lotIsAssigned: true,
+      lotSupplierLot: null,
+      quantity: '70.0000',
+      emptiedOn: null,
+      issuedToRun: null,
+    };
+    renderStanding(
+      [
+        standing({
+          places: [
+            {
+              locationId: 'loc-1',
+              locationName: 'Shelf A',
+              locationCode: null,
+              locationPath: [],
+              isAvailable: true,
+              onHand: '70.0000',
+              lots: [pile],
+            },
+          ],
+        }),
+        standing({
+          variantId: 'variant-2',
+          sku: 'ELDER-500',
+          places: null,
+          lots: [
+            {
+              lotId: 'lot-2',
+              lotCode: 'L-2026-11-20-2',
+              expiresAt: null,
+              expiry: 'unknown',
+              isAssigned: true,
+              supplierLot: 'SUP-88',
+              quantity: '10.0000',
+              places: 1,
+            },
+          ],
+        }),
+      ],
+      ['stock.view', 'locations.view'],
+    );
+
+    expect(
+      await screen.findByRole('link', { name: 'L-2026-11-20-1' }),
+    ).toBeVisible();
+    expect(screen.getAllByText('Expiry to add')).toHaveLength(2);
+    expect(screen.getByText('Supplier’s lot to add')).toBeVisible();
+    expect(screen.getByText('Supplier’s lot SUP-88')).toBeVisible();
+  });
+
   // Review 3, 115: why no place is named, once a page, in the first card
   // with stock, never for a reader who may see places.
   it('says once why places are hidden, for a reader without locations.view', async () => {
@@ -204,6 +273,9 @@ describe('Where it stands (ADR-093, R8)', () => {
         lotId: 'lot-1',
         lotCode: 'ELD-25A',
         expiresAt: null,
+        expiry: 'none' as const,
+        isAssigned: false,
+        supplierLot: null,
         quantity: '70.0000',
         places: 2,
       },
@@ -390,9 +462,12 @@ describe('Where it stands (ADR-093, R8)', () => {
                   lotId: 'lot-1',
                   lotCode: 'EB-01',
                   lotExpiresAt: null,
+                  lotExpiry: 'none',
                   lotIsAssigned: true,
+                  lotSupplierLot: null,
                   quantity: '70.0000',
                   emptiedOn: null,
+                  issuedToRun: null,
                 },
               ],
             },
