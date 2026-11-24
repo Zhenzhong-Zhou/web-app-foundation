@@ -33,10 +33,15 @@ test('the first Tab offers to skip the frame, and Enter lands on the page', asyn
  * takes focus off the button first, for Chrome's aria-hidden warning, and
  * without the hand-back a keyboard user closing a dialog started again from
  * the top of the page.
+ *
+ * An item of its own first: on an empty list Items shows a second Add item,
+ * the empty list's, and a shard this test leads met both (#679).
  */
 test('a dialog closed by Cancel or by Escape gives focus back to its button', async ({
   page,
+  api,
 }) => {
+  await createProduct(api);
   await page.goto('/items');
   const add = page.getByRole('button', { name: 'Add item', exact: true });
   const dialog = page.getByRole('dialog');
