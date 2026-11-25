@@ -984,3 +984,133 @@ decisions, which the maintainer answered that evening (1a, 2b).
   log → the seeds → the browser tests → Help, the rules files and the
   docs → the figures after → the lessons → the dependencies again →
   the reviews → the as-built.
+
+## Amendment (November 2026) — the branch after, as built (#717)
+
+The branch, `fix-678-after-094`, built on 24 and 25 November 2026 by
+its brief, versions 1 to 6, in the ignored `tmp/fix-678-after-094/`,
+from `main` at 20619bb2, brought onto d7040541 before its first timed
+step and onto a9c40326 before its push: 57 commits at that push
+(6b6eb481), then this as-built, pull request #717. Where building
+settled or changed the amendment above:
+
+### The branch after's requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R1 | Met (fbe2ccd6, f177642b, d9670e2d): `plan` walks the pool's rows in time order from the acquisition's first, the units kept to 12 places and the value split at 6, moves first, then what is held, then `issued`, which takes the remainder; `reach.claimed` is gone. The five examples hold to the cent, with ADR-048's two. A return of stock that was on hand when lot tracking started brings its share back too (review 74): 10 with no price, 6 shipped, tracking started on 4, 3 returned, costed at 10.00, 70.00 held and 30.00 issued, where the first build left 40.00 and 60.00. Which shipments a return reverses is written once, `shipmentsReversed` beside `shippedAt` (review 55) |
+| R2 | Changed (47fd55a9, f177642b, bed7149f): the three checks in one helper, `expectCostToFollow`, the margin of "no lot over" a millionth for each row of the pool where it was a flat ten; and a fourth in the generated test alone, once every receipt of a run is costed at its one price: each lot on hand is worth its units at that price, to a millionth a row. The generated test failed on the code before the walk, shrunk to #677's shape, and its fourth check on the code before review 74's fix, at seed 678's run 78, past the 50 that verify and CI run; the weekly flake hunt runs 1,000 on a new seed. Its first generator passed on the old code too, and was mended before its commit |
+| R3 | Met (48b54a9c): four writes to `lots`, none naming the day alone; the four tests of the trigger itself went with it |
+| R4 | Met (1f07f96a): what waits is unchanged, no test edited. The plain read stays a materialized set: without it Postgres hashed the organization's 420,000 movements, and the waiting list took 225 ms for 32 |
+| R5 | Not met, and accepted (Settled at the stop). The counts kept ready are #716. On a machine left alone the Lot view's counts read 321 ms on 25 November, against 330 before the branch |
+| R6 | Changed (ea579bab, 03f6ee93, 380ec5ec, d09b31b1, 5358f620, e7ead763, a079558f, 6b6eb481): as settled at the stop, and then: the totals are read on opening and after Set cost alone, and a find asks `GET /v1/costs/valuation/count`, its count and no more (review 61), where "Settled at the stop" has the totals asked once for a find; totals that cannot be read offer Try again; a pool emptied between a page's two statements is left out, where it divided by zero; a provisional row worth nothing says "Waits for a cost" in place of a zero unit cost, on the page and, as an empty cell, in the export. At large the first page reads 109 ms, a next page 120, a find 52, the sort by value 54 and the totals 193, where the whole list took 424 |
+| R7 | Met: the figures in ADR-051's amendment for this branch; the comments on #626 and #630 written at step 23 |
+| R8 | Met (fa95d014, 5c1683fc): `lot_former_codes`, written once and never edited, so a lot that takes its own former code back keeps both rows; the reason, at most 500 characters, never in the Activity log |
+| R9 | Changed (aebaeae4, 4cf91933, 1e4483b7, af2288ba, c6950c00, 1888cbe7, dbca6589): every place named, and Trace a lot's list and Movements' find box besides. A recall counts a return under the code of the latest shipment of the lot on its order before it, the code on its boxes (review 76). The codes a lot field reads leave out the lot's code today; Former codes on its page keeps every row (review 84). A search hit carries the former code it was found by, and none when today's code matches too. Movements' export writes today's code |
+| R10 | Met (aebaeae4, f63204b6, 2d45d858): any part of a former code matches; typed whole, it ranks after the lot whose code it is today and before the start of any code; the lookup's close pass reads today's code alone. Trace a lot's hint says a former code works (review 19). At large the lookup by a former code reads 96 ms and the lot search 9 |
+| R11 | Changed (5c1683fc, 4cf91933, 2c920d9a, 3a8385f1): the refusal is `lot_code_former`, carrying the lot for Use; one hook holds it in all six dialogs (review 54); and both refusals of a code end "Type another code." (reviews 75 and 89), words rows v19 and v22 do not draw. The refusal shown while typing names no day, the field knowing the codes alone; the server's names it. A correction locks the item's row first, so it cannot pass a receipt of its old code: no test can hold that race |
+| R12 | Met (fa95d014): the migration's check named two codes when tried on rows made for it |
+| R13 | Met (091ef1ee, d3e1d404, 6e97ff5c): every copy of minimatch 11.0.5 or later with no override, `npm audit` clean; fast-check new in `server/`, 4.10.2 and then 4.10.3; vitest 5.1.1 with tinybench and tinyexec held at their locked versions, 2.1 and 0.7 days old otherwise |
+| R14 | Met (f63204b6, c0d6bd2e, 10c95c68): the demo's B12-2609, corrected with a shipment before it and a return at its lot's average, and B12-2610, a return that waits; the volume seed corrects the code of 1 lot in 40 of all lots; a code made here is 批次编码 in Edit lot details too (reviews 3 and 78) |
+| R15 | Met (0419d518, 3799d25a): seventeen lessons; the skill is packed and uploaded after the merge |
+| R16 | Changed (90806312, bed7149f): the mark is the return's own value row naming its pool, `reference_type` `valuation_pool`, with no migration; `takesCost` and `atPoolAverage` are added fields, the revision unchanged by them. #676's review 75 was half right: an order's return already took the average, with nothing to say so, and a "Returned" receipt could already be given a cost. No screen offers to correct a row that landed at the average; the server takes it |
+| R17 | Met (fbe2ccd6): one older test's figures changed with it, "gives the second lot the same share whatever the first ships after the move", 8.00 held and 32.00 issued where it read 20.00 and 20.00 |
+| R18 | Met: 117 findings, 36 fixed in 31 commits, the rest in #695 to #714, on twelve open issues as comments, or left with the reason; this as-built |
+| R19 | Changed (1f07f96a, 7665abb8, 03f6ee93, 479bc421): ten joins, not eight, two of a run's cost by its movement having been missed, and Set cost's own read an eleventh (review 88); under Close matches each row says its kind, "MCS-001 · Lot", as its board draws it; "6 more below" counts every row one can move to |
+| R20 | Met by #694, the fix runner's, merged before this branch's code; the branch added nothing (80ae8534) |
+| R21 | Met so far: the file is in the working folder with its four counts, and a fifth beside it since 25 November, pools at zero units that hold a value; run before the merge. Its count of round trips means #678 only until then: the new walk writes such rows on purpose |
+| R22 | Met (ebaef37c): the stop of 24 November, Stock value's total matching its export's sum on the dev application |
+| R23 | Met (80ae8534, 1e4483b7): one component, `AuditDetails`, behind the Activity log and every History; "→ new value" is one box that moves whole to the next line, by layout alone |
+
+### Decided while the branch after was built
+
+- **The millionth is accepted (25 November).** What is held and what
+  is issued add up to the cost given exactly, compared in whole
+  millionths. A lot on hand may differ from its units at the run's
+  price by a millionth for each row of its pool, each late cost
+  rounding its share once: 16 at 2.00 came to 32.000001. Whether a lot
+  at zero units can keep such a remainder is not yet checked (#714).
+- **The generated test keeps 50 runs on its fixed seed (25
+  November),** the weekly hunt's 1,000 finding what 50 do not. A case
+  it finds is kept as a written test, as review 74's is: a seed stops
+  reaching its case once the generator or fast-check changes.
+- **#664 ends with this branch,** its waiting set and its pages built;
+  the four counts are #716's.
+- **Linux WebKit in the full verify runs on two workers (#715),** CI's
+  number: #643's own test passed three runs of three with it, and a
+  third run still stalled two others on the application's start
+  screen. The lasting remedy is the browser tests against the built
+  client (#530).
+
+### The branch after, built differently in small
+
+- A sort replaces the address (#341), so the browser's Back leaves
+  Stock value; the Item header is what puts the item order back.
+- Set cost's message is "Cost set", with no full stop.
+- "The item's name" in Lot updated is the item named by its code, as
+  the whole Activity log names items.
+- Use in Count it in… chooses that lot under One of its lots; in Move
+  to another lot it sends the stock into that lot.
+- Edit lot details offers no Open the lot on the lot's own page.
+- The count beside the find box shows while a find is typed, "1 of 5
+  matches"; with no find, the line under the list says it.
+- "Some figures wait for a cost" beside the total is not built: the
+  Provisional mark stays.
+- After Set cost the list reads its first page again.
+- Stock value's sort is one word in the API, `item`, `value` or
+  `-value`, where other lists take `sort` and `order`; the screen's
+  address holds `sort` and `order` as every list's does.
+- The page header takes grey words beside its title, for "was".
+- Stock value's find filters by what is typed; the glossary's note
+  that a Find box never filters now holds for Movements' alone.
+- The interaction table's rows are twelve browser tests; the row of
+  the four dialogs is one test, and the row of the five searches
+  another.
+
+### Found by the branch after, and left
+
+- **A lot at zero units is not looked at by the generated test**
+  (#714).
+- **A late cost on a long pool with no lots is not timed** (review 98,
+  #714); the walk grows in a straight line, 38 ms at 8,000 rows.
+- **A voided shipment whose shipment had no value rows** lands at the
+  average as found stock does, unmarked; **a return from before lot
+  tracking with no shipped cost** has no test.
+- **"Lot updated" lists its changes in the order kept,** Expires
+  before Lot code; a save that changes an expiry's kind and its day
+  gives two lines both named Expires.
+- **The organization's export does not explain `changed_by`** in its
+  README, and the Inventory guide's line on Edit lot details does not
+  say that why is asked.
+- **The "more below" line is not announced** to a screen reader; the
+  arrow keys reach every row.
+- **Coming's sort stays unproven (#630):** the volume seed holds no
+  expected day.
+- **A lot's and a run's cost have no plan probe.**
+- **What the reviews left:** #695 to #714, among them a return with no
+  order in a recall (#695), "shipped as" on an order's Shipments tab
+  (#696), the close pass left to the server (#713), and the small ones
+  together (#714).
+- **The Linux WebKit stall (#643).**
+
+### Deferred, added by its as-built
+
+- **The counts kept ready** are #716; their trigger is met.
+- **Stock value's sort as `sort` and `order`.** Trigger: the next
+  revision that changes that read.
+- **A screen that corrects a row landed at its lot's average.**
+  Trigger: the first organization with real costs asking for it.
+- **A remainder closed out when a lot empties.** Trigger: #714's
+  fifth check finding one.
+
+### The branch after, checked
+
+At 6b6eb481, on `main` at a9c40326, the full verify passed whole on 25
+November 2026, Linux WebKit on two workers; four full runs before it
+had each stalled in Linux WebKit (#643). CI's every-browser run passed
+on the pushed branch. The generated test passed three new seeds of
+1,000 runs at step 7 and three more after review 74's fix; 63 of 63
+budgets pass at small, and the plan check at both sizes. The panel
+walked `receive`, `stock` and `trace` in seven walks, every task
+finished at every size. The steps ran about 750 minutes in all, the
+reviews' fixes 153 of them, a little over half the brief's guess.

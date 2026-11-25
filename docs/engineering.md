@@ -217,7 +217,12 @@ steps; this section stays the rule.
   timed step, not after it.
 - **The Linux browsers' part of the full verify runs on a Mac left
   alone** (24 November 2026): a server compiling or a browser open beside
-  it times WebKit's pages out (#643). After a step that adds a route, the
+  it times WebKit's pages out (#643). A Linux WebKit run whose failed
+  tests all show the application's start screen alone in their kept
+  snapshot is run once more before it counts (25 November 2026), until
+  the browser tests run against the built client (#530):
+  `node scripts/one-at-a-time.mjs linux-browsers -- bash scripts/verify.sh --linux-browsers`.
+  After a step that adds a route, the
   dev server is started again before a look by hand: its watcher had not
   taken a new route, and the screen read "Cannot GET".
 - **A second working folder,** for a branch built while another runs in

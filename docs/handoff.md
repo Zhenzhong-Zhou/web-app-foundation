@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 24 November 2026
+# web-app-foundation — handoff, 25 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,27 +13,35 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 24 November 2026:
+On 25 November 2026:
 
-- **The branch after ADR-094,** `fix-678-after-094`, from `main` at
-  20619bb2, planned on 24 November as
-  [ADR-094's amendment](adr/0094-lots-at-receipt.md) of that day, its
-  requirements confirmed before drafting (R1 to R22) with the choices
-  1a to 8a, E1a to E6a, S1b, H1a and M1a: [#678], a late cost
-  following each unit once, and [#677], in proportion; [#661], a
-  return with no shipped cost; the temporary trigger's drop; [#664],
-  the waiting set made cheaper and Stock value read by the page, the
-  API revision rising to 7; [#665], a lot's former codes, kept, shown
-  and searched; [#669]'s 78; [#654], the top bar's close matches; and
-  the riders its R19 names. One pull request, its costs half first,
-  with a stop before the lots half. Its boards are the canvas's rows
-  v19 to v21; its check and its brief are in the ignored
-  `tmp/fix-678-after-094/`, and what it reads of ADR-094's branch in
-  the ignored `tmp/from-094/`. Found while planning: the Activity log
-  keeps neither code when a lot's code is corrected, [#687], for the
-  fix runner before this branch's code. **Until [#687] is deployed, no
-  lot's code is corrected on the live application.** **Next:** the
-  brief's step 2.
+- **The branch after ADR-094,** `fix-678-after-094`, with
+  [ADR-094's amendment and its as-built](adr/0094-lots-at-receipt.md):
+  planned on 24 November and built on 24 and 25 November from `main`
+  at 20619bb2, brought onto d7040541 and then a9c40326, by its brief,
+  versions 1 to 6, in the ignored `tmp/fix-678-after-094/`: 57 commits
+  and its as-built, pull request [#717]. A late cost follows each unit
+  once, in proportion ([#678], [#677]), a return bringing back what
+  its shipment took; a return with no shipped cost lands at its lot's
+  average, or waits and takes a cost ([#661]); the temporary trigger
+  dropped (migration 0085); Stock value read by the page, its totals a
+  read of their own, a row that waits saying so ([#664]); a lot's
+  former codes kept, shown, searched and never given to another lot
+  ([#665], migration 0086), with one start lot a code ([#669]'s 78);
+  the top bar's close matches ([#654], [#618]); and an Activity log
+  entry's changes one a line. The API revision rises to 7, so every
+  tab open at the deploy reloads once. Its boards are the canvas's
+  rows v19 to v23. [#664]'s four counts still read past 300 ms at
+  large, and the branch moved none: the counts kept ready are [#716],
+  an ADR of its own. The reviews found 117; the branch fixed 36 in 31
+  commits, and [#695] to [#714] hold what they left, [#714] the small
+  ones. Filed while building: [#693], a return made after its late
+  cost. The full verify passed on 25 November at 6b6eb481, and so did
+  CI's every-browser run on the pushed branch. **Left:** the pull
+  request's pictures and its checks; the read-only check on the live
+  database before the merge, and the manual checks (Still to do, by
+  hand). **Next:** the merge, as a merge commit, at an hour when few
+  tabs are open.
 - **Lots at receipt, ADR-094** ([#629]), with
   [its ADR and as-built](adr/0094-lots-at-receipt.md): planned on 21
   November and built from 21 to 23 November on
@@ -395,7 +403,14 @@ On 24 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 24 November, [#682] ([#679]), the fix
+- **The last merges:** on 25 November, [#715], the fix runner's, Linux
+  WebKit on CI's two workers in the full verify, part of [#643],
+  squashed (a9c40326). On 24 November, after [#686]: [#688] ([#666]),
+  [#689] ([#675]), [#690] ([#680]), [#691] ([#683]), [#692] ([#685])
+  and [#694] ([#687]), the fix runner's, each squashed, `main` then at
+  d7040541, which the live application ran on 25 November at revision
+  6; `main`'s CI failed once between them, at 007b226a on [#685]'s
+  test, which [#692] mended. Earlier that day, [#682] ([#679]), the fix
   runner's, squashed (4a052090); then Dependabot's [#681],
   typescript-eslint 8.73.0 in the client, and [#684], six production
   updates in the server, whose CI on `main` failed while npm's
@@ -515,9 +530,8 @@ On 24 November 2026:
   ([#446]) were taken at once on `fix-531-base-name`, as a security fix:
   eslint 10.15.0, the server's unused `@eslint/eslintrc` removed, and a
   scoped override taking typescript-estree's minimatch to ^11.0.5
-  (ADR-019, amended), gone once a typescript-eslint release after
-  8.72.2 depends on minimatch ^11: 8.73.0 does, and comes of age on 23
-  November at 10:07; every copy is 11.0.5. Inventory's branch took
+  (ADR-019, amended), removed on 24 November, once typescript-eslint
+  8.73.0 depended on minimatch ^11 (below). Inventory's branch took
   `@vitejs/plugin-react` 6.3.0, `typescript-eslint` 8.72.2,
   `@aws-sdk/client-s3` 3.1165.0 and `user-event` 14.6.9, the last three
   on 16 November. [#632]'s branch took vite 8.3.8 and
@@ -531,10 +545,17 @@ On 24 November 2026:
   taken: it carries 1.65.0's Firefox, and 19 of 159 tests crashed in
   the Linux image; Dependabot skips 1.65.0 and 1.65.1 ([#521]).
   typescript-eslint 8.73.0 came for the client as Dependabot's [#681]
-  on 24 November; the server takes it in `fix-678-after-094`'s
-  dependency step, where both minimatch overrides and ADR-019's line
-  go, proved by an install without them and `npm ls minimatch`; the
-  rest by their days, as Dependabot offers them. Held:
+  on 24 November; the server took it on `fix-678-after-094` that day
+  (091ef1ee), with `@aws-sdk/client-s3` 3.1171.0, `@formatjs/cli`
+  6.19.1, `@nestjs/testing` 12.5.1 and Sentry 11.14.0, and react-intl
+  12.1.8 in the client; then both minimatch overrides and ADR-019's
+  line went (d3e1d404), every copy 11.0.5 or later in an install
+  without them and `npm audit` clean. The same branch added fast-check
+  to `server/` for its generated test, and on 25 November took
+  `@formatjs/cli` 6.20.0, fast-check 4.10.3, vitest 5.1.1, msw 3.0.7
+  and react-intl 12.2.0 (6e97ff5c), vitest's tinybench and tinyexec
+  held at their locked versions, a day or two old otherwise; the rest
+  by their days, as Dependabot offers them. Held:
   `@playwright/test` at 1.64.1, pinned, its Firefox 159
   crashing in the Linux image ([#521]); `jsdom` at 30.1.3, pinned, 17
   unit tests failing on 31 ([#522]); TypeScript 7 ([#336]); fontkit 3,
@@ -591,6 +612,22 @@ On 24 November 2026:
 
 ## Still to do, by hand
 
+- **Before and after [#717]'s merge:** before it, the read-only check
+  on the live database, `live-check.sql` and
+  `live-check-zero-units.sql` in the ignored
+  `tmp/fix-678-after-094/`: no code with two start lots, or migration
+  0086 stops the deploy, naming each; its count of round trips means
+  [#678] only before the merge, since the new walk writes such rows on
+  purpose. The merge as a merge commit, at an hour when few tabs are
+  open. After it: `/api/health` saying `apiRevision: 7`, and MC-3424
+  at the deploy; the manual checks, MC-334, MC-806, MC-807, MC-808,
+  MC-911, MC-1576 and MC-2907, new, and MC-329, MC-802, MC-803,
+  MC-805, MC-1556 and MC-R77, changed; the comments written for
+  [#626], [#630] and [#693]; `/triage`, which reads [#544], [#473],
+  [#296], [#308] and [#669] for what is left of each; the figures the
+  counts' ADR reads ([#716]) moved out of the branch's `tmp/` folder,
+  then the prune and the clean-up; Project knowledge re-synced; the
+  planning skill packed from `main` and uploaded.
 - **After [#676]'s merge,** done on 23 and 24 November: the merge, as
   a merge commit, before its manual checks were walked; the deploy's
   check, `/api/health` saying `apiRevision: 6`; `/triage` (Where
@@ -599,10 +636,8 @@ On 24 November 2026:
   re-synced; Dependabot's [#681] and [#684]. Still to do: MC-319 to
   MC-333, MC-409, MC-2701, MC-2714 and MC-3328 walked by hand, and
   MC-3424, not walked at the deploy; Start tracking lots… in Firefox
-  on the live application, by hand, for [#685]; and the session's
-  lessons, among them the planning skill's line "for each action, list
-  every place the need arises, not only where the control sits", in
-  `fix-678-after-094`'s docs commit.
+  on the live application, by hand, for [#685]. The session's lessons
+  went into `fix-678-after-094`'s docs commit (3799d25a).
 - **After [#655]'s merge,** done on 21 November: the merge, as a
   merge commit; the deploy's checks, `/api/health` naming 99891ea2
   with `apiRevision: 5`; the planning skill packed from `main` and
@@ -618,8 +653,10 @@ On 24 November 2026:
   MC-409 walked by hand. The weekly Performance run of Monday 23
   November was judged by the triage of 24 November, every budget
   passing at small; it ran before [#676], and [#625], [#626] and
-  [#630] can only be judged at large, [#626] and [#630] in
-  `fix-678-after-094`'s timed pass. typescript-eslint 8.73.0 is under
+  [#630] can only be judged at large: [#626] and [#630] were, in
+  `fix-678-after-094`'s timed pass (ADR-051's amendment for [#717]),
+  [#626]'s exports at half their trigger and [#630]'s sort not proven,
+  the seed holding no expected day. typescript-eslint 8.73.0 is under
   Dates. #655
   closed neither #470 nor #587, since its issue list came from its
   commits alone: [#653]'s fix also checks the issues an ADR names as
@@ -871,10 +908,14 @@ request or a set of them:
       November; then [#629], lots at receipt,
       [ADR-094](adr/0094-lots-at-receipt.md), built from 21 to 23
       November as [#676]; then its next branch, `fix-678-after-094`,
-      planned on 24 November as ADR-094's amendment of that day (Where
-      things stand); beside it, the fix runner's picks, [#679] done as
-      [#682] and [#672] as [#686], then [#666], [#675], [#680],
-      [#683], [#685] and [#687]; with the next branch that changes
+      built on 24 and 25 November as [#717] (Where things stand);
+      beside it, the fix runner's picks, [#679] done as [#682], [#672]
+      as [#686], [#666] as [#688], [#675] as [#689], [#680] as [#690],
+      [#683] as [#691], [#685] as [#692], [#687] as [#694], and
+      [#643]'s two workers as [#715]; then the browser tests against
+      the built client ([#530]), a small branch of its own, which ends
+      [#643]'s stall; then the counts kept ready ([#716]), an ADR of
+      its own; with the next branch that changes
       orders, [#671], [#674] and [#652], an orders rules file; waiting
       on a trigger or a decision, [#667], [#668] and [#670]'s stages;
       each person choosing their main
@@ -1019,6 +1060,7 @@ Not repeated here; each list has one home:
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
 [#294]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/294
 [#295]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/295
+[#296]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/296
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#301]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/301
@@ -1179,6 +1221,7 @@ Not repeated here; each list has one home:
 [#534]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/534
 [#536]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/536
 [#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
+[#544]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/544
 [#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
 [#548]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/548
@@ -1227,6 +1270,7 @@ Not repeated here; each list has one home:
 [#608]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/608
 [#616]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/616
 [#617]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/617
+[#618]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/618
 [#620]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/620
 [#625]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/625
 [#626]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/626
@@ -1282,3 +1326,15 @@ Not repeated here; each list has one home:
 [#685]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/685
 [#686]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/686
 [#687]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/687
+[#688]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/688
+[#689]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/689
+[#690]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/690
+[#691]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/691
+[#692]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/692
+[#693]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/693
+[#694]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/694
+[#695]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/695
+[#714]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/714
+[#715]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/715
+[#716]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/716
+[#717]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/717

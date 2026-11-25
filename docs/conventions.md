@@ -785,7 +785,10 @@ The error tracker hears of real faults only (ADR-084).
   its shrunk case named in the commit. That spec's first generator passed
   on the old code too, most of its events falling on empty lots; one price
   a run, and stock taken only from a lot that holds some, made it fail on
-  #677's shape.
+  #677's shape. A case such a test finds is kept as a written test beside
+  it (25 November 2026): a seed stops reaching its case once the generator
+  or the library changes, as seed 678's did when the generator gained an
+  item that starts lot tracking with stock on hand.
 - **CI burns in the browser specs a pull request changes** (ADR-089's
   amendments): after the browser job's run, the tests of the specs it
   changes and of those importing a file it changes run in Chromium, with
@@ -1253,7 +1256,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   `e2e/cut-text.spec.ts` in Linux Chromium, whose measures depend on the
   fonts, CI's being Linux's (ADR-054's as-built), from one
   container of its own on a free port, stopped whatever the result; the
-  commands above are for a run by hand. A failed run's
+  commands above are for a run by hand. Linux WebKit runs there on two
+  workers, CI's number, where Playwright's own on a 12-core Mac is six
+  (#715): it makes the dev server's stall rarer and does not end it
+  (#643). A failed run's
   `client/e2e/.output/` is kept in `tmp/linux-browsers/`, and Linux
   WebKit's holds the failed test's trace, opened with
   `npx playwright show-trace` (#521).

@@ -190,6 +190,12 @@ so the timing is the evidence for the name lookup.
   code 246 ms (247 on 21 November, before the branch), with a whole
   supplier's lot 211, the lot search 10 to 12. The lookup's close pass
   reads the lot's code alone.
+  *Joined by former codes on 25 November 2026 (ADR-094's branch after,
+  R10):* a lot is found by any part of a former code too,
+  `lot_former_codes_code_trgm_idx` led by the organization (migration
+  0086), the former codes found once, as an array, beside the two lot
+  indexes. At large, at p95: by a former code the lot search 9 ms and
+  the lookup 96, and the lookup with a lot's whole code 238.
   Trigger: the lookup with a lot's whole code past 300 ms at large. Then
   its close pass first, the costliest query in it.
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
@@ -284,11 +290,26 @@ so the timing is the evidence for the name lookup.
   them faster than `main` does. All 57 budgets pass at small. The
   waiting set is made cheaper first (#664, the amendment for #676,
   below), before the figures are kept ready.
+  *Fired again on 24 November 2026 (ADR-094's branch after, #717):* at
+  large, Stock's counts 387 ms, the Lot view's counts 391 and Home 437,
+  on a machine that was not left alone; the Lot view's counts 321 the
+  next day on one that was. The cheaper waiting set saved a few
+  milliseconds of each. The figures kept ready are #716.
 - **JIT off for the app's connections** (ADR-093's as-built, below).
   Trigger: a report or an export that runs for seconds, which can then
   turn it on for its own transaction alone.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
+  *Closed on 25 November 2026 (ADR-094's branch after, #717):* Stock
+  value reads 50 pools a page, 109 ms at large for the first and 120
+  for a next one; the export still reads every pool.
+- **Stock value's totals** read every pool at each opening, as its
+  counts did: 193 ms at large (ADR-094's branch after). Trigger: past
+  300 ms at large. Then kept ready, with the counts (#716).
+- **A late cost's walk** reads every value row of its pool after the
+  receipt costed: 43 ms at large with five moves out of the pool, 38
+  at 8,000 rows of history, a long pool with no lots not timed (#714).
+  Trigger: a cost given past 300 ms at large. Then its plan first.
 - **Orders by how much has come** (#605; review 57, 109a): Receiving's
   filter works out each confirmed order's label from its lines, so
   `orders: purchases partly received`, the rarest, sums every confirmed
@@ -1079,3 +1100,63 @@ and a lot change in every 190 movements.
 The remedy is the next branch's (#664): the waiting set made cheaper
 and Stock value's pools read by the page; then the four are timed
 again.
+
+## Amendment (November 2026) — the branch after lots at receipt: Stock value by the page, a lot's former codes searched, and the counts still past 300 (#717)
+
+ADR-094's branch after, timed on the Mac at ten connections, 1,000
+requests after 50, p95 in ms, the median of three rounds: before on
+24 November 2026 with none of its server code, after its costs half
+that evening, after Stock value's totals moved that night, and after
+its lots half on 25 November. The volume databases were not seeded
+again: the lots half's former codes, 2,667 at large and 282 at small,
+1 lot in 44, were written into them, so every run reads the data of
+the first.
+
+- **Stock value reads by the page.** The whole list took 424 at
+  large. Built first with the totals in each page's answer, the first
+  page read 299 and a next page 413; with the totals a read of their
+  own and each item's sort key worked out once, 109 and 120, a find 52
+  to 62, the sort by value 54 to 58, and the totals 193, or 213 with a
+  find. A find has since asked its count alone (ADR-094's review 61):
+  13 at small, not timed at large.
+- **Every read of the lots half holds 300 at large:** the lookup with
+  a lot's whole code 238 (245 before), the lot search 11, a trace 21
+  to 23, Movements' first page 24 and one item's 27, the Lot view's
+  first page 92 (99).
+- **By a former code, at large:** the lookup 96, or 108 by a part of
+  one; the lot search 9; Stock's search 144 and the Lot view's 125;
+  Stock value's find 46. A row of Movements that says "was" costs
+  nothing seen: 27 for an item whose lots were corrected, as before.
+- **The four counts are still past 300 at large,** and the branch
+  moved none: Stock's counts 387, the Lot view's counts 391, Home 437
+  and Home for a newcomer 366 after its costs half, from 353, 330, 384
+  and 312 before, in a run where two reads it never touches rose by 12
+  and 18 %. On a machine left alone the next day the Lot view's counts
+  read 321. Each is one or two statements of 80 to 200 ms that read
+  the organization's stock levels and lots whole; the cheaper waiting
+  set saved a few milliseconds of each. Their Watch has fired twice:
+  the counts kept ready are #716.
+- **Timed at large for the first time (ADR-094's reviews 73, 54, 60
+  and 65):** the open-run read on every pile, the Lot view's first
+  page 99 and its page 21 97; Include empty, its list 61 and its
+  counts 243; a cost given, 43 with five moves out of its pool and 10
+  with none, where the walk before read 25 and 6, growing in a
+  straight line, 15 at 2,000 rows of history and 38 at 8,000; a trace
+  through a chain of three moves 11.
+- **#626's exports** read about 0.9 to 1.2 s at large, 5,000 and
+  13,000 rows, against a trigger of 2 s. **#630's sort by Coming's
+  date** does its own work in 163 to 192, but the seed holds no
+  expected day, so it is not proven as a page.
+- **63 budgets pass at small,** Stock value's first page, next page,
+  find, sort, totals and count among them, and Stock's search by a
+  code both sizes hold. **The plan check** holds at both sizes with
+  former codes in the data, its probes joined by Stock value's pages,
+  totals and export and by a lot search and a lookup by a former code.
+  After a budgets run it passes at small only once the database is
+  vacuumed and analyzed again: the run's 350 new lots had turned
+  Stock's search to a scan of `lots`.
+- **A machine that is not left alone reads 30 to 60 % high:** the
+  costs half's first batch ran beside another project's container
+  restarting in a loop, and its controls said so. A timed step now
+  carries two controls, reads the branch never touches
+  ([engineering.md](../engineering.md)).
