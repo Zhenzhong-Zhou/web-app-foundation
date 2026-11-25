@@ -401,6 +401,89 @@ describe('LookupBox', () => {
     expect(screen.queryByText(/close match/)).toBeNull();
   });
 
+  /** React's warning that two rows share a key, from what was logged. */
+  function watchSharedKeys() {
+    const errors = vi.spyOn(console, 'error');
+    return () =>
+      errors.mock.calls
+        .flat()
+        .filter((arg) => String(arg).includes('same key'));
+  }
+
+  // ADR-094 amended, R19: the demo's lot and production run FOC-2609-01,
+  // under one heading, were two rows keyed by the one title.
+  it('shows a lot and a production run with one code under Close matches, each saying its kind, keyed apart', async () => {
+    const sharedKeys = watchSharedKeys();
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'lot',
+              results: [found('FOC-2609-01', { id: 'lot-1', close: true })],
+            },
+            {
+              kind: 'productionRun',
+              results: [found('FOC-2609-01', { id: 'run-1', close: true })],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'fokus');
+
+    const group = (await screen.findByText('Close matches')).closest('li');
+    expect(
+      within(group as HTMLElement)
+        .getAllByRole('option')
+        .map((row) => row.textContent),
+    ).toEqual([
+      'FOC-2609-01 · LotFOCUS-60',
+      'FOC-2609-01 · Production runFOCUS-60',
+    ]);
+    expect(sharedKeys()).toEqual([]);
+  });
+
+  // ADR-094 amended, R19: a lot's code is its item's own, so two items'
+  // lots may share one under Lots.
+  it('shows two lots of different items with one code under Lots, keyed apart', async () => {
+    const sharedKeys = watchSharedKeys();
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'lot',
+              results: [
+                found('FOC-2609-01', { id: 'lot-1', detail: 'FOCUS-60' }),
+                found('FOC-2609-01', { id: 'lot-2', detail: 'CALM-30' }),
+              ],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'FOC-2609-01');
+
+    const group = (await screen.findByText('Lots')).closest('li');
+    expect(
+      within(group as HTMLElement)
+        .getAllByRole('option')
+        .map((row) => row.textContent),
+    ).toEqual([
+      'FOC-2609-01FOCUS-60',
+      'FOC-2609-01CALM-30',
+      'Show all in Inventory',
+    ]);
+    expect(sharedKeys()).toEqual([]);
+  });
+
   // ADR-094 amended, R9: a former code typed whole is an exact match, so
   // its lot is among what matches as typed, saying what it was called.
   it('says the former code a lot was found by beside its code', async () => {

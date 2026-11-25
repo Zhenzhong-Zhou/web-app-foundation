@@ -216,7 +216,9 @@ leave how it matches to this file. How this file is kept is in the
   Close matches, best first within each kind, each row saying its kind,
   "Focus 60ct · Item", none marked on its own and none with Show all;
   while anything matches as typed, that comes alone, as in Movements'
-  find box. "fokus" finds Focus 60ct, "nortside" Northside Pharmacy. The
+  find box. "fokus" finds Focus 60ct, "nortside" Northside Pharmacy.
+  Records that share a code, as the demo's lot and production run
+  FOC-2609-01 do, are a row each, each saying its kind. The
   server looks for close matches only while the whole search has found
   fewer than five records, so a search that fills the lookup asks for
   none. A close match is looked
@@ -231,6 +233,7 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "adds no close match once five records match as typed (#308’s 12)" ·
   [test](../../client/src/search/lookup-box.test.tsx) "shows only what matches as typed when anything does" ·
   [test](../../client/src/search/lookup-box.test.tsx) "shows the close matches under one heading only when nothing matches as typed, each saying its kind, with no Show all" ·
+  [test](../../client/src/search/lookup-box.test.tsx) "shows a lot and a production run with one code under Close matches, each saying its kind, keyed apart" ·
   [test](../../client/e2e/search.spec.ts) "The top bar, a whole code that matches: only what matches, no close match" ·
   [test](../../client/e2e/search.spec.ts) "The top bar, text nothing matches as typed: the close matches, under their heading, each saying its kind" ·
   [Help](../../client/src/help/guides/en/home.md#search-everything-search) ·

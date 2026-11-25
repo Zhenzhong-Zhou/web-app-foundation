@@ -260,6 +260,16 @@ function LookupField({
             ? option.result.title
             : option.to
       }
+      // Each row by what it is, never its title alone, which two records
+      // share where a lot and a run, or two items' lots, have one code
+      // (ADR-094 amended, R19); MUI keys by the label otherwise.
+      getOptionKey={(option) =>
+        option.type === 'recent'
+          ? `recent:${option.entry.kind}:${option.entry.id}`
+          : option.type === 'all'
+            ? `all:${option.kind}:${option.to}`
+            : `result:${option.kind}:${option.result.id}`
+      }
       // The server has matched and ranked them; nothing to filter here.
       filterOptions={(all) => all}
       isOptionEqualToValue={(a, b) => a === b}
