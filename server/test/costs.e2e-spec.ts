@@ -2059,6 +2059,12 @@ describe('Costs (e2e)', () => {
       const agent = await addMember(app, s, 'admin@alpha.example.com', 'Admin');
 
       await agent.get('/v1/costs/valuation').expect(403);
+      // Its totals and a find's count, each a read of its own (review 82).
+      await agent.get('/v1/costs/valuation/totals').expect(403);
+      await agent
+        .get('/v1/costs/valuation/count')
+        .query({ search: 'scoop' })
+        .expect(403);
       await agent
         .put('/v1/costs/exchange-rates')
         .send({ currency: 'USD', rateDate: '2026-09-28', rate: '1.37' })
