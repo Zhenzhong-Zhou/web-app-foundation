@@ -233,10 +233,19 @@ export function EditLotDialog({
 
             <TextField
               id="edit-lot-code"
-              label={intl.formatMessage({
-                id: 'inventory.lot.number',
-                defaultMessage: 'Lot number',
-              })}
+              // A code made here is 批次编码 in Chinese, as Receive's made
+              // code is; a printed one 批号 (reviews 3 and 78).
+              label={
+                madeHere
+                  ? intl.formatMessage({
+                      id: 'inventory.lot.madeCode',
+                      defaultMessage: 'Lot number',
+                    })
+                  : intl.formatMessage({
+                      id: 'inventory.lot.number',
+                      defaultMessage: 'Lot number',
+                    })
+              }
               required
               fullWidth
               disabled={!madeHere}

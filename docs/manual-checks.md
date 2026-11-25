@@ -771,7 +771,8 @@ a second organization.
   of On a date (its day under it), Not known yet or Doesn't expire; move
   it between the three and save: Stock reads the new one, "Expiry to
   add" for Not known yet. A lot made here offers its code and Supplier's
-  lot; emptied, it reads "Supplier's lot to add" again. A printed code
+  lot; emptied, it reads "Supplier's lot to add" again. In 中文 the code
+  of a lot made here reads 批次编码, a printed one 批号. A printed code
   is greyed, and the Owner reads under it to tick "We made this code up;
   nothing printed it", whose tick lets the code be corrected and the
   supplier's lot added in the same save; the Activity log then reads
@@ -8085,3 +8086,6 @@ first.
 - 2026-11-25: The review's 74, a return from before lot tracking brings
   back its share of a cost given later, where the delivery's history
   went into the start lot: MC-803 extended.
+- 2026-11-25: The review's 3 and 78, Edit lot details names a code made
+  here 批次编码 in Chinese, as Receive does, a printed one 批号: MC-329
+  extended.

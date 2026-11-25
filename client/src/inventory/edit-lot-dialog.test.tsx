@@ -2,11 +2,13 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
+import { IntlProvider } from 'react-intl';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { StockPile } from '../api/types.gen';
 import { ToastProvider } from '../components/toast-provider';
+import zh from '../locales/zh-Hans.json';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { EditLotDialog } from './edit-lot-dialog';
@@ -320,6 +322,28 @@ describe('EditLotDialog (ADR-094)', () => {
         madeHere: true,
       },
     ]);
+  });
+
+  // Reviews 3 and 78: one name for a code made here, 批次编码, as Receive's
+  // made code and the glossary have it; a printed one is 批号.
+  it('names a code made here 批次编码 in Chinese, a printed one 批号', () => {
+    for (const [row, name] of [
+      [MADE, '批次编码'],
+      [TYPED, '批号'],
+    ] as const) {
+      const { unmount } = renderWithAuth(
+        <IntlProvider locale="zh-Hans" messages={zh} defaultLocale="en">
+          <MemoryRouter>
+            <ToastProvider>
+              <Opened row={row} onSaved={() => Promise.resolve()} />
+            </ToastProvider>
+          </MemoryRouter>
+        </IntlProvider>,
+        { permissions: ['stock.view', 'stock.move'] },
+      );
+      expect(screen.getByRole('textbox', { name })).toHaveValue(row.lotCode);
+      unmount();
+    }
   });
 
   it('offers no mark for a lot made here already', () => {
