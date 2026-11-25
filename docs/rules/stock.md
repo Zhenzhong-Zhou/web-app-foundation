@@ -1031,12 +1031,15 @@ file is kept is in the [README](README.md).
   apart, with the lot it goes into. So what each lot shipped and what came back of it
   still match. Where the code started with nothing on hand, the first of
   it back makes that lot, made for us, noted the same, its expiry not
-  known yet.
+  known yet. A code has one such lot, never two, two returns at once
+  included, and the database refuses a second whatever writes it.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "takes back a sale shipped before the start by quantity, with no lot as it left, then into the start lot, at the cost it left at (Q3a)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "receives an RMA’s goods shipped before the start the same way, held to what it authorized (Q3a)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "voids a shipment made before the start: its goods back with no lot, as they left, then into the start lot, at the cost they left at (Q3a, #647)" ·
   [test](../../server/test/lot-tracking.e2e-spec.ts) "makes the start lot with the first stock back where the code started with nothing on hand, and puts the rest back in it, at the cost it left at (Q4a)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "makes one start lot for two returns at once, each the first of its code back from before (ADR-094 amended, R12)" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "refuses a second start lot for a code, two written at once straight to the table (ADR-094 amended, R12)" ·
   MC-614
 - **Stock back from before takes no cost of its own:** where what it
   came from still waits for a cost, it waits too, and the cost given to

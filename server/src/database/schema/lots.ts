@@ -144,6 +144,11 @@ export const lots = pgTable(
       t.variantId,
       t.code,
     ),
+    // One start lot a code (ADR-094 amended, R12): the lot that took its
+    // stock as its tracking started, found by its note (start-lot.ts).
+    uniqueIndex('lots_org_variant_start_lot_key')
+      .on(t.organizationId, t.variantId)
+      .where(sql`${t.note} = 'tracking_started'`),
     // FEFO picking and expiry reporting both read "soonest first, within an
     // organization". Partial, because lots that never expire are the majority
     // in a mixed catalogue and do not belong in this index.

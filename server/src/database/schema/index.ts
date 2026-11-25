@@ -26,6 +26,7 @@ export * from './invoice-lines';
 export * from './invoice-taxes';
 export * from './invoices';
 export * from './locations';
+export * from './lot-former-codes';
 export * from './lots';
 export * from './membership-roles';
 export * from './memberships';

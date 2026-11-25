@@ -5,7 +5,7 @@ paths:
   - "server/src/modules/stock/{start-lot,lot-search,lot-allocation,open-run}.ts"
   - "server/src/modules/stock/dto/{movement-lot,move-to-lot,start-lot-tracking,update-lot,lot-trace-response,lot-tracking-response}.dto.ts"
   - "server/src/modules/numbering/lot-codes.ts"
-  - "server/src/database/schema/lots.ts"
+  - "server/src/database/schema/{lots,lot-former-codes}.ts"
   - "server/test/{lot-changes,lot-trace,lot-tracking,lots-at-receipt}.e2e-spec.ts"
   - "client/src/inventory/{lot-input.ts,lot-received.ts,lot-expiry.ts,lot-fields.tsx,lot-marks.tsx,lot-taken.tsx,edit-lot-dialog.tsx,move-to-lot-dialog.tsx,expiry-choice.tsx,no-lot-line.tsx,supplier-lot-part.ts}"
   - "client/src/products/start-tracking-dialog.tsx"
@@ -49,7 +49,8 @@ states (ADR-087).
   hand; a cost and a move lock in the same order.
 - **Start tracking locks the variant `for update`,** and `recordWithin`
   reads it `for share`, so no receipt races it; the start lot is found
-  by its note's key, `tracking_started` (`start-lot.ts`), never by words.
+  by its note's key, `tracking_started` (`start-lot.ts`), never by words,
+  one a code by a partial unique index.
 - **Stock back from before tracking is the one exception to "a lot
   exactly when the variant tracks lots":** `fromBefore` writes it with
   no lot, then a lot change into the start lot; `shippedAt` reads the

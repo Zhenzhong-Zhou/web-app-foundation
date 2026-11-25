@@ -62,6 +62,7 @@ const TABLE_AREAS: Record<string, readonly string[]> = {
     'return_authorizations',
   ],
   stock: [
+    'lot_former_codes',
     'lots',
     'reorder_points',
     'stock_levels',

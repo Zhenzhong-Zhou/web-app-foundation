@@ -5,6 +5,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
+import { isUniqueViolation } from '../src/database/errors';
 import {
   lots,
   orderLines,
@@ -1257,6 +1258,78 @@ describe('Start tracking lots (e2e)', () => {
         { locationId: w.main, lotId: made[0].id, quantity: '6.0000' },
         { locationId: w.main, lotId: null, quantity: '0.0000' },
       ]);
+    });
+
+    // The amendment's R12 (#669's 78): one start lot a code, two writes at
+    // once included, the second finding the first's.
+    it('makes one start lot for two returns at once, each the first of its code back from before (ADR-094 amended, R12)', async () => {
+      const w = await world();
+      await buy(w, '10', '2.00', w.main);
+      const sales = [
+        await order(w.org.agent, 'sale', w.customer, w.code, '5'),
+        await order(w.org.agent, 'sale', w.customer, w.code, '5'),
+      ];
+      for (const sale of sales) await shipOut(w, sale, w.main, '5');
+      expect(await start(w)).toEqual({ lot: null });
+
+      await Promise.all(
+        sales.map((sale) =>
+          giveBack(w, sale.id, {
+            toLocationId: w.main,
+            lines: [{ lineId: sale.lineId, quantity: '2' }],
+          }).expect(201),
+        ),
+      );
+
+      const made = await db
+        .select({ id: lots.id, note: lots.note })
+        .from(lots)
+        .where(eq(lots.variantId, w.code));
+      expect(made.map((lot) => lot.note)).toEqual(['tracking_started']);
+      expect(await poolOf(db, w.code, made[0].id)).toMatchObject({
+        quantity: '4.0000',
+        value: '8.000000',
+      });
+    });
+
+    // R12: the partial unique index lots_org_variant_start_lot_key holds it
+    // whatever writes the table.
+    it('refuses a second start lot for a code, two written at once straight to the table (ADR-094 amended, R12)', async () => {
+      const w = await world();
+      expect(await start(w)).toEqual({ lot: null });
+      const write = (code: string) =>
+        db.transaction(async (tx) => {
+          await tx.insert(lots).values({
+            organizationId: w.org.organizationId,
+            variantId: w.code,
+            code,
+            expiry: 'unknown',
+            isAssigned: true,
+            note: 'tracking_started',
+          });
+          // Held open a moment, so the other's insert meets this one
+          // before it commits; either order ends the same.
+          await tx.execute(sql`select pg_sleep(0.2)`);
+        });
+
+      const both = await Promise.allSettled([
+        write('L-START-1'),
+        write('L-START-2'),
+      ]);
+
+      const refused = both.filter(
+        (each): each is PromiseRejectedResult => each.status === 'rejected',
+      );
+      expect(refused).toHaveLength(1);
+      expect(
+        isUniqueViolation(refused[0].reason, 'lots_org_variant_start_lot_key'),
+      ).toBe(true);
+      expect(
+        await db
+          .select({ note: lots.note })
+          .from(lots)
+          .where(eq(lots.variantId, w.code)),
+      ).toEqual([{ note: 'tracking_started' }]);
     });
 
     it('carries a cost given later to stock back from before into its lot, which takes none by hand (Q3a, D5)', async () => {
