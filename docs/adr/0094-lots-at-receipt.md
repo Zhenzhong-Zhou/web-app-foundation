@@ -544,7 +544,7 @@ the brief's.
 | R3 | The branch's first migration drops the trigger `lots_expiry_from_date` and its function | A list of every released write to `lots`, each naming the expiry's kind and its day; a server test where a day with the kind `none` is refused; the migrations' linter passes; the schema's comment and the lots rules say so | 3, 5 |
 | R4 | #664: the waiting set is worked out more cheaply, by query alone; "waiting" means the same on Stock, Stock value and Home | The tests of what waits pass unchanged; the plan check holds at both sizes | 9 |
 | R5 | The four reads timed again at large on the Mac, the median of three rounds, on ADR-094's seed | Stock's counts (371), the Lot view's counts (368), Home (384) and Home for a newcomer (303) each under 300 ms; every budget at small. One still over 300 stops the step: the next remedy is an ADR of its own | 4, 12 |
-| R6 | Stock value's pools read by the page, with a find box and a sort by Value, the total worked out by the server (3a, E4a) | A server test of the pages, the find, the sort and the total; the export still whole; a browser test; the first page, a find and the sort timed at large, the sort dropped if it misses its budget | 10, 11, 12 |
+| R6 | Stock value's pools read by the page, with a find box and a sort by Value, the total worked out by the server (3a, E4a) | A server test of the pages, the find, the sort and the total; the export still whole; a browser test; the first page, the next page, a find and the sort timed at large, each inside 300 ms, the sort dropped if it misses its budget; the totals a read of their own | 10, 11, 12, 29 |
 | R7 | Timed at large beside them: review 73's read, review 54's condition, a cost given with five moves (review 60), the trace's moved step (review 65); #626 and #630 judged in the same pass | Their figures in ADR-051's amendment, each inside its budget or on the Watch with a trigger; a comment on #626 and on #630 | 4, 12, 23 |
 | R8 | #665: a lot's former codes are kept when Edit lot details corrects its code, with when, by whom and why; the reason is asked only when the code changes (E2a) | A migration, the table in the organization's export; a server test corrects a code twice and reads two former codes; a save with a changed code and no reason is refused at its field | 14, 15 |
 | R9 | The former code is shown: beside the lot's title with every one listed under Former codes; under the code on Stock by lot and the Lot view; on a search hit; on Movements, for a row from before the correction (M1a); on the recall list and in its export, "shipped as", for what left before it, a row split by the code its stock left under (4a, E3a); on Stock value's rows | A browser test for each place; three languages; the canvas's rows v19, v21 and v22 | 16, 17, 21 |
@@ -709,9 +709,11 @@ One rule replaces two readings (R1, R17; ADR-048 amended).
 - **`GET /v1/costs/valuation` answers a page (R6):** 50 pools, at most
   100 a request, by a cursor, with a find by an item's name or code or
   a lot's code, a former code too, and a sort by item or by value.
-  `total`, `currency` and `provisional` speak for every pool, whatever
-  page or find is read. Each pool names its item in the reader's
-  language (#296).
+  Its totals are a read of their own, `GET /v1/costs/valuation/totals`,
+  as Stock's counts are: `total`, `currency` and `provisional` for
+  every pool whatever is found, the number of pools, and the number a
+  find matches. A page never works them out again. Each pool names its
+  item in the reader's language (#296).
 - **The API revision rises from 6 to 7:** a tab opened before would
   take the first page for the whole list. Every tab open at the deploy
   reloads once.
@@ -890,7 +892,8 @@ a next page that failed. Each row below is a browser test (step 21).
 - **A former code as an export's column.** Trigger: someone asking for
   it in a spreadsheet.
 - **The counts kept ready,** an ADR of its own. Trigger: ADR-051's,
-  past 300 ms at large in two runs, once more.
+  past 300 ms at large in two runs, once more. Met on 24 November
+  2026, at this branch's steps 4 and 12: the next ADR.
 - **A reason for a changed code chosen from a list.** Trigger: the
   first organization whose quality person reviews them.
 - **A reference type of its own for a part carried (#669's 57).**
@@ -927,6 +930,35 @@ above is changed in place, since nothing of it was built.
 - **Read as the inventory read them, with no choice:** the lookup's
   new field is an empty column for every other kind (F3); the item's
   page gains nothing (F5); how a former code matches (F8).
+
+### Settled at the stop
+
+Step 12 timed the costs half on 24 November 2026 and ended on two
+decisions, which the maintainer answered that evening (1a, 2b).
+
+- **R5 is not met, and the branch goes on.** At large, p95: Stock's
+  counts 387 ms, the Lot view's counts 391, Home 437, Home for a
+  newcomer 366; before the branch's code, 353, 330, 384 and 312. Two
+  reads the branch never touches moved as much, so it slowed none of
+  them, and the cheaper waiting set saved only a few milliseconds:
+  each is one or two statements that read the organization's stock
+  levels and lots whole. The remedy is the counts kept ready, the next
+  ADR, with these figures and plans as its "before".
+- **Stock value's totals are their own read.** Built first with the
+  totals in every page's answer, a next page took 413 ms at large,
+  about what the whole list had taken (424): every page worked the
+  totals out again, and ordered every pool by its item's name. The
+  totals move to a read of their own, as Stock's counts are, asked
+  once for a find and never for a next page or a sort; the page's
+  order is made cheaper by query alone, with no stored key. Each of
+  the page's reads is then in a budget at small and timed at large
+  (step 29).
+- **Read as built, and kept:** a page answers `entries` and
+  `nextCursor`, as every list does; `sort=value` is smallest first and
+  `-value` largest; the item order is by the name shown, then the
+  code, then the lot's code (ADR-056), where row v19 drew code order;
+  the Item header puts that order back; the line under the list says
+  "items and lots".
 
 ### Consequences of the branch after
 
