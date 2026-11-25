@@ -585,6 +585,7 @@
   "exports.value.noRecipient": "Aucun destinataire enregistré",
   "exports.value.openingBalance": "Solde d’ouverture",
   "exports.value.sampleOrder": "{reference} (échantillon)",
+  "exports.value.shippedAs": "{code} (expédié sous {codeThen})",
   "exports.value.supplierLotToAdd": "Lot du fournisseur à ajouter",
   "files.attach.unavailable": "Ce fichier ne peut pas être utilisé ici. Téléversez-le de nouveau.",
   "files.image.unreadable": "Cette image n’a pas pu être lue. Elle est peut-être endommagée, ou d’un autre type que celui qu’indique son nom.",

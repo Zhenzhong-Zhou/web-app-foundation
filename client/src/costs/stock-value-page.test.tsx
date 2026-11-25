@@ -171,6 +171,7 @@ function pool(name: string): ValuationPool {
     coverFileId: null,
     lotId: `lot-${name}`,
     lotCode: `LOT-${name.toUpperCase()}`,
+    lotFormerCode: null,
     quantity: '10.0000',
     value: '20.000000',
     unitCost: '2.000000',

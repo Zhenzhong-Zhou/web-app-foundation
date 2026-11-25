@@ -28,6 +28,7 @@ const PILE: StockPile = {
   lotExpiry: 'date',
   lotIsAssigned: true,
   lotSupplierLot: 'SUP-88',
+  lotFormerCode: null,
   quantity: '100.0000',
   emptiedOn: null,
   issuedToRun: null,
@@ -41,6 +42,7 @@ const LOTS: Lot[] = [
     expiry: 'unknown',
     isAssigned: false,
     supplierLot: null,
+    formerCodes: [],
   },
   {
     id: 'lot-a',
@@ -49,6 +51,7 @@ const LOTS: Lot[] = [
     expiry: 'date',
     isAssigned: true,
     supplierLot: 'SUP-88',
+    formerCodes: [],
   },
 ];
 

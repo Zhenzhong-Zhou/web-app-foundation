@@ -294,6 +294,18 @@ async function buildProbes(
   // A lot's whole code, as Stock value's find is given it; and its first
   // page's cursor, as Show 50 more sends it.
   const valuationLot = shelf.lotCode ?? '';
+  // A lot's former code (ADR-094 amended, R10), as the volume seed gives
+  // some lots one; with none yet, the shelf's own lot code, which reads
+  // the same arms: its code, its supplier's lot and the former codes.
+  const {
+    rows: [former],
+  } = await app
+    .get<Pool>(PG_POOL)
+    .query<{ code: string }>(
+      'select code from lot_former_codes where organization_id = $1 order by changed_at desc limit 1',
+      [org.organizationId],
+    );
+  const formerCode = former?.code ?? valuationLot;
   const { nextCursor: valuationNext } = await costs.valuation({}, 'zh-Hans');
   if (!valuationNext) throw new Error('One page of Stock value: seed again.');
   // A manifest written before the team (ADR-081) names nobody, and the
@@ -533,6 +545,13 @@ async function buildProbes(
       name: 'lot search: a supplier’s lot',
       run: () => traces.search('SUP-0001'),
     },
+    // And by a former code (ADR-094 amended, R10), through
+    // lot_former_codes_code_trgm_idx, led by the organization, the hit
+    // saying which by lot_former_codes_lot_idx.
+    {
+      name: 'lot search: a former code',
+      run: () => traces.search(formerCode),
+    },
     // Search (ADR-056): served by the trigram indexes for three characters
     // or more, so no allowance here; a sequential scan of a large table is a
     // failure like any other.
@@ -543,6 +562,10 @@ async function buildProbes(
     {
       name: 'lookup: code',
       run: () => lookups.lookup('LV-00001', EVERY_PERMISSION, 'en'),
+    },
+    {
+      name: 'lookup: a former code',
+      run: () => lookups.lookup(formerCode, EVERY_PERMISSION, 'en'),
     },
     {
       name: 'lookup: name',

@@ -585,6 +585,7 @@
   "exports.value.noRecipient": "未记录收货方",
   "exports.value.openingBalance": "期初结存",
   "exports.value.sampleOrder": "{reference}（样品）",
+  "exports.value.shippedAs": "{code}（发货时为 {codeThen}）",
   "exports.value.supplierLotToAdd": "待补供应商批号",
   "files.attach.unavailable": "此文件无法在此使用，请重新上传。",
   "files.image.unreadable": "无法读取此图片。它可能已损坏，或其类型与文件名不符。",

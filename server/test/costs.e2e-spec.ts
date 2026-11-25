@@ -16,6 +16,7 @@ import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   addMember,
   body,
+  correctLotCode,
   createE2eApp,
   createLocation,
   createPartner,
@@ -1711,6 +1712,7 @@ describe('Costs (e2e)', () => {
       entries: {
         sku: string;
         lotCode: string | null;
+        lotFormerCode: string | null;
         value: string;
         provisional: boolean;
       }[];
@@ -1843,6 +1845,41 @@ describe('Costs (e2e)', () => {
         entries: [],
         nextCursor: null,
       });
+    });
+
+    // A lot's former code finds its pool, as every lot search finds it,
+    // and the pool says the latest, "was {code}" under its code (ADR-094
+    // amended, R9, R10, F4).
+    it('finds a pool by its lot’s former code, the pool saying the latest, and counts it (R9, R10)', async () => {
+      const s = await setup('alpha');
+      await fivePools(s);
+      const lotId = await lotIdOf(db, 'J-2');
+      await correctLotCode(s.agent, lotId, 'J-0002');
+      await correctLotCode(s.agent, lotId, 'J-0003');
+
+      for (const search of ['j-2', 'J-0002', 'J-0003']) {
+        expect(
+          (await valuationPage(s, { search })).entries.map((pool) => [
+            pool.lotCode,
+            pool.lotFormerCode,
+          ]),
+        ).toEqual([['J-0003', 'J-0002']]);
+        expect((await valuationTotals(s, { search })).count).toBe(1);
+      }
+      // A pool of a lot never corrected, or with no lot, says none.
+      expect(
+        (await valuationPage(s, {})).entries.map((pool) => [
+          pool.sku,
+          pool.lotCode,
+          pool.lotFormerCode,
+        ]),
+      ).toEqual([
+        ['CAP', null, null],
+        ['JAR', 'J-0003', 'J-0002'],
+        ['JAR', 'J-1', null],
+        ['LID', null, null],
+        ['SCOOP', null, null],
+      ]);
     });
 
     /**

@@ -24,6 +24,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
+import { latestFormerCode } from '../stock/former-codes';
 import { namesIn, nameSortKey, productNameOrder } from '../stock/item-name';
 import { lotMatches } from '../stock/lot-search';
 import { baseCurrency } from '../stock/rates';
@@ -71,6 +72,7 @@ interface PoolRow {
 /** A page's pool, with its item named for the reader (#296). */
 interface PagePoolRow extends PoolRow {
   id: string;
+  lot_former_code: string | null;
   product_id: string;
   product_name: string;
   variant_name: string | null;
@@ -782,12 +784,13 @@ function poolsFrom(organizationId: string): SQL {
 
 /**
  * The pools a search finds (ADR-094's amendment, R6): its item's, as
- * every search matches an item (ADR-056), or its lot's, by its code or
- * its supplier's lot (lotMatches). Each is found once, as an array,
- * through its trigram indexes, and a pool matched by its item's id or
- * its lot's (database.md: an `in` inside an OR is `= any(array(...))`):
- * matched pool by pool, every name and code was read again for each of
- * an item's pools, about 90 ms of the count at ADR-051's large scale.
+ * every search matches an item (ADR-056), or its lot's, by its code, its
+ * supplier's lot or a former code (lotMatches). Each is found once, as an
+ * array, through its trigram indexes, and a pool matched by its item's
+ * id or its lot's (database.md: an `in` inside an OR is
+ * `= any(array(...))`): matched pool by pool, every name and code was
+ * read again for each of an item's pools, about 90 ms of the count at
+ * ADR-051's large scale.
  */
 function poolsFound(terms: SearchTerms, organizationId: string): SQL {
   const org = sql`${organizationId}::uuid`;
@@ -804,7 +807,15 @@ function poolsFound(terms: SearchTerms, organizationId: string): SQL {
     or p.lot_id = any(array(
       select lt.id from lots lt
       where lt.organization_id = ${org}
-        and ${lotMatches({ code: sql`lt.code`, supplierLot: sql`lt.supplier_lot` }, terms)}
+        and ${lotMatches(
+          {
+            id: sql`lt.id`,
+            code: sql`lt.code`,
+            supplierLot: sql`lt.supplier_lot`,
+          },
+          terms,
+          organizationId,
+        )}
     ))
   )`;
 }
@@ -941,7 +952,9 @@ async function poolsIn(
            ${shown.productName} as product_name,
            ${shown.variantName} as variant_name,
            ${products.type} as type, ${coverOf()} as cover_file_id,
-           p.lot_id, ${lots.code} as lot_code, p.quantity, p.value,
+           p.lot_id, ${lots.code} as lot_code,
+           ${latestFormerCode(sql`p.lot_id`, organizationId)} as lot_former_code,
+           p.quantity, p.value,
            round(p.value / p.quantity, 6) as unit_cost,
            (op.variant_id is not null) as provisional
     from ${poolsFrom(organizationId)}
@@ -966,6 +979,7 @@ async function poolsIn(
       coverFileId: row.cover_file_id,
       lotId: row.lot_id,
       lotCode: row.lot_code,
+      lotFormerCode: row.lot_former_code,
       quantity: row.quantity,
       value: row.value,
       unitCost: row.unit_cost,

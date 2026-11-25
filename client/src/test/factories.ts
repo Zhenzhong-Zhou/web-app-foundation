@@ -85,6 +85,8 @@ export function movement(over: Partial<Movement> = {}): Movement {
     lotSupplierLot: null,
     toLotId: null,
     toLotCode: null,
+    lotCodeThen: null,
+    toLotCodeThen: null,
     actorName: '王建国',
     actorEmail: 'wang@example.com',
     createdAt: '2026-10-30T17:00:00.000Z',

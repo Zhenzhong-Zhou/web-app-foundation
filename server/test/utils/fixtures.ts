@@ -141,6 +141,53 @@ export async function createVariant(
     .variants[0].id;
 }
 
+/**
+ * A lot's code corrected in Edit lot details (ADR-094 amended, R8),
+ * marked made here in the same save, so its code before is one of its
+ * former codes.
+ */
+export async function correctLotCode(
+  agent: Agent,
+  lotId: string,
+  code: string,
+  reason = 'The letter O was typed for a zero on the label.',
+): Promise<void> {
+  await agent
+    .patch(`/v1/stock/lots/${lotId}`)
+    .send({ madeHere: true, code, reason })
+    .expect(204);
+}
+
+/**
+ * Stock received into a lot typed as printed, `from`, whose code is then
+ * corrected to `to` (correctLotCode): `from` is its former code, as row
+ * v19's ASH-06O1 is. The lot's id.
+ */
+export async function correctedLot(
+  agent: Agent,
+  receipt: {
+    variantId: string;
+    toLocationId: string;
+    from: string;
+    to: string;
+    quantity?: string;
+  },
+): Promise<string> {
+  const res = await agent
+    .post('/v1/stock/movements')
+    .send({
+      variantId: receipt.variantId,
+      toLocationId: receipt.toLocationId,
+      quantity: receipt.quantity ?? '10',
+      reason: 'receipt',
+      lot: { code: receipt.from },
+    })
+    .expect(201);
+  const lotId = body<{ movement: { lotId: string } }>(res).movement.lotId;
+  await correctLotCode(agent, lotId, receipt.to);
+  return lotId;
+}
+
 /** A system role's id in one organization, by name: Owner, Admin, Viewer. */
 export async function roleIdNamed(
   app: INestApplication,

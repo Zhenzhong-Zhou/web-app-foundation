@@ -664,6 +664,34 @@ describe('A new lot at receipt (e2e)', () => {
       expect(logged).not.toContain('recount');
     });
 
+    // The receive dialogs' lots carry each lot's former codes, the codes
+    // alone, so the lot field refuses one as it is typed (R11, F2).
+    it('lists each lot of an item with its former codes, newest first, the codes alone (R9, F2)', async () => {
+      const w = await world();
+      const lotId = await corrected(w, 'ASH-06O1', 'ASH-0601');
+      await w.org.agent
+        .patch(`/v1/stock/lots/${lotId}`)
+        .send({ code: 'ASH-0601-B', reason: 'Relabelled after the recount.' })
+        .expect(204);
+      await ROUTES['Receive stock'](w, { lot: { code: 'ASH-0700' } }).expect(
+        201,
+      );
+
+      const listed = body<{ code: string; formerCodes: string[] }[]>(
+        await w.org.agent
+          .get(`/v1/stock/lots?variantId=${w.variantId}`)
+          .expect(200),
+      );
+      expect(
+        listed.map(({ code, formerCodes }) => [code, formerCodes]),
+      ).toEqual(
+        expect.arrayContaining([
+          ['ASH-0601-B', ['ASH-0601', 'ASH-06O1']],
+          ['ASH-0700', []],
+        ]),
+      );
+    });
+
     it('refuses a changed code with no why, saying so, and changes nothing; a save that keeps the code asks none (R8, E2a)', async () => {
       const w = await world();
       const { movement } = written(

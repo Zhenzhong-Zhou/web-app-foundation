@@ -585,6 +585,7 @@
   "exports.value.noRecipient": "No recipient recorded",
   "exports.value.openingBalance": "Opening balance",
   "exports.value.sampleOrder": "{reference} (sample)",
+  "exports.value.shippedAs": "{code} (shipped as {codeThen})",
   "exports.value.supplierLotToAdd": "Supplier’s lot to add",
   "files.attach.unavailable": "That file cannot be used here. Upload it again.",
   "files.image.unreadable": "This image could not be read. It may be damaged, or not the type its name says.",

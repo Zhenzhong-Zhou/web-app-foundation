@@ -103,17 +103,20 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "keeps what is at one place, its figures there, Free and Held the whole item’s" ·
   [Help](../../client/src/help/guides/en/inventory.md#read-the-stock-stock) ·
   MC-301
-- **A lot's code or its supplier's lot searched with a place chosen
-  finds that lot at that place alone,** never a code whose matching lot
-  is held elsewhere; either code finds the lot, any part of it, capitals
-  aside, on Stock and on the Lot view (ADR-094, R6).
+- **A lot's code, its supplier's lot or a former code searched with a
+  place chosen finds that lot at that place alone,** never a code whose
+  matching lot is held elsewhere; each finds the lot, any part of it,
+  capitals aside, on Stock and on the Lot view (ADR-094, R6; amended,
+  R10).
   [ADR-093](../adr/0093-inventory-and-movements.md#decision--group-by-item-or-lot-one-place-now) ·
   [ADR-056, amended](../adr/0056-search.md#amendment-november-2026--a-lot-found-by-its-suppliers-lot-adr-094) ·
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-lots-former-codes) ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code and a lot by a former code at the place chosen alone, each pile saying the latest (ADR-094 amended, R9, R10)" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a lot by its code at the place chosen alone, never one held elsewhere" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code by any part of a lot’s supplier’s lot, capitals aside, at the place chosen alone (ADR-094, R6)" ·
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a lot by any part of its supplier’s lot, beside the lots its own code finds (ADR-094, R6)" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
-  MC-314 · MC-909
+  MC-314 · MC-909 · MC-911
 - **Sorted by On hand or Expires first, each page follows the figure
   its rows show, either way,** a code with nothing to expire last both
   ways; at one place chosen, On hand and Expires first are what is
@@ -279,9 +282,9 @@ file is kept is in the [README](README.md).
   order are chosen in one find box, Find an item, lot or order, which
   reads the top bar's lookup, its kinds by the reader's permissions, and
   offers items, lots and orders alone, never a run or a return, the
-  exact matches alone while any match, a lot by its code or its
-  supplier's lot, the supplier's lot named on its option, a whole lot
-  code or supplier's lot its lot alone,
+  exact matches alone while any match, a lot by its code, its
+  supplier's lot or a former code, the supplier's lot named on its
+  option, a whole lot code, supplier's lot or former code its lot alone,
   and the close ones, a typo's, under Close matches only when none does:
   an item sets the item, a lot its item and the lot, an order the order,
   each then a chip, the box emptied; what is typed alone never filters. An archived code,
@@ -303,6 +306,7 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/movements-page.test.tsx) "offers the close matches under Close matches only when nothing matches exactly" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "offers a whole lot code alone; chosen, the box empties and the lot stays as its chip" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "offers a lot whose whole supplier’s lot is typed alone, naming it" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers a lot whose whole former code is typed alone, though another lot’s code starts with it" ·
   [test](../../client/e2e/movements-page.spec.ts) "Movements, Find an item, lot or order › a lot by the keyboard: its item and the lot, each a chip, a stock card; › an order: its chip" ·
   [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
   [test](../../client/e2e/stock.spec.ts) "Stock, a lot’s Actions › Movements, Location › its shelf, then × Lot and × Item: Movements of the shelf alone, its chip left" ·
@@ -569,15 +573,22 @@ file is kept is in the [README](README.md).
   moves as lead there, each row under the lot they received, with how
   much was shipped, sampled and returned and the day it first left; its
   export is the same rows, each lot's supplier's lot after its code, in
-  the reader's language, for a reader with stock.view.
+  the reader's language, for a reader with stock.view. A row is also
+  the code its lot had when each movement was recorded, the code on
+  the boxes: stock that left before the lot's code was corrected is a
+  row of its own, its export's Lot cell today's code then "(shipped as
+  …)", and an order shipped before and after is two rows adding up to
+  what one said; a lot never corrected reads as before.
   [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-recall-lists-export-and-a-lots-expired-days-adr-093) ·
   [ADR-044, amended again](../adr/0044-lot-trace.md#amendment-november-2026--the-trace-follows-a-move-between-lots-and-one-rule-for-the-lot-search-adr-094) ·
+  [ADR-044, amended for a former code](../adr/0044-lot-trace.md#amendment-november-2026--a-lot-found-by-its-former-code-and-a-recall-that-names-the-code-on-the-boxes-adr-094s-amendment-665) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "splits a recipient’s row by the code the stock left under, saying it on the page and after today’s code in the export (E3a, F1)" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "lists on the first lot’s recall list a customer who received only the second lot, with the lot it came through, on the page and in the export (R21)" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows a chain of three moves and a move back, each lot once, the recall list naming each lot’s supplier’s lot (R21)" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
-  MC-906 · MC-908
+  MC-906 · MC-908 · MC-911
 - **A move between lots is followed as the same stock:** Made from and
   Went into list a lot its stock moved from or into as many runs away
   as the lot it moved with, through the same run; a move alone is no
@@ -1291,7 +1302,9 @@ file is kept is in the [README](README.md).
   [test](../../client/src/costs/stock-value-page.test.tsx) "reads the totals again with the first page after Set cost" ·
   MC-802 · MC-807
 - **Stock value finds a pool by its item, as every search matches an
-  item, or by its lot's code or supplier's lot,** any part of either.
+  item, or by its lot's code, supplier's lot or a former code,** any
+  part of each.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
   [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its lot’s former code, the pool saying the latest, and counts it (R9, R10)" ·
   partly tested

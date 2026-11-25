@@ -803,7 +803,25 @@ export const RECALL_COLUMNS: ExportColumn<LotRecipient>[] = [
           )
         : row.orderNumber,
   },
-  { header: HEADERS.lot, value: (row) => row.lotCode },
+  // Today's code first, so the file still sorts and matches by it, then
+  // the code on the boxes where a correction changed it since the stock
+  // left (ADR-094 amended, E3a): no column added.
+  {
+    header: HEADERS.lot,
+    value: (row, locale) =>
+      row.lotCodeThen
+        ? translate(
+            t(
+              {
+                id: 'exports.value.shippedAs',
+                defaultMessage: '{code} (shipped as {codeThen})',
+              },
+              { code: row.lotCode, codeThen: row.lotCodeThen },
+            ),
+            locale,
+          )
+        : row.lotCode,
+  },
   supplierLotColumn((row) => row),
   { header: HEADERS.sku, value: (row) => row.sku },
   asQuantity(

@@ -679,6 +679,7 @@ describe('MovementsPage', () => {
       expiry: null,
       supplierLot: null,
       isAssigned: null,
+      formerCode: null,
       productId: null,
       coverFileId: null,
       type: null,
@@ -964,6 +965,39 @@ describe('MovementsPage', () => {
       expect(
         await screen.findByRole('button', {
           name: 'Remove filter: Lot: L-0001',
+        }),
+      ).toBeVisible();
+    });
+
+    // A lot is found by a code it had before its code was corrected
+    // (ADR-094 amended, R10, F3): typed whole, that lot alone.
+    it('offers a lot whose whole former code is typed alone, though another lot’s code starts with it', async () => {
+      const user = userEvent.setup();
+      answer([movement({ variantId: ITEM, lotId: LOT, lotCode: 'ASH-0601' })]);
+      found([
+        {
+          kind: 'lot',
+          results: [
+            result({ title: 'ASH-0601', formerCode: 'ASH-06O1' }),
+            result({ id: PARTNER, title: 'ASH-06O1-B' }),
+          ],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'ash-06o1',
+      );
+      expect(await offered()).toEqual({
+        options: ['Lot ASH-0601 · Vitamin C 500 mg'],
+        headings: ['Lots'],
+      });
+
+      await user.click(screen.getByRole('option', { name: /^Lot ASH-0601/ }));
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Lot: ASH-0601',
         }),
       ).toBeVisible();
     });

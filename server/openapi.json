@@ -16969,6 +16969,18 @@
               "null"
             ]
           },
+          "lotCodeThen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLotCodeThen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "actorName": {
             "type": [
               "string",
@@ -17060,6 +17072,8 @@
           "lotSupplierLot",
           "toLotId",
           "toLotCode",
+          "lotCodeThen",
+          "toLotCodeThen",
           "actorName",
           "actorEmail",
           "createdAt",
@@ -17197,6 +17211,12 @@
               "string",
               "null"
             ]
+          },
+          "formerCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -17205,7 +17225,8 @@
           "code",
           "expiresAt",
           "isAssigned",
-          "supplierLot"
+          "supplierLot",
+          "formerCodes"
         ]
       },
       "UpdateLotDto": {
@@ -17681,6 +17702,12 @@
               "null"
             ]
           },
+          "lotFormerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -17717,6 +17744,7 @@
           "lotExpiresAt",
           "lotIsAssigned",
           "lotSupplierLot",
+          "lotFormerCode",
           "quantity",
           "emptiedOn",
           "issuedToRun"
@@ -17864,6 +17892,12 @@
               "null"
             ]
           },
+          "lotFormerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -17932,6 +17966,7 @@
           "lotExpiresAt",
           "lotIsAssigned",
           "lotSupplierLot",
+          "lotFormerCode",
           "quantity",
           "emptiedOn",
           "issuedToRun",
@@ -18029,6 +18064,12 @@
           },
           "sku": {
             "type": "string"
+          },
+          "formerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -18038,7 +18079,32 @@
           "expiresAt",
           "supplierLot",
           "isAssigned",
-          "sku"
+          "sku",
+          "formerCode"
+        ]
+      },
+      "LotFormerCode": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "changedByName": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "changedAt",
+          "changedByName",
+          "reason"
         ]
       },
       "TracedLot": {
@@ -18087,6 +18153,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "formerCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotFormerCode"
+            }
           }
         },
         "required": [
@@ -18100,7 +18172,8 @@
           "productId",
           "sku",
           "unitOfMeasure",
-          "description"
+          "description",
+          "formerCodes"
         ]
       },
       "LotBalance": {
@@ -18402,6 +18475,12 @@
           "lotIsAssigned": {
             "type": "boolean"
           },
+          "lotCodeThen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "sku": {
             "type": "string"
           },
@@ -18432,6 +18511,7 @@
           "lotCode",
           "lotSupplierLot",
           "lotIsAssigned",
+          "lotCodeThen",
           "sku",
           "shipped",
           "sampled",
@@ -19611,6 +19691,12 @@
               "null"
             ]
           },
+          "formerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "productId": {
             "type": [
               "string",
@@ -19653,6 +19739,7 @@
           "expiresAt",
           "supplierLot",
           "isAssigned",
+          "formerCode",
           "productId",
           "coverFileId",
           "type",
@@ -20610,6 +20697,12 @@
               "null"
             ]
           },
+          "lotFormerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -20633,6 +20726,7 @@
           "coverFileId",
           "lotId",
           "lotCode",
+          "lotFormerCode",
           "quantity",
           "value",
           "unitCost",

@@ -1447,6 +1447,22 @@ search to having the list of customers; the target is **under two minutes**.
   it is not this lot, only what it shipped, sampled or returned, and
   the date, nothing cut off at the edge. In 中文 … 个合作伙伴已收货,
   开始按批次跟踪时的现有库存.
+- **MC-911** *(ADR-094 amended, R9, R10, E3a)* A lot found by a former
+  code, and a recall by the code on the boxes. As the demo Owner, take
+  a lot made here, ship part of it on a sale, then correct its code in
+  Edit lot details, saying why (MC-334), and ship more on the same
+  order. Type the old code, whole, in the top bar's search: Lots lists
+  the lot by its code now, after a lot of another item whose code it is
+  today, where there is one; part of the old code finds it too. The
+  same text finds it in Trace a lot, in Inventory's search by item and
+  by lot, at its place alone when one is chosen, in Stock value's Find
+  an item or a lot, and in Movements' Find an item, lot or order, where,
+  typed whole, the lot is offered alone. On the lot's trace, Who
+  received it lists the customer twice, what left before the
+  correction and what left after, adding up to what was shipped; the
+  Export's Lot cell reads "ASH-0601 (shipped as ASH-06O1)" on the
+  first row and today's code alone on the second. In French « (expédié
+  sous ASH-06O1) », in 中文（发货时为 ASH-06O1）.
 
 ## 10. Audit
 
@@ -7966,3 +7982,7 @@ first.
 - 2026-11-24: ADR-094's amendment, a lot's former codes, R8 and R11: a
   corrected code kept with until when, who and why, and refused to any
   other lot of the item wherever a code is typed: MC-334 added.
+- 2026-11-25: ADR-094's amendment, a lot's former codes read, R9 and
+  R10: every lot search finds a lot by a former code, and a recall's
+  rows split by the code on the boxes, the export saying "shipped as":
+  MC-911 added.

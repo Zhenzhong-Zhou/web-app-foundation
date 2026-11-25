@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import {
   type FieldValues,
@@ -21,6 +21,7 @@ import { refuseFormerCode } from '../numbering/lot-codes';
 import { ListLotsDto } from './dto/list-lots.dto';
 import type { Lot } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
+import { formerCodesOf } from './former-codes';
 import { expiryOf } from './stock.service';
 
 /**
@@ -49,12 +50,28 @@ export class LotsService {
    * typing a code that exists but belongs to a different run.
    */
   async listLots(query: ListLotsDto): Promise<Lot[]> {
-    const rows = await this.tenantDb.select(
-      lots,
-      eq(lots.variantId, query.variantId),
-      { orderBy: desc(lots.createdAt) },
+    return this.tenantDb.transaction((tx, organizationId) =>
+      tx
+        .select({
+          id: lots.id,
+          code: lots.code,
+          expiresAt: lots.expiresAt,
+          expiry: lots.expiry,
+          isAssigned: lots.isAssigned,
+          supplierLot: lots.supplierLot,
+          // Each lot's former codes, so the field refuses another lot's
+          // as it is typed (ADR-094 amended, R11, F2).
+          formerCodes: formerCodesOf(sql`lots.id`, organizationId),
+        })
+        .from(lots)
+        .where(
+          and(
+            eq(lots.organizationId, organizationId),
+            eq(lots.variantId, query.variantId),
+          ),
+        )
+        .orderBy(desc(lots.createdAt)),
     );
-    return rows.map(lotOf);
   }
 
   /**
@@ -280,20 +297,4 @@ export class LotsService {
  */
 function fromTo(key: AuditField, from: unknown, to: unknown): FieldValues {
   return to === undefined || to === from ? {} : { [key]: { from, to } };
-}
-
-/**
- * A lot as the API returns it (ADR-068): what the receive dialogs and Edit
- * lot details show, not the row, which would also send the organization
- * and when it arrived.
- */
-function lotOf({
-  id,
-  code,
-  expiresAt,
-  expiry,
-  isAssigned,
-  supplierLot,
-}: Lot): Lot {
-  return { id, code, expiresAt, expiry, isAssigned, supplierLot };
 }

@@ -115,6 +115,7 @@ function pile(
     lotExpiry: expiresAt ? 'date' : 'none',
     lotIsAssigned: false,
     lotSupplierLot: null,
+    lotFormerCode: null,
     quantity: '10.0000',
     emptiedOn: null,
     issuedToRun: null,

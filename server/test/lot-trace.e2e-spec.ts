@@ -11,6 +11,7 @@ import { lots, productVariants, stockMovements } from '../src/database/schema';
 import {
   addMember,
   body,
+  correctLotCode,
   createE2eApp,
   createLocation,
   createPartner,
@@ -64,6 +65,7 @@ interface Trace {
     lotCode: string;
     lotSupplierLot: string | null;
     lotIsAssigned: boolean;
+    lotCodeThen: string | null;
     shipped: string;
     sampled: string;
     returned: string;
@@ -1226,6 +1228,169 @@ describe('Lot trace (e2e)', () => {
       expect(JSON.stringify(await trace(alpha, 'BF-1'))).not.toContain(
         'Beta Customer',
       );
+    });
+  });
+
+  /**
+   * A lot's former codes (ADR-094 amended, R9, R10, E3a): Trace a lot
+   * finds it by one, its page lists every one with until when, who and
+   * why, and a recall names the code on the boxes, a row for each.
+   */
+  describe('a lot’s former codes (ADR-094 amended)', () => {
+    /** Ashwagandha received as printed, 100 in ASH-06O1, and a customer. */
+    async function received(org: Org) {
+      const shelf = await createLocation(org.agent, {
+        type: 'site',
+        name: 'Main',
+      });
+      const variantId = await createVariant(org.agent, {
+        type: 'good',
+        name: 'Ashwagandha 60ct',
+        variant: { sku: 'ASH-60CT', tracksLots: true },
+      });
+      const lot = body<{ movement: { lotId: string } }>(
+        await org.agent
+          .post('/v1/stock/movements')
+          .send({
+            variantId,
+            toLocationId: shelf,
+            quantity: '100',
+            reason: 'receipt',
+            lot: { code: 'ASH-06O1' },
+          })
+          .expect(201),
+      ).movement.lotId;
+      const customer = await createPartner(org.agent, { name: 'Maple Health' });
+      const sale = await order(org.agent, 'sale', customer, variantId, '100');
+      const ship = (quantity: string) =>
+        org.agent
+          .post(`/v1/orders/${sale.id}/shipments`)
+          .send({
+            fromLocationId: shelf,
+            lines: [
+              {
+                lineId: sale.lineId,
+                quantity,
+                lots: [{ lotId: lot, quantity }],
+              },
+            ],
+          })
+          .expect(201);
+      return { lot, ship };
+    }
+
+    const traced = async (org: Org, lot: string) =>
+      body<
+        Trace & {
+          lot: {
+            formerCodes: {
+              code: string;
+              changedAt: string;
+              changedByName: string;
+              reason: string;
+            }[];
+          };
+        }
+      >(await org.agent.get(`/v1/stock/lots/${lot}/trace`).expect(200));
+
+    it('splits a recipient’s row by the code the stock left under, saying it on the page and after today’s code in the export (E3a, F1)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const { lot, ship } = await received(alpha);
+
+      await ship('60');
+      await correctLotCode(alpha.agent, lot, 'ASH-0601');
+      await ship('40');
+
+      // Once one row of 100; now 60 under the old code and 40 under
+      // today's, 100 in all.
+      expect(
+        (await traced(alpha, lot)).recipients.map((row) => [
+          row.partnerName,
+          row.lotCode,
+          row.lotCodeThen,
+          row.shipped,
+        ]),
+      ).toEqual([
+        ['Maple Health', 'ASH-0601', 'ASH-06O1', '60.0000'],
+        ['Maple Health', 'ASH-0601', null, '40.0000'],
+      ]);
+
+      const exported = (
+        await alpha.agent
+          .get(`/v1/stock/lots/${lot}/recipients/export`)
+          .set('Accept-Language', 'en')
+          .expect(200)
+      ).text
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+      expect(exported.slice(1).map((row) => [row[0], row[2]])).toEqual([
+        ['Maple Health', 'ASH-0601 (shipped as ASH-06O1)'],
+        ['Maple Health', 'ASH-0601'],
+      ]);
+
+      // A lot never corrected reads as before: one row, no code then.
+      const beta = await registerOrganization(app, 'beta');
+      const plain = await received(beta);
+      await plain.ship('60');
+      await plain.ship('40');
+      expect(
+        (await traced(beta, plain.lot)).recipients.map((row) => [
+          row.lotCodeThen,
+          row.shipped,
+        ]),
+      ).toEqual([[null, '100.0000']]);
+    });
+
+    it('lists every former code on the lot’s page, newest first, with until when, who and why, and finds the lot by any of them (R9, R10)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const { lot } = await received(alpha);
+      expect((await traced(alpha, lot)).lot.formerCodes).toEqual([]);
+
+      await correctLotCode(
+        alpha.agent,
+        lot,
+        'ASH-0601',
+        'Letter O for a zero.',
+      );
+      await correctLotCode(alpha.agent, lot, 'ASH-0601A', 'Relabelled.');
+
+      const page = await traced(alpha, lot);
+      expect(page.lot.code).toBe('ASH-0601A');
+      expect(page.lot.formerCodes).toEqual([
+        {
+          code: 'ASH-0601',
+          changedAt: expect.any(String) as string,
+          changedByName: 'Owner',
+          reason: 'Relabelled.',
+        },
+        {
+          code: 'ASH-06O1',
+          changedAt: expect.any(String) as string,
+          changedByName: 'Owner',
+          reason: 'Letter O for a zero.',
+        },
+      ]);
+      expect(
+        new Date(page.lot.formerCodes[0].changedAt).getTime(),
+      ).toBeGreaterThanOrEqual(
+        new Date(page.lot.formerCodes[1].changedAt).getTime(),
+      );
+
+      // Trace a lot finds it by either, saying which; by today's code, none.
+      const found = async (code: string) =>
+        body<{ id: string; code: string; formerCode: string | null }[]>(
+          await alpha.agent
+            .get(`/v1/stock/lots/search?code=${encodeURIComponent(code)}`)
+            .expect(200),
+        ).map(({ id, code: today, formerCode }) => ({ id, today, formerCode }));
+      expect(await found('ash-06o1')).toEqual([
+        { id: lot, today: 'ASH-0601A', formerCode: 'ASH-06O1' },
+      ]);
+      expect(await found('0601')).toEqual([
+        { id: lot, today: 'ASH-0601A', formerCode: null },
+      ]);
     });
   });
 });

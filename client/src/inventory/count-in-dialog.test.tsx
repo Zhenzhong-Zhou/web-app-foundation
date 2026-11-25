@@ -29,6 +29,7 @@ const LOT: Lot = {
   expiry: 'date',
   isAssigned: false,
   supplierLot: null,
+  formerCodes: [],
 };
 
 const TRACKED: CountInItem = {

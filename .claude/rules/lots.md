@@ -2,7 +2,7 @@
 paths:
   - "server/src/modules/stock/{lot-changes,lot-tracking,lot-trace,lots}.service.ts"
   - "server/src/modules/stock/{lot-tracking,lot-trace}.controller.ts"
-  - "server/src/modules/stock/{start-lot,lot-search,lot-allocation,open-run}.ts"
+  - "server/src/modules/stock/{start-lot,lot-search,former-codes,lot-allocation,open-run}.ts"
   - "server/src/modules/stock/dto/{movement-lot,move-to-lot,start-lot-tracking,update-lot,lot-trace-response,lot-tracking-response}.dto.ts"
   - "server/src/modules/numbering/lot-codes.ts"
   - "server/src/database/schema/{lots,lot-former-codes}.ts"
@@ -57,11 +57,11 @@ states (ADR-087).
   exactly when the variant tracks lots":** `fromBefore` writes it with
   no lot, then a lot change into the start lot; `shippedAt` reads the
   shipment's own lots.
-- **A lot change is a joint in the trace,** as a run is: every join in
-  `lot-trace.service.ts` names the organization, and `movedOnTo` follows
-  moves alone.
-- **A lot is searched by `lotMatches` and `lotRank`,** over its code and
-  its supplier's lot, the start first (ADR-056).
+- **A lot change is a joint in the trace,** as a run is
+  (`lot-trace.service.ts`): `movedOnTo` follows moves alone.
+- **A lot is searched by `lotMatches` and `lotRank`,** its codes and
+  former codes alike (ADR-056); an answer reads former codes by
+  `former-codes.ts`.
 - **A screen's default for a kind or reason the server may add** says
   nothing it cannot know, "Other change", never a stored key (D4,
   `docs/conventions.md`).

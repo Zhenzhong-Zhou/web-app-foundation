@@ -25,6 +25,7 @@ const KNOWN: Lot[] = [
     expiry: 'date',
     isAssigned: false,
     supplierLot: null,
+    formerCodes: [],
   },
   {
     id: 'lot-2',
@@ -33,6 +34,7 @@ const KNOWN: Lot[] = [
     expiry: 'none',
     isAssigned: true,
     supplierLot: null,
+    formerCodes: [],
   },
 ];
 
@@ -125,6 +127,7 @@ describe('LotFields', () => {
               lotExpiry: 'date',
               lotIsAssigned: false,
               lotSupplierLot: null,
+              lotFormerCode: null,
               quantity: '120.0000',
               emptiedOn: null,
               issuedToRun: null,

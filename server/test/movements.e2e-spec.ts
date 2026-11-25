@@ -10,6 +10,7 @@ import { stockMovements } from '../src/database/schema';
 import {
   addMember,
   body,
+  correctLotCode,
   createE2eApp,
   createLocation,
   customRole,
@@ -56,6 +57,10 @@ interface Row {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
+  lotCodeThen?: string | null;
+  toLotId?: string | null;
+  toLotCode?: string | null;
+  toLotCodeThen?: string | null;
   actorName: string | null;
   document: { kind: string; id: string; number: string | null } | null;
   recipient: { id: string; name: string } | null;
@@ -240,6 +245,63 @@ describe('Movements (e2e)', () => {
         toLocationPath: zoneA,
       }),
     ]);
+  });
+
+  // M1a: a row from before a lot's code was corrected says the code the
+  // lot had then, as a changed item code reads; the export keeps today's
+  // (ADR-094 amended, row v21).
+  it('says the code each lot had when a row was made, where a correction changed it since, an older row the older code (ADR-094 amended, M1a)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+    const shelf = await site(agent, 'SHELF');
+    const das = await item(agent, 'BOTTLE-A60', true);
+    await receive(agent, das, shelf, '10', { code: 'DAS-S1' });
+    const lotOf = async (code: string) =>
+      (await list(agent, '?reason=receipt')).entries.find(
+        (row) => row.lotCode === code,
+      )!.lotId!;
+    const first = await lotOf('DAS-S1');
+    await agent
+      .post(`/v1/stock/lots/${first}/lot-changes`)
+      .send({
+        locationId: shelf,
+        quantity: '4',
+        note: 'Two runs in one delivery',
+        lot: { code: 'DAS-T1' },
+      })
+      .expect(201);
+
+    await correctLotCode(agent, first, 'DAS-S2');
+    await receive(agent, das, shelf, '3', { code: 'DAS-S2' });
+    await correctLotCode(agent, first, 'DAS-S3');
+    const [change] = (await list(agent, '?reason=lot_change')).entries;
+    await correctLotCode(agent, change.toLotId!, 'DAS-T2');
+    await receive(agent, das, shelf, '1', { code: 'DAS-S3' });
+
+    expect(
+      (await list(agent)).entries.map((row) => [
+        row.reason,
+        row.lotCode,
+        row.lotCodeThen,
+        row.toLotCode,
+        row.toLotCodeThen,
+      ]),
+    ).toEqual([
+      // After every correction: nothing to say.
+      ['receipt', 'DAS-S3', null, null, null],
+      // Between the two: the second code.
+      ['receipt', 'DAS-S3', 'DAS-S2', null, null],
+      // Before both: the first, each lot of the change its own.
+      ['lot_change', 'DAS-S3', 'DAS-S1', 'DAS-T2', 'DAS-T1'],
+      ['receipt', 'DAS-S3', 'DAS-S1', null, null],
+    ]);
+
+    // The export writes today's code alone.
+    const exported = (await agent.get('/v1/stock/movements/export').expect(200))
+      .text;
+    expect(exported).toContain('DAS-S3');
+    expect(exported).not.toContain('DAS-S1');
+    expect(exported).not.toContain('DAS-T1');
   });
 
   // 133b: one code by its id, for Movements to name a code it filters by

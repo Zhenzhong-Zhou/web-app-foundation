@@ -1896,6 +1896,8 @@ export type Movement = {
   lotSupplierLot: string | null;
   toLotId: string | null;
   toLotCode: string | null;
+  lotCodeThen: string | null;
+  toLotCodeThen: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
@@ -1936,6 +1938,7 @@ export type Lot = {
   expiresAt: string | null;
   isAssigned: boolean;
   supplierLot: string | null;
+  formerCodes: Array<string>;
 };
 
 export type UpdateLotDto = {
@@ -2050,6 +2053,7 @@ export type StockPile = {
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
+  lotFormerCode: string | null;
   quantity: string;
   emptiedOn: string | null;
   issuedToRun: IssuedRun | null;
@@ -2085,6 +2089,7 @@ export type StockLotRow = {
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
+  lotFormerCode: string | null;
   quantity: string;
   emptiedOn: string | null;
   issuedToRun: IssuedRun | null;
@@ -2118,6 +2123,14 @@ export type LotMatch = {
   supplierLot: string | null;
   isAssigned: boolean;
   sku: string;
+  formerCode: string | null;
+};
+
+export type LotFormerCode = {
+  code: string;
+  changedAt: string;
+  changedByName: string;
+  reason: string;
 };
 
 export type TracedLot = {
@@ -2132,6 +2145,7 @@ export type TracedLot = {
   sku: string;
   unitOfMeasure: string;
   description: string;
+  formerCodes: Array<LotFormerCode>;
 };
 
 export type LotBalance = {
@@ -2194,6 +2208,7 @@ export type LotRecipient = {
   lotCode: string;
   lotSupplierLot: string | null;
   lotIsAssigned: boolean;
+  lotCodeThen: string | null;
   sku: string;
   shipped: string;
   sampled: string;
@@ -2452,6 +2467,7 @@ export type LookupResult = {
   expiresAt: string | null;
   supplierLot: string | null;
   isAssigned: boolean | null;
+  formerCode: string | null;
   productId: string | null;
   coverFileId: string | null;
   type:
@@ -2765,6 +2781,7 @@ export type ValuationPool = {
   coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
+  lotFormerCode: string | null;
   quantity: string;
   value: string;
   unitCost: string;

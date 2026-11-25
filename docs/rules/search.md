@@ -123,15 +123,25 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   no test ·
   MC-1557
-- **A lot: any part of its own code or of its supplier's lot,** the
-  supplier's own lot kept beside a code made here, in the top bar,
-  Movements' find box, Trace a lot and on Inventory's two views; the
+- **A lot: any part of its own code, of its supplier's lot or of a
+  code it had before its code was corrected,** the supplier's own lot
+  kept beside a code made here, in the top bar, Movements' find box,
+  Trace a lot, on Inventory's two views and in Stock value's find; the
   top bar and Trace a lot rank an exact match, then the start of either
-  code, before the rest. Each lot found names its supplier's lot, or
-  that a code made here has none yet, in the top bar and in Trace a
-  lot's results, so one found by it says why.
+  code, before the rest, a former code typed whole after the lot whose
+  code it is today and before the start of any code. Each lot found
+  names its supplier's lot, or that a code made here has none yet, in
+  the top bar and in Trace a lot's results, so one found by it says
+  why; and the former code it was found by, where its code today does
+  not match. A typo's close match reads the code today alone.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [ADR-056, amended](../adr/0056-search.md#amendment-november-2026--a-lot-found-by-its-suppliers-lot-adr-094) ·
+  [ADR-056, amended again](../adr/0056-search.md#amendment-november-2026--the-top-bars-close-matches-only-when-nothing-matches-and-a-lots-former-code-adr-094s-amendment-654-665) ·
+  [test](../../server/test/lookup.e2e-spec.ts) "finds a lot by a former code, whole or in part, saying which, after a lot whose code it is today (R10)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "lists every former code on the lot’s page, newest first, with until when, who and why, and finds the lot by any of them (R9, R10)" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code and a lot by a former code at the place chosen alone, each pile saying the latest (ADR-094 amended, R9, R10)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its lot’s former code, the pool saying the latest, and counts it (R9, R10)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "offers a lot whose whole former code is typed alone, though another lot’s code starts with it" ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds a lot by its supplier’s lot as by its code, exactly either putting lots first, with its expiry and its marks (ADR-094, R6)" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
@@ -140,7 +150,7 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lot-trace.e2e-spec.ts) "finds a lot by any part of its code or its supplier’s lot, the start of either first (ADR-094, R6)" ·
   [test](../../client/src/inventory/lot-trace-page.test.tsx) "names each match’s supplier’s lot, or that a code made here has none yet, and asks for either code" ·
   [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
-  MC-1556 · MC-308 · MC-909
+  MC-1556 · MC-308 · MC-909 · MC-911
 - **Locations, people and settings are not in the top bar's search.**
   Each is found from its own page, and People has a box of its own.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·

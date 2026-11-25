@@ -31,6 +31,12 @@ export class ValuationPool {
   coverFileId!: string | null;
   lotId!: string | null;
   lotCode!: string | null;
+  /**
+   * The code the lot had last before its code today, for "was {code}"
+   * under it (ADR-094 amended, R9, F4); null for a lot never corrected,
+   * and a pool with no lot.
+   */
+  lotFormerCode!: string | null;
   quantity!: string;
   value!: string;
   unitCost!: string;

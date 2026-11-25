@@ -174,6 +174,12 @@ export class StockPile {
    * printed code, one whose supplier's lot is still to add, and no lot.
    */
   lotSupplierLot!: string | null;
+  /**
+   * The code the lot had last before its code today, for "was {code}"
+   * under it (ADR-094 amended, R9); null for a lot never corrected, and
+   * no lot.
+   */
+  lotFormerCode!: string | null;
   quantity!: string;
   /**
    * The organization's day it was emptied, its last change leaving none;

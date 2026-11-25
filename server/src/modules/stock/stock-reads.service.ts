@@ -97,13 +97,16 @@ function filtersOf(
     scope.push(gt(stockLevels.quantity, '0'));
   }
 
-  // The item (SKU, names in every language, pinyin) or the lot's code or
-  // supplier's lot, matched as every search in the app matches (ADR-056,
-  // common/search.ts; ADR-094, R6).
+  // The item (SKU, names in every language, pinyin) or the lot's code,
+  // supplier's lot or a former code, matched as every search in the app
+  // matches (ADR-056, common/search.ts; ADR-094, R6, and amended, R10).
   if (query.search) {
     const terms = searchTerms(query.search);
     scope.push(
-      or(itemMatches(terms, organizationId), lotMatches(lots, terms))!,
+      or(
+        itemMatches(terms, organizationId),
+        lotMatches(lots, terms, organizationId),
+      )!,
     );
   }
 

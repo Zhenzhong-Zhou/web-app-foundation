@@ -17,6 +17,7 @@ const row = (kind: LookupKind, position: number, title: string) => ({
   expiry: null,
   supplierLot: null,
   isAssigned: null,
+  formerCode: null,
   productId: null,
   coverFileId: null,
   type: null,

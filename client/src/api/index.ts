@@ -418,6 +418,7 @@ export {
   type LotCost,
   type LotCostEntry,
   type LotCostEnvelope,
+  type LotFormerCode,
   type LotMatch,
   type LotRecipient,
   type LotSource,

@@ -49,6 +49,7 @@ const TRACE: LotTrace = {
     sku: 'OIL',
     unitOfMeasure: 'kg',
     description: 'Fish oil',
+    formerCodes: [],
   },
   balances: [
     {
@@ -107,6 +108,7 @@ const TRACE: LotTrace = {
       lotCode: 'CAPS-0425',
       lotSupplierLot: null,
       lotIsAssigned: false,
+      lotCodeThen: null,
       sku: 'CAPS',
       shipped: '5.0000',
       sampled: '0.0000',
@@ -742,6 +744,7 @@ describe('LotSearchPage', () => {
       supplierLot: null,
       isAssigned: false,
       sku: 'FOCUS-60CT',
+      formerCode: null,
     });
     server.use(
       http.get('/api/v1/stock/lots/search', () =>
@@ -784,6 +787,7 @@ describe('LotSearchPage', () => {
         supplierLot: 'HX-2609',
         isAssigned: true,
         sku: 'FOCUS-60CT',
+        formerCode: null,
       },
       {
         id: 'lot-to-add',
@@ -793,6 +797,7 @@ describe('LotSearchPage', () => {
         supplierLot: null,
         isAssigned: true,
         sku: 'FOCUS-60CT',
+        formerCode: null,
       },
       {
         id: 'lot-printed',
@@ -802,6 +807,7 @@ describe('LotSearchPage', () => {
         supplierLot: null,
         isAssigned: false,
         sku: 'FOCUS-60CT',
+        formerCode: null,
       },
     ];
     server.use(

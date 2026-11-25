@@ -10,6 +10,7 @@ import { permissions, rolePermissions, roles } from '../src/database/schema';
 import {
   addMember,
   body,
+  correctedLot,
   createE2eApp,
   createLocation,
   createPartner,
@@ -33,6 +34,7 @@ interface LookupResponse {
       expiry: string | null;
       supplierLot: string | null;
       isAssigned: boolean | null;
+      formerCode: string | null;
       coverFileId: string | null;
       type: string | null;
       close: boolean;
@@ -233,6 +235,88 @@ describe('Lookup (e2e)', () => {
       expiry: 'none',
       supplierLot: null,
       isAssigned: false,
+    });
+  });
+
+  // A lot is found by a code it had before Edit lot details corrected it,
+  // as by its own: any part of it, typed whole as exact, after a lot whose
+  // code it is today; the hit says which, and a close match reads today's
+  // code alone (ADR-094 amended, R9, R10, F8).
+  it('finds a lot by a former code, whole or in part, saying which, after a lot whose code it is today (R10)', async () => {
+    const alpha = await stocked('alpha');
+    const shelf = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Back',
+    });
+    const ash = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Ashwagandha 60ct',
+      variant: { sku: 'ASH-60CT', tracksLots: true },
+    });
+    const calm = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Calm 30ct',
+      variant: { sku: 'CALM-30', tracksLots: true },
+    });
+    const corrected = await correctedLot(alpha.agent, {
+      variantId: ash,
+      toLocationId: shelf,
+      from: 'ASH-06O1',
+      to: 'ASH-0601',
+    });
+    const receive = (variantId: string, code: string) =>
+      alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId,
+          toLocationId: shelf,
+          quantity: '5',
+          reason: 'receipt',
+          lot: { code },
+        })
+        .expect(201);
+    // Another item's lot whose code it is today, and a lot starting with it.
+    await receive(calm, 'ASH-06O1');
+    await receive(ash, 'ASH-06O1-B');
+
+    const lotsFor = async (q: string) =>
+      (await lookup(alpha, q))
+        .find((group) => group.kind === 'lot')
+        ?.results.filter((result) => !result.close)
+        .map(({ id, title, detail, formerCode }) => ({
+          id,
+          title,
+          detail,
+          formerCode,
+        }));
+
+    expect(await lotsFor('ash-06o1')).toEqual([
+      expect.objectContaining({
+        title: 'ASH-06O1',
+        detail: 'CALM-30',
+        formerCode: null,
+      }),
+      {
+        id: corrected,
+        title: 'ASH-0601',
+        detail: 'ASH-60CT',
+        formerCode: 'ASH-06O1',
+      },
+      expect.objectContaining({ title: 'ASH-06O1-B', formerCode: null }),
+    ]);
+    // Any part of it, as of a code today.
+    expect(await lotsFor('6O1')).toContainEqual({
+      id: corrected,
+      title: 'ASH-0601',
+      detail: 'ASH-60CT',
+      formerCode: 'ASH-06O1',
+    });
+    // Found by its code today too: no "was" to explain it.
+    expect(await lotsFor('ASH-06')).toContainEqual({
+      id: corrected,
+      title: 'ASH-0601',
+      detail: 'ASH-60CT',
+      formerCode: null,
     });
   });
 

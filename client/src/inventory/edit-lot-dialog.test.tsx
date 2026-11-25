@@ -27,6 +27,7 @@ const TYPED: StockPile = {
   lotExpiry: 'none',
   lotIsAssigned: false,
   lotSupplierLot: null,
+  lotFormerCode: null,
   quantity: '100.0000',
   emptiedOn: null,
   issuedToRun: null,

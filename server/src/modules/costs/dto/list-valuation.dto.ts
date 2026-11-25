@@ -23,8 +23,8 @@ export type ValuationSort = (typeof VALUATION_SORTS)[number];
  */
 export class ValuationTotalsDto {
   /**
-   * The item, as every search matches it (ADR-056), or a lot's code or
-   * its supplier's lot (lotMatches).
+   * The item, as every search matches it (ADR-056), or a lot's code, its
+   * supplier's lot or a former code (lotMatches).
    */
   @IsOptional()
   @IsString()
