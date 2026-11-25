@@ -464,7 +464,7 @@ describe('StockValuePage, by item and lot', () => {
     expect(
       screen.getByRole('searchbox', { name: 'Find an item or a lot' }),
     ).toHaveValue('');
-    expect(screen.queryByText(/ match$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ match(es)?$/)).not.toBeInTheDocument();
 
     await user.type(
       screen.getByRole('searchbox', { name: 'Find an item or a lot' }),
@@ -472,7 +472,8 @@ describe('StockValuePage, by item and lot', () => {
     );
     await expect.poll(() => asked.at(-1)).toBe('limit=50&search=calm');
     await waitFor(() => expect(poolNames()).toEqual(['Calm']));
-    expect(await screen.findByText('1 of 2 match')).toBeVisible();
+    // One match is "matches" (review 87).
+    expect(await screen.findByText('1 of 2 matches')).toBeVisible();
     expect(screen.getByText('1 item or lot')).toBeVisible();
     expect(total()).toBeVisible();
     // The totals once, whatever is found; each find its count alone.

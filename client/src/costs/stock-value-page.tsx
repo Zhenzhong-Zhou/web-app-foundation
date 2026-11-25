@@ -530,7 +530,7 @@ export function StockValuePage() {
                       {
                         id: 'costs.findMatches',
                         defaultMessage:
-                          '{count, number} of {pools, number} match',
+                          '{count, plural, one {{count, number} of {pools, number} matches} other {{count, number} of {pools, number} match}}',
                       },
                       { count: matched.data.count, pools: known.pools },
                     )}
