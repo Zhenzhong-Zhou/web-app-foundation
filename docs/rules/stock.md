@@ -603,12 +603,15 @@ file is kept is in the [README](README.md).
   row of its own, its Through lot cell on the page "shipped as …",
   after the link where it came through another lot, and its export's
   Lot cell today's code then "(shipped as …)"; an order shipped before
-  and after is two rows adding up to what one said; a lot never
-  corrected reads as before.
+  and after is two rows adding up to what one said; a return is counted
+  under the code its boxes left under, the latest shipment of the lot
+  on its order before it, never the code on the day it came back; a lot
+  never corrected reads as before.
   [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-recall-lists-export-and-a-lots-expired-days-adr-093) ·
   [ADR-044, amended again](../adr/0044-lot-trace.md#amendment-november-2026--the-trace-follows-a-move-between-lots-and-one-rule-for-the-lot-search-adr-094) ·
   [ADR-044, amended for a former code](../adr/0044-lot-trace.md#amendment-november-2026--a-lot-found-by-its-former-code-and-a-recall-that-names-the-code-on-the-boxes-adr-094s-amendment-665) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "splits a recipient’s row by the code the stock left under, saying it on the page and after today’s code in the export (E3a, F1)" ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "counts a return under the code its shipment left under, not the code on the day it came back (review 76)" ·
   [test](../../client/src/inventory/lot-trace-page.test.tsx) "says “shipped as” in Through lot for what left before a correction, a row a code" ·
   [test](../../client/e2e/lots-at-receipt.spec.ts) "Edit lot details, Save, the code changed: one write; the message names both codes, with Open the lot; Stock, the lot reading “was”; its page, “was” by its title, Former codes and “shipped as” in Who received it (R9)" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·

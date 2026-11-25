@@ -16,6 +16,7 @@ import { formerCodeFound, lotMatches, lotRank } from './lot-search';
 import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
 import { usableInLot } from './usable-stock';
+import { shipmentsReversed } from './valuation';
 
 /**
  * How far genealogy is followed, in runs. Real recipes are two or three
@@ -625,10 +626,12 @@ export class LotTraceService {
    * says the day it first left for them, as a recall letter needs.
    *
    * A row is one partner, order, lot and SKU, and the code the lot had
-   * when its stock moved (ADR-094 amended, E3a, F1): the code on the
+   * when its stock left (ADR-094 amended, E3a, F1): the code on the
    * boxes, so one order shipped before a correction and after it is two
-   * rows, adding up to what one said. A return's row is by its own time,
-   * as every row's is.
+   * rows, adding up to what one said. A return's boxes carry the code
+   * they left under, so its row is by the time of the latest shipment of
+   * the lot on its order before it, as shipmentsReversed names them, not
+   * by its own (review 76); by its own where none shipped.
    */
   private async recipients(tx: Tx, organizationId: string, lotIds: string[]) {
     const ids = sql.join(
@@ -658,12 +661,28 @@ export class LotTraceService {
         from stock_movements sm
         join lots l
           on l.id = sm.lot_id and l.organization_id = ${organizationId}::uuid
-        -- The code on the boxes: the lot's code when the stock moved, where
+        -- When a return's boxes left: the latest shipment of the lot on its
+        -- order before it (review 76).
+        left join lateral (
+          select max(ss.created_at) as at
+          from stock_movements ss
+          where ss.organization_id = ${organizationId}::uuid
+            and ss.lot_id = sm.lot_id
+            and ss.reason = 'shipment'
+            and ss.reference_type = 'shipment'
+            and ss.reference_id in (${shipmentsReversed(
+              organizationId,
+              sql`sm.reference_type`,
+              sql`sm.reference_id`,
+            )})
+            and ss.created_at <= sm.created_at
+        ) back on sm.reason = 'return'
+        -- The code on the boxes: the lot's code when the stock left, where
         -- a correction changed it since (ADR-094 amended, E3a, F1).
         cross join lateral (
           select ${codeThen(
             { id: sql`sm.lot_id`, code: sql`l.code` },
-            sql`sm.created_at`,
+            sql`coalesce(back.at, sm.created_at)`,
             organizationId,
           )} as code_then
         ) m

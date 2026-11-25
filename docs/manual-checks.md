@@ -1506,6 +1506,8 @@ search to having the list of customers; the target is **under two minutes**.
   …", the second "—"; at 390 px the first card has a Through lot line
   with the same words. The Export's Lot cell reads "ASH-0601 (shipped
   as ASH-06O1)" on the first row and today's code alone on the second.
+  Return part of what left before the correction on its order: it is
+  counted in the first row's Returned, never in a row of today's code.
   In French « anciennement … », « expédié sous … » and « (expédié sous
   ASH-06O1) », in 中文 原编码 …, 发货时为 … and（发货时为 ASH-06O1）.
 
@@ -8100,3 +8102,5 @@ first.
 - 2026-11-25: The review's 75 and 89, a code refused as another lot's,
   former or now, says "Type another code.", on the server and the
   screen, in three languages: MC-334 extended.
+- 2026-11-25: The review's 76, a recall counts a return under the code
+  its boxes left under: MC-911 extended.

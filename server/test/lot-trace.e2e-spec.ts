@@ -1276,7 +1276,16 @@ describe('Lot trace (e2e)', () => {
             ],
           })
           .expect(201);
-      return { lot, ship };
+      const giveBack = (quantity: string) =>
+        org.agent
+          .post(`/v1/orders/${sale.id}/returns`)
+          .send({
+            toLocationId: shelf,
+            reason: 'Damaged in transit',
+            lines: [{ lineId: sale.lineId, lots: [{ lotId: lot, quantity }] }],
+          })
+          .expect(201);
+      return { lot, ship, giveBack };
     }
 
     const traced = async (org: Org, lot: string) =>
@@ -1341,6 +1350,29 @@ describe('Lot trace (e2e)', () => {
           row.shipped,
         ]),
       ).toEqual([[null, '100.0000']]);
+    });
+
+    it('counts a return under the code its shipment left under, not the code on the day it came back (review 76)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const { lot, ship, giveBack } = await received(alpha);
+
+      await ship('40');
+      await correctLotCode(alpha.agent, lot, 'ASH-0601');
+      await giveBack('5');
+
+      // The boxes back carry the code they left under: one row, 40 out
+      // and 5 back, never a row under today's code with 5 back alone.
+      expect(
+        (await traced(alpha, lot)).recipients.map((row) => [
+          row.partnerName,
+          row.lotCode,
+          row.lotCodeThen,
+          row.shipped,
+          row.returned,
+        ]),
+      ).toEqual([
+        ['Maple Health', 'ASH-0601', 'ASH-06O1', '40.0000', '5.0000'],
+      ]);
     });
 
     it('lists every former code on the lot’s page, newest first, with until when, who and why, and finds the lot by any of them (R9, R10)', async () => {
