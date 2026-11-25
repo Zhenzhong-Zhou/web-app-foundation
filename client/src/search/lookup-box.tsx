@@ -28,6 +28,7 @@ import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { lotExpiry } from '../inventory/lot-expiry';
 import { supplierLotPart } from '../inventory/supplier-lot-part';
+import { wasCode } from '../inventory/was-code';
 import { BarButton } from '../layout/bar-button';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
@@ -446,11 +447,7 @@ function Beside({ kind, result }: { kind: LookupKind; result: LookupResult }) {
         },
         { kind },
       ),
-    result.formerCode &&
-      intl.formatMessage(
-        { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
-        { code: result.formerCode },
-      ),
+    result.formerCode && wasCode(result.formerCode, intl),
   ].filter(Boolean);
   if (words.length === 0) return null;
   return (

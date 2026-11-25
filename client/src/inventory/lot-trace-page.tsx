@@ -74,6 +74,7 @@ import { movementsPath } from './movements-path';
 import { PlacesHidden } from './places-hidden';
 import { placeName } from './stock-places';
 import { supplierLotPart } from './supplier-lot-part';
+import { wasCode } from './was-code';
 
 /**
  * Finding a lot by any part of its code or its supplier's lot (ADR-044,
@@ -327,10 +328,7 @@ export function LotTracePage() {
           // codes (ADR-094 amended, R9); nothing for a lot never corrected.
           beside={
             trace.lot.formerCodes[0] &&
-            intl.formatMessage(
-              { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
-              { code: trace.lot.formerCodes[0].code },
-            )
+            wasCode(trace.lot.formerCodes[0].code, intl)
           }
           status={
             expiry

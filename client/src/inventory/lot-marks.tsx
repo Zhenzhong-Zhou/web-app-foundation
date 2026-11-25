@@ -2,6 +2,7 @@ import { Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import { supplierLotPart } from './supplier-lot-part';
+import { wasCode } from './was-code';
 
 /**
  * A lot's supplier's lot under its code (ADR-094, R5): "Supplier's lot
@@ -40,10 +41,7 @@ export function FormerCodeLine({ code }: { code: string | null }) {
 
   return (
     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-      {intl.formatMessage(
-        { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
-        { code },
-      )}
+      {wasCode(code, intl)}
     </Typography>
   );
 }

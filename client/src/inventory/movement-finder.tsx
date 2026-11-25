@@ -10,6 +10,7 @@ import { lookupLongEnough } from '../search/lookup-minimum';
 import { useLookup } from '../search/use-lookup';
 import { rem } from '../theme/rem';
 import { lotExpiryPart } from './lot-expiry';
+import { wasCode } from './was-code';
 
 /** The kinds Movements filters by; never a run or a return (126). */
 const FINDS = ['item', 'lot', 'order'] as const;
@@ -98,11 +99,7 @@ export function MovementFinder({
           { code: result.title },
         ),
         // The former code it was found by (ADR-094 amended, R9).
-        result.formerCode &&
-          intl.formatMessage(
-            { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
-            { code: result.formerCode },
-          ),
+        result.formerCode && wasCode(result.formerCode, intl),
         // Which finds it as its code does (ADR-094, R6).
         result.supplierLot &&
           intl.formatMessage(
