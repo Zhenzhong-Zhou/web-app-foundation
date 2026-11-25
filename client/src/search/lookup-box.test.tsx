@@ -433,6 +433,37 @@ describe('LookupBox', () => {
     ).toHaveTextContent(/^ASH-0601-BFOCUS-60$/);
   });
 
+  // Review 86: a former code may be 64 characters; its words shrink with
+  // an ellipsis rather than squeeze the lot's code out at 320 px. jsdom
+  // lays nothing out, so the styles that let it shrink are what is read.
+  it('lets a long former code beside a lot’s code shrink, ending in an ellipsis', async () => {
+    const long = 'L'.repeat(64);
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            { kind: 'lot', results: [found('ASH-0601', { formerCode: long })] },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'LLLL');
+
+    const option = await screen.findByRole('option', { name: /^ASH-0601 ·/ });
+    const beside = within(option).getByText(`· was ${long}`, {
+      normalizer: (text) => text.trim(),
+    });
+    expect(beside).toHaveStyle({
+      minWidth: '0',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    });
+    expect(beside).not.toHaveStyle({ flexShrink: '0' });
+  });
+
   // #618: the list stopped at its edge with no sign of more. jsdom lays
   // nothing out, so the list's edge is 200 px down and each row 48 px tall.
   it('says how many rows are below a list cut at its edge, counting again as it scrolls', async () => {

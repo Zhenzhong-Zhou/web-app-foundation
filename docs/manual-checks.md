@@ -1490,7 +1490,9 @@ search to having the list of customers; the target is **under two minutes**.
   Edit lot details, saying why (MC-334), and ship more on the same
   order. Type the old code, whole, in the top bar's search: Lots lists
   the lot by its code now, "… · was …" beside it, after a lot of another
-  item whose code it is today, where there is one; part of the old code finds it too. The
+  item whose code it is today, where there is one; part of the old code finds it too. At
+  320 px, a former code of 64 characters ends in "…" and the lot's code
+  stays whole (review 86). The
   same text finds it in Trace a lot, in Inventory's search by item and
   by lot, at its place alone when one is chosen, in Stock value's Find
   an item or a lot, and in Movements' Find an item, lot or order, where,
@@ -8108,3 +8110,5 @@ first.
   its boxes left under: MC-911 extended.
 - 2026-11-25: The review's 79, Stock value's totals that could not be
   read say so with Try again: MC-802 extended.
+- 2026-11-25: The review's 86, a long former code in the top bar's
+  search ends in an ellipsis at 320 px: MC-911 extended.

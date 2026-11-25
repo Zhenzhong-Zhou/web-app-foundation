@@ -453,8 +453,16 @@ function Beside({ kind, result }: { kind: LookupKind; result: LookupResult }) {
   return (
     <Typography
       variant="body2"
-      // Its leading space kept, as one sentence would have it.
-      sx={{ color: 'text.secondary', flexShrink: 0, whiteSpace: 'pre' }}
+      // Its leading space kept, as one sentence would have it; a former
+      // code of up to 64 characters shrinks, ending in an ellipsis, rather
+      // than squeeze the title out at 320 px (review 86).
+      sx={{
+        color: 'text.secondary',
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'pre',
+      }}
     >
       {SEPARATOR}
       {words.join(SEPARATOR)}
