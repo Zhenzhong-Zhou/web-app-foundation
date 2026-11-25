@@ -376,7 +376,7 @@ async function buildProbes(
     { name: 'stock by code', run: () => grouped.byCode({}, 'en') },
     {
       name: 'stock by code: search',
-      run: () => grouped.byCode({ search: 'G-001' }, 'en'),
+      run: () => grouped.byCode({ search: 'LV-00001' }, 'en'),
     },
     {
       name: 'stock by code: one shelf',

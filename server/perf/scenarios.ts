@@ -307,10 +307,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       (org, n) => `/orders/${org.orderIds[n % org.orderIds.length]}`,
     ),
     // Inventory's grouped read (ADR-093): a row per code, its counts and
-    // a code's places, and the Lot view.
+    // a code's places, and the Lot view. Its search is by part of a lot's
+    // code, which both scales hold: G-001 named items only the small one
+    // has, and found nothing at large (review 96).
     read('GET /stock/by-code', () => '/stock/by-code'),
     read('GET /stock/by-code/counts', () => '/stock/by-code/counts'),
-    read('GET /stock/by-code?search', () => '/stock/by-code?search=G-001'),
+    read('GET /stock/by-code?search', () => '/stock/by-code?search=LV-00001'),
     read('GET /stock/by-code?low', () => '/stock/by-code?low=true'),
     read('GET /stock/by-code?sort=onHand', () => '/stock/by-code?sort=onHand'),
     read(
@@ -379,7 +381,8 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Stock value a page at a time (ADR-094's amendment, R6): the first
     // page as it opens, by the item's name; Show 50 more's next page; a
     // find by part of a lot's code; the sort by value, the largest first;
-    // and the totals beside the list, read as it opens and for a find.
+    // the totals beside the list, read as it opens and after a cost is
+    // set; and a find's count, read for each find (reviews 61 and 83).
     read('GET /costs/valuation', () => '/costs/valuation'),
     read(
       'GET /costs/valuation, page 2',
@@ -394,6 +397,10 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       () => '/costs/valuation?sort=-value',
     ),
     read('GET /costs/valuation/totals', () => '/costs/valuation/totals'),
+    read(
+      'GET /costs/valuation/count?search',
+      () => '/costs/valuation/count?search=LV-00001',
+    ),
     read('GET /invoices', () => '/invoices'),
     // One invoice drawn as a PDF (ADR-071), each request the next of the
     // issued ones: drawing is the server's own work, so ten at once is the
