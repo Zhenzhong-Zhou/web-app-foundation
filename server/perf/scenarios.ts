@@ -64,6 +64,8 @@ export interface Org {
   issuedInvoiceIds: string[];
   /** An item with a code low, whose Where it stands is timed (ADR-093). */
   lowProductId: string;
+  /** Stock value's first page's cursor, as Show 50 more sends it (R6). */
+  valuationCursor: string;
 }
 
 export interface Scenario {
@@ -198,6 +200,17 @@ export async function discover(
       )
     ).entries[0].productId;
 
+  // Stock value's first page, whose cursor Show 50 more sends (ADR-094's
+  // amendment, R6).
+  const { nextCursor: valuationCursor } = await session.json<{
+    nextCursor: string | null;
+  }>('GET', '/costs/valuation');
+  if (!valuationCursor) {
+    throw new Error(
+      `${session.label}: Stock value has one page. Was it seeded with seed:volume?`,
+    );
+  }
+
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
   const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
@@ -221,6 +234,7 @@ export async function discover(
     categoryBottom: picked.bottom,
     issuedInvoiceIds: issued.entries.map((entry) => entry.id),
     lowProductId,
+    valuationCursor,
   };
 }
 
@@ -362,6 +376,24 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'GET /stock/movements?locationId',
       (org) => `/stock/movements?locationId=${org.shelfId}`,
     ),
+    // Stock value a page at a time (ADR-094's amendment, R6): the first
+    // page as it opens, by the item's name; Show 50 more's next page; a
+    // find by part of a lot's code; the sort by value, the largest first;
+    // and the totals beside the list, read as it opens and for a find.
+    read('GET /costs/valuation', () => '/costs/valuation'),
+    read(
+      'GET /costs/valuation, page 2',
+      (org) => `/costs/valuation?cursor=${org.valuationCursor}`,
+    ),
+    read(
+      'GET /costs/valuation?search',
+      () => '/costs/valuation?search=LV-00001',
+    ),
+    read(
+      'GET /costs/valuation?sort=-value',
+      () => '/costs/valuation?sort=-value',
+    ),
+    read('GET /costs/valuation/totals', () => '/costs/valuation/totals'),
     read('GET /invoices', () => '/invoices'),
     // One invoice drawn as a PDF (ADR-071), each request the next of the
     // issued ones: drawing is the server's own work, so ten at once is the

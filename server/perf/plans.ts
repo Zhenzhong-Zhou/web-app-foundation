@@ -93,18 +93,33 @@ const ALLOWED: { probe: string; table: string; reason: string }[] = [
       'database reads no other tenant; the screen reads a page (ADR-094’s ' +
       'amendment, R6).',
   })),
-  ...['valuation', 'valuation: a search', 'valuation: by value'].flatMap(
-    (probe) =>
-      ['valuation_pools', 'lots', 'product_variants'].map((table) => ({
-        probe,
-        table,
-        reason:
-          'Stock value’s total, its count and whether any of it is ' +
-          'provisional speak for every pool, whatever the page, and the ' +
-          'page is sorted from every pool, so each reads them all; each ' +
-          'join carries the organization, so a busier database reads no ' +
-          'other tenant (ADR-094’s amendment, R6).',
-      })),
+  ...[
+    'valuation',
+    'valuation: a next page',
+    'valuation: a search',
+    'valuation: by value',
+  ].flatMap((probe) =>
+    ['valuation_pools', 'lots', 'product_variants'].map((table) => ({
+      probe,
+      table,
+      reason:
+        'Stock value’s page is sorted from every pool the find keeps, by ' +
+        'a figure or a name worked out, not kept, so it reads them all, ' +
+        'its names once an item; each join carries the organization, so a ' +
+        'busier database reads no other tenant (ADR-094’s amendment, R6).',
+    })),
+  ),
+  ...['valuation totals', 'valuation totals: a search'].flatMap((probe) =>
+    ['valuation_pools', 'lots', 'product_variants'].map((table) => ({
+      probe,
+      table,
+      reason:
+        'Stock value’s total, its counts and whether any of it is ' +
+        'provisional speak for every pool, whatever the find, so the ' +
+        'totals read them all, once for a find and never for a page; ' +
+        'each join carries the organization, so a busier database reads ' +
+        'no other tenant (ADR-094’s amendment, R6).',
+    })),
   ),
   {
     probe: 'orders: purchases partly received',
@@ -276,8 +291,11 @@ async function buildProbes(
     20,
   );
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
-  // A lot's whole code, as Stock value's find is given it.
+  // A lot's whole code, as Stock value's find is given it; and its first
+  // page's cursor, as Show 50 more sends it.
   const valuationLot = shelf.lotCode ?? '';
+  const { nextCursor: valuationNext } = await costs.valuation({}, 'zh-Hans');
+  if (!valuationNext) throw new Error('One page of Stock value: seed again.');
   // A manifest written before the team (ADR-081) names nobody, and the
   // access probe would then send nothing and drop out without a word.
   if (!org.threeRoleMembershipId) {
@@ -623,9 +641,14 @@ async function buildProbes(
     // Add's picker marks the items with a point (#538).
     { name: 'reorder points: items', run: () => reorder.items() },
     // Stock value a page at a time (ADR-094's amendment, R6): the first
-    // page as it opens, a find by a lot's code, and the sort by value, the
-    // largest first; the export still reads every pool.
+    // page as it opens, Show 50 more's next page, a find by a lot's code,
+    // and the sort by value, the largest first; the totals beside them,
+    // whole and for the find; the export still reads every pool.
     { name: 'valuation', run: () => costs.valuation({}, 'zh-Hans') },
+    {
+      name: 'valuation: a next page',
+      run: () => costs.valuation({ cursor: valuationNext }, 'zh-Hans'),
+    },
     {
       name: 'valuation: a search',
       run: () => costs.valuation({ search: valuationLot }, 'zh-Hans'),
@@ -633,6 +656,11 @@ async function buildProbes(
     {
       name: 'valuation: by value',
       run: () => costs.valuation({ sort: '-value' }, 'zh-Hans'),
+    },
+    { name: 'valuation totals', run: () => costs.valuationTotals({}) },
+    {
+      name: 'valuation totals: a search',
+      run: () => costs.valuationTotals({ search: valuationLot }),
     },
     { name: 'valuation export', run: () => costs.everyPool() },
     // Stock value's Waiting for a cost, each row with its item's names and

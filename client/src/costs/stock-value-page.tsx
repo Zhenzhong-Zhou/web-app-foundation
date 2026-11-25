@@ -23,7 +23,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import type {
   NeedsCostEntry,
-  StockValuationPage,
+  StockValuationTotals,
   ValuationPool,
 } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -61,6 +61,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort } from '../lib/use-list-sort';
+import { useResource } from '../lib/use-resource';
 import { useRowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { SetCostDialog } from './set-cost-dialog';
@@ -179,8 +180,9 @@ function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): ReactNode {
  * provisional until it is cleared.
  *
  * By item and lot reads fifty pools at a time, found and sorted by the
- * server; the total above is every pool's, never the rows shown, and the
- * export is the way to read them all at once (ADR-094's amendment, R6).
+ * server; the total above is every pool's, never the rows shown, a read
+ * of its own beside the list, and the export is the way to read them all
+ * at once (ADR-094's amendment, R6).
  */
 export function StockValuePage() {
   const intl = useIntl();
@@ -197,23 +199,28 @@ export function StockValuePage() {
     sort: servedSort(sort),
   });
   // The rows shown kept for Back, which reads them again (#473).
-  const pools = useKeysetList<ValuationPool, StockValuationPage>(path, {
+  const pools = useKeysetList<ValuationPool>(path, {
     cursor: 'cursor',
     keep: entry,
   });
   const { rowReturn } = useRowReturn();
 
   /**
-   * The total, Provisional and the currency, every pool's whatever the
-   * page or the find: the last answer's, kept while another find's or
-   * sort's first page is on its way, so the total stays as it was.
+   * The totals, a read of their own keyed by the find (R6): how many the
+   * find matches, for this find alone; the total, Provisional and the
+   * currency, every pool's whatever is found, the last answer's, kept
+   * while another find's are on their way, so the total stays as it
+   * was. Show 50 more and a sort never ask them again.
    */
-  const [known, setKnown] = useState<typeof pools.first>(null);
-  if (pools.first && pools.first !== known) setKnown(pools.first);
+  const totals = useResource<StockValuationTotals>(
+    withQuery('/costs/valuation/totals', { search: search || undefined }),
+  );
+  const [known, setKnown] = useState<StockValuationTotals | null>(null);
+  if (totals.data && totals.data !== known) setKnown(totals.data);
 
   // A page at a time, with Load more, by the hook every list shares (#33).
   const waiting = useKeysetList<NeedsCostEntry>('/costs/needs-cost');
-  const refused = pools.refused ?? waiting.refused;
+  const refused = pools.refused ?? waiting.refused ?? totals.refused;
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
   const waitingSection = useRef<HTMLDivElement>(null);
   const waitingHeading = useRef<HTMLHeadingElement>(null);
@@ -221,9 +228,11 @@ export function StockValuePage() {
   // The page waits for its first reads alone: a find or a sort after
   // reads the pools again under their table's head, the find box kept.
   const loading =
-    (waiting.loading || (known === null && pools.loading)) &&
+    (waiting.loading ||
+      (known === null && (pools.loading || totals.data === null))) &&
     waiting.error === null &&
-    pools.error === null;
+    pools.error === null &&
+    totals.error === null;
   const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('costs.update');
 
@@ -250,10 +259,16 @@ export function StockValuePage() {
     setFirstNew(null);
   }
 
-  /** Both read again, after a cost is set or a refusal's Try again. */
+  /** The pools' first page again, and their totals with it. */
+  function reloadPools() {
+    pools.reload();
+    void totals.reload();
+  }
+
+  /** Every read again, after a cost is set or a refusal's Try again. */
   function load() {
     waiting.reload();
-    pools.reload();
+    reloadPools();
   }
 
   const currency = known?.currency ?? null;
@@ -286,6 +301,7 @@ export function StockValuePage() {
       />
 
       {waiting.error && <Alert severity="error">{waiting.error}</Alert>}
+      {totals.error && <Alert severity="error">{totals.error}</Alert>}
 
       {known && !currency && (
         <Alert severity="info">
@@ -495,13 +511,32 @@ export function StockValuePage() {
                   value: text,
                   onChange: setText,
                 }}
-              />
+              >
+                {/* Beside the find, how many it matches of every pool,
+                    from the totals' read for this find (R6). */}
+                {search && totals.data && (
+                  <Typography
+                    role="status"
+                    variant="body2"
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    {intl.formatMessage(
+                      {
+                        id: 'costs.findMatches',
+                        defaultMessage:
+                          '{count, number} of {pools, number} match',
+                      },
+                      { count: totals.data.count, pools: totals.data.pools },
+                    )}
+                  </Typography>
+                )}
+              </FilterRow>
             </Box>
 
             {/* The pools' part alone says it could not be read, with Try
                 again; the total and the find box stay. */}
             {pools.failed ? (
-              <ListError error={pools.error} onRetry={pools.reload} />
+              <ListError error={pools.error} onRetry={reloadPools} />
             ) : pools.entries?.length === 0 ? (
               search ? (
                 <EmptyState
@@ -670,7 +705,7 @@ export function StockValuePage() {
                   shown > 0 && (
                     <ShowingLine
                       shown={shown}
-                      total={pools.first?.count}
+                      total={totals.data?.count}
                       more={pools.hasMore}
                       of="pool"
                     />

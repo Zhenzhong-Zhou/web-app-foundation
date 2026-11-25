@@ -1281,7 +1281,10 @@ a second organization.
   than 50 pools, as on the large volume seed, By item and lot lists the
   first 50 by the item, "Showing 50 of … items and lots" under them, and
   the total and Provisional are still every pool's: the total is the
-  export's Value column summed (R6).
+  export's Value column summed (R6). In the browser's tools, Network:
+  the totals, `valuation/totals`, are read as the page opens and again
+  after Set cost, never for Show 50 more or a sort (R6, settled at the
+  stop).
 - **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
   each of its units carries its share once. Receive 40 by hand with no
   price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
@@ -1325,15 +1328,16 @@ a second organization.
   row after Show 50 more, then Back: the rows shown are there again,
   focus on that lot's link. Find an item or a lot: part of an item's
   name, its code or a lot's code lists the pools that match and how
-  many, the find in the address, the total as it was; text nothing
-  matches reads "Nothing matches “…”." with Clear the search, which
-  brings every pool back. The Value header puts the largest first;
+  many, "… of … match" beside the find box, the second number every
+  pool, the find in the address, the total as it was; text nothing
+  matches reads "Nothing matches “…”." and "0 of … match", with Clear
+  the search, which brings every pool back and takes the line away. The Value header puts the largest first;
   again, the smallest; the Item header puts the item's order back; each
   kept in the address on a reload. With the network turned off in the
   browser's tools, Show 50 more keeps the rows and reads "The next 50
   could not be loaded." with Try again, which reads them once it is back
-  on. In 中文 the find reads 查找物品或批次 and the line
-  已显示 50 个，共 … 个物品和批次.
+  on. In 中文 the find reads 查找物品或批次, beside it
+  匹配 … 个，共 … 个物品和批次, and the line 已显示 50 个，共 … 个物品和批次.
 
 ## 9. Recall drill (timed)
 
@@ -7942,3 +7946,7 @@ first.
 - 2026-11-24: ADR-094's amendment, Stock value by the page on the
   screen, R6: the find, the sort by Value, Show 50 more with its failed
   page, and Back to the row left: MC-807 added, MC-802 extended.
+- 2026-11-24: ADR-094's amendment, settled at the stop, R6: Stock
+  value's totals a read of their own, read for a find and after a cost
+  is set, never for a next page or a sort, with "… of … match" beside
+  the find box: MC-802 and MC-807 extended.

@@ -370,6 +370,7 @@
   "costs.entry.usedInRun": "Utilisé dans un ordre de fabrication",
   "costs.exchangeRate": "Taux de change",
   "costs.find": "Trouver un article ou un lot",
+  "costs.findMatches": "{count, plural, one {{count, number} sur {pools, number} correspond} other {{count, number} sur {pools, number} correspondent}}",
   "costs.intro": "Chaque lot a son propre coût; pour le stock sans lot, on utilise un coût moyen mis à jour au fil des mouvements. Les valeurs comprennent seulement le coût des matières — celles achetées et celles utilisées pour fabriquer un lot — dans la devise de base.",
   "costs.lot.history": "Comment sa valeur a évolué",
   "costs.lot.waiting": "Une partie de ce lot est encore en attente d’un coût. Fixez ce coût à la page <link>Valeur du stock</link>.",

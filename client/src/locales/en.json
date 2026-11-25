@@ -370,6 +370,7 @@
   "costs.entry.usedInRun": "Used in a run",
   "costs.exchangeRate": "Exchange rate",
   "costs.find": "Find an item or a lot",
+  "costs.findMatches": "{count, number} of {pools, number} match",
   "costs.intro": "Each lot carries what it cost; stock without lots carries a running average. Values are material cost only — what was bought and what went into a batch — in the base currency.",
   "costs.lot.history": "How its value changed",
   "costs.lot.waiting": "Part of this lot is still waiting for a cost. Set it on the <link>Stock value</link> page.",

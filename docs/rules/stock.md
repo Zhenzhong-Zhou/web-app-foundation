@@ -1238,24 +1238,31 @@ file is kept is in the [README](README.md).
   it did not give, or one given for another sort, is refused. Each pool
   names its item in the reader's language, with its code.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
-  [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, each page with the whole’s total, count and Provisional, and the export every pool (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, a page holding its rows and its cursor alone, and the export every pool (R6)" ·
   [test](../../server/test/costs.e2e-spec.ts) "sorts by the item, and by the value either way, the item breaking ties, over its pages (R6)" ·
   [test](../../server/test/costs.e2e-spec.ts) "refuses a cursor not in the list, one made for another sort among them, and a sort or a page size it does not know (R6)" ·
   [test](../../server/test/item-names.e2e-spec.ts) "lists every operation that names an item, each reading the language or keeping the base" ·
-  [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s and read once" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "sorts by value, the largest first and again the smallest, and back by the item" ·
   MC-802 · MC-807
 - **Stock value's total and Provisional are every pool's, whatever is
-  read or found,** never the sum of the rows shown; beside them, how
-  many pools the list holds, or the find finds. Its export still writes
-  every pool, the way to read them all at once.
-  [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
-  [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, each page with the whole’s total, count and Provisional, and the export every pool (R6)" ·
-  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code, the total and Provisional still every pool’s (R6)" ·
-  [test](../../client/src/costs/stock-value-page.test.tsx) "finds what is typed, says when nothing matches with Clear the search, the total as it was" ·
+  read or found,** never the sum of the rows shown: a read of their own
+  beside the list, as Stock's counts are, asked as the page opens, for
+  each find and after a cost is set, never for the next fifty or a
+  sort. With them, how many pools there are and how many the find
+  matches: "Showing 50 of … items and lots" under the list, and beside
+  the find box, while one is typed, "… of … match". Its export still
+  writes every pool, the way to read them all at once.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#settled-at-the-stop) ·
+  [test](../../server/test/costs.e2e-spec.ts) "totals every pool whatever the find, and counts the pools the find matches, as many as its pages hold (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, a page holding its rows and its cursor alone, and the export every pool (R6)" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "finds what is typed, how many match beside it, says when nothing matches with Clear the search, the total as it was" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s and read once" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "sorts by value, the largest first and again the smallest, and back by the item" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "reads the totals again with the first page after Set cost" ·
   MC-802 · MC-807
 - **Stock value finds a pool by its item, as every search matches an
   item, or by its lot's code or supplier's lot,** any part of either.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
-  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code, the total and Provisional still every pool’s (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code (R6)" ·
   partly tested

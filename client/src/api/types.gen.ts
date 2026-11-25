@@ -2773,10 +2773,14 @@ export type ValuationPool = {
 export type StockValuationPage = {
   entries: Array<ValuationPool>;
   nextCursor: string | null;
-  count: number;
+};
+
+export type StockValuationTotals = {
   currency: string | null;
   total: string;
   provisional: boolean;
+  pools: number;
+  count: number;
 };
 
 export type LotCostEntry = {
@@ -7263,8 +7267,8 @@ export type CostsControllerStockValuationV1Data = {
   query?: {
     cursor?: string;
     limit?: number;
-    search?: string;
     sort?: 'item' | 'value' | '-value';
+    search?: string;
   };
   url: '/v1/costs/valuation';
 };
@@ -7275,6 +7279,22 @@ export type CostsControllerStockValuationV1Responses = {
 
 export type CostsControllerStockValuationV1Response =
   CostsControllerStockValuationV1Responses[keyof CostsControllerStockValuationV1Responses];
+
+export type CostsControllerValuationTotalsV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+  };
+  url: '/v1/costs/valuation/totals';
+};
+
+export type CostsControllerValuationTotalsV1Responses = {
+  200: StockValuationTotals;
+};
+
+export type CostsControllerValuationTotalsV1Response =
+  CostsControllerValuationTotalsV1Responses[keyof CostsControllerValuationTotalsV1Responses];
 
 export type CostsControllerExportValuationV1Data = {
   body?: never;

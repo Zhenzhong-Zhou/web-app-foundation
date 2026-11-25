@@ -218,7 +218,7 @@ describe('Move to another lot (e2e)', () => {
   }
 
   async function total(w: World) {
-    const res = await w.org.agent.get('/v1/costs/valuation').expect(200);
+    const res = await w.org.agent.get('/v1/costs/valuation/totals').expect(200);
     return body<{ total: string }>(res).total;
   }
 

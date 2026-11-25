@@ -6774,15 +6774,6 @@
             }
           },
           {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -6793,6 +6784,15 @@
                 "value",
                 "-value"
               ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
             }
           },
           {
@@ -6811,6 +6811,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StockValuationPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/valuation/totals": {
+      "get": {
+        "operationId": "CostsController_valuationTotals_v1",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockValuationTotals"
                 }
               }
             }
@@ -20618,10 +20649,16 @@
               "string",
               "null"
             ]
-          },
-          "count": {
-            "type": "number"
-          },
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "StockValuationTotals": {
+        "type": "object",
+        "properties": {
           "currency": {
             "type": [
               "string",
@@ -20633,15 +20670,20 @@
           },
           "provisional": {
             "type": "boolean"
+          },
+          "pools": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
           }
         },
         "required": [
-          "entries",
-          "nextCursor",
-          "count",
           "currency",
           "total",
-          "provisional"
+          "provisional",
+          "pools",
+          "count"
         ]
       },
       "LotCostEntry": {

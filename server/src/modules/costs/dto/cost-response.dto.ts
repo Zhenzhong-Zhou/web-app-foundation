@@ -39,23 +39,33 @@ export class ValuationPool {
 }
 
 /**
- * GET /costs/valuation: one page of the pools, and what the stock on
- * hand is worth (ADR-094's amendment, R6). `total`, `currency` and
- * `provisional` speak for every pool of the organization, whatever the
- * page or the search; `count` is how many pools the search finds, every
- * pool with none.
+ * GET /costs/valuation: one page of the pools (ADR-094's amendment, R6).
+ * What they are worth together is a read of its own,
+ * GET /costs/valuation/totals, which no page works out again.
  */
 export class StockValuationPage {
   entries!: ValuationPool[];
   /** Pass as `cursor` for the next page; null when there is no more. */
   nextCursor!: string | null;
-  /** The pools the list shows, the search on: "Showing 50 of 14,512". */
-  count!: number;
+}
+
+/**
+ * GET /costs/valuation/totals: what the stock on hand is worth, and how
+ * many pools the find matches (ADR-094's amendment, R6), as Stock's
+ * counts are a read beside its list. `total`, `currency` and
+ * `provisional` speak for every pool of the organization, whatever the
+ * search.
+ */
+export class StockValuationTotals {
   /** Null until the organization has a base currency. */
   currency!: string | null;
   total!: string;
   /** True while any pool on hand depends on a row still waiting for a cost. */
   provisional!: boolean;
+  /** Every pool on hand: "1 of 14,512 match". */
+  pools!: number;
+  /** The pools the list shows, the search on: "Showing 50 of 14,512". */
+  count!: number;
 }
 
 /** One valuation row in a lot's history. */

@@ -194,7 +194,10 @@ answers:
     stands, the movement list (first page, a deep page, one product, one
     product oldest first with each row's balance, one product's month
     with its period, and one shelf, the place of the Lot view's first
-    row: ADR-093), the invoice list, and a lot trace;
+    row: ADR-093), Stock value (ADR-094's amendment, R6: its first page
+    by the item, Show 50 more's next page, a find by part of a lot's
+    code, the sort by value and the totals beside them), the invoice
+    list, and a lot trace;
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item
     pickers by pinyin, both asked in Chinese; and Partners by part of a

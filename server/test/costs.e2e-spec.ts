@@ -735,7 +735,7 @@ describe('Costs (e2e)', () => {
     }
 
     async function total(s: Setup) {
-      const res = await s.agent.get('/v1/costs/valuation').expect(200);
+      const res = await s.agent.get('/v1/costs/valuation/totals').expect(200);
       return body<{ total: string }>(res).total;
     }
 
@@ -1692,20 +1692,16 @@ describe('Costs (e2e)', () => {
         reason: 'receipt',
       });
 
-      const res = await s.agent.get('/v1/costs/valuation').expect(200);
-      const valuation = body<{
-        currency: string;
-        total: string;
-        provisional: boolean;
-        entries: { sku: string; value: string; provisional: boolean }[];
-      }>(res);
-
-      expect(valuation).toMatchObject({
+      expect(await valuationTotals(s, {})).toEqual({
         currency: 'CAD',
         total: '20.000000',
         provisional: true,
+        pools: 2,
+        count: 2,
       });
-      expect(valuation.entries).toMatchObject([
+
+      const { entries } = await valuationPage(s, {});
+      expect(entries).toMatchObject([
         { sku: 'LID', value: '0.000000', provisional: true },
         { sku: 'SCOOP', value: '20.000000', provisional: false },
       ]);
@@ -1719,9 +1715,14 @@ describe('Costs (e2e)', () => {
         provisional: boolean;
       }[];
       nextCursor: string | null;
-      count: number;
+    }
+
+    interface ValuationTotals {
+      currency: string | null;
       total: string;
       provisional: boolean;
+      pools: number;
+      count: number;
     }
 
     async function valuationPage(
@@ -1730,6 +1731,15 @@ describe('Costs (e2e)', () => {
     ) {
       return body<ValuationPage>(
         await s.agent.get('/v1/costs/valuation').query(query).expect(200),
+      );
+    }
+
+    async function valuationTotals(s: Setup, query: Record<string, string>) {
+      return body<ValuationTotals>(
+        await s.agent
+          .get('/v1/costs/valuation/totals')
+          .query(query)
+          .expect(200),
       );
     }
 
@@ -1781,10 +1791,10 @@ describe('Costs (e2e)', () => {
 
     /**
      * Stock value by the page (ADR-094's amendment, R6): fifty pools at a
-     * time, the next by the cursor, and every page saying what the whole
-     * is worth, so the total is never a sum of the rows read.
+     * time, the next by the cursor, and nothing more; what the whole is
+     * worth is the totals' read, which no page works out again.
      */
-    it('reads every pool once over its pages, each page with the whole’s total, count and Provisional, and the export every pool (R6)', async () => {
+    it('reads every pool once over its pages, a page holding its rows and its cursor alone, and the export every pool (R6)', async () => {
       const s = await setup('alpha');
       await fivePools(s);
 
@@ -1795,19 +1805,11 @@ describe('Costs (e2e)', () => {
         ['SCOOP'],
       ]);
       for (const page of pages) {
-        expect(page).toMatchObject({
-          count: 5,
-          currency: 'CAD',
-          total: '82.000000',
-          provisional: true,
-        });
+        expect(Object.keys(page).sort()).toEqual(['entries', 'nextCursor']);
       }
 
       // Fifty unless asked: one page holds them all.
-      expect(await valuationPage(s, {})).toMatchObject({
-        nextCursor: null,
-        count: 5,
-      });
+      expect(await valuationPage(s, {})).toMatchObject({ nextCursor: null });
 
       // The export still writes every pool, by its code and lot.
       const exported = (
@@ -1822,36 +1824,55 @@ describe('Costs (e2e)', () => {
       ).toEqual(['CAP', 'JAR/J-1', 'JAR/J-2', 'LID', 'SCOOP']);
     });
 
-    it('finds a pool by its item’s name or code or by its lot’s code, the total and Provisional still every pool’s (R6)', async () => {
+    it('finds a pool by its item’s name or code or by its lot’s code (R6)', async () => {
       const s = await setup('alpha');
       await fivePools(s);
 
       const lot = await valuationPage(s, { search: 'J-2' });
       expect(poolsOn(lot)).toEqual(['JAR/J-2']);
-      expect(lot).toMatchObject({
-        nextCursor: null,
-        count: 1,
-        total: '82.000000',
-        provisional: true,
-      });
+      expect(lot.nextCursor).toBeNull();
 
       const item = await everyPage(s, { search: 'jar', limit: 1 });
       expect(item.map(poolsOn)).toEqual([['JAR/J-1'], ['JAR/J-2']]);
-      for (const page of item) {
-        expect(page).toMatchObject({ count: 2, total: '82.000000' });
-      }
 
       expect(
         poolsOn(await valuationPage(s, { search: 'sco', sort: '-value' })),
       ).toEqual(['SCOOP']);
 
-      expect(await valuationPage(s, { search: 'zzz' })).toMatchObject({
+      expect(await valuationPage(s, { search: 'zzz' })).toEqual({
         entries: [],
         nextCursor: null,
-        count: 0,
+      });
+    });
+
+    /**
+     * The totals, a read of their own (R6): what every pool is worth and
+     * whether any of it is provisional, whatever the find, so the total is
+     * never a sum of the rows read; how many pools there are, and how many
+     * the find matches, which its pages hold together.
+     */
+    it('totals every pool whatever the find, and counts the pools the find matches, as many as its pages hold (R6)', async () => {
+      const s = await setup('alpha');
+      await fivePools(s);
+
+      const whole = {
+        currency: 'CAD',
         total: '82.000000',
         provisional: true,
-      });
+        pools: 5,
+      };
+      for (const [search, count] of [
+        ['', 5],
+        ['J-2', 1],
+        ['jar', 2],
+        ['sco', 1],
+        ['zzz', 0],
+      ] as const) {
+        const query: Record<string, string> = search ? { search } : {};
+        expect(await valuationTotals(s, query)).toEqual({ ...whole, count });
+        const pages = await everyPage(s, { ...query, limit: 2 });
+        expect(pages.flatMap(poolsOn)).toHaveLength(count);
+      }
     });
 
     it('sorts by the item, and by the value either way, the item breaking ties, over its pages (R6)', async () => {
@@ -1956,18 +1977,15 @@ describe('Costs (e2e)', () => {
         { sku: 'SCOOP', quantity: '10.0000' },
       ]);
 
-      const valuation = body<{
-        total: string;
-        provisional: boolean;
-        count: number;
-        entries: { sku: string }[];
-      }>(await s.agent.get('/v1/costs/valuation').expect(200));
-      expect(valuation).toMatchObject({
+      expect(await valuationTotals(s, {})).toMatchObject({
         total: '20.000000',
         provisional: false,
+        pools: 1,
         count: 1,
       });
-      expect(valuation.entries.map((pool) => pool.sku)).toEqual(['SCOOP']);
+      expect(
+        (await valuationPage(s, {})).entries.map((pool) => pool.sku),
+      ).toEqual(['SCOOP']);
 
       const exported = (
         await s.agent.get('/v1/costs/valuation/export').expect(200)

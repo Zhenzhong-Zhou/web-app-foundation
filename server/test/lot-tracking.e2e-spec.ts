@@ -213,13 +213,18 @@ describe('Start tracking lots (e2e)', () => {
     return body<{ entries: MovementRow[] }>(res).entries;
   }
 
+  /** Stock value's pools, and their totals, a read of their own (R6). */
   async function valuation(w: World) {
-    const res = await w.org.agent.get('/v1/costs/valuation').expect(200);
-    return body<{
-      total: string;
-      provisional: boolean;
-      entries: { lotId: string | null; quantity: string; value: string }[];
-    }>(res);
+    const [page, totals] = await Promise.all([
+      w.org.agent.get('/v1/costs/valuation').expect(200),
+      w.org.agent.get('/v1/costs/valuation/totals').expect(200),
+    ]);
+    return {
+      ...body<{ total: string; provisional: boolean }>(totals),
+      ...body<{
+        entries: { lotId: string | null; quantity: string; value: string }[];
+      }>(page),
+    };
   }
 
   async function waiting(w: World) {

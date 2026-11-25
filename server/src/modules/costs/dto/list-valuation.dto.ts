@@ -17,8 +17,23 @@ import {
 export const VALUATION_SORTS = ['item', 'value', '-value'] as const;
 export type ValuationSort = (typeof VALUATION_SORTS)[number];
 
+/**
+ * Stock value's find (ADR-094's amendment, R6): what its totals count as
+ * matching, and what its pages hold.
+ */
+export class ValuationTotalsDto {
+  /**
+   * The item, as every search matches it (ADR-056), or a lot's code or
+   * its supplier's lot (lotMatches).
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
+}
+
 /** Stock value's pools, fifty at a time (ADR-094's amendment, R6). */
-export class ListValuationDto {
+export class ListValuationDto extends ValuationTotalsDto {
   /**
    * The answer's `nextCursor`, for the page after it: the last pool's
    * place by the sort's key and its id (sorted-page.ts), never read by
@@ -36,15 +51,6 @@ export class ListValuationDto {
   @Min(1)
   @Max(100)
   limit?: number;
-
-  /**
-   * The item, as every search matches it (ADR-056), or a lot's code or
-   * its supplier's lot (lotMatches).
-   */
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  search?: string;
 
   /** By the item unless asked; by the value, either way. */
   @IsOptional()

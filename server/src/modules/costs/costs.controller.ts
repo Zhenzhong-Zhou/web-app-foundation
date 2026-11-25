@@ -32,10 +32,11 @@ import type {
   NeedsCostPage,
   RunCostEnvelope,
   StockValuationPage,
+  StockValuationTotals,
 } from './dto/cost-response.dto';
 import { ListExchangeRatesDto } from './dto/list-exchange-rates.dto';
 import { ListNeedsCostDto } from './dto/list-needs-cost.dto';
-import { ListValuationDto } from './dto/list-valuation.dto';
+import { ListValuationDto, ValuationTotalsDto } from './dto/list-valuation.dto';
 import { SetCostDto } from './dto/set-cost.dto';
 import { SetExchangeRateDto } from './dto/set-exchange-rate.dto';
 import { ExchangeRatesService } from './exchange-rates.service';
@@ -56,8 +57,8 @@ export class CostsController {
   ) {}
 
   /**
-   * Stock value: a page of its pools, found and sorted as asked, and what
-   * every pool is worth together (ADR-094's amendment, R6).
+   * Stock value: a page of its pools, found and sorted as asked (ADR-094's
+   * amendment, R6). What they are worth together is the totals' read.
    */
   @Get('valuation')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
@@ -66,6 +67,19 @@ export class CostsController {
     @AcceptLanguage() acceptLanguage?: string,
   ): Promise<StockValuationPage> {
     return this.costs.valuation(query, localeOf(acceptLanguage));
+  }
+
+  /**
+   * What every pool is worth together, and how many the find matches,
+   * beside the list as Stock's counts are (R6): read once for a find,
+   * never for a next page or a sort.
+   */
+  @Get('valuation/totals')
+  @RequirePermissions(PERMISSIONS.COSTS_VIEW)
+  valuationTotals(
+    @Query() query: ValuationTotalsDto,
+  ): Promise<StockValuationTotals> {
+    return this.costs.valuationTotals(query);
   }
 
   /**

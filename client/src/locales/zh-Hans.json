@@ -370,6 +370,7 @@
   "costs.entry.usedInRun": "用于生产订单",
   "costs.exchangeRate": "汇率",
   "costs.find": "查找物品或批次",
+  "costs.findMatches": "匹配 {count, number} 个，共 {pools, number} 个物品和批次",
   "costs.intro": "每个批次单独记录成本；未按批次管理的库存采用移动平均成本。库存价值只计算物料成本（采购成本和批次生产所用物料的成本），以本位币表示。",
   "costs.lot.history": "价值变动",
   "costs.lot.waiting": "此批次中仍有部分库存未确定成本。请在 <link>库存价值</link> 页面设置成本。",

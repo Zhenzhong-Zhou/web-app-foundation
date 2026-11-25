@@ -40,10 +40,15 @@ import type {
   NeedsCostPage,
   RunCost,
   StockValuationPage,
+  StockValuationTotals,
   ValuationPool,
 } from './dto/cost-response.dto';
 import type { ListNeedsCostDto } from './dto/list-needs-cost.dto';
-import type { ListValuationDto, ValuationSort } from './dto/list-valuation.dto';
+import type {
+  ListValuationDto,
+  ValuationSort,
+  ValuationTotalsDto,
+} from './dto/list-valuation.dto';
 import { inStockValue, openNeedsCost } from './open-needs-cost';
 
 /*
@@ -206,14 +211,12 @@ export class CostsService {
    * the item, as the page opens, or by the value, either way; found by
    * an item as every search matches it (ADR-056) or by a lot's codes
    * (lotMatches). Each pool names its item in the reader's language
-   * (#296). What the stock on hand is worth, and whether any of it is
-   * provisional, speak for every pool of the organization, whatever the
-   * page or the search: a page is never the whole, so a sum of its rows
-   * is never the total. Equipment is not stock value (inStockValue;
-   * ADR-048, amended by ADR-092).
+   * (#296). Equipment is not stock value (inStockValue; ADR-048, amended
+   * by ADR-092). What the pools are worth together is valuationTotals',
+   * which no page works out again.
    *
-   * Three statements: the whole's figures; the page's pools by their
-   * keys, paged by sorted-page's keys, the cursor holding them; then the
+   * Two statements: the page's pools by their keys, paged by
+   * sorted-page's keys, the cursor holding them (keyedPools); then the
    * page's columns for those alone, its names, cover and Provisional
    * worked out for fifty rather than for every pool (review 44).
    */
@@ -226,7 +229,7 @@ export class CostsService {
     const terms = query.search ? searchTerms(query.search) : null;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const parts = valuationKeys(sort, locale, organizationId);
+      const parts = valuationKeys(sort);
       const order = ['valuation', sort, locale ?? 'base'].join(' ');
       // A cursor made for another sort or language, or not made here, is
       // refused before anything is read.
@@ -234,43 +237,20 @@ export class CostsService {
         ? afterKeys(parts, readKeys(query.cursor, order, parts))
         : undefined;
       const found = terms ? poolsFound(terms, organizationId) : undefined;
-      const base = await baseCurrency(tx, organizationId);
-
-      /*
-       * Which pools are provisional is worked out once, as a set, and
-       * joined, as everyPool does and for its reasons.
-       */
-      const {
-        rows: [whole],
-      } = await tx.execute<{
-        total: string;
-        count: number;
-        provisional: boolean;
-      }>(sql`
-        with open as materialized (${openNeedsCost(organizationId)}),
-        ${openPools()}
-        select coalesce(sum(p.value), 0) as total,
-               (count(*) filter (where ${found ?? sql`true`}))::int as count,
-               coalesce(bool_or(op.variant_id is not null), false) as provisional
-        from ${poolsFrom(organizationId)}
-        left join open_pools op
-          on op.variant_id = p.variant_id
-         and op.lot_key = ${lotKey}
-        where ${shownOnHand(organizationId)}
-      `);
 
       const { rows: keyed } = await tx.execute<{
         id: string;
         variant_id: string;
         keys: string[];
       }>(sql`
-        select p.id, p.variant_id,
+        with ${keyedPools(sort, locale, organizationId, found)}
+        select k.id, k.variant_id,
                array[${sql.join(
                  parts.map((part) => sql`(${part.value})::text`),
                  sql`, `,
                )}] as keys
-        from ${poolsFrom(organizationId)}
-        where ${and(shownOnHand(organizationId), found, after)}
+        from k
+        where ${after ?? sql`true`}
         order by ${sql.join(orderOf(parts), sql`, `)}
         limit ${limit + 1}
       `);
@@ -281,10 +261,55 @@ export class CostsService {
         entries: await poolsIn(tx, organizationId, locale, page),
         nextCursor:
           keyed.length > limit && last ? cursorOf(order, last.keys) : null,
-        count: whole.count,
+      };
+    });
+  }
+
+  /**
+   * What Stock value's pools are worth together, and how many there are
+   * and the find matches (ADR-094's amendment, R6), a read of its own
+   * beside the list, as Stock's counts are: `total`, `currency` and
+   * `provisional` speak for every pool of the organization, whatever the
+   * find, so the total is never a sum of the rows read. Read once for a
+   * find; a next page or a sort never asks it again.
+   *
+   * Which pools are provisional is worked out once, as a set, and
+   * joined, as everyPool does and for its reasons.
+   */
+  valuationTotals(query: ValuationTotalsDto): Promise<StockValuationTotals> {
+    const terms = query.search ? searchTerms(query.search) : null;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const found = terms ? poolsFound(terms, organizationId) : undefined;
+      const base = await baseCurrency(tx, organizationId);
+
+      const {
+        rows: [whole],
+      } = await tx.execute<{
+        total: string;
+        pools: number;
+        count: number;
+        provisional: boolean;
+      }>(sql`
+        with open as materialized (${openNeedsCost(organizationId)}),
+        ${openPools()}
+        select coalesce(sum(p.value), 0) as total,
+               count(*)::int as pools,
+               (count(*) filter (where ${found ?? sql`true`}))::int as count,
+               coalesce(bool_or(op.variant_id is not null), false) as provisional
+        from ${poolsFrom(organizationId)}
+        left join open_pools op
+          on op.variant_id = p.variant_id
+         and op.lot_key = ${lotKey}
+        where ${shownOnHand(organizationId)}
+      `);
+
+      return {
         currency: base,
         total: whole.total,
         provisional: whole.provisional,
+        pools: whole.pools,
+        count: whole.count,
       };
     });
   }
@@ -804,46 +829,82 @@ function shownOnHand(organizationId: string): SQL {
 }
 
 /**
- * Stock value's order as key parts (ADR-094's amendment, R6): by the
- * item, its name as the reader sees it (ADR-056), then its code, then
- * its pool with no lot first and its lots by code, as the export lists
- * them; by the value, either way, the item's order breaking ties. The
- * pool's id last, so every pool has one place.
+ * Stock value's order as key parts over keyedPools' `k` (ADR-094's
+ * amendment, R6): by the item, its name as the reader sees it (ADR-056),
+ * then its code, then its pool with no lot first and its lots by code, as
+ * the export lists them; by the value, either way, the item's order
+ * breaking ties. The pool's id last, so every pool has one place.
  */
-function valuationKeys(
-  sort: ValuationSort,
-  locale: Locale | null,
-  organizationId: string,
-): KeyPart[] {
+function valuationKeys(sort: ValuationSort): KeyPart[] {
   const item: KeyPart[] = [
-    {
-      value: sql`(${
-        locale
-          ? productNameOrder(locale, organizationId)
-          : nameSortKey(sql`${products.namePinyin}`, sql`${products.name}`)
-      }) collate numeric_order`,
-      type: 'text',
-      order: 'asc',
-    },
-    {
-      value: sql`${productVariants.sku} collate numeric_order`,
-      type: 'text',
-      order: 'asc',
-    },
-    { value: sql`(${lots.code} is not null)::int`, type: 'int', order: 'asc' },
-    { value: sql`coalesce(${lots.code}, '')`, type: 'text', order: 'asc' },
-    { value: sql`p.id`, type: 'uuid', order: 'asc' },
+    { value: sql`k.name collate numeric_order`, type: 'text', order: 'asc' },
+    { value: sql`k.sku collate numeric_order`, type: 'text', order: 'asc' },
+    { value: sql`(k.lot_code is not null)::int`, type: 'int', order: 'asc' },
+    { value: sql`coalesce(k.lot_code, '')`, type: 'text', order: 'asc' },
+    { value: sql`k.id`, type: 'uuid', order: 'asc' },
   ];
 
   if (sort === 'item') return item;
   return [
     {
-      value: sql`p.value`,
+      value: sql`k.value`,
       type: 'numeric',
       order: sort === 'value' ? 'asc' : 'desc',
     },
     ...item,
   ];
+}
+
+/**
+ * The pools a page is cut from, as `k`: those on hand that the find
+ * keeps, each with its keys' columns, valuationKeys'.
+ *
+ * By the item, its name's sort key is worked out once an item, for every
+ * item that is stock value, and joined by its column: written into the
+ * page's statement, the translation's subquery and search_text() ran
+ * once a pool for the order and twice more for a next page's cursor. At
+ * ADR-051's large scale, 14,500 pools of 4,900 items, a next page's keys
+ * took 134 ms that way and 58 this, the first page's 68 and 54; and a
+ * later page's cursor now passes over the names before it, before a pool
+ * is joined. By the value, the name is a part only for a tie, so it
+ * stays in the statement, which Postgres flattens: the pools are sorted
+ * by their value and the name worked out for the page's rows alone.
+ */
+function keyedPools(
+  sort: ValuationSort,
+  locale: Locale | null,
+  organizationId: string,
+  found: SQL | undefined,
+): SQL {
+  const name = sql`(${
+    locale
+      ? productNameOrder(locale, organizationId)
+      : nameSortKey(sql`${products.namePinyin}`, sql`${products.name}`)
+  })`;
+  const columns = sql`p.id, p.variant_id, p.value,
+    ${productVariants.sku} as sku, ${lots.code} as lot_code`;
+  const where = and(shownOnHand(organizationId), found);
+
+  if (sort !== 'item') {
+    return sql`k as (
+      select ${columns}, ${name} as name
+      from ${poolsFrom(organizationId)}
+      where ${where}
+    )`;
+  }
+
+  return sql`names as materialized (
+      select ${products.id} as id, ${name} as name
+      from ${products}
+      where ${products.organizationId} = ${organizationId}::uuid
+        and ${products.type} <> ${'equipment' satisfies ProductType}
+    ),
+    k as (
+      select ${columns}, n.name
+      from ${poolsFrom(organizationId)}
+      join names n on n.id = ${products.id}
+      where ${where}
+    )`;
 }
 
 /**
