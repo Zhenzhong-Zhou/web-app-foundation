@@ -851,7 +851,8 @@ a second organization.
   one is its former code. For the same item, type the old code in
   Receive stock's Lot number: as it is typed the field turns red and
   says "… was the code of lot …. A code is never given to a second
-  lot.", naming the lot by its code now, with Use …; Receive anyway is
+  lot. Type another code.", naming the lot by its code now, with Use
+  …; Receive anyway is
   refused at the field, focus there, nothing received. Use … puts that
   lot's code in the field, "An existing lot. This adds to it.", the
   quantity and place kept. The same in an order's Receive and Move to
@@ -861,11 +862,13 @@ a second organization.
   the server at the field, "… until …", the day it was corrected, with
   Use … all the same. A run's Record output says it under Batch number,
   and Edit lot details renaming another lot of the item to it under Lot
-  number, each with no button. The lot itself takes its old code back.
+  number, each with no button; renamed to another lot's code now, it
+  says "… already exists for this item. Type another code." The lot
+  itself takes its old code back.
   Another item receives a lot of that code. Make a code for us never
   makes a former code again, and Organization › Documents › Lot codes
   refuses setting Next back to give one. In 中文 … 是批次 … 的原编码，
-  …起不再使用。, 使用 ….
+  …起不再使用。…请填写其他编码。, 使用 ….
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -8094,3 +8097,6 @@ first.
   before finds it too, in three languages: MC-909 extended.
 - 2026-11-25: The review's 61, Stock value's totals read once and after
   Set cost, a find asking its count alone: MC-802 extended.
+- 2026-11-25: The review's 75 and 89, a code refused as another lot's,
+  former or now, says "Type another code.", on the server and the
+  screen, in three languages: MC-334 extended.

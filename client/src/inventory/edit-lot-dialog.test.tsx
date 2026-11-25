@@ -234,7 +234,7 @@ describe('EditLotDialog (ADR-094)', () => {
   // since this is another lot being renamed.
   it('says the server’s refusal of another lot’s former code at the code, with no button, focus there', async () => {
     const refusal =
-      'L-2026-11-19-1 was the code of lot L-2026-11-19-1A until Nov 24, 2026. A code is never given to a second lot.';
+      'L-2026-11-19-1 was the code of lot L-2026-11-19-1A until Nov 24, 2026. A code is never given to a second lot. Type another code.';
     const { user } = open(MADE, ['stock.move'], {
       answer: () =>
         HttpResponse.json(

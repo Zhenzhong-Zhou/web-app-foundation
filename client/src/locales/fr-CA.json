@@ -684,7 +684,7 @@
   "inventory.lot.expiryMissing": "Choisissez quand le lot expire.",
   "inventory.lot.expiryToAdd": "Date de péremption à ajouter",
   "inventory.lot.expiryToAddPart": "date de péremption à ajouter",
-  "inventory.lot.formerCode": "{code} était le code du lot {lot}. Un code n’est jamais attribué à un deuxième lot.",
+  "inventory.lot.formerCode": "{code} était le code du lot {lot}. Un code n’est jamais attribué à un deuxième lot. Saisissez un autre code.",
   "inventory.lot.isExisting": "Un lot existant. Cette réception s’y ajoute.",
   "inventory.lot.isNew": "Un nouveau lot.",
   "inventory.lot.madeCode": "Numéro de lot",

@@ -35,7 +35,7 @@ const RUN: RunDetail = {
 };
 
 const REFUSAL =
-  'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.';
+  'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot. Type another code.';
 
 describe('RecordOutputDialog', () => {
   // ADR-094 amended, R11, 8a: another lot's former code, refused under

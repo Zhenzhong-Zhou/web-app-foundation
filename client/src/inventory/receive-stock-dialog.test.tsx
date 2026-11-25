@@ -446,7 +446,7 @@ describe('ReceiveStockDialog', () => {
     const user = userEvent.setup();
     const sent: unknown[] = [];
     const refusal =
-      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.';
+      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot. Type another code.';
     server.use(
       http.get('/api/v1/stock/lots', () =>
         HttpResponse.json([

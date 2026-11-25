@@ -125,7 +125,7 @@ export function formerCodeMessage(
     {
       id: 'inventory.lot.formerCode',
       defaultMessage:
-        '{code} was the code of lot {lot}. A code is never given to a second lot.',
+        '{code} was the code of lot {lot}. A code is never given to a second lot. Type another code.',
     },
     { code: cleanCode(input.code), lot: owner.code },
   );

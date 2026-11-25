@@ -294,7 +294,7 @@ describe('CountInDialog, found stock', () => {
     await user.type(code, 'VC-03O5');
 
     expect(code).toHaveAccessibleDescription(
-      'VC-03O5 was the code of lot VC-0305. A code is never given to a second lot.',
+      'VC-03O5 was the code of lot VC-0305. A code is never given to a second lot. Type another code.',
     );
     await user.click(screen.getByRole('button', { name: 'Use VC-0305' }));
 
@@ -326,7 +326,7 @@ describe('CountInDialog, found stock', () => {
   // code alone, with Use {code}.
   it('says the server’s refusal of another lot’s former code at the new lot’s code, focus there; Use {code} chooses that lot', async () => {
     const refused =
-      'VC-03O5 was the code of lot VC-0305 until Nov 24, 2026. A code is never given to a second lot.';
+      'VC-03O5 was the code of lot VC-0305 until Nov 24, 2026. A code is never given to a second lot. Type another code.';
     const { user } = open(TRACKED, {
       refusal: HttpResponse.json(
         {

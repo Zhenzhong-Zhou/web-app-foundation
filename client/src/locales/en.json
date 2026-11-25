@@ -684,7 +684,7 @@
   "inventory.lot.expiryMissing": "Choose when the lot expires.",
   "inventory.lot.expiryToAdd": "Expiry to add",
   "inventory.lot.expiryToAddPart": "expiry to add",
-  "inventory.lot.formerCode": "{code} was the code of lot {lot}. A code is never given to a second lot.",
+  "inventory.lot.formerCode": "{code} was the code of lot {lot}. A code is never given to a second lot. Type another code.",
   "inventory.lot.isExisting": "An existing lot. This adds to it.",
   "inventory.lot.isNew": "A new lot.",
   "inventory.lot.madeCode": "Lot number",

@@ -261,7 +261,8 @@ export class LotsService {
             t(
               {
                 id: 'stock.codeExistsItem',
-                defaultMessage: '{code} already exists for this item',
+                defaultMessage:
+                  '{code} already exists for this item. Type another code.',
               },
               { code: input.code },
             ),

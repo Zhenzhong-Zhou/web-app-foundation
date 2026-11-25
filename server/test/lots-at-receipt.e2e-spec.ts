@@ -761,6 +761,19 @@ describe('A new lot at receipt (e2e)', () => {
       expect((await lotOf(other)).code).toBe(made);
       expect(await formerCodesOf(other)).toEqual([]);
 
+      // Each refusal of a code says what to do next (reviews 75 and 89):
+      // another lot's former code, and its code now.
+      expect(body<{ message: string }>(refused).message).toMatch(
+        /\. Type another code\.$/,
+      );
+      const taken = await w.org.agent
+        .patch(`/v1/stock/lots/${other}`)
+        .send({ code: 'ASH-0601', reason: 'Typed from the old label.' })
+        .expect(409);
+      expect(body<{ message: string }>(taken).message).toBe(
+        'ASH-0601 already exists for this item. Type another code.',
+      );
+
       // A code is unique within an item (ADR-023): another item's lot may
       // carry it, typed or corrected to it.
       const zinc = await createVariant(w.org.agent, {

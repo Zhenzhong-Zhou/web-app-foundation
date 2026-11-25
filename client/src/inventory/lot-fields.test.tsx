@@ -415,11 +415,11 @@ describe('LotFields, another lot’s former code', () => {
     await user.type(code(), 'l2o24-a');
 
     expect(code()).toHaveAccessibleDescription(
-      'L2O24-A was the code of lot L2024-A. A code is never given to a second lot.',
+      'L2O24-A was the code of lot L2024-A. A code is never given to a second lot. Type another code.',
     );
     expect(code()).toBeInvalid();
     expect(lotErrors(value, CORRECTED, intl)).toEqual({
-      code: 'L2O24-A was the code of lot L2024-A. A code is never given to a second lot.',
+      code: 'L2O24-A was the code of lot L2024-A. A code is never given to a second lot. Type another code.',
     });
 
     await user.click(screen.getByRole('button', { name: 'Use L2024-A' }));
@@ -465,7 +465,7 @@ describe('LotFields, another lot’s former code', () => {
         initial={{ ...NO_LOT, code: 'L2O24-A' }}
         refused={{
           message:
-            'L2O24-A was the code of lot L2024-A until Nov 24, 2026. A code is never given to a second lot.',
+            'L2O24-A was the code of lot L2024-A until Nov 24, 2026. A code is never given to a second lot. Type another code.',
           lot: { id: 'lot-1', code: 'L2024-A' },
         }}
         onUse={onUse}
@@ -473,7 +473,7 @@ describe('LotFields, another lot’s former code', () => {
     );
 
     expect(code()).toHaveAccessibleDescription(
-      'L2O24-A was the code of lot L2024-A until Nov 24, 2026. A code is never given to a second lot.',
+      'L2O24-A was the code of lot L2024-A until Nov 24, 2026. A code is never given to a second lot. Type another code.',
     );
     await user.click(screen.getByRole('button', { name: 'Use L2024-A' }));
 
@@ -494,7 +494,7 @@ describe('LotFields, another lot’s former code', () => {
     await user.type(typed, 'L2O24-A');
 
     expect(typed).toHaveAccessibleDescription(
-      'L2O24-A 是批次 L2024-A 的原编码。同一编码不会给第二个批次。',
+      'L2O24-A 是批次 L2024-A 的原编码。同一编码不会给第二个批次。请填写其他编码。',
     );
     expect(
       screen.getByRole('button', { name: '使用 L2024-A' }),

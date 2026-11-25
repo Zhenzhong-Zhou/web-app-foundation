@@ -261,7 +261,7 @@ describe('ReceiveLineDialog', () => {
     const user = userEvent.setup();
     const line = orderLine({ tracksLots: true });
     const refused =
-      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.';
+      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot. Type another code.';
     const sent: { lot?: unknown }[] = [];
     server.use(
       http.get('/api/v1/stock/lots', () =>

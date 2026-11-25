@@ -142,7 +142,7 @@ export async function refuseFormerCode(
         {
           id: 'stock.lotCodeFormer',
           defaultMessage:
-            '{code} was the code of lot {lot} until {day}. A code is never given to a second lot.',
+            '{code} was the code of lot {lot} until {day}. A code is never given to a second lot. Type another code.',
         },
         { code, lot: had.code, day: calendarDay(day) },
       ),

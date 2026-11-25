@@ -269,13 +269,13 @@ describe('values', () => {
       {
         id: 'stock.lotCodeFormer',
         defaultMessage:
-          '{code} was the code of lot {lot} until {day}. A code is never given to a second lot.',
+          '{code} was the code of lot {lot} until {day}. A code is never given to a second lot. Type another code.',
       },
       { code: 'ASH-06O1', lot: 'ASH-0601', day: calendarDay('2026-11-24') },
     );
 
     expect(refused.message).toBe(
-      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.',
+      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot. Type another code.',
     );
     expect(translate(refused, 'fr-CA')).toContain('jusqu’au 24 nov. 2026.');
     expect(translate(refused, 'zh-Hans')).toContain('2026年11月24日');

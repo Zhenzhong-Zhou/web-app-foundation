@@ -251,7 +251,7 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     await fill(user, 'VC-031O');
     const code = screen.getByRole('combobox', { name: /^Lot number/ });
     expect(code).toHaveAccessibleDescription(
-      'VC-031O was the code of lot VC-0310. A code is never given to a second lot.',
+      'VC-031O was the code of lot VC-0310. A code is never given to a second lot. Type another code.',
     );
     await user.click(screen.getByRole('button', { name: 'Move to lot' }));
     expect(code).toHaveFocus();
@@ -278,7 +278,7 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
   // code alone, with Use {code}.
   it('says the server’s refusal of another lot’s former code at the lot’s code, focus there; Use {code} moves the stock into that lot', async () => {
     const refused =
-      'VC-031O was the code of lot VC-0310 until Nov 24, 2026. A code is never given to a second lot.';
+      'VC-031O was the code of lot VC-0310 until Nov 24, 2026. A code is never given to a second lot. Type another code.';
     const { user, sent } = open({
       toLot: { id: 'lot-b', code: 'VC-0310' },
       refusal: HttpResponse.json(

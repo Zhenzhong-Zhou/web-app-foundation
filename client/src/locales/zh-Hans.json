@@ -684,7 +684,7 @@
   "inventory.lot.expiryMissing": "请选择批次的有效期。",
   "inventory.lot.expiryToAdd": "待补有效期",
   "inventory.lot.expiryToAddPart": "待补有效期",
-  "inventory.lot.formerCode": "{code} 是批次 {lot} 的原编码。同一编码不会给第二个批次。",
+  "inventory.lot.formerCode": "{code} 是批次 {lot} 的原编码。同一编码不会给第二个批次。请填写其他编码。",
   "inventory.lot.isExisting": "已有批次，本次收货将累加到该批次。",
   "inventory.lot.isNew": "新批次。",
   "inventory.lot.madeCode": "批次编码",
