@@ -98,7 +98,9 @@ Then what worked well; the last line is `DONE: <why>` or
 read" says. When asked, file each blocker or major finding with
 `gh issue create`: one issue per finding for a single walk; for a
 panel, one issue per screen for the findings its screens own, and none
-for those the design language settles (ADR-090).
+for those the design language settles (ADR-090). Each carries
+`needs-triage` and its `area:` label, as [Issues and
+labels](../../../docs/engineering.md#issues-and-labels) says.
 
 ## 6. A panel: several personas at once
 
