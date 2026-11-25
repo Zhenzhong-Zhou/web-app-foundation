@@ -208,20 +208,28 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds a lot by its supplier’s lot as by its code, exactly either putting lots first, with its expiry and its marks (ADR-094, R6)" ·
   MC-2713 · MC-1556
-- **A typo is forgiven only in the top bar, and only when the whole
-  search found fewer than five records.** Each kind then adds close
-  matches after its exact ones, best first, marked "close match": "fokus"
-  finds Focus 60ct, "nortside" Northside Pharmacy. A close match is looked
+- **A typo is forgiven only in the top bar, and shown only when nothing
+  matches as typed.** Its close matches then come under one heading,
+  Close matches, best first within each kind, each row saying its kind,
+  "Focus 60ct · Item", none marked on its own and none with Show all;
+  while anything matches as typed, that comes alone, as in Movements'
+  find box. "fokus" finds Focus 60ct, "nortside" Northside Pharmacy. The
+  server looks for close matches only while the whole search has found
+  fewer than five records, so a search that fills the lookup asks for
+  none. A close match is looked
   for in an order's number, reference and partner's name, an item's SKU
   and its product's own name, a partner's name, and the other kinds'
   number, reference or code; not in a translation, a variant's name, a
   pinyin, a lot's supplier's lot, or a partner's code or tax ID. A list or
   a picker never adds close matches.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
+  [ADR-056, amended again](../adr/0056-search.md#amendment-november-2026--the-top-bars-close-matches-only-when-nothing-matches-and-a-lots-former-code-adr-094s-amendment-654-665) ·
   [test](../../server/test/lookup.e2e-spec.ts) "forgives a typo with a close match, after any exact one" ·
-  [test](../../client/src/search/lookup-box.test.tsx) "asks after two characters, and shows results by kind" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "adds no close match once five records match as typed (#308’s 12)" ·
+  [test](../../client/src/search/lookup-box.test.tsx) "shows only what matches as typed when anything does" ·
+  [test](../../client/src/search/lookup-box.test.tsx) "shows the close matches under one heading only when nothing matches as typed, each saying its kind, with no Show all" ·
   partly tested ·
-  MC-1556
+  MC-1556 · MC-R77
 - **Each result shows its record's number or name, and a second line:**
   an order, an invoice, a credit note or a return its partner; a lot its
   SKU, then its expiry with its label, "Expires Nov 19, 2028", the chip
@@ -232,16 +240,20 @@ leave how it matches to this file. How this file is kept is in the
   language; a run its item's SKU; a partner its code.
   An order carries its direction and, while confirmed, how much of it has
   come or gone, which Movements' find box says in words ("Partly
-  received"); every other kind carries neither.
+  received"); every other kind carries neither. A lot found by a code it
+  had before its code was corrected says so beside its code today,
+  "ASH-0601 · was ASH-06O1".
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
   [ADR-066](../adr/0066-covers-in-the-lookup.md#decision--an-items-result-shows-its-products-cover) ·
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
+  [ADR-056, amended again](../adr/0056-search.md#amendment-november-2026--the-top-bars-close-matches-only-when-nothing-matches-and-a-lots-former-code-adr-094s-amendment-654-665) ·
   [test](../../server/test/lookup.e2e-spec.ts) "shows an item's cover, and none for other kinds" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds its own records through each join, none of a twin organization's" ·
   [test](../../server/test/lookup.e2e-spec.ts) "ranks an exact match on the reader's name for an item first" ·
   [test](../../server/test/lookup.e2e-spec.ts) "says an order's direction and how much of it has come, and neither for other kinds" ·
   [test](../../client/src/search/lookup-box.test.tsx) "reads a lot’s item code, then its expiry or its mark, each labelled, and its supplier’s lot" ·
-  MC-2201 · MC-1556 · MC-320 · MC-909
+  [test](../../client/src/search/lookup-box.test.tsx) "says the former code a lot was found by beside its code" ·
+  MC-2201 · MC-1556 · MC-320 · MC-909 · MC-911
 - **A result opens its record:** an item opens its page under Items, a
   lot its trace.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
@@ -250,7 +262,8 @@ leave how it matches to this file. How this file is kept is in the
   MC-1556
 - **Each kind ends with Show all in its list, which opens that list with
   the same search:** Orders, Invoices, Credit notes, Inventory for lots,
-  Items for items, Partners, Production and Returns.
+  Items for items, Partners, Production and Returns. Close matches offer
+  none, since the list finds only what matches as typed.
   [ADR-056](../adr/0056-search.md#decision--order-of-results) ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·
   [test](../../client/src/products/products-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
@@ -274,6 +287,15 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
   [test](../../client/src/search/lookup-box.test.tsx) "says when nothing is found" ·
   MC-1556
+- **A list cut at the box's edge ends with a line saying how many rows
+  are below,** "6 more below · scroll, or keep typing to narrow", a
+  group's Show all counted as a row. It counts again as the list
+  scrolls, by the arrow keys too, and goes once the last row is in view;
+  in the full-screen search it sits at the screen's foot. The arrow keys
+  reach every row, as before.
+  [ADR-056, amended again](../adr/0056-search.md#amendment-november-2026--the-top-bars-close-matches-only-when-nothing-matches-and-a-lots-former-code-adr-094s-amendment-654-665) ·
+  [test](../../client/src/search/lookup-box.test.tsx) "says how many rows are below a list cut at its edge, counting again as it scrolls" ·
+  MC-1576
 - **Before anything is typed, it offers the five records last opened,**
   so / then Enter reopens the last one.
   [ADR-058](../adr/0058-home.md#decision--recently-opened-for-picking-up-where-one-left-off) ·

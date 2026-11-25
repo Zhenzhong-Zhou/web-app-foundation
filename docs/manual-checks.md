@@ -1466,8 +1466,8 @@ search to having the list of customers; the target is **under two minutes**.
   a lot made here, ship part of it on a sale, then correct its code in
   Edit lot details, saying why (MC-334), and ship more on the same
   order. Type the old code, whole, in the top bar's search: Lots lists
-  the lot by its code now, after a lot of another item whose code it is
-  today, where there is one; part of the old code finds it too. The
+  the lot by its code now, "… · was …" beside it, after a lot of another
+  item whose code it is today, where there is one; part of the old code finds it too. The
   same text finds it in Trace a lot, in Inventory's search by item and
   by lot, at its place alone when one is chosen, in Stock value's Find
   an item or a lot, and in Movements' Find an item, lot or order, where,
@@ -2314,8 +2314,12 @@ Paper is checked first because it must not change at all.
   Hovering the chip still says how much is held.
 - **MC-1556** From any page, `/` or ⌘K focuses the top bar's search. Typing
   `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its code and
-  expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
-  `fokus` shows Focus 60ct marked close match; `mdyf` or 明德 finds 明德药房; `INV-`
+  expiry chip, and nothing that only comes close; arrow keys move, Enter
+  opens the lot's trace, Escape closes. `fokus`, which nothing matches as
+  typed, shows Focus 60ct under one heading, Close matches, as "Focus
+  60ct · Item", no row marked on its own and no Show all (Résultats
+  proches and « · Article » in Français, 相近结果 and “· 物品” in 中文);
+  `mdyf` or 明德 finds 明德药房; `INV-`
   puts Invoices first. One letter alone asks for more, but one Chinese
   character is enough: in 中文, 专 lists 专注胶囊 60 粒 under 物品. In 中文
   and Français the headings and messages are translated. At 375px the
@@ -2731,6 +2735,17 @@ Paper is checked first because it must not change at all.
   narrow enough that Reorder scrolls sideways with its Actions pinned,
   open a row's Where it stands: the detail shows whole across the row,
   nothing pinned over its right or its left.
+- **MC-1576** *(ADR-056, amended November 2026, #618)* A list cut at the
+  top bar's edge. As the demo Owner in a window 1366 × 768, type `DEMO`
+  in Search everything: the list stops at its edge with a line under it,
+  "… more below · scroll, or keep typing to narrow". Press ↓ past the
+  last row in view: the list scrolls, the count falls, and once the last
+  row shows the line goes; ↑ back up and it returns. A click on the line
+  leaves the list open. Type more until the list fits: no line. At 375
+  px the full-screen search ends with the same line at the screen's
+  foot, every row above it reachable by scrolling. In Français
+  « … autres plus bas · faites défiler, ou continuez à taper pour
+  affiner », in 中文 “下面还有 … 条 · 滚动查看，或继续输入以缩小范围”.
 
 ## 16. Files (ADR-059)
 
@@ -5601,9 +5616,10 @@ first.
   menu button, collapsed, then expanded once open.
 
 - **MC-R77** *(Show all after a close match alone opening an empty list,
-  #311)* As the demo Owner, in the top bar's lookup, type a word that only
-  nearly matches a partner, for example focus: the Partners group shows
-  the close match, with no Show all.
+  #311)* As the demo Owner, in the top bar's lookup, type a word that
+  only nearly matches a partner and matches nothing as typed, for
+  example nortside: Close matches shows Northside Pharmacy · Partner,
+  with no Show all.
 
 - **MC-R76** *(Esc before the guide had loaded closing nothing, then
   focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
@@ -8016,3 +8032,9 @@ first.
   Edit lot details asking why a code changes; another lot's former code
   refused as it is typed, with Use …: MC-329, MC-334 and MC-911
   extended.
+- 2026-11-25: ADR-094's amendment, the top bar's close matches, R19
+  (#654, #618): what matches as typed alone when anything does, the
+  close ones under Close matches only when nothing does, each saying its
+  kind; a list cut at its edge says how many rows are below; a lot found
+  by a former code says "was …": MC-1556 and MC-R77 rewritten, MC-911
+  extended, MC-1576 added.

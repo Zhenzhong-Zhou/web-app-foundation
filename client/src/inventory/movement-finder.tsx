@@ -33,7 +33,7 @@ const SEPARATOR = ' · ';
  * it (ADR-094, R6; amended, R10, F3); else the exact
  * matches alone while any match; else the close ones, a typo's
  * (`close`), which the box heads Close matches. The top bar's search
- * shows them all, its own way.
+ * keeps the same rule, but for the whole code's lot alone (#654).
  */
 function offered(options: Option[], query: string): Option[] {
   // Full width read as usual, as the lookup reads it: ＭＣＳ－００１.

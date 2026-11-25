@@ -1,4 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -52,7 +58,7 @@ const ANSWER: LookupResponse = {
           productId: 'product-1',
           coverFileId: 'file-1',
           type: 'good',
-          close: true,
+          close: false,
         },
       ],
     },
@@ -114,8 +120,6 @@ describe('LookupBox', () => {
     ).toBe('/api/v1/files/file-1?size=thumb');
     expect(screen.getByText('BF-2609')).toBeTruthy();
     expect(screen.getByText('Items')).toBeTruthy();
-    // A typo's result says so.
-    expect(screen.getByText('close match')).toBeTruthy();
     // One question for the whole word, never for one character.
     expect(asked).toEqual(['bf']);
   });
@@ -311,17 +315,181 @@ describe('LookupBox', () => {
     );
   });
 
-  // Close matches are the lookup's alone (ADR-056): their list finds none.
-  it('offers Show all only for a group with a match that is not a close one', async () => {
-    server.use(http.get('/api/v1/lookup', () => HttpResponse.json(ANSWER)));
+  /** One result of the kind given, as the server answers it. */
+  const found = (
+    title: string,
+    over: Partial<LookupResponse['groups'][number]['results'][number]> = {},
+  ) => ({ ...ANSWER.groups[0].results[0], id: title, title, ...over });
+
+  // #654: a whole code typed brought its record among a heap of close
+  // matches, each marked "close match", that were not close at all.
+  it('shows only what matches as typed when anything does', async () => {
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'order',
+              results: [found('SO-000100', { close: true })],
+            },
+            {
+              kind: 'lot',
+              results: [
+                found('MCS-001'),
+                found('MCS-0019', { close: true }),
+                found('MCS-010', { close: true }),
+              ],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
     const user = userEvent.setup();
     renderBox();
 
-    await user.type(await openLookup(user), 'bf');
-    expect(await screen.findByText('Show all in Inventory')).toBeTruthy();
-    // Items' one result is a close match: shown, with no Show all (#311).
-    expect(screen.getByText('Focus 60ct')).toBeTruthy();
-    expect(screen.queryByText('Show all in Items')).toBeNull();
+    await user.type(await openLookup(user), 'MCS-001');
+
+    expect(
+      (await screen.findAllByRole('option')).map((row) => row.textContent),
+    ).toEqual(['MCS-001FOCUS-60', 'Show all in Inventory']);
+    expect(screen.getByText('Lots')).toBeTruthy();
+    expect(screen.queryByText('Orders')).toBeNull();
+    expect(screen.queryByText('Close matches')).toBeNull();
+  });
+
+  // #654 and #311: nothing matches as typed, so the close ones show, under
+  // one heading; each row says its kind, since no heading names it, and
+  // none offers Show all, as a list opened for a close match finds none.
+  it('shows the close matches under one heading only when nothing matches as typed, each saying its kind, with no Show all', async () => {
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'order',
+              results: [found('SO-000100', { close: true })],
+            },
+            {
+              kind: 'lot',
+              results: [
+                found('MCS-001', { close: true }),
+                found('MCS-010', { close: true }),
+              ],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'MCS-0O1');
+
+    const group = (await screen.findByText('Close matches')).closest('li');
+    expect(screen.getAllByText('Close matches')).toHaveLength(1);
+    expect(
+      within(group as HTMLElement)
+        .getAllByRole('option')
+        .map((row) => row.textContent),
+    ).toEqual([
+      'SO-000100 · OrderFOCUS-60',
+      'MCS-001 · LotFOCUS-60',
+      'MCS-010 · LotFOCUS-60',
+    ]);
+    expect(screen.queryByText('Lots')).toBeNull();
+    expect(screen.queryByText(/^Show all/)).toBeNull();
+    expect(screen.queryByText(/close match/)).toBeNull();
+  });
+
+  // ADR-094 amended, R9: a former code typed whole is an exact match, so
+  // its lot is among what matches as typed, saying what it was called.
+  it('says the former code a lot was found by beside its code', async () => {
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'lot',
+              results: [
+                found('ASH-0601', { formerCode: 'ASH-06O1' }),
+                found('ASH-0601-B'),
+              ],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'ASH-06O1');
+
+    expect(
+      await screen.findByRole('option', { name: /^ASH-0601 ·/ }),
+    ).toHaveTextContent(/^ASH-0601 · was ASH-06O1FOCUS-60$/);
+    // A lot found by its code today says nothing of a code it had.
+    expect(
+      screen.getByRole('option', { name: /^ASH-0601-B/ }),
+    ).toHaveTextContent(/^ASH-0601-BFOCUS-60$/);
+  });
+
+  // #618: the list stopped at its edge with no sign of more. jsdom lays
+  // nothing out, so the list's edge is 200 px down and each row 48 px tall.
+  it('says how many rows are below a list cut at its edge, counting again as it scrolls', async () => {
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'lot',
+              results: ['L-1', 'L-2', 'L-3', 'L-4', 'L-5'].map((code) =>
+                found(code),
+              ),
+            },
+            ANSWER.groups[1],
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    let scrolled = 0;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: HTMLElement) {
+        if (this.getAttribute('role') === 'listbox') {
+          return new DOMRect(0, 0, 390, 200);
+        }
+        if (this.getAttribute('role') === 'option') {
+          const rows = [...document.querySelectorAll('[role="option"]')];
+          return new DOMRect(0, rows.indexOf(this) * 48 - scrolled, 390, 48);
+        }
+        return new DOMRect(0, 0, 0, 0);
+      },
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'L-');
+
+    // Eight rows: five lots and Show all, an item and Show all. Four fit.
+    expect(
+      await screen.findByText(
+        '4 more below · scroll, or keep typing to narrow',
+      ),
+    ).toBeInTheDocument();
+
+    scrolled = 96;
+    fireEvent.scroll(screen.getByRole('listbox'));
+    expect(
+      await screen.findByText(
+        '2 more below · scroll, or keep typing to narrow',
+      ),
+    ).toBeInTheDocument();
+
+    // The last row in view: nothing is below, and the line goes.
+    scrolled = 8 * 48 - 200;
+    fireEvent.scroll(screen.getByRole('listbox'));
+    await waitFor(() =>
+      expect(screen.queryByText(/more below/)).not.toBeInTheDocument(),
+    );
   });
 
   it('fills the full-screen search with its list, under the field (#312)', async () => {

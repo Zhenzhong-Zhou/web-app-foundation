@@ -396,6 +396,38 @@ describe('Lookup (e2e)', () => {
     });
   });
 
+  // #308's 12: a typo is a search that finds next to nothing. Four
+  // partners named as typed leave room for an item whose name is a close
+  // match; a fifth partner fills the lookup, and no kind is asked for a
+  // close match at all.
+  it('adds no close match once five records match as typed (#308’s 12)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Harbor Tea',
+      variant: { sku: 'TEA-1', tracksLots: false },
+    });
+    for (const name of [
+      'Harbour',
+      'Harbour North',
+      'Harbour South',
+      'Harbour East',
+    ]) {
+      await createPartner(alpha.agent, { name });
+    }
+    const everything = async () =>
+      (await lookup(alpha, 'harbour')).flatMap((group) => group.results);
+
+    expect(await everything()).toContainEqual(
+      expect.objectContaining({ title: 'Harbor Tea', close: true }),
+    );
+
+    await createPartner(alpha.agent, { name: 'Harbour West' });
+    const results = await everything();
+    expect(results).toHaveLength(5);
+    expect(results.every((result) => !result.close)).toBe(true);
+  });
+
   // ADR-051's amendment for #225 and #276: an order's partner arm is an
   // array of the matching partners' ids. None matches a number, and the
   // empty array must not hide the order its number finds, in either pass.

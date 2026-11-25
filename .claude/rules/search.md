@@ -43,7 +43,8 @@ for people; a commit that changes one of those rules updates it
   takes `search` through `SearchQueryDto` or `SearchableKeysetQueryDto`
   (ADR-056, amended).
 - **Close matches are the lookup's alone,** only when it found fewer than
-  `LOOKUP_LIMIT`, after `closeMatchSetting` (ADR-056).
+  `LOOKUP_LIMIT`, after `closeMatchSetting` (ADR-056); the top bar and
+  Movements' find box show them only when nothing matches as typed (#654).
 - **A kind in the lookup** is a row in `KINDS` with its own view
   permission, and a case in `pathOf` and `listOf`; the route stays in
   `GATED_INSIDE` ([engineering.md, Server](../../docs/engineering.md#server);
