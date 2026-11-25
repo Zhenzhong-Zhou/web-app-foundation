@@ -155,6 +155,19 @@ supplier carrying its supplier's lot **Hx-2609** (MC-909); and a receipt of
 each other reason with no order, **K2-2601** returned by Northside Pharmacy
 and **K2-2610** under other, with its note.
 
+**B12-60CT**, vitamin B12, holds a lot whose code was corrected and two
+returns (ADR-094 amended, R8, R16): **B12-2609**, 150 bought on
+**PO-DEMO-16** into a code the lot series made, ending -3, 40 of it
+shipped to **Northside Pharmacy** on **SO-DEMO-13** under that code, then
+the code corrected to B12-2609, saying why, and 20 more shipped under the
+new one, so its page reads "was L-2026-…-3", its recall list names
+Northside twice, one row "shipped as" the old code, and Stock finds it by
+either code; 5 "Returned" into B12-2609 with no order, which landed at
+its lot's average, 4.20, and reads "Received, at the lot's average" in its
+cost history (MC-806); and **B12-2610**, 20 opening stock with no price
+and 2 of them "Returned" by Harbour Health, both waiting for a cost on
+Stock value, the return taking one (MC-806).
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -638,7 +651,7 @@ a second organization.
   and Expires is gone, the lot's own kept. Type `K2-9999`: "A new
   lot.", Expires back; On a date asks The day it expires. Press Make a
   code for us: Lot number reads "Made when you save, like
-  L-2026-…-3", today's next code from Settings' lot series, "Our own
+  L-2026-…-4", today's next code from Settings' lot series, "Our own
   code. Add the supplier's lot when you have it." under it, Supplier's
   lot shows, and Expires moves to Not known yet, saying the lot is
   marked "Expiry to add" and still usable; a choice you made first
@@ -8060,3 +8073,9 @@ first.
   (ADR-076 amended): two changes or more a line each on the audit log
   and in History, from seven the first five with Show all … changes:
   MC-2907 added.
+- 2026-11-25: ADR-094's amendment, the seeds, R14: the demo gains
+  B12-60CT, a lot whose code was corrected with a shipment before it, a
+  return at its lot's average and a return that waits for a cost; the
+  volume seed corrects the code of one lot in 40, its former code each:
+  the demo's setup names B12-2609 and B12-2610 for MC-334 and MC-806, and
+  MC-325's next made code now ends -4.

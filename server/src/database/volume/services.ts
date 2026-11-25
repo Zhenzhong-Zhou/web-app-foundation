@@ -22,6 +22,7 @@ import { ProductsService } from '../../modules/products/products.service';
 import { ReturnAuthorizationsService } from '../../modules/return-authorizations/return-authorizations.service';
 import { LotChangesService } from '../../modules/stock/lot-changes.service';
 import { LotTrackingService } from '../../modules/stock/lot-tracking.service';
+import { LotsService } from '../../modules/stock/lots.service';
 import { ReorderPointsService } from '../../modules/stock/reorder-points.service';
 import { StockService } from '../../modules/stock/stock.service';
 import { TaxCodesService } from '../../modules/tax-codes/tax-codes.service';
@@ -50,6 +51,7 @@ export interface Services {
   stock: StockService;
   lotChanges: LotChangesService;
   lotTracking: LotTrackingService;
+  lots: LotsService;
   boms: BomsService;
   runs: ProductionOrdersService;
   execution: ProductionExecutionService;
@@ -79,6 +81,7 @@ export function servicesOf(app: INestApplicationContext): Services {
     stock: app.get(StockService),
     lotChanges: app.get(LotChangesService),
     lotTracking: app.get(LotTrackingService),
+    lots: app.get(LotsService),
     boms: app.get(BomsService),
     runs: app.get(ProductionOrdersService),
     execution: app.get(ProductionExecutionService),

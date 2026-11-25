@@ -187,7 +187,10 @@ const DAY_STRIDE = 53;
  *   a quarter of what is at the home bin, into a new lot or the item's
  *   previous one by turns: about one movement in 200 is a lot change;
  * - in week `START_WEEK` every `START_TRACKING_EVERY`th untracked good
- *   starts tracking lots, so its later receipts carry one.
+ *   starts tracking lots, so its later receipts carry one;
+ * - the code of every second made code's lot, two in a row of each four,
+ *   is corrected as the lot is received, saying why (ADR-094 amended, R8):
+ *   one lot in 40, a former code each, with and without a supplier's lot.
  */
 const MADE_HERE_EVERY = 20;
 const EXPIRY_NOT_KNOWN_EVERY = 50;
@@ -195,6 +198,18 @@ const WAITING_EVERY = 60;
 const LOT_CHANGE_EVERY = 13;
 const START_TRACKING_EVERY = 10;
 const START_WEEK = 26;
+
+/**
+ * Whether the made code at this position is corrected: two of each four,
+ * so a corrected lot carries a supplier's lot as often as it reads
+ * "Supplier's lot to add". By position, as `receivedLot` is.
+ */
+function isCorrected(position: number): boolean {
+  return (
+    position % MADE_HERE_EVERY === 3 &&
+    Math.floor(position / MADE_HERE_EVERY) % 4 < 2
+  );
+}
 
 /**
  * Writes one organization's year (ADR-051), a week at a time.
@@ -635,6 +650,7 @@ export class OrganizationWriter {
         const quantity = line.quantityOrdered;
 
         const lot = item.tracked ? this.receivedLot(120, 900) : undefined;
+        const position = this.lotCount;
         const receipt = await this.services.receipts.receive(
           order.id,
           line.id,
@@ -645,6 +661,21 @@ export class OrganizationWriter {
           },
           this.actorId,
         );
+
+        // The code made here is corrected to the one the supplier's
+        // certificate gave, so the lot has a former code (ADR-094
+        // amended, R8). No draw from the random source.
+        if (lot?.makeCode && receipt.lotId && isCorrected(position)) {
+          await this.services.lots.updateLot(
+            receipt.lotId,
+            {
+              code: `LC-${pad(position, 7)}`,
+              reason: 'The supplier’s certificate gave the lot number',
+            },
+            this.actorId,
+          );
+          this.calls++;
+        }
 
         // Most of it goes to its home bin; now and then a third of it to
         // another, so the lot is in two places.

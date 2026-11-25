@@ -131,6 +131,13 @@ starts tracking lots, so its later receipts carry one: about one movement
 in 200 is a lot change. Its lot codes, `LV-…` and `LM-…`, are typed as
 printed.
 
+Former codes (ADR-094 amended, R8): the code made here of every second
+made-code lot, two in a row of each four, is corrected as the lot is
+received, to `LC-…`, saying why, so about one lot in 40 has a former code,
+with a supplier's lot as often as without; by position, no draw from the
+random source. The seed writes them as it goes, so a volume seeded before
+25 November has none until it is seeded again.
+
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
