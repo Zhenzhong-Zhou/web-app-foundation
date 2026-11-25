@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Button,
   Link,
   Paper,
@@ -11,29 +12,40 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   defineMessages,
   FormattedMessage,
   type IntlShape,
   useIntl,
 } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
-import type { NeedsCostEntry, StockValuationPage } from '../api/types.gen';
+import type {
+  NeedsCostEntry,
+  StockValuationPage,
+  ValuationPool,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ActionsHeader } from '../components/actions-header';
+import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
+import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { ListTable } from '../components/list-table';
 import { LoadMoreButton } from '../components/load-more-button';
 import { LotLink } from '../components/lot-link';
 import { NAME_COLUMN } from '../components/name-column';
 import { NUMBER_COLUMN } from '../components/number-column';
 import { PageHeader } from '../components/page-header';
-import { Reference } from '../components/reference';
+import { PlaceholderRows } from '../components/placeholder-rows';
+import { ShowingLine } from '../components/showing-line';
+import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
+import { withQuery } from '../lib/api';
+import type { ValuationSort } from '../lib/api-names';
 import {
   displayQuantity,
   formatDate,
@@ -47,7 +59,9 @@ import { openDialog } from '../lib/open-dialog';
 import { useArrival } from '../lib/use-arrival';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
-import { useResource } from '../lib/use-resource';
+import { useListSearch } from '../lib/use-list-search';
+import { type ListSort, useListSort } from '../lib/use-list-sort';
+import { useRowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { SetCostDialog } from './set-cost-dialog';
 
@@ -57,6 +71,33 @@ import { SetCostDialog } from './set-cost-dialog';
  * cost tile does (ADR-091; #505's 8).
  */
 const WAITING_HASH = '#costs';
+
+/**
+ * How many pools a page holds, asked for so Show 50 more says what it
+ * reads (ADR-094's amendment, R6).
+ */
+const PAGE_SIZE = 50;
+
+/**
+ * The one column a header sorts by in the address, the value; the item's
+ * order is the list's own, with no sort written (ADR-094's amendment, R6).
+ */
+const SORTS = ['value'] as const;
+
+/**
+ * The server's name for the order the address holds: the largest value
+ * first is `-value`, the smallest `value`; by the item, none (R6).
+ */
+function servedSort(
+  sort: ListSort<(typeof SORTS)[number]> | null,
+): ValuationSort | undefined {
+  if (!sort) return undefined;
+  return sort.order === 'desc' ? '-value' : 'value';
+}
+
+/** A pool's own key, its variant and its lot, for its row and for Back. */
+const poolKey = (pool: ValuationPool) =>
+  `${pool.variantId}:${pool.lotId ?? ''}`;
 
 /** Why a row is waiting, in the words someone would fix it by. */
 const WHY = defineMessages({
@@ -136,23 +177,53 @@ function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): ReactNode {
  * The waiting list comes first, because it is the one with something to do:
  * every figure below it that depends on one of those rows is marked
  * provisional until it is cleared.
+ *
+ * By item and lot reads fifty pools at a time, found and sorted by the
+ * server; the total above is every pool's, never the rows shown, and the
+ * export is the way to read them all at once (ADR-094's amendment, R6).
  */
 export function StockValuePage() {
   const intl = useIntl();
   const can = useCan();
-  // Its first page alone, until the screen pages it (ADR-094's
-  // amendment, R6); the total and Provisional are every pool's.
-  const read = useResource<StockValuationPage>('/costs/valuation');
-  const valuation = read.data ?? null;
+  const { key: entry } = useLocation();
+
+  // The pools fifty at a time, found and sorted by the server, the find
+  // and the sort kept in the address (ADR-094's amendment, R6).
+  const { text, setText, search } = useListSearch();
+  const { sort, set: setSort, clear: clearSort } = useListSort(SORTS);
+  const path = withQuery('/costs/valuation', {
+    limit: String(PAGE_SIZE),
+    search: search || undefined,
+    sort: servedSort(sort),
+  });
+  // The rows shown kept for Back, which reads them again (#473).
+  const pools = useKeysetList<ValuationPool, StockValuationPage>(path, {
+    cursor: 'cursor',
+    keep: entry,
+  });
+  const { rowReturn } = useRowReturn();
+
+  /**
+   * The total, Provisional and the currency, every pool's whatever the
+   * page or the find: the last answer's, kept while another find's or
+   * sort's first page is on its way, so the total stays as it was.
+   */
+  const [known, setKnown] = useState<typeof pools.first>(null);
+  if (pools.first && pools.first !== known) setKnown(pools.first);
+
   // A page at a time, with Load more, by the hook every list shares (#33).
   const waiting = useKeysetList<NeedsCostEntry>('/costs/needs-cost');
-  const refused = read.refused ?? waiting.refused;
-  const errorWords = read.error ?? waiting.error;
+  const refused = pools.refused ?? waiting.refused;
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
   const waitingSection = useRef<HTMLDivElement>(null);
   const waitingHeading = useRef<HTMLHeadingElement>(null);
 
-  const loading = (read.loading || waiting.loading) && errorWords === null;
+  // The page waits for its first reads alone: a find or a sort after
+  // reads the pools again under their table's head, the find box kept.
+  const loading =
+    (waiting.loading || (known === null && pools.loading)) &&
+    waiting.error === null &&
+    pools.error === null;
   const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('costs.update');
 
@@ -160,18 +231,36 @@ export function StockValuePage() {
   // focused; never again on a read after a cost is set.
   useArrival(WAITING_HASH, !loading, waitingSection, waitingHeading);
 
-  /** Both read again, after a cost is set or a refusal's Try again. */
-  async function load() {
-    waiting.reload();
-    await read.reload();
+  // Show 50 more: focus on the first new row once it is there, as Items
+  // does.
+  const firstNewRef = useRef<HTMLAnchorElement>(null);
+  const [firstNew, setFirstNew] = useState<number | null>(null);
+  const shown = pools.entries?.length ?? 0;
+  useEffect(() => {
+    if (firstNew !== null && shown > firstNew) firstNewRef.current?.focus();
+  }, [firstNew, shown]);
+  const showMore = () => {
+    setFirstNew(shown);
+    void pools.loadMore();
+  };
+  // Another find or sort starts with no row to focus.
+  const [readFor, setReadFor] = useState(path);
+  if (readFor !== path) {
+    setReadFor(path);
+    setFirstNew(null);
   }
 
-  const currency = valuation?.currency ?? null;
+  /** Both read again, after a cost is set or a refusal's Try again. */
+  function load() {
+    waiting.reload();
+    pools.reload();
+  }
+
+  const currency = known?.currency ?? null;
+  const valueSorted = sort !== null;
 
   if (refused) {
-    return (
-      <RevisionRefusalPage failure={refused} onRetry={() => void load()} />
-    );
+    return <RevisionRefusalPage failure={refused} onRetry={load} />;
   }
 
   return (
@@ -196,9 +285,9 @@ export function StockValuePage() {
         actions={<ExportButton path="/costs/valuation/export" />}
       />
 
-      {errorWords && <Alert severity="error">{errorWords}</Alert>}
+      {waiting.error && <Alert severity="error">{waiting.error}</Alert>}
 
-      {valuation && !currency && (
+      {known && !currency && (
         <Alert severity="info">
           <FormattedMessage
             id="costs.noBaseCurrency"
@@ -234,9 +323,9 @@ export function StockValuePage() {
                 })}
               </Typography>
               <Typography variant="h6" component="p">
-                {formatMoney(valuation?.total ?? null, currency)}
+                {formatMoney(known?.total ?? null, currency)}
               </Typography>
-              {valuation?.provisional && (
+              {known?.provisional && (
                 <StatusChip
                   tone="warning"
                   label={intl.formatMessage({
@@ -396,13 +485,51 @@ export function StockValuePage() {
               })}
             </Typography>
 
-            {valuation?.entries.length === 0 ? (
-              <Alert severity="info">
-                {intl.formatMessage({
-                  id: 'costs.nothingOnHand',
-                  defaultMessage: 'Nothing on hand.',
-                })}
-              </Alert>
+            <Box sx={{ px: 2, pb: 2 }}>
+              <FilterRow
+                search={{
+                  label: intl.formatMessage({
+                    id: 'costs.find',
+                    defaultMessage: 'Find an item or a lot',
+                  }),
+                  value: text,
+                  onChange: setText,
+                }}
+              />
+            </Box>
+
+            {/* The pools' part alone says it could not be read, with Try
+                again; the total and the find box stay. */}
+            {pools.failed ? (
+              <ListError error={pools.error} onRetry={pools.reload} />
+            ) : pools.entries?.length === 0 ? (
+              search ? (
+                <EmptyState
+                  action={
+                    <Button variant="outlined" onClick={() => setText('')}>
+                      {intl.formatMessage({
+                        id: 'costs.clearSearch',
+                        defaultMessage: 'Clear the search',
+                      })}
+                    </Button>
+                  }
+                >
+                  {intl.formatMessage(
+                    {
+                      id: 'costs.noMatch',
+                      defaultMessage: 'Nothing matches “{search}”.',
+                    },
+                    { search },
+                  )}
+                </EmptyState>
+              ) : (
+                <Alert severity="info">
+                  {intl.formatMessage({
+                    id: 'costs.nothingOnHand',
+                    defaultMessage: 'Nothing on hand.',
+                  })}
+                </Alert>
+              )
             ) : (
               <ListTable
                 label={intl.formatMessage({
@@ -413,12 +540,23 @@ export function StockValuePage() {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell {...NAME_COLUMN}>
-                      {intl.formatMessage({
+                    {/* The item's order is the list's own, one way, so
+                        its header puts it back after a sort by value
+                        (R6's "the order before"), and pressed in that
+                        order changes nothing. */}
+                    <SortHeader
+                      name
+                      label={intl.formatMessage({
                         id: 'inventory.item',
                         defaultMessage: 'Item',
                       })}
-                    </TableCell>
+                      active={!valueSorted}
+                      order="asc"
+                      onSort={() => {
+                        if (valueSorted) clearSort();
+                      }}
+                      atRest
+                    />
                     <TableCell>
                       {intl.formatMessage({
                         id: 'inventory.lot',
@@ -437,12 +575,24 @@ export function StockValuePage() {
                         defaultMessage: 'Unit cost',
                       })}
                     </TableCell>
-                    <TableCell {...NUMBER_COLUMN}>
-                      {intl.formatMessage({
+                    {/* The largest first, then the smallest (the board's
+                        sort). */}
+                    <SortHeader
+                      number
+                      label={intl.formatMessage({
                         id: 'costs.value',
                         defaultMessage: 'Value',
                       })}
-                    </TableCell>
+                      active={valueSorted}
+                      order={sort?.order ?? 'desc'}
+                      onSort={() =>
+                        setSort(
+                          'value',
+                          sort?.order === 'desc' ? 'asc' : 'desc',
+                        )
+                      }
+                      atRest
+                    />
                     {/* As wide as its chip, as a number column is: a
                         text column it is not, and taking the rest it
                         left the figures mid-table (E1). */}
@@ -457,10 +607,20 @@ export function StockValuePage() {
                 </TableHead>
 
                 <TableBody>
-                  {valuation?.entries.map((pool) => (
-                    <TableRow key={`${pool.variantId}:${pool.lotId ?? ''}`}>
+                  {pools.loading && <PlaceholderRows columns={6} />}
+                  {pools.entries?.map((pool, index) => (
+                    <TableRow key={poolKey(pool)} {...rowReturn(poolKey(pool))}>
                       <TableCell>
-                        <Reference>{pool.sku}</Reference>
+                        {/* The name first, its code grey, as every list
+                            of items reads (#296, #631). */}
+                        <NameAndCode
+                          name={itemName(pool.productName, pool.variantName)}
+                          code={pool.sku}
+                          type={pool.type}
+                          coverFileId={pool.coverFileId}
+                          to={`/items/${pool.productId}`}
+                          linkRef={index === firstNew ? firstNewRef : undefined}
+                        />
                       </TableCell>
                       <TableCell>
                         {pool.lotId && pool.lotCode ? (
@@ -493,6 +653,30 @@ export function StockValuePage() {
                   ))}
                 </TableBody>
               </ListTable>
+            )}
+
+            {/* How many the list or the find holds, always (#638), and
+                Show 50 more; failing, the rows stay, with a line saying
+                so and Try again (#544). */}
+            {!pools.failed && pools.entries && (
+              <LoadMoreButton
+                hasMore={pools.hasMore}
+                loading={pools.loadingMore}
+                failed={!!pools.error}
+                pageSize={PAGE_SIZE}
+                onLoadMore={showMore}
+                sx={{ p: 2 }}
+                before={
+                  shown > 0 && (
+                    <ShowingLine
+                      shown={shown}
+                      total={pools.first?.count}
+                      more={pools.hasMore}
+                      of="pool"
+                    />
+                  )
+                }
+              />
             )}
           </Paper>
         </>

@@ -1,6 +1,7 @@
 import type {
   AuditLink,
   Bom,
+  CostsControllerStockValuationV1Data,
   HomeCard,
   HomeResponse,
   Invitation,
@@ -159,6 +160,14 @@ export type ReturnResolution = ReturnAuthorizationLine['resolution'];
 export type RunStatus = ProductionRun['status'];
 
 export type ValuationKind = LotCostEntry['kind'];
+
+/**
+ * What Stock value's pools sort by (ADR-094's amendment, R6): the item,
+ * or the value, `value` the smallest first and `-value` the largest.
+ */
+export type ValuationSort = NonNullable<
+  NonNullable<CostsControllerStockValuationV1Data['query']>['sort']
+>;
 
 /** When a numbering series starts again from 1 (ADR-073). */
 export type NumberingReset = NumberingSeries['reset'];

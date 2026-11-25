@@ -1242,7 +1242,9 @@ file is kept is in the [README](README.md).
   [test](../../server/test/costs.e2e-spec.ts) "sorts by the item, and by the value either way, the item breaking ties, over its pages (R6)" ·
   [test](../../server/test/costs.e2e-spec.ts) "refuses a cursor not in the list, one made for another sort among them, and a sort or a page size it does not know (R6)" ·
   [test](../../server/test/item-names.e2e-spec.ts) "lists every operation that names an item, each reading the language or keeping the base" ·
-  MC-802
+  [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "sorts by value, the largest first and again the smallest, and back by the item" ·
+  MC-802 · MC-807
 - **Stock value's total and Provisional are every pool's, whatever is
   read or found,** never the sum of the rows shown; beside them, how
   many pools the list holds, or the find finds. Its export still writes
@@ -1250,7 +1252,8 @@ file is kept is in the [README](README.md).
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
   [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, each page with the whole’s total, count and Provisional, and the export every pool (R6)" ·
   [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code, the total and Provisional still every pool’s (R6)" ·
-  MC-802
+  [test](../../client/src/costs/stock-value-page.test.tsx) "finds what is typed, says when nothing matches with Clear the search, the total as it was" ·
+  MC-802 · MC-807
 - **Stock value finds a pool by its item, as every search matches an
   item, or by its lot's code or supplier's lot,** any part of either.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·

@@ -1279,8 +1279,9 @@ a second organization.
   with its icon and its code grey under it, and in 中文 by its Chinese
   name where it has one; a lot's code opens its trace (#296). With more
   than 50 pools, as on the large volume seed, By item and lot lists the
-  first 50 by the item, and the total and Provisional are still every
-  pool's: the total is the export's Value column summed (R6).
+  first 50 by the item, "Showing 50 of … items and lots" under them, and
+  the total and Provisional are still every pool's: the total is the
+  export's Value column summed (R6).
 - **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
   each of its units carries its share once. Receive 40 by hand with no
   price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
@@ -1317,6 +1318,22 @@ a second organization.
   still waiting for a cost: it is on Stock value's Waiting for a cost
   with Set cost, and Set cost takes one, "Cost set.". A batch's output
   still offers Open run, never Set cost.
+- **MC-807** *(ADR-094 amended, R6)* Stock value by the page, on the
+  large volume seed. Show 50 more under By item and lot: the next 50
+  come below, focus on the first new row's item, the line reads
+  "Showing 100 of …", and the total does not change. Open a lot from a
+  row after Show 50 more, then Back: the rows shown are there again,
+  focus on that lot's link. Find an item or a lot: part of an item's
+  name, its code or a lot's code lists the pools that match and how
+  many, the find in the address, the total as it was; text nothing
+  matches reads "Nothing matches “…”." with Clear the search, which
+  brings every pool back. The Value header puts the largest first;
+  again, the smallest; the Item header puts the item's order back; each
+  kept in the address on a reload. With the network turned off in the
+  browser's tools, Show 50 more keeps the rows and reads "The next 50
+  could not be loaded." with Try again, which reads them once it is back
+  on. In 中文 the find reads 查找物品或批次 and the line
+  已显示 50 个，共 … 个物品和批次.
 
 ## 9. Recall drill (timed)
 
@@ -7922,3 +7939,6 @@ first.
   the API revision raised to 7, since a tab opened before would take the
   first page for every pool: MC-3424's raise now 6 to 7, MC-802
   extended.
+- 2026-11-24: ADR-094's amendment, Stock value by the page on the
+  screen, R6: the find, the sort by Value, Show 50 more with its failed
+  page, and Back to the row left: MC-807 added, MC-802 extended.
