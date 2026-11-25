@@ -932,8 +932,13 @@ function keyedPools(
  * item's page, type and cover (#296), and whether it is provisional,
  * from what waits of the page's items alone (openNeedsCost's
  * `variants`; review 40).
+ *
+ * Its own statement after the page's keys, under READ COMMITTED: a pool
+ * emptied between the two is left out, never divided by (review 81).
+ * Exported for that test, which cannot hold one statement while another
+ * transaction ships.
  */
-async function poolsIn(
+export async function poolsIn(
   tx: Transaction,
   organizationId: string,
   locale: Locale | null,
@@ -970,12 +975,14 @@ async function poolsIn(
     ${openPoolOf}
     where p.organization_id = ${organizationId}::uuid
       and p.id in ${ids}
+      and p.quantity > 0
   `);
 
   const rows = found.rows as unknown as PagePoolRow[];
   const byId = new Map(rows.map((row) => [row.id, row]));
-  return page.map(({ id }) => {
-    const row = byId.get(id)!;
+  return page.flatMap(({ id }) => {
+    const row = byId.get(id);
+    if (!row) return [];
     return {
       variantId: row.variant_id,
       sku: row.sku,

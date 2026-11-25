@@ -11,7 +11,9 @@ import {
   exchangeRates,
   stockMovements,
   stockValuations,
+  valuationPools,
 } from '../src/database/schema';
+import { poolsIn } from '../src/modules/costs/costs.service';
 import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   addMember,
@@ -1650,6 +1652,32 @@ describe('Costs (e2e)', () => {
   });
 
   describe('stock valuation', () => {
+    // Review 81: the page's keys and its rows are two statements under
+    // READ COMMITTED, so a pool emptied between them is left out of the
+    // page, never divided by.
+    it('leaves out a pool emptied between the page’s keys and its rows', async () => {
+      const s = await setup('alpha');
+      const scoop = await variant(s, 'SCOOP');
+      await buy(s, scoop, '10', cad('2'));
+      const [pool] = await db
+        .select({ id: valuationPools.id })
+        .from(valuationPools)
+        .where(eq(valuationPools.variantId, scoop));
+      await move(s, {
+        variantId: scoop,
+        fromLocationId: s.shelf,
+        quantity: '10',
+        reason: 'shipment',
+      });
+
+      const rows = await db.transaction((tx) =>
+        poolsIn(tx, s.organizationId, null, [
+          { id: pool.id, variant_id: scoop },
+        ]),
+      );
+      expect(rows).toEqual([]);
+    });
+
     it('totals what is on hand and says what is still waiting for a cost', async () => {
       const s = await setup('alpha');
       const scoop = await variant(s, 'SCOOP');
