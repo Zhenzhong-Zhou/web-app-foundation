@@ -305,7 +305,9 @@ export function StockValuePage() {
       />
 
       {waiting.error && <Alert severity="error">{waiting.error}</Alert>}
-      {totals.error && <Alert severity="error">{totals.error}</Alert>}
+      {/* The totals' part alone says it could not be read, with Try
+          again (the design language's States; review 79). */}
+      <ListError error={totals.error} onRetry={() => void totals.reload()} />
 
       {known && !currency && (
         <Alert severity="info">

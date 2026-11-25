@@ -358,6 +358,58 @@ describe('StockValuePage, by item and lot', () => {
     expect(totalsAsked).toEqual(['']);
   });
 
+  // Review 79, the design language's States: a part that could not be
+  // read says so with Try again, the totals' read and the pools' first
+  // page each, and Try again reads that part again.
+  it('says when the totals or the first page could not be read, each with Try again, which reads it again', async () => {
+    const user = userEvent.setup();
+    let totalsFail = true;
+    let poolsFail = true;
+    const { totalsAsked } = poolsRead(
+      () => pageOf([pool('Calm')]),
+      () => 1,
+    );
+    server.use(
+      http.get('/api/v1/costs/valuation/totals', () =>
+        totalsFail
+          ? HttpResponse.json({ message: 'Totals failed' }, { status: 500 })
+          : undefined,
+      ),
+      http.get('/api/v1/costs/valuation', () =>
+        poolsFail
+          ? HttpResponse.json({ message: 'Pools failed' }, { status: 500 })
+          : undefined,
+      ),
+    );
+    renderAt('/costs');
+
+    const failed = async (text: string) =>
+      (await screen.findByText(text)).closest<HTMLElement>('[role="alert"]')!;
+    const totalsFailed = await failed('Totals failed');
+    const poolsFailed = await failed('Pools failed');
+    expect(
+      within(totalsFailed).getByRole('button', { name: 'Try again' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: 'Calm' }),
+    ).not.toBeInTheDocument();
+
+    totalsFail = false;
+    await user.click(
+      within(totalsFailed).getByRole('button', { name: 'Try again' }),
+    );
+    expect(await screen.findByText('CA$999.00')).toBeVisible();
+    expect(totalsAsked).toEqual(['']);
+
+    poolsFail = false;
+    await user.click(
+      within(poolsFailed).getByRole('button', { name: 'Try again' }),
+    );
+    expect(await screen.findByRole('link', { name: 'Calm' })).toBeVisible();
+    expect(screen.queryByText('Totals failed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pools failed')).not.toBeInTheDocument();
+  });
+
   // #473: Back from a lot reads the pages shown again, and focus is on
   // the row left from, its lot's link.
   it('finds the rows shown and the row left from on Back from a lot after Show 50 more', async () => {

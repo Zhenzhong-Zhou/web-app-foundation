@@ -1329,7 +1329,9 @@ a second organization.
   the totals, `valuation/totals`, are read as the page opens and again
   after Set cost, never for a find, Show 50 more or a sort (R6, settled
   at the stop); a find reads its count alone, `valuation/count` (review
-  61).
+  61). With the totals' read blocked in the browser's tools, the page
+  says it could not be read with Try again, which reads it again; the
+  same for the list's first page (review 79).
 - **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
   each of its units carries its share once. Receive 40 by hand with no
   price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
@@ -8104,3 +8106,5 @@ first.
   screen, in three languages: MC-334 extended.
 - 2026-11-25: The review's 76, a recall counts a return under the code
   its boxes left under: MC-911 extended.
+- 2026-11-25: The review's 79, Stock value's totals that could not be
+  read say so with Try again: MC-802 extended.
