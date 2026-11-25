@@ -241,7 +241,9 @@ export class CostsService {
       const found = await tx.execute(sql`
         select l.id, l.code, l.variant_id, pv.sku
         from lots l
-        join product_variants pv on pv.id = l.variant_id
+        join product_variants pv
+          on pv.id = l.variant_id
+         and pv.organization_id = ${organizationId}::uuid
         where l.id = ${lotId}::uuid
           and l.organization_id = ${organizationId}::uuid
       `);
@@ -290,7 +292,9 @@ export class CostsService {
                  else 'to'
                end as carried
         from stock_valuations v
-        left join stock_movements m on m.id = v.movement_id
+        left join stock_movements m
+          on m.id = v.movement_id
+         and m.organization_id = ${organizationId}::uuid
         left join stock_valuations ri
           on ri.organization_id = ${organizationId}::uuid
          and v.reference_type = 'stock_valuation'
@@ -361,7 +365,9 @@ export class CostsService {
         select po.id, po.status, po.reference, po.quantity_produced,
                pv.sku
         from production_orders po
-        join product_variants pv on pv.id = po.output_variant_id
+        join product_variants pv
+          on pv.id = po.output_variant_id
+         and pv.organization_id = ${organizationId}::uuid
         where po.id = ${runId}::uuid
           and po.organization_id = ${organizationId}::uuid
       `);
@@ -383,9 +389,14 @@ export class CostsService {
                sum(m.quantity) as quantity,
                -sum(v.value) as value
         from stock_movements m
-        join stock_valuations v on v.movement_id = m.id
-        join product_variants pv on pv.id = m.variant_id
-        left join lots l on l.id = m.lot_id
+        join stock_valuations v
+          on v.movement_id = m.id
+         and v.organization_id = ${organizationId}::uuid
+        join product_variants pv
+          on pv.id = m.variant_id
+         and pv.organization_id = ${organizationId}::uuid
+        left join lots l
+          on l.id = m.lot_id and l.organization_id = ${organizationId}::uuid
         where m.organization_id = ${organizationId}::uuid
           and m.reference_type = 'production_order'
           and m.reference_id = ${runId}::uuid
@@ -404,7 +415,9 @@ export class CostsService {
         from (
           select coalesce(-sum(v.value), 0) as material
           from stock_movements m
-          join stock_valuations v on v.movement_id = m.id
+          join stock_valuations v
+            on v.movement_id = m.id
+           and v.organization_id = ${organizationId}::uuid
           where m.organization_id = ${organizationId}::uuid
             and m.reference_type = 'production_order'
             and m.reference_id = ${runId}::uuid
@@ -530,15 +543,19 @@ export class CostsService {
                m.reference_type, m.reference_id, m.to_location_id,
                v.reference_type as own_reference_type
         from open o
-        join stock_valuations v on v.id = o.id
+        join stock_valuations v
+          on v.id = o.id and v.organization_id = ${organizationId}::uuid
         join ${productVariants}
           on ${productVariants.id} = v.variant_id
           and ${productVariants.organizationId} = ${organizationId}
         join ${products}
           on ${products.id} = ${productVariants.productId}
           and ${products.organizationId} = ${organizationId}
-        left join lots l on l.id = v.lot_id
-        left join stock_movements m on m.id = v.movement_id
+        left join lots l
+          on l.id = v.lot_id and l.organization_id = ${organizationId}::uuid
+        left join stock_movements m
+          on m.id = v.movement_id
+         and m.organization_id = ${organizationId}::uuid
         -- What waits of a lot change is its row in, so the lot it came
         -- from is the one the movement leaves (ADR-094, 3a).
         left join lots fl
