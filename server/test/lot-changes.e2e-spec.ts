@@ -18,6 +18,7 @@ import { calendarDay } from '../src/i18n/translate';
 import {
   addMember,
   body,
+  correctLotCode,
   createE2eApp,
   createLocation,
   createPartner,
@@ -758,14 +759,7 @@ describe('Move to another lot (e2e)', () => {
     const w = await world();
     const first = await buy(w, '30', '2.00', 'NL-2611-A');
     const had = await buy(w, '5', '2.00', 'NL-78O');
-    await w.org.agent
-      .patch(`/v1/stock/lots/${had.id}`)
-      .send({
-        madeHere: true,
-        code: 'NL-780',
-        reason: 'The letter O was typed for a zero on the label.',
-      })
-      .expect(204);
+    await correctLotCode(w.org.agent, had.id, 'NL-780');
     const [kept] = await db
       .select({ changedAt: lotFormerCodes.changedAt })
       .from(lotFormerCodes)

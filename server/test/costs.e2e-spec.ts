@@ -34,6 +34,7 @@ import {
   move,
   poolOf,
   type Price,
+  sellAndShip,
   usd,
   valuationOf,
 } from './utils/valuation';
@@ -1062,8 +1063,8 @@ describe('Costs (e2e)', () => {
     });
 
     /**
-     * A sale of one lot, confirmed and shipped from the shelf: its order's
-     * line and its shipment, for a return or a void.
+     * A sale of one lot, confirmed and shipped from the shelf: its order
+     * and its shipment, for a return or a void.
      */
     async function sold(
       s: Setup,
@@ -1075,40 +1076,7 @@ describe('Costs (e2e)', () => {
         name: 'Northside Pharmacy',
         code: 'NORTH',
       });
-      const order = body<{ order: { id: string; lines: { id: string }[] } }>(
-        await s.agent
-          .post('/v1/orders')
-          .send({
-            partnerId: customer,
-            direction: 'sale',
-            lines: [{ variantId, quantityOrdered: quantity, ...cad('10') }],
-          })
-          .expect(201),
-      ).order;
-      await s.agent
-        .patch(`/v1/orders/${order.id}`)
-        .send({ status: 'confirmed' })
-        .expect(204);
-      const shipment = body<{ shipment: { id: string } }>(
-        await s.agent
-          .post(`/v1/orders/${order.id}/shipments`)
-          .send({
-            fromLocationId: s.shelf,
-            lines: [
-              {
-                lineId: order.lines[0].id,
-                quantity,
-                lots: [{ lotId, quantity }],
-              },
-            ],
-          })
-          .expect(201),
-      ).shipment;
-      return {
-        orderId: order.id,
-        lineId: order.lines[0].id,
-        shipmentId: shipment.id,
-      };
+      return sellAndShip({ ...s, customer }, variantId, quantity, lotId);
     }
 
     /** Part of a sale's lot back on its order, onto the shelf. */
@@ -1119,11 +1087,13 @@ describe('Costs (e2e)', () => {
       quantity: string,
     ) {
       await s.agent
-        .post(`/v1/orders/${sale.orderId}/returns`)
+        .post(`/v1/orders/${sale.order.id}/returns`)
         .send({
           toLocationId: s.shelf,
           reason: 'Damaged in transit',
-          lines: [{ lineId: sale.lineId, lots: [{ lotId, quantity }] }],
+          lines: [
+            { lineId: sale.order.lines[0].id, lots: [{ lotId, quantity }] },
+          ],
         })
         .expect(201);
     }
@@ -1206,7 +1176,7 @@ describe('Costs (e2e)', () => {
       const a = await lotIdOf(db, 'A');
       const sale = await sold(s, vitc, a, '6');
       await s.agent
-        .post(`/v1/orders/${sale.orderId}/shipments/${sale.shipmentId}/void`)
+        .post(`/v1/orders/${sale.order.id}/shipments/${sale.shipmentId}/void`)
         .send({ reason: 'Recorded before the box left' })
         .expect(204);
 

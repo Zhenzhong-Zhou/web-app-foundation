@@ -19,6 +19,7 @@ import {
 import { calendarDay } from '../src/i18n/translate';
 import {
   body,
+  correctedLot,
   createE2eApp,
   createLocation,
   createPartner,
@@ -557,29 +558,18 @@ describe('A new lot at receipt (e2e)', () => {
      * and corrected to `to`, as row v19's ASH-06O1 is: `from` is its
      * former code.
      */
-    async function corrected(
+    function corrected(
       w: World,
       from: string,
       to: string,
       variantId = w.variantId,
     ): Promise<string> {
-      const { movement } = written(
-        await w.org.agent
-          .post('/v1/stock/movements')
-          .send({
-            variantId,
-            toLocationId: w.shelf,
-            quantity: '10',
-            reason: 'receipt',
-            lot: { code: from },
-          })
-          .expect(201),
-      );
-      await w.org.agent
-        .patch(`/v1/stock/lots/${movement.lotId}`)
-        .send({ madeHere: true, code: to, reason: WHY })
-        .expect(204);
-      return movement.lotId!;
+      return correctedLot(w.org.agent, {
+        variantId,
+        toLocationId: w.shelf,
+        from,
+        to,
+      });
     }
 
     /** A lot's former codes as kept, newest first. */

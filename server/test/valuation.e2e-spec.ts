@@ -29,6 +29,7 @@ import {
   lotIdOf,
   move,
   poolOf,
+  sellAndShip,
   usd,
   valuationOf,
 } from './utils/valuation';
@@ -110,37 +111,6 @@ describe('Stock valuation (e2e)', () => {
       name: sku,
       variant: { sku, tracksLots },
     });
-  }
-
-  /** A sale for one untracked item, confirmed and shipped from the shelf. */
-  async function sellAndShip(s: Setup, variantId: string, quantity: string) {
-    const order = body<{ order: OrderResponse }>(
-      await s.agent
-        .post('/v1/orders')
-        .send({
-          partnerId: s.customer,
-          direction: 'sale',
-          lines: [{ variantId, quantityOrdered: quantity, ...cad('10') }],
-        })
-        .expect(201),
-    ).order;
-
-    await s.agent
-      .patch(`/v1/orders/${order.id}`)
-      .send({ status: 'confirmed' })
-      .expect(204);
-
-    const shipment = body<{ shipment: { id: string } }>(
-      await s.agent
-        .post(`/v1/orders/${order.id}/shipments`)
-        .send({
-          fromLocationId: s.shelf,
-          lines: [{ lineId: order.lines[0].id, quantity }],
-        })
-        .expect(201),
-    ).shipment;
-
-    return { order, shipmentId: shipment.id };
   }
 
   async function movementWith(reason: string) {

@@ -24,6 +24,7 @@ import {
   cad,
   expectBooksToReconcile,
   move,
+  sellAndShip,
   valuationOf,
 } from './utils/valuation';
 
@@ -356,54 +357,16 @@ describe('A late cost over generated orders (e2e)', () => {
               const lot = stocked(event.lot);
               if (!lot) break;
               const units = Math.min(event.quantity, held(lot));
-              const order = body<{
-                order: { id: string; lines: { id: string }[] };
-              }>(
-                await agent
-                  .post('/v1/orders')
-                  .send({
-                    partnerId: customer,
-                    direction: 'sale',
-                    lines: [
-                      {
-                        variantId,
-                        quantityOrdered: String(units),
-                        ...cad('10'),
-                      },
-                    ],
-                  })
-                  .expect(201),
-              ).order;
-              await agent
-                .patch(`/v1/orders/${order.id}`)
-                .send({ status: 'confirmed' })
-                .expect(204);
-              const shipment = body<{ shipment: { id: string } }>(
-                await agent
-                  .post(`/v1/orders/${order.id}/shipments`)
-                  .send({
-                    fromLocationId: shelf,
-                    lines: [
-                      {
-                        lineId: order.lines[0].id,
-                        quantity: String(units),
-                        ...(lot !== '-' && {
-                          lots: [
-                            {
-                              lotId: lotIds.get(lot),
-                              quantity: String(units),
-                            },
-                          ],
-                        }),
-                      },
-                    ],
-                  })
-                  .expect(201),
-              ).shipment;
+              const { order, shipmentId } = await sellAndShip(
+                { ...s, customer },
+                variantId,
+                String(units),
+                lotIds.get(lot),
+              );
               sales.push({
                 orderId: order.id,
                 lineId: order.lines[0].id,
-                shipmentId: shipment.id,
+                shipmentId,
                 lot,
                 shipped: units,
                 returned: 0,
