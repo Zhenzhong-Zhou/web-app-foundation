@@ -105,9 +105,11 @@ where a step must act on it.
 ### Migrations ([engineering.md, "Process"][process]; [conventions.md][migrations])
 
 - `npm run migrate:new -- --name <name>` in `server/`, the hand-written
-  parts after a `--> statement-breakpoint`, then `npm run migrate:all`.
-  The generated SQL keeps `NULLS NOT DISTINCT`, and the journal's new
-  `when` is later than the one before.
+  parts after a `--> statement-breakpoint`, then `npm run migrate:all`,
+  then `DATABASE_URL=<its URL> npm run migrate` on each volume database
+  that exists, which `migrate:all` does not reach (engineering.md's
+  step 5). The generated SQL keeps `NULLS NOT DISTINCT`, and the
+  journal's new `when` is later than the one before.
 - Expand, then contract: a migration adds, and takes nothing away that the
   running release reads.
 - **A migration that adds to a list the code shares commits with that
