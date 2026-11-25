@@ -1,15 +1,8 @@
-import { Type } from 'class-transformer';
-import {
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IntersectionType } from '@nestjs/swagger';
+import { IsIn, IsOptional } from 'class-validator';
 
 import { SearchQueryDto } from '../../../common/dto/search-query.dto';
+import { SortedPageQueryDto } from '../../../common/dto/sorted-page-query.dto';
 
 /**
  * What Stock value's pools are sorted by (ADR-094's amendment, R6): the
@@ -28,25 +21,10 @@ export type ValuationSort = (typeof VALUATION_SORTS)[number];
 export class ValuationFindDto extends SearchQueryDto {}
 
 /** Stock value's pools, fifty at a time (ADR-094's amendment, R6). */
-export class ListValuationDto extends ValuationFindDto {
-  /**
-   * The answer's `nextCursor`, for the page after it: the last pool's
-   * place by the sort's key and its id (sorted-page.ts), never read by
-   * the client.
-   */
-  @IsOptional()
-  @IsString()
-  @MaxLength(4096)
-  cursor?: string;
-
-  /** How many to return, fifty unless asked; capped, as every list's. */
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
+export class ListValuationDto extends IntersectionType(
+  ValuationFindDto,
+  SortedPageQueryDto,
+) {
   /** By the item unless asked; by the value, either way. */
   @IsOptional()
   @IsIn(VALUATION_SORTS)

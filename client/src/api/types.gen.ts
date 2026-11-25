@@ -5620,8 +5620,7 @@ export type ProductsControllerListV1Data = {
   };
   path?: never;
   query?: {
-    cursor?: string;
-    limit?: number;
+    search?: string;
     type?:
       'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
     category?: string;
@@ -5629,7 +5628,8 @@ export type ProductsControllerListV1Data = {
     low?: string;
     sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
     order?: 'asc' | 'desc';
-    search?: string;
+    cursor?: string;
+    limit?: number;
   };
   url: '/v1/products';
 };
@@ -7289,10 +7289,10 @@ export type CostsControllerStockValuationV1Data = {
   };
   path?: never;
   query?: {
+    sort?: 'item' | 'value' | '-value';
     search?: string;
     cursor?: string;
     limit?: number;
-    sort?: 'item' | 'value' | '-value';
   };
   url: '/v1/costs/valuation';
 };

@@ -2384,22 +2384,12 @@
         "operationId": "ProductsController_list_v1",
         "parameters": [
           {
-            "name": "cursor",
+            "name": "search",
             "required": false,
             "in": "query",
             "schema": {
-              "maxLength": 4096,
+              "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           },
           {
@@ -2475,12 +2465,22 @@
             }
           },
           {
-            "name": "search",
+            "name": "cursor",
             "required": false,
             "in": "query",
             "schema": {
-              "maxLength": 100,
+              "maxLength": 4096,
               "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
             }
           },
           {
@@ -6755,6 +6755,19 @@
         "operationId": "CostsController_stockValuation_v1",
         "parameters": [
           {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "item",
+                "value",
+                "-value"
+              ]
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
@@ -6780,19 +6793,6 @@
               "minimum": 1,
               "maximum": 100,
               "type": "number"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "item",
-                "value",
-                "-value"
-              ]
             }
           },
           {

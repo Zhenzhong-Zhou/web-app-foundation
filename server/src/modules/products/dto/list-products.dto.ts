@@ -1,17 +1,8 @@
-import { Type } from 'class-transformer';
-import {
-  IsBooleanString,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IntersectionType } from '@nestjs/swagger';
+import { IsBooleanString, IsIn, IsOptional, Matches } from 'class-validator';
 
 import { SearchQueryDto } from '../../../common/dto/search-query.dto';
+import { SortedPageQueryDto } from '../../../common/dto/sorted-page-query.dto';
 import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
 import { PRODUCT_TYPES, type ProductType } from '../../../database/schema';
 
@@ -81,21 +72,7 @@ export class ItemFiltersDto extends SearchQueryDto {
 }
 
 /** Items' list a page at a time (ADR-092): fifty, by keyset. */
-export class ListProductsDto extends ItemFiltersDto {
-  /**
-   * The answer's `nextCursor`, for the page after it: the last row's
-   * place by the sort's key and its id, never read by the client.
-   */
-  @IsOptional()
-  @IsString()
-  @MaxLength(4096)
-  cursor?: string;
-
-  /** How many to return, fifty unless asked; capped, as every list's. */
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-}
+export class ListProductsDto extends IntersectionType(
+  ItemFiltersDto,
+  SortedPageQueryDto,
+) {}
