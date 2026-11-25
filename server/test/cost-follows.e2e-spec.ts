@@ -5,13 +5,17 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { each, expectCostToFollow, millionths } from './utils/cost-follows';
+import {
+  each,
+  expectCostToFollow,
+  expectEachLotAt,
+  millionths,
+} from './utils/cost-follows';
 import {
   body,
   createE2eApp,
   createLocation,
   createPartner,
-  createVariant,
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
@@ -31,6 +35,14 @@ import {
  * hand, sales shipped and then returned on their order or voided, and moves
  * to another lot; somewhere among them, one receipt with no price. That
  * receipt is then given its cost, and the three checks hold.
+ *
+ * In about half the runs the code starts with no lots, and starts tracking
+ * them part way, with stock on hand, which goes into a start lot with its
+ * history; what shipped before then comes back with no lot, then into that
+ * lot (Q3a). Last, every other receipt with no price is given the run's one
+ * price, and each lot on hand is then worth exactly its units at it, the
+ * fourth check (review 74): a share not brought back by a return shows
+ * there, where the three cannot see it.
  *
  * A fixed seed and 50 runs in verify and CI. The weekly flake hunt gives a
  * new seed by COST_FOLLOWS_SEED and more runs by COST_FOLLOWS_RUNS, and puts
@@ -62,10 +74,13 @@ type Code = 'A' | 'B' | 'C';
 
 const CODES: Code[] = ['A', 'B', 'C'];
 
+/** A lot by its code; `S` the start lot, `-` no lot, before tracking starts. */
+type Lot = Code | 'S' | '-';
+
 /**
  * One event before the cost. A receipt names its lot; what takes stock out
  * names one of the lots holding any, by its place among them, so few events
- * fall on an empty lot, and a move names one of the other two lots.
+ * fall on an empty lot, and a move names one of the other lots by its place.
  */
 type Step =
   | { do: 'receive'; lot: Code; quantity: number; priced: boolean }
@@ -79,6 +94,11 @@ interface Scenario {
   steps: Step[];
   /** The receipt with no price that is costed late, and where it comes. */
   costed: { at: number; lot: Code; quantity: number };
+  /**
+   * Where a code with no lots starts tracking them, among the events, once
+   * it has stock on hand; none for a code that tracks lots from the first.
+   */
+  starts?: number;
   /**
    * The one unit price of the run, for every receipt priced and for the
    * cost given late, so a share counted twice shows as a lot over it.
@@ -133,7 +153,7 @@ const step: fc.Arbitrary<Step> = fc.oneof(
     arbitrary: fc.record({
       do: fc.constant('move' as const),
       from: fc.nat(2),
-      to: fc.nat(1),
+      to: fc.nat(2),
       quantity,
     }),
   },
@@ -143,6 +163,7 @@ const scenario: fc.Arbitrary<Scenario> = fc.record({
   steps: fc.array(step, { maxLength: 12 }),
   costed: fc.record({ at: fc.nat(12), lot: code, quantity }),
   price,
+  starts: fc.option(fc.nat(13), { nil: undefined, freq: 2 }),
 });
 
 /** Millionths as the ledger's decimal string, six places. */
@@ -175,7 +196,7 @@ describe('A late cost over generated orders (e2e)', () => {
   });
 
   it(
-    'holds the three checks after a receipt is costed late, over generated receipts, shipments, sales returned or voided, and moves between three lots',
+    'holds the four checks after a receipt is costed late, over generated receipts, shipments, sales returned or voided, moves between three lots, and lot tracking started part way',
     { timeout: RUNS * 4_000 },
     async () => {
       const { agent } = await registerOrganization(app, 'alpha');
@@ -200,59 +221,111 @@ describe('A late cost over generated orders (e2e)', () => {
       let codes = 0;
 
       /** One scenario, on a code of its own: its events, then the cost. */
-      async function run({ steps, costed, price: late }: Scenario) {
+      async function run({ steps, costed, price: late, starts }: Scenario) {
         codes += 1;
-        const variantId = await createVariant(agent, {
-          type: 'good',
-          name: `Generated ${codes}`,
-          variant: { sku: `GEN-${codes}`, tracksLots: true },
-        });
-        const lotIds = new Map<Code, string>();
-        const onHand = new Map<Code, number>();
+        const { product } = body<{
+          product: { id: string; variants: { id: string }[] };
+        }>(
+          await agent
+            .post('/v1/products')
+            .send({
+              type: 'good',
+              name: `Generated ${codes}`,
+              variant: {
+                sku: `GEN-${codes}`,
+                tracksLots: starts === undefined,
+              },
+            })
+            .expect(201),
+        );
+        const variantId = product.variants[0].id;
+        let tracking = starts === undefined;
+        let startDue = false;
+        const lotIds = new Map<Lot, string>();
+        const onHand = new Map<Lot, number>();
         const sales: {
           orderId: string;
           lineId: string;
           shipmentId: string;
-          lot: Code;
+          lot: Lot;
           shipped: number;
           returned: number;
           voided: boolean;
         }[] = [];
+        /** Every receipt given no price, the one costed late among them. */
+        const unpriced: string[] = [];
         let receiptRow = '';
 
-        const held = (lot: Code) => onHand.get(lot) ?? 0;
-        const add = (lot: Code, change: number) =>
+        const held = (lot: Lot) => onHand.get(lot) ?? 0;
+        const add = (lot: Lot, change: number) =>
           onHand.set(lot, held(lot) + change);
+        /** The code's lots: none before tracking starts, the start lot after. */
+        const lots = (): Lot[] =>
+          !tracking ? ['-'] : lotIds.has('S') ? [...CODES, 'S'] : CODES;
+        /** Where stock shipped from a lot comes back to: before, the start lot. */
+        const backTo = (lot: Lot): Lot => (lot === '-' && tracking ? 'S' : lot);
         /** The lot at this place among those holding stock, if any does. */
-        const stocked = (place: number): Code | undefined => {
-          const holding = CODES.filter((lot) => held(lot) > 0);
+        const stocked = (place: number): Lot | undefined => {
+          const holding = lots().filter((lot) => held(lot) > 0);
           return holding[place % Math.max(holding.length, 1)];
         };
 
         /** Into the lot by its code, made the first time; priced or not. */
-        async function receive(lot: Code, units: number, unitPrice?: string) {
+        async function receive(code: Code, units: number, unitPrice?: string) {
+          const lot = tracking ? { code } : undefined;
           const movementId = unitPrice
-            ? await buy(s, variantId, String(units), cad(unitPrice), {
-                code: lot,
-              })
+            ? await buy(s, variantId, String(units), cad(unitPrice), lot)
             : await move(s, {
                 variantId,
                 toLocationId: shelf,
                 quantity: String(units),
                 reason: 'receipt',
-                lot: { code: lot },
+                lot,
               });
           const row = await valuationOf(db, movementId);
-          lotIds.set(lot, row.lotId!);
-          add(lot, units);
+          const into: Lot = tracking ? code : '-';
+          if (row.lotId) lotIds.set(into, row.lotId);
+          add(into, units);
+          if (!unitPrice) unpriced.push(row.id);
           return row.id;
         }
 
-        const events: (Step | { do: 'costed' })[] = [...steps];
+        /**
+         * Lot tracking starts once it is due and the code has stock on hand,
+         * all of which goes into the start lot, with its history (R15, 3a).
+         */
+        async function startWhenDue() {
+          if (tracking || !startDue || held('-') === 0) return;
+          const { lot } = body<{ lot: { id: string } }>(
+            await agent
+              .post(
+                `/v1/products/${product.id}/variants/${variantId}/lot-tracking`,
+              )
+              .send({})
+              .expect(201),
+          );
+          tracking = true;
+          lotIds.set('S', lot.id);
+          add('S', held('-'));
+          onHand.set('-', 0);
+        }
+
+        const events: (Step | { do: 'costed' } | { do: 'start' })[] = [
+          ...steps,
+        ];
         events.splice(costed.at % (steps.length + 1), 0, { do: 'costed' });
+        if (starts !== undefined) {
+          events.splice(starts % (events.length + 1), 0, { do: 'start' });
+        }
 
         for (const event of events) {
+          await startWhenDue();
           switch (event.do) {
+            case 'start': {
+              startDue = true;
+              await startWhenDue();
+              break;
+            }
             case 'costed': {
               receiptRow = await receive(costed.lot, costed.quantity);
               break;
@@ -314,12 +387,14 @@ describe('A late cost over generated orders (e2e)', () => {
                       {
                         lineId: order.lines[0].id,
                         quantity: String(units),
-                        lots: [
-                          {
-                            lotId: lotIds.get(lot),
-                            quantity: String(units),
-                          },
-                        ],
+                        ...(lot !== '-' && {
+                          lots: [
+                            {
+                              lotId: lotIds.get(lot),
+                              quantity: String(units),
+                            },
+                          ],
+                        }),
                       },
                     ],
                   })
@@ -351,20 +426,22 @@ describe('A late cost over generated orders (e2e)', () => {
                   toLocationId: shelf,
                   reason: 'Damaged in transit',
                   lines: [
-                    {
-                      lineId: sale.lineId,
-                      lots: [
-                        {
-                          lotId: lotIds.get(sale.lot),
-                          quantity: String(units),
+                    sale.lot === '-'
+                      ? { lineId: sale.lineId, quantity: String(units) }
+                      : {
+                          lineId: sale.lineId,
+                          lots: [
+                            {
+                              lotId: lotIds.get(sale.lot),
+                              quantity: String(units),
+                            },
+                          ],
                         },
-                      ],
-                    },
                   ],
                 })
                 .expect(201);
               sale.returned += units;
-              add(sale.lot, units);
+              add(backTo(sale.lot), units);
               break;
             }
             case 'void': {
@@ -384,13 +461,14 @@ describe('A late cost over generated orders (e2e)', () => {
                 .send({ status: 'cancelled' })
                 .expect(204);
               sale.voided = true;
-              add(sale.lot, sale.shipped);
+              add(backTo(sale.lot), sale.shipped);
               break;
             }
             case 'move': {
-              const from = stocked(event.from);
+              const from = tracking ? stocked(event.from) : undefined;
               if (!from) break;
-              const into = CODES.filter((lot) => lot !== from)[event.to % 2];
+              const others = lots().filter((lot) => lot !== from);
+              const into = others[event.to % others.length];
               const units = Math.min(event.quantity, held(from));
               const to = lotIds.get(into);
               const res = await agent
@@ -432,6 +510,17 @@ describe('A late cost over generated orders (e2e)', () => {
           most: each(late),
           answer: cost,
         });
+
+        // The fourth check (review 74): every receipt costed at the one
+        // price, each lot on hand is worth exactly its units at it.
+        for (const row of unpriced) {
+          if (row === receiptRow) continue;
+          await agent
+            .put(`/v1/costs/valuations/${row}`)
+            .send(cad(late))
+            .expect(200);
+        }
+        await expectEachLotAt(db, variantId, late);
       }
 
       await fc.assert(fc.asyncProperty(scenario, run), {

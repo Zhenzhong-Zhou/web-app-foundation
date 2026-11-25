@@ -1332,7 +1332,10 @@ a second organization.
   2.00 each, the rest gone with the 90, and the receipt leaves the
   needs-cost list. Done again with 9 of the 90 returned on the sale
   before the cost: the lot's 19 read 38.00 once costed, 2.00 each, the
-  9's share back with them.
+  9's share back with them. On an item not tracked by lot, receive 10
+  with no price, ship 6 on a sale, Start tracking lots on the 4 left,
+  return 3 on the sale, then Set cost 10.00: the start lot's 7 read
+  70.00, 10.00 each (review 74).
 - **MC-804** Costs and price lists are hidden from a viewer and from any role
   without the permission.
 - **MC-805** *(ADR-094, R20, D4, D5)* A cost that follows a move. On
@@ -8079,3 +8082,6 @@ first.
   volume seed corrects the code of one lot in 40, its former code each:
   the demo's setup names B12-2609 and B12-2610 for MC-334 and MC-806, and
   MC-325's next made code now ends -4.
+- 2026-11-25: The review's 74, a return from before lot tracking brings
+  back its share of a cost given later, where the delivery's history
+  went into the start lot: MC-803 extended.

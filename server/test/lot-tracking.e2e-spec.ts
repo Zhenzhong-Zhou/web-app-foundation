@@ -1397,6 +1397,53 @@ describe('Start tracking lots (e2e)', () => {
         answer: cost,
       });
     });
+
+    it('brings back a return’s share of a cost given later where stock was on hand at the start, its history in the start lot (F9, review 74)', async () => {
+      const w = await world();
+      // 10 received with no price, 6 sold and shipped, tracking started on
+      // the 4 left: the receipt and the shipment now in the start lot.
+      await receive(w.org.agent, w.code, w.main, '10');
+      const [receipt] = await waiting(w);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '6');
+      await shipOut(w, sale, w.main, '6');
+      const { lot } = await start(w);
+
+      // 3 of the 6 back, with no lot as they left, then into the start lot.
+      await giveBack(w, sale.id, {
+        toLocationId: w.main,
+        lines: [{ lineId: sale.lineId, quantity: '3' }],
+      }).expect(201);
+
+      // Costed at 10.00: 7 of the 10 are in the lot, 3 gone for good.
+      const { cost } = body<{
+        cost: {
+          held: string;
+          issued: string;
+          followed: { value: string }[];
+        };
+      }>(
+        await w.org.agent
+          .put(`/v1/costs/valuations/${receipt.id}`)
+          .send({ unitPrice: '10.00', currency: 'CAD' })
+          .expect(200),
+      );
+      expect(cost).toMatchObject({
+        held: '70.000000',
+        issued: '30.000000',
+        followed: [],
+      });
+      expect(await poolOf(db, w.code, lot!.id)).toMatchObject({
+        quantity: '7.0000',
+        value: '70.000000',
+      });
+      expect(await waiting(w)).toEqual([]);
+      await expectCostToFollow(db, {
+        variantId: w.code,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
+    });
   });
 
   function message(res: Parameters<typeof body>[0]): string {

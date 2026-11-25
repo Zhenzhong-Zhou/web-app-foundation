@@ -192,7 +192,8 @@ async function spread(
  * dilutes them, all but the acquisition's own rows, which add their units,
  * and a row that brings back stock a shipment took: an order's return, from
  * the order's shipments from the lot, or a voided shipment's reversal, from
- * the shipment it names, as shippedAt (valuation.ts) finds them. It takes
+ * the shipment it names, as shippedAt (valuation.ts) finds them, stock back
+ * from before lot tracking among them, by its lot change (review 74). It takes
  * back the units the shipment took, times the quantity coming back over the
  * quantity shipped, so they are in the pool again, and their share is not
  * issued. A return whose shipment took none, and a "Returned" receipt with
@@ -250,15 +251,47 @@ async function plan(
         )
     ),
     -- Rows in that bring back stock a shipment took, and the shipments'
-    -- rows in this pool before them: those that may bring units back.
+    -- rows in this pool before them: those that may bring units back. A
+    -- row in by a lot change from before lot tracking is its stock back
+    -- from a shipment then: the return or reversal it follows, the row
+    -- before its own out of the pool with no lot, both in one transaction
+    -- under that pool's lock (StockService.recordWithin's fromBefore).
     reversals as (
       select r.id, m.reason, m.reference_type, m.reference_id
       from history r
+      cross join lateral (
+        select r.movement_id as id
+        where r.kind = 'movement'
+        union all
+        select back.movement_id
+        from stock_movements c
+        join stock_valuations o
+          on o.organization_id = ${organizationId}::uuid
+         and o.movement_id = c.id
+         and o.kind = 'lot_change'
+         and o.quantity < 0
+        cross join lateral (
+          select p.movement_id, p.kind, p.quantity
+          from stock_valuations p
+          where p.organization_id = ${organizationId}::uuid
+            and p.variant_id = ${variantId}::uuid
+            and p.lot_id is null
+            and p.created_at = o.created_at
+            and p.id < o.id
+          order by p.id desc
+          limit 1
+        ) back
+        where r.kind = 'lot_change'
+          and c.organization_id = ${organizationId}::uuid
+          and c.id = r.movement_id
+          and c.reason_detail = 'from_before'
+          and back.kind = 'movement'
+          and back.quantity = -o.quantity
+      ) came
       join stock_movements m
         on m.organization_id = ${organizationId}::uuid
-       and m.id = r.movement_id
-      where r.kind = 'movement'
-        and r.quantity > 0
+       and m.id = came.id
+      where r.quantity > 0
         and (
           (m.reason = 'return' and m.reference_type = 'order_return')
           or m.reference_type = 'shipment'

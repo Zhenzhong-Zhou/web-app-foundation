@@ -1218,7 +1218,11 @@ file is kept is in the [README](README.md).
   6 shipped and the 4 left moved A → B → A → C, C holds the 4's share
   and the 6's is gone. A return on the order, or a shipment voided,
   brings back its part of what its shipment took, held again rather
-  than gone; a "Returned" receipt with no order brings back none, and
+  than gone, stock back from before lot tracking too, into the start
+  lot that holds the delivery's history: of 10 with no price, 6
+  shipped, tracking started on the 4 left and 3 returned, the 10
+  costed at 10.00, 70.00 is held and 30.00 issued; a "Returned"
+  receipt with no order brings back none, and
   a return after the cost was given comes back at its shipment's own
   figure (#693). None of the stock moved is recorded as gone, and each
   lot's cost history shows the part carried on, or the part that came,
@@ -1237,10 +1241,11 @@ file is kept is in the [README](README.md).
   [test](../../server/test/costs.e2e-spec.ts) "issues nothing for a shipment voided before the cost came: 10 with no price, 6 shipped and voided, costed at 10.00, 100.00 held" ·
   [test](../../server/test/costs.e2e-spec.ts) "brings back the share of what a return brings back: 10 with no price, 6 shipped, 3 of them returned on the order, costed at 10.00, 70.00 held and 30.00 issued" ·
   [test](../../server/test/costs.e2e-spec.ts) "brings back a return’s part of what its shipment took from a mixed lot: 9 of the 90 back at 1.20 before the cost, 64.80 issued, the 19 on hand holding 38.00" ·
+  [test](../../server/test/lot-tracking.e2e-spec.ts) "brings back a return’s share of a cost given later where stock was on hand at the start, its history in the start lot (F9, review 74)" ·
   [test](../../server/test/costs.e2e-spec.ts) "carries a correction after the move, upward and then downward, by what the lot held when it moved" ·
   [test](../../server/test/costs.e2e-spec.ts) "carries a batch’s cost at close to its output moved to another lot before it" ·
   [test](../../server/test/costs.e2e-spec.ts) "gives a cost and a move at once, neither waiting on the other (two at once)" ·
-  [test](../../server/test/cost-follows.e2e-spec.ts) "holds the three checks after a receipt is costed late, over generated receipts, shipments, sales returned or voided, and moves between three lots"
+  [test](../../server/test/cost-follows.e2e-spec.ts) "holds the four checks after a receipt is costed late, over generated receipts, shipments, sales returned or voided, moves between three lots, and lot tracking started part way"
 - **Movements names both lots of a lot change,** the lot it leaves and
   the lot it enters, and each lot's cost history names the other. Lot
   tracking started, and stock back from before, name the lot entered

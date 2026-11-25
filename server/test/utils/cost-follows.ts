@@ -154,3 +154,47 @@ async function expectPoolsToBeTheirRows(
   `);
   expect(drift.rows).toEqual([]);
 }
+
+/**
+ * The fourth check, once every receipt of a code is costed at one unit
+ * price: each of its pools on hand is worth its units at that price (review
+ * 74), to the ledger's six places: one millionth for each row of the pool,
+ * as the first check allows, since each late cost rounds its share once. A
+ * share issued for units a return brought back, or kept for units gone,
+ * shows here, where the three checks above allow it.
+ */
+export async function expectEachLotAt(
+  db: Database,
+  variantId: string,
+  unitPrice: string,
+): Promise<void> {
+  const { rows } = await db.execute<{
+    lot_id: string | null;
+    quantity: string;
+    value: string;
+    rows: number;
+  }>(sql`
+    select p.lot_id, p.quantity::text, p.value::text,
+           (
+             select count(*)::int
+             from stock_valuations v
+             where v.organization_id = p.organization_id
+               and v.variant_id = p.variant_id
+               and v.lot_id is not distinct from p.lot_id
+               and v.kind <> 'issued'
+           ) as rows
+    from valuation_pools p
+    where p.variant_id = ${variantId}::uuid
+      and p.quantity <> 0
+    order by p.lot_id nulls first
+  `);
+  const price = millionths(unitPrice);
+  for (const pool of rows) {
+    const off =
+      millionths(pool.value) - (millionths(pool.quantity) * price) / 1_000_000n;
+    expect({
+      lotId: pool.lot_id,
+      within: (off < 0n ? -off : off) <= BigInt(pool.rows),
+    }).toEqual({ lotId: pool.lot_id, within: true });
+  }
+}
