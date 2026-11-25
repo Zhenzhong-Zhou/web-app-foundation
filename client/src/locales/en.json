@@ -160,6 +160,8 @@
   "account.work.title": "Your recent work in {organization}",
   "audit.action": "Action",
   "audit.allActions": "All actions",
+  "audit.changes.all": "{count, plural, other {Show all # changes}}",
+  "audit.changes.fewer": "Show fewer",
   "audit.from": "From",
   "audit.fromWhere": "From",
   "audit.history.close": "Close history",

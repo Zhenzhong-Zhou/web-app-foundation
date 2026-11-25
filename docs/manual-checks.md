@@ -3400,6 +3400,24 @@ Signed in as the demo Owner the seed prints.
   Sharma, the same entry reads Person one person.
 - **MC-2906** *(ADR-076)* The audit log's Action filter names each action
   in the language, never by its code.
+- **MC-2907** *(ADR-076 amended; ADR-094, R23)* An entry's changes, one a
+  line. In Edit lot details, correct a made lot's code, give it a
+  supplier's lot and set Expires to Not known yet, in one save. On the
+  audit log its Lot updated entry reads Code and Lot on the first line,
+  joined by a dot, then one line each for Lot code, Supplier's lot and
+  Expires, each before → after. An entry with one change, a member's role
+  changed, still reads on one line with the rest. In Settings →
+  Organization → Documents, change the digits of all six series of
+  Numbering and Documents in date order, and save: Numbering changed
+  shows its first five changes and Show all 7 changes; pressed, all
+  seven show in place, the button reads Show fewer and keeps focus, and
+  a screen reader says it is expanded and counts a list of seven. The
+  Organization page's History draws it the same. At
+  320 px wide the page has no sideways scroll: a long change reads as two
+  lines, its old value, then "→" and the new one together on the next.
+  Nothing is cut with "…", and nothing shows only on hover. In light and
+  dark, in Français "Afficher les 7 modifications" and "Afficher moins",
+  in 中文 "显示全部 7 项更改" and "收起".
 
 ## 30. Invitations (ADR-077)
 
@@ -8038,3 +8056,7 @@ first.
   kind; a list cut at its edge says how many rows are below; a lot found
   by a former code says "was …": MC-1556 and MC-R77 rewritten, MC-911
   extended, MC-1576 added.
+- 2026-11-25: ADR-094's amendment, an entry's changes one a line, R23
+  (ADR-076 amended): two changes or more a line each on the audit log
+  and in History, from seven the first five with Show all … changes:
+  MC-2907 added.

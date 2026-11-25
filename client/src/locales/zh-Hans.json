@@ -160,6 +160,8 @@
   "account.work.title": "我在 {organization} 的最近操作",
   "audit.action": "操作",
   "audit.allActions": "所有操作",
+  "audit.changes.all": "{count, plural, other {显示全部 # 项更改}}",
+  "audit.changes.fewer": "收起",
   "audit.from": "起始",
   "audit.fromWhere": "来源",
   "audit.history.close": "关闭历史记录",
