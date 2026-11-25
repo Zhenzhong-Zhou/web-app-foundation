@@ -50,7 +50,7 @@ import type {
   ValuationSort,
   ValuationTotalsDto,
 } from './dto/list-valuation.dto';
-import { inStockValue, openNeedsCost } from './open-needs-cost';
+import { isStockValue, openNeedsCost } from './open-needs-cost';
 
 /*
  * The rows of the raw queries below, as Postgres returns them: numeric and
@@ -213,7 +213,7 @@ export class CostsService {
    * the item, as the page opens, or by the value, either way; found by
    * an item as every search matches it (ADR-056) or by a lot's codes
    * (lotMatches). Each pool names its item in the reader's language
-   * (#296). Equipment is not stock value (inStockValue; ADR-048, amended
+   * (#296). Equipment is not stock value (isStockValue; ADR-048, amended
    * by ADR-092). What the pools are worth together is valuationTotals',
    * which no page works out again.
    *
@@ -340,22 +340,16 @@ export class CostsService {
       const pools = await tx.execute(sql`
         with open as materialized (${openNeedsCost(organizationId)}),
         ${openPools()}
-        select p.variant_id, pv.sku, p.lot_id, l.code as lot_code,
-               p.quantity, p.value,
+        select p.variant_id, ${productVariants.sku} as sku, p.lot_id,
+               ${lots.code} as lot_code, p.quantity, p.value,
                round(p.value / p.quantity, 6) as unit_cost,
                (op.variant_id is not null) as provisional
-        from valuation_pools p
-        join product_variants pv
-          on pv.id = p.variant_id
-         and pv.organization_id = ${organizationId}::uuid
-        left join lots l
-          on l.id = p.lot_id
-         and l.organization_id = ${organizationId}::uuid
+        from ${poolsFrom(organizationId)}
         left join open_pools op
           on op.variant_id = p.variant_id
          and op.lot_key = ${lotKey}
-        where ${onHand(organizationId)}
-        order by pv.sku, l.code nulls first
+        where ${shownOnHand(organizationId)}
+        order by ${productVariants.sku}, ${lots.code} nulls first
       `);
 
       const rows = pools.rows as unknown as PoolRow[];
@@ -820,23 +814,17 @@ function poolsFound(terms: SearchTerms, organizationId: string): SQL {
   )`;
 }
 
-/** The organization's pools that hold stock and are stock value. */
-function onHand(organizationId: string): SQL {
-  return sql`p.organization_id = ${organizationId}::uuid
-    and p.quantity > 0
-    and ${inStockValue(organizationId, sql`p.variant_id`)}`;
-}
-
 /**
- * onHand, for a statement over poolsFrom: equipment is not stock value
- * (inStockValue's rule; ADR-048, amended by ADR-092), read from the item
- * the statement joins. inStockValue's lookup ran once a pool, about 22 ms
- * of each of the page's statements at ADR-051's large scale.
+ * The organization's pools that hold stock and are stock value, for a
+ * statement over poolsFrom (isStockValue; ADR-048, amended by ADR-092),
+ * read from the item the statement joins: inStockValue's lookup ran once
+ * a pool, about 22 ms of each of the page's statements at ADR-051's large
+ * scale. The page, its totals and the export read it alike.
  */
 function shownOnHand(organizationId: string): SQL {
   return sql`p.organization_id = ${organizationId}::uuid
     and p.quantity > 0
-    and ${products.type} <> ${'equipment' satisfies ProductType}`;
+    and ${isStockValue(sql`${products.type}`)}`;
 }
 
 /**
@@ -908,7 +896,7 @@ function keyedPools(
       select ${products.id} as id, ${name} as name
       from ${products}
       where ${products.organizationId} = ${organizationId}::uuid
-        and ${products.type} <> ${'equipment' satisfies ProductType}
+        and ${isStockValue(sql`${products.type}`)}
     ),
     k as (
       select ${columns}, n.name

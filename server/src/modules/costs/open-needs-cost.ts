@@ -3,17 +3,26 @@ import { type SQL, sql } from 'drizzle-orm';
 import type { ProductType } from '../../database/schema';
 
 /**
- * Whether a variant's value is stock value (ADR-048, amended by ADR-092):
+ * Whether an item's value is stock value (ADR-048, amended by ADR-092):
  * every item's but equipment's. Equipment is a fixed asset, not stock
  * held to sell or use up, so it is received, moved and counted where it
  * stands, and its movements are valued in the ledger, but stock value and
  * what waits for a cost leave it out.
  *
- * A condition on `variantId`, the outer row's variant; the subquery names
- * the organization in its own join and filter (ADR-003).
+ * A condition on the item's type, where the statement joins the item;
+ * the one place the rule is written (review 56).
+ */
+export function isStockValue(type: SQL): SQL {
+  return sql`${type} <> ${'equipment' satisfies ProductType}`;
+}
+
+/**
+ * isStockValue for a statement that does not join the item: a condition
+ * on `variantId`, the outer row's variant; the subquery names the
+ * organization in its own join and filter (ADR-003).
  */
 export function inStockValue(organizationId: string, variantId: SQL): SQL {
-  return sql`not exists (
+  return sql`exists (
     select 1
     from product_variants ev
     join products ep
@@ -21,7 +30,7 @@ export function inStockValue(organizationId: string, variantId: SQL): SQL {
      and ep.organization_id = ${organizationId}::uuid
     where ev.id = ${variantId}
       and ev.organization_id = ${organizationId}::uuid
-      and ep.type = ${'equipment' satisfies ProductType}
+      and ${isStockValue(sql`ep.type`)}
   )`;
 }
 
