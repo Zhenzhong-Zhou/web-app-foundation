@@ -233,6 +233,10 @@ against_main() {
 # explains (#521), so the next miss is read from what its page showed.
 # Linux WebKit also records a trace of each test and keeps a failed one's,
 # which says what the page was still waiting for when the test gave up.
+# It runs on CI's two workers, not Playwright's default of one per core:
+# six WebKit pages starting at once each ask Vite's dev server for every
+# module, and under that load a full page load's start outlasted its
+# 5 seconds (#643).
 BROWSERS_CONTAINER=verify-linux-browsers
 
 linux_browsers() {
@@ -270,23 +274,24 @@ linux_browsers() {
   done
   address="$(docker port "$BROWSERS_CONTAINER" 3333/tcp)"
 
-  local project status kept extra
+  local project status kept
+  local -a extra
   for project in firefox webkit chromium; do
-    extra=''
+    extra=()
     case "$project" in
       webkit)
         step 'Client: the specs every browser runs, in Linux WebKit, from the same container'
-        extra='--trace=retain-on-failure'
+        extra=(--workers=2 --trace=retain-on-failure)
         ;;
       chromium)
         step "Client: the cut-text spec in Linux Chromium, with CI's fonts, from the same container"
-        extra='e2e/cut-text.spec.ts'
+        extra=(e2e/cut-text.spec.ts)
         ;;
     esac
     status=0
     (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
       PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-      npx playwright test --project="$project" ${extra:+"$extra"}) || status=$?
+      npx playwright test --project="$project" ${extra[@]+"${extra[@]}"}) || status=$?
     if ((status != 0)); then
       # A run that failed before any test, such as one that could not
       # reach the container, leaves no folder: nothing to copy.
