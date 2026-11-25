@@ -12,6 +12,7 @@ import {
   stockMovements,
   stockValuations,
 } from '../src/database/schema';
+import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   body,
   createE2eApp,
@@ -529,11 +530,16 @@ describe('Stock valuation (e2e)', () => {
       }>(res).entries;
     }
 
+    /** Set cost's answer, for the three checks (R2; review 77). */
     async function setCost(s: Setup, valuationId: string, unitPrice: string) {
-      await s.agent
-        .put(`/v1/costs/valuations/${valuationId}`)
-        .send({ unitPrice, currency: 'CAD' })
-        .expect(200);
+      return body<{
+        cost: { held: string; issued: string; followed: { value: string }[] };
+      }>(
+        await s.agent
+          .put(`/v1/costs/valuations/${valuationId}`)
+          .send({ unitPrice, currency: 'CAD' })
+          .expect(200),
+      ).cost;
     }
 
     it('lands an order’s return at its pool’s average, marked so, and Set cost corrects it', async () => {
@@ -551,8 +557,15 @@ describe('Stock valuation (e2e)', () => {
         referenceId: (await poolOf(db, scoop)).id,
       });
 
-      await setCost(s, row.id, '3');
+      const cost = await setCost(s, row.id, '3');
       expect((await poolOf(db, scoop)).value).toBe('15.000000');
+      // 2.00 at the average to 3.00: 1.00 more.
+      await expectCostToFollow(db, {
+        variantId: scoop,
+        change: '1.000000',
+        most: each('3'),
+        answer: cost,
+      });
     });
 
     it('lets an order’s return that waits, its pool empty, take a cost on its own row', async () => {
@@ -572,8 +585,14 @@ describe('Stock valuation (e2e)', () => {
         expect.objectContaining({ id: row.id, takesCost: true }),
       ]);
 
-      await setCost(s, row.id, '2.50');
+      const cost = await setCost(s, row.id, '2.50');
       expect((await poolOf(db, scoop)).value).toBe('2.500000');
+      await expectCostToFollow(db, {
+        variantId: scoop,
+        change: '2.500000',
+        most: each('2.50'),
+        answer: cost,
+      });
       expect(await waiting(s)).toEqual([]);
     });
 
@@ -614,8 +633,15 @@ describe('Stock valuation (e2e)', () => {
         takesCost: true,
       });
 
-      await setCost(s, row.id, '2.40');
+      const cost = await setCost(s, row.id, '2.40');
       expect((await poolOf(db, blend, lotId)).value).toBe('32.000000');
+      // 5 at the average, 10.00, to 2.40 each: 2.00 more.
+      await expectCostToFollow(db, {
+        variantId: blend,
+        change: '2.000000',
+        most: each('2.40'),
+        answer: cost,
+      });
     });
 
     it('lets a “Returned” receipt wait where its pool waits, and take a cost', async () => {
@@ -648,8 +674,14 @@ describe('Stock valuation (e2e)', () => {
         ['receipt', true],
       ]);
 
-      await setCost(s, row.id, '4');
+      const cost = await setCost(s, row.id, '4');
       expect((await poolOf(db, lid)).value).toBe('4.000000');
+      await expectCostToFollow(db, {
+        variantId: lid,
+        change: '4.000000',
+        most: each('4'),
+        answer: cost,
+      });
     });
   });
 
