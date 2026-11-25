@@ -11,7 +11,12 @@ import { timeZoneOf } from '../../core/organizations/time-zone';
 import { t, type Translatable } from '../../i18n/translate';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
-import { AT_POOL_AVERAGE, lockPool, lockPools } from './valuation';
+import {
+  AT_POOL_AVERAGE,
+  lockPool,
+  lockPools,
+  shipmentsReversed,
+} from './valuation';
 
 /**
  * Value that arrives after the stock did (ADR-048): a batch's cost at its
@@ -190,9 +195,9 @@ async function spread(
  * out takes them in proportion: its quantity times those units, over what
  * the pool held just before; the last unit out takes what is left. A row in
  * dilutes them, all but the acquisition's own rows, which add their units,
- * and a row that brings back stock a shipment took: an order's return, from
- * the order's shipments from the lot, or a voided shipment's reversal, from
- * the shipment it names, as shippedAt (valuation.ts) finds them, stock back
+ * and a row that brings back stock a shipment took: an order's return, or a
+ * voided shipment's reversal, from the shipments shipmentsReversed
+ * (valuation.ts) names, their rows in this pool, stock back
  * from before lot tracking among them, by its lot change (review 74). It takes
  * back the units the shipment took, times the quantity coming back over the
  * quantity shipped, so they are in the pool again, and their share is not
@@ -301,18 +306,11 @@ async function plan(
       select r.id, array_agg(s.id) as shipments, -sum(s.quantity) as shipped
       from reversals r
       cross join lateral (
-        select sh.id
-        from order_returns o
-        join shipments sh
-          on sh.organization_id = ${organizationId}::uuid
-         and sh.order_id = o.order_id
-         and sh.voided_at is null
-        where r.reference_type = 'order_return'
-          and o.organization_id = ${organizationId}::uuid
-          and o.id = r.reference_id
-        union all
-        select r.reference_id
-        where r.reference_type = 'shipment'
+        ${shipmentsReversed(
+          organizationId,
+          sql`r.reference_type`,
+          sql`r.reference_id`,
+        )}
       ) reversed
       join stock_movements sm
         on sm.organization_id = ${organizationId}::uuid

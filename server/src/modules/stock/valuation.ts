@@ -330,19 +330,7 @@ async function valueInbound(
       // on its own row (#661).
       const shipped =
         movement.referenceType === 'order_return' && movement.referenceId
-          ? await shippedAt(
-              tx,
-              organizationId,
-              movement,
-              sql`
-                select s.id
-                from shipments s
-                join order_returns r on r.order_id = s.order_id
-                where r.id = ${movement.referenceId}::uuid
-                  and r.organization_id = ${organizationId}::uuid
-                  and s.voided_at is null
-              `,
-            )
+          ? await shippedAt(tx, organizationId, movement)
           : null;
 
       return (
@@ -359,12 +347,7 @@ async function valueInbound(
       // a cost while that pool does.
       const reversed =
         movement.referenceType === 'shipment' && movement.referenceId
-          ? await shippedAt(
-              tx,
-              organizationId,
-              movement,
-              sql`select ${movement.referenceId}::uuid`,
-            )
+          ? await shippedAt(tx, organizationId, movement)
           : null;
 
       return (
@@ -427,8 +410,37 @@ async function purchased(
 }
 
 /**
- * The unit cost at which this stock left on the given shipments, applied to
- * what is coming back. Null when none of it was valued — a shipment from
+ * The shipments a row in brings stock back from, by its movement's
+ * reference: an order's return, its order's shipments not voided; a voided
+ * shipment's reversal, the shipment it names. One select of their ids, for
+ * the cost it comes back at (shippedAt) and the late cost's walk
+ * (revaluation.ts) alike, its aliases its own, so the reference may name
+ * the caller's row.
+ */
+export function shipmentsReversed(
+  organizationId: string,
+  referenceType: SQL,
+  referenceId: SQL,
+): SQL {
+  return sql`
+    select reversed_shipment.id
+    from order_returns reversed_return
+    join shipments reversed_shipment
+      on reversed_shipment.organization_id = ${organizationId}::uuid
+     and reversed_shipment.order_id = reversed_return.order_id
+     and reversed_shipment.voided_at is null
+    where ${referenceType} = 'order_return'
+      and reversed_return.organization_id = ${organizationId}::uuid
+      and reversed_return.id = ${referenceId}
+    union all
+    select ${referenceId}
+    where ${referenceType} = 'shipment'
+  `;
+}
+
+/**
+ * The unit cost at which this stock left on the shipments it reverses
+ * (shipmentsReversed), applied to what is coming back. Null when none of it was valued — a shipment from
  * before valuation began.
  *
  * The shipments' movements are matched by their own lot, the one the stock
@@ -441,7 +453,6 @@ async function shippedAt(
   tx: Tx,
   organizationId: string,
   movement: Movement,
-  shipmentIds: SQL,
 ): Promise<Valued | null> {
   const result = await tx.execute(sql`
     select round(
@@ -457,7 +468,11 @@ async function shippedAt(
       and m.lot_id is not distinct from ${movement.lotId}::uuid
       and m.reason = 'shipment'
       and m.reference_type = 'shipment'
-      and m.reference_id in (${shipmentIds})
+      and m.reference_id in (${shipmentsReversed(
+        organizationId,
+        sql`${movement.referenceType}::text`,
+        sql`${movement.referenceId}::uuid`,
+      )})
     having sum(v.quantity) <> 0
   `);
 
