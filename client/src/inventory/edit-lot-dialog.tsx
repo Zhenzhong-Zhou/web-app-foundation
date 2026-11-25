@@ -10,7 +10,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useId, useRef, useState } from 'react';
+import { type SubmitEvent, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { StockPile, UpdateLotDto } from '../api/types.gen';
@@ -18,11 +18,17 @@ import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
-import { api, hasCode } from '../lib/api';
+import { api } from '../lib/api';
 import type { ExpiryKind } from '../lib/api-names';
 import { useSubmit } from '../lib/use-submit';
 import { ExpiryChoice } from './expiry-choice';
-import { dayError, dayFor, expiryKindOf } from './lot-input';
+import {
+  cleanCode,
+  dayError,
+  dayFor,
+  expiryKindOf,
+  useFormerCodeRefusal,
+} from './lot-input';
 import { useLotMessage } from './lot-received';
 
 /** What Edit lot details reads of a lot: a pile's lot fields and place. */
@@ -93,8 +99,8 @@ export function EditLotDialog({
   // The code as saved, for the message that names both (R8).
   const sent = useRef<string | null>(null);
 
-  const { submitting, error, errorCode, reset, submit } = useSubmit(
-    async () => {
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
+    useSubmit(async () => {
       const code = sent.current;
       if (code && row?.lotId) {
         say(
@@ -118,15 +124,13 @@ export function EditLotDialog({
       }
       close();
       await onSaved();
-    },
-  );
+    });
   // Another lot's former code (R11): at the code, with no button, since
-  // it is another lot being renamed; focus there, as on every refusal at
-  // a field.
-  const former = hasCode(errorCode, 'lot_code_former');
-  useEffect(() => {
-    if (former) codeRef.current?.focus();
-  }, [former]);
+  // it is another lot being renamed.
+  const former = useFormerCodeRefusal(
+    { error, errorCode, errorDetails, reset },
+    codeRef,
+  );
 
   function close() {
     reset();
@@ -149,7 +153,7 @@ export function EditLotDialog({
   const mayMark = row?.lotIsAssigned === false && can('stock.lot_made_here');
   // A changed code asks why, and only then (E2a): as the server compares
   // it, trimmed and in capitals.
-  const newCode = form.code.trim().toUpperCase();
+  const newCode = cleanCode(form.code);
   const changing = madeHere && newCode !== row?.lotCode;
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -229,7 +233,7 @@ export function EditLotDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && !former && <FormError message={error} />}
+            {error && !former.refused && <FormError message={error} />}
 
             <TextField
               id="edit-lot-code"
@@ -252,17 +256,17 @@ export function EditLotDialog({
               value={form.code}
               onChange={(event) => {
                 // The refusal was of the code sent.
-                if (former) reset();
+                former.clear();
                 setForm((current) => ({
                   ...current,
                   code: event.target.value,
                 }));
               }}
               inputRef={codeRef}
-              error={!!errors.code || former}
+              error={!!errors.code || former.refused}
               helperText={
                 errors.code ??
-                (former ? error : null) ??
+                former.error ??
                 (madeHere
                   ? intl.formatMessage({
                       id: 'inventory.lot.codeEditable',

@@ -187,8 +187,7 @@ export function ReceiveLineDialog({
   // Another lot's former code (ADR-094 amended, R11): at the lot's code,
   // with Use {code}.
   const former = useFormerCodeRefusal(
-    errorCode,
-    errorDetails,
+    { error, errorCode, errorDetails, reset },
     lotControls.code,
   );
 
@@ -276,7 +275,7 @@ export function ReceiveLineDialog({
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {/* Another lot's former code is said at the lot's code. */}
-            {error && !former && <FormError message={error} />}
+            {error && !former.refused && <FormError message={error} />}
 
             {delivery && (
               <Typography>
@@ -401,7 +400,7 @@ export function ReceiveLineDialog({
                 onChange={(update) => {
                   setLotProblems({});
                   // The refusal was of the code sent.
-                  if (former) reset();
+                  former.clear();
                   setForm((current) => ({
                     ...current,
                     lot: update(current.lot),
@@ -412,9 +411,9 @@ export function ReceiveLineDialog({
                 dayRef={lotControls.day}
                 errors={{
                   ...lotProblems,
-                  code: former ? (error ?? undefined) : lotProblems.code,
+                  code: former.error ?? lotProblems.code,
                 }}
-                refusedFor={former?.lot}
+                refusedFor={former.refusedFor}
               />
             )}
 

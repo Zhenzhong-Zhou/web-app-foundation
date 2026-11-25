@@ -14,7 +14,8 @@ import type { Lot, RunDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { lotExpiryPart } from '../inventory/lot-expiry';
-import { api, hasCode } from '../lib/api';
+import { useFormerCodeRefusal } from '../inventory/lot-input';
+import { api } from '../lib/api';
 import {
   formatQuantity,
   groupedNumberMessage,
@@ -51,18 +52,19 @@ export function RecordOutputDialog({
   const [lots, setLots] = useState<Lot[]>([]);
   const codeRef = useRef<HTMLInputElement>(null);
 
-  const { submitting, error, errorCode, reset, submit } = useSubmit(
-    async () => {
-      close();
-      await onRecorded();
-    },
-    {
-      success: intl.formatMessage({
-        id: 'production.output.recorded',
-        defaultMessage: 'Output recorded',
-      }),
-    },
-  );
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
+    useSubmit(
+      async () => {
+        close();
+        await onRecorded();
+      },
+      {
+        success: intl.formatMessage({
+          id: 'production.output.recorded',
+          defaultMessage: 'Output recorded',
+        }),
+      },
+    );
 
   /**
    * The run knows its batches only by id. Their codes live on the lots,
@@ -121,10 +123,10 @@ export function RecordOutputDialog({
    * what else was typed kept. No Use {code}: this field is not the shared
    * one (Deferred).
    */
-  const former = hasCode(errorCode, 'lot_code_former');
-  useEffect(() => {
-    if (former) codeRef.current?.focus();
-  }, [former]);
+  const former = useFormerCodeRefusal(
+    { error, errorCode, errorDetails, reset },
+    codeRef,
+  );
 
   const openLot = run.outputLots[run.outputLots.length - 1] ?? '';
   const effective = lotChoice || openLot;
@@ -187,7 +189,7 @@ export function RecordOutputDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && !former && <FormError message={error} />}
+            {error && !former.refused && <FormError message={error} />}
 
             <TextField
               id="output-quantity"
@@ -270,12 +272,12 @@ export function RecordOutputDialog({
                   value={newCode}
                   onChange={(event) => {
                     // The refusal was of the code sent.
-                    if (former) reset();
+                    former.clear();
                     setNewCode(event.target.value);
                   }}
                   inputRef={codeRef}
-                  error={former}
-                  helperText={former ? error : undefined}
+                  error={former.refused}
+                  helperText={former.error}
                   slotProps={{ htmlInput: { maxLength: 64 } }}
                 />
 

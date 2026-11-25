@@ -1,4 +1,4 @@
-import { render as renderPlain, screen } from '@testing-library/react';
+import { render as renderPlain, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import type { ReactElement } from 'react';
@@ -252,6 +252,85 @@ describe('ReceiveLineDialog', () => {
       variantId: line.variantId,
       locationId: 'loc-dock',
     });
+  });
+
+  // ADR-094 amended, R11; review 80: the server's refusal of another lot's
+  // former code, which the lots read before did not hold, at the lot's
+  // code alone, with Use {code}.
+  it('says the server’s refusal of another lot’s former code at the lot number, focus there; Use {code} takes that lot', async () => {
+    const user = userEvent.setup();
+    const line = orderLine({ tracksLots: true });
+    const refused =
+      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.';
+    const sent: { lot?: unknown }[] = [];
+    server.use(
+      http.get('/api/v1/stock/lots', () =>
+        HttpResponse.json([
+          {
+            id: 'lot-ash',
+            code: 'ASH-0601',
+            expiresAt: null,
+            expiry: 'none',
+            isAssigned: true,
+            supplierLot: null,
+            formerCodes: [],
+          },
+        ]),
+      ),
+      http.post(
+        `/api/v1/orders/order-1/lines/${line.id}/receipts`,
+        async ({ request }) => {
+          sent.push((await request.json()) as (typeof sent)[number]);
+          return sent.length === 1
+            ? HttpResponse.json(
+                {
+                  statusCode: 409,
+                  message: refused,
+                  code: 'lot_code_former',
+                  details: { lotId: 'lot-ash', lotCode: 'ASH-0601' },
+                },
+                { status: 409 },
+              )
+            : HttpResponse.json(
+                { movement: { id: 'm1' }, needsCost: false, lotCode: null },
+                { status: 201 },
+              );
+        },
+      ),
+    );
+    render(
+      <ToastProvider>
+        <ReceiveLineDialog
+          orderId="order-1"
+          orderNumber="PO-000001"
+          line={line}
+          locations={[DOCK]}
+          tree={[DOCK]}
+          canSeeLots
+          onClose={() => undefined}
+          onReceived={() => Promise.resolve()}
+        />
+      </ToastProvider>,
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'Into' }));
+    await user.click(await screen.findByRole('option', { name: 'Dock' }));
+    await user.type(screen.getByRole('textbox', { name: 'Quantity' }), '4');
+    const lot = screen.getByRole('combobox', { name: 'Lot number' });
+    await user.type(lot, 'ASH-06O1');
+    await user.click(screen.getByRole('radio', { name: 'Doesn’t expire' }));
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    await waitFor(() => expect(lot).toHaveAccessibleDescription(refused));
+    expect(lot).toHaveFocus();
+    expect(screen.getAllByText(refused)).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'Use ASH-0601' }));
+    expect(lot).toHaveValue('ASH-0601');
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    await expect.poll(() => sent.length).toBe(2);
+    expect(sent[1].lot).toEqual({ code: 'ASH-0601' });
   });
 
   // ADR-093, v3: opened over Stock for a delivery chosen there.

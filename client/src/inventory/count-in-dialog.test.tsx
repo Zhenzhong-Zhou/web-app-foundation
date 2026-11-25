@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
@@ -319,6 +319,44 @@ describe('CountInDialog, found stock', () => {
       lotId: 'lot-5',
       note: 'Behind the cartons',
     });
+  });
+
+  // ADR-094 amended, R11; review 80: the server's refusal of another lot's
+  // former code, which the lots read before did not hold, at the new lot's
+  // code alone, with Use {code}.
+  it('says the server’s refusal of another lot’s former code at the new lot’s code, focus there; Use {code} chooses that lot', async () => {
+    const refused =
+      'VC-03O5 was the code of lot VC-0305 until Nov 24, 2026. A code is never given to a second lot.';
+    const { user } = open(TRACKED, {
+      refusal: HttpResponse.json(
+        {
+          statusCode: 409,
+          message: refused,
+          code: 'lot_code_former',
+          details: { lotId: 'lot-5', lotCode: 'VC-0305' },
+        },
+        { status: 409 },
+      ),
+    });
+    await fill(user);
+    await user.click(screen.getByRole('radio', { name: 'A new lot' }));
+    const code = screen.getByRole('textbox', { name: /^Lot number/ });
+    await user.type(code, 'VC-03O5');
+    await user.click(screen.getByRole('radio', { name: 'Doesn’t expire' }));
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    await waitFor(() => expect(code).toHaveAccessibleDescription(refused));
+    expect(code).toHaveFocus();
+    expect(screen.getAllByText(refused)).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'Use VC-0305' }));
+
+    expect(
+      screen.getByRole('radio', { name: 'One of its lots' }),
+    ).toBeChecked();
+    expect(screen.getByRole('combobox', { name: /^Lot/ })).toHaveTextContent(
+      'VC-0305 · Expires Mar 3, 2027',
+    );
   });
 
   // ADR-094, R3: Make a code for us here too, the message naming it.

@@ -73,15 +73,20 @@ export function useNextLotCode(): string | null {
     : null;
 }
 
+/** A typed lot code as the server matches it: trimmed and in capitals. */
+export function cleanCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
 /**
  * The lot a typed code names among the item's, matched as the server
- * matches it: trimmed and in capitals (MovementLotDto).
+ * matches it (cleanCode; MovementLotDto).
  */
 export function existingLot(
   input: LotInput,
   lots: readonly Lot[],
 ): Lot | undefined {
-  const code = input.code.trim().toUpperCase();
+  const code = cleanCode(input.code);
   return input.made || !code
     ? undefined
     : lots.find((lot) => lot.code === code);
@@ -100,7 +105,7 @@ export function formerOwner(
   input: LotInput,
   lots: readonly Lot[],
 ): Lot | undefined {
-  const code = input.code.trim().toUpperCase();
+  const code = cleanCode(input.code);
   return input.made || !code || existingLot(input, lots)
     ? undefined
     : lots.find((lot) => lot.formerCodes.includes(code));
@@ -122,31 +127,56 @@ export function formerCodeMessage(
       defaultMessage:
         '{code} was the code of lot {lot}. A code is never given to a second lot.',
     },
-    { code: input.code.trim().toUpperCase(), lot: owner.code },
+    { code: cleanCode(input.code), lot: owner.code },
   );
+}
+
+/** A write's answer as `useSubmit` gives it, and how to clear it. */
+export interface Submitted {
+  error: string | null;
+  errorCode: string | null;
+  errorDetails: ErrorDetails | null;
+  reset: () => void;
+}
+
+/** A write refused for another lot's former code, as a form shows it. */
+export interface FormerCodeRefusal {
+  /** Refused so: the form's own error says nothing, the code's field does. */
+  refused: boolean;
+  /** The refusal, for the lot's code field; undefined for any other answer. */
+  error: string | undefined;
+  /** The lot that had the code, when the server names it, for Use {code}. */
+  refusedFor: LotToUse | undefined;
+  /** Clears the refusal as the code changes: it was of the code sent. */
+  clear: () => void;
 }
 
 /**
  * A write refused for another lot's former code (`lot_code_former`, R11):
  * said at the lot's code, never above the form, focus going there as on
  * every refusal at a field; the lot that had the code, when the server
- * names it, for Use {code}. Null for any other answer.
+ * names it, for Use {code}. Every dialog that sends a typed code reads it
+ * here (review 54).
  */
 export function useFormerCodeRefusal(
-  errorCode: string | null,
-  errorDetails: ErrorDetails | null,
+  submitted: Submitted,
   codeRef: RefObject<HTMLInputElement | null>,
-): { lot: LotToUse | null } | null {
+): FormerCodeRefusal {
+  const { error, errorCode, errorDetails, reset } = submitted;
   const refused = hasCode(errorCode, 'lot_code_former');
   useEffect(() => {
     if (refused) codeRef.current?.focus();
   }, [refused, codeRef]);
-  if (!refused) return null;
   return {
-    lot:
-      errorDetails?.lotId && errorDetails.lotCode
+    refused,
+    error: refused ? (error ?? undefined) : undefined,
+    refusedFor:
+      refused && errorDetails?.lotId && errorDetails.lotCode
         ? { id: errorDetails.lotId, code: errorDetails.lotCode }
-        : null,
+        : undefined,
+    clear: () => {
+      if (refused) reset();
+    },
   };
 }
 

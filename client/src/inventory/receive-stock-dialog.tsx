@@ -244,8 +244,7 @@ export function ReceiveStockDialog({
   // Another lot's former code (ADR-094 amended, R11): at the lot's code,
   // with Use {code}.
   const former = useFormerCodeRefusal(
-    errorCode,
-    errorDetails,
+    { error, errorCode, errorDetails, reset },
     controls.lotCode,
   );
 
@@ -436,7 +435,7 @@ export function ReceiveStockDialog({
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {/* Another lot's former code is said at the lot's code. */}
-            {error && !former && <FormError message={error} />}
+            {error && !former.refused && <FormError message={error} />}
 
             {variantsError && (
               <FormError
@@ -629,7 +628,7 @@ export function ReceiveStockDialog({
                     onChange={(update) => {
                       clearError('lotCode', 'lotExpiry', 'lotDay');
                       // The refusal was of the code sent.
-                      if (former) reset();
+                      former.clear();
                       setForm((current) => ({
                         ...current,
                         lot: update(current.lot),
@@ -639,11 +638,11 @@ export function ReceiveStockDialog({
                     expiryRef={controls.lotExpiry}
                     dayRef={controls.lotDay}
                     errors={{
-                      code: former ? (error ?? undefined) : errors.lotCode,
+                      code: former.error ?? errors.lotCode,
                       expiry: errors.lotExpiry,
                       day: errors.lotDay,
                     }}
-                    refusedFor={former?.lot}
+                    refusedFor={former.refusedFor}
                   />
                 )}
                 {variant && !variant.tracksLots && (
