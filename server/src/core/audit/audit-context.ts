@@ -56,8 +56,10 @@ export function recordPrevious(values: FieldValues): void {
  *
  * A receipt's body says how much and where; which item it was is on the
  * order line, which only the service loads. Without it the log reads "15
- * received" on an order of six lines. Stored as a bare value, not from/to:
- * it describes the thing acted on, it did not change.
+ * received" on an order of six lines. Stored as given: mostly a bare
+ * value, which describes the thing acted on and did not change; or a
+ * change worked out only in the service, as `{ from, to }`, as Lot updated
+ * records what Edit lot details changed (#687; review 65).
  *
  * The same allow-list discipline as `fields` (ADR-018) applies, enforced by
  * the caller: a catalogue code or a quantity, never a note or anything that
