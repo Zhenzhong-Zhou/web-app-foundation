@@ -2797,6 +2797,8 @@ export type LotCostEntry = {
   referenceId: string | null;
   otherLotId: string | null;
   otherLotCode: string | null;
+  atPoolAverage: boolean;
+  takesCost: boolean;
   createdAt: string;
 };
 
@@ -2875,6 +2877,7 @@ export type NeedsCostEntry = {
   currency: string | null;
   referenceType: string | null;
   referenceId: string | null;
+  takesCost: boolean;
   createdAt: string;
 };
 

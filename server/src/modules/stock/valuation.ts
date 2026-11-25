@@ -1,6 +1,9 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import type { LotChangeDetail } from '../../common/movement-reasons';
+import type {
+  LotChangeDetail,
+  ReceiptDetail,
+} from '../../common/movement-reasons';
 import { todayOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
 import { openNeedsCost } from '../costs/open-needs-cost';
@@ -23,7 +26,19 @@ interface Valued {
   currency: string | null;
   exchangeRate: string | null;
   needsCost: boolean;
+  /**
+   * The pool whose average valued a return with no shipped cost (#661),
+   * the row's mark (AT_POOL_AVERAGE); unset for every other.
+   */
+  averageOf?: string;
 }
+
+/**
+ * The reference a return's value row carries when its pool's average
+ * valued it, for want of a cost it shipped at (ADR-048 amended, #661): the
+ * row says where its value came from, and Set cost may correct it.
+ */
+export const AT_POOL_AVERAGE = 'valuation_pool';
 
 function unvalued(cost: PurchaseCost | null): Valued {
   return {
@@ -111,7 +126,8 @@ export async function valueMovement(
   await tx.execute(sql`
     insert into stock_valuations
       (organization_id, variant_id, lot_id, kind, movement_id, quantity, value,
-       unit_price, currency, exchange_rate, needs_cost, actor_id)
+       unit_price, currency, exchange_rate, needs_cost, reference_type,
+       reference_id, actor_id)
     values (
       ${organizationId}::uuid, ${movement.variantId}::uuid,
       ${movement.lotId}::uuid, 'movement', ${movement.id}::uuid,
@@ -119,6 +135,8 @@ export async function valueMovement(
       ${sign}::integer * ${valued.value}::numeric,
       ${valued.unitPrice}::numeric, ${valued.currency},
       ${valued.exchangeRate}::numeric, ${valued.needsCost},
+      ${valued.averageOf ? AT_POOL_AVERAGE : null},
+      ${valued.averageOf ?? null}::uuid,
       ${movement.actorId}::uuid
     )
   `);
@@ -287,11 +305,17 @@ async function valueInbound(
 ): Promise<Valued> {
   switch (movement.reason) {
     case 'receipt':
-      // A receipt by hand, or against an unpriced line, is still a real
-      // delivery; it waits for a cost rather than being refused (ADR-032).
-      return cost
-        ? purchased(tx, organizationId, movement.quantity, cost)
-        : unvalued(null);
+      if (cost) return purchased(tx, organizationId, movement.quantity, cost);
+      // A return recorded on Stock with no order has no shipment to come
+      // back at, so it lands at its pool's average where there is one
+      // (#661). Any other receipt by hand, or against an unpriced line, is
+      // still a real delivery; it waits for a cost rather than being
+      // refused (ADR-032).
+      return (
+        (movement.reasonDetail === ('returned' satisfies ReceiptDetail)
+          ? await returnAtAverage(tx, organizationId, poolId, movement)
+          : null) ?? unvalued(null)
+      );
 
     case 'production':
       // The batch's cost exists only once its run closes (ADR-032), which
@@ -300,7 +324,10 @@ async function valueInbound(
 
     case 'return': {
       // A customer returns what they were sold, at what it cost when it
-      // went — not at whatever the pool averages today.
+      // went — not at whatever the pool averages today. A shipment from
+      // before costs were kept has no cost to come back at: the return
+      // lands at its pool's average, marked so, or waits and takes a cost
+      // on its own row (#661).
       const shipped =
         movement.referenceType === 'order_return' && movement.referenceId
           ? await shippedAt(
@@ -320,7 +347,7 @@ async function valueInbound(
 
       return (
         shipped ??
-        (await atPoolAverage(tx, organizationId, poolId, movement)) ??
+        (await returnAtAverage(tx, organizationId, poolId, movement)) ??
         unvalued(null)
       );
     }
@@ -436,6 +463,20 @@ async function shippedAt(
 
   const [row] = result.rows as { value: string }[];
   return row ? derived(row.value) : null;
+}
+
+/**
+ * A return with no shipped cost at its pool's average (#661), its row
+ * marked with the pool, so it says where its value came from.
+ */
+async function returnAtAverage(
+  tx: Tx,
+  organizationId: string,
+  poolId: string,
+  movement: Movement,
+): Promise<Valued | null> {
+  const valued = await atPoolAverage(tx, organizationId, poolId, movement);
+  return valued && { ...valued, averageOf: poolId };
 }
 
 /**

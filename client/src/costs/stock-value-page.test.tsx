@@ -30,6 +30,7 @@ const RECEIPT: NeedsCostEntry = {
   currency: null,
   referenceType: null,
   referenceId: null,
+  takesCost: true,
   createdAt: '2026-11-20T17:00:00.000Z',
 };
 
@@ -79,6 +80,7 @@ describe('StockValuePage, what waits', () => {
         fromLotId: 'lot-a',
         fromLotCode: 'LOT-A',
         quantity: '20.0000',
+        takesCost: false,
       },
     ]);
 
@@ -107,8 +109,14 @@ describe('StockValuePage, what waits', () => {
         ...RECEIPT,
         id: 'valuation-3',
         kind: 'split_in_two' as NeedsCostEntry['kind'],
+        takesCost: false,
       },
-      { ...RECEIPT, id: 'valuation-4', reason: 'teleported' },
+      {
+        ...RECEIPT,
+        id: 'valuation-4',
+        reason: 'teleported',
+        takesCost: false,
+      },
     ]);
 
     for (const row of rows) {
@@ -118,5 +126,27 @@ describe('StockValuePage, what waits', () => {
         within(row).queryByRole('button', { name: 'Set cost' }),
       ).not.toBeInTheDocument();
     }
+  });
+
+  // #661 and #669's 58: which rows take a cost is the server's to say. A
+  // return with no cost it shipped at takes one on its own row, which the
+  // page's own copy of the rule refused; a batch's output does not.
+  it('offers Set cost on the rows the server says take one, and on no other', async () => {
+    const [returned, made] = await waitingRows([
+      { ...RECEIPT, id: 'valuation-5', reason: 'return' },
+      {
+        ...RECEIPT,
+        id: 'valuation-6',
+        reason: 'adjustment',
+        takesCost: false,
+      },
+    ]);
+
+    expect(
+      within(returned).getByRole('button', { name: 'Set cost' }),
+    ).toBeVisible();
+    expect(
+      within(made).queryByRole('button', { name: 'Set cost' }),
+    ).not.toBeInTheDocument();
   });
 });

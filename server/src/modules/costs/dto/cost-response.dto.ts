@@ -74,6 +74,13 @@ export class LotCostEntry {
    */
   @ApiProperty({ enum: COST_CARRIED, nullable: true })
   carried!: CostCarried | null;
+  /**
+   * A return with no cost it shipped at, valued at its pool's average when
+   * it came back (#661): the row says so.
+   */
+  atPoolAverage!: boolean;
+  /** Whether Set cost takes a cost on this row, the server's rule (#669's 58). */
+  takesCost!: boolean;
   createdAt!: Date;
 }
 
@@ -170,6 +177,11 @@ export class NeedsCostEntry {
   currency!: string | null;
   referenceType!: string | null;
   referenceId!: string | null;
+  /**
+   * Whether Set cost takes a cost on this row, the server's rule (#669's
+   * 58): false for a batch's output and for stock a lot change moved in.
+   */
+  takesCost!: boolean;
   createdAt!: Date;
 }
 

@@ -1206,3 +1206,23 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/count-in-dialog.test.tsx) "makes a new lot with the count, saying it waits for a cost, linked to Waiting for a cost" ·
   [Help](../../client/src/help/guides/en/inventory.md#move-ship-or-correct-move) ·
   MC-322
+- **A return with no cost it shipped at lands at its lot's average,**
+  or the item's for one with no lots, where that lot has stock on hand
+  and none of it waits for a cost; its row in the lot's cost history
+  says "at the lot's average", and Set cost may correct it. Otherwise
+  it waits, and Set cost takes a cost on its own row, as for a receipt
+  with no price. Two returns have none: an order's return whose
+  shipment left before costs were kept, and a "Returned" receipt with
+  no order. A return with a shipped cost comes back at it, and Set
+  cost refuses it, saying so. Which rows take a cost is the server's
+  to say on each row, so Stock value offers Set cost on those alone.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-return-with-no-shipped-cost) ·
+  [ADR-048, amended](../adr/0048-cost.md#amendment-november-2026--a-late-cost-follows-each-unit-once-in-proportion-a-return-with-no-shipped-cost-adr-094s-amendment-678-677-661) ·
+  [test](../../server/test/valuation.e2e-spec.ts) "lands an order’s return at its pool’s average, marked so, and Set cost corrects it" ·
+  [test](../../server/test/valuation.e2e-spec.ts) "lets an order’s return that waits, its pool empty, take a cost on its own row" ·
+  [test](../../server/test/valuation.e2e-spec.ts) "lands a “Returned” receipt with no order at its lot’s average, and its lot’s history says so" ·
+  [test](../../server/test/valuation.e2e-spec.ts) "lets a “Returned” receipt wait where its pool waits, and take a cost" ·
+  [test](../../server/test/valuation.e2e-spec.ts) "takes a return back at the cost it shipped at" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "offers Set cost on the rows the server says take one, and on no other" ·
+  [test](../../client/src/costs/lot-cost-panel.test.tsx) "says a return came back at the lot’s average where the server marks it so" ·
+  MC-806

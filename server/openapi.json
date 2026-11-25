@@ -20645,6 +20645,12 @@
               "null"
             ]
           },
+          "atPoolAverage": {
+            "type": "boolean"
+          },
+          "takesCost": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -20665,6 +20671,8 @@
           "referenceId",
           "otherLotId",
           "otherLotCode",
+          "atPoolAverage",
+          "takesCost",
           "createdAt"
         ]
       },
@@ -20984,6 +20992,9 @@
               "null"
             ]
           },
+          "takesCost": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -21010,6 +21021,7 @@
           "currency",
           "referenceType",
           "referenceId",
+          "takesCost",
           "createdAt"
         ]
       },

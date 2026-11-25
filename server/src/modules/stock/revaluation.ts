@@ -8,10 +8,10 @@ import { type SQL, sql } from 'drizzle-orm';
 import { dayIn } from '../../common/today';
 import { recordPrevious } from '../../core/audit/audit-context';
 import { timeZoneOf } from '../../core/organizations/time-zone';
-import { t } from '../../i18n/translate';
+import { t, type Translatable } from '../../i18n/translate';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
-import { lockPool, lockPools } from './valuation';
+import { AT_POOL_AVERAGE, lockPool, lockPools } from './valuation';
 
 /**
  * Value that arrives after the stock did (ADR-048): a batch's cost at its
@@ -744,9 +744,25 @@ export interface CorrectedCost {
   followed: FollowedLot[];
 }
 
-interface Target {
-  id: string;
+/**
+ * What a valuation row is, as far as taking a cost goes: enough for
+ * `refusalOf`, which the write and the reads that say `takesCost` share.
+ */
+export interface CostTaker {
   kind: string;
+  reason: string | null;
+  to_location_id: string | null;
+  /** Signed: a lot change's row out is negative. */
+  quantity: string;
+  /** The row's own flag, never cleared: it waited when written. */
+  needs_cost: boolean;
+  reference_type: string | null;
+  /** A lot change's: the lot its stock left. */
+  from_lot_code: string | null;
+}
+
+interface Target extends CostTaker {
+  id: string;
   variant_id: string;
   lot_id: string | null;
   /**
@@ -755,12 +771,6 @@ interface Target {
    * organization's.
    */
   arrived_ms: number;
-  reason: string | null;
-  to_location_id: string | null;
-  /** Signed: a lot change's row out is negative. */
-  quantity: string;
-  /** A lot change's: the lot its stock left. */
-  from_lot_code: string | null;
 }
 
 /**
@@ -769,84 +779,91 @@ interface Target {
  * change moved in, waiting or not (ADR-094, D5), from another lot or from
  * before the code's lot tracking started: the cost its first pool waited
  * for, or any given there later, follows it (spread), so a second one typed
- * on it could only disagree.
+ * on it could only disagree. A return with no shipped cost is one (#661):
+ * it waited, or landed at its pool's average, marked so.
+ *
+ * Null for a row that takes a cost; otherwise why not, the refusal's words.
  */
-function assertAcquisition(target: Target): void {
-  if (target.kind === 'opening') return;
+function refusalOf(target: CostTaker): Translatable | null {
+  if (target.kind === 'opening') return null;
 
   if (target.kind === 'lot_change') {
     if (target.quantity.startsWith('-')) {
-      throw new ConflictException(
-        t({
-          id: 'stock.stockGoingOutValued',
-          defaultMessage:
-            'Stock going out is valued at its pool’s average. Set the cost of what came in instead.',
-        }),
-      );
+      return t({
+        id: 'stock.stockGoingOutValued',
+        defaultMessage:
+          'Stock going out is valued at its pool’s average. Set the cost of what came in instead.',
+      });
     }
     if (target.from_lot_code !== null) {
-      throw new ConflictException(
-        t(
-          {
-            id: 'stock.stockMovedInFromLot',
-            defaultMessage:
-              'This stock was moved in from lot {code}. Give the cost there and it follows.',
-          },
-          { code: target.from_lot_code },
-        ),
+      return t(
+        {
+          id: 'stock.stockMovedInFromLot',
+          defaultMessage:
+            'This stock was moved in from lot {code}. Give the cost there and it follows.',
+        },
+        { code: target.from_lot_code },
       );
     }
     // Come back from before the code's lot tracking started (ADR-094,
     // Q3a): what it waits for is the cost of the delivery it came from,
     // which follows it into the lot when given.
-    throw new ConflictException(
-      t({
-        id: 'stock.stockBackFromBefore',
-        defaultMessage:
-          'This stock came back from before lot tracking started. Give the cost of the delivery it came from, and it follows.',
-      }),
-    );
+    return t({
+      id: 'stock.stockBackFromBefore',
+      defaultMessage:
+        'This stock came back from before lot tracking started. Give the cost of the delivery it came from, and it follows.',
+    });
   }
 
   if (target.kind === 'movement') {
-    if (target.reason === 'receipt') return;
-    if (target.reason === 'adjustment' && target.to_location_id) return;
+    if (target.reason === 'receipt') return null;
+    if (target.reason === 'adjustment' && target.to_location_id) return null;
 
     if (target.reason === 'production') {
-      throw new ConflictException(
-        t({
-          id: 'stock.batchSCostComes',
-          defaultMessage:
-            'A batch’s cost comes from its run, when the run closes',
-        }),
-      );
+      return t({
+        id: 'stock.batchSCostComes',
+        defaultMessage:
+          'A batch’s cost comes from its run, when the run closes',
+      });
     }
 
     if (target.reason === 'return') {
-      throw new ConflictException(
-        t({
-          id: 'stock.returnComesBackCost',
-          defaultMessage: 'A return comes back at the cost it shipped at',
-        }),
-      );
+      // With no cost it shipped at (#661): it waited, or took its pool's
+      // average, and either takes a cost on its own row.
+      if (target.needs_cost || target.reference_type === AT_POOL_AVERAGE) {
+        return null;
+      }
+      return t({
+        id: 'stock.returnComesBackCost',
+        defaultMessage: 'A return comes back at the cost it shipped at',
+      });
     }
 
-    throw new ConflictException(
-      t({
-        id: 'stock.stockGoingOutValued',
-        defaultMessage:
-          'Stock going out is valued at its pool’s average. Set the cost of what came in instead.',
-      }),
-    );
+    return t({
+      id: 'stock.stockGoingOutValued',
+      defaultMessage:
+        'Stock going out is valued at its pool’s average. Set the cost of what came in instead.',
+    });
   }
 
-  throw new ConflictException(
-    t({
-      id: 'stock.receiptInboundAdjustmentOpening',
-      defaultMessage:
-        'Only a receipt, an inbound adjustment or an opening balance takes a cost',
-    }),
-  );
+  return t({
+    id: 'stock.receiptInboundAdjustmentOpening',
+    defaultMessage:
+      'Only a receipt, an inbound adjustment or an opening balance takes a cost',
+  });
+}
+
+/**
+ * Whether Set cost takes a cost on this row (#669's 58): the server says,
+ * so no screen keeps a copy of the rule.
+ */
+export function takesCost(row: CostTaker): boolean {
+  return refusalOf(row) === null;
+}
+
+function assertAcquisition(target: Target): void {
+  const refusal = refusalOf(target);
+  if (refusal) throw new ConflictException(refusal);
 }
 
 /**
@@ -881,8 +898,8 @@ export async function correctCost(
   const found = await tx.execute(sql`
     select v.id, v.kind, v.variant_id, v.lot_id,
            (extract(epoch from v.created_at) * 1000)::float8 as arrived_ms,
-           m.reason, m.to_location_id, v.quantity,
-           fl.code as from_lot_code
+           m.reason, m.to_location_id, v.quantity, v.needs_cost,
+           v.reference_type, fl.code as from_lot_code
     from stock_valuations v
     left join stock_movements m on m.id = v.movement_id
     left join lots fl

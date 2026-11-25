@@ -351,6 +351,7 @@
   "costs.batch": "Lot",
   "costs.byItemAndLot": "Par article et par lot",
   "costs.cost": "Coût",
+  "costs.entry.atLotAverage": "{what}, au coût moyen du lot",
   "costs.entry.carriedFrom": "Coût venu du lot {code}",
   "costs.entry.carriedTo": "Coût reporté au lot {code}",
   "costs.entry.correction": "Coût fixé ou corrigé",

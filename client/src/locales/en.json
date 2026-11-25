@@ -351,6 +351,7 @@
   "costs.batch": "Batch",
   "costs.byItemAndLot": "By item and lot",
   "costs.cost": "Cost",
+  "costs.entry.atLotAverage": "{what}, at the lot’s average",
   "costs.entry.carriedFrom": "Cost from lot {code}",
   "costs.entry.carriedTo": "Cost carried to lot {code}",
   "costs.entry.correction": "Cost set or corrected",

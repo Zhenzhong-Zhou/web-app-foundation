@@ -76,6 +76,22 @@ const WORDS = defineMessages({
  * (D4). The other lot is a link to its page.
  */
 function describe(entry: LotCostEntry, intl: IntlShape): ReactNode {
+  const what = described(entry, intl);
+  // A return with no cost it shipped at, valued at the lot's average when
+  // it came back, says so (#661).
+  return entry.atPoolAverage
+    ? intl.formatMessage(
+        {
+          id: 'costs.entry.atLotAverage',
+          defaultMessage: '{what}, at the lot’s average',
+        },
+        { what },
+      )
+    : what;
+}
+
+/** The row's own words, before the mark of how it was valued. */
+function described(entry: LotCostEntry, intl: IntlShape): ReactNode {
   const out = entry.quantity.startsWith('-');
   // The other lot a link to its page, with Back (v17's board; review 34).
   const other =

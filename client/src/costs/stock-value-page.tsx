@@ -58,20 +58,6 @@ import { SetCostDialog } from './set-cost-dialog';
  */
 const WAITING_HASH = '#costs';
 
-/**
- * Only an acquisition takes a cost; the server refuses the rest (ADR-048).
- * A batch's output waits for its run to close instead, and stock moved in
- * from another lot for that lot's cost, which follows it (ADR-094, D5). A
- * kind this tab does not know is offered nothing (D4).
- */
-function takesACost(entry: NeedsCostEntry): boolean {
-  return (
-    entry.kind === 'opening' ||
-    (entry.kind === 'movement' &&
-      (entry.reason === 'receipt' || entry.reason === 'adjustment'))
-  );
-}
-
 /** Why a row is waiting, in the words someone would fix it by. */
 const WHY = defineMessages({
   opening: {
@@ -366,9 +352,13 @@ export function StockValuePage() {
                             })}
                           </Button>
                         ) : (
+                          // Which rows take a cost is the server's to say,
+                          // so this page keeps no copy of the rule (#669's
+                          // 58): a batch's output waits for its run, stock
+                          // moved in for its first lot's cost.
                           canUpdate &&
                           currency &&
-                          takesACost(entry) && (
+                          entry.takesCost && (
                             <Button
                               variant="text"
                               size="small"

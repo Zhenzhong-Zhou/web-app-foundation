@@ -1306,6 +1306,14 @@ a second organization.
   the tab does not know, in an old tab after a deploy, reads "Other
   change" and "Waiting for a cost", never a stored key, and offers no
   Set cost.
+- **MC-806** *(ADR-094 amended, R16; #661)* A return with no cost it
+  shipped at. On Inventory, receive 5 of BF-2609's item into BF-2609 by
+  hand, why there is no order "Returned": no Waiting for a cost, and
+  BF-2609's Cost history reads the row "Received, at the lot's
+  average", at the lot's unit cost. Receive 1 "Returned" into a lot
+  still waiting for a cost: it is on Stock value's Waiting for a cost
+  with Set cost, and Set cost takes one, "Cost set.". A batch's output
+  still offers Open run, never Set cost.
 
 ## 9. Recall drill (timed)
 
@@ -7904,3 +7912,6 @@ first.
 - 2026-11-24: ADR-094's amendment, a late cost follows each unit once,
   in proportion, a return bringing back its share, #678 and #677:
   MC-803 rewritten, MC-805 extended.
+- 2026-11-24: ADR-094's amendment, a return with no shipped cost lands
+  at its lot's average or waits and takes a cost on its own row, which
+  rows take one the server's to say, #661: MC-806 added.

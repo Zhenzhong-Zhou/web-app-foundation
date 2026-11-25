@@ -351,6 +351,7 @@
   "costs.batch": "批次",
   "costs.byItemAndLot": "按物品和批次",
   "costs.cost": "成本",
+  "costs.entry.atLotAverage": "{what}，按批次的平均成本",
   "costs.entry.carriedFrom": "来自批次 {code} 的成本",
   "costs.entry.carriedTo": "成本已转至批次 {code}",
   "costs.entry.correction": "设定或更正成本",

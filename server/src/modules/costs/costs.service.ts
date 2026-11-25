@@ -19,7 +19,9 @@ import {
   correctCost,
   type CorrectedCost,
   type CostInput,
+  takesCost,
 } from '../stock/revaluation';
+import { AT_POOL_AVERAGE } from '../stock/valuation';
 import type {
   CostCarried,
   LotCost,
@@ -77,6 +79,7 @@ interface EntryRow {
   carried: CostCarried | null;
   created_at: Date;
   reason: string | null;
+  to_location_id: string | null;
 }
 
 interface RunRow {
@@ -122,6 +125,9 @@ interface NeedsCostRow {
   reason_detail: string | null;
   reference_type: string | null;
   reference_id: string | null;
+  to_location_id: string | null;
+  /** The value row's own, where `reference_type` is its movement's. */
+  own_reference_type: string | null;
 }
 
 /**
@@ -276,7 +282,7 @@ export class CostsService {
       const entries = await tx.execute(sql`
         select v.id, v.kind, v.quantity, v.value, v.unit_price, v.currency,
                v.exchange_rate, v.needs_cost, v.reference_type,
-               v.reference_id, v.created_at, m.reason,
+               v.reference_id, v.created_at, m.reason, m.to_location_id,
                ol.id as other_lot_id, ol.code as other_lot_code,
                case
                  when ri.id is null then null
@@ -333,6 +339,8 @@ export class CostsService {
           otherLotId: row.other_lot_id,
           otherLotCode: row.other_lot_code,
           carried: row.carried,
+          atPoolAverage: row.reference_type === AT_POOL_AVERAGE,
+          takesCost: takesCost({ ...row, from_lot_code: row.other_lot_code }),
           createdAt: row.created_at,
         })),
       };
@@ -519,7 +527,8 @@ export class CostsService {
                v.lot_id, l.code as lot_code, fl.id as from_lot_id,
                fl.code as from_lot_code, v.quantity, v.unit_price,
                v.currency, v.created_at, m.reason, m.reason_detail,
-               m.reference_type, m.reference_id
+               m.reference_type, m.reference_id, m.to_location_id,
+               v.reference_type as own_reference_type
         from open o
         join stock_valuations v on v.id = o.id
         join ${productVariants}
@@ -562,6 +571,15 @@ export class CostsService {
         currency: row.currency,
         referenceType: row.reference_type,
         referenceId: row.reference_id,
+        takesCost: takesCost({
+          kind: row.kind,
+          reason: row.reason,
+          to_location_id: row.to_location_id,
+          quantity: row.quantity,
+          needs_cost: true,
+          reference_type: row.own_reference_type,
+          from_lot_code: row.from_lot_code,
+        }),
         createdAt: row.created_at,
       }));
 
