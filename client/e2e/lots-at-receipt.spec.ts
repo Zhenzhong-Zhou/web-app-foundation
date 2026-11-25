@@ -1187,11 +1187,17 @@ test('A lot’s Actions, Edit lot details…, an older code typed up here: the c
   await mark(dialog).check();
   await expect(lotNumber).toBeEnabled();
   await lotNumber.fill('FO-0101-R');
+  // A changed code asks why (ADR-094 amended, R8, E2a).
+  await dialog
+    .getByRole('textbox', { name: 'Why is the code changing?' })
+    .fill('Typed up from a smudged label.');
   await dialog.getByRole('textbox', { name: 'Supplier’s lot' }).fill('SUP-1');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(dialog).toBeHidden();
-  await expect(message(page)).toContainText(said('inventory.lot.saved'));
+  await expect(message(page)).toContainText(
+    said('inventory.lot.savedWas', { code: 'FO-0101-R', was: 'FO-0101' }),
+  );
   await expect(
     lotRow(page, 'FO-0101-R').getByText(
       said('inventory.lot.supplierLotIs', { code: 'SUP-1' }),

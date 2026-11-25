@@ -51,7 +51,7 @@ import { displayWithUnit } from '../products/units';
 import { WIDE_ONLY } from '../theme/media';
 import type { CountInItem } from './count-in-dialog';
 import { EmptiedLine } from './emptied-line';
-import { SupplierLotLine } from './lot-marks';
+import { FormerCodeLine, SupplierLotLine } from './lot-marks';
 import { useMenuWords } from './menu-words';
 import type { MoveMode } from './move-stock-dialog';
 import { movementsPath } from './movements-path';
@@ -1372,6 +1372,8 @@ function LotTableRow({
         ) : (
           NO_VALUE
         )}
+        {/* Its latest former code (ADR-094 amended, R9). */}
+        <FormerCodeLine code={lot.lotFormerCode} />
         <SupplierLotLine
           isAssigned={lot.lotIsAssigned}
           supplierLot={lot.lotSupplierLot}
@@ -1601,6 +1603,7 @@ function OpenedCard({
                 {lot.lotId && lot.lotCode && (
                   <LotLink id={lot.lotId} code={lot.lotCode} />
                 )}
+                <FormerCodeLine code={lot.lotFormerCode} />
                 <SupplierLotLine
                   isAssigned={lot.lotIsAssigned}
                   supplierLot={lot.lotSupplierLot}

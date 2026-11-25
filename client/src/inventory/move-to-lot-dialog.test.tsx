@@ -77,15 +77,18 @@ function open({
   toLot = { id: 'lot-new', code: 'VC-0311' },
   needsCost = false,
   permissions = ['stock.view', 'stock.move', 'stock.adjust'],
+  lots = LOTS,
 }: {
   toLot?: { id: string; code: string };
   needsCost?: boolean;
   permissions?: string[];
+  /** The item's lots, as the lot field reads them. */
+  lots?: Lot[];
 } = {}) {
   const sent: Record<string, unknown>[] = [];
   const onMoved = vi.fn();
   server.use(
-    http.get('/api/v1/stock/lots', () => HttpResponse.json(LOTS)),
+    http.get('/api/v1/stock/lots', () => HttpResponse.json(lots)),
     http.post('/api/v1/stock/lots/lot-a/lot-changes', async ({ request }) => {
       sent.push((await request.json()) as Record<string, unknown>);
       return HttpResponse.json(
@@ -232,6 +235,38 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Open the lot' }));
     expect(await screen.findByText('At /lots/lot-new')).toBeVisible();
+  });
+
+  // ADR-094 amended, R11: another lot's former code for the new lot; Use
+  // {code} moves the stock into that lot.
+  it('refuses another lot’s former code as it is typed, sending nothing; Use {code} moves the stock into that lot', async () => {
+    const { user, sent } = open({
+      toLot: { id: 'lot-b', code: 'VC-0310' },
+      lots: [{ ...LOTS[0], formerCodes: ['VC-031O'] }, LOTS[1]],
+    });
+    await fill(user, 'VC-031O');
+    const code = screen.getByRole('combobox', { name: /^Lot number/ });
+    expect(code).toHaveAccessibleDescription(
+      'VC-031O was the code of lot VC-0310. A code is never given to a second lot.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+    expect(code).toHaveFocus();
+    expect(sent).toEqual([]);
+
+    await user.click(screen.getByRole('button', { name: 'Use VC-0310' }));
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Moved 30 each from lot L-2026-11-20-1 to lot VC-0310.',
+    );
+    expect(sent).toEqual([
+      {
+        locationId: 'loc-a2',
+        quantity: '30',
+        note: 'Two runs in one delivery',
+        toLotId: 'lot-b',
+      },
+    ]);
   });
 
   it('moves into one of the item’s lots by its code, asking no expiry, and says when it waits for a cost', async () => {

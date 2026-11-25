@@ -440,6 +440,71 @@ describe('ReceiveStockDialog', () => {
     expect(quantityField()).toHaveValue('5');
   });
 
+  // ADR-094 amended, R11: the server's refusal of another lot's former
+  // code, at the lot's code, with Use {code}; what else was typed kept.
+  it('says the server’s refusal of another lot’s former code at the lot number, focus there; Use {code} takes that lot, the quantity kept', async () => {
+    const user = userEvent.setup();
+    const sent: unknown[] = [];
+    const refusal =
+      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.';
+    server.use(
+      http.get('/api/v1/stock/lots', () =>
+        HttpResponse.json([
+          {
+            id: 'lot-ash',
+            code: 'ASH-0601',
+            expiresAt: null,
+            expiry: 'none',
+            isAssigned: true,
+            supplierLot: null,
+            formerCodes: [],
+          },
+        ]),
+      ),
+      http.get('/api/v1/stock/by-code/variant-lotted/places', () =>
+        HttpResponse.json({ places: [] }),
+      ),
+      http.post('/api/v1/stock/movements', async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json(
+          {
+            statusCode: 409,
+            message: refusal,
+            code: 'lot_code_former',
+            details: { lotId: 'lot-ash', lotCode: 'ASH-0601' },
+          },
+          { status: 409 },
+        );
+      }),
+    );
+    open();
+
+    await choose('Item', /LOTTED-1/);
+    await why();
+    await user.type(quantityField(), '5');
+    const lot = screen.getByRole('combobox', { name: 'Lot number' });
+    await user.type(lot, 'ASH-06O1');
+    await user.click(screen.getByRole('radio', { name: 'Doesn’t expire' }));
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    await waitFor(() => expect(lot).toHaveAccessibleDescription(refusal));
+    expect(lot).toHaveFocus();
+    // At the field alone, not above the form as well.
+    expect(screen.getAllByText(refusal)).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'Use ASH-0601' }));
+
+    expect(lot).toHaveValue('ASH-0601');
+    expect(lot).toHaveFocus();
+    await waitFor(() =>
+      expect(lot).toHaveAccessibleDescription(
+        /^An existing lot\. This adds to it\./,
+      ),
+    );
+    expect(quantityField()).toHaveValue('5');
+    expect(sent).toHaveLength(1);
+  });
+
   it('says so when the catalogue is empty, and only once it has answered', async () => {
     let answer: () => void = () => undefined;
     const answered = new Promise<void>((resolve) => {

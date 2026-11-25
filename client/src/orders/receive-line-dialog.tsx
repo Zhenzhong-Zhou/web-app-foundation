@@ -26,6 +26,7 @@ import {
   lotErrors,
   lotRequest,
   NO_LOT,
+  useFormerCodeRefusal,
   useItemLots,
 } from '../inventory/lot-input';
 import { useLotMessage } from '../inventory/lot-received';
@@ -142,8 +143,8 @@ export function ReceiveLineDialog({
   // saving; 55a): its lot, a made one with Copy code, and Open the lot
   // (ADR-094, E3), with Open the order over Stock.
   const say = useLotMessage();
-  const { submitting, error, reset, submit } = useSubmit<ReceiptEnvelope>(
-    async (result) => {
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
+    useSubmit<ReceiptEnvelope>(async (result) => {
       const { movement, lotCode, needsCost } = result;
       say(
         intl.formatMessage(
@@ -182,7 +183,13 @@ export function ReceiveLineDialog({
       };
       close();
       await onReceived(received);
-    },
+    });
+  // Another lot's former code (ADR-094 amended, R11): at the lot's code,
+  // with Use {code}.
+  const former = useFormerCodeRefusal(
+    errorCode,
+    errorDetails,
+    lotControls.code,
   );
 
   function close() {
@@ -268,7 +275,8 @@ export function ReceiveLineDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {/* Another lot's former code is said at the lot's code. */}
+            {error && !former && <FormError message={error} />}
 
             {delivery && (
               <Typography>
@@ -392,6 +400,8 @@ export function ReceiveLineDialog({
                 value={form.lot}
                 onChange={(update) => {
                   setLotProblems({});
+                  // The refusal was of the code sent.
+                  if (former) reset();
                   setForm((current) => ({
                     ...current,
                     lot: update(current.lot),
@@ -400,7 +410,11 @@ export function ReceiveLineDialog({
                 codeRef={lotControls.code}
                 expiryRef={lotControls.expiry}
                 dayRef={lotControls.day}
-                errors={lotProblems}
+                errors={{
+                  ...lotProblems,
+                  code: former ? (error ?? undefined) : lotProblems.code,
+                }}
+                refusedFor={former?.lot}
               />
             )}
 

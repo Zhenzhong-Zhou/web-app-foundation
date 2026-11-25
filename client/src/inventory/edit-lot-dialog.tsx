@@ -10,7 +10,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useId, useRef, useState } from 'react';
+import { type SubmitEvent, useEffect, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { StockPile, UpdateLotDto } from '../api/types.gen';
@@ -18,11 +18,12 @@ import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
-import { api } from '../lib/api';
+import { api, hasCode } from '../lib/api';
 import type { ExpiryKind } from '../lib/api-names';
 import { useSubmit } from '../lib/use-submit';
 import { ExpiryChoice } from './expiry-choice';
 import { dayError, dayFor, expiryKindOf } from './lot-input';
+import { useLotMessage } from './lot-received';
 
 /** What Edit lot details reads of a lot: a pile's lot fields and place. */
 export type EditedLot = Pick<
@@ -40,7 +41,8 @@ export type EditedLot = Pick<
  * Edit lot details (ADR-094): when it expires, one of three (R8); its
  * supplier's lot, for a code made here (R5); its code, when the code was
  * ours to invent; and, for whoever holds stock.lot_made_here, an older
- * code typed up here marked as made here, once (R7).
+ * code typed up here marked as made here, once (R7). A corrected code
+ * asks why, kept with the code it leaves (ADR-094 amended, R8, E2a).
  *
  * Not a movement. Every other action on a stock row changes a quantity and
  * writes to the ledger; this changes a fact about the lot and writes nothing
@@ -52,6 +54,7 @@ export function EditLotDialog({
   row,
   onClose,
   onSaved,
+  onItsPage = false,
 }: {
   /**
    * The lot, as a pile carries it; its place null where none was chosen,
@@ -60,6 +63,11 @@ export function EditLotDialog({
   row: EditedLot | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
+  /**
+   * Opened on the lot's own page: the message after a corrected code
+   * offers no Open the lot, a link to where the person is.
+   */
+  onItsPage?: boolean;
 }) {
   const intl = useIntl();
   const can = useCan();
@@ -71,23 +79,54 @@ export function EditLotDialog({
     // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
     expiresAt: row?.lotExpiresAt ?? '',
     madeHere: false,
+    reason: '',
   });
-  const [errors, setErrors] = useState<{ code?: string; day?: string }>({});
+  const [errors, setErrors] = useState<{
+    code?: string;
+    reason?: string;
+    day?: string;
+  }>({});
   const codeRef = useRef<HTMLInputElement>(null);
+  const reasonRef = useRef<HTMLInputElement>(null);
   const dayRef = useRef<HTMLInputElement>(null);
+  const say = useLotMessage();
+  // The code as saved, for the message that names both (R8).
+  const sent = useRef<string | null>(null);
 
-  const { submitting, error, reset, submit } = useSubmit(
+  const { submitting, error, errorCode, reset, submit } = useSubmit(
     async () => {
+      const code = sent.current;
+      if (code && row?.lotId) {
+        say(
+          intl.formatMessage(
+            {
+              id: 'inventory.lot.savedWas',
+              defaultMessage: 'Lot {code} saved. It was {was}.',
+            },
+            { code, was: row.lotCode },
+          ),
+          onItsPage ? null : { id: row.lotId, code, made: false },
+        );
+      } else {
+        say(
+          intl.formatMessage({
+            id: 'inventory.lot.saved',
+            defaultMessage: 'Lot saved',
+          }),
+          null,
+        );
+      }
       close();
       await onSaved();
     },
-    {
-      success: intl.formatMessage({
-        id: 'inventory.lot.saved',
-        defaultMessage: 'Lot saved',
-      }),
-    },
   );
+  // Another lot's former code (R11): at the code, with no button, since
+  // it is another lot being renamed; focus there, as on every refusal at
+  // a field.
+  const former = hasCode(errorCode, 'lot_code_former');
+  useEffect(() => {
+    if (former) codeRef.current?.focus();
+  }, [former]);
 
   function close() {
     reset();
@@ -108,6 +147,10 @@ export function EditLotDialog({
   const madeHere = row?.lotIsAssigned === true || form.madeHere;
   // The mark, offered for a typed code to whoever may give it (R7).
   const mayMark = row?.lotIsAssigned === false && can('stock.lot_made_here');
+  // A changed code asks why, and only then (E2a): as the server compares
+  // it, trimmed and in capitals.
+  const newCode = form.code.trim().toUpperCase();
+  const changing = madeHere && newCode !== row?.lotCode;
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,10 +164,23 @@ export function EditLotDialog({
               defaultMessage: 'Type the lot’s code.',
             })
           : undefined,
+      reason:
+        changing && !form.reason.trim()
+          ? intl.formatMessage({
+              id: 'inventory.lot.reasonMissing',
+              defaultMessage: 'Say why the code is changing.',
+            })
+          : undefined,
       day: dayError(form.expiry, form.expiresAt, intl),
     };
     setErrors(found);
-    const first = found.code ? codeRef : found.day ? dayRef : null;
+    const first = found.code
+      ? codeRef
+      : found.reason
+        ? reasonRef
+        : found.day
+          ? dayRef
+          : null;
     if (first) {
       first.current?.focus();
       return;
@@ -134,12 +190,14 @@ export function EditLotDialog({
     // logs nothing for a save that changes nothing.
     const body: UpdateLotDto = {
       code: madeHere ? form.code : undefined,
+      reason: changing ? form.reason.trim() : undefined,
       // Empty takes it away again, "Supplier's lot to add" (R5).
       supplierLot: madeHere ? form.supplierLot.trim() : undefined,
       expiry: form.expiry,
       expiresAt: dayFor(form.expiry, form.expiresAt),
       madeHere: form.madeHere ? true : undefined,
     };
+    sent.current = changing ? newCode : null;
     void submit(() =>
       api(`/stock/lots/${row.lotId}`, {
         method: 'PATCH',
@@ -171,7 +229,7 @@ export function EditLotDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {error && !former && <FormError message={error} />}
 
             <TextField
               id="edit-lot-code"
@@ -183,13 +241,19 @@ export function EditLotDialog({
               fullWidth
               disabled={!madeHere}
               value={form.code}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, code: event.target.value }))
-              }
+              onChange={(event) => {
+                // The refusal was of the code sent.
+                if (former) reset();
+                setForm((current) => ({
+                  ...current,
+                  code: event.target.value,
+                }));
+              }}
               inputRef={codeRef}
-              error={!!errors.code}
+              error={!!errors.code || former}
               helperText={
                 errors.code ??
+                (former ? error : null) ??
                 (madeHere
                   ? intl.formatMessage({
                       id: 'inventory.lot.codeEditable',
@@ -212,6 +276,44 @@ export function EditLotDialog({
               }
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
+
+            {/* Asked when the code changes, and only then (E2a); put the
+                code back and it goes, what was typed kept. */}
+            {changing && (
+              <TextField
+                id="edit-lot-reason"
+                label={intl.formatMessage({
+                  id: 'inventory.lot.reason',
+                  defaultMessage: 'Why is the code changing?',
+                })}
+                required
+                fullWidth
+                multiline
+                minRows={2}
+                value={form.reason}
+                onChange={(event) => {
+                  setErrors((current) => ({ ...current, reason: undefined }));
+                  setForm((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }));
+                }}
+                inputRef={reasonRef}
+                error={!!errors.reason}
+                helperText={
+                  errors.reason ??
+                  intl.formatMessage(
+                    {
+                      id: 'inventory.lot.reason.help',
+                      defaultMessage:
+                        'Kept with the old code, {code}, on the lot’s page.',
+                    },
+                    { code: row?.lotCode },
+                  )
+                }
+                slotProps={{ htmlInput: { maxLength: 500 } }}
+              />
+            )}
 
             {mayMark && (
               <Box>

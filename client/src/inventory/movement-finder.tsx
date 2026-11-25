@@ -97,6 +97,12 @@ export function MovementFinder({
           { id: 'inventory.movements.findLot', defaultMessage: 'Lot {code}' },
           { code: result.title },
         ),
+        // The former code it was found by (ADR-094 amended, R9).
+        result.formerCode &&
+          intl.formatMessage(
+            { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
+            { code: result.formerCode },
+          ),
         // Which finds it as its code does (ADR-094, R6).
         result.supplierLot &&
           intl.formatMessage(

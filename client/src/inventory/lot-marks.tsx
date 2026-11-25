@@ -28,3 +28,22 @@ export function SupplierLotLine({
     </Typography>
   );
 }
+
+/**
+ * A lot's latest former code, one grey line under its code: "was
+ * ASH-06O1", as a changed item code reads on Movements (ADR-094 amended,
+ * R9). A lot never corrected says nothing, never an empty "was —".
+ */
+export function FormerCodeLine({ code }: { code: string | null }) {
+  const intl = useIntl();
+  if (!code) return null;
+
+  return (
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      {intl.formatMessage(
+        { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
+        { code },
+      )}
+    </Typography>
+  );
+}

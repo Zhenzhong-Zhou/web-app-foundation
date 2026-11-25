@@ -26,6 +26,7 @@ import {
   movementActor,
   type MovementColumns,
 } from './describe-movement';
+import { FormerCodeLine } from './lot-marks';
 import {
   inSentence,
   lotChangeLabel,
@@ -563,17 +564,27 @@ function Sender({
  * The lot's code, a link to its trace, its expiry under it; a lot change
  * both its lots, "LOT-A → LOT-B", the one it left first, each a link; and
  * as lot tracking starts, or for stock back from before, the lot it
- * entered alone, there being no first (ADR-094; review 30).
+ * entered alone, there being no first (ADR-094; review 30). A lot whose
+ * code was corrected since the row says under it the code it had then,
+ * "was …", as a changed item code reads (ADR-094 amended, M1a).
  */
 export function MovementLot({
   movement,
 }: {
   movement: Pick<Movement, 'lotId' | 'lotCode' | 'lotExpiresAt' | 'lotExpiry'> &
-    Partial<Pick<Movement, 'toLotId' | 'toLotCode'>>;
+    Partial<
+      Pick<Movement, 'toLotId' | 'toLotCode' | 'lotCodeThen' | 'toLotCodeThen'>
+    >;
 }) {
   const intl = useIntl();
   if (movement.toLotId && movement.toLotCode && !movement.lotId) {
-    return <LotLink id={movement.toLotId} code={movement.toLotCode} />;
+    return (
+      <LotThen
+        id={movement.toLotId}
+        code={movement.toLotCode}
+        then={movement.toLotCodeThen}
+      />
+    );
   }
   if (movement.toLotId && movement.toLotCode) {
     return (
@@ -584,7 +595,11 @@ export function MovementLot({
         sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
       >
         {movement.lotId && movement.lotCode ? (
-          <LotLink id={movement.lotId} code={movement.lotCode} />
+          <LotThen
+            id={movement.lotId}
+            code={movement.lotCode}
+            then={movement.lotCodeThen}
+          />
         ) : (
           NO_VALUE
         )}
@@ -596,7 +611,11 @@ export function MovementLot({
             defaultMessage: 'into',
           })}
         </Box>
-        <LotLink id={movement.toLotId} code={movement.toLotCode} />
+        <LotThen
+          id={movement.toLotId}
+          code={movement.toLotCode}
+          then={movement.toLotCodeThen}
+        />
       </Stack>
     );
   }
@@ -604,7 +623,11 @@ export function MovementLot({
 
   return (
     <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
-      <LotLink id={movement.lotId} code={movement.lotCode} />
+      <LotThen
+        id={movement.lotId}
+        code={movement.lotCode}
+        then={movement.lotCodeThen}
+      />
       {/* Its expiry, or "Expiry to add" while it is not known (ADR-094,
           D2); nothing for a lot that does not expire. */}
       {(movement.lotExpiresAt || movement.lotExpiry === 'unknown') && (
@@ -682,6 +705,30 @@ export function MovementBy({
         intl.formatMessage(MOVEMENT_HEADINGS.deletedUser),
       )}
     />
+  );
+}
+
+/**
+ * A lot's code today, a link, and under it the code it had when the row
+ * was made, where a correction changed it since (M1a); the first line its
+ * baseline beside a lot change's arrow.
+ */
+function LotThen({
+  id,
+  code,
+  then,
+}: {
+  id: string;
+  code: string;
+  then?: string | null;
+}) {
+  if (!then) return <LotLink id={id} code={code} />;
+
+  return (
+    <Stack sx={{ alignItems: 'flex-start' }}>
+      <LotLink id={id} code={code} />
+      <FormerCodeLine code={then} />
+    </Stack>
   );
 }
 

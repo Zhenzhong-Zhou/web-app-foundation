@@ -544,6 +544,35 @@ describe('MovementsPage', () => {
     expect(cellUnder(row, 'Lot')).toHaveTextContent('NN-2410-07Expiry to add');
   });
 
+  // ADR-094 amended, M1a: a row from before its lot's code was corrected
+  // says the code the lot had then, as a changed item code reads.
+  it('says under a lot the code it had when the row was made, where it was corrected since', async () => {
+    const row = await rowFor(movement({ lotCodeThen: 'NN-24I0-07' }));
+
+    const lot = cellUnder(row, 'Lot')!;
+    // The code then under today's, before its expiry.
+    expect(lot).toHaveTextContent(/^NN-2410-07was NN-24I0-07Oct 31, 2027$/);
+    expect(within(lot).getByRole('link', { name: 'NN-2410-07' })).toBeVisible();
+  });
+
+  it('says it under each lot of a lot change that had another code then', async () => {
+    const row = await rowFor({
+      ...LOT_CHANGE,
+      lotCodeThen: 'LOT-0',
+      toLotCodeThen: 'LOT-8',
+    });
+
+    expect(cellUnder(row, 'Lot')).toHaveTextContent(
+      'LOT-Awas LOT-0→intoLOT-Bwas LOT-8',
+    );
+  });
+
+  it('says nothing more under a lot whose code is as it was', async () => {
+    const row = await rowFor(MOVEMENT);
+
+    expect(cellUnder(row, 'Lot')).not.toHaveTextContent('was');
+  });
+
   it('names who by name, their email beneath', async () => {
     const row = await rowFor(MOVEMENT);
 
@@ -989,8 +1018,9 @@ describe('MovementsPage', () => {
         await screen.findByRole('combobox', { name: FIND }),
         'ash-06o1',
       );
+      // Saying the former code it was found by (ADR-094 amended, R9).
       expect(await offered()).toEqual({
-        options: ['Lot ASH-0601 · Vitamin C 500 mg'],
+        options: ['Lot ASH-0601 · was ASH-06O1 · Vitamin C 500 mg'],
         headings: ['Lots'],
       });
 

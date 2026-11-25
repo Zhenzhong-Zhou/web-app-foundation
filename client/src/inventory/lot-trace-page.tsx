@@ -50,6 +50,7 @@ import {
   displayQuantity,
   formatDate,
   formatDay,
+  formatWhen,
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
@@ -66,7 +67,7 @@ import { rem } from '../theme/rem';
 import { COLOR_OF_TONE } from '../theme/status';
 import { EditLotDialog } from './edit-lot-dialog';
 import { lotExpiryPart } from './lot-expiry';
-import { SupplierLotLine } from './lot-marks';
+import { FormerCodeLine, SupplierLotLine } from './lot-marks';
 import { useMenuWords } from './menu-words';
 import { inSentence, reasonDetailLabel } from './movement-reasons';
 import { movementsPath } from './movements-path';
@@ -215,6 +216,9 @@ export function LotSearchPage() {
                 <TableRow key={lot.id} hover>
                   <TableCell>
                     <LotLink id={lot.id} code={lot.code} />
+                    {/* The former code it was found by, where its code
+                        today did not match (ADR-094 amended, R9). */}
+                    <FormerCodeLine code={lot.formerCode} />
                     {/* The supplier's lot, which finds it too, as the
                         lookup's lot row reads it (ADR-094, S10). */}
                     <SupplierLotLine
@@ -318,6 +322,15 @@ export function LotTracePage() {
             { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
             { code: trace.lot.code },
           )}
+          // Its latest former code beside it, every one under Former
+          // codes (ADR-094 amended, R9); nothing for a lot never corrected.
+          beside={
+            trace.lot.formerCodes[0] &&
+            intl.formatMessage(
+              { id: 'inventory.movements.was', defaultMessage: 'was {code}' },
+              { code: trace.lot.formerCodes[0].code },
+            )
+          }
           status={
             expiry
               ? { label: expiry.label, color: COLOR_OF_TONE[expiry.tone] }
@@ -386,6 +399,10 @@ export function LotTracePage() {
           onShow={() => receivedBy.current?.focus()}
         />
       </Stack>
+
+      {trace.lot.formerCodes.length > 0 && (
+        <FormerCodes codes={trace.lot.formerCodes} />
+      )}
 
       <Section
         title={intl.formatMessage({
@@ -619,8 +636,53 @@ export function LotTracePage() {
         }
         onClose={() => setEditing(false)}
         onSaved={reload}
+        onItsPage
       />
     </Stack>
+  );
+}
+
+/**
+ * Every code the lot had before its code was corrected, newest first:
+ * until when, who corrected it and why (ADR-094 amended, R8, R9, E2a).
+ */
+function FormerCodes({ codes }: { codes: LotTrace['lot']['formerCodes'] }) {
+  const intl = useIntl();
+
+  return (
+    <Section
+      title={intl.formatMessage({
+        id: 'inventory.trace.formerCodes',
+        defaultMessage: 'Former codes',
+      })}
+    >
+      <Grid
+        head={[
+          intl.formatMessage({ id: 'products.sku', defaultMessage: 'Code' }),
+          intl.formatMessage({
+            id: 'inventory.trace.formerCodes.until',
+            defaultMessage: 'Used until',
+          }),
+          intl.formatMessage({
+            id: 'inventory.trace.formerCodes.by',
+            defaultMessage: 'Changed by',
+          }),
+          intl.formatMessage({
+            id: 'inventory.trace.formerCodes.why',
+            defaultMessage: 'Why',
+          }),
+        ]}
+        rows={codes.map((former) => [
+          <Reference>{former.code}</Reference>,
+          formatWhen(former.changedAt),
+          former.changedByName,
+          // As typed, kept whole: it is the record of why.
+          <Box component="span" sx={{ whiteSpace: 'pre-line' }}>
+            {former.reason}
+          </Box>,
+        ])}
+      />
+    </Section>
   );
 }
 
@@ -845,8 +907,9 @@ function Recipients({
       defaultMessage: 'Date',
     }),
   };
+  // A row is also the code its lot had as the stock left (F1).
   const keyOf = (row: LotRecipient) =>
-    [row.partnerId, row.orderId, row.lotId].join('-');
+    [row.partnerId, row.orderId, row.lotId, row.lotCodeThen].join('-');
 
   const who = (row: LotRecipient) =>
     row.partnerId ? (
@@ -883,9 +946,26 @@ function Recipients({
     ) : (
       NO_VALUE
     );
+  // What left before the lot's code was corrected says the code on its
+  // boxes, in the Through lot cell, no column added (ADR-094 amended,
+  // E3a; row v22): alone for this lot, after the link for another.
+  const shippedAs = (row: LotRecipient) =>
+    row.lotCodeThen &&
+    intl.formatMessage(
+      {
+        id: 'inventory.trace.shippedAs',
+        defaultMessage: 'shipped as {code}',
+      },
+      { code: <Reference>{row.lotCodeThen}</Reference> },
+    );
   const through = (row: LotRecipient) =>
     row.lotId === lotId ? (
-      NO_VALUE
+      (shippedAs(row) ?? NO_VALUE)
+    ) : row.lotCodeThen ? (
+      <Stack sx={{ alignItems: 'flex-start' }}>
+        <LotLink id={row.lotId} code={row.lotCode} />
+        <span>{shippedAs(row)}</span>
+      </Stack>
     ) : (
       <LotLink id={row.lotId} code={row.lotCode} />
     );
@@ -965,7 +1045,8 @@ function Recipients({
                   {row.orderId && (
                     <CardLine label={HEADS.order}>{order(row)}</CardLine>
                   )}
-                  {row.lotId !== lotId && (
+                  {/* Another lot's, or the code on the boxes (E3a). */}
+                  {(row.lotId !== lotId || row.lotCodeThen) && (
                     <CardLine label={HEADS.through}>{through(row)}</CardLine>
                   )}
                   {/* What it received, the numbers that matter alone. */}

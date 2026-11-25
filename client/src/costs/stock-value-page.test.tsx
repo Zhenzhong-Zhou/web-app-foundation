@@ -285,6 +285,29 @@ describe('StockValuePage, by item and lot', () => {
     ).not.toBeInTheDocument();
   });
 
+  // ADR-094 amended, R9, 5a: a corrected lot's latest former code, one
+  // grey line under its code, as Stock by lot has it.
+  it('says a corrected lot’s latest former code under its code, and nothing for a lot never corrected', async () => {
+    poolsRead(
+      () =>
+        pageOf([
+          { ...pool('Ash'), lotCode: 'ASH-0601', lotFormerCode: 'ASH-06O1' },
+          pool('Calm'),
+        ]),
+      () => 2,
+    );
+    renderAt('/costs');
+
+    const table = await screen.findByRole('table', {
+      name: 'By item and lot',
+    });
+    const [ash, calm] = within(table).getAllByRole('row').slice(1);
+    expect(
+      within(ash).getByRole('link', { name: 'ASH-0601' }).closest('td'),
+    ).toHaveTextContent(/^ASH-0601was ASH-06O1$/);
+    expect(calm).not.toHaveTextContent('was');
+  });
+
   // Show 50 more: the next page below, focus on its first row; failing,
   // the rows shown stay, with a line saying so and Try again (#544); the
   // total stays the whole's throughout, its read never asked again.

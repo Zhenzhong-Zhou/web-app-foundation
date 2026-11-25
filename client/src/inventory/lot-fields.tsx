@@ -1,6 +1,5 @@
 import {
   Autocomplete,
-  Box,
   Button,
   Stack,
   TextField,
@@ -19,8 +18,11 @@ import { lotExpiry } from './lot-expiry';
 import {
   chosenExpiry,
   existingLot,
+  formerCodeMessage,
+  formerOwner,
   type LotErrors,
   type LotInput,
+  type LotToUse,
   useNextLotCode,
 } from './lot-input';
 import { placeName } from './stock-places';
@@ -32,6 +34,10 @@ import { placeName } from './stock-places';
  * a new one (R10); the supplier's lot beside a made code (R5); and when a
  * new lot expires, one of three (R8). The dialogs themselves stay apart;
  * these fields are the part that is the same.
+ *
+ * Another lot's former code is refused at the field while it is typed,
+ * naming that lot, and on the server's refusal of the write; Use {code}
+ * takes that lot, what else was typed kept (ADR-094 amended, R11, 4a).
  *
  * Render it only for a lot-tracked variant. The server refuses a lot on a
  * variant that does not track them, and refuses a receipt without one on
@@ -52,6 +58,8 @@ export function LotFields({
   dayRef,
   errors = {},
   expiryStart,
+  refusedFor,
+  onUse,
 }: {
   /** Keeps the dialogs' field ids apart. */
   idPrefix: string;
@@ -77,6 +85,17 @@ export function LotFields({
   errors?: LotErrors;
   /** Where Expires started, said under it (ExpiryChoice's `start`). */
   expiryStart?: string;
+  /**
+   * The lot the server named, refusing the code sent as its former code
+   * (`useFormerCodeRefusal`), its words in `errors.code`: Use {code}.
+   */
+  refusedFor?: LotToUse | null;
+  /**
+   * Use {code}, where taking the lot is more than its code typed: Count
+   * it in's new lot, which takes it as One of its lots. Without it the
+   * field takes the code, focus staying in it.
+   */
+  onUse?: (lot: LotToUse) => void;
 }) {
   const intl = useIntl();
   // Type one instead: the field empties, and focus goes into it as it
@@ -88,9 +107,13 @@ export function LotFields({
       node.focus();
     }
   }, []);
-  const codeInput = useForkRef(focusTyped, codeRef);
+  const codeNode = useRef<HTMLInputElement | null>(null);
+  const codeInput = useForkRef(focusTyped, codeRef, codeNode);
 
   const existing = knowsLots ? existingLot(value, lots) : undefined;
+  // Another lot's former code, said as it is typed (R11, 4a).
+  const former = knowsLots ? formerOwner(value, lots) : undefined;
+  const toUse = value.made ? null : (refusedFor ?? former ?? null);
   const asksExpiry = mustBeNew || !existing;
   const expiry = chosenExpiry(value, lots);
 
@@ -101,9 +124,12 @@ export function LotFields({
     id: 'inventory.lot.number',
     defaultMessage: 'Lot number',
   });
+  const refused = !!errors.code || !!former;
   const help =
     errors.code ??
-    (knowsLots && value.code.trim() ? (
+    (former ? (
+      formerCodeMessage(value, former, intl)
+    ) : knowsLots && value.code.trim() ? (
       <CodeLine
         lot={existing}
         mustBeNew={mustBeNew}
@@ -138,7 +164,7 @@ export function LotFields({
           value={value.code}
           onChange={(event) => set({ code: event.target.value })}
           inputRef={codeInput}
-          error={!!errors.code}
+          error={refused}
           helperText={help}
           slotProps={{ htmlInput: { maxLength: 64 } }}
         />
@@ -179,15 +205,40 @@ export function LotFields({
               label={label}
               required
               inputRef={codeInput}
-              error={!!errors.code}
+              error={refused}
               helperText={help}
             />
           )}
         />
       )}
 
-      {/* Under the field it changes, so the two read as one control. */}
-      <Box sx={{ mt: -1 }}>
+      {/* Under the field it changes, so the two read as one control; the
+          lot a refused code names first, as the way out (v19's board). */}
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        sx={{ mt: -1, flexWrap: 'wrap', alignItems: 'center' }}
+      >
+        {toUse && (
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              if (onUse) {
+                onUse(toUse);
+                return;
+              }
+              set({ code: toUse.code });
+              codeNode.current?.focus();
+            }}
+          >
+            {intl.formatMessage(
+              { id: 'inventory.lot.useCode', defaultMessage: 'Use {code}' },
+              { code: toUse.code },
+            )}
+          </Button>
+        )}
         {value.made ? (
           <Button
             size="small"
@@ -209,7 +260,7 @@ export function LotFields({
             })}
           </Button>
         )}
-      </Box>
+      </Stack>
 
       {value.made && (
         <TextField

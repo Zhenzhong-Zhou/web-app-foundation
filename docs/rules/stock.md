@@ -576,13 +576,16 @@ file is kept is in the [README](README.md).
   the reader's language, for a reader with stock.view. A row is also
   the code its lot had when each movement was recorded, the code on
   the boxes: stock that left before the lot's code was corrected is a
-  row of its own, its export's Lot cell today's code then "(shipped as
-  …)", and an order shipped before and after is two rows adding up to
-  what one said; a lot never corrected reads as before.
+  row of its own, its Through lot cell on the page "shipped as …",
+  after the link where it came through another lot, and its export's
+  Lot cell today's code then "(shipped as …)"; an order shipped before
+  and after is two rows adding up to what one said; a lot never
+  corrected reads as before.
   [ADR-044, amended](../adr/0044-lot-trace.md#amendment-november-2026--the-recall-lists-export-and-a-lots-expired-days-adr-093) ·
   [ADR-044, amended again](../adr/0044-lot-trace.md#amendment-november-2026--the-trace-follows-a-move-between-lots-and-one-rule-for-the-lot-search-adr-094) ·
   [ADR-044, amended for a former code](../adr/0044-lot-trace.md#amendment-november-2026--a-lot-found-by-its-former-code-and-a-recall-that-names-the-code-on-the-boxes-adr-094s-amendment-665) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "splits a recipient’s row by the code the stock left under, saying it on the page and after today’s code in the export (E3a, F1)" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "says “shipped as” in Through lot for what left before a correction, a row a code" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "lists on the first lot’s recall list a customer who received only the second lot, with the lot it came through, on the page and in the export (R21)" ·
@@ -973,20 +976,29 @@ file is kept is in the [README](README.md).
   until when, who corrected it and why, in the same save; a lot
   corrected twice keeps both. Why is asked only when the code changes,
   and a changed code with none is refused, saying so, nothing changed;
-  the why is free text, so it is never in the Activity log. A lot may
-  take its own former code back.
+  Edit lot details asks it only once the code differs, trimmed and in
+  capitals, and says both codes after the save. The why is free text,
+  so it is never in the Activity log. A lot may take its own former
+  code back.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-lots-former-codes) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "keeps each code a lot is corrected from, with when, who and why, the why never in the Activity log (R8)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a changed code with no why, saying so, and changes nothing; a save that keeps the code asks none (R8, E2a)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "lets a lot take its own former code back, and refuses the code it leaves to any other lot (R11)" ·
+  [test](../../client/src/inventory/edit-lot-dialog.test.tsx) "asks why only when the code changes, the question gone when it is put back; required, at its field" ·
+  MC-329 ·
   MC-334
 - **A former code is never given to another lot of the item:** typed in
   Receive stock, an order's Receive, Count it in…, Move to another lot or
   a run's Record output, for a new lot or one to add to, or in Edit lot
   details for another lot, it is refused, naming the lot that had it and
-  until when, and nothing is written. Another item may carry the code,
-  as a code is unique within an item. A made code passes over a former
-  code of the item, and Numbering refuses a next number one carries.
+  until when, and nothing is written. The four dialogs that share the
+  lot field say so as the code is typed, from the former codes of the
+  item's lots, and offer Use …, which takes that lot, what else was
+  typed kept; Record output and Edit lot details say the server's
+  refusal at the field, with no button. Another item may carry the
+  code, as a code is unique within an item. A made code passes over a
+  former code of the item, and Numbering refuses a next number one
+  carries.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#an-old-code-is-never-given-to-another-lot) ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses another lot’s former code for a new lot or to add to, naming that lot, and writes nothing (R11)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses another lot’s former code in Edit lot details, naming that lot, and changes nothing; another item takes the code (R11)" ·
@@ -994,6 +1006,9 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lot-changes.e2e-spec.ts) "refuses another lot’s former code for the new lot, naming that lot, and moves nothing (R11)" ·
   [test](../../server/test/numbering.e2e-spec.ts) "passes over a code a lot of the item had before its code was corrected, and not another item’s (ADR-094 amended, R11)" ·
   [test](../../server/test/numbering.e2e-spec.ts) "refuses a next number a lot’s former code carries (ADR-094 amended, R11)" ·
+  [test](../../client/src/inventory/lot-fields.test.tsx) "refuses it while it is typed, naming the lot that had it; Use {code} takes that lot, focus in the field" ·
+  [test](../../client/src/inventory/count-in-dialog.test.tsx) "refuses another lot’s former code for the new lot as it is typed; Use {code} chooses that lot among its lots, the rest kept" ·
+  [test](../../client/src/production/record-output-dialog.test.tsx) "says the server’s refusal of another lot’s former code under the batch number, focus there, with no button, what was typed kept" ·
   MC-334
 
 ## Starting lot tracking

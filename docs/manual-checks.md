@@ -768,9 +768,15 @@ a second organization.
   from Open the lot or Trace a lot, has Edit lot details… beside its
   title, saying "This changes the lot everywhere it is."; saved, the
   page reads the lot again. A Viewer sees no such button. Correct a code
-  made here, then open its Lot updated entry in the Activity log: it
-  names the item's code and the lot, and reads "Lot code: OLD → NEW",
-  both codes; a save of the expiry alone reads the expiry alone.
+  made here: "Why is the code changing?" shows under it, and only once
+  the code differs; put the code back and it goes. Save with it empty:
+  "Say why the code is changing." at it, focus there, nothing saved.
+  Saved with a reason, the message reads "Lot NEW saved. It was OLD.",
+  with Open the lot, which the lot's own page does not offer. Then open
+  its Lot updated entry in the Activity log: it names the item's code
+  and the lot, and reads "Lot code: OLD → NEW", both codes, and not the
+  reason; a save of the expiry alone reads the expiry alone and asks no
+  reason. In 中文 为什么改编码？
 - **MC-330** *(ADR-094, R5, R9)* A lot's marks and Details to add. On
   Stock, a lot whose expiry is not known yet reads "Expiry to add" where
   its expiry shows, and a lot made here with no supplier's lot reads
@@ -829,15 +835,23 @@ a second organization.
   another lot's. As the demo Owner, correct the code of a lot made here
   in Edit lot details, saying why: it reads the new code, and the old
   one is its former code. For the same item, type the old code in
-  Receive stock and Receive: refused, "… was the code of lot … until
-  …. A code is never given to a second lot.", naming the lot by its
-  code now, the day the one it was corrected; nothing is received. The
-  same in an order's Receive, Count it in…, Move to another lot… and a
-  run's Record output, and in Edit lot details renaming another lot of
-  the item to it. The lot itself takes its old code back. Another item
-  receives a lot of that code. Make a code for us never makes a former
-  code again, and Organization › Documents › Lot codes refuses setting
-  Next back to give one. In 中文 … 是批次 … 的原编码，…起不再使用。
+  Receive stock's Lot number: as it is typed the field turns red and
+  says "… was the code of lot …. A code is never given to a second
+  lot.", naming the lot by its code now, with Use …; Receive anyway is
+  refused at the field, focus there, nothing received. Use … puts that
+  lot's code in the field, "An existing lot. This adds to it.", the
+  quantity and place kept. The same in an order's Receive and Move to
+  another lot…, whose Use moves the stock into that lot, and in Count it
+  in…'s new lot, whose Use chooses One of its lots with that lot. Where
+  the dialog was opened before the correction, Receive is refused by
+  the server at the field, "… until …", the day it was corrected, with
+  Use … all the same. A run's Record output says it under Batch number,
+  and Edit lot details renaming another lot of the item to it under Lot
+  number, each with no button. The lot itself takes its old code back.
+  Another item receives a lot of that code. Make a code for us never
+  makes a former code again, and Organization › Documents › Lot codes
+  refuses setting Next back to give one. In 中文 … 是批次 … 的原编码，
+  …起不再使用。, 使用 ….
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -1457,12 +1471,22 @@ search to having the list of customers; the target is **under two minutes**.
   same text finds it in Trace a lot, in Inventory's search by item and
   by lot, at its place alone when one is chosen, in Stock value's Find
   an item or a lot, and in Movements' Find an item, lot or order, where,
-  typed whole, the lot is offered alone. On the lot's trace, Who
-  received it lists the customer twice, what left before the
-  correction and what left after, adding up to what was shipped; the
-  Export's Lot cell reads "ASH-0601 (shipped as ASH-06O1)" on the
-  first row and today's code alone on the second. In French « (expédié
-  sous ASH-06O1) », in 中文（发货时为 ASH-06O1）.
+  typed whole, the lot is offered alone, "Lot … · was …". Trace a lot's
+  list says "was …" under its code. The lot's own page reads "Lot …"
+  with "was …" beside it, and Former codes under the title lists each
+  code it had, newest first, with Used until, Changed by and Why. One
+  grey line, "was …", sits under its code on Stock's lots, the Lot view
+  (on a phone's card too) and Stock value's rows; a lot never corrected
+  shows none. On Movements, a row from before the correction says "was
+  …" under the lot, one after it nothing, and its Export keeps today's
+  code. On the lot's trace, Who received it lists the customer twice,
+  what left before the correction and what left after, adding up to
+  what was shipped, the first row's Through lot reading "shipped as
+  …", the second "—"; at 390 px the first card has a Through lot line
+  with the same words. The Export's Lot cell reads "ASH-0601 (shipped
+  as ASH-06O1)" on the first row and today's code alone on the second.
+  In French « anciennement … », « expédié sous … » and « (expédié sous
+  ASH-06O1) », in 中文 原编码 …, 发货时为 … and（发货时为 ASH-06O1）.
 
 ## 10. Audit
 
@@ -7986,3 +8010,9 @@ first.
   R10: every lot search finds a lot by a former code, and a recall's
   rows split by the code on the boxes, the export saying "shipped as":
   MC-911 added.
+- 2026-11-25: ADR-094's amendment, a lot's former codes on the screens,
+  R9 and R11: "was …" beside a lot's title and under its code in the
+  lists, Former codes on its page, "shipped as …" in Who received it;
+  Edit lot details asking why a code changes; another lot's former code
+  refused as it is typed, with Use …: MC-329, MC-334 and MC-911
+  extended.

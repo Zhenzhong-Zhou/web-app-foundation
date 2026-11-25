@@ -260,11 +260,16 @@ file is kept is in the [README](README.md).
 - **Output goes into a batch this run already made, its latest by
   default, or a new one.** Record output offers only this run's own
   batches, by their codes. A new batch's code is required, up to 64
-  characters, with an optional expiry.
+  characters, with an optional expiry; a code another lot of the item
+  had before its code was corrected is refused under the batch number,
+  naming that lot, with no button (stock's rules).
   [ADR-032](../adr/0032-production-runs.md#decision--output-joins-the-runs-open-lot-by-default) ·
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#an-old-code-is-never-given-to-another-lot) ·
   [ADR-030](../adr/0030-who-supplies-a-component-is-a-property-of-the-run.md#decision--a-runs-output-lots-are-read-from-the-ledger-not-stored-on-it) ·
   [test](../../server/test/production-orders.e2e-spec.ts) "offers the run own lots so a second day can join the first" ·
   [test](../../server/test/production-orders.e2e-spec.ts) "creates a second lot when the batch genuinely divides" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses another lot’s former code for a run’s Record output, naming that lot, and records nothing (R11)" ·
+  [test](../../client/src/production/record-output-dialog.test.tsx) "says the server’s refusal of another lot’s former code under the batch number, focus there, with no button, what was typed kept" ·
   [test](../../client/e2e/production.spec.ts) "plans, releases by lot, records output and closes a run" ·
   [Help](../../client/src/help/guides/en/production.md#record-output-and-close-close) ·
   MC-503

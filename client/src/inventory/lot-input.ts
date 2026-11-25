@@ -1,6 +1,13 @@
+import { type RefObject, useEffect } from 'react';
 import type { IntlShape } from 'react-intl';
 
-import type { Lot, MovementLotDto, NumberingEnvelope } from '../api/types.gen';
+import type {
+  ErrorDetails,
+  Lot,
+  MovementLotDto,
+  NumberingEnvelope,
+} from '../api/types.gen';
+import { hasCode } from '../lib/api';
 import type { ExpiryKind } from '../lib/api-names';
 import { formatNumber } from '../lib/numbering';
 import { useResource } from '../lib/use-resource';
@@ -80,6 +87,69 @@ export function existingLot(
     : lots.find((lot) => lot.code === code);
 }
 
+/** A lot of the item, as Use {code} takes it: its id and its code now. */
+export type LotToUse = Pick<Lot, 'id' | 'code'>;
+
+/**
+ * The lot whose former code a typed code is (ADR-094 amended, R11, 4a),
+ * where no lot has it now: a code is never given to a second lot, so the
+ * field refuses it while it is typed, naming that lot. A lot that took
+ * its own former code back has it now, and is the lot the code names.
+ */
+export function formerOwner(
+  input: LotInput,
+  lots: readonly Lot[],
+): Lot | undefined {
+  const code = input.code.trim().toUpperCase();
+  return input.made || !code || existingLot(input, lots)
+    ? undefined
+    : lots.find((lot) => lot.formerCodes.includes(code));
+}
+
+/**
+ * The refusal, while typing, of another lot's former code (R11, 4a). The
+ * server's, on a write, also says until when; the lots the field holds
+ * carry the codes alone (F2).
+ */
+export function formerCodeMessage(
+  input: LotInput,
+  owner: LotToUse,
+  intl: IntlShape,
+): string {
+  return intl.formatMessage(
+    {
+      id: 'inventory.lot.formerCode',
+      defaultMessage:
+        '{code} was the code of lot {lot}. A code is never given to a second lot.',
+    },
+    { code: input.code.trim().toUpperCase(), lot: owner.code },
+  );
+}
+
+/**
+ * A write refused for another lot's former code (`lot_code_former`, R11):
+ * said at the lot's code, never above the form, focus going there as on
+ * every refusal at a field; the lot that had the code, when the server
+ * names it, for Use {code}. Null for any other answer.
+ */
+export function useFormerCodeRefusal(
+  errorCode: string | null,
+  errorDetails: ErrorDetails | null,
+  codeRef: RefObject<HTMLInputElement | null>,
+): { lot: LotToUse | null } | null {
+  const refused = hasCode(errorCode, 'lot_code_former');
+  useEffect(() => {
+    if (refused) codeRef.current?.focus();
+  }, [refused, codeRef]);
+  if (!refused) return null;
+  return {
+    lot:
+      errorDetails?.lotId && errorDetails.lotCode
+        ? { id: errorDetails.lotId, code: errorDetails.lotCode }
+        : null,
+  };
+}
+
 /**
  * Where Expires starts (R8, E6): as the item's last lot had it, a first
  * lot with none chosen; Not known yet for a code made for us, since a
@@ -146,6 +216,13 @@ export function lotErrors(
       id: 'inventory.lot.numberMissing',
       defaultMessage: 'Type the lot number as printed, or make a code for us.',
     });
+  }
+  // Another lot's former code, refused before the write (R11, 4a); the
+  // server's refusal is what holds.
+  const owner = formerOwner(input, lots);
+  if (owner) {
+    errors.code = formerCodeMessage(input, owner, intl);
+    return errors;
   }
   if (!mustBeNew && existingLot(input, lots)) return errors;
 

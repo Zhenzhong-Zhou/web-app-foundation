@@ -79,18 +79,21 @@ function open(
     refusal,
     canSeeCosts = true,
     lotCode = null,
+    lots = [LOT],
   }: {
     needsCost?: boolean;
     refusal?: Response;
     canSeeCosts?: boolean;
     /** The lot the write names, as the server answers (ADR-094). */
     lotCode?: string | null;
+    /** The item's lots, as the lot field reads them. */
+    lots?: Lot[];
   } = {},
 ) {
   const sent: Record<string, unknown>[] = [];
   const onCounted = vi.fn();
   server.use(
-    http.get('/api/v1/stock/lots', () => HttpResponse.json([LOT])),
+    http.get('/api/v1/stock/lots', () => HttpResponse.json(lots)),
     http.post('/api/v1/stock/movements', async ({ request }) => {
       sent.push((await request.json()) as Record<string, unknown>);
       if (refusal) return refusal;
@@ -275,6 +278,47 @@ describe('CountInDialog, found stock', () => {
     expect(
       screen.queryByRole('alert', { name: 'Error' }),
     ).not.toBeInTheDocument();
+  });
+
+  // ADR-094 amended, R11: another lot's former code for the new lot; Use
+  // {code} takes that lot as One of its lots, what else was typed kept.
+  it('refuses another lot’s former code for the new lot as it is typed; Use {code} chooses that lot among its lots, the rest kept', async () => {
+    const { user, sent } = open(TRACKED, {
+      lotCode: 'VC-0305',
+      lots: [{ ...LOT, formerCodes: ['VC-03O5'] }],
+    });
+    await fill(user);
+    await user.click(screen.getByRole('radio', { name: 'A new lot' }));
+    const code = screen.getByRole('textbox', { name: /^Lot number/ });
+
+    await user.type(code, 'VC-03O5');
+
+    expect(code).toHaveAccessibleDescription(
+      'VC-03O5 was the code of lot VC-0305. A code is never given to a second lot.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Use VC-0305' }));
+
+    expect(
+      screen.getByRole('radio', { name: 'One of its lots' }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole('radio', { name: 'One of its lots' }),
+    ).toHaveFocus();
+    expect(screen.getByRole('combobox', { name: /^Lot/ })).toHaveTextContent(
+      'VC-0305 · Expires Mar 3, 2027',
+    );
+    expect(screen.getByRole('textbox', { name: /^Quantity/ })).toHaveValue(
+      '12',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Counted in 12 each of VITC-100 at Shelf C3, lot VC-0305.',
+    );
+    expect(sent[0]).toMatchObject({
+      lotId: 'lot-5',
+      note: 'Behind the cartons',
+    });
   });
 
   // ADR-094, R3: Make a code for us here too, the message naming it.

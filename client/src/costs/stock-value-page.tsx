@@ -44,6 +44,7 @@ import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
+import { FormerCodeLine } from '../inventory/lot-marks';
 import { withQuery } from '../lib/api';
 import type { ValuationSort } from '../lib/api-names';
 import {
@@ -663,6 +664,9 @@ export function StockValuePage() {
                         ) : (
                           NO_VALUE
                         )}
+                        {/* Its latest former code, as Stock by lot has it
+                            (ADR-094 amended, R9, 5a). */}
+                        <FormerCodeLine code={pool.lotFormerCode} />
                       </TableCell>
                       <TableCell align="right">
                         {displayQuantity(pool.quantity)}
