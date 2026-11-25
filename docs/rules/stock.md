@@ -117,6 +117,17 @@ file is kept is in the [README](README.md).
   [test](../../server/test/stock-grouped.e2e-spec.ts) "lists a lot by any part of its supplier’s lot, beside the lots its own code finds (ADR-094, R6)" ·
   [Help](../../client/src/help/guides/en/inventory.md#find-stock-find) ·
   MC-314 · MC-909 · MC-911
+- **A lot corrected under a new code says so under it,** one grey "was
+  {code}" line, its newest former code, on Stock's lots and on the Lot
+  view, a phone's card too; a lot never corrected shows none. The
+  item's page, Where it stands, draws none.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-lots-former-codes) ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says it under the lot’s code on Stock’s lots" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "says it under the lot’s code on the Lot view, on its table and on a phone’s card" ·
+  [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code and a lot by a former code at the place chosen alone, each pile saying the latest (ADR-094 amended, R9, R10)" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Stock, the Lot view, the top bar, Movements’ find box, Trace a lot; type a former code: the lot, saying “was” (R9, R10)" ·
+  partly tested ·
+  MC-911
 - **Sorted by On hand or Expires first, each page follows the figure
   its rows show, either way,** a code with nothing to expire last both
   ways; at one place chosen, On hand and Expires first are what is
@@ -353,6 +364,19 @@ file is kept is in the [README](README.md).
   [test](../../server/src/core/audit/audit-words.spec.ts) "reads the reason in Movements’ words, in each language" ·
   [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
   MC-320 · MC-R105
+- **A row from before a lot's code was corrected says the code the lot
+  had then,** "was {code}" under the lot, each lot of a lot change its
+  own, as a changed item code reads; a row after the correction, or of a
+  lot never corrected, says nothing more. The code then is read for the
+  page's rows alone, and the export keeps today's code.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-lots-former-codes) ·
+  [test](../../server/test/movements.e2e-spec.ts) "says the code each lot had when a row was made, where a correction changed it since, an older row the older code (ADR-094 amended, M1a)" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says under a lot the code it had when the row was made, where it was corrected since" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says it under each lot of a lot change that had another code then" ·
+  [test](../../client/src/inventory/movements-page.test.tsx) "says nothing more under a lot whose code is as it was" ·
+  [test](../../client/e2e/movements-page.spec.ts) "Movements, a lot whose code was corrected: its row from before says “was {code}” under the lot, the row after does not" ·
+  [Help](../../client/src/help/guides/en/movements.md#find-a-movement-find) ·
+  MC-911
 - **Show 25 more adds the next movements below, and failing keeps the
   rows, with Try again;** Back from a row past the first page reads those
   pages again before they show, its row in focus.
@@ -586,12 +610,26 @@ file is kept is in the [README](README.md).
   [ADR-044, amended for a former code](../adr/0044-lot-trace.md#amendment-november-2026--a-lot-found-by-its-former-code-and-a-recall-that-names-the-code-on-the-boxes-adr-094s-amendment-665) ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "splits a recipient’s row by the code the stock left under, saying it on the page and after today’s code in the export (E3a, F1)" ·
   [test](../../client/src/inventory/lot-trace-page.test.tsx) "says “shipped as” in Through lot for what left before a correction, a row a code" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Edit lot details, Save, the code changed: one write; the message names both codes, with Open the lot; Stock, the lot reading “was”; its page, “was” by its title, Former codes and “shipped as” in Who received it (R9)" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows an ingredient through the batch to everyone who received it" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "exports the recall list as Who received it lists it, in the reader’s words" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "lists on the first lot’s recall list a customer who received only the second lot, with the lot it came through, on the page and in the export (R21)" ·
   [test](../../server/test/lot-trace.e2e-spec.ts) "follows a chain of three moves and a move back, each lot once, the recall list naming each lot’s supplier’s lot (R21)" ·
   [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
   MC-906 · MC-908 · MC-911
+- **A corrected lot says so on its page:** "was {code}", its newest
+  former code, beside its title, and Former codes under it lists every
+  one, newest first, with Used until, Changed by and Why; a lot never
+  corrected shows neither. Trace a lot's list says "was {code}" under
+  the code of a lot found by a former code.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-lots-former-codes) ·
+  [test](../../server/test/lot-trace.e2e-spec.ts) "lists every former code on the lot’s page, newest first, with until when, who and why, and finds the lot by any of them (R9, R10)" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "says the latest beside its title and lists every one under Former codes: until when, who and why" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "says nothing of former codes for a lot never corrected" ·
+  [test](../../client/src/inventory/lot-trace-page.test.tsx) "says the former code a match was found by under its code" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Edit lot details, Save, the code changed: one write; the message names both codes, with Open the lot; Stock, the lot reading “was”; its page, “was” by its title, Former codes and “shipped as” in Who received it (R9)" ·
+  [Help](../../client/src/help/guides/en/lots.md#read-a-trace-read) ·
+  MC-911
 - **A move between lots is followed as the same stock:** Made from and
   Went into list a lot its stock moved from or into as many runs away
   as the lot it moved with, through the same run; a move alone is no
@@ -969,9 +1007,19 @@ file is kept is in the [README](README.md).
 - **Lot updated keeps what the save changed, from and to,** each of the
   lot code, the supplier's lot, the expiry and its day that moved, and
   names the item's code and the lot, as a lot change does; so a
-  corrected code is kept, the old and the new.
+  corrected code is kept, the old and the new. An entry with two changes
+  or more reads one change a line on the Activity log and in a record's
+  History, the details that are not changes first, from seven changes
+  the first five with Show all {count} changes, which opens the rest in
+  place and reads Show fewer, nothing cut.
+  [ADR-076, amended](../adr/0076-the-audit-log-in-words.md#amendment-november-2026--an-entrys-changes-one-a-line-adr-094s-amendment) ·
   [test](../../server/test/stock.e2e-spec.ts) "keeps a corrected code in Lot updated, the old and the new, naming the lot and its item (#687)" ·
-  [test](../../server/test/stock.e2e-spec.ts) "keeps only what a save changed in Lot updated: the expiry alone (#687)"
+  [test](../../server/test/stock.e2e-spec.ts) "keeps only what a save changed in Lot updated: the expiry alone (#687)" ·
+  [test](../../client/src/audit/audit-details.test.tsx) "puts each of three changes on its own line, the details that are not changes together on the first" ·
+  [test](../../client/src/audit/audit-details.test.tsx) "shows the first five of seven, and Show all 7 changes opens the rest in place, focus staying on it, then Show fewer" ·
+  [test](../../client/e2e/audit.spec.ts) "an entry with seven changes or more, Show all changes: the rest open in place, focus staying on the button, which reads Show fewer; Show fewer; at 320 px, nothing scrolls sideways" ·
+  [Help](../../client/src/help/guides/en/audit-log.md#a-lots-entry-lot) ·
+  MC-329 · MC-2907
 - **A corrected code is kept as one of the lot's former codes,** with
   until when, who corrected it and why, in the same save; a lot
   corrected twice keeps both. Why is asked only when the code changes,
@@ -985,6 +1033,9 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a changed code with no why, saying so, and changes nothing; a save that keeps the code asks none (R8, E2a)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "lets a lot take its own former code back, and refuses the code it leaves to any other lot (R11)" ·
   [test](../../client/src/inventory/edit-lot-dialog.test.tsx) "asks why only when the code changes, the question gone when it is put back; required, at its field" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Edit lot details, Lot number, change the code: “Why is the code changing?” shows, and is required; put the code back, the question goes" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Edit lot details, Save, the code changed: one write; the message names both codes, with Open the lot; Stock, the lot reading “was”; its page, “was” by its title, Former codes and “shipped as” in Who received it (R9)" ·
+  [Help](../../client/src/help/guides/en/lots.md#correct-a-lots-code-code) ·
   MC-329 ·
   MC-334
 - **A former code is never given to another lot of the item:** typed in
@@ -1009,6 +1060,9 @@ file is kept is in the [README](README.md).
   [test](../../client/src/inventory/lot-fields.test.tsx) "refuses it while it is typed, naming the lot that had it; Use {code} takes that lot, focus in the field" ·
   [test](../../client/src/inventory/count-in-dialog.test.tsx) "refuses another lot’s former code for the new lot as it is typed; Use {code} chooses that lot among its lots, the rest kept" ·
   [test](../../client/src/production/record-output-dialog.test.tsx) "says the server’s refusal of another lot’s former code under the batch number, focus there, with no button, what was typed kept" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Receive stock, an order’s Receive, Count it in…, Move to another lot; Lot number, another lot’s former code: refused at the field, naming that lot, with Use; Use, the field takes it, what else was typed kept" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "A run’s Record output, Batch number, another lot’s former code, Record: refused at the field, naming that lot, with no button; another code, recorded" ·
+  [Help](../../client/src/help/guides/en/lots.md#correct-a-lots-code-code) ·
   MC-334
 
 ## Starting lot tracking
@@ -1280,6 +1334,8 @@ file is kept is in the [README](README.md).
   [test](../../server/test/valuation.e2e-spec.ts) "takes a return back at the cost it shipped at" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "offers Set cost on the rows the server says take one, and on no other" ·
   [test](../../client/src/costs/lot-cost-panel.test.tsx) "says a return came back at the lot’s average where the server marks it so" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, a return with no shipped cost that waits, Set cost: saved, “Cost set”; nothing left waiting (R16)" ·
+  [Help](../../client/src/help/guides/en/stock-value.md#give-stock-its-cost-costs) ·
   MC-806
 
 ## Stock value
@@ -1299,6 +1355,8 @@ file is kept is in the [README](README.md).
   [test](../../server/test/item-names.e2e-spec.ts) "lists every operation that names an item, each reading the language or keeping the base" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s and read once" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "sorts by value, the largest first and again the smallest, and back by the item" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, the Value header, press: largest first; again, smallest first; the sort in the address; the Item header, the order before; Back, the page before, as every list’s sort" ·
+  [Help](../../client/src/help/guides/en/stock-value.md#read-the-value-read) ·
   MC-802 · MC-807
 - **Stock value's total and Provisional are every pool's, whatever is
   read or found,** never the sum of the rows shown: a read of their own
@@ -1315,7 +1373,28 @@ file is kept is in the [README](README.md).
   [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s and read once" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "sorts by value, the largest first and again the smallest, and back by the item" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "reads the totals again with the first page after Set cost" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, Find an item or a lot, type: the pools that match and how many, a lot found by its former code saying “was”; the total as it was; the find in the address; Clear the search" ·
   MC-802 · MC-807
+- **Stock value's screen keeps what a list keeps (#544, #473, #296):**
+  Show 50 more puts focus on the first new row; a next page that fails
+  keeps the rows, says so and offers Try again; Back from a lot or an
+  item returns to the row left, the pages read again; a find nothing
+  matches says "Nothing matches “…”." with Clear the search; the Value
+  header puts the largest first and again the smallest, and the Item
+  header puts the item's order back, each in the address; each row
+  names its item by the shared name and code cell, and a lot corrected
+  under a new code shows its newest former code in grey under its code.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s and read once" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "finds the rows shown and the row left from on Back from a lot after Show 50 more" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "finds what is typed, how many match beside it, says when nothing matches with Clear the search, the total as it was" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "names each pool by its item, a link, with its code, and its lot a link" ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "says a corrected lot’s latest former code under its code, and nothing for a lot never corrected" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, Show 50 more: the next page, focus on its first new row; a failed page says so, with Try again; Back from a lot, the row left" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, Find an item or a lot, type: the pools that match and how many, a lot found by its former code saying “was”; the total as it was; the find in the address; Clear the search" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, the Value header, press: largest first; again, smallest first; the sort in the address; the Item header, the order before; Back, the page before, as every list’s sort" ·
+  [Help](../../client/src/help/guides/en/stock-value.md#read-the-value-read) ·
+  MC-807
 - **Stock value finds a pool by its item, as every search matches an
   item, or by its lot's code, supplier's lot or a former code,** any
   part of each.

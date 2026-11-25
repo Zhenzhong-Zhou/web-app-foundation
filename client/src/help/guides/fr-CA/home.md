@@ -98,6 +98,14 @@ L’étape suivante a son bouton, avec **En savoir plus** à côté; pour les au
 
 Sur un téléphone ou une tablette, chaque icône de la barre du haut a son mot dessous : **Menu**, les pages; **Rechercher**, pour trouver une commande, un lot, un article ou un partenaire; **Aide**, le guide de la page où vous êtes; **Notifications**, ce qu’on vous a signalé; et **Compte**, votre compte, **Mode de couleur**, **Langue** et **Taille du texte**.
 
+## Tout rechercher {#search}
+
+Dans la barre du haut, **Tout rechercher** trouve une commande, une facture, une note de crédit, un lot, un article, un partenaire, un ordre de fabrication ou un retour d’après ce que vous tapez, au moins deux caractères, ou un caractère chinois, groupés par genre, chaque groupe se terminant par une ligne **Tout afficher dans** sa liste. Un lot se trouve par son code, par le lot du fournisseur ou par un code qu’il a eu avant : sa ligne le dit alors, « ASH-0601 · anciennement ASH-06O1 ».
+
+- Ce qui correspond tel que tapé vient seul tant que quelque chose correspond, de sorte qu’un code entier comme ASH-0601 n’amène que ce qui le porte.
+- Ce n’est que lorsque rien ne correspond tel que tapé que viennent les résultats proches, pour une faute de frappe, sous **Résultats proches**, chaque ligne disant son genre, « MCS-001 · Lot ». Ils n’ont pas de ligne **Tout afficher dans**.
+- Une liste plus longue que sa zone se termine par une ligne disant combien d’autres sont plus bas, « 6 autres plus bas · faites défiler, ou continuez à taper pour affiner ». Elle disparaît quand la dernière ligne est visible.
+
 ## Sans organisation {#no-organization}
 
 Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouvrez son lien en étant connecté : vous la rejoignez avec ce compte. Un lien pour créer votre propre organisation s’ouvre de la même façon. Là où l’accueil offre **Créer une organisation**, vous pouvez aussi en créer une, dont vous serez propriétaire.

@@ -98,6 +98,14 @@ The next step has its button, with **Learn more** beside it; every other step op
 
 On a phone or a tablet, each icon in the top bar has its word under it: **Menu**, the pages; **Search**, for an order, a lot, an item or a partner; **Help**, the guide to the page you are on; **Notifications**, what you have been told; and **Account**, your account, **Colour mode**, **Language** and **Text size**.
 
+## Search everything {#search}
+
+In the top bar, **Search everything** finds an order, an invoice, a credit note, a lot, an item, a partner, a production run or a return by what you type, at least two characters, or one Chinese character, grouped by kind, each group ending with a **Show all in** row for its list. A lot is found by its code, its supplier’s lot or a code it had before: its row then says so, “ASH-0601 · was ASH-06O1”.
+
+- What matches as typed comes alone while anything does, so a whole code such as ASH-0601 brings only what carries it.
+- Only when nothing matches as typed do the close matches come, for a typo, under **Close matches**, each row saying its kind, “MCS-001 · Lot”. They have no **Show all in** row.
+- A list longer than its box ends with a line saying how many more are below, “6 more below · scroll, or keep typing to narrow”. It goes once the last row is in view.
+
 ## With no organization {#no-organization}
 
 Ask someone in an organization to invite your address, then open their link while signed in: you join with this account. A link to set up an organization of your own opens the same way. Where Home offers **Start an organization**, you can also set one up there, as its Owner.

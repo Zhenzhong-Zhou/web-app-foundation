@@ -142,6 +142,9 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/stock-grouped.e2e-spec.ts) "finds a code and a lot by a former code at the place chosen alone, each pile saying the latest (ADR-094 amended, R9, R10)" ·
   [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its lot’s former code, the pool saying the latest, and counts it (R9, R10)" ·
   [test](../../client/src/inventory/movements-page.test.tsx) "offers a lot whose whole former code is typed alone, though another lot’s code starts with it" ·
+  [test](../../client/e2e/lots-at-receipt.spec.ts) "Stock, the Lot view, the top bar, Movements’ find box, Trace a lot; type a former code: the lot, saying “was” (R9, R10)" ·
+  [test](../../client/e2e/costs.spec.ts) "Stock value, Find an item or a lot, type: the pools that match and how many, a lot found by its former code saying “was”; the total as it was; the find in the address; Clear the search" ·
+  [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds a lot by its supplier’s lot as by its code, exactly either putting lots first, with its expiry and its marks (ADR-094, R6)" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
@@ -228,6 +231,9 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "adds no close match once five records match as typed (#308’s 12)" ·
   [test](../../client/src/search/lookup-box.test.tsx) "shows only what matches as typed when anything does" ·
   [test](../../client/src/search/lookup-box.test.tsx) "shows the close matches under one heading only when nothing matches as typed, each saying its kind, with no Show all" ·
+  [test](../../client/e2e/search.spec.ts) "The top bar, a whole code that matches: only what matches, no close match" ·
+  [test](../../client/e2e/search.spec.ts) "The top bar, text nothing matches as typed: the close matches, under their heading, each saying its kind" ·
+  [Help](../../client/src/help/guides/en/home.md#search-everything-search) ·
   partly tested ·
   MC-1556 · MC-R77
 - **Each result shows its record's number or name, and a second line:**
