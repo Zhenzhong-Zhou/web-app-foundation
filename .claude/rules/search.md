@@ -7,6 +7,7 @@ paths:
   - "server/src/modules/partners/partner-search.ts"
   - "server/src/modules/stock/lot-search.ts"
   - "client/src/search/**"
+  - "client/src/inventory/movement-finder.tsx"
   - "client/src/lib/use-{list,picker}-search.ts"
   - "client/src/components/{variant,partner}-picker*.tsx"
   - "server/test/{lookup,list-search,whole-list-search}.e2e-spec.ts"
