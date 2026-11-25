@@ -1693,12 +1693,11 @@ describe('Costs (e2e)', () => {
         reason: 'receipt',
       });
 
-      expect(await valuationTotals(s, {})).toEqual({
+      expect(await valuationTotals(s)).toEqual({
         currency: 'CAD',
         total: '20.000000',
         provisional: true,
         pools: 2,
-        count: 2,
       });
 
       const { entries } = await valuationPage(s, {});
@@ -1724,7 +1723,6 @@ describe('Costs (e2e)', () => {
       total: string;
       provisional: boolean;
       pools: number;
-      count: number;
     }
 
     async function valuationPage(
@@ -1736,13 +1734,16 @@ describe('Costs (e2e)', () => {
       );
     }
 
-    async function valuationTotals(s: Setup, query: Record<string, string>) {
+    async function valuationTotals(s: Setup) {
       return body<ValuationTotals>(
-        await s.agent
-          .get('/v1/costs/valuation/totals')
-          .query(query)
-          .expect(200),
+        await s.agent.get('/v1/costs/valuation/totals').expect(200),
       );
+    }
+
+    async function valuationCount(s: Setup, query: Record<string, string>) {
+      return body<{ count: number }>(
+        await s.agent.get('/v1/costs/valuation/count').query(query).expect(200),
+      ).count;
     }
 
     /** Each pool on a page by its code, a lot's after a slash. */
@@ -1864,7 +1865,7 @@ describe('Costs (e2e)', () => {
             pool.lotFormerCode,
           ]),
         ).toEqual([['J-0003', 'J-0002']]);
-        expect((await valuationTotals(s, { search })).count).toBe(1);
+        expect(await valuationCount(s, { search })).toBe(1);
       }
       // A pool of a lot never corrected, or with no lot, says none.
       expect(
@@ -1883,21 +1884,21 @@ describe('Costs (e2e)', () => {
     });
 
     /**
-     * The totals, a read of their own (R6): what every pool is worth and
-     * whether any of it is provisional, whatever the find, so the total is
-     * never a sum of the rows read; how many pools there are, and how many
-     * the find matches, which its pages hold together.
+     * The totals, a read of their own (R6): what every pool is worth,
+     * whether any of it is provisional and how many pools there are, so
+     * the total is never a sum of the rows read. A find asks its count
+     * alone (review 61), as many as its pages hold together.
      */
-    it('totals every pool whatever the find, and counts the pools the find matches, as many as its pages hold (R6)', async () => {
+    it('totals every pool, and counts alone the pools a find matches, as many as its pages hold (R6, review 61)', async () => {
       const s = await setup('alpha');
       await fivePools(s);
 
-      const whole = {
+      expect(await valuationTotals(s)).toEqual({
         currency: 'CAD',
         total: '82.000000',
         provisional: true,
         pools: 5,
-      };
+      });
       for (const [search, count] of [
         ['', 5],
         ['J-2', 1],
@@ -1906,7 +1907,14 @@ describe('Costs (e2e)', () => {
         ['zzz', 0],
       ] as const) {
         const query: Record<string, string> = search ? { search } : {};
-        expect(await valuationTotals(s, query)).toEqual({ ...whole, count });
+        expect(
+          body<unknown>(
+            await s.agent
+              .get('/v1/costs/valuation/count')
+              .query(query)
+              .expect(200),
+          ),
+        ).toEqual({ count });
         const pages = await everyPage(s, { ...query, limit: 2 });
         expect(pages.flatMap(poolsOn)).toHaveLength(count);
       }
@@ -2014,12 +2022,12 @@ describe('Costs (e2e)', () => {
         { sku: 'SCOOP', quantity: '10.0000' },
       ]);
 
-      expect(await valuationTotals(s, {})).toMatchObject({
+      expect(await valuationTotals(s)).toMatchObject({
         total: '20.000000',
         provisional: false,
         pools: 1,
-        count: 1,
       });
+      expect(await valuationCount(s, {})).toBe(1);
       expect(
         (await valuationPage(s, {})).entries.map((pool) => pool.sku),
       ).toEqual(['SCOOP']);

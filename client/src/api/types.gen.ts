@@ -2798,6 +2798,9 @@ export type StockValuationTotals = {
   total: string;
   provisional: boolean;
   pools: number;
+};
+
+export type StockValuationCount = {
   count: number;
 };
 
@@ -7286,10 +7289,10 @@ export type CostsControllerStockValuationV1Data = {
   };
   path?: never;
   query?: {
+    search?: string;
     cursor?: string;
     limit?: number;
     sort?: 'item' | 'value' | '-value';
-    search?: string;
   };
   url: '/v1/costs/valuation';
 };
@@ -7304,9 +7307,7 @@ export type CostsControllerStockValuationV1Response =
 export type CostsControllerValuationTotalsV1Data = {
   body?: never;
   path?: never;
-  query?: {
-    search?: string;
-  };
+  query?: never;
   url: '/v1/costs/valuation/totals';
 };
 
@@ -7316,6 +7317,22 @@ export type CostsControllerValuationTotalsV1Responses = {
 
 export type CostsControllerValuationTotalsV1Response =
   CostsControllerValuationTotalsV1Responses[keyof CostsControllerValuationTotalsV1Responses];
+
+export type CostsControllerValuationCountV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+  };
+  url: '/v1/costs/valuation/count';
+};
+
+export type CostsControllerValuationCountV1Responses = {
+  200: StockValuationCount;
+};
+
+export type CostsControllerValuationCountV1Response =
+  CostsControllerValuationCountV1Responses[keyof CostsControllerValuationCountV1Responses];
 
 export type CostsControllerExportValuationV1Data = {
   body?: never;

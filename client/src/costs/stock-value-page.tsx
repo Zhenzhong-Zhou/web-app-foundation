@@ -23,6 +23,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import type {
   NeedsCostEntry,
+  StockValuationCount,
   StockValuationTotals,
   ValuationPool,
 } from '../api/types.gen';
@@ -207,21 +208,22 @@ export function StockValuePage() {
   const { rowReturn } = useRowReturn();
 
   /**
-   * The totals, a read of their own keyed by the find (R6): how many the
-   * find matches, for this find alone; the total, Provisional and the
-   * currency, every pool's whatever is found, the last answer's, kept
-   * while another find's are on their way, so the total stays as it
-   * was. Show 50 more and a sort never ask them again.
+   * The totals, a read of their own (R6): the total, Provisional, the
+   * currency and how many pools there are, every pool's whatever is
+   * found, read as the page opens and again after a cost is set. A find
+   * asks how many it matches alone, the sums being the same for every
+   * find (review 61); Show 50 more and a sort ask neither.
    */
-  const totals = useResource<StockValuationTotals>(
-    withQuery('/costs/valuation/totals', { search: search || undefined }),
+  const totals = useResource<StockValuationTotals>('/costs/valuation/totals');
+  const known = totals.data;
+  const matched = useResource<StockValuationCount>(
+    search ? withQuery('/costs/valuation/count', { search }) : null,
   );
-  const [known, setKnown] = useState<StockValuationTotals | null>(null);
-  if (totals.data && totals.data !== known) setKnown(totals.data);
 
   // A page at a time, with Load more, by the hook every list shares (#33).
   const waiting = useKeysetList<NeedsCostEntry>('/costs/needs-cost');
-  const refused = pools.refused ?? waiting.refused ?? totals.refused;
+  const refused =
+    pools.refused ?? waiting.refused ?? totals.refused ?? matched.refused;
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
   const waitingSection = useRef<HTMLDivElement>(null);
   const waitingHeading = useRef<HTMLHeadingElement>(null);
@@ -260,16 +262,17 @@ export function StockValuePage() {
     setFirstNew(null);
   }
 
-  /** The pools' first page again, and their totals with it. */
+  /** The pools' first page again, and the find's count with it. */
   function reloadPools() {
     pools.reload();
-    void totals.reload();
+    if (search) void matched.reload();
   }
 
   /** Every read again, after a cost is set or a refusal's Try again. */
   function load() {
     waiting.reload();
     reloadPools();
+    void totals.reload();
   }
 
   const currency = known?.currency ?? null;
@@ -513,9 +516,9 @@ export function StockValuePage() {
                   onChange: setText,
                 }}
               >
-                {/* Beside the find, how many it matches of every pool,
-                    from the totals' read for this find (R6). */}
-                {search && totals.data && (
+                {/* Beside the find, how many it matches of every pool:
+                    its count, and the totals' pools (R6; review 61). */}
+                {search && matched.data && known && (
                   <Typography
                     role="status"
                     variant="body2"
@@ -527,7 +530,7 @@ export function StockValuePage() {
                         defaultMessage:
                           '{count, number} of {pools, number} match',
                       },
-                      { count: totals.data.count, pools: totals.data.pools },
+                      { count: matched.data.count, pools: known.pools },
                     )}
                   </Typography>
                 )}
@@ -709,7 +712,7 @@ export function StockValuePage() {
                   shown > 0 && (
                     <ShowingLine
                       shown={shown}
-                      total={totals.data?.count}
+                      total={search ? matched.data?.count : known?.pools}
                       more={pools.hasMore}
                       of="pool"
                     />

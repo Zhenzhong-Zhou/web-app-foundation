@@ -680,10 +680,10 @@ async function buildProbes(
       name: 'valuation: by value',
       run: () => costs.valuation({ sort: '-value' }, 'zh-Hans'),
     },
-    { name: 'valuation totals', run: () => costs.valuationTotals({}) },
+    { name: 'valuation totals', run: () => costs.valuationTotals() },
     {
-      name: 'valuation totals: a search',
-      run: () => costs.valuationTotals({ search: valuationLot }),
+      name: 'valuation count: a search',
+      run: () => costs.valuationCount({ search: valuationLot }),
     },
     { name: 'valuation export', run: () => costs.everyPool() },
     // Stock value's Waiting for a cost, each row with its item's names and

@@ -1365,14 +1365,14 @@ file is kept is in the [README](README.md).
   MC-802 · MC-807
 - **Stock value's total and Provisional are every pool's, whatever is
   read or found,** never the sum of the rows shown: a read of their own
-  beside the list, as Stock's counts are, asked as the page opens, for
-  each find and after a cost is set, never for the next fifty or a
-  sort. With them, how many pools there are and how many the find
-  matches: "Showing 50 of … items and lots" under the list, and beside
-  the find box, while one is typed, "… of … match". Its export still
-  writes every pool, the way to read them all at once.
+  beside the list, as Stock's counts are, asked as the page opens and
+  after a cost is set, never for a find, the next fifty or a sort. With
+  them, how many pools there are; a find asks how many it matches
+  alone (review 61): "Showing 50 of … items and lots" under the list,
+  and beside the find box, while one is typed, "… of … match". Its
+  export still writes every pool, the way to read them all at once.
   [ADR-094, amended](../adr/0094-lots-at-receipt.md#settled-at-the-stop) ·
-  [test](../../server/test/costs.e2e-spec.ts) "totals every pool whatever the find, and counts the pools the find matches, as many as its pages hold (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "totals every pool, and counts alone the pools a find matches, as many as its pages hold (R6, review 61)" ·
   [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, a page holding its rows and its cursor alone, and the export every pool (R6)" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "finds what is typed, how many match beside it, says when nothing matches with Clear the search, the total as it was" ·
   [test](../../client/src/costs/stock-value-page.test.tsx) "shows fifty more below with focus on the first new row, keeping the rows when that fails, the total the whole’s and read once" ·

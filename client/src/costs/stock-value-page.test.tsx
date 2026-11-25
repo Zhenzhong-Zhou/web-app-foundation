@@ -47,7 +47,6 @@ const TOTALS: StockValuationTotals = {
   total: '120.000000',
   provisional: true,
   pools: 0,
-  count: 0,
 };
 
 /** The page with these rows waiting, for a reader who may set costs. */
@@ -189,9 +188,9 @@ function pageOf(
 
 /**
  * Stock value's pools answered by `answer`, nothing waiting, and their
- * totals: every pool's 999.00 and provisional, of 2 pools, `count` of
- * them matching the find. Each query asked for kept, in order, the
- * pages' and the totals' apart.
+ * totals: every pool's 999.00 and provisional, of 2 pools; a find's
+ * count, `count` of them matching it. Each query asked for kept, in
+ * order, the pages', the totals' and the counts' apart.
  */
 function poolsRead(
   answer: (query: URLSearchParams) => StockValuationPage,
@@ -199,6 +198,7 @@ function poolsRead(
 ) {
   const asked: string[] = [];
   const totalsAsked: string[] = [];
+  const countsAsked: string[] = [];
   server.use(
     http.get('/api/v1/costs/valuation', ({ request }) => {
       const query = new URL(request.url).searchParams;
@@ -208,18 +208,18 @@ function poolsRead(
     http.get('/api/v1/costs/valuation/totals', ({ request }) => {
       const query = new URL(request.url).searchParams;
       totalsAsked.push(query.toString());
-      return HttpResponse.json({
-        ...TOTALS,
-        total: '999.000000',
-        pools: 2,
-        count: count(query.get('search') ?? ''),
-      });
+      return HttpResponse.json({ ...TOTALS, total: '999.000000', pools: 2 });
+    }),
+    http.get('/api/v1/costs/valuation/count', ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      countsAsked.push(query.toString());
+      return HttpResponse.json({ count: count(query.get('search') ?? '') });
     }),
     http.get('/api/v1/costs/needs-cost', () =>
       HttpResponse.json({ entries: [], nextCursor: null }),
     ),
   );
-  return { asked, totalsAsked };
+  return { asked, totalsAsked, countsAsked };
 }
 
 /** A lot's page as a row's link lands there, with Back. */
@@ -385,12 +385,12 @@ describe('StockValuePage, by item and lot', () => {
 
   // The interaction table's find: what is typed is asked for, the find
   // in the address; how many it matches of every pool beside it, from
-  // the totals' read for the find; nothing matching says so, with Clear
-  // the search; the total stays the whole's.
+  // the find's count alone (review 61); nothing matching says so, with
+  // Clear the search; the total stays the whole's, read once.
   it('finds what is typed, how many match beside it, says when nothing matches with Clear the search, the total as it was', async () => {
     const user = userEvent.setup();
     const matching = { zzz: 0, calm: 1 } as Record<string, number>;
-    const { asked, totalsAsked } = poolsRead(
+    const { asked, totalsAsked, countsAsked } = poolsRead(
       (query) =>
         query.get('search') === 'zzz'
           ? pageOf([])
@@ -423,8 +423,9 @@ describe('StockValuePage, by item and lot', () => {
     expect(await screen.findByText('1 of 2 match')).toBeVisible();
     expect(screen.getByText('1 item or lot')).toBeVisible();
     expect(total()).toBeVisible();
-    // The totals once a find, as the find asks the list.
-    expect(totalsAsked).toEqual(['search=zzz', '', 'search=calm']);
+    // The totals once, whatever is found; each find its count alone.
+    expect(totalsAsked).toEqual(['']);
+    expect(countsAsked).toEqual(['search=zzz', 'search=calm']);
   });
 
   // The interaction table's sort: the Value header puts the largest
@@ -493,7 +494,6 @@ describe('StockValuePage, by item and lot', () => {
           ...TOTALS,
           total: costed ? '1019.000000' : '999.000000',
           pools: 1,
-          count: 1,
         });
       }),
       http.put('/api/v1/costs/valuations/valuation-1', () => {

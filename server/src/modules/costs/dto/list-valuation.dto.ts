@@ -9,6 +9,8 @@ import {
   Min,
 } from 'class-validator';
 
+import { SearchQueryDto } from '../../../common/dto/search-query.dto';
+
 /**
  * What Stock value's pools are sorted by (ADR-094's amendment, R6): the
  * item, as the page opens, or the value, `value` the smallest first and
@@ -18,22 +20,15 @@ export const VALUATION_SORTS = ['item', 'value', '-value'] as const;
 export type ValuationSort = (typeof VALUATION_SORTS)[number];
 
 /**
- * Stock value's find (ADR-094's amendment, R6): what its totals count as
- * matching, and what its pages hold.
+ * Stock value's find (ADR-094's amendment, R6): what its count counts as
+ * matching, and what its pages hold. `search` finds the item, as every
+ * search matches it (ADR-056), or a lot's code, its supplier's lot or a
+ * former code (lotMatches).
  */
-export class ValuationTotalsDto {
-  /**
-   * The item, as every search matches it (ADR-056), or a lot's code, its
-   * supplier's lot or a former code (lotMatches).
-   */
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  search?: string;
-}
+export class ValuationFindDto extends SearchQueryDto {}
 
 /** Stock value's pools, fifty at a time (ADR-094's amendment, R6). */
-export class ListValuationDto extends ValuationTotalsDto {
+export class ListValuationDto extends ValuationFindDto {
   /**
    * The answer's `nextCursor`, for the page after it: the last pool's
    * place by the sort's key and its id (sorted-page.ts), never read by

@@ -524,7 +524,10 @@ committed, and neither is edited by hand.
   asked once for a search and never for a next page or a sort. Stock
   value's pages first carried their totals: a next page took 413 ms at
   large, and 120 once the totals moved (ADR-094's amendment, "Settled at
-  the stop").
+  the stop"). A total that is the same for every search is read once,
+  and a search asks its count alone, `GET /v1/costs/valuation/count`:
+  the whole organization's sums were 180 ms of the 213 a find took at
+  large (review 61).
 - **The e2e suite checks every response against the document** (ADR-068,
   amended): each object schema is closed, so a field the contract does
   not declare fails the test that made the request, as does a declared

@@ -6755,6 +6755,15 @@
         "operationId": "CostsController_stockValuation_v1",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
             "name": "cursor",
             "required": false,
             "in": "query",
@@ -6787,15 +6796,6 @@
             }
           },
           {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
             "name": "accept-language",
             "in": "header",
             "required": false,
@@ -6824,6 +6824,27 @@
     "/v1/costs/valuation/totals": {
       "get": {
         "operationId": "CostsController_valuationTotals_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockValuationTotals"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/valuation/count": {
+      "get": {
+        "operationId": "CostsController_valuationCount_v1",
         "parameters": [
           {
             "name": "search",
@@ -6841,7 +6862,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockValuationTotals"
+                  "$ref": "#/components/schemas/StockValuationCount"
                 }
               }
             }
@@ -20771,16 +20792,23 @@
           },
           "pools": {
             "type": "number"
-          },
-          "count": {
-            "type": "number"
           }
         },
         "required": [
           "currency",
           "total",
           "provisional",
-          "pools",
+          "pools"
+        ]
+      },
+      "StockValuationCount": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
           "count"
         ]
       },

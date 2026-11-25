@@ -57,10 +57,10 @@ export class StockValuationPage {
 
 /**
  * GET /costs/valuation/totals: what the stock on hand is worth, and how
- * many pools the find matches (ADR-094's amendment, R6), as Stock's
- * counts are a read beside its list. `total`, `currency` and
- * `provisional` speak for every pool of the organization, whatever the
- * search.
+ * many pools there are (ADR-094's amendment, R6), as Stock's counts are
+ * a read beside its list: every pool of the organization, whatever is
+ * found, read as the page opens and again after a cost is set. How many
+ * a find matches is GET /costs/valuation/count (review 61).
  */
 export class StockValuationTotals {
   /** Null until the organization has a base currency. */
@@ -68,9 +68,16 @@ export class StockValuationTotals {
   total!: string;
   /** True while any pool on hand depends on a row still waiting for a cost. */
   provisional!: boolean;
-  /** Every pool on hand: "1 of 14,512 match". */
+  /** Every pool on hand: "1 of 14,512 match", "Showing 50 of 14,512". */
   pools!: number;
-  /** The pools the list shows, the search on: "Showing 50 of 14,512". */
+}
+
+/**
+ * GET /costs/valuation/count: how many pools a find matches (review 61),
+ * "1 of 14,512 match" and "Showing 1 of 1"; the total is the totals'
+ * read, the same for every find, so a find asks for nothing else.
+ */
+export class StockValuationCount {
   count!: number;
 }
 

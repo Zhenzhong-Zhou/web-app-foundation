@@ -40,6 +40,7 @@ import type {
   LotCost,
   NeedsCostPage,
   RunCost,
+  StockValuationCount,
   StockValuationPage,
   StockValuationTotals,
   ValuationPool,
@@ -47,8 +48,8 @@ import type {
 import type { ListNeedsCostDto } from './dto/list-needs-cost.dto';
 import type {
   ListValuationDto,
+  ValuationFindDto,
   ValuationSort,
-  ValuationTotalsDto,
 } from './dto/list-valuation.dto';
 import { isStockValue, openNeedsCost } from './open-needs-cost';
 
@@ -269,20 +270,18 @@ export class CostsService {
 
   /**
    * What Stock value's pools are worth together, and how many there are
-   * and the find matches (ADR-094's amendment, R6), a read of its own
-   * beside the list, as Stock's counts are: `total`, `currency` and
-   * `provisional` speak for every pool of the organization, whatever the
-   * find, so the total is never a sum of the rows read. Read once for a
-   * find; a next page or a sort never asks it again.
+   * (ADR-094's amendment, R6), a read of its own beside the list, as
+   * Stock's counts are: every pool of the organization, whatever is
+   * found, so the total is never a sum of the rows read. Read as the page
+   * opens and again after a cost is set; a find asks valuationCount alone,
+   * since the sums, about 180 ms of 213 at ADR-051's large scale, are the
+   * same for every find (review 61).
    *
    * Which pools are provisional is worked out once, as a set, and
    * joined, as everyPool does and for its reasons.
    */
-  valuationTotals(query: ValuationTotalsDto): Promise<StockValuationTotals> {
-    const terms = query.search ? searchTerms(query.search) : null;
-
+  valuationTotals(): Promise<StockValuationTotals> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const found = terms ? poolsFound(terms, organizationId) : undefined;
       const base = await baseCurrency(tx, organizationId);
 
       const {
@@ -290,14 +289,12 @@ export class CostsService {
       } = await tx.execute<{
         total: string;
         pools: number;
-        count: number;
         provisional: boolean;
       }>(sql`
         with open as materialized (${openNeedsCost(organizationId)}),
         ${openPools()}
         select coalesce(sum(p.value), 0) as total,
                count(*)::int as pools,
-               (count(*) filter (where ${found ?? sql`true`}))::int as count,
                coalesce(bool_or(op.variant_id is not null), false) as provisional
         from ${poolsFrom(organizationId)}
         left join open_pools op
@@ -311,8 +308,28 @@ export class CostsService {
         total: whole.total,
         provisional: whole.provisional,
         pools: whole.pools,
-        count: whole.count,
       };
+    });
+  }
+
+  /**
+   * How many of Stock value's pools a find matches (review 61), as the
+   * page's own read finds them (poolsFound), a count and nothing else:
+   * the totals are the same for every find. No find counts them all.
+   */
+  valuationCount(query: ValuationFindDto): Promise<StockValuationCount> {
+    const terms = query.search ? searchTerms(query.search) : null;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const found = terms ? poolsFound(terms, organizationId) : undefined;
+      const {
+        rows: [matched],
+      } = await tx.execute<{ count: number }>(sql`
+        select count(*)::int as count
+        from ${poolsFrom(organizationId)}
+        where ${and(shownOnHand(organizationId), found)}
+      `);
+      return { count: matched.count };
     });
   }
 

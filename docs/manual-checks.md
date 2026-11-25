@@ -1324,8 +1324,9 @@ a second organization.
   the total and Provisional are still every pool's: the total is the
   export's Value column summed (R6). In the browser's tools, Network:
   the totals, `valuation/totals`, are read as the page opens and again
-  after Set cost, never for Show 50 more or a sort (R6, settled at the
-  stop).
+  after Set cost, never for a find, Show 50 more or a sort (R6, settled
+  at the stop); a find reads its count alone, `valuation/count` (review
+  61).
 - **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
   each of its units carries its share once. Receive 40 by hand with no
   price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
@@ -8091,3 +8092,5 @@ first.
   extended.
 - 2026-11-25: The review's 19, Trace a lot's hint says a code the lot had
   before finds it too, in three languages: MC-909 extended.
+- 2026-11-25: The review's 61, Stock value's totals read once and after
+  Set cost, a find asking its count alone: MC-802 extended.
