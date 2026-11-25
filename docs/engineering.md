@@ -577,8 +577,8 @@ reports success.
   uniq -c` shows it). Every mbox or patch Claude prepares uses it, never a
   placeholder such as `Claude (draft) <draft@example.invalid>`: removing
   those took a history rewrite. A pre-push hook refuses a push that
-  carries one: `.git/hooks/pre-push` until ADR-082 moves it to
-  `scripts/hooks/`, with a CI check behind it.
+  carries one: `scripts/hooks/pre-push`, set once per clone by `git
+  config core.hooksPath scripts/hooks`, with a CI check behind it.
 - Explicit `git add` per concern, never `-A`.
 - Run `git status` before every commit. Files staged earlier — even new or
   empty ones — ride into whichever commit runs first. Unstage with
