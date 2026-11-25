@@ -1130,7 +1130,8 @@ file is kept is in the [README](README.md).
   [test](../../server/test/costs.e2e-spec.ts) "brings back a return’s part of what its shipment took from a mixed lot: 9 of the 90 back at 1.20 before the cost, 64.80 issued, the 19 on hand holding 38.00" ·
   [test](../../server/test/costs.e2e-spec.ts) "carries a correction after the move, upward and then downward, by what the lot held when it moved" ·
   [test](../../server/test/costs.e2e-spec.ts) "carries a batch’s cost at close to its output moved to another lot before it" ·
-  [test](../../server/test/costs.e2e-spec.ts) "gives a cost and a move at once, neither waiting on the other (two at once)"
+  [test](../../server/test/costs.e2e-spec.ts) "gives a cost and a move at once, neither waiting on the other (two at once)" ·
+  [test](../../server/test/cost-follows.e2e-spec.ts) "holds the three checks after a receipt is costed late, over generated receipts, shipments, sales returned or voided, and moves between three lots"
 - **Movements names both lots of a lot change,** the lot it leaves and
   the lot it enters, and each lot's cost history names the other. Lot
   tracking started, and stock back from before, name the lot entered

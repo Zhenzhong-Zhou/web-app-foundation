@@ -14,6 +14,7 @@ import {
   stockValuations,
   valuationPools,
 } from '../src/database/schema';
+import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   addMember,
   body,
@@ -1313,6 +1314,12 @@ describe('Start tracking lots (e2e)', () => {
         value: '4.000000',
       });
       expect(await waiting(w)).toEqual([]);
+      await expectCostToFollow(db, {
+        variantId: w.code,
+        change: '10.000000',
+        most: each('1.00'),
+        answer: cost,
+      });
     });
   });
 

@@ -12,6 +12,7 @@ import {
   stockMovements,
   stockValuations,
 } from '../src/database/schema';
+import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   addMember,
   body,
@@ -56,17 +57,6 @@ interface CorrectedCost {
   held: string;
   issued: string;
   followed: { lotId: string; lotCode: string; value: string }[];
-}
-
-/**
- * A signed decimal string in millionths, the ledger's places, so a test can
- * add amounts exactly; the server adds in Postgres (ADR-025).
- */
-function millionths(value: string): bigint {
-  const [whole, fraction = ''] = value.replace('-', '').split('.');
-  const units =
-    BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, '0').slice(0, 6));
-  return value.startsWith('-') ? -units : units;
 }
 
 /**
@@ -319,6 +309,11 @@ describe('Costs (e2e)', () => {
       expect((await runCost(s, run.runId)).outputs).toEqual([
         { lotCode: 'FOC-1', quantity: '980.0000', value: '1240.000000' },
       ]);
+      await expectCostToFollow(db, {
+        variantId: run.output,
+        change: '1240.000000',
+        most: { value: '1240.000000', quantity: '980' },
+      });
     });
 
     it('has a material cost and no unit cost when nothing was made', async () => {
@@ -375,6 +370,12 @@ describe('Costs (e2e)', () => {
       const pool = await poolOf(db, scoop);
       expect(pool.quantity).toBe('6.0000');
       expect(pool.value).toBe('18.000000');
+      await expectCostToFollow(db, {
+        variantId: scoop,
+        change: '10.000000',
+        most: each('3'),
+        answer: cost,
+      });
 
       // Corrected back again, measured from what it carries now.
       const back = await setCost(
@@ -386,6 +387,12 @@ describe('Costs (e2e)', () => {
         value: '20.000000',
         held: '-6.000000',
         issued: '-4.000000',
+      });
+      await expectCostToFollow(db, {
+        variantId: scoop,
+        change: '-10.000000',
+        most: each('2'),
+        answer: back,
       });
     });
 
@@ -639,8 +646,10 @@ describe('Costs (e2e)', () => {
    * is the moved quantity times its units still in the pool just before,
    * over what the pool held then; that part carries its share to the row in,
    * which spreads it again, and what remains splits as ADR-048 splits it.
-   * Each test also checks that what was held, carried and issued adds up to
-   * the cost given, in the answer and in the rows it wrote.
+   * Each test also makes the three checks of a cost that follows stock
+   * (expectCostToFollow, R2): no lot over its units at the cost given, the
+   * parts adding up to it in the answer and in the rows it wrote, and each
+   * pool its rows.
    */
   describe('a late cost following stock moved to another lot (ADR-094, D5)', () => {
     const tracked = (s: Setup) => variant(s, 'VITC-90', 'good', true);
@@ -736,72 +745,6 @@ describe('Costs (e2e)', () => {
         .lotCost.entries;
     }
 
-    /**
-     * The rows the latest late value wrote, in its one transaction, add up
-     * to it: every part carried out of one pool arrives in another.
-     */
-    async function expectRowsToSum(change: string) {
-      const { rows } = await db.execute<{ total: string }>(sql`
-        select coalesce(sum(v.value), 0)::text as total
-        from stock_valuations v
-        where v.kind in ('correction', 'run_close', 'issued')
-          and v.created_at = (
-            select max(c.created_at)
-            from stock_valuations c
-            where c.kind in ('correction', 'run_close', 'issued')
-          )
-      `);
-      expect(millionths(rows[0].total)).toBe(millionths(change));
-    }
-
-    /** Held, issued and what followed add up to the change, as written. */
-    async function expectToAddUp(cost: CorrectedCost, change: string) {
-      const parts = [
-        cost.held,
-        cost.issued,
-        ...cost.followed.map((lot) => lot.value),
-      ];
-      expect(parts.reduce((sum, part) => sum + millionths(part), 0n)).toBe(
-        millionths(change),
-      );
-      await expectRowsToSum(change);
-    }
-
-    /**
-     * No lot of the code holds more than its units at the cost given, the
-     * highest where a test gives more than one: a part counted twice would
-     * (ADR-094, D5). The cost given is a value for a quantity, as a batch's
-     * is for its output, so a share rounded to the ledger's six places
-     * passes.
-     */
-    async function expectNoLotOver(
-      variantId: string,
-      given: { value: string; quantity: string },
-    ) {
-      const pools = await db.execute<{
-        lot_id: string | null;
-        quantity: string;
-        value: string;
-      }>(sql`
-        select lot_id, quantity::text, value::text
-        from valuation_pools
-        where variant_id = ${variantId}::uuid
-      `);
-      const value = millionths(given.value);
-      const quantity = millionths(given.quantity);
-      expect(pools.rows.length).toBeGreaterThan(0);
-      for (const pool of pools.rows) {
-        const most = millionths(pool.quantity) * value + 10n * quantity;
-        expect({
-          lotId: pool.lot_id,
-          over: millionths(pool.value) * quantity > most,
-        }).toEqual({ lotId: pool.lot_id, over: false });
-      }
-    }
-
-    /** A unit price as the cost given for one unit. */
-    const each = (unitPrice: string) => ({ value: unitPrice, quantity: '1' });
-
     it('carries 40.00 of 80.00 to the 50 moved, 20 of them the receipt’s by what the lot held: each lot 100.00 for 50, nothing issued, Stock value 200.00', async () => {
       const s = await setup('alpha');
       const vitc = await tracked(s);
@@ -825,7 +768,6 @@ describe('Costs (e2e)', () => {
         issued: '0.000000',
         followed: [{ lotId: b, lotCode: 'B', value: '40.000000' }],
       });
-      await expectToAddUp(cost, '80.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '50.0000',
@@ -839,7 +781,12 @@ describe('Costs (e2e)', () => {
       // Lot B waits no longer, and nothing else does.
       expect(await needsCost(s)).toEqual([]);
       expect(await total(s)).toBe('200.000000');
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '80.000000',
+        most: each('2.00'),
+        answer: cost,
+      });
 
       // Each lot's history adds up and says where the rest went: the whole
       // cost given, the part carried on to B; in B, the part that came.
@@ -892,7 +839,6 @@ describe('Costs (e2e)', () => {
         issued: '50.000000',
         followed: [{ lotId: moved.toLot.id, lotCode: 'B', value: '20.000000' }],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '3.0000',
@@ -904,7 +850,12 @@ describe('Costs (e2e)', () => {
       });
       // What went with the 5 shipped alone is issued; the part carried never.
       expect(await issuedRows()).toEqual([{ lotId: a, value: '50.000000' }]);
-      await expectNoLotOver(vitc, each('10.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
 
     it('values both lots of one receipt part moved and costed once, nothing issued', async () => {
@@ -920,7 +871,6 @@ describe('Costs (e2e)', () => {
         issued: '0.000000',
         followed: [{ lotCode: 'B', value: '60.000000' }],
       });
-      await expectToAddUp(cost, '200.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '70.0000',
@@ -932,7 +882,12 @@ describe('Costs (e2e)', () => {
       });
       expect(await issuedRows()).toEqual([]);
       expect(await needsCost(s)).toEqual([]);
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '200.000000',
+        most: each('2.00'),
+        answer: cost,
+      });
     });
 
     it('gives the second lot the same share whatever the first ships after the move', async () => {
@@ -954,10 +909,14 @@ describe('Costs (e2e)', () => {
         if (shipped) await ship(s, vitc, a, shipped);
 
         const cost = await setCost(s, receipt, cad('2.00'));
-        await expectToAddUp(cost, '80.000000');
         // The first lot too, which holds its share of the cost and no more
         // (#677).
-        await expectNoLotOver(vitc, each('2.00'));
+        await expectCostToFollow(db, {
+          variantId: vitc,
+          change: '80.000000',
+          most: each('2.00'),
+          answer: cost,
+        });
         return {
           cost,
           second: await poolOf(db, vitc, moved.toLot.id),
@@ -1011,7 +970,6 @@ describe('Costs (e2e)', () => {
           { lotCode: 'C', value: '10.000000' },
         ],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, toB.toLot.id)).toMatchObject({
         quantity: '30.0000',
@@ -1022,7 +980,12 @@ describe('Costs (e2e)', () => {
         value: '10.000000',
       });
       expect(await needsCost(s)).toEqual([]);
-      await expectNoLotOver(vitc, each('1.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('1.00'),
+        answer: cost,
+      });
     });
 
     it('follows stock moved and moved back, the part back held in the first lot', async () => {
@@ -1041,7 +1004,6 @@ describe('Costs (e2e)', () => {
         issued: '0.000000',
         followed: [{ lotId: out.toLot.id, lotCode: 'B', value: '20.000000' }],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '8.0000',
@@ -1052,7 +1014,12 @@ describe('Costs (e2e)', () => {
         value: '20.000000',
       });
       expect(await needsCost(s)).toEqual([]);
-      await expectNoLotOver(vitc, each('10.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
 
     it('holds no more than the stock back in the first lot: 10 received, 6 shipped, the 4 left moved away and back, costed at 10.00, 40.00 held and 60.00 issued', async () => {
@@ -1074,7 +1041,6 @@ describe('Costs (e2e)', () => {
         issued: '60.000000',
         followed: [],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '4.0000',
@@ -1086,7 +1052,12 @@ describe('Costs (e2e)', () => {
       });
       expect(await issuedRows()).toEqual([{ lotId: a, value: '60.000000' }]);
       expect(await total(s)).toBe('40.000000');
-      await expectNoLotOver(vitc, each('10.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
 
     /**
@@ -1175,7 +1146,6 @@ describe('Costs (e2e)', () => {
         issued: '60.000000',
         followed: [{ lotId: c, lotCode: 'C', value: '40.000000' }],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, c)).toMatchObject({
         quantity: '4.0000',
@@ -1190,7 +1160,12 @@ describe('Costs (e2e)', () => {
       expect(await issuedRows()).toEqual([{ lotId: a, value: '60.000000' }]);
       expect(await total(s)).toBe('40.000000');
       expect(await needsCost(s)).toEqual([]);
-      await expectNoLotOver(vitc, each('10.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
 
     it('keeps a lot’s share of a late cost and no more: 60 at 2.00 and 40 with no price, 90 shipped, the 40 costed at 2.00, 8.00 held, 72.00 issued, the 10 left holding 20.00 (#677)', async () => {
@@ -1209,14 +1184,18 @@ describe('Costs (e2e)', () => {
         issued: '72.000000',
         followed: [],
       });
-      await expectToAddUp(cost, '80.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '10.0000',
         value: '20.000000',
       });
       expect(await issuedRows()).toEqual([{ lotId: a, value: '72.000000' }]);
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '80.000000',
+        most: each('2.00'),
+        answer: cost,
+      });
     });
 
     it('issues nothing for a shipment voided before the cost came: 10 with no price, 6 shipped and voided, costed at 10.00, 100.00 held', async () => {
@@ -1238,14 +1217,18 @@ describe('Costs (e2e)', () => {
         issued: '0.000000',
         followed: [],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '10.0000',
         value: '100.000000',
       });
       expect(await issuedRows()).toEqual([]);
-      await expectNoLotOver(vitc, each('10.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
 
     it('brings back the share of what a return brings back: 10 with no price, 6 shipped, 3 of them returned on the order, costed at 10.00, 70.00 held and 30.00 issued', async () => {
@@ -1264,14 +1247,18 @@ describe('Costs (e2e)', () => {
         issued: '30.000000',
         followed: [],
       });
-      await expectToAddUp(cost, '100.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '7.0000',
         value: '70.000000',
       });
       expect(await issuedRows()).toEqual([{ lotId: a, value: '30.000000' }]);
-      await expectNoLotOver(vitc, each('10.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
 
     it('brings back a return’s part of what its shipment took from a mixed lot: 9 of the 90 back at 1.20 before the cost, 64.80 issued, the 19 on hand holding 38.00', async () => {
@@ -1298,14 +1285,18 @@ describe('Costs (e2e)', () => {
         issued: '64.800000',
         followed: [],
       });
-      await expectToAddUp(cost, '80.000000');
 
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '19.0000',
         value: '38.000000',
       });
       expect(await issuedRows()).toEqual([{ lotId: a, value: '64.800000' }]);
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '80.000000',
+        most: each('2.00'),
+        answer: cost,
+      });
     });
 
     it('carries a correction after the move, upward and then downward, by what the lot held when it moved', async () => {
@@ -1333,14 +1324,18 @@ describe('Costs (e2e)', () => {
         issued: '0.000000',
         followed: [{ lotId: b, value: '20.000000' }],
       });
-      await expectToAddUp(up, '40.000000');
       expect(await poolOf(db, vitc, a)).toMatchObject({
         value: '120.000000',
       });
       expect(await poolOf(db, vitc, b)).toMatchObject({
         value: '120.000000',
       });
-      await expectNoLotOver(vitc, each('3.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '40.000000',
+        most: each('3.00'),
+        answer: up,
+      });
 
       // 1.00: 80.00 less, measured from all it carries now, B's part too.
       const down = await setCost(s, receipt, cad('1.00'));
@@ -1350,7 +1345,6 @@ describe('Costs (e2e)', () => {
         issued: '0.000000',
         followed: [{ lotId: b, value: '-40.000000' }],
       });
-      await expectToAddUp(down, '-80.000000');
       expect(await poolOf(db, vitc, a)).toMatchObject({
         quantity: '50.0000',
         value: '80.000000',
@@ -1361,7 +1355,12 @@ describe('Costs (e2e)', () => {
       });
       expect(await total(s)).toBe('160.000000');
       // The 60 bought at 2.00 are the dearest left.
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '-80.000000',
+        most: each('2.00'),
+        answer: down,
+      });
     });
 
     it('carries a batch’s cost at close to its output moved to another lot before it', async () => {
@@ -1396,12 +1395,12 @@ describe('Costs (e2e)', () => {
         quantity: '280.0000',
         value: '354.285714',
       });
-      await expectRowsToSum('1240.000000');
       expect(await issuedRows()).toEqual([]);
       expect(await needsCost(s)).toEqual([]);
-      await expectNoLotOver(run.output, {
-        value: '1240.000000',
-        quantity: '980',
+      await expectCostToFollow(db, {
+        variantId: run.output,
+        change: '1240.000000',
+        most: { value: '1240.000000', quantity: '980' },
       });
 
       // The batch's output still carries the whole of its cost.
@@ -1426,7 +1425,12 @@ describe('Costs (e2e)', () => {
       // The first costed: 6 of the 10 moved were its, by what the lot held.
       const costedOne = await setCost(s, one, cad('1.00'));
       expect(costedOne.followed).toMatchObject([{ value: '6.000000' }]);
-      await expectToAddUp(costedOne, '30.000000');
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '30.000000',
+        most: each('1.00'),
+        answer: costedOne,
+      });
       expect(await waitingIds(s)).toContain(rowIn);
 
       // Its pool still gives no average (#650): stock counted in waits too.
@@ -1449,7 +1453,6 @@ describe('Costs (e2e)', () => {
       // The second costed: the other 4, and the stock moved waits no more.
       const costedTwo = await setCost(s, two, cad('2.00'));
       expect(costedTwo.followed).toMatchObject([{ value: '8.000000' }]);
-      await expectToAddUp(costedTwo, '40.000000');
       expect(await waitingIds(s)).toEqual([
         (await valuationOf(db, found.movement.id)).id,
       ]);
@@ -1461,7 +1464,12 @@ describe('Costs (e2e)', () => {
         quantity: '40.0000',
         value: '56.000000',
       });
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '40.000000',
+        most: each('2.00'),
+        answer: costedTwo,
+      });
     });
 
     it('refuses a cost by hand on the stock moved in, naming the lot to cost', async () => {
@@ -1488,7 +1496,11 @@ describe('Costs (e2e)', () => {
           .where(eq(stockValuations.kind, 'correction')),
       ).toEqual([]);
       // Refused, so no cost was given and no lot holds any.
-      await expectNoLotOver(vitc, each('0'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '0',
+        most: each('0'),
+      });
     });
 
     /**
@@ -1562,7 +1574,12 @@ describe('Costs (e2e)', () => {
         value: '80.000000',
       });
       expect(await needsCost(s)).toEqual([]);
-      await expectNoLotOver(vitc, each('2.00'));
+      await expectCostToFollow(db, {
+        variantId: vitc,
+        change: '80.000000',
+        most: each('2.00'),
+        answer: body<{ cost: CorrectedCost }>(costed).cost,
+      });
     });
 
     /** Until this many of the test database's sessions wait on a lock. */
