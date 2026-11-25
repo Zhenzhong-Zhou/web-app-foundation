@@ -13,8 +13,8 @@ import {
   signInAs,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
-import { saidOn } from './support/said';
-import { orderOf } from './support/stock';
+import { saidBy, saidOn } from './support/said';
+import { orderOf, releasedRun } from './support/stock';
 
 /**
  * ADR-094's interaction table, row by row: each row is one test here,
@@ -1357,4 +1357,393 @@ test('Receive stock with a code made for us and no supplier’s lot: its lot rea
     lot.getByText(said('inventory.lot.supplierLotToAdd')),
   ).toHaveCount(0);
   await expect(lot.getByText(said('inventory.lot.expiryToAdd'))).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------
+// ADR-094 amended, the branch after: a lot's former codes, row by row of
+// its interaction table (R9, R11), each with a lot of its own whose made
+// code was corrected
+// ---------------------------------------------------------------------------
+
+/** A lot whose code was made, then corrected; `was` its code before. */
+interface CorrectedLot extends SeededLot {
+  was: string;
+}
+
+/**
+ * Received into a code made for us, then corrected by Edit lot details'
+ * route with its reason (R8): the made code is the lot's former code.
+ */
+async function correctedLot(
+  api: APIRequestContext,
+  product: SeededProduct,
+  place: SeededLocation,
+  code: string,
+): Promise<CorrectedLot> {
+  const made = await receiveInto(api, product, place, '6', {
+    makeCode: true,
+    expiry: 'unknown',
+  });
+  const corrected = await api.patch(`/v1/stock/lots/${made.id}`, {
+    data: { code, reason: 'E2E typed from a smudged label' },
+  });
+  expect(corrected.ok(), await corrected.text()).toBeTruthy();
+  return { id: made.id, code, was: made.code };
+}
+
+/** Text that starts with these words, read as they are. */
+const startingWith = (words: string) =>
+  new RegExp(`^${words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+
+/** A lot's grey line under its code, "was {code}". */
+const wasLine = (code: string) => said('inventory.movements.was', { code });
+
+/** Edit lot details opened from a lot's Actions on Stock. */
+async function editLotDetails(page: Page, code: string, place: string) {
+  await page
+    .getByRole('button', { name: `Actions for lot ${code} at ${place}` })
+    .click();
+  await page
+    .getByRole('menuitem', { name: 'Edit lot details…', exact: true })
+    .click();
+  return page.getByRole('dialog', { name: `Lot ${code}` });
+}
+
+test('Edit lot details, Lot number, change the code: “Why is the code changing?” shows, and is required; put the code back, the question goes', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const made = await receiveInto(
+    freshOrg.api,
+    scene.fishOil,
+    scene.shelf,
+    '6',
+    {
+      makeCode: true,
+      expiry: 'unknown',
+    },
+  );
+  await signInAs(page, freshOrg.api);
+  await lotsOnStock(page, scene);
+  const dialog = await editLotDetails(page, made.code, scene.shelf.name);
+
+  const lotNumber = dialog.getByRole('textbox', { name: 'Lot number' });
+  const why = dialog.getByRole('textbox', {
+    name: 'Why is the code changing?',
+  });
+  // Asked only when the code changes (E2a).
+  await expect(lotNumber).toHaveValue(made.code);
+  await expect(why).toHaveCount(0);
+
+  await lotNumber.fill('FO-0909');
+  await expect(why).toBeVisible();
+  await expect(why).toHaveAttribute('required');
+
+  // Saved with no reason: refused at its field, focus there, nothing sent.
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(why).toHaveAccessibleDescription(
+    said('inventory.lot.reasonMissing'),
+  );
+  await expect(why).toBeFocused();
+  await expect(dialog).toBeVisible();
+
+  // The lot's own code again, as the server compares it: no question.
+  await lotNumber.fill(made.code.toLowerCase());
+  await expect(why).toHaveCount(0);
+});
+
+test('Edit lot details, Save, the code changed: one write; the message names both codes, with Open the lot; Stock, the lot reading “was”; its page, “was” by its title, Former codes and “shipped as” in Who received it (R9)', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const made = await receiveInto(
+    freshOrg.api,
+    scene.fishOil,
+    scene.shelf,
+    '6',
+    {
+      makeCode: true,
+      expiry: 'unknown',
+    },
+  );
+  const customer = await createPartner(freshOrg.api, {
+    name: 'E2E Harbour Clinic',
+  });
+  // Shipped under the made code, before it was corrected (E3a).
+  await shipFrom(freshOrg.api, customer, scene.fishOil, made, scene.shelf, '2');
+  await signInAs(page, freshOrg.api);
+  await lotsOnStock(page, scene);
+  const dialog = await editLotDetails(page, made.code, scene.shelf.name);
+
+  await dialog.getByRole('textbox', { name: 'Lot number' }).fill('FO-0909');
+  await dialog
+    .getByRole('textbox', { name: 'Why is the code changing?' })
+    .fill('E2E typed from a smudged label');
+  const [saved] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        new URL(response.url()).pathname === `/api/v1/stock/lots/${made.id}`,
+    ),
+    dialog.getByRole('button', { name: 'Save', exact: true }).click(),
+  ]);
+  // Read before the screen moves on, which takes its body with it.
+  expect(saved.ok()).toBe(true);
+
+  // Where it was opened: Stock, the lot under its new code, the old one
+  // a grey line under it.
+  await expect(dialog).toBeHidden();
+  await expect(message(page)).toContainText(
+    said('inventory.lot.savedWas', { code: 'FO-0909', was: made.code }),
+  );
+  await expect(
+    lotRow(page, 'FO-0909').getByText(wasLine(made.code)),
+  ).toBeVisible();
+
+  await message(page).getByRole('button', { name: 'Open the lot' }).click();
+  await expect(page).toHaveURL(new RegExp(`/lots/${made.id}$`));
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    'FO-0909',
+  );
+  const main = page.getByRole('main');
+  await expect(
+    main.getByText(wasLine(made.code), { exact: true }),
+  ).toBeVisible();
+  await expect(
+    main.getByRole('heading', { name: 'Former codes', exact: true }),
+  ).toBeVisible();
+  await expect(main.getByText('E2E typed from a smudged label')).toBeVisible();
+  // The boxes the clinic holds carry the old code.
+  await expect(
+    page
+      .getByRole('table', { name: 'Who received it' })
+      .getByRole('row', { name: /E2E Harbour Clinic/ }),
+  ).toContainText(said('inventory.trace.shippedAs', { code: made.code }));
+});
+
+test('Receive stock, an order’s Receive, Count it in…, Move to another lot; Lot number, another lot’s former code: refused at the field, naming that lot, with Use; Use, the field takes it, what else was typed kept', async ({
+  page,
+  freshOrg,
+}) => {
+  test.setTimeout(60_000);
+  const scene = await lotsScene(freshOrg.api);
+  const lot = await correctedLot(
+    freshOrg.api,
+    scene.fishOil,
+    scene.shelf,
+    'FO-0909',
+  );
+  const refusal = said('inventory.lot.formerCode', {
+    code: lot.was,
+    lot: lot.code,
+  });
+  const use = (dialog: Locator) =>
+    dialog.getByRole('button', { name: `Use ${lot.code}`, exact: true });
+  await signInAs(page, freshOrg.api);
+
+  // Receive stock: refused as it is typed (4a); Use, the lot it names,
+  // which this adds to, the quantity kept.
+  await stockFrom(page);
+  let dialog = await receiveStock(page, scene);
+  let lotNumber = dialog.getByRole('combobox', { name: 'Lot number' });
+  await lotNumber.fill(lot.was);
+  await expect(lotNumber).toHaveAccessibleDescription(refusal);
+  await use(dialog).click();
+  await expect(lotNumber).toHaveValue(lot.code);
+  await expect(lotNumber).toHaveAccessibleDescription(
+    startingWith(said('inventory.lot.isExisting')),
+  );
+  await expect(use(dialog)).toHaveCount(0);
+  await expect(dialog.getByRole('textbox', { name: 'Quantity' })).toHaveValue(
+    '12',
+  );
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
+  // An order's Receive, the same field; the order made only now, since
+  // Receive stock would first ask whether this is its delivery.
+  const supplier = await createPartner(freshOrg.api, {
+    name: 'E2E Ocean Supply',
+  });
+  const purchase = await orderOf(
+    freshOrg.api,
+    supplier,
+    'purchase',
+    scene.fishOil,
+    '50',
+  );
+  await page.goto(`/orders/${purchase.id}`);
+  await page.getByRole('button', { name: 'Receive', exact: true }).click();
+  dialog = page.getByRole('dialog', { name: 'Receive E2E-FISH' });
+  await dialog.getByRole('textbox', { name: 'Quantity' }).fill('15');
+  lotNumber = dialog.getByRole('combobox', { name: 'Lot number' });
+  await lotNumber.fill(lot.was);
+  await expect(lotNumber).toHaveAccessibleDescription(refusal);
+  await use(dialog).click();
+  await expect(lotNumber).toHaveValue(lot.code);
+  await expect(dialog.getByRole('textbox', { name: 'Quantity' })).toHaveValue(
+    '15',
+  );
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
+  // Count it in…, A new lot: Use takes the lot as One of its lots, since
+  // a new lot must be new.
+  await stockFrom(page, '/inventory?search=E2E-FISH');
+  await placesOf(page, 'E2E Fish Oil').click();
+  await page.getByRole('button', { name: 'Count it in E2E-FISH…' }).click();
+  dialog = page.getByRole('dialog', { name: 'Correct the count' });
+  await dialog
+    .getByRole('textbox', { name: 'What happened' })
+    .fill('E2E found behind the pallet');
+  await dialog.getByRole('radio', { name: 'A new lot' }).check();
+  lotNumber = dialog.getByRole('textbox', { name: 'Lot number' });
+  await lotNumber.fill(lot.was);
+  await expect(lotNumber).toHaveAccessibleDescription(refusal);
+  await use(dialog).click();
+  const itsLots = dialog.getByRole('radio', { name: 'One of its lots' });
+  await expect(itsLots).toBeChecked();
+  await expect(itsLots).toBeFocused();
+  await expect(dialog.getByRole('combobox', { name: 'Lot' })).toContainText(
+    lot.code,
+  );
+  await expect(
+    dialog.getByRole('textbox', { name: 'What happened' }),
+  ).toHaveValue('E2E found behind the pallet');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
+  // Move to another lot: Use, the stock goes into that lot.
+  await lotsOnStock(page, scene);
+  await page
+    .getByRole('button', {
+      name: `Actions for lot FO-0101 at ${scene.shelf.name}`,
+    })
+    .click();
+  await page
+    .getByRole('menuitem', { name: 'Move to another lot…', exact: true })
+    .click();
+  dialog = page.getByRole('dialog', { name: 'Move to another lot' });
+  await dialog.getByRole('textbox', { name: 'Quantity' }).fill('5');
+  lotNumber = dialog.getByRole('combobox', { name: 'Lot number' });
+  await lotNumber.fill(lot.was);
+  await expect(lotNumber).toHaveAccessibleDescription(refusal);
+  await use(dialog).click();
+  await expect(lotNumber).toHaveValue(lot.code);
+  await expect(dialog.getByRole('textbox', { name: 'Quantity' })).toHaveValue(
+    '5',
+  );
+});
+
+test('Stock, the Lot view, the top bar, Movements’ find box, Trace a lot; type a former code: the lot, saying “was” (R9, R10)', async ({
+  page,
+  freshOrg,
+}) => {
+  test.setTimeout(60_000);
+  const scene = await lotsScene(freshOrg.api);
+  const lot = await correctedLot(
+    freshOrg.api,
+    scene.fishOil,
+    scene.shelf,
+    'FO-0909',
+  );
+  const was = wasLine(lot.was);
+  await signInAs(page, freshOrg.api);
+
+  // Stock: the item found, its lot under today's code.
+  await stockFrom(page, `/inventory?search=${lot.was}`);
+  await placesOf(page, 'E2E Fish Oil').click();
+  await lotsAt(page, scene.shelf.name).click();
+  await expect(lotRow(page, lot.code).getByText(was)).toBeVisible();
+
+  // The Lot view: that lot alone.
+  await page.goto(`/inventory?group=lot&search=${lot.was}`);
+  const lots = page.getByRole('main').getByRole('link', { name: /^(FO-|L-)/ });
+  await expect(lots).toHaveText([lot.code]);
+  await expect(lotRow(page, lot.code).getByText(was)).toBeVisible();
+
+  // The top bar: the lot, its title today's code; Enter opens it.
+  const box = page.getByRole('combobox', { name: 'Search everything' });
+  await box.fill(lot.was);
+  await expect(
+    page.getByRole('option', { name: new RegExp(`^${lot.code} · ${was}`) }),
+  ).toBeVisible();
+  await box.press('Enter');
+  await expect(page).toHaveURL(new RegExp(`/lots/${lot.id}$`));
+
+  // Movements' find box: the lot found by its whole former code, offered.
+  await page.goto('/movements');
+  await page
+    .getByRole('combobox', { name: 'Find an item, lot or order' })
+    .fill(lot.was);
+  await expect(
+    page.getByRole('option', {
+      name: new RegExp(`^Lot ${lot.code} · ${was} · `),
+    }),
+  ).toBeVisible();
+
+  // Trace a lot: no lot has the code today, so a list, the lot in it.
+  await page.goto(`/lots?code=${lot.was}`);
+  const found = page.getByRole('table', { name: 'Trace a lot' });
+  await expect(found.getByRole('link', { name: lot.code })).toBeVisible();
+  await expect(found.getByText(was)).toBeVisible();
+});
+
+/** A day as the server's messages write it in English: "Nov 25, 2026". */
+const dayInEnglish = (day: string) =>
+  new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`));
+
+test('A run’s Record output, Batch number, another lot’s former code, Record: refused at the field, naming that lot, with no button; another code, recorded', async ({
+  page,
+  freshOrg,
+}) => {
+  const scene = await lotsScene(freshOrg.api);
+  const lot = await correctedLot(
+    freshOrg.api,
+    scene.fishOil,
+    scene.shelf,
+    'FO-0909',
+  );
+  const runId = await releasedRun(freshOrg.api, scene.fishOil, scene.shelf);
+  // The day the code stopped being the lot's, the organization's today.
+  const today = lot.was.slice('L-'.length, 'L-YYYY-MM-DD'.length);
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/production/${runId}`);
+
+  await page
+    .getByRole('button', { name: 'Record output', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Record output' });
+  await dialog.getByRole('textbox', { name: 'Finished this time' }).fill('4');
+  const batch = dialog.getByRole('textbox', { name: 'Batch number' });
+  await batch.fill(lot.was);
+  await dialog.getByRole('button', { name: 'Record', exact: true }).click();
+
+  // The server's refusal under the field, focus there, what was typed
+  // kept; another lot being made, so no Use (8a).
+  await expect(batch).toHaveAccessibleDescription(
+    saidBy('en', 'stock.lotCodeFormer', {
+      code: lot.was,
+      lot: lot.code,
+      day: dayInEnglish(today),
+    }),
+  );
+  await expect(batch).toBeFocused();
+  await expect(batch).toHaveValue(lot.was);
+  await expect(dialog.getByRole('button', { name: /^Use / })).toHaveCount(0);
+
+  await batch.fill('FO-1001');
+  await expect(batch).not.toHaveAccessibleDescription(/never given/);
+  await dialog.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByText(said('production.output.recorded')),
+  ).toBeVisible();
 });

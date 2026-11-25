@@ -6,6 +6,7 @@ import {
   daysFromNow,
   signInAs,
 } from './support/api';
+import { saidOn } from './support/said';
 
 /**
  * The top bar's lookup (ADR-056), end to end: a lot code typed in part,
@@ -121,4 +122,90 @@ test('closes the full-screen search on a tablet held upright, still on Home', as
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
+/**
+ * The top bar's close matches (ADR-056 amended, #654), the two rows of
+ * ADR-094's amended interaction table: what matches as typed shows alone;
+ * the close matches only when nothing does, under one heading.
+ */
+test('The top bar, a whole code that matches: only what matches, no close match', async ({
+  page,
+  freshOrg,
+}) => {
+  const product = await createProduct(freshOrg.api, { tracksLots: true });
+  const location = await createLocation(freshOrg.api);
+  // BF-2609 is a close match for BF-2609-B, which the lookup finds as
+  // typed: the box shows the second alone.
+  for (const code of ['BF-2609', 'BF-2609-B']) {
+    await created(
+      await freshOrg.api.post('/v1/stock/movements', {
+        data: {
+          variantId: product.variantId,
+          toLocationId: location.id,
+          quantity: '5',
+          reason: 'receipt',
+          lot: { code, expiresAt: daysFromNow(200) },
+        },
+      }),
+    );
+  }
+  await signInAs(page, freshOrg.api);
+  await page.goto('/inventory');
+
+  const box = page.getByRole('combobox', { name: 'Search everything' });
+  const [answer] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/v1/lookup' &&
+        new URL(response.url()).searchParams.get('q') === 'BF-2609-B',
+    ),
+    box.fill('BF-2609-B'),
+  ]);
+  // The server's answer holds the close one; the box leaves it out.
+  const { groups } = (await answer.json()) as {
+    groups: { results: { title: string; close: boolean }[] }[];
+  };
+  expect(groups.flatMap((group) => group.results)).toContainEqual(
+    expect.objectContaining({ title: 'BF-2609', close: true }),
+  );
+  const listbox = page.getByRole('listbox');
+  await expect(
+    listbox.getByRole('option', { name: /^BF-2609-B/ }),
+  ).toBeVisible();
+  await expect(listbox.getByRole('option', { name: /^BF-2609 / })).toHaveCount(
+    0,
+  );
+  await expect(
+    listbox.getByText(saidOn('en', 'inventory.movements.closeMatches')),
+  ).toHaveCount(0);
+});
+
+test('The top bar, text nothing matches as typed: the close matches, under their heading, each saying its kind', async ({
+  page,
+  freshOrg,
+}) => {
+  await createProduct(freshOrg.api, { name: 'Focus 60ct', sku: 'E2E-FOCUS' });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/inventory');
+
+  const box = page.getByRole('combobox', { name: 'Search everything' });
+  await box.fill('fokus');
+  const listbox = page.getByRole('listbox');
+  await expect(
+    listbox.getByText(saidOn('en', 'inventory.movements.closeMatches'), {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    listbox.getByRole('option', {
+      name: new RegExp(
+        `^Focus 60ct · ${saidOn('en', 'search.kindOne', { kind: 'item' })}`,
+      ),
+    }),
+  ).toBeVisible();
+  // One heading for them all, the kinds' own gone.
+  await expect(
+    listbox.getByText(saidOn('en', 'search.kind.item'), { exact: true }),
+  ).toHaveCount(0);
 });

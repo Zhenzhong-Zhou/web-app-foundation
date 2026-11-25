@@ -20,9 +20,11 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
+import { numberingChangedSevenWays } from './support/audit';
 import { shownCards } from './support/customise-home';
 import { dragByKeyboard } from './support/drag';
 import { confirmEmailInDatabase } from './support/mail';
+import { releasedRun } from './support/stock';
 import { deploy } from './support/version';
 
 /**
@@ -69,6 +71,8 @@ interface Screen {
 interface More {
   productId?: string;
   orderId?: string;
+  /** A production run released, for its Record output. */
+  runId?: string;
 }
 
 interface Seed {
@@ -399,6 +403,18 @@ const SCREENS: Screen[] = [
     ready: (page) => page.getByText('Where it is now'),
   },
   {
+    // A lot whose code was corrected (ADR-094 amended, R9): "was" beside
+    // its title, and Former codes.
+    name: 'a lot, its code corrected',
+    path: (seed) => `/lots/${seed.lotId}`,
+    more: async (api, seed) => {
+      await corrected(api, seed);
+      return {};
+    },
+    ready: (page) =>
+      page.getByRole('heading', { name: 'Former codes', exact: true }),
+  },
+  {
     // Move to another lot (ADR-094, R20), from the lot's Actions.
     name: 'inventory, Move to another lot…',
     path: () => '/inventory',
@@ -459,6 +475,61 @@ const SCREENS: Screen[] = [
       page
         .getByRole('dialog', { name: /^Lot L-/ })
         .getByRole('radiogroup', { name: 'Expires' }),
+  },
+  {
+    // The code changed and saved with no reason (ADR-094 amended, R8,
+    // E2a): "Why is the code changing?" shown, refused at its field.
+    name: 'inventory, Edit lot details…, the code changed and no reason given',
+    path: () => '/inventory?group=lot',
+    more: async (api, seed) => {
+      await madeLot(api, seed);
+      return {};
+    },
+    open: async (page) => {
+      await page.getByRole('button', { name: /^Actions for lot L-/ }).click();
+      await page
+        .getByRole('menuitem', { name: 'Edit lot details…', exact: true })
+        .click();
+      const dialog = page.getByRole('dialog', { name: /^Lot L-/ });
+      await dialog
+        .getByRole('textbox', { name: 'Lot number' })
+        .fill('A11Y-LOT-9');
+      await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+      await expect(
+        dialog.getByRole('textbox', { name: 'Why is the code changing?' }),
+      ).toHaveAttribute('aria-invalid', 'true');
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: /^Lot L-/ })
+        .getByRole('textbox', { name: 'Why is the code changing?' }),
+  },
+  {
+    // Another lot's former code typed for a new lot (ADR-094 amended,
+    // R11, 4a): refused at the field, naming that lot, with Use.
+    name: 'inventory, Receive stock, another lot’s former code typed',
+    path: () => '/inventory',
+    more: async (api, seed) => {
+      await corrected(api, seed);
+      return {};
+    },
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Actions for E2E Widget / })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Receive stock…' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Receive stock' });
+      await dialog.getByRole('radio', { name: 'Not on an order' }).check();
+      await dialog.getByRole('button', { name: 'Continue' }).click();
+      await dialog
+        .getByRole('combobox', { name: 'Lot number' })
+        .fill('A11Y-LOT-1');
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Receive stock' })
+        .getByRole('button', { name: 'Use A11Y-LOT-2', exact: true }),
   },
   {
     // Found stock (#628): Correct the count with a place and Which lot,
@@ -750,6 +821,42 @@ const SCREENS: Screen[] = [
         .getByText(/^That day has passed: /),
   },
   {
+    // A run's output under another lot's former code (ADR-094 amended,
+    // R11, 8a): the server's refusal at Batch number, with no button.
+    name: 'a run, Record output, another lot’s former code refused',
+    path: (seed) => `/production/${seed.more.runId}`,
+    more: async (api, seed) => {
+      await corrected(api, seed);
+      return {
+        runId: await releasedRun(
+          api,
+          { variantId: seed.variantId },
+          { id: seed.locationId },
+        ),
+      };
+    },
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: 'Record output', exact: true })
+        .click();
+      const dialog = page.getByRole('dialog', { name: 'Record output' });
+      await dialog
+        .getByRole('textbox', { name: 'Finished this time' })
+        .fill('4');
+      await dialog
+        .getByRole('textbox', { name: 'Batch number' })
+        .fill('A11Y-LOT-1');
+      await dialog.getByRole('button', { name: 'Record', exact: true }).click();
+      await expect(
+        dialog.getByRole('textbox', { name: 'Batch number' }),
+      ).toHaveAttribute('aria-invalid', 'true');
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Record output' })
+        .getByRole('textbox', { name: 'Batch number' }),
+  },
+  {
     name: 'an item, Edit',
     path: (seed) => `/items/${seed.productId}`,
     // The item's Edit item, in its header, named apart from a variant's.
@@ -760,6 +867,19 @@ const SCREENS: Screen[] = [
   { name: 'locations', path: () => '/locations', ready: heading },
   { name: 'stock value', path: () => '/costs', ready: heading },
   { name: 'audit log', path: () => '/audit', ready: heading },
+  {
+    // An entry's seven changes, one a line, all shown (ADR-076 amended;
+    // ADR-094 amended, R23).
+    name: 'audit log, an entry’s seven changes shown whole',
+    path: () => '/audit',
+    more: async (api) => {
+      await numberingChangedSevenWays(api);
+      return {};
+    },
+    open: (page) =>
+      page.getByRole('button', { name: 'Show all 7 changes' }).click(),
+    ready: (page) => page.getByRole('button', { name: 'Show fewer' }),
+  },
   { name: 'account', path: () => '/account', ready: heading },
   {
     name: 'organization',
@@ -1022,6 +1142,22 @@ async function madeLot(
     makeCode: true,
     expiry: 'unknown',
   });
+}
+
+/**
+ * The seed's lot, A11Y-LOT-1, marked as a code made here and corrected to
+ * A11Y-LOT-2 with its reason (ADR-094 amended, R8): A11Y-LOT-1 is then
+ * its former code, which no other lot of the item may take.
+ */
+async function corrected(api: APIRequestContext, seed: Seed): Promise<void> {
+  const saved = await api.patch(`/v1/stock/lots/${seed.lotId}`, {
+    data: {
+      madeHere: true,
+      code: 'A11Y-LOT-2',
+      reason: 'Typed up from a smudged label.',
+    },
+  });
+  expect(saved.ok(), await saved.text()).toBeTruthy();
 }
 
 /** A page's requests in flight, and when the last one began or ended. */

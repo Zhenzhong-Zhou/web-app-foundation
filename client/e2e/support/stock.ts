@@ -232,3 +232,57 @@ export async function reorderScene(
   );
   return { ...stock, zinc, focus, copper, draft };
 }
+
+/**
+ * A run of the lot-tracked item given, released at the place: a material
+ * of its own, 100 there, a recipe of 5 for 10 made, a run for 10; the
+ * run's id, for its Record output.
+ */
+export async function releasedRun(
+  api: APIRequestContext,
+  output: { variantId: string },
+  place: { id: string },
+): Promise<string> {
+  const material = await createProduct(api, {
+    name: 'E2E Blend',
+    type: 'material',
+  });
+  await created(
+    await api.post('/v1/stock/movements', {
+      data: {
+        variantId: material.variantId,
+        toLocationId: place.id,
+        quantity: '100',
+        reason: 'receipt',
+      },
+    }),
+  );
+  const { bom } = await created<{ bom: { id: string } }>(
+    await api.post('/v1/boms', {
+      data: {
+        outputVariantId: output.variantId,
+        outputQuantity: '10',
+        lines: [{ componentVariantId: material.variantId, quantity: '5' }],
+      },
+    }),
+  );
+  const promoted = await api.post(`/v1/boms/${bom.id}/promote`);
+  expect(promoted.ok(), await promoted.text()).toBeTruthy();
+  const { productionOrder: run } = await created<{
+    productionOrder: { id: string };
+  }>(
+    await api.post('/v1/production-orders', {
+      data: {
+        outputVariantId: output.variantId,
+        bomId: bom.id,
+        locationId: place.id,
+        quantityPlanned: '10',
+      },
+    }),
+  );
+  const released = await api.post(`/v1/production-orders/${run.id}/release`, {
+    data: { sourceLocationId: place.id },
+  });
+  expect(released.ok(), await released.text()).toBeTruthy();
+  return run.id;
+}
