@@ -17,12 +17,13 @@ import { lockPool, lockPools } from './valuation';
  * Value that arrives after the stock did (ADR-048): a batch's cost at its
  * run's close, and a cost set or corrected after the receipt.
  *
- * Both spread the same way (spread). The share for units moved since to
- * another lot follows them there (ADR-094, D5); the share for units still in
- * the pool revalues the pool; the share for units already gone is an
- * `issued` row, recorded against the pool's history and kept out of its
- * balance. None flows on into anything those gone units became —
- * propagating through production is an open decision.
+ * Both spread the same way (spread): each unit of the acquisition carries its
+ * share once, in time order (ADR-094's amendment, #678, #677). The share for
+ * units moved since to another lot follows them there (ADR-094, D5); the
+ * share for units still in the pool revalues the pool; the share for units
+ * already gone is an `issued` row, recorded against the pool's history and
+ * kept out of its balance. None flows on into anything those gone units
+ * became — propagating through production is an open decision.
  */
 
 /** One code's value arriving late, and who gave it. */
@@ -79,22 +80,17 @@ interface Carried {
   carried: string;
 }
 
-/** What is left of the acquisition and its value after the last lot change. */
-interface Last {
-  part: 'last';
-  taken: string;
-  left_value: string;
+/** What of the value stays with the stock in the pool, and what went. */
+interface Rest {
+  part: 'rest';
+  held: string;
+  issued: string;
 }
 
-/** The pools a late value may reach, and what it has counted in each. */
+/** The pools a late value may reach. */
 interface Reach {
   /** Each pool's id by its lot, locked in lot order. */
   pools: Map<string | null, string>;
-  /**
-   * By pool, the units already counted as still there for this late value,
-   * so stock moved away and back is not counted twice (plan).
-   */
-  claimed: Map<string, string>;
 }
 
 /** What a late value comes to in one pool, worked out before it is written. */
@@ -166,7 +162,7 @@ async function lockReach(
     late.variantId,
     (found.rows as { lot_id: string | null }[]).map((row) => row.lot_id),
   );
-  return { pools, claimed: new Map() };
+  return { pools };
 }
 
 /**
@@ -186,26 +182,35 @@ async function spread(
 
 /**
  * Works out what a late value comes to in one pool, and in each pool it
- * follows stock to, before anything is written.
+ * follows stock to, before anything is written (ADR-094's amendment, "A late
+ * cost follows each unit once").
  *
- * Each lot change out of the pool after the acquisition arrived is taken in
- * order. Of the units it moved, the acquisition's are the moved quantity
- * times the acquisition's units still in the pool just before, over what the
- * pool held then; "still in the pool" is ADR-048's reading, as many as the
- * pool held, up to what had arrived of the acquisition and not yet moved.
- * Those units carry their share of the value, by the acquisition's unit, to
- * the lot change's row in, and what is left goes on to the next. So the part
- * a move took depends only on what happened up to the move, and a move never
- * turns a cost into a variance.
+ * The walk takes the pool's rows in time order from the acquisition's first,
+ * keeping how many of the acquisition's units the pool still holds. Each row
+ * out takes them in proportion: its quantity times those units, over what
+ * the pool held just before; the last unit out takes what is left. A row in
+ * dilutes them, all but the acquisition's own rows, which add their units,
+ * and a row that brings back stock a shipment took: an order's return, from
+ * the order's shipments from the lot, or a voided shipment's reversal, from
+ * the shipment it names, as shippedAt (valuation.ts) finds them. It takes
+ * back the units the shipment took, times the quantity coming back over the
+ * quantity shipped, so they are in the pool again, and their share is not
+ * issued. A return whose shipment took none, and a "Returned" receipt with
+ * no order, bring nothing back. Once the pool holds none of the units and
+ * no later row can bring any back, the walk stops.
  *
- * The part carried is a late value for the row in, so it is worked out again
- * in that pool, the row in its acquisition; each hop is a later row, so it
- * ends. Only then is the rest worked out: what remains after the last move
- * splits between the pool and `issued` on what is left of the acquisition,
- * as many as the pool holds now, less the units this late value has already
- * counted there. Stock moved away and back is the row in's, so the units it
- * holds are never also counted for the acquisition it left, whose own were
- * shipped meanwhile.
+ * What a row out took goes where its stock went: a lot change's to its row
+ * in, where the walk goes on (a hop, in that pool, the row in its
+ * acquisition); any other row's to `issued`. Stock back by a later lot
+ * change is a later row in, so it carries only what its own units carry and
+ * a unit is never counted twice (#678). What the pool still holds is its
+ * share and never more (#677). Units are kept to twelve places, each taken
+ * exactly from what is left, so the parts add up to the acquisition.
+ *
+ * The value splits by those units, rounded to six places on the running
+ * total, so the parts add up to it to the millionth: each lot change that
+ * carried a part, in time order, then what is held, then what is issued,
+ * the last, taking the remainder.
  */
 async function plan(
   tx: Tx,
@@ -221,15 +226,12 @@ async function plan(
   reach.pools.set(acquisition.lotId, poolId);
 
   const quantity = sql`${acquisition.quantity}::numeric`;
+  const value = sql`${acquisition.value}::numeric`;
   const walked = await tx.execute(sql`
     with recursive ledger as (
       select h.id, h.kind, h.quantity, h.movement_id,
-             coalesce(sum(h.quantity) over earlier, 0) as before,
-             coalesce(
-               sum(case when ${acquisition.rows} then h.quantity end)
-                 over earlier,
-               0
-             ) as arrived
+             (${acquisition.rows}) as acquired,
+             coalesce(sum(h.quantity) over earlier, 0) as before
       from stock_valuations h
       where h.organization_id = ${organizationId}::uuid
         and h.variant_id = ${variantId}::uuid
@@ -238,65 +240,169 @@ async function plan(
         order by h.id rows between unbounded preceding and 1 preceding
       )
     ),
-    moves as (
-      select row_number() over (order by l.id) as n,
-             i.id as in_id, i.lot_id as to_lot_id,
-             -l.quantity as moved, l.before, l.arrived
+    history as (
+      select l.id, l.kind, l.quantity, l.movement_id, l.acquired, l.before,
+             row_number() over (order by l.id) as n
       from ledger l
-      join stock_valuations i
-        on i.organization_id = ${organizationId}::uuid
-       and i.movement_id = l.movement_id
+      where l.quantity <> 0
+        and l.id >= (
+          select f.id from ledger f where f.acquired order by f.id limit 1
+        )
+    ),
+    -- Rows in that bring back stock a shipment took, and the shipments'
+    -- rows in this pool before them: those that may bring units back.
+    reversals as (
+      select r.id, m.reason, m.reference_type, m.reference_id
+      from history r
+      join stock_movements m
+        on m.organization_id = ${organizationId}::uuid
+       and m.id = r.movement_id
+      where r.kind = 'movement'
+        and r.quantity > 0
+        and (
+          (m.reason = 'return' and m.reference_type = 'order_return')
+          or m.reference_type = 'shipment'
+        )
+    ),
+    backs as (
+      select r.id, array_agg(s.id) as shipments, -sum(s.quantity) as shipped
+      from reversals r
+      cross join lateral (
+        select sh.id
+        from order_returns o
+        join shipments sh
+          on sh.organization_id = ${organizationId}::uuid
+         and sh.order_id = o.order_id
+         and sh.voided_at is null
+        where r.reference_type = 'order_return'
+          and o.organization_id = ${organizationId}::uuid
+          and o.id = r.reference_id
+        union all
+        select r.reference_id
+        where r.reference_type = 'shipment'
+      ) reversed
+      join stock_movements sm
+        on sm.organization_id = ${organizationId}::uuid
+       and sm.variant_id = ${variantId}::uuid
+       and sm.reason = 'shipment'
+       and sm.reference_type = 'shipment'
+       and sm.reference_id = reversed.id
+      join stock_valuations s
+        on s.organization_id = ${organizationId}::uuid
+       and s.movement_id = sm.id
+       and s.kind = 'movement'
+       and s.variant_id = ${variantId}::uuid
+       and ${lotIs(sql`s.lot_id`, acquisition.lotId)}
+       and s.id < r.id
+      group by r.id
+    ),
+    steps as (
+      select h.n, h.id, h.quantity, h.acquired, h.before,
+             b.shipments, b.shipped,
+             exists (
+               select 1 from backs bb where h.id = any (bb.shipments)
+             ) as watched,
+             i.id as in_id, i.lot_id as to_lot_id,
+             max(case when h.acquired or b.id is not null then h.n end)
+               over () as needed
+      from history h
+      left join backs b on b.id = h.id
+      left join stock_valuations i
+        on h.kind = 'lot_change'
+       and h.quantity < 0
+       and i.organization_id = ${organizationId}::uuid
+       and i.movement_id = h.movement_id
        and i.kind = 'lot_change'
        and i.quantity > 0
-      where l.kind = 'lot_change'
-        and l.quantity < 0
-        and l.arrived > 0
     ),
-    walk (n, taken, left_value, in_id, to_lot_id, moved, carried) as (
-      select 0::bigint, 0::numeric, ${acquisition.value}::numeric,
-             null::uuid, null::uuid, null::numeric, null::numeric
+    -- The acquisition's units in the pool after each row, and what each
+    -- shipment a later row brings back took of them.
+    walk (n, units, took, change) as (
+      select 0::bigint, 0::numeric, '{}'::jsonb, 0::numeric
       union all
-      select m.n, w.taken + s.x, w.left_value - s.carried,
-             m.in_id, m.to_lot_id, m.moved, s.carried
+      select k.n, w.units + d.change,
+             case
+               when k.watched
+                 then w.took || jsonb_build_object(k.id::text, -d.change)
+               else w.took
+             end,
+             d.change
       from walk w
-      join moves m on m.n = w.n + 1
+      join steps k on k.n = w.n + 1
       cross join lateral (
-        select t.x,
-               case
-                 when t.x >= ${quantity} - w.taken then w.left_value
-                 else round(w.left_value * t.x / (${quantity} - w.taken), 6)
-               end as carried
-        from (
-          select case
-                   when m.before > 0 then
-                     m.moved
-                       * least(m.before, greatest(m.arrived - w.taken, 0))
-                       / m.before
-                   else 0
-                 end as x
-        ) t
-      ) s
-      where w.taken < ${quantity}
+        select case
+                 when k.acquired then k.quantity
+                 when k.quantity > 0 and k.shipped > 0 then
+                   round(
+                     k.quantity * (
+                       select coalesce(sum((w.took ->> t.id::text)::numeric), 0)
+                       from unnest(k.shipments) as t(id)
+                     ) / k.shipped,
+                     12
+                   )
+                 when k.quantity > 0 then 0
+                 when k.before + k.quantity <= 0 then -w.units
+                 else greatest(
+                   round(k.quantity * w.units / k.before, 12),
+                   -w.units
+                 )
+               end as change
+      ) d
+      where w.units <> 0 or k.n <= k.needed
     ),
-    last as (
-      select w.taken, w.left_value
+    ended as (
+      select w.units from walk w order by w.n desc limit 1
+    ),
+    moved as (
+      select k.n, k.in_id, k.to_lot_id, -k.quantity as moved,
+             -w.change as units
       from walk w
-      order by w.n desc
-      limit 1
+      join steps k on k.n = w.n
+      where k.in_id is not null
+        and w.change <> 0
+    ),
+    parts as (
+      select 0 as rank, m.n, m.in_id, m.to_lot_id, m.moved, m.units
+      from moved m
+      union all
+      select 1, null, null, null, null, e.units
+      from ended e
+      union all
+      select 2, null, null, null, null,
+             ${quantity} - e.units
+               - coalesce((select sum(m.units) from moved m), 0)
+      from ended e
+    ),
+    valued as (
+      select p.rank, p.n, p.in_id, p.to_lot_id, p.moved,
+             round(${value} * sum(p.units) over upto / ${quantity}, 6)
+               - round(
+                   ${value} * coalesce(sum(p.units) over earlier, 0)
+                     / ${quantity},
+                   6
+                 ) as value
+      from parts p
+      window upto as (order by p.rank, p.n rows unbounded preceding),
+             earlier as (
+               order by p.rank, p.n
+               rows between unbounded preceding and 1 preceding
+             )
     )
-    select 'move' as part, w.n, w.in_id, w.to_lot_id, w.moved, w.carried,
-           null::numeric as taken, null::numeric as left_value
-    from walk w
-    where w.n > 0
-      and w.carried <> 0
+    select 'move' as part, v.n, v.in_id, v.to_lot_id, v.moved,
+           v.value as carried, null::numeric as held, null::numeric as issued
+    from valued v
+    where v.rank = 0
+      and v.value <> 0
     union all
-    select 'last', null, null, null, null, null, l.taken, l.left_value
-    from last l
+    select 'rest', null, null, null, null, null,
+           max(v.value) filter (where v.rank = 1),
+           max(v.value) filter (where v.rank = 2)
+    from valued v
     order by n nulls last
   `);
 
-  const rows = walked.rows as unknown as (Carried | Last)[];
-  const last = rows.find((row): row is Last => row.part === 'last')!;
+  const rows = walked.rows as unknown as (Carried | Rest)[];
+  const rest = rows.find((row): row is Rest => row.part === 'rest')!;
 
   const moves: Plan['moves'] = [];
   for (const carried of rows) {
@@ -317,32 +423,6 @@ async function plan(
       ),
     });
   }
-
-  const left = sql`${quantity} - ${last.taken}::numeric`;
-  const claimed = sql`${reach.claimed.get(poolId) ?? '0'}::numeric`;
-  const split = await tx.execute(sql`
-    select r.held, ${last.left_value}::numeric - r.held as issued,
-           ${claimed} + r.units as claimed
-    from (
-      select u.units,
-             case
-               when ${left} > 0 then
-                 round(${last.left_value}::numeric * u.units / (${left}), 6)
-               else round(0, 6)
-             end as held
-      from (
-        select greatest(least(p.quantity - ${claimed}, ${left}), 0) as units
-        from valuation_pools p
-        where p.id = ${poolId}::uuid
-      ) u
-    ) r
-  `);
-  const rest = split.rows[0] as {
-    held: string;
-    issued: string;
-    claimed: string;
-  };
-  reach.claimed.set(poolId, rest.claimed);
 
   return {
     acquisition,

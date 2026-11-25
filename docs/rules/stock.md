@@ -1095,28 +1095,39 @@ file is kept is in the [README](README.md).
   [test](../../server/test/costs.e2e-spec.ts) "keeps the stock moved waiting while anything the first lot waited for still does, its pool taking no average, and not after" ·
   [test](../../server/test/costs.e2e-spec.ts) "follows a chain of two moves, each lot waiting until the first receipt is costed" ·
   [test](../../server/test/costs.e2e-spec.ts) "refuses a cost by hand on the stock moved in, naming the lot to cost"
-- **A cost given later follows the stock moved,** a delivery's cost set
-  or corrected, or a batch's at its run's close. Of each move out of the
-  lot after the stock arrived, the delivery's part is the quantity moved
-  times the delivery's units still in the lot just before, over what the
-  lot held then; that part takes its share of the cost to the lot it
-  went to, and on from there to any lot it moved to next. What remains
-  splits between the lot and its stock already gone, as any cost given
-  late does, except that stock moved away and back is counted once, as
-  the part that came back: of 10 received, 6 shipped and the 4 left moved
-  away and back, the lot holds the 4's share and the 6's is gone. So
-  the share of the stock moved depends only on what happened up to the
-  move, none of it is recorded as gone, and each lot's cost history
-  shows the part carried on, or the part that came, naming the other
-  lot. The answer to a cost given names each lot it followed stock to,
-  with its amount.
+- **A cost given later follows each unit once, in proportion,** a
+  delivery's cost set or corrected, or a batch's at its run's close.
+  From the stock's arrival on, each row out of the lot takes the
+  delivery's units in proportion: the quantity out times the delivery's
+  units still in the lot just before, over what the lot held then. What
+  a shipment took is gone; what a move took takes its share of the cost
+  to the lot it went to, and on from there to any lot it moved to next;
+  what the lot still holds keeps its share, and never more: of 60 at
+  2.00 and 40 with no price, 90 shipped and the 40 costed at 2.00, the
+  10 left hold 20.00. Stock back by a later move arrives again, carrying
+  only its own units' share, so a unit is counted once: of 10 received,
+  6 shipped and the 4 left moved A → B → A → C, C holds the 4's share
+  and the 6's is gone. A return on the order, or a shipment voided,
+  brings back its part of what its shipment took, held again rather
+  than gone; a "Returned" receipt with no order brings back none, and
+  a return after the cost was given comes back at its shipment's own
+  figure (#693). None of the stock moved is recorded as gone, and each
+  lot's cost history shows the part carried on, or the part that came,
+  naming the other lot. The answer to a cost given names each lot it
+  followed stock to, with its amount.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--the-cost-goes-with-the-stock-and-what-waits-still-waits) ·
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-late-cost-follows-each-unit-once-in-proportion) ·
   [test](../../server/test/costs.e2e-spec.ts) "carries 40.00 of 80.00 to the 50 moved, 20 of them the receipt’s by what the lot held: each lot 100.00 for 50, nothing issued, Stock value 200.00" ·
   [test](../../server/test/costs.e2e-spec.ts) "splits what stays after the move as ADR-048 does: 10 received, 5 shipped, 2 of the 5 left moved, costed at 10.00, 20.00 follows, 30.00 held, 50.00 issued" ·
   [test](../../server/test/costs.e2e-spec.ts) "values both lots of one receipt part moved and costed once, nothing issued" ·
   [test](../../server/test/costs.e2e-spec.ts) "gives the second lot the same share whatever the first ships after the move" ·
   [test](../../server/test/costs.e2e-spec.ts) "follows stock moved and moved back, the part back held in the first lot" ·
   [test](../../server/test/costs.e2e-spec.ts) "holds no more than the stock back in the first lot: 10 received, 6 shipped, the 4 left moved away and back, costed at 10.00, 40.00 held and 60.00 issued" ·
+  [test](../../server/test/costs.e2e-spec.ts) "carries each unit once, through a lot it left and came back to: 10 received, 6 shipped, the 4 left moved A → B → A → C, costed at 10.00, C holds 40.00 and 60.00 is issued (#678)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "keeps a lot’s share of a late cost and no more: 60 at 2.00 and 40 with no price, 90 shipped, the 40 costed at 2.00, 8.00 held, 72.00 issued, the 10 left holding 20.00 (#677)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "issues nothing for a shipment voided before the cost came: 10 with no price, 6 shipped and voided, costed at 10.00, 100.00 held" ·
+  [test](../../server/test/costs.e2e-spec.ts) "brings back the share of what a return brings back: 10 with no price, 6 shipped, 3 of them returned on the order, costed at 10.00, 70.00 held and 30.00 issued" ·
+  [test](../../server/test/costs.e2e-spec.ts) "brings back a return’s part of what its shipment took from a mixed lot: 9 of the 90 back at 1.20 before the cost, 64.80 issued, the 19 on hand holding 38.00" ·
   [test](../../server/test/costs.e2e-spec.ts) "carries a correction after the move, upward and then downward, by what the lot held when it moved" ·
   [test](../../server/test/costs.e2e-spec.ts) "carries a batch’s cost at close to its output moved to another lot before it" ·
   [test](../../server/test/costs.e2e-spec.ts) "gives a cost and a move at once, neither waiting on the other (two at once)"

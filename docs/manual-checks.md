@@ -1278,9 +1278,14 @@ a second organization.
   keeps its count. Its row names the item first, a link to its page,
   with its icon and its code grey under it, and in 中文 by its Chinese
   name where it has one; a lot's code opens its trace (#296).
-- **MC-803** Correct a needs-cost receipt. The correction splits between
-  stock still held and stock already gone, and the item leaves the
-  needs-cost list.
+- **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
+  each of its units carries its share once. Receive 40 by hand with no
+  price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
+  then Set cost 2.00 on the 40: the lot's 10 read 20.00 on Stock value,
+  2.00 each, the rest gone with the 90, and the receipt leaves the
+  needs-cost list. Done again with 9 of the 90 returned on the sale
+  before the cost: the lot's 19 read 38.00 once costed, 2.00 each, the
+  9's share back with them.
 - **MC-804** Costs and price lists are hidden from a viewer and from any role
   without the permission.
 - **MC-805** *(ADR-094, R20, D4, D5)* A cost that follows a move. On
@@ -1294,7 +1299,10 @@ a second organization.
   stock moved to lot …", each lot named where several took a part; the
   moved row leaves the list, both lots are valued, and their histories
   read "Cost carried to lot …" and "Cost from lot …", the other lot a
-  link to its page, Back returning here. A row of a kind
+  link to its page, Back returning here. Of 10 received with no price,
+  6 shipped and the 4 left moved to another lot, back, then on to a
+  third, a cost of 10.00 names the third lot alone, 40.00, and the
+  first two hold nothing (#678). A row of a kind
   the tab does not know, in an old tab after a deploy, reads "Other
   change" and "Waiting for a cost", never a stored key, and offers no
   Set cost.
@@ -7893,3 +7901,6 @@ first.
   active places that can hold stock, each as its path, #666: MC-R107 added.
 - 2026-11-24: Lot updated keeps what Edit lot details changed, from and
   to, #687: MC-329 extended, MC-R109 added.
+- 2026-11-24: ADR-094's amendment, a late cost follows each unit once,
+  in proportion, a return bringing back its share, #678 and #677:
+  MC-803 rewritten, MC-805 extended.

@@ -42,11 +42,11 @@ states (ADR-087).
   locked `inLotOrder` after the variant row.
 - **A lot issued to an open run is not moved** (`open-run.ts`, one
   query for the refusal and the pile's `issuedToRun`).
-- **A late cost follows stock moved on,** by what the lot held when it
-  moved (`revaluation.ts`, D5): never a variance, and the row
-  in takes no cost by hand. A cost and a move lock in the same order.
-  `plan` works a pool's rest out after its hops, less what it counted
-  there already; `write` then writes the rows.
+- **A late cost follows each unit once** (`revaluation.ts`): `plan`
+  walks the pool's rows in time order, each row out taking its share of
+  the units to `issued` or to a lot change's row in, a return taking back
+  its shipment's; `write` writes the rows. The row in takes no cost by
+  hand; a cost and a move lock in the same order.
 - **Start tracking locks the variant `for update`,** and `recordWithin`
   reads it `for share`, so no receipt races it; the start lot is found
   by its note's key, `tracking_started` (`start-lot.ts`), never by words.
