@@ -27,6 +27,8 @@ A batch made by a run that is still open waits for its run instead: **Open run**
 
 The total is **On hand**, every item’s and lot’s, whatever the list shows. **By item and lot** lists each item and lot with its quantity, **Unit cost** and **Value**, fifty at a time, by the item; a lot’s code opens its trace, and “was ASH-06O1” under it says a code it had before. Under the list, “Showing 50 of 14,512 items and lots” and **Show 50 more**, which adds the next fifty and puts focus on the first new row; if they cannot be loaded the rows stay, with **Try again**. Back from a lot returns to the row you left. **Export** downloads every item and lot as a spreadsheet file.
 
+“Waits for a cost” in place of a **Unit cost** means none of that item’s or lot’s stock has a cost yet, so it is worth nothing for now, and giving it one with **Set cost**, under **Waiting for a cost**, clears it.
+
 Type in **Find an item or a lot** any part of an item’s name or code, or of a lot’s code, its supplier’s lot or a code it had before. The list shows what matches, with “12 of 14,512 match” beside the box, the total as it was, and the find in the address; text that matches nothing says so, with **Clear the search**.
 
 Press **Value**, at the head of its column, to put the largest first, and again for the smallest first. **Item** puts the item’s order back.

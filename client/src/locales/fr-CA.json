@@ -405,6 +405,7 @@
   "costs.unitCost": "Coût unitaire",
   "costs.value": "Valeur",
   "costs.waiting": "En attente d’un coût",
+  "costs.waitsForCost": "En attente d’un coût",
   "costs.why.adjustment": "Ajouté lors du comptage, sans coût permettant de l’évaluer",
   "costs.why.fromBefore": "Revenu d’avant le suivi par lot",
   "costs.why.movedIn": "Venu du lot {code}. Son coût suit celui de ce lot.",

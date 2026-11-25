@@ -102,6 +102,18 @@ function servedSort(
 const poolKey = (pool: ValuationPool) =>
   `${pool.variantId}:${pool.lotId ?? ''}`;
 
+/**
+ * A provisional pool worth nothing, every unit of it waiting, says "Waits
+ * for a cost" in place of its unit cost, where 0.00 would read as a price;
+ * its value and Provisional stay. Its value is read for a digit other than
+ * zero, never as a number (ADR-025). The export leaves the same pool's Unit
+ * cost empty, `unitCostOf` in server/src/modules/costs/cost-exports.ts; the
+ * rule is docs/rules/stock.md's, under Stock value: "A provisional pool
+ * worth nothing says “Waits for a cost” in place of its unit cost".
+ */
+const waitsForCost = (pool: ValuationPool) =>
+  pool.provisional && !/[1-9]/.test(pool.value);
+
 /** Why a row is waiting, in the words someone would fix it by. */
 const WHY = defineMessages({
   opening: {
@@ -677,7 +689,12 @@ export function StockValuePage() {
                         {displayQuantity(pool.quantity)}
                       </TableCell>
                       <TableCell align="right">
-                        {formatUnitCost(pool.unitCost, currency)}
+                        {waitsForCost(pool)
+                          ? intl.formatMessage({
+                              id: 'costs.waitsForCost',
+                              defaultMessage: 'Waits for a cost',
+                            })
+                          : formatUnitCost(pool.unitCost, currency)}
                       </TableCell>
                       <TableCell align="right">
                         {formatMoney(pool.value, currency)}

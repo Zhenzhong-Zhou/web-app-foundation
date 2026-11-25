@@ -405,6 +405,7 @@
   "costs.unitCost": "单位成本",
   "costs.value": "价值",
   "costs.waiting": "等待成本",
+  "costs.waitsForCost": "等待成本",
   "costs.why.adjustment": "盘盈入库，没有可用于估值的依据",
   "costs.why.fromBefore": "开始按批次跟踪前的库存退回",
   "costs.why.movedIn": "从批次 {code} 转入。其成本随该批次而定。",

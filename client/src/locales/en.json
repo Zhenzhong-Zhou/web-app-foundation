@@ -405,6 +405,7 @@
   "costs.unitCost": "Unit cost",
   "costs.value": "Value",
   "costs.waiting": "Waiting for a cost",
+  "costs.waitsForCost": "Waits for a cost",
   "costs.why.adjustment": "Counted in, with nothing to value it by",
   "costs.why.fromBefore": "Back from before lot tracking",
   "costs.why.movedIn": "Moved in from lot {code}. Its cost follows that lot’s.",

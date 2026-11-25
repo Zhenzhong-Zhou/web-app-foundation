@@ -1383,6 +1383,18 @@ file is kept is in the [README](README.md).
   [test](../../client/src/costs/stock-value-page.test.tsx) "reads the totals again with the first page after Set cost" ·
   [test](../../client/e2e/costs.spec.ts) "Stock value, Find an item or a lot, type: the pools that match and how many, a lot found by its former code saying “was”; the total as it was; the find in the address; Clear the search" ·
   MC-802 · MC-807
+- **A provisional pool worth nothing says “Waits for a cost” in place of
+  its unit cost,** every unit of it waiting, where 0.00 would read as a
+  price; its value and its Provisional mark stay, and Set cost clears
+  it. A provisional pool worth more than nothing keeps its figure, and a
+  pool not provisional is untouched, one received free still at 0.00.
+  Its export says the same: that pool's Unit cost cell is empty, its
+  Value and Provisional as ever.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
+  [test](../../client/src/costs/stock-value-page.test.tsx) "says “Waits for a cost” in place of the unit cost of a provisional pool worth nothing, a pool of which a part waits keeping its figure" ·
+  [test](../../server/test/costs.e2e-spec.ts) "exports no unit cost for a provisional pool worth nothing, one of which a part waits and one received free keeping theirs" ·
+  [Help](../../client/src/help/guides/en/stock-value.md#read-the-value-read) ·
+  MC-808
 - **Stock value's screen keeps what a list keeps (#544, #473, #296):**
   Show 50 more puts focus on the first new row; a next page that fails
   keeps the rows, says so and offers Try again; Back from a lot or an

@@ -27,6 +27,8 @@ Un lot fabriqué par un ordre encore ouvert attend plutôt son ordre : **Voir l
 
 Le total est **En stock**, celui de tous les articles et lots, quoi que montre la liste. **Par article et par lot** liste chaque article et chaque lot avec sa quantité, son **Coût unitaire** et sa **Valeur**, cinquante à la fois, par article; le code d’un lot ouvre sa traçabilité, et « anciennement ASH-06O1 » dessous dit un code qu’il a eu avant. Sous la liste, « 50 sur 14 512 articles et lots affichés » et **Afficher 50 de plus**, qui ajoute les cinquante suivants et met le focus sur la première nouvelle ligne; s’ils ne peuvent pas être chargés, les lignes restent, avec **Réessayer**. Le retour depuis un lot ramène à la ligne que vous avez quittée. **Exporter** télécharge tous les articles et lots dans un fichier de feuille de calcul.
 
+« En attente d’un coût » à la place d’un **Coût unitaire** signifie qu’aucune partie du stock de cet article ou de ce lot n’a encore de coût, de sorte qu’il ne vaut rien pour l’instant, et lui en donner un avec **Fixer le coût**, sous **En attente d’un coût**, l’efface.
+
 Tapez dans **Trouver un article ou un lot** n’importe quelle partie du nom ou du code d’un article, ou du code d’un lot, de son lot du fournisseur ou d’un code qu’il a eu avant. La liste montre ce qui correspond, avec « 12 sur 14 512 correspondent » à côté de la zone, le total inchangé et la recherche dans l’adresse; un texte qui ne correspond à rien le dit, avec **Effacer la recherche**.
 
 Appuyez sur **Valeur**, en tête de sa colonne, pour mettre la plus grande valeur d’abord, et encore pour la plus petite. **Article** remet l’ordre des articles.

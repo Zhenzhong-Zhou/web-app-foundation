@@ -308,6 +308,53 @@ describe('StockValuePage, by item and lot', () => {
     expect(calm).not.toHaveTextContent('was');
   });
 
+  // ADR-094 amended, R6: a provisional pool worth nothing, every unit of
+  // it waiting, says it waits for a cost where a unit cost of 0.00 would
+  // read as a price, its value and Provisional kept; one of which a part
+  // waits keeps its figure, and one not provisional, received free, its
+  // 0.00.
+  it('says “Waits for a cost” in place of the unit cost of a provisional pool worth nothing, a pool of which a part waits keeping its figure', async () => {
+    poolsRead(
+      () =>
+        pageOf([
+          {
+            ...pool('Lid'),
+            value: '0.000000',
+            unitCost: '0.000000',
+            provisional: true,
+          },
+          {
+            ...pool('Scoop'),
+            quantity: '20.0000',
+            value: '20.000000',
+            unitCost: '1.000000',
+            provisional: true,
+          },
+          { ...pool('Spoon'), value: '0.000000', unitCost: '0.000000' },
+        ]),
+      () => 3,
+    );
+    renderAt('/costs');
+
+    const table = await screen.findByRole('table', {
+      name: 'By item and lot',
+    });
+    // Unit cost, Value and the status, each row's last three cells.
+    const figures = (row: HTMLElement) =>
+      within(row)
+        .getAllByRole('cell')
+        .slice(-3)
+        .map((cell) => cell.textContent);
+    const [lid, scoop, spoon] = within(table).getAllByRole('row').slice(1);
+    expect(figures(lid)).toEqual([
+      'Waits for a cost',
+      'CA$0.00',
+      'Provisional',
+    ]);
+    expect(figures(scoop)).toEqual(['CA$1.00', 'CA$20.00', 'Provisional']);
+    expect(figures(spoon)).toEqual(['CA$0.00', 'CA$0.00', '']);
+  });
+
   // Show 50 more: the next page below, focus on its first row; failing,
   // the rows shown stay, with a line saying so and Try again (#544); the
   // total stays the whole's throughout, its read never asked again.

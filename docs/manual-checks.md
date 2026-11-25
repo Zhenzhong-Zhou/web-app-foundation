@@ -1388,6 +1388,16 @@ a second organization.
   could not be loaded." with Try again, which reads them once it is back
   on. In 中文 the find reads 查找物品或批次, beside it
   匹配 … 个，共 … 个物品和批次, and the line 已显示 50 个，共 … 个物品和批次.
+- **MC-808** *(ADR-094 amended, R6)* A pool worth nothing waits for a
+  cost. On Stock value, By item and lot, THE-0915 and B12-2610, every
+  unit of each waiting, read "Waits for a cost" under Unit cost, never
+  0.00, each with its Value 0.00 and Provisional. Under Waiting for a
+  cost, Set cost on B12-2610's 2 returned alone: its row now reads a
+  unit cost, still Provisional, its opening 20 still waiting. Export:
+  THE-0915's Unit cost cell is empty, its Value 0.00 and Provisional
+  true; B12-2610's has its figure. Set THE-0915's cost: its row reads
+  its unit cost, and its Provisional goes. In 中文 the cell reads 等待成本,
+  in French En attente d’un coût.
 
 ## 9. Recall drill (timed)
 

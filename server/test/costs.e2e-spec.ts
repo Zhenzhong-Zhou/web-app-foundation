@@ -2050,6 +2050,43 @@ describe('Costs (e2e)', () => {
         ),
       ).toMatchObject({ needsCost: 0 });
     });
+
+    // ADR-094 amended, R6: a provisional pool worth nothing, every unit
+    // of it waiting, exports no unit cost, as the page says "Waits for a
+    // cost" in its place; one of which a part waits keeps its unit cost,
+    // and one not provisional, received free, its 0.00. Value and
+    // Provisional as ever.
+    it('exports no unit cost for a provisional pool worth nothing, one of which a part waits and one received free keeping theirs', async () => {
+      const s = await setup('alpha');
+      const lid = await variant(s, 'LID');
+      const scoop = await variant(s, 'SCOOP');
+      const spoon = await variant(s, 'SPOON');
+
+      // Every lid waits; half the scoops; the spoons came free.
+      await move(s, {
+        variantId: lid,
+        toLocationId: s.shelf,
+        quantity: '5',
+        reason: 'receipt',
+      });
+      await buy(s, scoop, '10', cad('2'));
+      await move(s, {
+        variantId: scoop,
+        toLocationId: s.shelf,
+        quantity: '10',
+        reason: 'receipt',
+      });
+      await buy(s, spoon, '4', cad('0'));
+
+      const exported = (
+        await s.agent.get('/v1/costs/valuation/export').expect(200)
+      ).text;
+      expect(exported.trim().split(/\r?\n/).slice(1)).toEqual([
+        'LID,,5,,0.00,CAD,true',
+        'SCOOP,,20,1.00,20.00,CAD,true',
+        'SPOON,,4,0.00,0.00,CAD,false',
+      ]);
+    });
   });
 
   describe('permissions', () => {
