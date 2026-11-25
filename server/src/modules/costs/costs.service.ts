@@ -1,10 +1,20 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { sql } from 'drizzle-orm';
+import { and, type SQL, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { detailOf } from '../../common/movement-reasons';
+import { type SearchTerms, searchTerms } from '../../common/search';
 import {
+  afterKeys,
+  cursorOf,
+  type KeyPart,
+  orderOf,
+  readKeys,
+} from '../../common/sorted-page';
+import type { Transaction } from '../../database/database.module';
+import {
+  lots,
   products,
   type ProductType,
   productVariants,
@@ -12,8 +22,10 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
-import { namesIn } from '../stock/item-name';
+import { namesIn, nameSortKey, productNameOrder } from '../stock/item-name';
+import { lotMatches } from '../stock/lot-search';
 import { baseCurrency } from '../stock/rates';
 import {
   correctCost,
@@ -27,9 +39,11 @@ import type {
   LotCost,
   NeedsCostPage,
   RunCost,
-  StockValuation,
+  StockValuationPage,
+  ValuationPool,
 } from './dto/cost-response.dto';
 import type { ListNeedsCostDto } from './dto/list-needs-cost.dto';
+import type { ListValuationDto, ValuationSort } from './dto/list-valuation.dto';
 import { inStockValue, openNeedsCost } from './open-needs-cost';
 
 /*
@@ -48,6 +62,35 @@ interface PoolRow {
   unit_cost: string;
   provisional: boolean;
 }
+
+/** A page's pool, with its item named for the reader (#296). */
+interface PagePoolRow extends PoolRow {
+  id: string;
+  product_id: string;
+  product_name: string;
+  variant_name: string | null;
+  type: ProductType;
+  cover_file_id: string | null;
+}
+
+/** Every pool at once, as the export writes them (ADR-057). */
+export interface EveryPool {
+  /** Null until the organization has a base currency. */
+  currency: string | null;
+  pools: {
+    variantId: string;
+    sku: string;
+    lotId: string | null;
+    lotCode: string | null;
+    quantity: string;
+    value: string;
+    unitCost: string;
+    provisional: boolean;
+  }[];
+}
+
+/** Fifty pools a page unless asked, as every list. */
+const PAGE_SIZE = 50;
 
 interface LotRow {
   id: string;
@@ -159,11 +202,99 @@ export class CostsService {
   }
 
   /**
-   * Everything on hand, pool by pool, and what it is worth together:
-   * stock value, which leaves equipment out (inStockValue; ADR-048, amended
-   * by ADR-092).
+   * Stock value's pools a page at a time (ADR-094's amendment, R6): by
+   * the item, as the page opens, or by the value, either way; found by
+   * an item as every search matches it (ADR-056) or by a lot's codes
+   * (lotMatches). Each pool names its item in the reader's language
+   * (#296). What the stock on hand is worth, and whether any of it is
+   * provisional, speak for every pool of the organization, whatever the
+   * page or the search: a page is never the whole, so a sum of its rows
+   * is never the total. Equipment is not stock value (inStockValue;
+   * ADR-048, amended by ADR-092).
+   *
+   * Three statements: the whole's figures; the page's pools by their
+   * keys, paged by sorted-page's keys, the cursor holding them; then the
+   * page's columns for those alone, its names, cover and Provisional
+   * worked out for fifty rather than for every pool (review 44).
    */
-  stockValuation(): Promise<StockValuation> {
+  valuation(
+    query: ListValuationDto,
+    locale: Locale | null,
+  ): Promise<StockValuationPage> {
+    const limit = query.limit ?? PAGE_SIZE;
+    const sort = query.sort ?? 'item';
+    const terms = query.search ? searchTerms(query.search) : null;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const parts = valuationKeys(sort, locale, organizationId);
+      const order = ['valuation', sort, locale ?? 'base'].join(' ');
+      // A cursor made for another sort or language, or not made here, is
+      // refused before anything is read.
+      const after = query.cursor
+        ? afterKeys(parts, readKeys(query.cursor, order, parts))
+        : undefined;
+      const found = terms ? poolsFound(terms, organizationId) : undefined;
+      const base = await baseCurrency(tx, organizationId);
+
+      /*
+       * Which pools are provisional is worked out once, as a set, and
+       * joined, as everyPool does and for its reasons.
+       */
+      const {
+        rows: [whole],
+      } = await tx.execute<{
+        total: string;
+        count: number;
+        provisional: boolean;
+      }>(sql`
+        with open as materialized (${openNeedsCost(organizationId)}),
+        ${openPools()}
+        select coalesce(sum(p.value), 0) as total,
+               (count(*) filter (where ${found ?? sql`true`}))::int as count,
+               coalesce(bool_or(op.variant_id is not null), false) as provisional
+        from ${poolsFrom(organizationId)}
+        left join open_pools op
+          on op.variant_id = p.variant_id
+         and op.lot_key = ${lotKey}
+        where ${shownOnHand(organizationId)}
+      `);
+
+      const { rows: keyed } = await tx.execute<{
+        id: string;
+        variant_id: string;
+        keys: string[];
+      }>(sql`
+        select p.id, p.variant_id,
+               array[${sql.join(
+                 parts.map((part) => sql`(${part.value})::text`),
+                 sql`, `,
+               )}] as keys
+        from ${poolsFrom(organizationId)}
+        where ${and(shownOnHand(organizationId), found, after)}
+        order by ${sql.join(orderOf(parts), sql`, `)}
+        limit ${limit + 1}
+      `);
+
+      const page = keyed.slice(0, limit);
+      const last = page.at(-1);
+      return {
+        entries: await poolsIn(tx, organizationId, locale, page),
+        nextCursor:
+          keyed.length > limit && last ? cursorOf(order, last.keys) : null,
+        count: whole.count,
+        currency: base,
+        total: whole.total,
+        provisional: whole.provisional,
+      };
+    });
+  }
+
+  /**
+   * Every pool on hand at once, for the export alone (ADR-057), which is
+   * the way to read everything together: the page reads them fifty at a
+   * time (ADR-094's amendment, R6).
+   */
+  everyPool(): Promise<EveryPool> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const base = await baseCurrency(tx, organizationId);
 
@@ -181,12 +312,7 @@ export class CostsService {
        */
       const pools = await tx.execute(sql`
         with open as materialized (${openNeedsCost(organizationId)}),
-        open_pools as (
-          select distinct
-            o.variant_id,
-            coalesce(o.lot_id, '00000000-0000-0000-0000-000000000000'::uuid) as lot_key
-          from open o
-        )
+        ${openPools()}
         select p.variant_id, pv.sku, p.lot_id, l.code as lot_code,
                p.quantity, p.value,
                round(p.value / p.quantity, 6) as unit_cost,
@@ -200,27 +326,15 @@ export class CostsService {
          and l.organization_id = ${organizationId}::uuid
         left join open_pools op
           on op.variant_id = p.variant_id
-         and op.lot_key = coalesce(p.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)
-        where p.organization_id = ${organizationId}::uuid
-          and p.quantity > 0
-          and ${inStockValue(organizationId, sql`p.variant_id`)}
+         and op.lot_key = ${lotKey}
+        where ${onHand(organizationId)}
         order by pv.sku, l.code nulls first
-      `);
-
-      const totals = await tx.execute(sql`
-        select coalesce(sum(p.value), 0) as total
-        from valuation_pools p
-        where p.organization_id = ${organizationId}::uuid
-          and p.quantity > 0
-          and ${inStockValue(organizationId, sql`p.variant_id`)}
       `);
 
       const rows = pools.rows as unknown as PoolRow[];
 
       return {
         currency: base,
-        total: (totals.rows[0] as { total: string }).total,
-        provisional: rows.some((row) => row.provisional === true),
         pools: rows.map((row) => ({
           variantId: row.variant_id,
           sku: row.sku,
@@ -603,4 +717,198 @@ export class CostsService {
       return pageOf(entries, limit);
     });
   }
+}
+
+/** A pool's lot, the nil uuid for none, as open_pools keys it. */
+const lotKey = sql`coalesce(p.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)`;
+
+/**
+ * The pools still waiting for a cost, from the statement's `open`, as a
+ * set to join: the nil uuid stands in for "no lot" so the match is a
+ * plain equality, which a hash join can use; IS NOT DISTINCT FROM cannot.
+ */
+function openPools(): SQL {
+  return sql`open_pools as (
+    select distinct
+      o.variant_id,
+      coalesce(o.lot_id, '00000000-0000-0000-0000-000000000000'::uuid) as lot_key
+    from open o
+  )`;
+}
+
+/**
+ * A pool, `p`, with its variant, its item and its lot, each joined by
+ * the organization (ADR-003), unaliased so the item's and the lot's
+ * matchers and the name's order read their columns.
+ */
+function poolsFrom(organizationId: string): SQL {
+  const org = sql`${organizationId}::uuid`;
+  return sql`valuation_pools p
+    join ${productVariants}
+      on ${productVariants.id} = p.variant_id
+     and ${productVariants.organizationId} = ${org}
+    join ${products}
+      on ${products.id} = ${productVariants.productId}
+     and ${products.organizationId} = ${org}
+    left join ${lots}
+      on ${lots.id} = p.lot_id
+     and ${lots.organizationId} = ${org}`;
+}
+
+/**
+ * The pools a search finds (ADR-094's amendment, R6): its item's, as
+ * every search matches an item (ADR-056), or its lot's, by its code or
+ * its supplier's lot (lotMatches). Each is found once, as an array,
+ * through its trigram indexes, and a pool matched by its item's id or
+ * its lot's (database.md: an `in` inside an OR is `= any(array(...))`):
+ * matched pool by pool, every name and code was read again for each of
+ * an item's pools, about 90 ms of the count at ADR-051's large scale.
+ */
+function poolsFound(terms: SearchTerms, organizationId: string): SQL {
+  const org = sql`${organizationId}::uuid`;
+  return sql`(
+    p.variant_id = any(array(
+      select ${productVariants.id}
+      from ${productVariants}
+      join ${products}
+        on ${products.id} = ${productVariants.productId}
+       and ${products.organizationId} = ${org}
+      where ${productVariants.organizationId} = ${org}
+        and ${itemMatches(terms, organizationId)}
+    ))
+    or p.lot_id = any(array(
+      select lt.id from lots lt
+      where lt.organization_id = ${org}
+        and ${lotMatches({ code: sql`lt.code`, supplierLot: sql`lt.supplier_lot` }, terms)}
+    ))
+  )`;
+}
+
+/** The organization's pools that hold stock and are stock value. */
+function onHand(organizationId: string): SQL {
+  return sql`p.organization_id = ${organizationId}::uuid
+    and p.quantity > 0
+    and ${inStockValue(organizationId, sql`p.variant_id`)}`;
+}
+
+/**
+ * onHand, for a statement over poolsFrom: equipment is not stock value
+ * (inStockValue's rule; ADR-048, amended by ADR-092), read from the item
+ * the statement joins. inStockValue's lookup ran once a pool, about 22 ms
+ * of each of the page's statements at ADR-051's large scale.
+ */
+function shownOnHand(organizationId: string): SQL {
+  return sql`p.organization_id = ${organizationId}::uuid
+    and p.quantity > 0
+    and ${products.type} <> ${'equipment' satisfies ProductType}`;
+}
+
+/**
+ * Stock value's order as key parts (ADR-094's amendment, R6): by the
+ * item, its name as the reader sees it (ADR-056), then its code, then
+ * its pool with no lot first and its lots by code, as the export lists
+ * them; by the value, either way, the item's order breaking ties. The
+ * pool's id last, so every pool has one place.
+ */
+function valuationKeys(
+  sort: ValuationSort,
+  locale: Locale | null,
+  organizationId: string,
+): KeyPart[] {
+  const item: KeyPart[] = [
+    {
+      value: sql`(${
+        locale
+          ? productNameOrder(locale, organizationId)
+          : nameSortKey(sql`${products.namePinyin}`, sql`${products.name}`)
+      }) collate numeric_order`,
+      type: 'text',
+      order: 'asc',
+    },
+    {
+      value: sql`${productVariants.sku} collate numeric_order`,
+      type: 'text',
+      order: 'asc',
+    },
+    { value: sql`(${lots.code} is not null)::int`, type: 'int', order: 'asc' },
+    { value: sql`coalesce(${lots.code}, '')`, type: 'text', order: 'asc' },
+    { value: sql`p.id`, type: 'uuid', order: 'asc' },
+  ];
+
+  if (sort === 'item') return item;
+  return [
+    {
+      value: sql`p.value`,
+      type: 'numeric',
+      order: sort === 'value' ? 'asc' : 'desc',
+    },
+    ...item,
+  ];
+}
+
+/**
+ * A page's pools, in its order: each named for the reader, with its
+ * item's page, type and cover (#296), and whether it is provisional,
+ * from what waits of the page's items alone (openNeedsCost's
+ * `variants`; review 40).
+ */
+async function poolsIn(
+  tx: Transaction,
+  organizationId: string,
+  locale: Locale | null,
+  page: { id: string; variant_id: string }[],
+): Promise<ValuationPool[]> {
+  if (page.length === 0) return [];
+
+  const shown = namesIn(locale, organizationId);
+  const variants = sql`(${sql.join(
+    [...new Set(page.map((pool) => pool.variant_id))].map(
+      (variantId) => sql`${variantId}::uuid`,
+    ),
+    sql`, `,
+  )})`;
+  const ids = sql`(${sql.join(
+    page.map((pool) => sql`${pool.id}::uuid`),
+    sql`, `,
+  )})`;
+
+  const found = await tx.execute(sql`
+    with open as materialized (${openNeedsCost(organizationId, variants)}),
+    ${openPools()}
+    select p.id, p.variant_id, ${productVariants.sku} as sku,
+           ${products.id} as product_id,
+           ${shown.productName} as product_name,
+           ${shown.variantName} as variant_name,
+           ${products.type} as type, ${coverOf()} as cover_file_id,
+           p.lot_id, ${lots.code} as lot_code, p.quantity, p.value,
+           round(p.value / p.quantity, 6) as unit_cost,
+           (op.variant_id is not null) as provisional
+    from ${poolsFrom(organizationId)}
+    left join open_pools op
+      on op.variant_id = p.variant_id
+     and op.lot_key = ${lotKey}
+    where p.organization_id = ${organizationId}::uuid
+      and p.id in ${ids}
+  `);
+
+  const rows = found.rows as unknown as PagePoolRow[];
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return page.map(({ id }) => {
+    const row = byId.get(id)!;
+    return {
+      variantId: row.variant_id,
+      sku: row.sku,
+      productId: row.product_id,
+      productName: row.product_name,
+      variantName: row.variant_name,
+      type: row.type,
+      coverFileId: row.cover_file_id,
+      lotId: row.lot_id,
+      lotCode: row.lot_code,
+      quantity: row.quantity,
+      value: row.value,
+      unitCost: row.unit_cost,
+      provisional: row.provisional,
+    };
+  });
 }

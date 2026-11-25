@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
+import type { NeedsCostEntry, StockValuationPage } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { StockValuePage } from './stock-value-page';
@@ -34,19 +34,19 @@ const RECEIPT: NeedsCostEntry = {
   createdAt: '2026-11-20T17:00:00.000Z',
 };
 
-const VALUATION: StockValuation = {
+const VALUATION: StockValuationPage = {
+  entries: [],
+  nextCursor: null,
+  count: 0,
   currency: 'CAD',
   total: '120.000000',
   provisional: true,
-  pools: [],
 };
 
 /** The page with these rows waiting, for a reader who may set costs. */
 async function waitingRows(entries: NeedsCostEntry[]) {
   server.use(
-    http.get('/api/v1/costs/valuation', () =>
-      HttpResponse.json({ valuation: VALUATION }),
-    ),
+    http.get('/api/v1/costs/valuation', () => HttpResponse.json(VALUATION)),
     http.get('/api/v1/costs/needs-cost', () =>
       HttpResponse.json({ entries, nextCursor: null }),
     ),

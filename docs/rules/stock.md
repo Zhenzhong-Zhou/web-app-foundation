@@ -4,8 +4,8 @@ What the app allows, refuses and works out for stock, as the code does
 it today: usable stock, a code's figures, Inventory's list and Lot view,
 Movements, a lot's trace, Where it stands, Reorder, what confirmed sales
 hold, what may be taken, stock found where it never was, a new lot at
-receipt, a lot's details corrected, lot tracking started and stock moved
-to another lot, as ADR-093's Inventory branch
+receipt, a lot's details corrected, lot tracking started, stock moved
+to another lot and Stock value's list, as ADR-093's Inventory branch
 completed it, its Movements branch grows it and ADR-094's lots at
 receipt grow it again. Each
 rule links the ADR that decided it, the test that proves it, the Help
@@ -1226,3 +1226,33 @@ file is kept is in the [README](README.md).
   [test](../../client/src/costs/stock-value-page.test.tsx) "offers Set cost on the rows the server says take one, and on no other" ·
   [test](../../client/src/costs/lot-cost-panel.test.tsx) "says a return came back at the lot’s average where the server marks it so" ·
   MC-806
+
+## Stock value
+
+- **Stock value lists its pools fifty at a time,** a pool being an item
+  without lots or one lot of an item: by the item unless asked, its name
+  as the reader sees it, then its code, its stock with no lot first and
+  then its lots by code; or by the value, the largest first or the
+  smallest, the item's order breaking ties. The next fifty follow the
+  last one shown, never repeating or skipping one; a place in the list
+  it did not give, or one given for another sort, is refused. Each pool
+  names its item in the reader's language, with its code.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
+  [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, each page with the whole’s total, count and Provisional, and the export every pool (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "sorts by the item, and by the value either way, the item breaking ties, over its pages (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "refuses a cursor not in the list, one made for another sort among them, and a sort or a page size it does not know (R6)" ·
+  [test](../../server/test/item-names.e2e-spec.ts) "lists every operation that names an item, each reading the language or keeping the base" ·
+  MC-802
+- **Stock value's total and Provisional are every pool's, whatever is
+  read or found,** never the sum of the rows shown; beside them, how
+  many pools the list holds, or the find finds. Its export still writes
+  every pool, the way to read them all at once.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
+  [test](../../server/test/costs.e2e-spec.ts) "reads every pool once over its pages, each page with the whole’s total, count and Provisional, and the export every pool (R6)" ·
+  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code, the total and Provisional still every pool’s (R6)" ·
+  MC-802
+- **Stock value finds a pool by its item, as every search matches an
+  item, or by its lot's code or supplier's lot,** any part of either.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#the-waiting-set-and-stock-value-by-the-page) ·
+  [test](../../server/test/costs.e2e-spec.ts) "finds a pool by its item’s name or code or by its lot’s code, the total and Provisional still every pool’s (R6)" ·
+  partly tested

@@ -1277,7 +1277,10 @@ a second organization.
   price: Waiting for a cost, on Stock value, on Home and in Inventory,
   keeps its count. Its row names the item first, a link to its page,
   with its icon and its code grey under it, and in 中文 by its Chinese
-  name where it has one; a lot's code opens its trace (#296).
+  name where it has one; a lot's code opens its trace (#296). With more
+  than 50 pools, as on the large volume seed, By item and lot lists the
+  first 50 by the item, and the total and Provisional are still every
+  pool's: the total is the export's Value column summed (R6).
 - **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
   each of its units carries its share once. Receive 40 by hand with no
   price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
@@ -4359,11 +4362,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-094's lots at receipt does from 5 to 6: leave a
-  third tab on Stock value before the push. Back in it once the static
-  site is out, the amber banner asks it to reload (MC-3404); Reload, once:
-  Stock value, its Waiting for a cost, and no banner, and switching away
-  and back asks nothing more.
+  API revision, as ADR-094's amendment's Stock value by the page does
+  from 6 to 7: leave a third tab on Stock value before the push. Back in
+  it once the static site is out, the amber banner asks it to reload
+  (MC-3404); Reload, once: Stock value, its pools and its Waiting for a
+  cost, and no banner, and switching away and back asks nothing more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -7915,3 +7918,7 @@ first.
 - 2026-11-24: ADR-094's amendment, a return with no shipped cost lands
   at its lot's average or waits and takes a cost on its own row, which
   rows take one the server's to say, #661: MC-806 added.
+- 2026-11-24: ADR-094's amendment, Stock value read by the page, R6:
+  the API revision raised to 7, since a tab opened before would take the
+  first page for every pool: MC-3424's raise now 6 to 7, MC-802
+  extended.

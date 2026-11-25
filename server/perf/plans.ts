@@ -85,14 +85,27 @@ const EVERY_PART = { places: true, orders: true, runs: true, partners: true };
  */
 const ALLOWED: { probe: string; table: string; reason: string }[] = [
   ...['valuation_pools', 'lots', 'product_variants'].map((table) => ({
-    probe: 'valuation',
+    probe: 'valuation export',
     table,
     reason:
-      'A valuation is every pool the organization holds, so reading them ' +
+      'The export is every pool the organization holds, so reading them ' +
       'all is the report. Each join carries the organization, so a busier ' +
-      'database reads no other tenant; an export, not a page, is the answer ' +
-      'if one organization outgrows a screen.',
+      'database reads no other tenant; the screen reads a page (ADR-094’s ' +
+      'amendment, R6).',
   })),
+  ...['valuation', 'valuation: a search', 'valuation: by value'].flatMap(
+    (probe) =>
+      ['valuation_pools', 'lots', 'product_variants'].map((table) => ({
+        probe,
+        table,
+        reason:
+          'Stock value’s total, its count and whether any of it is ' +
+          'provisional speak for every pool, whatever the page, and the ' +
+          'page is sorted from every pool, so each reads them all; each ' +
+          'join carries the organization, so a busier database reads no ' +
+          'other tenant (ADR-094’s amendment, R6).',
+      })),
+  ),
   {
     probe: 'orders: purchases partly received',
     table: 'partners',
@@ -263,6 +276,8 @@ async function buildProbes(
     20,
   );
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
+  // A lot's whole code, as Stock value's find is given it.
+  const valuationLot = shelf.lotCode ?? '';
   // A manifest written before the team (ADR-081) names nobody, and the
   // access probe would then send nothing and drop out without a word.
   if (!org.threeRoleMembershipId) {
@@ -607,7 +622,19 @@ async function buildProbes(
     },
     // Add's picker marks the items with a point (#538).
     { name: 'reorder points: items', run: () => reorder.items() },
-    { name: 'valuation', run: () => costs.stockValuation() },
+    // Stock value a page at a time (ADR-094's amendment, R6): the first
+    // page as it opens, a find by a lot's code, and the sort by value, the
+    // largest first; the export still reads every pool.
+    { name: 'valuation', run: () => costs.valuation({}, 'zh-Hans') },
+    {
+      name: 'valuation: a search',
+      run: () => costs.valuation({ search: valuationLot }, 'zh-Hans'),
+    },
+    {
+      name: 'valuation: by value',
+      run: () => costs.valuation({ sort: '-value' }, 'zh-Hans'),
+    },
+    { name: 'valuation export', run: () => costs.everyPool() },
     // Stock value's Waiting for a cost, each row with its item's names and
     // cover since 3fb4b3e5 (review 74), in Chinese as a reader there sees it.
     {

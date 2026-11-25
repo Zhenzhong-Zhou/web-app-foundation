@@ -2757,6 +2757,11 @@ export type UpdateNumberingDto = {
 export type ValuationPool = {
   variantId: string;
   sku: string;
+  productId: string;
+  productName: string;
+  variantName: string | null;
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
+  coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
   quantity: string;
@@ -2765,15 +2770,13 @@ export type ValuationPool = {
   provisional: boolean;
 };
 
-export type StockValuation = {
+export type StockValuationPage = {
+  entries: Array<ValuationPool>;
+  nextCursor: string | null;
+  count: number;
   currency: string | null;
   total: string;
   provisional: boolean;
-  pools: Array<ValuationPool>;
-};
-
-export type StockValuationEnvelope = {
-  valuation: StockValuation;
 };
 
 export type LotCostEntry = {
@@ -7253,13 +7256,21 @@ export type NumberingControllerUpdateV1Response =
 
 export type CostsControllerStockValuationV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
-  query?: never;
+  query?: {
+    cursor?: string;
+    limit?: number;
+    search?: string;
+    sort?: 'item' | 'value' | '-value';
+  };
   url: '/v1/costs/valuation';
 };
 
 export type CostsControllerStockValuationV1Responses = {
-  200: StockValuationEnvelope;
+  200: StockValuationPage;
 };
 
 export type CostsControllerStockValuationV1Response =

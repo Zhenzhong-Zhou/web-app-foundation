@@ -21,6 +21,14 @@ export type CostCarried = (typeof COST_CARRIED)[number];
 export class ValuationPool {
   variantId!: string;
   sku!: string;
+  /** The item's page, which its name opens (#296). */
+  productId!: string;
+  /** The item's names in the reader's language (ADR-056, #296). */
+  productName!: string;
+  variantName!: string | null;
+  /** The item's type and cover, for its icon or picture (#546). */
+  type!: ProductType;
+  coverFileId!: string | null;
   lotId!: string | null;
   lotCode!: string | null;
   quantity!: string;
@@ -30,18 +38,24 @@ export class ValuationPool {
   provisional!: boolean;
 }
 
-/** What the stock on hand is worth, pool by pool. */
-export class StockValuation {
+/**
+ * GET /costs/valuation: one page of the pools, and what the stock on
+ * hand is worth (ADR-094's amendment, R6). `total`, `currency` and
+ * `provisional` speak for every pool of the organization, whatever the
+ * page or the search; `count` is how many pools the search finds, every
+ * pool with none.
+ */
+export class StockValuationPage {
+  entries!: ValuationPool[];
+  /** Pass as `cursor` for the next page; null when there is no more. */
+  nextCursor!: string | null;
+  /** The pools the list shows, the search on: "Showing 50 of 14,512". */
+  count!: number;
   /** Null until the organization has a base currency. */
   currency!: string | null;
   total!: string;
+  /** True while any pool on hand depends on a row still waiting for a cost. */
   provisional!: boolean;
-  pools!: ValuationPool[];
-}
-
-/** GET /costs/valuation. */
-export class StockValuationEnvelope {
-  valuation!: StockValuation;
 }
 
 /** One valuation row in a lot's history. */

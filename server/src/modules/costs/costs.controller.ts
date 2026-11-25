@@ -31,10 +31,11 @@ import type {
   LotCostEnvelope,
   NeedsCostPage,
   RunCostEnvelope,
-  StockValuationEnvelope,
+  StockValuationPage,
 } from './dto/cost-response.dto';
 import { ListExchangeRatesDto } from './dto/list-exchange-rates.dto';
 import { ListNeedsCostDto } from './dto/list-needs-cost.dto';
+import { ListValuationDto } from './dto/list-valuation.dto';
 import { SetCostDto } from './dto/set-cost.dto';
 import { SetExchangeRateDto } from './dto/set-exchange-rate.dto';
 import { ExchangeRatesService } from './exchange-rates.service';
@@ -54,13 +55,23 @@ export class CostsController {
     private readonly rates: ExchangeRatesService,
   ) {}
 
+  /**
+   * Stock value: a page of its pools, found and sorted as asked, and what
+   * every pool is worth together (ADR-094's amendment, R6).
+   */
   @Get('valuation')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  async stockValuation(): Promise<StockValuationEnvelope> {
-    return { valuation: await this.costs.stockValuation() };
+  stockValuation(
+    @Query() query: ListValuationDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<StockValuationPage> {
+    return this.costs.valuation(query, localeOf(acceptLanguage));
   }
 
-  /** Stock value as CSV (ADR-057), as at the moment of export. */
+  /**
+   * Stock value as CSV (ADR-057), as at the moment of export: every pool,
+   * whatever the page shows.
+   */
   @Get('valuation/export')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'stock_value' })
@@ -68,7 +79,7 @@ export class CostsController {
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    const rows = withinLimit(poolsOf(await this.costs.stockValuation()));
+    const rows = withinLimit(poolsOf(await this.costs.everyPool()));
     recordContext({ list: 'stock_value', filters: {}, rows: rows.length });
     return csvFile(
       res,

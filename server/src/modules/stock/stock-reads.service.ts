@@ -146,7 +146,7 @@ export function quickFiltersOf(
      * The same pool as a waiting cost row: its variant, and its lot or none.
      *
      * The waiting pools are worked out once, as a set, as the valuation's are
-     * (CostsService.stockValuation). As an EXISTS per stock row it read every
+     * (CostsService.everyPool). As an EXISTS per stock row it read every
      * row the organization holds to find the few waiting, twice on each Home,
      * for the costs card's count and its rows (#276). MATERIALIZED keeps
      * Postgres from folding the set back into that lookup, and the nil uuid

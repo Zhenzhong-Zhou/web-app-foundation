@@ -6753,14 +6753,64 @@
     "/v1/costs/valuation": {
       "get": {
         "operationId": "CostsController_stockValuation_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "item",
+                "value",
+                "-value"
+              ]
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockValuationEnvelope"
+                  "$ref": "#/components/schemas/StockValuationPage"
                 }
               }
             }
@@ -10344,7 +10394,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.6",
+    "version": "1.7",
     "contact": {}
   },
   "tags": [],
@@ -20484,6 +20534,35 @@
           "sku": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sample",
+              "good",
+              "material",
+              "packaging",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotId": {
             "type": [
               "string",
@@ -20512,6 +20591,11 @@
         "required": [
           "variantId",
           "sku",
+          "productId",
+          "productName",
+          "variantName",
+          "type",
+          "coverFileId",
           "lotId",
           "lotCode",
           "quantity",
@@ -20520,9 +20604,24 @@
           "provisional"
         ]
       },
-      "StockValuation": {
+      "StockValuationPage": {
         "type": "object",
         "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValuationPool"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "count": {
+            "type": "number"
+          },
           "currency": {
             "type": [
               "string",
@@ -20534,30 +20633,15 @@
           },
           "provisional": {
             "type": "boolean"
-          },
-          "pools": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ValuationPool"
-            }
           }
         },
         "required": [
+          "entries",
+          "nextCursor",
+          "count",
           "currency",
           "total",
-          "provisional",
-          "pools"
-        ]
-      },
-      "StockValuationEnvelope": {
-        "type": "object",
-        "properties": {
-          "valuation": {
-            "$ref": "#/components/schemas/StockValuation"
-          }
-        },
-        "required": [
-          "valuation"
+          "provisional"
         ]
       },
       "LotCostEntry": {

@@ -4,7 +4,7 @@ import { t } from '../../i18n/translate';
 import type { CostsService } from './costs.service';
 
 /**
- * A pool as stockValuation() returns it, its raw row's values named, with
+ * A pool as everyPool() returns it, its raw row's values named, with
  * the valuation's currency beside it.
  */
 interface Pool {
@@ -20,7 +20,7 @@ interface Pool {
 
 /** The valuation's pools, each with the currency, for the columns below. */
 export function poolsOf(
-  valuation: Awaited<ReturnType<CostsService['stockValuation']>>,
+  valuation: Awaited<ReturnType<CostsService['everyPool']>>,
 ): Pool[] {
   return valuation.pools.map((pool) => ({
     ...(pool as Omit<Pool, 'currency'>),

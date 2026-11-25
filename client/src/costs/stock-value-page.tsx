@@ -20,7 +20,7 @@ import {
 } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
+import type { NeedsCostEntry, StockValuationPage } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ActionsHeader } from '../components/actions-header';
 import { ExportButton } from '../components/export-button';
@@ -140,8 +140,10 @@ function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): ReactNode {
 export function StockValuePage() {
   const intl = useIntl();
   const can = useCan();
-  const read = useResource<{ valuation: StockValuation }>('/costs/valuation');
-  const valuation = read.data?.valuation ?? null;
+  // Its first page alone, until the screen pages it (ADR-094's
+  // amendment, R6); the total and Provisional are every pool's.
+  const read = useResource<StockValuationPage>('/costs/valuation');
+  const valuation = read.data ?? null;
   // A page at a time, with Load more, by the hook every list shares (#33).
   const waiting = useKeysetList<NeedsCostEntry>('/costs/needs-cost');
   const refused = read.refused ?? waiting.refused;
@@ -394,7 +396,7 @@ export function StockValuePage() {
               })}
             </Typography>
 
-            {valuation?.pools.length === 0 ? (
+            {valuation?.entries.length === 0 ? (
               <Alert severity="info">
                 {intl.formatMessage({
                   id: 'costs.nothingOnHand',
@@ -455,7 +457,7 @@ export function StockValuePage() {
                 </TableHead>
 
                 <TableBody>
-                  {valuation?.pools.map((pool) => (
+                  {valuation?.entries.map((pool) => (
                     <TableRow key={`${pool.variantId}:${pool.lotId ?? ''}`}>
                       <TableCell>
                         <Reference>{pool.sku}</Reference>

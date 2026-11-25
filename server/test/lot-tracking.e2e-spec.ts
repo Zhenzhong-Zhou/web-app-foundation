@@ -216,12 +216,10 @@ describe('Start tracking lots (e2e)', () => {
   async function valuation(w: World) {
     const res = await w.org.agent.get('/v1/costs/valuation').expect(200);
     return body<{
-      valuation: {
-        total: string;
-        provisional: boolean;
-        pools: { lotId: string | null; quantity: string; value: string }[];
-      };
-    }>(res).valuation;
+      total: string;
+      provisional: boolean;
+      entries: { lotId: string | null; quantity: string; value: string }[];
+    }>(res);
   }
 
   async function waiting(w: World) {
@@ -419,11 +417,11 @@ describe('Start tracking lots (e2e)', () => {
     const after = await valuation(w);
     expect(after.total).toBe(before.total);
     expect(after.provisional).toBe(true);
-    expect(after.pools).toEqual([
+    expect(after.entries).toEqual([
       expect.objectContaining({
         lotId: lot!.id,
         quantity: '150.0000',
-        value: before.pools[0].value,
+        value: before.entries[0].value,
       }),
     ]);
 
