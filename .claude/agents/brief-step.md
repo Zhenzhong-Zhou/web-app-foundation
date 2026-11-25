@@ -138,9 +138,10 @@ where a step must act on it.
 
 - A new rule arrives with the test that proves it: failing before the
   change, passing after.
-- **A new or changed test runs before its commit,** as conventions.md's
-  "Tests" says: five times for a client unit test or a browser test
-  (`--repeat-each=5`), three times for a server end-to-end test.
+- **A new or changed test runs before its commit,** by the commands
+  conventions.md's "Tests" gives: a client unit test five times, a
+  browser test five times under the lock (`--repeat-each=5`), a server
+  end-to-end test three times.
 - **Manual checks go in the same commit as what they check:** a commit
   that changes what a person sees, or a rule they work under, updates
   `docs/manual-checks.md` itself. A brief that puts them in a later step
