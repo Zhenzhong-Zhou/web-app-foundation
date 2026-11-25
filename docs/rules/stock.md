@@ -852,13 +852,17 @@ file is kept is in the [README](README.md).
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "makes a code for us when saved, stored as made here with the supplier’s lot as printed, one after another" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a new lot it cannot read, saying what to do, and writes nothing"
 - **A new lot's expiry is a date, not known yet, or none,** with a day
-  exactly for a date, a write that contradicts it refused. A write
+  exactly for a date, a write that contradicts it refused. The
+  database's own check holds the two together for every write to a lot,
+  whatever makes it; nothing sets the kind from the day any more. A write
   naming no kind, as a tab opened before sends it, reads a date with a
   day and none without. A lot that exists keeps its expiry when more of
   its code arrives. A day already past, or more than 10 years away, is
   warned of in amber at the field, wherever an expiry is asked, and
   never refused.
   [ADR-094](../adr/0094-lots-at-receipt.md#decision--an-expiry-is-a-date-not-known-yet-or-none) ·
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#amendment-november-2026--the-branch-after-a-late-cost-follows-each-unit-once-stock-value-by-the-page-a-lots-former-code-678-664-665) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a lot written straight to the table with a day and the kind none, on insert and on update (ADR-094 amended, R3)" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "stores each of the three expiries, and a day alone or none as a tab opened before sends them" ·
   [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a new lot it cannot read, saying what to do, and writes nothing" ·
   [test](../../client/src/inventory/lot-fields.test.tsx) "warns at the day of one already past, or more than 10 years away, and refuses neither"

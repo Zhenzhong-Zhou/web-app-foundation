@@ -600,7 +600,7 @@ describe('Lot trace (e2e)', () => {
     // Expired, none of it is usable, wherever it is.
     await db
       .update(lots)
-      .set({ expiresAt: '2020-01-31' })
+      .set({ expiry: 'date', expiresAt: '2020-01-31' })
       .where(eq(lots.code, 'FOC-1'));
     expect(await trace(alpha, 'FOC-1')).toMatchObject({
       usable: '0',

@@ -93,11 +93,10 @@ export const lots = pgTable(
      * yet no longer reads as none (ADR-094, R8). Lots from before read
      * `date` where they had a day and `none` elsewhere.
      *
-     * For now a trigger, lots_expiry_from_date (migration 0084), sets it from
-     * expires_at on every insert and update: the release still serving
-     * while a deploy goes on writes expires_at alone (Q5a). It is temporary,
-     * dropped by the first migration of the next branch, once every
-     * released write names both.
+     * Every write names it beside expires_at, and the check
+     * lots_expiry_date_check alone holds the two together: migration 0085
+     * dropped 0084's trigger, which set it from the day for the release
+     * that wrote the day alone (Q5a).
      */
     expiry: text('expiry').$type<LotExpiry>().notNull().default('none'),
 

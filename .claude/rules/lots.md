@@ -32,8 +32,8 @@ states (ADR-087).
   one to make; `mustBeNew` comes from the route, never the reason.
 - **`lots.expiry` is `date`, `unknown` or `none`,** `expires_at` set
   exactly for `date`; `unknown` is usable, never expired and never first
-  to expire. Migration 0084's trigger is temporary (Q5a), dropped with
-  its function by the next branch's first migration (`schema/lots.ts`).
+  to expire. Every write names both, and `lots_expiry_date_check` alone
+  holds them together: 0085 dropped 0084's trigger (`schema/lots.ts`).
 - **The supplier's lot is for a lot made here,** and the mark
   (`stock.lot_made_here`) is one way, audited, never undone.
 - **A lot change is one `lot_change` movement and two value rows of

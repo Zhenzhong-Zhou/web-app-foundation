@@ -6,6 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
+import { isCheckViolation } from '../src/database/errors';
 import { lots, orderLines, stockMovements } from '../src/database/schema';
 import {
   body,
@@ -284,6 +285,44 @@ describe('A new lot at receipt (e2e)', () => {
         said('en', 'stock.lotTrackingStarted', { sku: 'VITC' }),
       );
       await expectNothingWritten();
+    });
+  });
+
+  // The amendment's R3: migration 0085 dropped 0084's temporary trigger,
+  // which mended a day written alone, so the check alone holds a lot's
+  // kind to its day, whatever writes the table.
+  it('refuses a lot written straight to the table with a day and the kind none, on insert and on update (ADR-094 amended, R3)', async () => {
+    const w = await world();
+    const refusal = (write: PromiseLike<unknown>) =>
+      Promise.resolve(write).then(
+        () => null,
+        (error: unknown) => error,
+      );
+    const lot = {
+      organizationId: w.org.organizationId,
+      variantId: w.variantId,
+      code: 'VC-0310',
+    };
+
+    const inserted = await refusal(
+      db
+        .insert(lots)
+        .values({ ...lot, expiry: 'none', expiresAt: '2027-01-31' }),
+    );
+    expect(isCheckViolation(inserted, 'lots_expiry_date_check')).toBe(true);
+
+    // The day set alone, as the release before 0084 wrote it.
+    const [none] = await db.insert(lots).values(lot).returning({ id: lots.id });
+    const updated = await refusal(
+      db
+        .update(lots)
+        .set({ expiresAt: '2027-01-31' })
+        .where(eq(lots.id, none.id)),
+    );
+    expect(isCheckViolation(updated, 'lots_expiry_date_check')).toBe(true);
+    expect(await lotOf(none.id)).toMatchObject({
+      expiry: 'none',
+      expiresAt: null,
     });
   });
 
