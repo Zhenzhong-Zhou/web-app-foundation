@@ -2384,22 +2384,12 @@
         "operationId": "ProductsController_list_v1",
         "parameters": [
           {
-            "name": "cursor",
+            "name": "search",
             "required": false,
             "in": "query",
             "schema": {
-              "maxLength": 4096,
+              "maxLength": 100,
               "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           },
           {
@@ -2475,12 +2465,22 @@
             }
           },
           {
-            "name": "search",
+            "name": "cursor",
             "required": false,
             "in": "query",
             "schema": {
-              "maxLength": 100,
+              "maxLength": 4096,
               "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
             }
           },
           {
@@ -6753,6 +6753,77 @@
     "/v1/costs/valuation": {
       "get": {
         "operationId": "CostsController_stockValuation_v1",
+        "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "item",
+                "value",
+                "-value"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockValuationPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/valuation/totals": {
+      "get": {
+        "operationId": "CostsController_valuationTotals_v1",
         "parameters": [],
         "responses": {
           "200": {
@@ -6760,7 +6831,38 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockValuationEnvelope"
+                  "$ref": "#/components/schemas/StockValuationTotals"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/valuation/count": {
+      "get": {
+        "operationId": "CostsController_valuationCount_v1",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockValuationCount"
                 }
               }
             }
@@ -10344,7 +10446,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.6",
+    "version": "1.7",
     "contact": {}
   },
   "tags": [],
@@ -12572,8 +12674,8 @@
           "active": {
             "type": "string",
             "enum": [
-              "never",
               "month",
+              "never",
               "today",
               "week",
               "older"
@@ -12662,8 +12764,8 @@
           },
           "active": {
             "enum": [
-              "never",
               "month",
+              "never",
               "today",
               "week",
               "older"
@@ -12810,8 +12912,8 @@
           "active": {
             "type": "string",
             "enum": [
-              "never",
               "month",
+              "never",
               "today",
               "week",
               "older"
@@ -16888,6 +16990,18 @@
               "null"
             ]
           },
+          "lotCodeThen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLotCodeThen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "actorName": {
             "type": [
               "string",
@@ -16979,6 +17093,8 @@
           "lotSupplierLot",
           "toLotId",
           "toLotCode",
+          "lotCodeThen",
+          "toLotCodeThen",
           "actorName",
           "actorEmail",
           "createdAt",
@@ -17116,6 +17232,12 @@
               "string",
               "null"
             ]
+          },
+          "formerCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -17124,7 +17246,8 @@
           "code",
           "expiresAt",
           "isAssigned",
-          "supplierLot"
+          "supplierLot",
+          "formerCodes"
         ]
       },
       "UpdateLotDto": {
@@ -17148,6 +17271,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
           },
           "supplierLot": {
             "type": "string",
@@ -17596,6 +17723,12 @@
               "null"
             ]
           },
+          "lotFormerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -17632,6 +17765,7 @@
           "lotExpiresAt",
           "lotIsAssigned",
           "lotSupplierLot",
+          "lotFormerCode",
           "quantity",
           "emptiedOn",
           "issuedToRun"
@@ -17779,6 +17913,12 @@
               "null"
             ]
           },
+          "lotFormerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -17847,6 +17987,7 @@
           "lotExpiresAt",
           "lotIsAssigned",
           "lotSupplierLot",
+          "lotFormerCode",
           "quantity",
           "emptiedOn",
           "issuedToRun",
@@ -17944,6 +18085,12 @@
           },
           "sku": {
             "type": "string"
+          },
+          "formerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -17953,7 +18100,32 @@
           "expiresAt",
           "supplierLot",
           "isAssigned",
-          "sku"
+          "sku",
+          "formerCode"
+        ]
+      },
+      "LotFormerCode": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "changedByName": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "changedAt",
+          "changedByName",
+          "reason"
         ]
       },
       "TracedLot": {
@@ -18002,6 +18174,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "formerCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotFormerCode"
+            }
           }
         },
         "required": [
@@ -18015,7 +18193,8 @@
           "productId",
           "sku",
           "unitOfMeasure",
-          "description"
+          "description",
+          "formerCodes"
         ]
       },
       "LotBalance": {
@@ -18317,6 +18496,12 @@
           "lotIsAssigned": {
             "type": "boolean"
           },
+          "lotCodeThen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "sku": {
             "type": "string"
           },
@@ -18347,6 +18532,7 @@
           "lotCode",
           "lotSupplierLot",
           "lotIsAssigned",
+          "lotCodeThen",
           "sku",
           "shipped",
           "sampled",
@@ -19526,6 +19712,12 @@
               "null"
             ]
           },
+          "formerCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "productId": {
             "type": [
               "string",
@@ -19568,6 +19760,7 @@
           "expiresAt",
           "supplierLot",
           "isAssigned",
+          "formerCode",
           "productId",
           "coverFileId",
           "type",
@@ -20484,6 +20677,35 @@
           "sku": {
             "type": "string"
           },
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sample",
+              "good",
+              "material",
+              "packaging",
+              "supply",
+              "equipment"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotId": {
             "type": [
               "string",
@@ -20491,6 +20713,12 @@
             ]
           },
           "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotFormerCode": {
             "type": [
               "string",
               "null"
@@ -20512,15 +20740,42 @@
         "required": [
           "variantId",
           "sku",
+          "productId",
+          "productName",
+          "variantName",
+          "type",
+          "coverFileId",
           "lotId",
           "lotCode",
+          "lotFormerCode",
           "quantity",
           "value",
           "unitCost",
           "provisional"
         ]
       },
-      "StockValuation": {
+      "StockValuationPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValuationPool"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "StockValuationTotals": {
         "type": "object",
         "properties": {
           "currency": {
@@ -20536,10 +20791,7 @@
             "type": "boolean"
           },
           "pools": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ValuationPool"
-            }
+            "type": "number"
           }
         },
         "required": [
@@ -20549,15 +20801,15 @@
           "pools"
         ]
       },
-      "StockValuationEnvelope": {
+      "StockValuationCount": {
         "type": "object",
         "properties": {
-          "valuation": {
-            "$ref": "#/components/schemas/StockValuation"
+          "count": {
+            "type": "number"
           }
         },
         "required": [
-          "valuation"
+          "count"
         ]
       },
       "LotCostEntry": {
@@ -20645,6 +20897,12 @@
               "null"
             ]
           },
+          "atPoolAverage": {
+            "type": "boolean"
+          },
+          "takesCost": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -20665,6 +20923,8 @@
           "referenceId",
           "otherLotId",
           "otherLotCode",
+          "atPoolAverage",
+          "takesCost",
           "createdAt"
         ]
       },
@@ -20984,6 +21244,9 @@
               "null"
             ]
           },
+          "takesCost": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -21010,6 +21273,7 @@
           "currency",
           "referenceType",
           "referenceId",
+          "takesCost",
           "createdAt"
         ]
       },
@@ -25884,7 +26148,8 @@
           "item_name_missing",
           "product_names_changed",
           "stock_not_usable",
-          "lot_code_in_use"
+          "lot_code_in_use",
+          "lot_code_former"
         ]
       },
       "ApiVocabulary": {
@@ -25953,6 +26218,13 @@
           "productId": {
             "type": "string",
             "format": "uuid"
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lotCode": {
+            "type": "string"
           }
         }
       },

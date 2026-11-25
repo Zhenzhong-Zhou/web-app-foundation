@@ -39,6 +39,12 @@ export class LookupResult {
   supplierLot!: string | null;
   /** Whether a lot's code was made here (ADR-094, R5); null for other kinds. */
   isAssigned!: boolean | null;
+  /**
+   * The former code a lot was found by, for "was {code}" (ADR-094
+   * amended, R9): typed whole first, then the latest. Null where the
+   * lot's code today matches too, for a close match, and for other kinds.
+   */
+  formerCode!: string | null;
   productId!: string | null;
   /** An item's product's cover (ADR-066); null for other kinds. */
   coverFileId!: string | null;

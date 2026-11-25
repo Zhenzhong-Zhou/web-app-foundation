@@ -28,8 +28,10 @@ language on the Account page. Then follow the persona's **Set up:**
 line, where it has one: a screen size, a text size, a slower network,
 an account of its own, or each task walked twice. A Set up that slows
 the network is walked on the client's production build
-(`npm run build`, then `npm run preview` in `client/`), so the walk
-times what a person loads, not the development build.
+(`npm run build`, then `npm run preview -- --port 5173 --strictPort` in
+`client/`: the preview's own default is 4173, and the mail's links and a
+walker given no address both expect 5173), so the walk times what a
+person loads, not the development build.
 
 ## 3. Walk the task
 
@@ -96,7 +98,9 @@ Then what worked well; the last line is `DONE: <why>` or
 read" says. When asked, file each blocker or major finding with
 `gh issue create`: one issue per finding for a single walk; for a
 panel, one issue per screen for the findings its screens own, and none
-for those the design language settles (ADR-090).
+for those the design language settles (ADR-090). Each carries
+`needs-triage` and its `area:` label, as [Issues and
+labels](../../../docs/engineering.md#issues-and-labels) says.
 
 ## 6. A panel: several personas at once
 

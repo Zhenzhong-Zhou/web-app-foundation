@@ -42,6 +42,7 @@ import {
   lotErrors,
   type LotInput,
   NO_LOT,
+  useFormerCodeRefusal,
   useItemLots,
 } from './lot-input';
 import { useLotMessage } from './lot-received';
@@ -101,8 +102,8 @@ export function MoveToLotDialog({
   const can = useCan();
   const navigate = useNavigate();
 
-  const { submitting, error, reset, submit } = useSubmit<LotChanged>(
-    (moved) => {
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
+    useSubmit<LotChanged>((moved) => {
       const words = {
         quantity: sent.current.quantity,
         from: moved.fromLot.code,
@@ -143,7 +144,12 @@ export function MoveToLotDialog({
       );
       close();
       onMoved({ variantId: row.variantId, locationId: row.locationId });
-    },
+    });
+  // Another lot's former code (ADR-094 amended, R11): at the lot's code,
+  // with Use {code}, which moves the stock into that lot.
+  const former = useFormerCodeRefusal(
+    { error, errorCode, errorDetails, reset },
+    controls.lotCode,
   );
 
   function close() {
@@ -274,7 +280,8 @@ export function MoveToLotDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {/* Another lot's former code is said at the lot's code. */}
+            {error && !former.refused && <FormError message={error} />}
 
             {/* What it is for, beside Move… in the same menu (review 6). */}
             <Typography variant="body2">
@@ -352,6 +359,8 @@ export function MoveToLotDialog({
               value={form.lot}
               onChange={(update) => {
                 clearError('lotCode', 'lotExpiry', 'lotDay');
+                // The refusal was of the code sent.
+                former.clear();
                 setForm((current) => ({
                   ...current,
                   lot: update(current.lot),
@@ -360,8 +369,9 @@ export function MoveToLotDialog({
               codeRef={controls.lotCode}
               expiryRef={controls.lotExpiry}
               dayRef={controls.lotDay}
+              refusedFor={former.refusedFor}
               errors={{
-                code: errors.lotCode,
+                code: former.error ?? errors.lotCode,
                 expiry: errors.lotExpiry,
                 day: errors.lotDay,
               }}

@@ -25,6 +25,7 @@ const ROW: StockPile = {
   lotExpiry: null,
   lotIsAssigned: null,
   lotSupplierLot: null,
+  lotFormerCode: null,
   quantity: '12',
   emptiedOn: null,
   issuedToRun: null,

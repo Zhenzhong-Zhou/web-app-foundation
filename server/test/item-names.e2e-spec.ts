@@ -132,6 +132,21 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    // Stock value's pools (#296): the item's, on hand.
+    operation: 'GET /v1/costs/valuation',
+    of: 'item',
+    ask: async (world, language) => {
+      const pool = (
+        await read<{ entries: (Omit<Named, 'id'> & { variantId: string })[] }>(
+          world,
+          language,
+          '/v1/costs/valuation',
+        )
+      ).entries.find((each) => each.variantId === world.variantId)!;
+      return itemName(pool.productName, pool.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/by-code',
     of: 'item',
     ask: async (world, language) => {

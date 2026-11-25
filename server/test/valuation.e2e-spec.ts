@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { todayIn } from '../src/common/today';
 import {
@@ -12,6 +12,7 @@ import {
   stockMovements,
   stockValuations,
 } from '../src/database/schema';
+import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   body,
   createE2eApp,
@@ -29,6 +30,7 @@ import {
   lotIdOf,
   move,
   poolOf,
+  sellAndShip,
   usd,
   valuationOf,
 } from './utils/valuation';
@@ -110,37 +112,6 @@ describe('Stock valuation (e2e)', () => {
       name: sku,
       variant: { sku, tracksLots },
     });
-  }
-
-  /** A sale for one untracked item, confirmed and shipped from the shelf. */
-  async function sellAndShip(s: Setup, variantId: string, quantity: string) {
-    const order = body<{ order: OrderResponse }>(
-      await s.agent
-        .post('/v1/orders')
-        .send({
-          partnerId: s.customer,
-          direction: 'sale',
-          lines: [{ variantId, quantityOrdered: quantity, ...cad('10') }],
-        })
-        .expect(201),
-    ).order;
-
-    await s.agent
-      .patch(`/v1/orders/${order.id}`)
-      .send({ status: 'confirmed' })
-      .expect(204);
-
-    const shipment = body<{ shipment: { id: string } }>(
-      await s.agent
-        .post(`/v1/orders/${order.id}/shipments`)
-        .send({
-          fromLocationId: s.shelf,
-          lines: [{ lineId: order.lines[0].id, quantity }],
-        })
-        .expect(201),
-    ).shipment;
-
-    return { order, shipmentId: shipment.id };
   }
 
   async function movementWith(reason: string) {
@@ -509,6 +480,208 @@ describe('Stock valuation (e2e)', () => {
 
       const reversal = await movementWith('adjustment');
       expect((await valuationOf(db, reversal.id)).value).toBe('10.000000');
+    });
+  });
+
+  /**
+   * A return with no cost it shipped at (#661; ADR-048 amended): a
+   * shipment from before costs were kept, or a "Returned" receipt on Stock
+   * with no order. It lands at its pool's average where the pool has one,
+   * its row saying so, and otherwise waits; either takes a cost on its own
+   * row.
+   */
+  describe('a return with no shipped cost', () => {
+    /**
+     * As if costs began now: the code's value rows gone, what is on hand
+     * an opening balance at its value, as migration 0033 opened it. A
+     * shipment already made then has no value rows.
+     */
+    async function costsKeptFromNow(variantId: string) {
+      await db.execute(sql`
+        delete from stock_valuations where variant_id = ${variantId}::uuid
+      `);
+      await db.execute(sql`
+        insert into stock_valuations
+          (organization_id, variant_id, lot_id, kind, quantity, value,
+           needs_cost)
+        select organization_id, variant_id, lot_id, 'opening', quantity,
+               value, false
+        from valuation_pools
+        where variant_id = ${variantId}::uuid and quantity <> 0
+      `);
+    }
+
+    async function returnOne(s: Setup, order: OrderResponse) {
+      await s.agent
+        .post(`/v1/orders/${order.id}/returns`)
+        .send({
+          toLocationId: s.bin,
+          reason: 'damaged in transit',
+          lines: [{ lineId: order.lines[0].id, quantity: '1' }],
+        })
+        .expect(201);
+      return await valuationOf(db, (await movementWith('return')).id);
+    }
+
+    async function waiting(s: Setup) {
+      const res = await s.agent.get('/v1/costs/needs-cost').expect(200);
+      return body<{
+        entries: { id: string; reason: string; takesCost: boolean }[];
+      }>(res).entries;
+    }
+
+    /** Set cost's answer, for the three checks (R2; review 77). */
+    async function setCost(s: Setup, valuationId: string, unitPrice: string) {
+      return body<{
+        cost: { held: string; issued: string; followed: { value: string }[] };
+      }>(
+        await s.agent
+          .put(`/v1/costs/valuations/${valuationId}`)
+          .send({ unitPrice, currency: 'CAD' })
+          .expect(200),
+      ).cost;
+    }
+
+    it('lands an order’s return at its pool’s average, marked so, and Set cost corrects it', async () => {
+      const s = await setup('alpha');
+      const scoop = await variant(s, 'SCOOP');
+      await buy(s, scoop, '10', cad('2'));
+      const { order } = await sellAndShip(s, scoop, '4');
+      await costsKeptFromNow(scoop);
+
+      const row = await returnOne(s, order);
+      expect(row).toMatchObject({
+        value: '2.000000',
+        needsCost: false,
+        referenceType: 'valuation_pool',
+        referenceId: (await poolOf(db, scoop)).id,
+      });
+
+      const cost = await setCost(s, row.id, '3');
+      expect((await poolOf(db, scoop)).value).toBe('15.000000');
+      // 2.00 at the average to 3.00: 1.00 more.
+      await expectCostToFollow(db, {
+        variantId: scoop,
+        change: '1.000000',
+        most: each('3'),
+        answer: cost,
+      });
+    });
+
+    it('lets an order’s return that waits, its pool empty, take a cost on its own row', async () => {
+      const s = await setup('alpha');
+      const scoop = await variant(s, 'SCOOP');
+      await buy(s, scoop, '4', cad('2'));
+      const { order } = await sellAndShip(s, scoop, '4');
+      await costsKeptFromNow(scoop);
+
+      const row = await returnOne(s, order);
+      expect(row).toMatchObject({
+        value: '0.000000',
+        needsCost: true,
+        referenceType: null,
+      });
+      expect(await waiting(s)).toEqual([
+        expect.objectContaining({ id: row.id, takesCost: true }),
+      ]);
+
+      const cost = await setCost(s, row.id, '2.50');
+      expect((await poolOf(db, scoop)).value).toBe('2.500000');
+      await expectCostToFollow(db, {
+        variantId: scoop,
+        change: '2.500000',
+        most: each('2.50'),
+        answer: cost,
+      });
+      expect(await waiting(s)).toEqual([]);
+    });
+
+    it('lands a “Returned” receipt with no order at its lot’s average, and its lot’s history says so', async () => {
+      const s = await setup('alpha');
+      const blend = await variant(s, 'BLEND-FOCUS', true);
+      const bought = await buy(s, blend, '10', cad('2'), { code: 'BF-2609' });
+      const lotId = await lotIdOf(db, 'BF-2609');
+
+      const returned = await move(s, {
+        variantId: blend,
+        lotId,
+        toLocationId: s.shelf,
+        quantity: '5',
+        reason: 'receipt',
+        reasonDetail: 'returned',
+      });
+      const row = await valuationOf(db, returned);
+      expect(row).toMatchObject({
+        value: '10.000000',
+        needsCost: false,
+        referenceType: 'valuation_pool',
+      });
+
+      const res = await s.agent.get(`/v1/costs/lots/${lotId}`).expect(200);
+      const { entries } = body<{
+        lotCost: {
+          entries: { id: string; atPoolAverage: boolean; takesCost: boolean }[];
+        };
+      }>(res).lotCost;
+      const bySet = (id: string) => entries.find((e) => e.id === id);
+      expect(bySet(row.id)).toMatchObject({
+        atPoolAverage: true,
+        takesCost: true,
+      });
+      expect(bySet((await valuationOf(db, bought)).id)).toMatchObject({
+        atPoolAverage: false,
+        takesCost: true,
+      });
+
+      const cost = await setCost(s, row.id, '2.40');
+      expect((await poolOf(db, blend, lotId)).value).toBe('32.000000');
+      // 5 at the average, 10.00, to 2.40 each: 2.00 more.
+      await expectCostToFollow(db, {
+        variantId: blend,
+        change: '2.000000',
+        most: each('2.40'),
+        answer: cost,
+      });
+    });
+
+    it('lets a “Returned” receipt wait where its pool waits, and take a cost', async () => {
+      const s = await setup('alpha');
+      const lid = await variant(s, 'LID');
+      await move(s, {
+        variantId: lid,
+        toLocationId: s.shelf,
+        quantity: '5',
+        reason: 'receipt',
+      });
+
+      const returned = await move(s, {
+        variantId: lid,
+        toLocationId: s.shelf,
+        quantity: '1',
+        reason: 'receipt',
+        reasonDetail: 'returned',
+      });
+      const row = await valuationOf(db, returned);
+      expect(row).toMatchObject({
+        value: '0.000000',
+        needsCost: true,
+        referenceType: null,
+      });
+      expect(
+        (await waiting(s)).map(({ reason, takesCost }) => [reason, takesCost]),
+      ).toEqual([
+        ['receipt', true],
+        ['receipt', true],
+      ]);
+
+      const cost = await setCost(s, row.id, '4');
+      expect((await poolOf(db, lid)).value).toBe('4.000000');
+      await expectCostToFollow(db, {
+        variantId: lid,
+        change: '4.000000',
+        most: each('4'),
+        answer: cost,
+      });
     });
   });
 

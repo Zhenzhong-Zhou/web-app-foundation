@@ -32,6 +32,16 @@ export class ErrorDetails {
    */
   @ApiPropertyOptional({ format: 'uuid' })
   productId?: string;
+
+  /**
+   * The lot that had a code typed again for another lot (ADR-094 amended,
+   * R11), and its code as it is now, for Use {code}.
+   */
+  @ApiPropertyOptional({ format: 'uuid' })
+  lotId?: string;
+
+  @ApiPropertyOptional()
+  lotCode?: string;
 }
 
 /**

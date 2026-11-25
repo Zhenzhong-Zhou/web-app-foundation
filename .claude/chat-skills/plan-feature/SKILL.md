@@ -52,6 +52,12 @@ one recommended. Nothing is drafted until Bob confirms. The list goes
 into the ADR as "Requirements, as confirmed", a table of R, What, Done
 when and Step.
 
+**Each requirement lists every place its need arises,** not only where
+its control sits: the lists, the record's own page, Movements, the
+Activity log, the searches, the exports and the documents. ADR-094's
+branch after drew a lot's former code on three screens and missed
+Movements, where the log and the row then named one lot by two codes.
+
 **Then the check,** as `docs/engineering.md`, "Process", asks, before
 anything is drafted. For each area the change touches, by its name in
 `AREAS`
@@ -76,6 +82,9 @@ anything is drafted. For each area the change touches, by its name in
   GitHub's API without a token shares its limit with every container
   behind the same address, so it is not relied on; an issue's page on
   github.com still reads from the clone's container when one is missing.
+- any open issue, in whatever area, whose text names this branch or its
+  ADR as its trigger: `check.txt` is searched for both. #654 named
+  ADR-094's branch, lay outside its areas, and was missed there.
 
 Write it as the ADRs' Context does, under "Checked before drafting":
 **Fired, and taken here**; **Not fired, and left**; **Found while
@@ -89,6 +98,14 @@ checking**. Each item names its issue or ADR.
   where the foundation may serve another industry. Where no standard
   exists, say so.
 - Nothing is drafted past a decision not yet answered.
+- A rule that changes a figure is tried to the cent, before it is
+  recommended, on each way the stock or the money comes back: a return,
+  a void, a reversal, and both orders of two events. ADR-094's amendment
+  first wrote "a return is a new arrival", which a voided shipment showed
+  wrong once the inventory asked.
+- What the chat says the code or a tool does, it has read in the clone
+  first: a route's audit fields before "the log keeps both codes"
+  (#687), a skill's own checks before saying what a run refuses.
 
 ## 3. The ADR, as the branch's first commit
 
@@ -115,6 +132,9 @@ checking**. Each item names its issue or ADR.
   the chat's. A changed design is a new row of boards,
   titled with its version, never drawn over the old one: every earlier
   version stays as the design's history.
+- On a board a column's header sits over its figures, a number
+  column's to the right like its numbers: a header left of right-aligned
+  numbers read as the next column's.
 
 ## 4. The brief
 
@@ -151,6 +171,12 @@ gets:
 - A chat step (the docs, a design, a fix the chat writes): its files as
   [the delivery rules](reference/delivery.md) say, from a clone of the
   branch Bob has pushed, at the commit he names.
+- Nothing is asked of Bob's Mac while a step or a check that needs it
+  quiet runs there: a timed step, or the Linux browsers' part of the
+  full verify.
+- A step added while a brief runs takes the next free number, its row
+  placed where it runs in the steps table, and is run alone by its
+  number; no step already named is renumbered.
 
 ## 6. The as-built and the pull request
 

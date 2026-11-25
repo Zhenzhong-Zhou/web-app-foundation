@@ -39,6 +39,9 @@ repeat; a brief holds only its decisions and its steps.
    - Dependencies first, and again before the reviews.
    - An inventory first for a change across many screens.
    - The seeds where a feature adds a table or a screen.
+   - A timed step says what must be quiet and names two controls, reads
+     the branch does not touch; `main` comes in before the first of
+     them, and a fix runner's run is not started beside one.
    - The reviews, run by `/review-step tmp/<branch>/brief.md <N>`, in two
      prompts: the findings, numbered, to `tmp/<branch>/review.md` with
      nothing fixed; then the same command with the fixes Bob chose after

@@ -209,7 +209,7 @@ export class StockController {
       await this.permissions.demand(user, [PERMISSIONS.STOCK_LOT_MADE_HERE]);
     }
 
-    const { marked } = await this.lots.updateLot(id, dto);
+    const { marked } = await this.lots.updateLot(id, dto, user.userId);
 
     /**
      * The mark is its own entry in the Activity log, beside Lot updated

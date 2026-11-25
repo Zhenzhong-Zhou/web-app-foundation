@@ -12,6 +12,7 @@ import {
   signInAs,
 } from './support/api';
 import { confirmEmailInDatabase } from './support/mail';
+import { saidOn } from './support/said';
 import {
   orderOf,
   receive,
@@ -1045,4 +1046,65 @@ test('a reader without orders.view: a link with ?orderId= reads every movement, 
     page.getByRole('button', { name: 'Show all movements' }),
   ).toHaveCount(0);
   await lookup.dispose();
+});
+
+// ---------------------------------------------------------------------------
+// ADR-094 amended (M1a, R9): a row from before a lot's code was corrected
+// says the code the lot had then, as a changed item code reads here
+// ---------------------------------------------------------------------------
+
+test('Movements, a lot whose code was corrected: its row from before says “was {code}” under the lot, the row after does not', async ({
+  page,
+  freshOrg,
+}) => {
+  const product = await createProduct(freshOrg.api, {
+    name: 'E2E Fish Oil',
+    sku: 'E2E-FISH',
+    tracksLots: true,
+  });
+  const shelf = await createLocation(freshOrg.api, { name: 'E2E Shelf M1' });
+  const { movement, lotCode: made } = await created<{
+    movement: { lotId: string };
+    lotCode: string;
+  }>(
+    await freshOrg.api.post('/v1/stock/movements', {
+      data: {
+        variantId: product.variantId,
+        toLocationId: shelf.id,
+        quantity: '6',
+        reason: 'receipt',
+        reasonDetail: 'opening',
+        lot: { makeCode: true, expiry: 'unknown' },
+      },
+    }),
+  );
+  const corrected = await freshOrg.api.patch(
+    `/v1/stock/lots/${movement.lotId}`,
+    { data: { code: 'FO-0909', reason: 'E2E typed from a smudged label' } },
+  );
+  expect(corrected.ok(), await corrected.text()).toBeTruthy();
+  // After the correction, under the code it has today.
+  await created(
+    await freshOrg.api.post('/v1/stock/movements', {
+      data: {
+        variantId: product.variantId,
+        lotId: movement.lotId,
+        toLocationId: shelf.id,
+        quantity: '4',
+        reason: 'receipt',
+        reasonDetail: 'opening',
+      },
+    }),
+  );
+  await signInAs(page, freshOrg.api);
+  await movementsFrom(page);
+
+  // Newest first: the receipt after, then the one before.
+  const was = saidOn('en', 'inventory.movements.was', { code: made });
+  await expect(rows(page)).toHaveCount(2);
+  const [after, before] = [rows(page).nth(0), rows(page).nth(1)];
+  await expect(after.getByRole('link', { name: 'FO-0909' })).toBeVisible();
+  await expect(after.getByText(was)).toHaveCount(0);
+  await expect(before.getByRole('link', { name: 'FO-0909' })).toBeVisible();
+  await expect(before.getByText(was)).toBeVisible();
 });

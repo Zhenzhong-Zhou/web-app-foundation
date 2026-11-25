@@ -26,6 +26,20 @@ export const LOT_SOURCE_KINDS = [
 
 export type LotSourceKind = (typeof LOT_SOURCE_KINDS)[number];
 
+/**
+ * A code the lot had before Edit lot details corrected it (ADR-094
+ * amended, R8, R9), as its page lists them under Former codes.
+ */
+export class LotFormerCode {
+  code!: string;
+  /** Until when: the save that corrected it. */
+  changedAt!: Date;
+  /** Who corrected it, by name: Deleted User once anonymised (ADR-012). */
+  changedByName!: string;
+  /** Why, as typed. */
+  reason!: string;
+}
+
 /** The lot itself, named from the catalogue beside its snapshot SKU. */
 export class TracedLot {
   id!: string;
@@ -45,6 +59,11 @@ export class TracedLot {
   sku!: string;
   unitOfMeasure!: string;
   description!: string;
+  /**
+   * Every code it had, newest first: the first beside its title, "was
+   * {code}", all under Former codes. Empty for a lot never corrected.
+   */
+  formerCodes!: LotFormerCode[];
 }
 
 /**
@@ -165,6 +184,13 @@ export class LotRecipient {
   lotSupplierLot!: string | null;
   /** True when that lot's code was made here, not printed (ADR-094). */
   lotIsAssigned!: boolean;
+  /**
+   * The code that lot had when this row's stock left, where it differs
+   * from its code today: the boxes carry it, "shipped as {code}" (ADR-094
+   * amended, E3a). Each row names one code, so an order shipped before a
+   * correction and after it is two rows. Null otherwise.
+   */
+  lotCodeThen!: string | null;
   sku!: string;
   shipped!: string;
   sampled!: string;

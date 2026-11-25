@@ -55,6 +55,7 @@ export function PageHeader({
   crumbs,
   title,
   subtitle,
+  beside,
   status,
   actions,
   headingRef,
@@ -63,6 +64,11 @@ export function PageHeader({
   crumbs: Crumb[];
   title: string;
   subtitle?: ReactNode;
+  /**
+   * Grey words beside the title, part of what it names: a lot's former
+   * code, "was ASH-06O1" (ADR-094 amended, R9).
+   */
+  beside?: ReactNode;
   /**
    * What it is now, by name: its status, or its status and what reads
    * beside it, as a confirmed order's "Partly received" (#605).
@@ -121,6 +127,17 @@ export function PageHeader({
     id: 'components.pageHeader.back',
     defaultMessage: 'Back',
   });
+  const heading = (
+    <Typography
+      ref={headingRef}
+      variant="h5"
+      component="h1"
+      tabIndex={headingRef ? -1 : undefined}
+      sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
+    >
+      {title}
+    </Typography>
+  );
 
   return (
     <Stack spacing={1}>
@@ -188,15 +205,29 @@ export function PageHeader({
             </Tooltip>
           )}
 
-          <Typography
-            ref={headingRef}
-            variant="h5"
-            component="h1"
-            tabIndex={headingRef ? -1 : undefined}
-            sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
-          >
-            {title}
-          </Typography>
+          {/* The words beside it go under it where both do not fit, the
+              title never squeezed by them. */}
+          {beside ? (
+            <Stack
+              direction="row"
+              useFlexGap
+              sx={{
+                flexWrap: 'wrap',
+                alignItems: 'baseline',
+                columnGap: 1.5,
+                minWidth: 0,
+              }}
+            >
+              {heading}
+              <Typography
+                sx={{ color: 'text.secondary', overflowWrap: 'anywhere' }}
+              >
+                {beside}
+              </Typography>
+            </Stack>
+          ) : (
+            heading
+          )}
 
           {/* Two wrap as a pair, so neither squeezes the title. */}
           {status && (

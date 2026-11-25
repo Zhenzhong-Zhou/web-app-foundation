@@ -10,6 +10,7 @@ import { permissions, rolePermissions, roles } from '../src/database/schema';
 import {
   addMember,
   body,
+  correctedLot,
   createE2eApp,
   createLocation,
   createPartner,
@@ -33,6 +34,7 @@ interface LookupResponse {
       expiry: string | null;
       supplierLot: string | null;
       isAssigned: boolean | null;
+      formerCode: string | null;
       coverFileId: string | null;
       type: string | null;
       close: boolean;
@@ -236,6 +238,88 @@ describe('Lookup (e2e)', () => {
     });
   });
 
+  // A lot is found by a code it had before Edit lot details corrected it,
+  // as by its own: any part of it, typed whole as exact, after a lot whose
+  // code it is today; the hit says which, and a close match reads today's
+  // code alone (ADR-094 amended, R9, R10, F8).
+  it('finds a lot by a former code, whole or in part, saying which, after a lot whose code it is today (R10)', async () => {
+    const alpha = await stocked('alpha');
+    const shelf = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Back',
+    });
+    const ash = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Ashwagandha 60ct',
+      variant: { sku: 'ASH-60CT', tracksLots: true },
+    });
+    const calm = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Calm 30ct',
+      variant: { sku: 'CALM-30', tracksLots: true },
+    });
+    const corrected = await correctedLot(alpha.agent, {
+      variantId: ash,
+      toLocationId: shelf,
+      from: 'ASH-06O1',
+      to: 'ASH-0601',
+    });
+    const receive = (variantId: string, code: string) =>
+      alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId,
+          toLocationId: shelf,
+          quantity: '5',
+          reason: 'receipt',
+          lot: { code },
+        })
+        .expect(201);
+    // Another item's lot whose code it is today, and a lot starting with it.
+    await receive(calm, 'ASH-06O1');
+    await receive(ash, 'ASH-06O1-B');
+
+    const lotsFor = async (q: string) =>
+      (await lookup(alpha, q))
+        .find((group) => group.kind === 'lot')
+        ?.results.filter((result) => !result.close)
+        .map(({ id, title, detail, formerCode }) => ({
+          id,
+          title,
+          detail,
+          formerCode,
+        }));
+
+    expect(await lotsFor('ash-06o1')).toEqual([
+      expect.objectContaining({
+        title: 'ASH-06O1',
+        detail: 'CALM-30',
+        formerCode: null,
+      }),
+      {
+        id: corrected,
+        title: 'ASH-0601',
+        detail: 'ASH-60CT',
+        formerCode: 'ASH-06O1',
+      },
+      expect.objectContaining({ title: 'ASH-06O1-B', formerCode: null }),
+    ]);
+    // Any part of it, as of a code today.
+    expect(await lotsFor('6O1')).toContainEqual({
+      id: corrected,
+      title: 'ASH-0601',
+      detail: 'ASH-60CT',
+      formerCode: 'ASH-06O1',
+    });
+    // Found by its code today too: no "was" to explain it.
+    expect(await lotsFor('ASH-06')).toContainEqual({
+      id: corrected,
+      title: 'ASH-0601',
+      detail: 'ASH-60CT',
+      formerCode: null,
+    });
+  });
+
   // #546: an item's result carries its type, for its icon where it has
   // no cover, as Items draws it; other kinds none.
   it("names an item's type, and none for other kinds", async () => {
@@ -310,6 +394,38 @@ describe('Lookup (e2e)', () => {
       title: 'Northside Pharmacy',
       close: true,
     });
+  });
+
+  // #308's 12: a typo is a search that finds next to nothing. Four
+  // partners named as typed leave room for an item whose name is a close
+  // match; a fifth partner fills the lookup, and no kind is asked for a
+  // close match at all.
+  it('adds no close match once five records match as typed (#308’s 12)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Harbor Tea',
+      variant: { sku: 'TEA-1', tracksLots: false },
+    });
+    for (const name of [
+      'Harbour',
+      'Harbour North',
+      'Harbour South',
+      'Harbour East',
+    ]) {
+      await createPartner(alpha.agent, { name });
+    }
+    const everything = async () =>
+      (await lookup(alpha, 'harbour')).flatMap((group) => group.results);
+
+    expect(await everything()).toContainEqual(
+      expect.objectContaining({ title: 'Harbor Tea', close: true }),
+    );
+
+    await createPartner(alpha.agent, { name: 'Harbour West' });
+    const results = await everything();
+    expect(results).toHaveLength(5);
+    expect(results.every((result) => !result.close)).toBe(true);
   });
 
   // ADR-051's amendment for #225 and #276: an order's partner arm is an

@@ -14,6 +14,7 @@ import {
   auditLog,
   documentNumbering,
   documentSequences,
+  lotFormerCodes,
   lots,
 } from '../src/database/schema';
 import { takeLotCode } from '../src/modules/numbering/lot-codes';
@@ -558,6 +559,76 @@ describe('Numbering (e2e)', () => {
 
       // L-…-5 was typed as printed: the take passes over it for its item.
       await save(org, { lot: { ...LOT, next: 3 } }).expect(204);
+    });
+
+    /** A former code of a lot, as Edit lot details keeps one (ADR-094 amended, R8). */
+    async function formerCode(org: Org, lotId: string, code: string) {
+      await db.insert(lotFormerCodes).values({
+        organizationId: org.organizationId,
+        lotId,
+        code,
+        changedBy: org.userId,
+        reason: 'The label was misread.',
+      });
+    }
+
+    /** The lot a receipt typed as printed made. */
+    async function typedLot(
+      org: Org,
+      item: { variantId: string; shelf: string },
+      code: string,
+    ) {
+      await receiveTyped(org, item, code);
+      const [lot] = await db
+        .select({ id: lots.id })
+        .from(lots)
+        .where(and(eq(lots.variantId, item.variantId), eq(lots.code, code)));
+      return lot.id;
+    }
+
+    it('passes over a code a lot of the item had before its code was corrected, and not another item’s (ADR-094 amended, R11)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const day = (await numbering(org)).today;
+      const vitc = await trackedItem(org, 'VITC');
+      const zinc = await trackedItem(org, 'ZINC');
+      await formerCode(org, await typedLot(org, vitc, 'VC-A'), `L-${day}-1`);
+      await formerCode(org, await typedLot(org, zinc, 'ZN-A'), `L-${day}-3`);
+
+      expect(await take(org, vitc.variantId)).toBe(`L-${day}-2`);
+      expect(await take(org, vitc.variantId)).toBe(`L-${day}-3`);
+    });
+
+    it('refuses a next number a lot’s former code carries (ADR-094 amended, R11)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const day = (await numbering(org)).today;
+      const vitc = await trackedItem(org, 'VITC');
+      await org.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: vitc.variantId,
+          toLocationId: vitc.shelf,
+          quantity: '5',
+          reason: 'receipt',
+          lot: { makeCode: true },
+        })
+        .expect(201);
+      const [made] = await db
+        .select({ id: lots.id })
+        .from(lots)
+        .where(eq(lots.code, `L-${day}-1`));
+      await org.agent
+        .patch(`/v1/stock/lots/${made.id}`)
+        .send({ code: 'VC-A', reason: 'Relabelled as the supplier’s run.' })
+        .expect(204);
+
+      // No lot carries L-…-1 now, and setting Next back would make it
+      // again, for a box still labelled so.
+      const taken = await save(org, { lot: { ...LOT, next: 1 } }).expect(409);
+      expect(body<Refusal>(taken)).toMatchObject({
+        code: 'numbering_number_taken',
+        details: { series: ['lot'], lowest: 2 },
+        message: `L-${day}-1 is already a lot’s code. Under L-${day}-, the next number must be 2 or more.`,
+      });
     });
   });
 

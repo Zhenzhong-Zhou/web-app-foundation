@@ -12,7 +12,8 @@ each reply does.
   3. **Recorded where:** where each decision or finding is kept.
   4. **Decisions needed:** each with its options and the one
      recommended; or "none". Never left out.
-  5. **Next:** the exact commands or prompt, numbered, in order.
+  5. **Next:** the exact commands or prompt, numbered, in order, as
+     one list a reply.
 - **Every bullet starts with its status:** ✅ done, ⏳ waiting for Bob,
   📝 noted for later.
 - **Style:** one short sentence per bullet; the one thing Bob must act

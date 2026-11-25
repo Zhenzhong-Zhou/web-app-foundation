@@ -22,6 +22,8 @@ const RECEIPT: LotCostEntry = {
   otherLotId: null,
   otherLotCode: null,
   carried: null,
+  atPoolAverage: false,
+  takesCost: true,
   createdAt: '2026-10-01T15:00:00Z',
 };
 
@@ -177,5 +179,26 @@ describe('LotCostPanel', () => {
     }
     expect(kind).not.toHaveTextContent('split_in_two');
     expect(reason).not.toHaveTextContent('teleported');
+  });
+
+  // #661: a return with no cost it shipped at, valued at the lot's average
+  // when it came back, says so; one that came back at its shipped cost
+  // reads as before.
+  it('says a return came back at the lot’s average where the server marks it so', async () => {
+    const returned = {
+      ...RECEIPT,
+      reason: 'return',
+      unitPrice: null,
+      currency: null,
+      exchangeRate: null,
+    };
+    const [average, shipped] = await historyOf([
+      { ...returned, id: 'average', atPoolAverage: true },
+      { ...returned, id: 'shipped' },
+    ]);
+
+    expect(average).toHaveTextContent('Returned, at the lot’s average');
+    expect(shipped).toHaveTextContent('Returned');
+    expect(shipped).not.toHaveTextContent('average');
   });
 });

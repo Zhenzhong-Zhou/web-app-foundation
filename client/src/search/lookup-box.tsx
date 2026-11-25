@@ -28,6 +28,7 @@ import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { lotExpiry } from '../inventory/lot-expiry';
 import { supplierLotPart } from '../inventory/supplier-lot-part';
+import { wasCode } from '../inventory/was-code';
 import { BarButton } from '../layout/bar-button';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
@@ -41,6 +42,7 @@ import { productTypeIcon, typeAfter } from '../products/product-types';
 import { rem } from '../theme/rem';
 import { KIND_LABELS, LIST_LABELS, listOf, pathOf } from './lookup-kinds';
 import { lookupLongEnough } from './lookup-minimum';
+import { MoreBelowPaper } from './more-below-paper';
 import { useLookup } from './use-lookup';
 
 /** One row in the list: a record, a group's "Show all", or one recently
@@ -52,6 +54,9 @@ type Option =
 
 /** The search's recently opened, before typing (ADR-058). */
 const RECENT_IN_SEARCH = 5;
+
+/** The list's greatest height in the top bar: MUI's own for a listbox. */
+const LIST_HEIGHT = '40vh';
 
 /**
  * The top bar's lookup (ADR-056): type a lot code, a number, a SKU or a
@@ -240,7 +245,13 @@ function LookupField({
               id: 'recent.title',
               defaultMessage: 'Recently opened',
             })
-          : intl.formatMessage(KIND_LABELS[option.kind])
+          : option.type === 'result' && option.result.close
+            ? // Movements' find box's heading, as its rule is (#654).
+              intl.formatMessage({
+                id: 'inventory.movements.closeMatches',
+                defaultMessage: 'Close matches',
+              })
+            : intl.formatMessage(KIND_LABELS[option.kind])
       }
       getOptionLabel={(option) =>
         option.type === 'recent'
@@ -248,6 +259,16 @@ function LookupField({
           : option.type === 'result'
             ? option.result.title
             : option.to
+      }
+      // Each row by what it is, never its title alone, which two records
+      // share where a lot and a run, or two items' lots, have one code
+      // (ADR-094 amended, R19); MUI keys by the label otherwise.
+      getOptionKey={(option) =>
+        option.type === 'recent'
+          ? `recent:${option.entry.kind}:${option.entry.id}`
+          : option.type === 'all'
+            ? `all:${option.kind}:${option.to}`
+            : `result:${option.kind}:${option.result.id}`
       }
       // The server has matched and ranked them; nothing to filter here.
       filterOptions={(all) => all}
@@ -262,7 +283,19 @@ function LookupField({
         if (option) go(option);
       }}
       loading={loading}
-      slotProps={{ listbox: { sx: { maxHeight: listHeight } } }}
+      // A list cut at its edge says how many rows are below (#618). Its
+      // paper is a column of the list's height, the line under the list.
+      slots={{ paper: MoreBelowPaper }}
+      slotProps={{
+        paper: {
+          sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: listHeight ?? LIST_HEIGHT,
+          },
+        },
+        listbox: { sx: { maxHeight: listHeight } },
+      }}
       autoHighlight
       // Opens on focus only to offer what was recently opened.
       openOnFocus={recent.length > 0}
@@ -320,23 +353,12 @@ function LookupField({
               <Stack sx={{ minWidth: 0, width: '100%' }}>
                 <Stack
                   direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center', minWidth: 0 }}
+                  sx={{ alignItems: 'baseline', minWidth: 0 }}
                 >
                   <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
                     {option.result.title}
                   </Typography>
-                  {option.result.close && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary' }}
-                    >
-                      {intl.formatMessage({
-                        id: 'search.close',
-                        defaultMessage: 'close match',
-                      })}
-                    </Typography>
-                  )}
+                  <Beside kind={option.kind} result={option.result} />
                 </Stack>
                 {option.kind === 'lot' ? (
                   <LotLine result={option.result} />
@@ -395,21 +417,67 @@ function LookupField({
 }
 
 /**
- * The answer as rows: each group's records, then its "Show all" when one of
- * them is not a close match. Close matches are the lookup's alone
- * (ADR-056), so a list opened for them alone would find nothing (#311).
+ * The answer as rows (ADR-056, amended for #654): what matches as typed,
+ * alone, when anything does, each kind under its name and ending with its
+ * "Show all"; otherwise the close ones, a typo's, which the box heads
+ * Close matches as one group, with no "Show all", since close matches are
+ * the lookup's alone and a list opened for them would find nothing
+ * (#311). The rule Movements' find box has (`movement-finder.tsx`).
  */
 function optionsOf(groups: LookupGroup[], query: string): Option[] {
+  const exact = groups.some(({ results }) =>
+    results.some((result) => !result.close),
+  );
   return groups.flatMap(({ kind, results }) => {
-    const rows: Option[] = results.map((result) => ({
-      type: 'result',
-      kind,
-      result,
-    }));
+    const rows: Option[] = results
+      .filter((result) => !exact || !result.close)
+      .map((result) => ({ type: 'result', kind, result }));
     const to = listOf(kind, query);
-    const listed = results.some((result) => !result.close);
-    return to && listed ? [...rows, { type: 'all', kind, to }] : rows;
+    return to && exact && rows.length > 0
+      ? [...rows, { type: 'all', kind, to }]
+      : rows;
   });
+}
+
+/**
+ * Grey words beside a result's title, dotted apart: under Close matches,
+ * its kind, "MCS-001 · Lot", since the heading no longer names it; a lot
+ * found by a former code, that code, "ASH-0601 · was ASH-06O1" (ADR-094
+ * amended, R9), as Movements' find box says it.
+ */
+function Beside({ kind, result }: { kind: LookupKind; result: LookupResult }) {
+  const intl = useIntl();
+  const words = [
+    result.close &&
+      intl.formatMessage(
+        {
+          id: 'search.kindOne',
+          defaultMessage:
+            '{kind, select, order {Order} invoice {Invoice} creditNote {Credit note} lot {Lot} item {Item} partner {Partner} productionRun {Production run} returnAuthorization {Return} other {Record}}',
+        },
+        { kind },
+      ),
+    result.formerCode && wasCode(result.formerCode, intl),
+  ].filter(Boolean);
+  if (words.length === 0) return null;
+  return (
+    <Typography
+      variant="body2"
+      // Its leading space kept, as one sentence would have it; a former
+      // code of up to 64 characters shrinks, ending in an ellipsis, rather
+      // than squeeze the title out at 320 px (review 86).
+      sx={{
+        color: 'text.secondary',
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'pre',
+      }}
+    >
+      {SEPARATOR}
+      {words.join(SEPARATOR)}
+    </Typography>
+  );
 }
 
 /**

@@ -1,6 +1,9 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import type { LotChangeDetail } from '../../common/movement-reasons';
+import type {
+  LotChangeDetail,
+  ReceiptDetail,
+} from '../../common/movement-reasons';
 import { todayOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
 import { openNeedsCost } from '../costs/open-needs-cost';
@@ -23,7 +26,19 @@ interface Valued {
   currency: string | null;
   exchangeRate: string | null;
   needsCost: boolean;
+  /**
+   * The pool whose average valued a return with no shipped cost (#661),
+   * the row's mark (AT_POOL_AVERAGE); unset for every other.
+   */
+  averageOf?: string;
 }
+
+/**
+ * The reference a return's value row carries when its pool's average
+ * valued it, for want of a cost it shipped at (ADR-048 amended, #661): the
+ * row says where its value came from, and Set cost may correct it.
+ */
+export const AT_POOL_AVERAGE = 'valuation_pool';
 
 function unvalued(cost: PurchaseCost | null): Valued {
   return {
@@ -111,7 +126,8 @@ export async function valueMovement(
   await tx.execute(sql`
     insert into stock_valuations
       (organization_id, variant_id, lot_id, kind, movement_id, quantity, value,
-       unit_price, currency, exchange_rate, needs_cost, actor_id)
+       unit_price, currency, exchange_rate, needs_cost, reference_type,
+       reference_id, actor_id)
     values (
       ${organizationId}::uuid, ${movement.variantId}::uuid,
       ${movement.lotId}::uuid, 'movement', ${movement.id}::uuid,
@@ -119,6 +135,8 @@ export async function valueMovement(
       ${sign}::integer * ${valued.value}::numeric,
       ${valued.unitPrice}::numeric, ${valued.currency},
       ${valued.exchangeRate}::numeric, ${valued.needsCost},
+      ${valued.averageOf ? AT_POOL_AVERAGE : null},
+      ${valued.averageOf ?? null}::uuid,
       ${movement.actorId}::uuid
     )
   `);
@@ -287,11 +305,17 @@ async function valueInbound(
 ): Promise<Valued> {
   switch (movement.reason) {
     case 'receipt':
-      // A receipt by hand, or against an unpriced line, is still a real
-      // delivery; it waits for a cost rather than being refused (ADR-032).
-      return cost
-        ? purchased(tx, organizationId, movement.quantity, cost)
-        : unvalued(null);
+      if (cost) return purchased(tx, organizationId, movement.quantity, cost);
+      // A return recorded on Stock with no order has no shipment to come
+      // back at, so it lands at its pool's average where there is one
+      // (#661). Any other receipt by hand, or against an unpriced line, is
+      // still a real delivery; it waits for a cost rather than being
+      // refused (ADR-032).
+      return (
+        (movement.reasonDetail === ('returned' satisfies ReceiptDetail)
+          ? await returnAtAverage(tx, organizationId, poolId, movement)
+          : null) ?? unvalued(null)
+      );
 
     case 'production':
       // The batch's cost exists only once its run closes (ADR-032), which
@@ -300,27 +324,18 @@ async function valueInbound(
 
     case 'return': {
       // A customer returns what they were sold, at what it cost when it
-      // went — not at whatever the pool averages today.
+      // went — not at whatever the pool averages today. A shipment from
+      // before costs were kept has no cost to come back at: the return
+      // lands at its pool's average, marked so, or waits and takes a cost
+      // on its own row (#661).
       const shipped =
         movement.referenceType === 'order_return' && movement.referenceId
-          ? await shippedAt(
-              tx,
-              organizationId,
-              movement,
-              sql`
-                select s.id
-                from shipments s
-                join order_returns r on r.order_id = s.order_id
-                where r.id = ${movement.referenceId}::uuid
-                  and r.organization_id = ${organizationId}::uuid
-                  and s.voided_at is null
-              `,
-            )
+          ? await shippedAt(tx, organizationId, movement)
           : null;
 
       return (
         shipped ??
-        (await atPoolAverage(tx, organizationId, poolId, movement)) ??
+        (await returnAtAverage(tx, organizationId, poolId, movement)) ??
         unvalued(null)
       );
     }
@@ -332,12 +347,7 @@ async function valueInbound(
       // a cost while that pool does.
       const reversed =
         movement.referenceType === 'shipment' && movement.referenceId
-          ? await shippedAt(
-              tx,
-              organizationId,
-              movement,
-              sql`select ${movement.referenceId}::uuid`,
-            )
+          ? await shippedAt(tx, organizationId, movement)
           : null;
 
       return (
@@ -400,8 +410,37 @@ async function purchased(
 }
 
 /**
- * The unit cost at which this stock left on the given shipments, applied to
- * what is coming back. Null when none of it was valued — a shipment from
+ * The shipments a row in brings stock back from, by its movement's
+ * reference: an order's return, its order's shipments not voided; a voided
+ * shipment's reversal, the shipment it names. One select of their ids, for
+ * the cost it comes back at (shippedAt) and the late cost's walk
+ * (revaluation.ts) alike, its aliases its own, so the reference may name
+ * the caller's row.
+ */
+export function shipmentsReversed(
+  organizationId: string,
+  referenceType: SQL,
+  referenceId: SQL,
+): SQL {
+  return sql`
+    select reversed_shipment.id
+    from order_returns reversed_return
+    join shipments reversed_shipment
+      on reversed_shipment.organization_id = ${organizationId}::uuid
+     and reversed_shipment.order_id = reversed_return.order_id
+     and reversed_shipment.voided_at is null
+    where ${referenceType} = 'order_return'
+      and reversed_return.organization_id = ${organizationId}::uuid
+      and reversed_return.id = ${referenceId}
+    union all
+    select ${referenceId}
+    where ${referenceType} = 'shipment'
+  `;
+}
+
+/**
+ * The unit cost at which this stock left on the shipments it reverses
+ * (shipmentsReversed), applied to what is coming back. Null when none of it was valued — a shipment from
  * before valuation began.
  *
  * The shipments' movements are matched by their own lot, the one the stock
@@ -414,7 +453,6 @@ async function shippedAt(
   tx: Tx,
   organizationId: string,
   movement: Movement,
-  shipmentIds: SQL,
 ): Promise<Valued | null> {
   const result = await tx.execute(sql`
     select round(
@@ -430,12 +468,30 @@ async function shippedAt(
       and m.lot_id is not distinct from ${movement.lotId}::uuid
       and m.reason = 'shipment'
       and m.reference_type = 'shipment'
-      and m.reference_id in (${shipmentIds})
+      and m.reference_id in (${shipmentsReversed(
+        organizationId,
+        sql`${movement.referenceType}::text`,
+        sql`${movement.referenceId}::uuid`,
+      )})
     having sum(v.quantity) <> 0
   `);
 
   const [row] = result.rows as { value: string }[];
   return row ? derived(row.value) : null;
+}
+
+/**
+ * A return with no shipped cost at its pool's average (#661), its row
+ * marked with the pool, so it says where its value came from.
+ */
+async function returnAtAverage(
+  tx: Tx,
+  organizationId: string,
+  poolId: string,
+  movement: Movement,
+): Promise<Valued | null> {
+  const valued = await atPoolAverage(tx, organizationId, poolId, movement);
+  return valued && { ...valued, averageOf: poolId };
 }
 
 /**

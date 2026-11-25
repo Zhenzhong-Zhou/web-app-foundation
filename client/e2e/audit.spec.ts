@@ -1,5 +1,7 @@
 import { expect, test } from './fixtures';
 import { createLocation, createProduct, signInAs } from './support/api';
+import { numberingChangedSevenWays } from './support/audit';
+import { saidOn } from './support/said';
 
 /**
  * Read-only, so there is nothing to drive. What is worth proving is that the
@@ -91,4 +93,47 @@ test('tells a Viewer they cannot read it, without pretending otherwise', async (
   await expect(
     page.getByText(/every change made in this organization/i),
   ).toHaveCount(0);
+});
+
+test('an entry with seven changes or more, Show all changes: the rest open in place, focus staying on the button, which reads Show fewer; Show fewer; at 320 px, nothing scrolls sideways', async ({
+  page,
+  freshOrg,
+}) => {
+  await numberingChangedSevenWays(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await page.goto('/audit');
+
+  const entry = page.getByRole('row', { name: /^Numbering changed/ });
+  const changes = entry.getByRole('list').getByRole('listitem');
+  // The first five, then the button for the rest.
+  await expect(changes).toHaveCount(5);
+  const all = entry.getByRole('button', {
+    name: saidOn('en', 'audit.changes.all', { count: 7 }),
+  });
+  await expect(all).toHaveAttribute('aria-expanded', 'false');
+
+  await all.click();
+  await expect(changes).toHaveCount(7);
+  const fewer = entry.getByRole('button', {
+    name: saidOn('en', 'audit.changes.fewer'),
+  });
+  await expect(fewer).toBeFocused();
+  await expect(fewer).toHaveAttribute('aria-expanded', 'true');
+
+  // Open at a narrow phone's width: every change wraps, the page does
+  // not scroll sideways.
+  await page.setViewportSize({ width: 320, height: 640 });
+  await expect(changes).toHaveCount(7);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const { scrollWidth, clientWidth } = document.documentElement;
+        return `${scrollWidth} of ${clientWidth}`;
+      }),
+    )
+    .toBe('320 of 320');
+
+  await fewer.click();
+  await expect(changes).toHaveCount(5);
+  await expect(all).toBeFocused();
 });

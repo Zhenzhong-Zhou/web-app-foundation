@@ -50,7 +50,7 @@ import {
 import { itemMatches, itemRank } from '../products/item-search';
 import { coverOf } from '../products/product-images';
 import { itemName, namesIn } from '../stock/item-name';
-import { lotMatches, lotRank } from '../stock/lot-search';
+import { formerCodeFound, lotMatches, lotRank } from '../stock/lot-search';
 
 /** At most this many of each kind (ADR-056). */
 export const LOOKUP_LIMIT = 5;
@@ -95,6 +95,12 @@ export interface LookupResult {
    * reads "Supplier's lot to add" (ADR-094, R5); null for other kinds.
    */
   isAssigned: boolean | null;
+  /**
+   * The former code a lot was found by, so its row reads "was {code}"
+   * (ADR-094 amended, R9); null where its code today matches too, for a
+   * lot found by neither, and for other kinds.
+   */
+  formerCode: string | null;
   /** An item's product, which is the page it opens. */
   productId: string | null;
   /** An item's product's cover (ADR-066); null for every other kind. */
@@ -174,6 +180,7 @@ const NONE = {
   expiry: sql<LotExpiry | null>`null::text`,
   supplierLot: sql<string | null>`null::text`,
   isAssigned: sql<boolean | null>`null::boolean`,
+  formerCode: sql<string | null>`null::text`,
   productId: sql<string | null>`null::uuid`,
   coverFileId: sql<string | null>`null::uuid`,
   type: sql<ProductType | null>`null::text`,
@@ -315,6 +322,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -376,6 +384,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -423,6 +432,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -455,7 +465,7 @@ export class LookupService {
               position: positionBy(
                 close
                   ? desc(closeness(lots.code, terms))
-                  : lotRank(lots, terms),
+                  : lotRank(lots, terms, organizationId),
                 desc(lots.id),
               ),
               id: lots.id,
@@ -469,6 +479,14 @@ export class LookupService {
               expiry: sql<LotExpiry | null>`${lots.expiry}`,
               supplierLot: sql<string | null>`${lots.supplierLot}`,
               isAssigned: sql<boolean | null>`${lots.isAssigned}`,
+              // Never for a close match, which reads today's code alone.
+              formerCode: close
+                ? NONE.formerCode
+                : formerCodeFound(
+                    { id: sql`lots.id`, code: sql`lots.code` },
+                    terms,
+                    organizationId,
+                  ),
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -485,13 +503,14 @@ export class LookupService {
               and(
                 eq(lots.organizationId, organizationId),
                 excluding(lots.id, exclude),
-                // Its code or its supplier's lot (ADR-094, R6); a typo's
-                // close match in its own code alone, as an item's is looked
-                // for in its SKU and base name alone, since the close pass
-                // is the costliest query here (ADR-051).
+                // Its code, its supplier's lot (ADR-094, R6) or a former
+                // code (amended, R10); a typo's close match in its own code
+                // today alone, as an item's is looked for in its SKU and
+                // base name alone, since the close pass is the costliest
+                // query here (ADR-051).
                 close
                   ? closeMatches(lots.code, terms)
-                  : lotMatches(lots, terms),
+                  : lotMatches(lots, terms, organizationId),
               ),
             )
             .orderBy(byPosition)
@@ -524,6 +543,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: products.id,
               // Its product's cover, as Products shows it (ADR-066).
               coverFileId: coverOf(),
@@ -576,6 +596,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -615,6 +636,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,
@@ -661,6 +683,7 @@ export class LookupService {
               expiry: NONE.expiry,
               supplierLot: NONE.supplierLot,
               isAssigned: NONE.isAssigned,
+              formerCode: NONE.formerCode,
               productId: NONE.productId,
               coverFileId: NONE.coverFileId,
               type: NONE.type,

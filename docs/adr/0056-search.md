@@ -463,3 +463,19 @@ own code (ADR-094). Both find it, matched the same way, in Stock's
 search, the Lot view, the top bar's lookup and Movements' find box; the
 supplier's lot has a trigram index led by the organization, as
 migration 0077's are, and joins ADR-051's timed reads.
+
+## Amendment (November 2026) — the top bar's close matches only when nothing matches, and a lot's former code (ADR-094's amendment, #654, #665)
+
+- **Exact matches alone, when there are any.** "Order of results"
+  listed close matches after the exact ones, each marked "close
+  match". The top bar now shows what matches as typed, alone; its
+  close matches only when nothing does, under one heading, "Close
+  matches", the rows no longer marked one by one. It is the rule
+  Movements' find box has had since ADR-093, so the two boxes that
+  read one answer read alike. The lookup's own answer is unchanged.
+- **A list cut at the box's edge says how many more are below**
+  (#618).
+- **A lot's former code is searched** as its code and its supplier's
+  lot are (ADR-094's amendment): matched as typed it is an exact
+  match, after the current code, with a trigram index led by the
+  organization, in ADR-051's timed reads.

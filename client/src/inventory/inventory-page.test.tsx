@@ -115,6 +115,7 @@ function pile(
     lotExpiry: expiresAt ? 'date' : 'none',
     lotIsAssigned: false,
     lotSupplierLot: null,
+    lotFormerCode: null,
     quantity: '10.0000',
     emptiedOn: null,
     issuedToRun: null,
@@ -2433,6 +2434,85 @@ describe('InventoryPage', () => {
         screen.getByRole('searchbox', { name: 'Search items, codes or lots' }),
       ).toHaveValue('d3');
       await expect.poll(() => asked.codes.at(-1)?.get('search')).toBe('d3');
+    });
+  });
+
+  // ADR-094 amended, R9: a corrected lot's latest former code, one grey
+  // line under its code; a lot never corrected as it was.
+  describe('a lot’s former code', () => {
+    const corrected = { ...pile('1', 'NN-2410-07', null, 'Shelf A') };
+    corrected.lotFormerCode = 'NN-24I0-07';
+
+    it('says it under the lot’s code on Stock’s lots', async () => {
+      const user = userEvent.setup();
+      answer();
+      server.use(
+        http.get('/api/v1/stock/by-code/variant-1/places', () =>
+          HttpResponse.json({
+            places: [
+              {
+                ...PLACES[1]!,
+                lots: [corrected, pile('2', 'NN-2412-01', null, 'Shelf A')],
+              },
+            ],
+          }),
+        ),
+      );
+      renderAt('/inventory', ['stock.view']);
+
+      await user.click(
+        await screen.findByRole('button', {
+          name: '2 lots: show where Vitamin D (60ct) is',
+        }),
+      );
+      const was = await screen.findByText('was NN-24I0-07');
+      expect(was.closest('td')).toHaveTextContent(
+        'LotNN-2410-07was NN-24I0-07',
+      );
+      expect(screen.getAllByText(/^was /)).toHaveLength(1);
+    });
+
+    it('says it under the lot’s code on the Lot view, on its table and on a phone’s card', async () => {
+      answer();
+      const row = (over: Partial<StockPile>) => ({
+        ...pile('1', 'NN-2410-07', null, 'Shelf A'),
+        productId: PRODUCT,
+        type: 'good',
+        coverFileId: null,
+        locationPath: [],
+        isAvailable: true,
+        places: 1,
+        ...over,
+      });
+      server.use(
+        http.get('/api/v1/stock/by-lot', () =>
+          HttpResponse.json({
+            entries: [
+              row({ lotFormerCode: 'NN-24I0-07' }),
+              row({ id: '2', lotId: 'lot-2', lotCode: 'NN-2412-01' }),
+            ],
+            nextCursor: null,
+          }),
+        ),
+      );
+      const { unmount } = renderAt('/inventory?group=lot', ['stock.view']);
+
+      const was = await screen.findByText('was NN-24I0-07');
+      expect(was.closest('td')).toHaveTextContent(/^NN-2410-07was NN-24I0-07/);
+      expect(screen.getAllByText(/^was /)).toHaveLength(1);
+      unmount();
+
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: /max-width/.test(query),
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }));
+      renderAt('/inventory?group=lot', ['stock.view']);
+      expect(
+        (await screen.findByText('was NN-24I0-07')).closest('li'),
+      ).toHaveTextContent('NN-2410-07');
+      vi.unstubAllGlobals();
     });
   });
 });

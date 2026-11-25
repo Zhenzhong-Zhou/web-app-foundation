@@ -127,7 +127,9 @@ export const stockValuations = pgTable(
      * What a row without a movement belongs to: `production_order` for a
      * run's close, `stock_valuation` for the row a correction corrects; for
      * the part of a late value a lot change carried, out of one pool and
-     * into the other, that change's row in (ADR-094, D5).
+     * into the other, that change's row in (ADR-094, D5). On a return's
+     * own row, `valuation_pool` and its pool, where that pool's average
+     * valued it for want of a cost it shipped at (#661; AT_POOL_AVERAGE).
      */
     referenceType: text('reference_type'),
     referenceId: uuid('reference_id'),

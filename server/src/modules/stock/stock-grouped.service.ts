@@ -61,6 +61,7 @@ import type {
   StockLotPage,
   StockPlace,
 } from './dto/stock-grouped-response.dto';
+import { latestFormerCode } from './former-codes';
 import { namesIn, productNameOrder } from './item-name';
 import { lotMatches } from './lot-search';
 import { openRunIssued } from './open-run';
@@ -143,9 +144,9 @@ function presentOf(
  * What narrows the codes whatever the quick filters: their presence, one
  * item, its type, its category with every category under it, and the
  * search, the item as every search matches it (ADR-056) or one of its
- * lots on hand by its code or its supplier's lot (ADR-094, R6), at the
- * place chosen when one is: the list keeps what is there (20a). Every
- * join names the organization (ADR-003).
+ * lots on hand by its code, its supplier's lot (ADR-094, R6) or a former
+ * code (amended, R10), at the place chosen when one is: the list keeps
+ * what is there (20a). Every join names the organization (ADR-003).
  */
 function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
   const org = sql`${organizationId}::uuid`;
@@ -172,8 +173,13 @@ function codesWhere(query: StockFiltersDto, organizationId: string): SQL {
             where sl.organization_id = ${org}
               and sl.quantity > 0
               and ${lotMatches(
-                { code: sql`lt.code`, supplierLot: sql`lt.supplier_lot` },
+                {
+                  id: sql`lt.id`,
+                  code: sql`lt.code`,
+                  supplierLot: sql`lt.supplier_lot`,
+                },
                 terms,
+                organizationId,
               )}
               ${
                 query.locationId
@@ -432,6 +438,7 @@ type PileRow = {
   lot_expiry: LotExpiry | null;
   lot_is_assigned: boolean | null;
   lot_supplier_lot: string | null;
+  lot_former_code: string | null;
   quantity: string;
   emptied_at: Date | string | null;
   issued_to_run: IssuedRun | null;
@@ -1277,6 +1284,9 @@ function pileColumns(organizationId: string, locale: Locale | null): SQL {
     ${lots.expiry} as lot_expiry,
     ${lots.isAssigned} as lot_is_assigned,
     ${lots.supplierLot} as lot_supplier_lot,
+    -- "was {code}" under the code (ADR-094 amended, R9), for the page's
+    -- piles alone.
+    ${latestFormerCode(sql`${stockLevels.lotId}`, organizationId)} as lot_former_code,
     ${quantity(sql`${stockLevels.quantity}`)} as quantity,
     -- An emptied pile's last change, the one that left none; its day is
     -- the organization's, worked out by dayIn (ADR-072).
@@ -1318,6 +1328,7 @@ function pileOf(row: PileRow, seesPlaces: boolean, timeZone: string) {
     lotExpiry: row.lot_expiry,
     lotIsAssigned: row.lot_is_assigned,
     lotSupplierLot: row.lot_supplier_lot,
+    lotFormerCode: row.lot_former_code,
     quantity: row.quantity,
     emptiedOn: row.emptied_at ? dayIn(timeZone, row.emptied_at) : null,
     issuedToRun: row.issued_to_run,

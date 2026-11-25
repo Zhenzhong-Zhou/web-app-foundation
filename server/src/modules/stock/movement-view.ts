@@ -36,6 +36,7 @@ import type {
   MovementRecipient,
   RecordedMovement,
 } from './dto/stock-response.dto';
+import { codeThen } from './former-codes';
 import { namesIn } from './item-name';
 import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
@@ -322,6 +323,19 @@ export async function movementPage(
       lotSupplierLot: lots.supplierLot,
       toLotId: movement.toLotId,
       toLotCode: toLot.code,
+      // The code each lot had when the row was made, where a correction
+      // changed it since (ADR-094 amended, M1a), for the page's rows
+      // alone: never in a count or a sort.
+      lotCodeThen: codeThen(
+        { id: sql`${movement.lotId}`, code: sql`${lots.code}` },
+        sql`${movement.createdAt}`,
+        organizationId,
+      ),
+      toLotCodeThen: codeThen(
+        { id: sql`${movement.toLotId}`, code: sql`${toLot.code}` },
+        sql`${movement.createdAt}`,
+        organizationId,
+      ),
       // Who, by name with their email (ADR-063). An anonymised account
       // keeps its row and its name, Deleted User, and its address is a
       // placeholder, which no one should read as theirs (ADR-012).
@@ -447,6 +461,8 @@ export async function movementPage(
         lotSupplierLot: row.lotSupplierLot,
         toLotId: row.toLotId,
         toLotCode: row.toLotCode,
+        lotCodeThen: row.lotCodeThen,
+        toLotCodeThen: row.toLotCodeThen,
         actorName: row.actorName,
         actorEmail: row.actorEmail,
         createdAt: row.createdAt,

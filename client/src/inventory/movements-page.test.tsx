@@ -544,6 +544,35 @@ describe('MovementsPage', () => {
     expect(cellUnder(row, 'Lot')).toHaveTextContent('NN-2410-07Expiry to add');
   });
 
+  // ADR-094 amended, M1a: a row from before its lot's code was corrected
+  // says the code the lot had then, as a changed item code reads.
+  it('says under a lot the code it had when the row was made, where it was corrected since', async () => {
+    const row = await rowFor(movement({ lotCodeThen: 'NN-24I0-07' }));
+
+    const lot = cellUnder(row, 'Lot')!;
+    // The code then under today's, before its expiry.
+    expect(lot).toHaveTextContent(/^NN-2410-07was NN-24I0-07Oct 31, 2027$/);
+    expect(within(lot).getByRole('link', { name: 'NN-2410-07' })).toBeVisible();
+  });
+
+  it('says it under each lot of a lot change that had another code then', async () => {
+    const row = await rowFor({
+      ...LOT_CHANGE,
+      lotCodeThen: 'LOT-0',
+      toLotCodeThen: 'LOT-8',
+    });
+
+    expect(cellUnder(row, 'Lot')).toHaveTextContent(
+      'LOT-Awas LOT-0→intoLOT-Bwas LOT-8',
+    );
+  });
+
+  it('says nothing more under a lot whose code is as it was', async () => {
+    const row = await rowFor(MOVEMENT);
+
+    expect(cellUnder(row, 'Lot')).not.toHaveTextContent('was');
+  });
+
   it('names who by name, their email beneath', async () => {
     const row = await rowFor(MOVEMENT);
 
@@ -679,6 +708,7 @@ describe('MovementsPage', () => {
       expiry: null,
       supplierLot: null,
       isAssigned: null,
+      formerCode: null,
       productId: null,
       coverFileId: null,
       type: null,
@@ -964,6 +994,40 @@ describe('MovementsPage', () => {
       expect(
         await screen.findByRole('button', {
           name: 'Remove filter: Lot: L-0001',
+        }),
+      ).toBeVisible();
+    });
+
+    // A lot is found by a code it had before its code was corrected
+    // (ADR-094 amended, R10, F3): typed whole, that lot alone.
+    it('offers a lot whose whole former code is typed alone, though another lot’s code starts with it', async () => {
+      const user = userEvent.setup();
+      answer([movement({ variantId: ITEM, lotId: LOT, lotCode: 'ASH-0601' })]);
+      found([
+        {
+          kind: 'lot',
+          results: [
+            result({ title: 'ASH-0601', formerCode: 'ASH-06O1' }),
+            result({ id: PARTNER, title: 'ASH-06O1-B' }),
+          ],
+        },
+      ]);
+      renderAt('/movements');
+
+      await user.type(
+        await screen.findByRole('combobox', { name: FIND }),
+        'ash-06o1',
+      );
+      // Saying the former code it was found by (ADR-094 amended, R9).
+      expect(await offered()).toEqual({
+        options: ['Lot ASH-0601 · was ASH-06O1 · Vitamin C 500 mg'],
+        headings: ['Lots'],
+      });
+
+      await user.click(screen.getByRole('option', { name: /^Lot ASH-0601/ }));
+      expect(
+        await screen.findByRole('button', {
+          name: 'Remove filter: Lot: ASH-0601',
         }),
       ).toBeVisible();
     });

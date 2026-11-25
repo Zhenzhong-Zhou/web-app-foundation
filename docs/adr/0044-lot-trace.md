@@ -75,3 +75,16 @@ Quantities per downstream batch stay deferred.
   first, as the code does it; this ADR had said both that and "the
   start of a code" (#308's 37). It reads a lot's own code and its
   supplier's lot alike.
+
+## Amendment (November 2026) — a lot found by its former code, and a recall that names the code on the boxes (ADR-094's amendment, #665)
+
+- **A lot's former codes find it.** When a code made here is corrected
+  (ADR-094), the code it had is kept, with when, by whom and why. The
+  lot search reads it as it reads the lot's own code and its supplier's
+  lot, through the one matcher, and a result found by it says "was
+  {code}".
+- **Who received it names the code on the boxes.** A shipment that
+  left before the correction reads "shipped as {code}", on the page
+  and in the export, with no column added: in a recall the customer is
+  told the code they can see. A recipient's row is split by the code
+  its stock left under, so each row names one code.

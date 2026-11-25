@@ -141,6 +141,15 @@ export class Movement {
    */
   toLotId!: string | null;
   toLotCode!: string | null;
+  /**
+   * The code the lot had when the row was made, where a correction
+   * changed it since: the row reads "was {code}" under it, as a changed
+   * item code does (ADR-094 amended, M1a). Null otherwise, and with no
+   * lot. The export writes today's code alone.
+   */
+  lotCodeThen!: string | null;
+  /** As `lotCodeThen`, for the lot a lot change puts the stock into. */
+  toLotCodeThen!: string | null;
   /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
   actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
@@ -301,11 +310,18 @@ export class Lot {
   isAssigned!: boolean;
   /** The supplier's own lot, as printed, for a code made here; else null. */
   supplierLot!: string | null;
+  /**
+   * Every code it had before Edit lot details corrected it, newest first,
+   * the codes alone (ADR-094 amended, R9, F2): the first is its "was"
+   * line, and the lot field refuses each for another lot as it is typed
+   * (R11). Empty for a lot never corrected.
+   */
+  formerCodes!: string[];
 }
 
 /**
- * A lot matched by any part of its code or its supplier's lot, the start
- * first (ADR-044, amended by ADR-094).
+ * A lot matched by any part of its code, its supplier's lot or a former
+ * code, the start first (ADR-044, amended by ADR-094).
  */
 export class LotMatch {
   id!: string;
@@ -322,4 +338,10 @@ export class LotMatch {
   /** True when the code was made here, not printed (ADR-094). */
   isAssigned!: boolean;
   sku!: string;
+  /**
+   * The former code it was found by, for "was {code}" (ADR-094 amended,
+   * R9): typed whole first, then the latest; null where its code today
+   * matches too, or none does.
+   */
+  formerCode!: string | null;
 }

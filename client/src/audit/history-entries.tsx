@@ -101,9 +101,12 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                 <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                   <Typography variant="body2">{entry.actionName}</Typography>
 
+                  {/* component="div": several changes are a list, which
+                    the default <p> cannot hold. */}
                   {entry.details.length > 0 && (
                     <Typography
                       variant="body2"
+                      component="div"
                       sx={{ color: 'text.secondary' }}
                     >
                       <AuditDetails details={entry.details} />

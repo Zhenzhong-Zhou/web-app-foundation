@@ -10,6 +10,7 @@ import { lots, productVariants } from '../src/database/schema';
 import {
   addMember,
   body,
+  correctLotCode,
   createE2eApp,
   createLocation,
   customRole,
@@ -36,6 +37,7 @@ interface CodeRow {
 interface Pile {
   id: string;
   lotCode: string | null;
+  lotFormerCode?: string | null;
   locationName: string | null;
   quantity: string;
   places?: number;
@@ -516,6 +518,73 @@ describe('Inventory, grouped (e2e)', () => {
       'VC-SOON BACK',
       'VC-SOON SHELF',
       `${made} BACK`,
+    ]);
+  });
+
+  // A lot is found by a code it had before Edit lot details corrected it
+  // (ADR-094 amended, R10), as by its own, at the place chosen alone; each
+  // pile says the latest, "was {code}" under its code (R9).
+  it('finds a code and a lot by a former code at the place chosen alone, each pile saying the latest (ADR-094 amended, R9, R10)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { vitc, shelf, back } = await world(alpha);
+    const [far] = await db
+      .select({ id: lots.id })
+      .from(lots)
+      .where(eq(lots.code, 'VC-FAR'));
+    await correctLotCode(alpha.agent, far.id, 'VC-0099');
+    await correctLotCode(alpha.agent, far.id, 'VC-0100');
+
+    const lotsAt = async (query: string) =>
+      body<{ entries: Pile[] }>(
+        await alpha.agent.get(`/v1/stock/by-lot?${query}`).expect(200),
+      ).entries.map((row) => [
+        row.lotCode,
+        row.lotFormerCode,
+        row.locationName,
+      ]);
+
+    // Stock by item, by either former code, held at SHELF alone.
+    expect(skus(await codes(alpha, '?search=vc-far'))).toEqual(['VITC']);
+    expect(
+      skus(await codes(alpha, `?search=VC-0099&locationId=${shelf}`)),
+    ).toEqual(['VITC']);
+    expect(
+      skus(await codes(alpha, `?search=VC-FAR&locationId=${back}`)),
+    ).toEqual([]);
+    // The Lot view, its rows and its count.
+    expect(await lotsAt('search=vc-far')).toEqual([
+      ['VC-0100', 'VC-0099', 'SHELF'],
+    ]);
+    expect(await lotsAt(`search=vc-far&locationId=${back}`)).toEqual([]);
+    expect(
+      body<{ total: number }>(
+        await alpha.agent
+          .get('/v1/stock/by-lot/counts?search=VC-FAR')
+          .expect(200),
+      ).total,
+    ).toBe(1);
+
+    // Every pile of a lot never corrected says none.
+    expect(
+      (await lotsAt('search=VC-')).map(([code, was]) => [code, was]),
+    ).toEqual([
+      ['VC-OLD', null],
+      ['VC-SOON', null],
+      ['VC-SOON', null],
+      ['VC-0100', 'VC-0099'],
+    ]);
+    const { places } = body<{ places: { lots: Pile[] }[] }>(
+      await alpha.agent.get(`/v1/stock/by-code/${vitc}/places`).expect(200),
+    );
+    expect(
+      places.flatMap((place) =>
+        place.lots.map((pile) => [pile.lotCode, pile.lotFormerCode]),
+      ),
+    ).toEqual([
+      ['VC-SOON', null],
+      ['VC-OLD', null],
+      ['VC-SOON', null],
+      ['VC-0100', 'VC-0099'],
     ]);
   });
 

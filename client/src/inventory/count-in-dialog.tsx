@@ -40,6 +40,7 @@ import {
   lotErrors,
   lotRequest,
   NO_LOT,
+  useFormerCodeRefusal,
   useItemLots,
 } from './lot-input';
 import { useLotMessage } from './lot-received';
@@ -195,7 +196,7 @@ export function CountInDialog({
     );
   }
 
-  const { submitting, error, errorCode, reset, submit } =
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
     useSubmit<RecordedMovementEnvelope>(async (result) => {
       said(result);
       onClose();
@@ -208,6 +209,12 @@ export function CountInDialog({
   useEffect(() => {
     if (taken) codeRef.current?.focus();
   }, [taken]);
+  // Another lot's former code (ADR-094 amended, R11), the same, with Use
+  // {code}.
+  const former = useFormerCodeRefusal(
+    { error, errorCode, errorDetails, reset },
+    codeRef,
+  );
 
   // A change clears a refusal about the values sent, as a fixed field
   // stops saying it is wrong.
@@ -300,7 +307,9 @@ export function CountInDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && !taken && <FormError message={error} />}
+            {error && !taken && !former.refused && (
+              <FormError message={error} />
+            )}
 
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage(
@@ -423,8 +432,19 @@ export function CountInDialog({
                 dayRef={dayRef}
                 errors={{
                   ...lotProblems,
-                  // A code the item has, said at the code (ADR-093's table).
-                  code: taken ? (error ?? undefined) : lotProblems.code,
+                  // A code the item has, or had, said at the code (ADR-093's
+                  // table; R11).
+                  code: taken
+                    ? (error ?? undefined)
+                    : (former.error ?? lotProblems.code),
+                }}
+                refusedFor={former.refusedFor}
+                // The lot that had the code is one of its lots: Use takes
+                // it so, what else was typed kept, focus on the choice.
+                onUse={(lot) => {
+                  setLotProblems({});
+                  change({ which: 'existing', lotId: lot.id });
+                  firstLot.current?.focus();
                 }}
               />
             )}

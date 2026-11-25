@@ -10,11 +10,13 @@ import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { LotSourceKind } from './dto/lot-trace-response.dto';
+import { codeThen } from './former-codes';
 import { itemName, namesIn } from './item-name';
-import { lotMatches, lotRank } from './lot-search';
+import { formerCodeFound, lotMatches, lotRank } from './lot-search';
 import { pathsOf } from './place-paths';
 import type { Tx } from './stock.service';
 import { usableInLot } from './usable-stock';
+import { shipmentsReversed } from './valuation';
 
 /**
  * How far genealogy is followed, in runs. Real recipes are two or three
@@ -138,12 +140,14 @@ export class LotTraceService {
   }
 
   /**
-   * Lots whose code or supplier's lot contains what was typed, across every
-   * product (ADR-044, amended by ADR-094: one rule, R6). A recall usually
-   * arrives as part of a code — the batch number or date people remember,
-   * "2609" from "FOC-2609-01", or the supplier's own lot off its letter —
-   * with no product attached, and the same code can exist for two
-   * products, so every match is returned with its SKU rather than guessing.
+   * Lots whose code, supplier's lot or a former code contains what was
+   * typed, across every product (ADR-044, amended by ADR-094: one rule,
+   * R6; a former code, R10), one found by a former code saying which. A
+   * recall usually arrives as part of a code — the batch number or date
+   * people remember, "2609" from "FOC-2609-01", or the supplier's own lot
+   * off its letter — with no product attached, and the same code can
+   * exist for two products, so every match is returned with its SKU
+   * rather than guessing.
    *
    * Exact, then the start of either code, then anywhere (lotRank), so
    * typing a prefix still puts the obvious match on top. % and _ are
@@ -162,20 +166,25 @@ export class LotTraceService {
   async search(code: string) {
     // Escaped and trimmed as every search is (ADR-056, common/search.ts).
     const terms = searchTerms(code);
-    const lot = { code: sql`l.code`, supplierLot: sql`l.supplier_lot` };
+    const lot = {
+      id: sql`l.id`,
+      code: sql`l.code`,
+      supplierLot: sql`l.supplier_lot`,
+    };
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (
         await tx.execute(sql`
           select l.id, l.code, l.expires_at, l.expiry, l.supplier_lot,
-            l.is_assigned, pv.sku
+            l.is_assigned, pv.sku,
+            ${formerCodeFound(lot, terms, organizationId)} as former_code
           from lots l
           join product_variants pv
             on pv.id = l.variant_id
             and pv.organization_id = ${organizationId}::uuid
           where l.organization_id = ${organizationId}::uuid
-            and ${lotMatches(lot, terms)}
-          order by ${lotRank(lot, terms)}, l.code, pv.sku
+            and ${lotMatches(lot, terms, organizationId)}
+          order by ${lotRank(lot, terms, organizationId)}, l.code, pv.sku
           limit 20
         `)
       ).rows as {
@@ -186,6 +195,7 @@ export class LotTraceService {
         supplier_lot: string | null;
         is_assigned: boolean;
         sku: string;
+        former_code: string | null;
       }[];
 
       return rows.map((row) => ({
@@ -196,6 +206,7 @@ export class LotTraceService {
         supplierLot: row.supplier_lot,
         isAssigned: row.is_assigned,
         sku: row.sku,
+        formerCode: row.former_code,
       }));
     });
   }
@@ -254,6 +265,25 @@ export class LotTraceService {
         t({ id: 'stock.suchLot', defaultMessage: 'No such lot' }),
       );
 
+    // Every code it had, newest first, with until when, who changed it and
+    // why (ADR-094 amended, R9); a person belongs to no organization, and
+    // one anonymised reads Deleted User (ADR-012).
+    const former = (
+      await tx.execute(sql`
+        select f.code, f.changed_at, u.name as changed_by_name, f.reason
+        from lot_former_codes f
+        join users u on u.id = f.changed_by
+        where f.organization_id = ${organizationId}::uuid
+          and f.lot_id = ${lotId}::uuid
+        order by f.changed_at desc
+      `)
+    ).rows as {
+      code: string;
+      changed_at: Date;
+      changed_by_name: string;
+      reason: string;
+    }[];
+
     return {
       id: row.id,
       code: row.code,
@@ -266,6 +296,12 @@ export class LotTraceService {
       sku: row.sku,
       unitOfMeasure: row.unit_of_measure,
       description: itemName(row.product_name, row.variant_name),
+      formerCodes: former.map((code) => ({
+        code: code.code,
+        changedAt: code.changed_at,
+        changedByName: code.changed_by_name,
+        reason: code.reason,
+      })),
     };
   }
 
@@ -588,6 +624,14 @@ export class LotTraceService {
    * left empty: a recall has to know how much went somewhere it cannot name.
    * A voided shipment is left out: it was recorded, but nothing left. Each
    * says the day it first left for them, as a recall letter needs.
+   *
+   * A row is one partner, order, lot and SKU, and the code the lot had
+   * when its stock left (ADR-094 amended, E3a, F1): the code on the
+   * boxes, so one order shipped before a correction and after it is two
+   * rows, adding up to what one said. A return's boxes carry the code
+   * they left under, so its row is by the time of the latest shipment of
+   * the lot on its order before it, as shipmentsReversed names them, not
+   * by its own (review 76); by its own where none shipped.
    */
   private async recipients(tx: Tx, organizationId: string, lotIds: string[]) {
     const ids = sql.join(
@@ -608,6 +652,7 @@ export class LotTraceService {
           l.code as lot_code,
           l.supplier_lot as lot_supplier_lot,
           l.is_assigned as lot_is_assigned,
+          m.code_then as lot_code_then,
           sm.sku,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'shipment'), 0)::text as shipped,
           coalesce(sum(sm.quantity) filter (where sm.reason = 'sample'), 0)::text as sampled,
@@ -616,6 +661,31 @@ export class LotTraceService {
         from stock_movements sm
         join lots l
           on l.id = sm.lot_id and l.organization_id = ${organizationId}::uuid
+        -- When a return's boxes left: the latest shipment of the lot on its
+        -- order before it (review 76).
+        left join lateral (
+          select max(ss.created_at) as at
+          from stock_movements ss
+          where ss.organization_id = ${organizationId}::uuid
+            and ss.lot_id = sm.lot_id
+            and ss.reason = 'shipment'
+            and ss.reference_type = 'shipment'
+            and ss.reference_id in (${shipmentsReversed(
+              organizationId,
+              sql`sm.reference_type`,
+              sql`sm.reference_id`,
+            )})
+            and ss.created_at <= sm.created_at
+        ) back on sm.reason = 'return'
+        -- The code on the boxes: the lot's code when the stock left, where
+        -- a correction changed it since (ADR-094 amended, E3a, F1).
+        cross join lateral (
+          select ${codeThen(
+            { id: sql`sm.lot_id`, code: sql`l.code` },
+            sql`coalesce(back.at, sm.created_at)`,
+            organizationId,
+          )} as code_then
+        ) m
         left join shipments s
           on sm.reference_type = 'shipment'
           and s.id = sm.reference_id
@@ -641,8 +711,9 @@ export class LotTraceService {
           -- shipment row to join.
           and s.voided_at is null
         group by p.id, p.name, o.id, o.number, o.reference, o.is_sample,
-          l.id, l.code, l.supplier_lot, l.is_assigned, sm.sku
-        order by p.name nulls last, o.number nulls last, l.code
+          l.id, l.code, l.supplier_lot, l.is_assigned, m.code_then, sm.sku
+        order by p.name nulls last, o.number nulls last, l.code,
+          min(sm.created_at)
       `)
     ).rows as {
       partner_id: string | null;
@@ -655,6 +726,7 @@ export class LotTraceService {
       lot_code: string;
       lot_supplier_lot: string | null;
       lot_is_assigned: boolean;
+      lot_code_then: string | null;
       sku: string;
       shipped: string;
       sampled: string;
@@ -675,6 +747,7 @@ export class LotTraceService {
       lotCode: row.lot_code,
       lotSupplierLot: row.lot_supplier_lot,
       lotIsAssigned: row.lot_is_assigned,
+      lotCodeThen: row.lot_code_then,
       sku: row.sku,
       shipped: row.shipped,
       sampled: row.sampled,

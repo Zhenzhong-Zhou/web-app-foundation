@@ -131,6 +131,13 @@ starts tracking lots, so its later receipts carry one: about one movement
 in 200 is a lot change. Its lot codes, `LV-…` and `LM-…`, are typed as
 printed.
 
+Former codes (ADR-094 amended, R8): the code made here of every second
+made-code lot, two in a row of each four, is corrected as the lot is
+received, to `LC-…`, saying why, so about one lot in 40 has a former code,
+with a supplier's lot as often as without; by position, no draw from the
+random source. The seed writes them as it goes, so a volume seeded before
+25 November has none until it is seeded again.
+
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
@@ -194,7 +201,10 @@ answers:
     stands, the movement list (first page, a deep page, one product, one
     product oldest first with each row's balance, one product's month
     with its period, and one shelf, the place of the Lot view's first
-    row: ADR-093), the invoice list, and a lot trace;
+    row: ADR-093), Stock value (ADR-094's amendment, R6: its first page
+    by the item, Show 50 more's next page, a find by part of a lot's
+    code, the sort by value and the totals beside them), the invoice
+    list, and a lot trace;
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item
     pickers by pinyin, both asked in Chinese; and Partners by part of a
@@ -300,7 +310,7 @@ back. It fails on a sequential scan of a table the planner estimates at
 lists one organization: every row is then that organization's, so a full
 scan is the right plan and says nothing about a busier database. A scan
 that is the decision rather than an accident goes in the allow-list in
-`perf/plans.ts`, with the reason; valuation's is the one there today. An
+`perf/plans.ts`, with the reason, as Stock value's and its export's are. An
 `exists` that a scan answers at its first match is not a reason: for an
 organization with no such row, the scan reads every organization's
 (#187). It fails, too, when a probe with a trigger takes longer than it:

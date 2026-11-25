@@ -24,7 +24,7 @@ import type { RowReturn } from '../lib/use-row-return';
 import { NameAndCode } from '../products/name-and-code';
 import { displayWithUnit } from '../products/units';
 import { EmptiedLine } from './emptied-line';
-import { SupplierLotLine } from './lot-marks';
+import { FormerCodeLine, SupplierLotLine } from './lot-marks';
 import { PlacePath } from './place-path';
 import { PileActions, type StockHandlers } from './stock-codes';
 import { withPlaceNumbers } from './stock-places';
@@ -132,6 +132,8 @@ export function StockLots({
                   ) : (
                     NO_VALUE
                   )}
+                  {/* Its latest former code (ADR-094 amended, R9). */}
+                  <FormerCodeLine code={row.lotFormerCode} />
                   <SupplierLotLine
                     isAssigned={row.lotIsAssigned}
                     supplierLot={row.lotSupplierLot}
@@ -211,6 +213,7 @@ export function StockLots({
                   <Box sx={{ flex: 1 }} />
                   <PileActions pile={row} handlers={handlers} />
                 </Stack>
+                <FormerCodeLine code={row.lotFormerCode} />
                 <SupplierLotLine
                   isAssigned={row.lotIsAssigned}
                   supplierLot={row.lotSupplierLot}

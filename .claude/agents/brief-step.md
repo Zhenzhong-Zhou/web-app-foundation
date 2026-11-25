@@ -105,9 +105,11 @@ where a step must act on it.
 ### Migrations ([engineering.md, "Process"][process]; [conventions.md][migrations])
 
 - `npm run migrate:new -- --name <name>` in `server/`, the hand-written
-  parts after a `--> statement-breakpoint`, then `npm run migrate:all`.
-  The generated SQL keeps `NULLS NOT DISTINCT`, and the journal's new
-  `when` is later than the one before.
+  parts after a `--> statement-breakpoint`, then `npm run migrate:all`,
+  then `DATABASE_URL=<its URL> npm run migrate` on each volume database
+  that exists, which `migrate:all` does not reach (engineering.md's
+  step 5). The generated SQL keeps `NULLS NOT DISTINCT`, and the
+  journal's new `when` is later than the one before.
 - Expand, then contract: a migration adds, and takes nothing away that the
   running release reads.
 - **A migration that adds to a list the code shares commits with that
@@ -138,9 +140,10 @@ where a step must act on it.
 
 - A new rule arrives with the test that proves it: failing before the
   change, passing after.
-- **A new or changed test runs before its commit,** as conventions.md's
-  "Tests" says: five times for a client unit test or a browser test
-  (`--repeat-each=5`), three times for a server end-to-end test.
+- **A new or changed test runs before its commit,** by the commands
+  conventions.md's "Tests" gives: a client unit test five times, a
+  browser test five times under the lock (`--repeat-each=5`), a server
+  end-to-end test three times.
 - **Manual checks go in the same commit as what they check:** a commit
   that changes what a person sees, or a rule they work under, updates
   `docs/manual-checks.md` itself. A brief that puts them in a later step

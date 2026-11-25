@@ -2,6 +2,7 @@ import { Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import { supplierLotPart } from './supplier-lot-part';
+import { wasCode } from './was-code';
 
 /**
  * A lot's supplier's lot under its code (ADR-094, R5): "Supplier's lot
@@ -25,6 +26,22 @@ export function SupplierLotLine({
   return (
     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {part}
+    </Typography>
+  );
+}
+
+/**
+ * A lot's latest former code, one grey line under its code: "was
+ * ASH-06O1", as a changed item code reads on Movements (ADR-094 amended,
+ * R9). A lot never corrected says nothing, never an empty "was —".
+ */
+export function FormerCodeLine({ code }: { code: string | null }) {
+  const intl = useIntl();
+  if (!code) return null;
+
+  return (
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      {wasCode(code, intl)}
     </Typography>
   );
 }

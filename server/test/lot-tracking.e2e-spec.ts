@@ -5,6 +5,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
+import { isUniqueViolation } from '../src/database/errors';
 import {
   lots,
   orderLines,
@@ -14,6 +15,7 @@ import {
   stockValuations,
   valuationPools,
 } from '../src/database/schema';
+import { each, expectCostToFollow } from './utils/cost-follows';
 import {
   addMember,
   body,
@@ -212,15 +214,18 @@ describe('Start tracking lots (e2e)', () => {
     return body<{ entries: MovementRow[] }>(res).entries;
   }
 
+  /** Stock value's pools, and their totals, a read of their own (R6). */
   async function valuation(w: World) {
-    const res = await w.org.agent.get('/v1/costs/valuation').expect(200);
-    return body<{
-      valuation: {
-        total: string;
-        provisional: boolean;
-        pools: { lotId: string | null; quantity: string; value: string }[];
-      };
-    }>(res).valuation;
+    const [page, totals] = await Promise.all([
+      w.org.agent.get('/v1/costs/valuation').expect(200),
+      w.org.agent.get('/v1/costs/valuation/totals').expect(200),
+    ]);
+    return {
+      ...body<{ total: string; provisional: boolean }>(totals),
+      ...body<{
+        entries: { lotId: string | null; quantity: string; value: string }[];
+      }>(page),
+    };
   }
 
   async function waiting(w: World) {
@@ -418,11 +423,11 @@ describe('Start tracking lots (e2e)', () => {
     const after = await valuation(w);
     expect(after.total).toBe(before.total);
     expect(after.provisional).toBe(true);
-    expect(after.pools).toEqual([
+    expect(after.entries).toEqual([
       expect.objectContaining({
         lotId: lot!.id,
         quantity: '150.0000',
-        value: before.pools[0].value,
+        value: before.entries[0].value,
       }),
     ]);
 
@@ -1255,6 +1260,78 @@ describe('Start tracking lots (e2e)', () => {
       ]);
     });
 
+    // The amendment's R12 (#669's 78): one start lot a code, two writes at
+    // once included, the second finding the first's.
+    it('makes one start lot for two returns at once, each the first of its code back from before (ADR-094 amended, R12)', async () => {
+      const w = await world();
+      await buy(w, '10', '2.00', w.main);
+      const sales = [
+        await order(w.org.agent, 'sale', w.customer, w.code, '5'),
+        await order(w.org.agent, 'sale', w.customer, w.code, '5'),
+      ];
+      for (const sale of sales) await shipOut(w, sale, w.main, '5');
+      expect(await start(w)).toEqual({ lot: null });
+
+      await Promise.all(
+        sales.map((sale) =>
+          giveBack(w, sale.id, {
+            toLocationId: w.main,
+            lines: [{ lineId: sale.lineId, quantity: '2' }],
+          }).expect(201),
+        ),
+      );
+
+      const made = await db
+        .select({ id: lots.id, note: lots.note })
+        .from(lots)
+        .where(eq(lots.variantId, w.code));
+      expect(made.map((lot) => lot.note)).toEqual(['tracking_started']);
+      expect(await poolOf(db, w.code, made[0].id)).toMatchObject({
+        quantity: '4.0000',
+        value: '8.000000',
+      });
+    });
+
+    // R12: the partial unique index lots_org_variant_start_lot_key holds it
+    // whatever writes the table.
+    it('refuses a second start lot for a code, two written at once straight to the table (ADR-094 amended, R12)', async () => {
+      const w = await world();
+      expect(await start(w)).toEqual({ lot: null });
+      const write = (code: string) =>
+        db.transaction(async (tx) => {
+          await tx.insert(lots).values({
+            organizationId: w.org.organizationId,
+            variantId: w.code,
+            code,
+            expiry: 'unknown',
+            isAssigned: true,
+            note: 'tracking_started',
+          });
+          // Held open a moment, so the other's insert meets this one
+          // before it commits; either order ends the same.
+          await tx.execute(sql`select pg_sleep(0.2)`);
+        });
+
+      const both = await Promise.allSettled([
+        write('L-START-1'),
+        write('L-START-2'),
+      ]);
+
+      const refused = both.filter(
+        (each): each is PromiseRejectedResult => each.status === 'rejected',
+      );
+      expect(refused).toHaveLength(1);
+      expect(
+        isUniqueViolation(refused[0].reason, 'lots_org_variant_start_lot_key'),
+      ).toBe(true);
+      expect(
+        await db
+          .select({ note: lots.note })
+          .from(lots)
+          .where(eq(lots.variantId, w.code)),
+      ).toEqual([{ note: 'tracking_started' }]);
+    });
+
     it('carries a cost given later to stock back from before into its lot, which takes none by hand (Q3a, D5)', async () => {
       const w = await world();
       // Received with no price, then all of it sold at nothing.
@@ -1313,6 +1390,59 @@ describe('Start tracking lots (e2e)', () => {
         value: '4.000000',
       });
       expect(await waiting(w)).toEqual([]);
+      await expectCostToFollow(db, {
+        variantId: w.code,
+        change: '10.000000',
+        most: each('1.00'),
+        answer: cost,
+      });
+    });
+
+    it('brings back a return’s share of a cost given later where stock was on hand at the start, its history in the start lot (F9, review 74)', async () => {
+      const w = await world();
+      // 10 received with no price, 6 sold and shipped, tracking started on
+      // the 4 left: the receipt and the shipment now in the start lot.
+      await receive(w.org.agent, w.code, w.main, '10');
+      const [receipt] = await waiting(w);
+      const sale = await order(w.org.agent, 'sale', w.customer, w.code, '6');
+      await shipOut(w, sale, w.main, '6');
+      const { lot } = await start(w);
+
+      // 3 of the 6 back, with no lot as they left, then into the start lot.
+      await giveBack(w, sale.id, {
+        toLocationId: w.main,
+        lines: [{ lineId: sale.lineId, quantity: '3' }],
+      }).expect(201);
+
+      // Costed at 10.00: 7 of the 10 are in the lot, 3 gone for good.
+      const { cost } = body<{
+        cost: {
+          held: string;
+          issued: string;
+          followed: { value: string }[];
+        };
+      }>(
+        await w.org.agent
+          .put(`/v1/costs/valuations/${receipt.id}`)
+          .send({ unitPrice: '10.00', currency: 'CAD' })
+          .expect(200),
+      );
+      expect(cost).toMatchObject({
+        held: '70.000000',
+        issued: '30.000000',
+        followed: [],
+      });
+      expect(await poolOf(db, w.code, lot!.id)).toMatchObject({
+        quantity: '7.0000',
+        value: '70.000000',
+      });
+      expect(await waiting(w)).toEqual([]);
+      await expectCostToFollow(db, {
+        variantId: w.code,
+        change: '100.000000',
+        most: each('10.00'),
+        answer: cost,
+      });
     });
   });
 

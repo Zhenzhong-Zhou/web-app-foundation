@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
 import { createIntl, IntlProvider } from 'react-intl';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Lot, StockCodePlaces } from '../api/types.gen';
 import zh from '../locales/zh-Hans.json';
@@ -13,6 +13,7 @@ import {
   lotErrors,
   type LotInput,
   lotRequest,
+  type LotToUse,
   NO_LOT,
   useItemLots,
 } from './lot-input';
@@ -25,6 +26,7 @@ const KNOWN: Lot[] = [
     expiry: 'date',
     isAssigned: false,
     supplierLot: null,
+    formerCodes: [],
   },
   {
     id: 'lot-2',
@@ -33,20 +35,29 @@ const KNOWN: Lot[] = [
     expiry: 'none',
     isAssigned: true,
     supplierLot: null,
+    formerCodes: [],
   },
 ];
 
 const intl = createIntl({ locale: 'en' });
+
+/** L2024-A, whose code was L2O24-A until corrected (ADR-094 amended). */
+const CORRECTED: Lot[] = [{ ...KNOWN[0], formerCodes: ['L2O24-A'] }, KNOWN[1]];
 
 /** Holds the value the way a dialog's form does, its lots read. */
 function Harness({
   initial = NO_LOT,
   mustBeNew = false,
   onValue,
+  refused,
+  onUse,
 }: {
   initial?: LotInput;
   mustBeNew?: boolean;
   onValue?: (value: LotInput) => void;
+  /** The server's refusal of a former code: its words and its lot. */
+  refused?: { message: string; lot: LotToUse };
+  onUse?: (lot: LotToUse) => void;
 }) {
   const [value, setValue] = useState(initial);
   const { lots, known } = useItemLots('variant-lotted');
@@ -61,6 +72,9 @@ function Harness({
       mustBeNew={mustBeNew}
       value={value}
       onChange={setValue}
+      errors={refused ? { code: refused.message } : {}}
+      refusedFor={refused?.lot}
+      onUse={onUse}
     />
   );
 }
@@ -125,6 +139,7 @@ describe('LotFields', () => {
               lotExpiry: 'date',
               lotIsAssigned: false,
               lotSupplierLot: null,
+              lotFormerCode: null,
               quantity: '120.0000',
               emptiedOn: null,
               issuedToRun: null,
@@ -373,6 +388,117 @@ describe('LotFields', () => {
       'Already one of its lots. Choose One of its lots for it, or type another code.',
     );
     expect(expires()).toBeVisible();
+  });
+});
+
+// ADR-094 amended, R11, 4a: a code is never given to a second lot.
+describe('LotFields, another lot’s former code', () => {
+  it('refuses it while it is typed, naming the lot that had it; Use {code} takes that lot, focus in the field', async () => {
+    knownLots(CORRECTED);
+    server.use(
+      http.get('/api/v1/stock/by-code/variant-lotted/places', () =>
+        HttpResponse.json({ places: [] }),
+      ),
+    );
+    const user = userEvent.setup();
+    let value = NO_LOT;
+    render(
+      <Harness
+        onValue={(next) => {
+          value = next;
+        }}
+      />,
+    );
+    await screen.findByRole('radio', { name: 'On a date', checked: true });
+
+    // Typed from an old label, in lower case.
+    await user.type(code(), 'l2o24-a');
+
+    expect(code()).toHaveAccessibleDescription(
+      'L2O24-A was the code of lot L2024-A. A code is never given to a second lot. Type another code.',
+    );
+    expect(code()).toBeInvalid();
+    expect(lotErrors(value, CORRECTED, intl)).toEqual({
+      code: 'L2O24-A was the code of lot L2024-A. A code is never given to a second lot. Type another code.',
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Use L2024-A' }));
+
+    expect(code()).toHaveValue('L2024-A');
+    expect(code()).toHaveFocus();
+    expect(code()).toBeValid();
+    await waitFor(() =>
+      expect(code()).toHaveAccessibleDescription(
+        /^An existing lot\. This adds to it\./,
+      ),
+    );
+    expect(
+      screen.queryByRole('button', { name: /^Use / }),
+    ).not.toBeInTheDocument();
+    expect(lotRequest(value, CORRECTED)).toEqual({ code: 'L2024-A' });
+  });
+
+  it('lets a lot’s own former code name it, where it took the code back', () => {
+    const back: Lot[] = [{ ...KNOWN[0], formerCodes: ['L2024-Z', 'L2024-A'] }];
+    const typed = { ...NO_LOT, code: 'L2024-A' };
+
+    expect(lotErrors(typed, back, intl)).toEqual({});
+    expect(lotRequest(typed, back)).toEqual({ code: 'L2024-A' });
+  });
+
+  it('says nothing of a former code for a code made for us', () => {
+    expect(
+      lotErrors(
+        { ...NO_LOT, made: true, code: 'L2O24-A', expiry: 'none' },
+        CORRECTED,
+        intl,
+      ),
+    ).toEqual({});
+  });
+
+  it('offers Use {code} for the lot the server named, its refusal at the field, and hands the lot to a dialog that takes it otherwise', async () => {
+    knownLots([]);
+    const user = userEvent.setup();
+    const onUse = vi.fn();
+    render(
+      <Harness
+        initial={{ ...NO_LOT, code: 'L2O24-A' }}
+        refused={{
+          message:
+            'L2O24-A was the code of lot L2024-A until Nov 24, 2026. A code is never given to a second lot. Type another code.',
+          lot: { id: 'lot-1', code: 'L2024-A' },
+        }}
+        onUse={onUse}
+      />,
+    );
+
+    expect(code()).toHaveAccessibleDescription(
+      'L2O24-A was the code of lot L2024-A until Nov 24, 2026. A code is never given to a second lot. Type another code.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Use L2024-A' }));
+
+    expect(onUse).toHaveBeenCalledWith({ id: 'lot-1', code: 'L2024-A' });
+  });
+
+  it('says it in Chinese, 原编码', async () => {
+    knownLots(CORRECTED);
+    const user = userEvent.setup();
+    render(
+      <IntlProvider locale="zh-Hans" messages={zh} defaultLocale="en">
+        <Harness />
+      </IntlProvider>,
+    );
+    const typed = await screen.findByRole('combobox', { name: '批号' });
+    await screen.findByRole('radio', { name: '指定日期', checked: true });
+
+    await user.type(typed, 'L2O24-A');
+
+    expect(typed).toHaveAccessibleDescription(
+      'L2O24-A 是批次 L2024-A 的原编码。同一编码不会给第二个批次。请填写其他编码。',
+    );
+    expect(
+      screen.getByRole('button', { name: '使用 L2024-A' }),
+    ).toBeInTheDocument();
   });
 });
 

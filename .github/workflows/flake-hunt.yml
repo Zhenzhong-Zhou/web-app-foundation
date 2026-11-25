@@ -3,7 +3,8 @@ name: Flake hunt
 # Main's suites, run again and again, so a test that fails one run in a few
 # shows up as a name rather than as a pull request someone re-runs
 # (conventions.md, Tests). The client's unit tests run five times and the
-# server's end-to-end suite three, through server/scripts/e2e-flake-hunt.sh.
+# server's end-to-end suite three, through server/scripts/e2e-flake-hunt.sh;
+# then the generated test of a late cost once more, on a new seed.
 # Weekly, and by hand: Actions → Flake hunt → Run workflow.
 #
 # A failure in any run turns the run red and names the tests in its summary.
@@ -168,3 +169,14 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           exit "$status"
+
+      # The generated test of a late cost (cost-follows.e2e-spec.ts, ADR-094's
+      # amendment, R2) on a new seed and 1,000 runs, the suite's 50 on a fixed
+      # one. The seed is in the summary: COST_FOLLOWS_SEED=<seed> runs the same
+      # cases again.
+      - name: A late cost over generated orders, a new seed
+        if: ${{ !cancelled() }}
+        run: |
+          seed=$(( $(date +%s) % 2147483647 ))
+          echo "## A late cost over generated orders: seed $seed, 1,000 runs" >> "$GITHUB_STEP_SUMMARY"
+          COST_FOLLOWS_SEED="$seed" COST_FOLLOWS_RUNS=1000 npm run test:e2e -- test/cost-follows.e2e-spec.ts

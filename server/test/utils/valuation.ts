@@ -124,6 +124,52 @@ export async function buy(
   return body<{ movement: { id: string } }>(res).movement.id;
 }
 
+/**
+ * A sale of one item, confirmed and shipped from the shelf: from one lot
+ * when given, with no lot otherwise. Its order and its shipment, for a
+ * return or a void.
+ */
+export async function sellAndShip(
+  s: Stocked & { customer: string },
+  variantId: string,
+  quantity: string,
+  lotId?: string,
+): Promise<{ order: OrderResponse; shipmentId: string }> {
+  const order = body<{ order: OrderResponse }>(
+    await s.agent
+      .post('/v1/orders')
+      .send({
+        partnerId: s.customer,
+        direction: 'sale',
+        lines: [{ variantId, quantityOrdered: quantity, ...cad('10') }],
+      })
+      .expect(201),
+  ).order;
+
+  await s.agent
+    .patch(`/v1/orders/${order.id}`)
+    .send({ status: 'confirmed' })
+    .expect(204);
+
+  const shipment = body<{ shipment: { id: string } }>(
+    await s.agent
+      .post(`/v1/orders/${order.id}/shipments`)
+      .send({
+        fromLocationId: s.shelf,
+        lines: [
+          {
+            lineId: order.lines[0].id,
+            quantity,
+            ...(lotId && { lots: [{ lotId, quantity }] }),
+          },
+        ],
+      })
+      .expect(201),
+  ).shipment;
+
+  return { order, shipmentId: shipment.id };
+}
+
 /** A movement through the stock endpoint, by hand. */
 export async function move(s: Stocked, payload: Record<string, unknown>) {
   const res = await s.agent

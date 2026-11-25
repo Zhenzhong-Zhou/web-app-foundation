@@ -85,14 +85,42 @@ const EVERY_PART = { places: true, orders: true, runs: true, partners: true };
  */
 const ALLOWED: { probe: string; table: string; reason: string }[] = [
   ...['valuation_pools', 'lots', 'product_variants'].map((table) => ({
-    probe: 'valuation',
+    probe: 'valuation export',
     table,
     reason:
-      'A valuation is every pool the organization holds, so reading them ' +
+      'The export is every pool the organization holds, so reading them ' +
       'all is the report. Each join carries the organization, so a busier ' +
-      'database reads no other tenant; an export, not a page, is the answer ' +
-      'if one organization outgrows a screen.',
+      'database reads no other tenant; the screen reads a page (ADR-094’s ' +
+      'amendment, R6).',
   })),
+  ...[
+    'valuation',
+    'valuation: a next page',
+    'valuation: a search',
+    'valuation: by value',
+  ].flatMap((probe) =>
+    ['valuation_pools', 'lots', 'product_variants'].map((table) => ({
+      probe,
+      table,
+      reason:
+        'Stock value’s page is sorted from every pool the find keeps, by ' +
+        'a figure or a name worked out, not kept, so it reads them all, ' +
+        'its names once an item; each join carries the organization, so a ' +
+        'busier database reads no other tenant (ADR-094’s amendment, R6).',
+    })),
+  ),
+  ...['valuation totals', 'valuation totals: a search'].flatMap((probe) =>
+    ['valuation_pools', 'lots', 'product_variants'].map((table) => ({
+      probe,
+      table,
+      reason:
+        'Stock value’s total, its counts and whether any of it is ' +
+        'provisional speak for every pool, whatever the find, so the ' +
+        'totals read them all, once for a find and never for a page; ' +
+        'each join carries the organization, so a busier database reads ' +
+        'no other tenant (ADR-094’s amendment, R6).',
+    })),
+  ),
   {
     probe: 'orders: purchases partly received',
     table: 'partners',
@@ -263,6 +291,23 @@ async function buildProbes(
     20,
   );
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
+  // A lot's whole code, as Stock value's find is given it; and its first
+  // page's cursor, as Show 50 more sends it.
+  const valuationLot = shelf.lotCode ?? '';
+  // A lot's former code (ADR-094 amended, R10), as the volume seed gives
+  // some lots one; with none yet, the shelf's own lot code, which reads
+  // the same arms: its code, its supplier's lot and the former codes.
+  const {
+    rows: [former],
+  } = await app
+    .get<Pool>(PG_POOL)
+    .query<{ code: string }>(
+      'select code from lot_former_codes where organization_id = $1 order by changed_at desc limit 1',
+      [org.organizationId],
+    );
+  const formerCode = former?.code ?? valuationLot;
+  const { nextCursor: valuationNext } = await costs.valuation({}, 'zh-Hans');
+  if (!valuationNext) throw new Error('One page of Stock value: seed again.');
   // A manifest written before the team (ADR-081) names nobody, and the
   // access probe would then send nothing and drop out without a word.
   if (!org.threeRoleMembershipId) {
@@ -331,7 +376,7 @@ async function buildProbes(
     { name: 'stock by code', run: () => grouped.byCode({}, 'en') },
     {
       name: 'stock by code: search',
-      run: () => grouped.byCode({ search: 'G-001' }, 'en'),
+      run: () => grouped.byCode({ search: 'LV-00001' }, 'en'),
     },
     {
       name: 'stock by code: one shelf',
@@ -500,6 +545,13 @@ async function buildProbes(
       name: 'lot search: a supplier’s lot',
       run: () => traces.search('SUP-0001'),
     },
+    // And by a former code (ADR-094 amended, R10), through
+    // lot_former_codes_code_trgm_idx, led by the organization, the hit
+    // saying which by lot_former_codes_lot_idx.
+    {
+      name: 'lot search: a former code',
+      run: () => traces.search(formerCode),
+    },
     // Search (ADR-056): served by the trigram indexes for three characters
     // or more, so no allowance here; a sequential scan of a large table is a
     // failure like any other.
@@ -510,6 +562,10 @@ async function buildProbes(
     {
       name: 'lookup: code',
       run: () => lookups.lookup('LV-00001', EVERY_PERMISSION, 'en'),
+    },
+    {
+      name: 'lookup: a former code',
+      run: () => lookups.lookup(formerCode, EVERY_PERMISSION, 'en'),
     },
     {
       name: 'lookup: name',
@@ -607,7 +663,29 @@ async function buildProbes(
     },
     // Add's picker marks the items with a point (#538).
     { name: 'reorder points: items', run: () => reorder.items() },
-    { name: 'valuation', run: () => costs.stockValuation() },
+    // Stock value a page at a time (ADR-094's amendment, R6): the first
+    // page as it opens, Show 50 more's next page, a find by a lot's code,
+    // and the sort by value, the largest first; the totals beside them,
+    // whole and for the find; the export still reads every pool.
+    { name: 'valuation', run: () => costs.valuation({}, 'zh-Hans') },
+    {
+      name: 'valuation: a next page',
+      run: () => costs.valuation({ cursor: valuationNext }, 'zh-Hans'),
+    },
+    {
+      name: 'valuation: a search',
+      run: () => costs.valuation({ search: valuationLot }, 'zh-Hans'),
+    },
+    {
+      name: 'valuation: by value',
+      run: () => costs.valuation({ sort: '-value' }, 'zh-Hans'),
+    },
+    { name: 'valuation totals', run: () => costs.valuationTotals() },
+    {
+      name: 'valuation count: a search',
+      run: () => costs.valuationCount({ search: valuationLot }),
+    },
+    { name: 'valuation export', run: () => costs.everyPool() },
     // Stock value's Waiting for a cost, each row with its item's names and
     // cover since 3fb4b3e5 (review 74), in Chinese as a reader there sees it.
     {

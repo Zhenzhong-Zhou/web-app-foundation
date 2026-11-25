@@ -4,7 +4,7 @@ import { t } from '../../i18n/translate';
 import type { CostsService } from './costs.service';
 
 /**
- * A pool as stockValuation() returns it, its raw row's values named, with
+ * A pool as everyPool() returns it, its raw row's values named, with
  * the valuation's currency beside it.
  */
 interface Pool {
@@ -20,12 +20,27 @@ interface Pool {
 
 /** The valuation's pools, each with the currency, for the columns below. */
 export function poolsOf(
-  valuation: Awaited<ReturnType<CostsService['stockValuation']>>,
+  valuation: Awaited<ReturnType<CostsService['everyPool']>>,
 ): Pool[] {
   return valuation.pools.map((pool) => ({
     ...(pool as Omit<Pool, 'currency'>),
     currency: valuation.currency,
   }));
+}
+
+/**
+ * A provisional pool worth nothing, every unit of it waiting, has no unit
+ * cost: 0.00 would read as a price, so its cell is empty, its Value and
+ * Provisional as ever. Its value is read for a digit other than zero, as
+ * this module's `EXCHANGE_RATE` reads a rate above zero and invoices'
+ * `chargesTax` a tax, never as a float (ADR-025). The page says "Waits for
+ * a cost" in the same pool's place, `waitsForCost` in
+ * client/src/costs/stock-value-page.tsx; the rule is docs/rules/stock.md's,
+ * under Stock value: "A provisional pool worth nothing says “Waits for a
+ * cost” in place of its unit cost".
+ */
+function unitCostOf(row: Pool): string | null {
+  return row.provisional && !/[1-9]/.test(row.value) ? null : row.unitCost;
 }
 
 /**
@@ -39,7 +54,7 @@ export const VALUATION_COLUMNS: ExportColumn<Pool>[] = [
   asQuantity(HEADERS.quantity, (row) => row.quantity),
   asMoney(
     t({ id: 'exports.column.unitCost', defaultMessage: 'Unit cost' }),
-    (row) => row.unitCost,
+    unitCostOf,
     (row) => row.currency,
   ),
   asMoney(

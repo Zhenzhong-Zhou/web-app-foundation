@@ -97,13 +97,16 @@ function filtersOf(
     scope.push(gt(stockLevels.quantity, '0'));
   }
 
-  // The item (SKU, names in every language, pinyin) or the lot's code or
-  // supplier's lot, matched as every search in the app matches (ADR-056,
-  // common/search.ts; ADR-094, R6).
+  // The item (SKU, names in every language, pinyin) or the lot's code,
+  // supplier's lot or a former code, matched as every search in the app
+  // matches (ADR-056, common/search.ts; ADR-094, R6, and amended, R10).
   if (query.search) {
     const terms = searchTerms(query.search);
     scope.push(
-      or(itemMatches(terms, organizationId), lotMatches(lots, terms))!,
+      or(
+        itemMatches(terms, organizationId),
+        lotMatches(lots, terms, organizationId),
+      )!,
     );
   }
 
@@ -146,7 +149,7 @@ export function quickFiltersOf(
      * The same pool as a waiting cost row: its variant, and its lot or none.
      *
      * The waiting pools are worked out once, as a set, as the valuation's are
-     * (CostsService.stockValuation). As an EXISTS per stock row it read every
+     * (CostsService.everyPool). As an EXISTS per stock row it read every
      * row the organization holds to find the few waiting, twice on each Home,
      * for the costs card's count and its rows (#276). MATERIALIZED keeps
      * Postgres from folding the set back into that lookup, and the nil uuid

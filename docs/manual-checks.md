@@ -155,6 +155,19 @@ supplier carrying its supplier's lot **Hx-2609** (MC-909); and a receipt of
 each other reason with no order, **K2-2601** returned by Northside Pharmacy
 and **K2-2610** under other, with its note.
 
+**B12-60CT**, vitamin B12, holds a lot whose code was corrected and two
+returns (ADR-094 amended, R8, R16): **B12-2609**, 150 bought on
+**PO-DEMO-16** into a code the lot series made, ending -3, 40 of it
+shipped to **Northside Pharmacy** on **SO-DEMO-13** under that code, then
+the code corrected to B12-2609, saying why, and 20 more shipped under the
+new one, so its page reads "was L-2026-…-3", its recall list names
+Northside twice, one row "shipped as" the old code, and Stock finds it by
+either code; 5 "Returned" into B12-2609 with no order, which landed at
+its lot's average, 4.20, and reads "Received, at the lot's average" in its
+cost history (MC-806); and **B12-2610**, 20 opening stock with no price
+and 2 of them "Returned" by Harbour Health, both waiting for a cost on
+Stock value, the return taking one (MC-806).
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -638,7 +651,7 @@ a second organization.
   and Expires is gone, the lot's own kept. Type `K2-9999`: "A new
   lot.", Expires back; On a date asks The day it expires. Press Make a
   code for us: Lot number reads "Made when you save, like
-  L-2026-…-3", today's next code from Settings' lot series, "Our own
+  L-2026-…-4", today's next code from Settings' lot series, "Our own
   code. Add the supplier's lot when you have it." under it, Supplier's
   lot shows, and Expires moves to Not known yet, saying the lot is
   marked "Expiry to add" and still usable; a choice you made first
@@ -758,7 +771,8 @@ a second organization.
   of On a date (its day under it), Not known yet or Doesn't expire; move
   it between the three and save: Stock reads the new one, "Expiry to
   add" for Not known yet. A lot made here offers its code and Supplier's
-  lot; emptied, it reads "Supplier's lot to add" again. A printed code
+  lot; emptied, it reads "Supplier's lot to add" again. In 中文 the code
+  of a lot made here reads 批次编码, a printed one 批号. A printed code
   is greyed, and the Owner reads under it to tick "We made this code up;
   nothing printed it", whose tick lets the code be corrected and the
   supplier's lot added in the same save; the Activity log then reads
@@ -768,9 +782,15 @@ a second organization.
   from Open the lot or Trace a lot, has Edit lot details… beside its
   title, saying "This changes the lot everywhere it is."; saved, the
   page reads the lot again. A Viewer sees no such button. Correct a code
-  made here, then open its Lot updated entry in the Activity log: it
-  names the item's code and the lot, and reads "Lot code: OLD → NEW",
-  both codes; a save of the expiry alone reads the expiry alone.
+  made here: "Why is the code changing?" shows under it, and only once
+  the code differs; put the code back and it goes. Save with it empty:
+  "Say why the code is changing." at it, focus there, nothing saved.
+  Saved with a reason, the message reads "Lot NEW saved. It was OLD.",
+  with Open the lot, which the lot's own page does not offer. Then open
+  its Lot updated entry in the Activity log: it names the item's code
+  and the lot, and reads "Lot code: OLD → NEW", both codes, and not the
+  reason; a save of the expiry alone reads the expiry alone and asks no
+  reason. In 中文 为什么改编码？
 - **MC-330** *(ADR-094, R5, R9)* A lot's marks and Details to add. On
   Stock, a lot whose expiry is not known yet reads "Expiry to add" where
   its expiry shows, and a lot made here with no supplier's lot reads
@@ -825,6 +845,30 @@ a second organization.
   to: the partner follows the reason, "Received: returned · from
   Northside Pharmacy", the name a link; a partner is not a place. In 中文
   期初库存, 客户, 其他, 收货：退回 · 来自 Northside Pharmacy.
+- **MC-334** *(ADR-094 amended, R8, R11)* A lot's former code is never
+  another lot's. As the demo Owner, correct the code of a lot made here
+  in Edit lot details, saying why: it reads the new code, and the old
+  one is its former code. For the same item, type the old code in
+  Receive stock's Lot number: as it is typed the field turns red and
+  says "… was the code of lot …. A code is never given to a second
+  lot. Type another code.", naming the lot by its code now, with Use
+  …; Receive anyway is
+  refused at the field, focus there, nothing received. Use … puts that
+  lot's code in the field, "An existing lot. This adds to it.", the
+  quantity and place kept. The same in an order's Receive and Move to
+  another lot…, whose Use moves the stock into that lot, and in Count it
+  in…'s new lot, whose Use chooses One of its lots with that lot. Where
+  the dialog was opened before the correction, Receive is refused by
+  the server at the field, "… until …", the day it was corrected, with
+  Use … all the same. A run's Record output says it under Batch number,
+  and Edit lot details renaming another lot of the item to it under Lot
+  number, each with no button; renamed to another lot's code now, it
+  says "… already exists for this item. Type another code." The lot
+  itself takes its old code back.
+  Another item receives a lot of that code. Make a code for us never
+  makes a former code again, and Organization › Documents › Lot codes
+  refuses setting Next back to give one. In 中文 … 是批次 … 的原编码，
+  …起不再使用。…请填写其他编码。, 使用 ….
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -1277,10 +1321,28 @@ a second organization.
   price: Waiting for a cost, on Stock value, on Home and in Inventory,
   keeps its count. Its row names the item first, a link to its page,
   with its icon and its code grey under it, and in 中文 by its Chinese
-  name where it has one; a lot's code opens its trace (#296).
-- **MC-803** Correct a needs-cost receipt. The correction splits between
-  stock still held and stock already gone, and the item leaves the
-  needs-cost list.
+  name where it has one; a lot's code opens its trace (#296). With more
+  than 50 pools, as on the large volume seed, By item and lot lists the
+  first 50 by the item, "Showing 50 of … items and lots" under them, and
+  the total and Provisional are still every pool's: the total is the
+  export's Value column summed (R6). In the browser's tools, Network:
+  the totals, `valuation/totals`, are read as the page opens and again
+  after Set cost, never for a find, Show 50 more or a sort (R6, settled
+  at the stop); a find reads its count alone, `valuation/count` (review
+  61). With the totals' read blocked in the browser's tools, the page
+  says it could not be read with Try again, which reads it again; the
+  same for the list's first page (review 79).
+- **MC-803** *(ADR-094 amended, R1, R17)* Correct a needs-cost receipt:
+  each of its units carries its share once. Receive 40 by hand with no
+  price into a lot holding 60 at 2.00, ship 90 of the lot on a sale,
+  then Set cost 2.00 on the 40: the lot's 10 read 20.00 on Stock value,
+  2.00 each, the rest gone with the 90, and the receipt leaves the
+  needs-cost list. Done again with 9 of the 90 returned on the sale
+  before the cost: the lot's 19 read 38.00 once costed, 2.00 each, the
+  9's share back with them. On an item not tracked by lot, receive 10
+  with no price, ship 6 on a sale, Start tracking lots on the 4 left,
+  return 3 on the sale, then Set cost 10.00: the start lot's 7 read
+  70.00, 10.00 each (review 74).
 - **MC-804** Costs and price lists are hidden from a viewer and from any role
   without the permission.
 - **MC-805** *(ADR-094, R20, D4, D5)* A cost that follows a move. On
@@ -1294,10 +1356,48 @@ a second organization.
   stock moved to lot …", each lot named where several took a part; the
   moved row leaves the list, both lots are valued, and their histories
   read "Cost carried to lot …" and "Cost from lot …", the other lot a
-  link to its page, Back returning here. A row of a kind
+  link to its page, Back returning here. Of 10 received with no price,
+  6 shipped and the 4 left moved to another lot, back, then on to a
+  third, a cost of 10.00 names the third lot alone, 40.00, and the
+  first two hold nothing (#678). A row of a kind
   the tab does not know, in an old tab after a deploy, reads "Other
   change" and "Waiting for a cost", never a stored key, and offers no
   Set cost.
+- **MC-806** *(ADR-094 amended, R16; #661)* A return with no cost it
+  shipped at. On Inventory, receive 5 of BF-2609's item into BF-2609 by
+  hand, why there is no order "Returned": no Waiting for a cost, and
+  BF-2609's Cost history reads the row "Received, at the lot's
+  average", at the lot's unit cost. Receive 1 "Returned" into a lot
+  still waiting for a cost: it is on Stock value's Waiting for a cost
+  with Set cost, and Set cost takes one, "Cost set.". A batch's output
+  still offers Open run, never Set cost.
+- **MC-807** *(ADR-094 amended, R6)* Stock value by the page, on the
+  large volume seed. Show 50 more under By item and lot: the next 50
+  come below, focus on the first new row's item, the line reads
+  "Showing 100 of …", and the total does not change. Open a lot from a
+  row after Show 50 more, then Back: the rows shown are there again,
+  focus on that lot's link. Find an item or a lot: part of an item's
+  name, its code or a lot's code lists the pools that match and how
+  many, "… of … match" beside the find box, the second number every
+  pool, the find in the address, the total as it was; text nothing
+  matches reads "Nothing matches “…”." and "0 of … match", with Clear
+  the search, which brings every pool back and takes the line away. The Value header puts the largest first;
+  again, the smallest; the Item header puts the item's order back; each
+  kept in the address on a reload. With the network turned off in the
+  browser's tools, Show 50 more keeps the rows and reads "The next 50
+  could not be loaded." with Try again, which reads them once it is back
+  on. In 中文 the find reads 查找物品或批次, beside it
+  匹配 … 个，共 … 个物品和批次, and the line 已显示 50 个，共 … 个物品和批次.
+- **MC-808** *(ADR-094 amended, R6)* A pool worth nothing waits for a
+  cost. On Stock value, By item and lot, THE-0915 and B12-2610, every
+  unit of each waiting, read "Waits for a cost" under Unit cost, never
+  0.00, each with its Value 0.00 and Provisional. Under Waiting for a
+  cost, Set cost on B12-2610's 2 returned alone: its row now reads a
+  unit cost, still Provisional, its opening 20 still waiting. Export:
+  THE-0915's Unit cost cell is empty, its Value 0.00 and Provisional
+  true; B12-2610's has its figure. Set THE-0915's cost: its row reads
+  its unit cost, and its Provisional goes. In 中文 the cell reads 等待成本,
+  in French En attente d’un coût.
 
 ## 9. Recall drill (timed)
 
@@ -1371,7 +1471,7 @@ search to having the list of customers; the target is **under two minutes**.
   lot to add", and a lot that does not expire shows its item's code
   alone. Typed whole, `Hx-2609` puts Lots first. The same text finds
   the lot in Trace a lot, its field reading "Lot code or supplier's lot",
-  whose result names "Supplier's lot Hx-2609" under the code, or
+  its hint saying a code the lot had before works too, whose result names "Supplier's lot Hx-2609" under the code, or
   "Supplier's lot to add" for a code made here with none; in
   Inventory's search by item and by lot, and
   in Movements' Find an item, lot or order, where, typed whole, the lot
@@ -1394,6 +1494,36 @@ search to having the list of customers; the target is **under two minutes**.
   it is not this lot, only what it shipped, sampled or returned, and
   the date, nothing cut off at the edge. In 中文 … 个合作伙伴已收货,
   开始按批次跟踪时的现有库存.
+- **MC-911** *(ADR-094 amended, R9, R10, E3a)* A lot found by a former
+  code, and a recall by the code on the boxes. As the demo Owner, take
+  a lot made here, ship part of it on a sale, then correct its code in
+  Edit lot details, saying why (MC-334), and ship more on the same
+  order. Type the old code, whole, in the top bar's search: Lots lists
+  the lot by its code now, "… · was …" beside it, after a lot of another
+  item whose code it is today, where there is one; part of the old code finds it too. At
+  320 px, a former code of 64 characters ends in "…" and the lot's code
+  stays whole (review 86). The
+  same text finds it in Trace a lot, in Inventory's search by item and
+  by lot, at its place alone when one is chosen, in Stock value's Find
+  an item or a lot, and in Movements' Find an item, lot or order, where,
+  typed whole, the lot is offered alone, "Lot … · was …". Trace a lot's
+  list says "was …" under its code. The lot's own page reads "Lot …"
+  with "was …" beside it, and Former codes under the title lists each
+  code it had, newest first, with Used until, Changed by and Why. One
+  grey line, "was …", sits under its code on Stock's lots, the Lot view
+  (on a phone's card too) and Stock value's rows; a lot never corrected
+  shows none. On Movements, a row from before the correction says "was
+  …" under the lot, one after it nothing, and its Export keeps today's
+  code. On the lot's trace, Who received it lists the customer twice,
+  what left before the correction and what left after, adding up to
+  what was shipped, the first row's Through lot reading "shipped as
+  …", the second "—"; at 390 px the first card has a Through lot line
+  with the same words. The Export's Lot cell reads "ASH-0601 (shipped
+  as ASH-06O1)" on the first row and today's code alone on the second.
+  Return part of what left before the correction on its order: it is
+  counted in the first row's Returned, never in a row of today's code.
+  In French « anciennement … », « expédié sous … » and « (expédié sous
+  ASH-06O1) », in 中文 原编码 …, 发货时为 … and（发货时为 ASH-06O1）.
 
 ## 10. Audit
 
@@ -2221,8 +2351,12 @@ Paper is checked first because it must not change at all.
   Hovering the chip still says how much is held.
 - **MC-1556** From any page, `/` or ⌘K focuses the top bar's search. Typing
   `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its code and
-  expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
-  `fokus` shows Focus 60ct marked close match; `mdyf` or 明德 finds 明德药房; `INV-`
+  expiry chip, and nothing that only comes close; arrow keys move, Enter
+  opens the lot's trace, Escape closes. `fokus`, which nothing matches as
+  typed, shows Focus 60ct under one heading, Close matches, as "Focus
+  60ct · Item", no row marked on its own and no Show all (Résultats
+  proches and « · Article » in Français, 相近结果 and “· 物品” in 中文);
+  `mdyf` or 明德 finds 明德药房; `INV-`
   puts Invoices first. One letter alone asks for more, but one Chinese
   character is enough: in 中文, 专 lists 专注胶囊 60 粒 under 物品. In 中文
   and Français the headings and messages are translated. At 375px the
@@ -2638,6 +2772,17 @@ Paper is checked first because it must not change at all.
   narrow enough that Reorder scrolls sideways with its Actions pinned,
   open a row's Where it stands: the detail shows whole across the row,
   nothing pinned over its right or its left.
+- **MC-1576** *(ADR-056, amended November 2026, #618)* A list cut at the
+  top bar's edge. As the demo Owner in a window 1366 × 768, type `DEMO`
+  in Search everything: the list stops at its edge with a line under it,
+  "… more below · scroll, or keep typing to narrow". Press ↓ past the
+  last row in view: the list scrolls, the count falls, and once the last
+  row shows the line goes; ↑ back up and it returns. A click on the line
+  leaves the list open. Type more until the list fits: no line. At 375
+  px the full-screen search ends with the same line at the screen's
+  foot, every row above it reachable by scrolling. In Français
+  « … autres plus bas · faites défiler, ou continuez à taper pour
+  affiner », in 中文 “下面还有 … 条 · 滚动查看，或继续输入以缩小范围”.
 
 ## 16. Files (ADR-059)
 
@@ -3292,6 +3437,24 @@ Signed in as the demo Owner the seed prints.
   Sharma, the same entry reads Person one person.
 - **MC-2906** *(ADR-076)* The audit log's Action filter names each action
   in the language, never by its code.
+- **MC-2907** *(ADR-076 amended; ADR-094, R23)* An entry's changes, one a
+  line. In Edit lot details, correct a made lot's code, give it a
+  supplier's lot and set Expires to Not known yet, in one save. On the
+  audit log its Lot updated entry reads Code and Lot on the first line,
+  joined by a dot, then one line each for Lot code, Supplier's lot and
+  Expires, each before → after. An entry with one change, a member's role
+  changed, still reads on one line with the rest. In Settings →
+  Organization → Documents, change the digits of all six series of
+  Numbering and Documents in date order, and save: Numbering changed
+  shows its first five changes and Show all 7 changes; pressed, all
+  seven show in place, the button reads Show fewer and keeps focus, and
+  a screen reader says it is expanded and counts a list of seven. The
+  Organization page's History draws it the same. At
+  320 px wide the page has no sideways scroll: a long change reads as two
+  lines, its old value, then "→" and the new one together on the next.
+  Nothing is cut with "…", and nothing shows only on hover. In light and
+  dark, in Français "Afficher les 7 modifications" and "Afficher moins",
+  in 中文 "显示全部 7 项更改" and "收起".
 
 ## 30. Invitations (ADR-077)
 
@@ -4343,11 +4506,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-094's lots at receipt does from 5 to 6: leave a
-  third tab on Stock value before the push. Back in it once the static
-  site is out, the amber banner asks it to reload (MC-3404); Reload, once:
-  Stock value, its Waiting for a cost, and no banner, and switching away
-  and back asks nothing more.
+  API revision, as ADR-094's amendment's Stock value by the page does
+  from 6 to 7: leave a third tab on Stock value before the push. Back in
+  it once the static site is out, the amber banner asks it to reload
+  (MC-3404); Reload, once: Stock value, its pools and its Waiting for a
+  cost, and no banner, and switching away and back asks nothing more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -5508,9 +5671,10 @@ first.
   menu button, collapsed, then expanded once open.
 
 - **MC-R77** *(Show all after a close match alone opening an empty list,
-  #311)* As the demo Owner, in the top bar's lookup, type a word that only
-  nearly matches a partner, for example focus: the Partners group shows
-  the close match, with no Show all.
+  #311)* As the demo Owner, in the top bar's lookup, type a word that
+  only nearly matches a partner and matches nothing as typed, for
+  example nortside: Close matches shows Northside Pharmacy · Partner,
+  with no Show all.
 
 - **MC-R76** *(Esc before the guide had loaded closing nothing, then
   focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
@@ -7893,3 +8057,68 @@ first.
   active places that can hold stock, each as its path, #666: MC-R107 added.
 - 2026-11-24: Lot updated keeps what Edit lot details changed, from and
   to, #687: MC-329 extended, MC-R109 added.
+- 2026-11-24: ADR-094's amendment, a late cost follows each unit once,
+  in proportion, a return bringing back its share, #678 and #677:
+  MC-803 rewritten, MC-805 extended.
+- 2026-11-24: ADR-094's amendment, a return with no shipped cost lands
+  at its lot's average or waits and takes a cost on its own row, which
+  rows take one the server's to say, #661: MC-806 added.
+- 2026-11-24: ADR-094's amendment, Stock value read by the page, R6:
+  the API revision raised to 7, since a tab opened before would take the
+  first page for every pool: MC-3424's raise now 6 to 7, MC-802
+  extended.
+- 2026-11-24: ADR-094's amendment, Stock value by the page on the
+  screen, R6: the find, the sort by Value, Show 50 more with its failed
+  page, and Back to the row left: MC-807 added, MC-802 extended.
+- 2026-11-24: ADR-094's amendment, settled at the stop, R6: Stock
+  value's totals a read of their own, read for a find and after a cost
+  is set, never for a next page or a sort, with "… of … match" beside
+  the find box: MC-802 and MC-807 extended.
+- 2026-11-24: ADR-094's amendment, a lot's former codes, R8 and R11: a
+  corrected code kept with until when, who and why, and refused to any
+  other lot of the item wherever a code is typed: MC-334 added.
+- 2026-11-25: ADR-094's amendment, a lot's former codes read, R9 and
+  R10: every lot search finds a lot by a former code, and a recall's
+  rows split by the code on the boxes, the export saying "shipped as":
+  MC-911 added.
+- 2026-11-25: ADR-094's amendment, a lot's former codes on the screens,
+  R9 and R11: "was …" beside a lot's title and under its code in the
+  lists, Former codes on its page, "shipped as …" in Who received it;
+  Edit lot details asking why a code changes; another lot's former code
+  refused as it is typed, with Use …: MC-329, MC-334 and MC-911
+  extended.
+- 2026-11-25: ADR-094's amendment, the top bar's close matches, R19
+  (#654, #618): what matches as typed alone when anything does, the
+  close ones under Close matches only when nothing does, each saying its
+  kind; a list cut at its edge says how many rows are below; a lot found
+  by a former code says "was …": MC-1556 and MC-R77 rewritten, MC-911
+  extended, MC-1576 added.
+- 2026-11-25: ADR-094's amendment, an entry's changes one a line, R23
+  (ADR-076 amended): two changes or more a line each on the audit log
+  and in History, from seven the first five with Show all … changes:
+  MC-2907 added.
+- 2026-11-25: ADR-094's amendment, the seeds, R14: the demo gains
+  B12-60CT, a lot whose code was corrected with a shipment before it, a
+  return at its lot's average and a return that waits for a cost; the
+  volume seed corrects the code of one lot in 40, its former code each:
+  the demo's setup names B12-2609 and B12-2610 for MC-334 and MC-806, and
+  MC-325's next made code now ends -4.
+- 2026-11-25: The review's 74, a return from before lot tracking brings
+  back its share of a cost given later, where the delivery's history
+  went into the start lot: MC-803 extended.
+- 2026-11-25: The review's 3 and 78, Edit lot details names a code made
+  here 批次编码 in Chinese, as Receive does, a printed one 批号: MC-329
+  extended.
+- 2026-11-25: The review's 19, Trace a lot's hint says a code the lot had
+  before finds it too, in three languages: MC-909 extended.
+- 2026-11-25: The review's 61, Stock value's totals read once and after
+  Set cost, a find asking its count alone: MC-802 extended.
+- 2026-11-25: The review's 75 and 89, a code refused as another lot's,
+  former or now, says "Type another code.", on the server and the
+  screen, in three languages: MC-334 extended.
+- 2026-11-25: The review's 76, a recall counts a return under the code
+  its boxes left under: MC-911 extended.
+- 2026-11-25: The review's 79, Stock value's totals that could not be
+  read say so with Try again: MC-802 extended.
+- 2026-11-25: The review's 86, a long former code in the top bar's
+  search ends in an ellipsis at 320 px: MC-911 extended.

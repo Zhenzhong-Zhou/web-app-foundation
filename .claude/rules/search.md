@@ -7,6 +7,7 @@ paths:
   - "server/src/modules/partners/partner-search.ts"
   - "server/src/modules/stock/lot-search.ts"
   - "client/src/search/**"
+  - "client/src/inventory/movement-finder.tsx"
   - "client/src/lib/use-{list,picker}-search.ts"
   - "client/src/components/{variant,partner}-picker*.tsx"
   - "server/test/{lookup,list-search,whole-list-search}.e2e-spec.ts"
@@ -26,11 +27,11 @@ for people; a commit that changes one of those rules updates it
   `searchTerms`; a code goes through `codeMatches`, a name through
   `nameMatches` (`search_text()`), its pinyin through `pinyinMatches`; an
   item through `itemMatches`, a partner through `partnerRecordMatches`, a
-  document by its partner through `partnerMatches`, a lot by its code or
-  supplier's lot through `lotMatches` and `lotRank` (ADR-094). Never an
-  `ILIKE` of its own, so what the lookup finds, its list finds too
-  (ADR-056). Items' list, counts and export read `itemSearch`'s, once a
-  statement (ADR-051, amended for #547).
+  document by its partner through `partnerMatches`, a lot by its code,
+  supplier's lot or a former code through `lotMatches` and `lotRank`
+  (ADR-094). Never an `ILIKE` of its own, so what the lookup finds, its
+  list finds too (ADR-056). Items' list, counts and export read
+  `itemSearch`'s, once a statement (ADR-051, amended for #547).
 - **Ranked by the same helpers:** `itemRank`, `partnerRank`, or
   `matchRank` and `pinyinRank` under `bestRank`, in the lookup and the
   lists that load whole. A keyset-paged list is never ordered by match,
@@ -43,7 +44,8 @@ for people; a commit that changes one of those rules updates it
   takes `search` through `SearchQueryDto` or `SearchableKeysetQueryDto`
   (ADR-056, amended).
 - **Close matches are the lookup's alone,** only when it found fewer than
-  `LOOKUP_LIMIT`, after `closeMatchSetting` (ADR-056).
+  `LOOKUP_LIMIT`, after `closeMatchSetting` (ADR-056); the top bar and
+  Movements' find box show them only when nothing matches as typed (#654).
 - **A kind in the lookup** is a row in `KINDS` with its own view
   permission, and a case in `pathOf` and `listOf`; the route stays in
   `GATED_INSIDE` ([engineering.md, Server](../../docs/engineering.md#server);

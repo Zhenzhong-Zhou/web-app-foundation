@@ -1,11 +1,13 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { IntlProvider } from 'react-intl';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { LotMatch, LotSource, LotTrace } from '../api/types.gen';
 import { OFFER_BACK } from '../lib/offer-back';
+import zh from '../locales/zh-Hans.json';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { LotSearchPage, LotTracePage } from './lot-trace-page';
@@ -49,6 +51,7 @@ const TRACE: LotTrace = {
     sku: 'OIL',
     unitOfMeasure: 'kg',
     description: 'Fish oil',
+    formerCodes: [],
   },
   balances: [
     {
@@ -107,6 +110,7 @@ const TRACE: LotTrace = {
       lotCode: 'CAPS-0425',
       lotSupplierLot: null,
       lotIsAssigned: false,
+      lotCodeThen: null,
       sku: 'CAPS',
       shipped: '5.0000',
       sampled: '0.0000',
@@ -731,6 +735,147 @@ describe('LotTracePage, ADR-094', () => {
   });
 });
 
+/**
+ * OIL-0425, corrected twice: OIL-O425 then OIL-0424 (ADR-094 amended,
+ * R8, R9). Northern Health's order shipped before the last correction and
+ * after; Coastal Clinic's, through a lot part of it moved into, before
+ * that lot's own correction.
+ */
+const CORRECTED: LotTrace = {
+  ...MOVED,
+  lot: {
+    ...TRACE.lot,
+    formerCodes: [
+      {
+        code: 'OIL-0424',
+        changedAt: '2026-11-24T12:10:00Z',
+        changedByName: 'Demo Owner',
+        reason: 'The 5 was read as a 4.',
+      },
+      {
+        code: 'OIL-O425',
+        changedAt: '2026-11-20T12:00:00Z',
+        changedByName: 'Ana Reyes',
+        reason: 'The letter O was typed for a zero.',
+      },
+    ],
+  },
+  recipients: [
+    { ...MOVED.recipients[0], lotCodeThen: 'OIL-0424', shipped: '3.0000' },
+    { ...MOVED.recipients[0], shipped: '2.0000', leftOn: '2026-11-25' },
+    { ...MOVED.recipients[1], lotCodeThen: 'OIL-0425-8' },
+  ],
+};
+
+describe('LotTracePage, a lot’s former codes (ADR-094 amended)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('says the latest beside its title and lists every one under Former codes: until when, who and why', async () => {
+    renderTraced(CORRECTED, ['stock.view']);
+
+    const title = await screen.findByRole('heading', {
+      level: 1,
+      name: 'Lot OIL-0425',
+    });
+    expect(title.parentElement).toHaveTextContent('Lot OIL-0425was OIL-0424');
+    const heading = screen.getByRole('heading', { name: 'Former codes' });
+    const table = within(heading.closest('div')!.parentElement!).getByRole(
+      'table',
+    );
+    const rows = within(table)
+      .getAllByRole('row')
+      .map((row) =>
+        within(row)
+          .queryAllByRole(row.querySelector('th') ? 'columnheader' : 'cell')
+          .map((cell) => cell.textContent),
+      );
+    expect(rows).toEqual([
+      ['Code', 'Used until', 'Changed by', 'Why'],
+      [
+        'OIL-0424',
+        expect.stringMatching(/^Nov 24, 2026/),
+        'Demo Owner',
+        'The 5 was read as a 4.',
+      ],
+      [
+        'OIL-O425',
+        expect.stringMatching(/^Nov 20, 2026/),
+        'Ana Reyes',
+        'The letter O was typed for a zero.',
+      ],
+    ]);
+  });
+
+  it('says nothing of former codes for a lot never corrected', async () => {
+    renderTraced(TRACE, ['stock.view']);
+
+    await screen.findByRole('heading', { level: 1, name: 'Lot OIL-0425' });
+    expect(screen.queryByText(/^was /)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Former codes' }),
+    ).not.toBeInTheDocument();
+  });
+
+  // E3a, row v22: the code on the boxes in the Through lot cell, alone
+  // for this lot, after the link for another; no column added.
+  it('says “shipped as” in Through lot for what left before a correction, a row a code', async () => {
+    widthIs(1280);
+    renderTraced(CORRECTED, ['stock.view', 'partners.view']);
+
+    const table = await screen.findByRole('table', { name: 'Who received it' });
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(7);
+    const [before, after, moved] = within(table).getAllByRole('row').slice(1);
+    expect(within(before).getAllByRole('cell')[2]).toHaveTextContent(
+      /^shipped as OIL-0424$/,
+    );
+    expect(within(before).getAllByRole('cell')[3]).toHaveTextContent('3');
+    expect(within(after).getAllByRole('cell')[2]).toHaveTextContent(/^—$/);
+    expect(within(after).getAllByRole('cell')[3]).toHaveTextContent('2');
+    expect(within(moved).getAllByRole('cell')[2]).toHaveTextContent(
+      /^OIL-0425-Bshipped as OIL-0425-8$/,
+    );
+    expect(
+      within(moved).getByRole('link', { name: 'OIL-0425-B' }),
+    ).toHaveAttribute('href', '/lots/lot-b');
+  });
+
+  it('shows the Through lot line on a phone’s card for a “shipped as” row too', async () => {
+    widthIs(390);
+    renderTraced(CORRECTED, ['stock.view']);
+
+    const list = await screen.findByRole('list', { name: 'Who received it' });
+    const [before, after] = within(list).getAllByRole('listitem');
+    expect(before).toHaveTextContent('Through lotshipped as OIL-0424');
+    expect(after).not.toHaveTextContent('Through lot');
+  });
+
+  it('says it in Chinese: 原编码, 发货时为', async () => {
+    widthIs(1280);
+    server.use(
+      http.get('/api/v1/stock/lots/lot-1/trace', () =>
+        HttpResponse.json(CORRECTED),
+      ),
+    );
+    renderWithAuth(
+      <IntlProvider locale="zh-Hans" messages={zh} defaultLocale="en">
+        <MemoryRouter initialEntries={['/lots/lot-1']}>
+          <Routes>
+            <Route path="/lots/:id" element={<LotTracePage />} />
+          </Routes>
+        </MemoryRouter>
+      </IntlProvider>,
+      { permissions: ['stock.view'] },
+    );
+
+    expect(await screen.findByText('原编码 OIL-0424')).toBeVisible();
+    expect(screen.getByRole('heading', { name: '原编码' })).toBeVisible();
+    const table = screen.getByRole('table', { name: '收货方' });
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent(
+      '发货时为 OIL-0424',
+    );
+  });
+});
+
 describe('LotSearchPage', () => {
   // Opened by a link that offered Back, a search keeps it (#341).
   it('keeps Back after a search, when a link inside the app opened it', async () => {
@@ -742,6 +887,7 @@ describe('LotSearchPage', () => {
       supplierLot: null,
       isAssigned: false,
       sku: 'FOCUS-60CT',
+      formerCode: null,
     });
     server.use(
       http.get('/api/v1/stock/lots/search', () =>
@@ -784,6 +930,7 @@ describe('LotSearchPage', () => {
         supplierLot: 'HX-2609',
         isAssigned: true,
         sku: 'FOCUS-60CT',
+        formerCode: null,
       },
       {
         id: 'lot-to-add',
@@ -793,6 +940,7 @@ describe('LotSearchPage', () => {
         supplierLot: null,
         isAssigned: true,
         sku: 'FOCUS-60CT',
+        formerCode: null,
       },
       {
         id: 'lot-printed',
@@ -802,6 +950,7 @@ describe('LotSearchPage', () => {
         supplierLot: null,
         isAssigned: false,
         sku: 'FOCUS-60CT',
+        formerCode: null,
       },
     ];
     server.use(
@@ -820,7 +969,7 @@ describe('LotSearchPage', () => {
       name: 'Lot code or supplier’s lot',
     });
     expect(field).toHaveAccessibleDescription(
-      'Any part of either works — the batch number is usually enough. Press Enter to search.',
+      'Any part of either works, or a code the lot had before — the batch number is usually enough. Press Enter to search.',
     );
     const cellOf = async (code: string) =>
       (await screen.findByRole('link', { name: code })).closest('td');
@@ -831,5 +980,37 @@ describe('LotSearchPage', () => {
       'L-2026-11-21-2Supplier’s lot to add',
     );
     expect(await cellOf('FOC-2609-01')).toHaveTextContent(/^FOC-2609-01$/);
+  });
+
+  // ADR-094 amended, R9: a lot found by a former code says it.
+  it('says the former code a match was found by under its code', async () => {
+    server.use(
+      http.get('/api/v1/stock/lots/search', () =>
+        HttpResponse.json([
+          {
+            id: 'lot-ash',
+            code: 'ASH-0601',
+            expiresAt: null,
+            expiry: 'none',
+            supplierLot: null,
+            isAssigned: true,
+            sku: 'ASH-60CT',
+            formerCode: 'ASH-06O1',
+          },
+        ] satisfies LotMatch[]),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/lots?code=ASH-06O1']}>
+        <Routes>
+          <Route path="/lots" element={<LotSearchPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    expect(
+      (await screen.findByRole('link', { name: 'ASH-0601' })).closest('td'),
+    ).toHaveTextContent('ASH-0601was ASH-06O1Supplier’s lot to add');
   });
 });

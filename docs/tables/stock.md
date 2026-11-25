@@ -6,6 +6,14 @@ how to read the diagram.
 
 ```mermaid
 erDiagram
+  lot_former_codes {
+    uuid id PK
+    uuid lot_id FK
+    text code
+    timestamptz changed_at
+    uuid changed_by FK
+    text reason
+  }
   lots {
     uuid id PK
     uuid variant_id FK
@@ -84,6 +92,8 @@ erDiagram
     timestamptz created_at
     timestamptz updated_at
   }
+  lot_former_codes }o--|| lots : "lot_id"
+  lot_former_codes }o--|| users : "changed_by"
   lots }o--|| product_variants : "variant_id"
   reorder_points }o--|| product_variants : "variant_id"
   stock_levels }o--|| product_variants : "variant_id"

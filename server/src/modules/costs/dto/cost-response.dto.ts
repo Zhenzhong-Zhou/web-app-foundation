@@ -21,8 +21,22 @@ export type CostCarried = (typeof COST_CARRIED)[number];
 export class ValuationPool {
   variantId!: string;
   sku!: string;
+  /** The item's page, which its name opens (#296). */
+  productId!: string;
+  /** The item's names in the reader's language (ADR-056, #296). */
+  productName!: string;
+  variantName!: string | null;
+  /** The item's type and cover, for its icon or picture (#546). */
+  type!: ProductType;
+  coverFileId!: string | null;
   lotId!: string | null;
   lotCode!: string | null;
+  /**
+   * The code the lot had last before its code today, for "was {code}"
+   * under it (ADR-094 amended, R9, F4); null for a lot never corrected,
+   * and a pool with no lot.
+   */
+  lotFormerCode!: string | null;
   quantity!: string;
   value!: string;
   unitCost!: string;
@@ -30,18 +44,41 @@ export class ValuationPool {
   provisional!: boolean;
 }
 
-/** What the stock on hand is worth, pool by pool. */
-export class StockValuation {
+/**
+ * GET /costs/valuation: one page of the pools (ADR-094's amendment, R6).
+ * What they are worth together is a read of its own,
+ * GET /costs/valuation/totals, which no page works out again.
+ */
+export class StockValuationPage {
+  entries!: ValuationPool[];
+  /** Pass as `cursor` for the next page; null when there is no more. */
+  nextCursor!: string | null;
+}
+
+/**
+ * GET /costs/valuation/totals: what the stock on hand is worth, and how
+ * many pools there are (ADR-094's amendment, R6), as Stock's counts are
+ * a read beside its list: every pool of the organization, whatever is
+ * found, read as the page opens and again after a cost is set. How many
+ * a find matches is GET /costs/valuation/count (review 61).
+ */
+export class StockValuationTotals {
   /** Null until the organization has a base currency. */
   currency!: string | null;
   total!: string;
+  /** True while any pool on hand depends on a row still waiting for a cost. */
   provisional!: boolean;
-  pools!: ValuationPool[];
+  /** Every pool on hand: "1 of 14,512 match", "Showing 50 of 14,512". */
+  pools!: number;
 }
 
-/** GET /costs/valuation. */
-export class StockValuationEnvelope {
-  valuation!: StockValuation;
+/**
+ * GET /costs/valuation/count: how many pools a find matches (review 61),
+ * "1 of 14,512 match" and "Showing 1 of 1"; the total is the totals'
+ * read, the same for every find, so a find asks for nothing else.
+ */
+export class StockValuationCount {
+  count!: number;
 }
 
 /** One valuation row in a lot's history. */
@@ -74,6 +111,13 @@ export class LotCostEntry {
    */
   @ApiProperty({ enum: COST_CARRIED, nullable: true })
   carried!: CostCarried | null;
+  /**
+   * A return with no cost it shipped at, valued at its pool's average when
+   * it came back (#661): the row says so.
+   */
+  atPoolAverage!: boolean;
+  /** Whether Set cost takes a cost on this row, the server's rule (#669's 58). */
+  takesCost!: boolean;
   createdAt!: Date;
 }
 
@@ -170,6 +214,11 @@ export class NeedsCostEntry {
   currency!: string | null;
   referenceType!: string | null;
   referenceId!: string | null;
+  /**
+   * Whether Set cost takes a cost on this row, the server's rule (#669's
+   * 58): false for a batch's output and for stock a lot change moved in.
+   */
+  takesCost!: boolean;
   createdAt!: Date;
 }
 

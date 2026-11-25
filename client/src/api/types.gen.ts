@@ -911,7 +911,7 @@ export type Person = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'never' | 'month' | 'today' | 'week' | 'older';
+  active: 'month' | 'never' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
@@ -927,7 +927,7 @@ export type PersonDetail = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'never' | 'month' | 'today' | 'week' | 'older';
+  active: 'month' | 'never' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
   recentActivity?: Array<AuditRecord>;
 };
@@ -954,7 +954,7 @@ export type Member = {
   name: string;
   roles: Array<RoleRef>;
   photoFileId?: string | null;
-  active: 'never' | 'month' | 'today' | 'week' | 'older';
+  active: 'month' | 'never' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
@@ -1896,6 +1896,8 @@ export type Movement = {
   lotSupplierLot: string | null;
   toLotId: string | null;
   toLotCode: string | null;
+  lotCodeThen: string | null;
+  toLotCodeThen: string | null;
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
@@ -1936,12 +1938,14 @@ export type Lot = {
   expiresAt: string | null;
   isAssigned: boolean;
   supplierLot: string | null;
+  formerCodes: Array<string>;
 };
 
 export type UpdateLotDto = {
   expiry?: 'date' | 'unknown' | 'none';
   madeHere?: true;
   code?: string;
+  reason?: string;
   supplierLot?: string;
   expiresAt?: string;
 };
@@ -2049,6 +2053,7 @@ export type StockPile = {
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
+  lotFormerCode: string | null;
   quantity: string;
   emptiedOn: string | null;
   issuedToRun: IssuedRun | null;
@@ -2084,6 +2089,7 @@ export type StockLotRow = {
   lotExpiresAt: string | null;
   lotIsAssigned: boolean | null;
   lotSupplierLot: string | null;
+  lotFormerCode: string | null;
   quantity: string;
   emptiedOn: string | null;
   issuedToRun: IssuedRun | null;
@@ -2117,6 +2123,14 @@ export type LotMatch = {
   supplierLot: string | null;
   isAssigned: boolean;
   sku: string;
+  formerCode: string | null;
+};
+
+export type LotFormerCode = {
+  code: string;
+  changedAt: string;
+  changedByName: string;
+  reason: string;
 };
 
 export type TracedLot = {
@@ -2131,6 +2145,7 @@ export type TracedLot = {
   sku: string;
   unitOfMeasure: string;
   description: string;
+  formerCodes: Array<LotFormerCode>;
 };
 
 export type LotBalance = {
@@ -2193,6 +2208,7 @@ export type LotRecipient = {
   lotCode: string;
   lotSupplierLot: string | null;
   lotIsAssigned: boolean;
+  lotCodeThen: string | null;
   sku: string;
   shipped: string;
   sampled: string;
@@ -2451,6 +2467,7 @@ export type LookupResult = {
   expiresAt: string | null;
   supplierLot: string | null;
   isAssigned: boolean | null;
+  formerCode: string | null;
   productId: string | null;
   coverFileId: string | null;
   type:
@@ -2757,23 +2774,34 @@ export type UpdateNumberingDto = {
 export type ValuationPool = {
   variantId: string;
   sku: string;
+  productId: string;
+  productName: string;
+  variantName: string | null;
+  type: 'sample' | 'good' | 'material' | 'packaging' | 'supply' | 'equipment';
+  coverFileId: string | null;
   lotId: string | null;
   lotCode: string | null;
+  lotFormerCode: string | null;
   quantity: string;
   value: string;
   unitCost: string;
   provisional: boolean;
 };
 
-export type StockValuation = {
+export type StockValuationPage = {
+  entries: Array<ValuationPool>;
+  nextCursor: string | null;
+};
+
+export type StockValuationTotals = {
   currency: string | null;
   total: string;
   provisional: boolean;
-  pools: Array<ValuationPool>;
+  pools: number;
 };
 
-export type StockValuationEnvelope = {
-  valuation: StockValuation;
+export type StockValuationCount = {
+  count: number;
 };
 
 export type LotCostEntry = {
@@ -2797,6 +2825,8 @@ export type LotCostEntry = {
   referenceId: string | null;
   otherLotId: string | null;
   otherLotCode: string | null;
+  atPoolAverage: boolean;
+  takesCost: boolean;
   createdAt: string;
 };
 
@@ -2875,6 +2905,7 @@ export type NeedsCostEntry = {
   currency: string | null;
   referenceType: string | null;
   referenceId: string | null;
+  takesCost: boolean;
   createdAt: string;
 };
 
@@ -4157,6 +4188,7 @@ export const ErrorCode = {
   PRODUCT_NAMES_CHANGED: 'product_names_changed',
   STOCK_NOT_USABLE: 'stock_not_usable',
   LOT_CODE_IN_USE: 'lot_code_in_use',
+  LOT_CODE_FORMER: 'lot_code_former',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -4175,6 +4207,8 @@ export type ErrorDetails = {
   at?: string;
   day?: string;
   productId?: string;
+  lotId?: string;
+  lotCode?: string;
 };
 
 export type ErrorBody = {
@@ -5586,8 +5620,7 @@ export type ProductsControllerListV1Data = {
   };
   path?: never;
   query?: {
-    cursor?: string;
-    limit?: number;
+    search?: string;
     type?:
       'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
     category?: string;
@@ -5595,7 +5628,8 @@ export type ProductsControllerListV1Data = {
     low?: string;
     sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
     order?: 'asc' | 'desc';
-    search?: string;
+    cursor?: string;
+    limit?: number;
   };
   url: '/v1/products';
 };
@@ -7250,17 +7284,55 @@ export type NumberingControllerUpdateV1Response =
 
 export type CostsControllerStockValuationV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
-  query?: never;
+  query?: {
+    sort?: 'item' | 'value' | '-value';
+    search?: string;
+    cursor?: string;
+    limit?: number;
+  };
   url: '/v1/costs/valuation';
 };
 
 export type CostsControllerStockValuationV1Responses = {
-  200: StockValuationEnvelope;
+  200: StockValuationPage;
 };
 
 export type CostsControllerStockValuationV1Response =
   CostsControllerStockValuationV1Responses[keyof CostsControllerStockValuationV1Responses];
+
+export type CostsControllerValuationTotalsV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/costs/valuation/totals';
+};
+
+export type CostsControllerValuationTotalsV1Responses = {
+  200: StockValuationTotals;
+};
+
+export type CostsControllerValuationTotalsV1Response =
+  CostsControllerValuationTotalsV1Responses[keyof CostsControllerValuationTotalsV1Responses];
+
+export type CostsControllerValuationCountV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+  };
+  url: '/v1/costs/valuation/count';
+};
+
+export type CostsControllerValuationCountV1Responses = {
+  200: StockValuationCount;
+};
+
+export type CostsControllerValuationCountV1Response =
+  CostsControllerValuationCountV1Responses[keyof CostsControllerValuationCountV1Responses];
 
 export type CostsControllerExportValuationV1Data = {
   body?: never;

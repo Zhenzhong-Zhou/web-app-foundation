@@ -7,13 +7,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Lot, RunDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { lotExpiryPart } from '../inventory/lot-expiry';
+import { useFormerCodeRefusal } from '../inventory/lot-input';
 import { api } from '../lib/api';
 import {
   formatQuantity,
@@ -49,19 +50,21 @@ export function RecordOutputDialog({
   const [newCode, setNewCode] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [lots, setLots] = useState<Lot[]>([]);
+  const codeRef = useRef<HTMLInputElement>(null);
 
-  const { submitting, error, reset, submit } = useSubmit(
-    async () => {
-      close();
-      await onRecorded();
-    },
-    {
-      success: intl.formatMessage({
-        id: 'production.output.recorded',
-        defaultMessage: 'Output recorded',
-      }),
-    },
-  );
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
+    useSubmit(
+      async () => {
+        close();
+        await onRecorded();
+      },
+      {
+        success: intl.formatMessage({
+          id: 'production.output.recorded',
+          defaultMessage: 'Output recorded',
+        }),
+      },
+    );
 
   /**
    * The run knows its batches only by id. Their codes live on the lots,
@@ -113,6 +116,17 @@ export function RecordOutputDialog({
           { code: lot.code },
         );
   }
+
+  /**
+   * Another lot's former code typed for a new batch (ADR-094 amended, R11,
+   * 8a): said under its field, naming the lot that had it, focus there,
+   * what else was typed kept. No Use {code}: this field is not the shared
+   * one (Deferred).
+   */
+  const former = useFormerCodeRefusal(
+    { error, errorCode, errorDetails, reset },
+    codeRef,
+  );
 
   const openLot = run.outputLots[run.outputLots.length - 1] ?? '';
   const effective = lotChoice || openLot;
@@ -175,7 +189,7 @@ export function RecordOutputDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {error && !former.refused && <FormError message={error} />}
 
             <TextField
               id="output-quantity"
@@ -256,7 +270,14 @@ export function RecordOutputDialog({
                   required
                   fullWidth
                   value={newCode}
-                  onChange={(event) => setNewCode(event.target.value)}
+                  onChange={(event) => {
+                    // The refusal was of the code sent.
+                    former.clear();
+                    setNewCode(event.target.value);
+                  }}
+                  inputRef={codeRef}
+                  error={former.refused}
+                  helperText={former.error}
                   slotProps={{ htmlInput: { maxLength: 64 } }}
                 />
 

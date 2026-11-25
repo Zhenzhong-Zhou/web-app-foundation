@@ -596,6 +596,20 @@
       "when": 1795327587425,
       "tag": "0084_lots_expiry",
       "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1795566359112,
+      "tag": "0085_drop_lots_expiry_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1795587798336,
+      "tag": "0086_lot_former_codes",
+      "breakpoints": true
     }
   ]
 }

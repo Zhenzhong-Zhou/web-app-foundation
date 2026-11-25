@@ -31,6 +31,18 @@ export class UpdateLotDto {
   code?: string;
 
   /**
+   * Why the code is changing, as typed (ADR-094 amended, R8, E2a): asked
+   * only when `code` differs from the lot's, and then required, kept with
+   * the code it leaves on the lot's page. Free text, so never in the
+   * Activity log (ADR-018). Ignored when the code stays as it is.
+   */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+
+  /**
    * The supplier's own lot, as printed, its case kept (ADR-094, R5): for a
    * lot whose code was made here, added once it is known. Empty takes it
    * away, so the lot reads "Supplier's lot to add" again. Refused for a

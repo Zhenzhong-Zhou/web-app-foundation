@@ -10,6 +10,7 @@ import { lookupLongEnough } from '../search/lookup-minimum';
 import { useLookup } from '../search/use-lookup';
 import { rem } from '../theme/rem';
 import { lotExpiryPart } from './lot-expiry';
+import { wasCode } from './was-code';
 
 /** The kinds Movements filters by; never a run or a return (126). */
 const FINDS = ['item', 'lot', 'order'] as const;
@@ -28,11 +29,12 @@ const SEPARATOR = ' · ';
 
 /**
  * What to offer of the lookup's items, lots and orders (126's polish): a
- * lot whose code or supplier's lot is the whole text typed, alone, as
- * MCS-001 is though MCS-0010 starts with it (ADR-094, R6); else the exact
+ * lot whose code, supplier's lot or the former code it was found by is
+ * the whole text typed, alone, as MCS-001 is though MCS-0010 starts with
+ * it (ADR-094, R6; amended, R10, F3); else the exact
  * matches alone while any match; else the close ones, a typo's
  * (`close`), which the box heads Close matches. The top bar's search
- * shows them all, its own way.
+ * keeps the same rule, but for the whole code's lot alone (#654).
  */
 function offered(options: Option[], query: string): Option[] {
   // Full width read as usual, as the lookup reads it: ＭＣＳ－００１.
@@ -41,7 +43,7 @@ function offered(options: Option[], query: string): Option[] {
   const whole = exact.find(
     ({ kind, result }) =>
       kind === 'lot' &&
-      [result.title, result.supplierLot].some(
+      [result.title, result.supplierLot, result.formerCode].some(
         (code) => code?.toLowerCase() === typed,
       ),
   );
@@ -96,6 +98,8 @@ export function MovementFinder({
           { id: 'inventory.movements.findLot', defaultMessage: 'Lot {code}' },
           { code: result.title },
         ),
+        // The former code it was found by (ADR-094 amended, R9).
+        result.formerCode && wasCode(result.formerCode, intl),
         // Which finds it as its code does (ADR-094, R6).
         result.supplierLot &&
           intl.formatMessage(

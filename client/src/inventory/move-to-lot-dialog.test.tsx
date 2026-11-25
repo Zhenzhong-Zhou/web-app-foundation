@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
@@ -28,6 +28,7 @@ const PILE: StockPile = {
   lotExpiry: 'date',
   lotIsAssigned: true,
   lotSupplierLot: 'SUP-88',
+  lotFormerCode: null,
   quantity: '100.0000',
   emptiedOn: null,
   issuedToRun: null,
@@ -41,6 +42,7 @@ const LOTS: Lot[] = [
     expiry: 'unknown',
     isAssigned: false,
     supplierLot: null,
+    formerCodes: [],
   },
   {
     id: 'lot-a',
@@ -49,6 +51,7 @@ const LOTS: Lot[] = [
     expiry: 'date',
     isAssigned: true,
     supplierLot: 'SUP-88',
+    formerCodes: [],
   },
 ];
 
@@ -74,17 +77,24 @@ function open({
   toLot = { id: 'lot-new', code: 'VC-0311' },
   needsCost = false,
   permissions = ['stock.view', 'stock.move', 'stock.adjust'],
+  lots = LOTS,
+  refusal,
 }: {
   toLot?: { id: string; code: string };
   needsCost?: boolean;
   permissions?: string[];
+  /** The item's lots, as the lot field reads them. */
+  lots?: Lot[];
+  /** The server's answer to the first write, where it refuses it. */
+  refusal?: Response;
 } = {}) {
   const sent: Record<string, unknown>[] = [];
   const onMoved = vi.fn();
   server.use(
-    http.get('/api/v1/stock/lots', () => HttpResponse.json(LOTS)),
+    http.get('/api/v1/stock/lots', () => HttpResponse.json(lots)),
     http.post('/api/v1/stock/lots/lot-a/lot-changes', async ({ request }) => {
       sent.push((await request.json()) as Record<string, unknown>);
+      if (refusal && sent.length === 1) return refusal;
       return HttpResponse.json(
         {
           movement: {
@@ -229,6 +239,78 @@ describe('MoveToLotDialog (ADR-094, R20)', () => {
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Open the lot' }));
     expect(await screen.findByText('At /lots/lot-new')).toBeVisible();
+  });
+
+  // ADR-094 amended, R11: another lot's former code for the new lot; Use
+  // {code} moves the stock into that lot.
+  it('refuses another lot’s former code as it is typed, sending nothing; Use {code} moves the stock into that lot', async () => {
+    const { user, sent } = open({
+      toLot: { id: 'lot-b', code: 'VC-0310' },
+      lots: [{ ...LOTS[0], formerCodes: ['VC-031O'] }, LOTS[1]],
+    });
+    await fill(user, 'VC-031O');
+    const code = screen.getByRole('combobox', { name: /^Lot number/ });
+    expect(code).toHaveAccessibleDescription(
+      'VC-031O was the code of lot VC-0310. A code is never given to a second lot. Type another code.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+    expect(code).toHaveFocus();
+    expect(sent).toEqual([]);
+
+    await user.click(screen.getByRole('button', { name: 'Use VC-0310' }));
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Moved 30 each from lot L-2026-11-20-1 to lot VC-0310.',
+    );
+    expect(sent).toEqual([
+      {
+        locationId: 'loc-a2',
+        quantity: '30',
+        note: 'Two runs in one delivery',
+        toLotId: 'lot-b',
+      },
+    ]);
+  });
+
+  // ADR-094 amended, R11; review 80: the server's refusal of another lot's
+  // former code, which the lots read before did not hold, at the lot's
+  // code alone, with Use {code}.
+  it('says the server’s refusal of another lot’s former code at the lot’s code, focus there; Use {code} moves the stock into that lot', async () => {
+    const refused =
+      'VC-031O was the code of lot VC-0310 until Nov 24, 2026. A code is never given to a second lot. Type another code.';
+    const { user, sent } = open({
+      toLot: { id: 'lot-b', code: 'VC-0310' },
+      refusal: HttpResponse.json(
+        {
+          statusCode: 409,
+          message: refused,
+          code: 'lot_code_former',
+          details: { lotId: 'lot-b', lotCode: 'VC-0310' },
+        },
+        { status: 409 },
+      ),
+    });
+    await fill(user, 'VC-031O');
+    const code = screen.getByRole('combobox', { name: /^Lot number/ });
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+
+    await waitFor(() => expect(code).toHaveAccessibleDescription(refused));
+    expect(code).toHaveFocus();
+    expect(screen.getAllByText(refused)).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'Use VC-0310' }));
+    await user.click(screen.getByRole('button', { name: 'Move to lot' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Moved 30 each from lot L-2026-11-20-1 to lot VC-0310.',
+    );
+    expect(sent[1]).toEqual({
+      locationId: 'loc-a2',
+      quantity: '30',
+      note: 'Two runs in one delivery',
+      toLotId: 'lot-b',
+    });
   });
 
   it('moves into one of the item’s lots by its code, asking no expiry, and says when it waits for a cost', async () => {

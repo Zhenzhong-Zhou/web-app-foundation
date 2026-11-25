@@ -39,8 +39,9 @@ export class LotTraceController {
   ) {}
 
   /**
-   * Find a lot by any part of its code or its supplier's lot, the start
-   * first: how a recall usually begins (ADR-044, amended by ADR-094).
+   * Find a lot by any part of its code, its supplier's lot or a former
+   * code, the start first: how a recall usually begins (ADR-044, amended
+   * by ADR-094 and its amendment).
    */
   @Get('search')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)

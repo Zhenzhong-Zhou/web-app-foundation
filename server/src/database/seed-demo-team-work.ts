@@ -1076,7 +1076,8 @@ export async function addTeamWork(
     await audited(
       actor,
       { action: AUDIT_ACTIONS.STOCK_LOT_UPDATED, type: 'lot', id: expired },
-      () => lotsService.updateLot(expired, { expiresAt: daysFromNow(-4) }),
+      () =>
+        lotsService.updateLot(expired, { expiresAt: daysFromNow(-4) }, actor),
     );
     await move(actor, {
       variantId: catalogue.vitaminC,
@@ -1523,7 +1524,7 @@ export async function addTeamWork(
     await audited(
       actor,
       { action: AUDIT_ACTIONS.STOCK_LOT_UPDATED, type: 'lot', id: lot },
-      () => lotsService.updateLot(lot, { expiresAt: daysFromNow(-2) }),
+      () => lotsService.updateLot(lot, { expiresAt: daysFromNow(-2) }, actor),
     );
   });
 

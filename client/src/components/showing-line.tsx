@@ -8,7 +8,9 @@ import { useIntl } from 'react-intl';
  * is every row the list's filters match, which its counts give, so it
  * follows each filter; without it, while there are more, nothing.
  * Codes on Stock and Reorder, lots on the Lot view, items on Items (the
- * glossary's words). No column of row numbers (R1a): a row's place
+ * glossary's words), and items and lots on Stock value, each row an item
+ * without lots or one of its lots (`pool`, ADR-094's amendment, R6). No
+ * column of row numbers (R1a): a row's place
  * changes with each sort and filter, and its code is what stays.
  */
 export function ShowingLine({
@@ -21,7 +23,7 @@ export function ShowingLine({
   total: number | null | undefined;
   /** Whether there are more to show. */
   more: boolean;
-  of: 'code' | 'lot' | 'item';
+  of: 'code' | 'lot' | 'item' | 'pool';
 }) {
   const intl = useIntl();
 
@@ -34,7 +36,7 @@ export function ShowingLine({
             {
               id: 'components.showing',
               defaultMessage:
-                '{of, select, lot {Showing {shown} of {total, plural, one {# lot} other {# lots}}} item {Showing {shown} of {total, plural, one {# item} other {# items}}} other {Showing {shown} of {total, plural, one {# code} other {# codes}}}}',
+                '{of, select, lot {Showing {shown} of {total, plural, one {# lot} other {# lots}}} item {Showing {shown} of {total, plural, one {# item} other {# items}}} pool {Showing {shown} of {total, plural, one {# item or lot} other {# items and lots}}} other {Showing {shown} of {total, plural, one {# code} other {# codes}}}}',
             },
             { of, shown, total },
           )
@@ -42,7 +44,7 @@ export function ShowingLine({
             {
               id: 'components.shown',
               defaultMessage:
-                '{of, select, lot {{count, plural, one {# lot} other {# lots}}} item {{count, plural, one {# item} other {# items}}} other {{count, plural, one {# code} other {# codes}}}}',
+                '{of, select, lot {{count, plural, one {# lot} other {# lots}}} item {{count, plural, one {# item} other {# items}}} pool {{count, plural, one {# item or lot} other {# items and lots}}} other {{count, plural, one {# code} other {# codes}}}}',
             },
             { of, count: shown },
           )}

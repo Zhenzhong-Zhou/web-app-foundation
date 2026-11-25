@@ -1,20 +1,24 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { dayIn } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  lotFormerCodes,
   lots,
   productVariants,
   stockLevels,
   stockMovements,
   stockValuations,
 } from '../src/database/schema';
+import { calendarDay } from '../src/i18n/translate';
 import {
   addMember,
   body,
+  correctLotCode,
   createE2eApp,
   createLocation,
   createPartner,
@@ -218,8 +222,8 @@ describe('Move to another lot (e2e)', () => {
   }
 
   async function total(w: World) {
-    const res = await w.org.agent.get('/v1/costs/valuation').expect(200);
-    return body<{ valuation: { total: string } }>(res).valuation.total;
+    const res = await w.org.agent.get('/v1/costs/valuation/totals').expect(200);
+    return body<{ total: string }>(res).total;
   }
 
   function message(res: Parameters<typeof body>[0]): string {
@@ -745,5 +749,42 @@ describe('Move to another lot (e2e)', () => {
         quantity: '100',
       }),
     );
+  });
+
+  // ADR-094 amended, R11: the new lot of a move is a new lot like any
+  // other, so a code one of the item's lots had before its code was
+  // corrected is refused for it, naming that lot, whose Use {code} moves
+  // the stock into it instead.
+  it('refuses another lot’s former code for the new lot, naming that lot, and moves nothing (R11)', async () => {
+    const w = await world();
+    const first = await buy(w, '30', '2.00', 'NL-2611-A');
+    const had = await buy(w, '5', '2.00', 'NL-78O');
+    await correctLotCode(w.org.agent, had.id, 'NL-780');
+    const [kept] = await db
+      .select({ changedAt: lotFormerCodes.changedAt })
+      .from(lotFormerCodes)
+      .where(eq(lotFormerCodes.lotId, had.id));
+
+    const refused = await w.org.agent
+      .post(path(first.id))
+      .send({
+        locationId: w.main,
+        quantity: '10',
+        lot: { code: 'nl-78o' },
+        note: 'Two runs in one delivery',
+      })
+      .expect(409);
+    expect(body(refused)).toMatchObject({
+      message: said('en', 'stock.lotCodeFormer', {
+        code: 'NL-78O',
+        lot: 'NL-780',
+        day: calendarDay(dayIn('UTC', kept.changedAt)),
+      }),
+      code: 'lot_code_former',
+      details: { lotId: had.id, lotCode: 'NL-780' },
+    });
+
+    expect(await pileOf(first.id, w.main)).toBe('30.0000');
+    expect(await db.select().from(lots)).toHaveLength(2);
   });
 });
