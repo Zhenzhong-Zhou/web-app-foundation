@@ -24,7 +24,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { takeLotCode } from '../numbering/lot-codes';
+import { refuseFormerCode, takeLotCode } from '../numbering/lot-codes';
 import { assertTakeable } from './availability';
 import { startLotsOf, TRACKING_STARTED } from './start-lot';
 import { PurchaseCost, valueMovement } from './valuation';
@@ -668,6 +668,12 @@ export class StockService {
       // details, by its own permission (ADR-094, R4 and R7).
       isAssigned: false,
     };
+
+    // A code another of the item's lots had before it was corrected is
+    // never a new lot's, nor reused for one, whichever write follows
+    // (ADR-094 amended, R11). The caller holds the variant `for share`, so
+    // a correction, which takes it first, is committed or not begun.
+    await refuseFormerCode(tx, organizationId, variant.id, incoming.code);
 
     /**
      * A lot the write must make, as Count it in's new lot (ADR-093, 84a):

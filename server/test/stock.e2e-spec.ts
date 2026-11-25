@@ -1559,7 +1559,7 @@ describe('Stock (e2e)', () => {
       // with. A typo is a typo, and a made code can be corrected (ADR-094, R4).
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
-        .send({ code: '2026A' })
+        .send({ code: '2026A', reason: 'Typed wrong at receipt.' })
         .expect(204);
 
       const [updated] = await db.select().from(lots);
@@ -1595,7 +1595,7 @@ describe('Stock (e2e)', () => {
       // rename that happens to collide.
       await ctx.agent
         .patch(`/v1/stock/lots/${second.id}`)
-        .send({ code: 'L2026-A' })
+        .send({ code: 'L2026-A', reason: 'Typed wrong at receipt.' })
         .expect(409);
     });
 
@@ -1605,7 +1605,7 @@ describe('Stock (e2e)', () => {
 
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
-        .send({ code: '2026a' })
+        .send({ code: '2026a', reason: 'Typed wrong at receipt.' })
         .expect(204);
 
       // Same normalization as on creation, or the unique index sees two lots
@@ -1775,7 +1775,11 @@ describe('Stock (e2e)', () => {
       // supplier's lot once it is known.
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
-        .send({ code: 'LOT-7', supplierLot: 'CB-2026-114' })
+        .send({
+          code: 'LOT-7',
+          supplierLot: 'CB-2026-114',
+          reason: 'Typed up without its hyphen.',
+        })
         .expect(204);
       const now = await lotNow(lot.id);
       expect({ code: now.code, supplierLot: now.supplierLot }).toEqual({
@@ -1800,7 +1804,12 @@ describe('Stock (e2e)', () => {
 
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
-        .send({ madeHere: true, code: 'LOT-7', supplierLot: 'CB-2026-114' })
+        .send({
+          madeHere: true,
+          code: 'LOT-7',
+          supplierLot: 'CB-2026-114',
+          reason: 'Typed up without its hyphen.',
+        })
         .expect(204);
 
       const now = await lotNow(lot.id);
@@ -1835,7 +1844,7 @@ describe('Stock (e2e)', () => {
 
       await ctx.agent
         .patch(`/v1/stock/lots/${lot.id}`)
-        .send({ code: 'LOT-7' })
+        .send({ code: 'LOT-7', reason: 'Typed wrong at receipt.' })
         .expect(204);
 
       expect(await updatesOf(lot.id)).toEqual([

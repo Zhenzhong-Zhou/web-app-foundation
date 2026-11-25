@@ -417,9 +417,11 @@ async function lastNumbers(
  * compared, not text: INV-0050 and INV-000050 are both 50.
  *
  * The lot series is held to the codes of lots made here alone (ADR-094),
- * so a made code names one lot in the organization. A code typed as
- * printed is a supplier's, which any format may happen to match: the take
- * passes over one the item already has.
+ * so a made code names one lot in the organization, and to their former
+ * codes, which no other lot of the item may take (ADR-094 amended, R11):
+ * only a code made here is ever corrected. A code typed as printed is a
+ * supplier's, which any format may happen to match: the take passes over
+ * one the item already has.
  */
 async function assertFree(
   tx: Transaction,
@@ -454,6 +456,10 @@ async function assertFree(
     select 'lot' as kind, l.code as number from lots as l
       where l.organization_id = ${organizationId} and l.is_assigned
         and l.code ~ ${pattern.source}
+    union all
+    select 'lot', f.code from lot_former_codes as f
+      where f.organization_id = ${organizationId}
+        and f.code ~ ${pattern.source}
   `;
   const carried = await tx.execute<{ kind: DocumentType; number: string }>(
     series === 'lot' ? madeLots : documents,

@@ -825,6 +825,19 @@ a second organization.
   to: the partner follows the reason, "Received: returned · from
   Northside Pharmacy", the name a link; a partner is not a place. In 中文
   期初库存, 客户, 其他, 收货：退回 · 来自 Northside Pharmacy.
+- **MC-334** *(ADR-094 amended, R8, R11)* A lot's former code is never
+  another lot's. As the demo Owner, correct the code of a lot made here
+  in Edit lot details, saying why: it reads the new code, and the old
+  one is its former code. For the same item, type the old code in
+  Receive stock and Receive: refused, "… was the code of lot … until
+  …. A code is never given to a second lot.", naming the lot by its
+  code now, the day the one it was corrected; nothing is received. The
+  same in an order's Receive, Count it in…, Move to another lot… and a
+  run's Record output, and in Edit lot details renaming another lot of
+  the item to it. The lot itself takes its old code back. Another item
+  receives a lot of that code. Make a code for us never makes a former
+  code again, and Organization › Documents › Lot codes refuses setting
+  Next back to give one. In 中文 … 是批次 … 的原编码，…起不再使用。
 - **MC-323** *(ADR-093, R28; #638, #473)* A list's count, and Back after
   Show more. As the demo Owner, Stock by item ends with "… codes" under
   its rows and no Show 50 more; the Lot view says "… lots", Reorder
@@ -7950,3 +7963,6 @@ first.
   value's totals a read of their own, read for a find and after a cost
   is set, never for a next page or a sort, with "… of … match" beside
   the find box: MC-802 and MC-807 extended.
+- 2026-11-24: ADR-094's amendment, a lot's former codes, R8 and R11: a
+  corrected code kept with until when, who and why, and refused to any
+  other lot of the item wherever a code is typed: MC-334 added.

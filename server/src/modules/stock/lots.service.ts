@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import {
   type FieldValues,
@@ -14,9 +14,10 @@ import {
 } from '../../core/audit/audit-context';
 import type { AuditField } from '../../core/audit/audit-fields';
 import { isUniqueViolation } from '../../database/errors';
-import { lots, productVariants } from '../../database/schema';
+import { lotFormerCodes, lots, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { refuseFormerCode } from '../numbering/lot-codes';
 import { ListLotsDto } from './dto/list-lots.dto';
 import type { Lot } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
@@ -69,12 +70,44 @@ export class LotsService {
    * typo. Marked in the same save, the code is treated as invented already.
    *
    * The row is read for update, so two saves at once mark it once.
+   *
+   * A corrected code is kept as one of the lot's former codes, with who
+   * corrected it and why, in the same save (ADR-094 amended, R8), and
+   * another lot's former code is refused (R11). A save that names a code
+   * takes the variant's row first, `for no key update`, so a write of a
+   * new lot of the item, which reads it `for share`, never reads the
+   * item's former codes while one is being written.
    */
   async updateLot(
     lotId: string,
     input: UpdateLotDto,
+    actorId: string,
   ): Promise<{ marked: boolean }> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      if (input.code !== undefined) {
+        await tx
+          .select({ id: productVariants.id })
+          .from(productVariants)
+          .where(
+            and(
+              eq(productVariants.organizationId, organizationId),
+              inArray(
+                productVariants.id,
+                tx
+                  .select({ variantId: lots.variantId })
+                  .from(lots)
+                  .where(
+                    and(
+                      eq(lots.id, lotId),
+                      eq(lots.organizationId, organizationId),
+                    ),
+                  ),
+              ),
+            ),
+          )
+          .for('no key update');
+      }
+
       const [lot] = await tx
         .select()
         .from(lots)
@@ -90,7 +123,11 @@ export class LotsService {
       const marked = input.madeHere === true && !lot.isAssigned;
       const madeHere = lot.isAssigned || marked;
 
-      if (input.code && input.code !== lot.code && !madeHere) {
+      // The code it is given, where it changes.
+      const recoded =
+        input.code !== undefined && input.code !== lot.code ? input.code : null;
+
+      if (recoded !== null && !madeHere) {
         throw new ConflictException(
           t(
             {
@@ -100,6 +137,26 @@ export class LotsService {
             },
             { code: lot.code },
           ),
+        );
+      }
+
+      // Why, asked only when the code changes (E2a), kept with the code it
+      // leaves; the DTO has trimmed it.
+      if (recoded !== null && !input.reason) {
+        throw new BadRequestException(
+          t({
+            id: 'stock.lotCodeWhy',
+            defaultMessage: 'Say why the code is changing.',
+          }),
+        );
+      }
+      if (recoded !== null) {
+        await refuseFormerCode(
+          tx,
+          organizationId,
+          lot.variantId,
+          recoded,
+          lot.id,
         );
       }
 
@@ -131,9 +188,7 @@ export class LotsService {
           : expiryOf(input);
 
       const changes: Partial<typeof lots.$inferInsert> = {
-        ...(input.code !== undefined && input.code !== lot.code
-          ? { code: input.code }
-          : {}),
+        ...(recoded !== null ? { code: recoded } : {}),
         ...(supplierLot !== undefined && supplierLot !== lot.supplierLot
           ? { supplierLot }
           : {}),
@@ -196,6 +251,19 @@ export class LotsService {
           );
         }
         throw error;
+      }
+
+      // The code it leaves, read by every lot search and refused for any
+      // other lot of the item; the reason is free text, so it is kept
+      // here and never in the Activity log (ADR-018).
+      if (recoded !== null) {
+        await tx.insert(lotFormerCodes).values({
+          organizationId,
+          lotId: lot.id,
+          code: lot.code,
+          changedBy: actorId,
+          reason: input.reason!,
+        });
       }
 
       this.logger.log(

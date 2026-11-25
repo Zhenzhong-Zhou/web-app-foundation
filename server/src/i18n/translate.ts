@@ -5,6 +5,7 @@ import {
   type Locale,
   SUPPORTED_LOCALES,
 } from '../common/locales';
+import { formatDay } from '../core/documents/format';
 import english from './en.json';
 import french from './fr-CA.json';
 import chinese from './zh-Hans.json';
@@ -38,8 +39,9 @@ import chinese from './zh-Hans.json';
  * A value a message can carry: data; a list, joined the way the language
  * joins a list ("CAD and USD", "CAD et USD", "CAD和USD"), whose items may
  * be messages of their own, as a built-in role's name is; a whole message
- * of its own, rendered in the same language as the sentence around it; or
- * a language, named in that language too (`languageName`).
+ * of its own, rendered in the same language as the sentence around it; a
+ * language, named in that language too (`languageName`); or a calendar
+ * day, written as that language writes one (`calendarDay`).
  */
 export type MessageValue =
   | string
@@ -49,7 +51,8 @@ export type MessageValue =
   | undefined
   | readonly (string | Translatable)[]
   | Translatable
-  | LanguageName;
+  | LanguageName
+  | CalendarDay;
 
 /** A language as a message's value, named as the sentence is rendered. */
 export interface LanguageName {
@@ -94,6 +97,28 @@ export function languageWord(language: Locale, reader: Locale): string {
     new Intl.DisplayNames([reader], { type: 'language' }).of(
       new Intl.Locale(language).language,
     ) ?? language
+  );
+}
+
+/** A calendar day as a message's value, written as the sentence is. */
+export interface CalendarDay {
+  calendarDay: string;
+}
+
+/**
+ * A calendar day, YYYY-MM-DD (ADR-052), for a message to write as its
+ * reader's language writes a day, as a printed document and the client's
+ * `formatDay` do: Nov 24, 2026, 24 nov. 2026, 2026年11月24日.
+ */
+export function calendarDay(day: string): CalendarDay {
+  return { calendarDay: day };
+}
+
+function isCalendarDay(value: unknown): value is CalendarDay {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as CalendarDay).calendarDay === 'string'
   );
 }
 
@@ -186,6 +211,7 @@ function flatValues(
     locale === DEFAULT_LOCALE ? value.message : translate(value, locale);
   const flatten = (value: MessageValue) => {
     if (isLanguageName(value)) return languageWord(value.languageName, locale);
+    if (isCalendarDay(value)) return formatDay(value.calendarDay, locale);
     if (isTranslatable(value)) return nested(value);
     if (Array.isArray(value)) {
       return joinList(

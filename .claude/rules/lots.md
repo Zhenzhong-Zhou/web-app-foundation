@@ -24,10 +24,12 @@ move between lots (ADR-094). What lots allow, refuse and work out is in
 states (ADR-087).
 
 - **A made code is taken in the caller's transaction,** `takeLotCode`
-  (`lot-codes.ts`), by the organization's today, one counter for the
-  organization; a code the item already has is passed over. Its format
-  is `numbering-format.ts`'s, capitals, digits and hyphens, at most 20
-  with its digits; the client's `numbering.ts` is held level by tests.
+  (`lot-codes.ts`), by the organization's today and its one counter; a
+  code the item has, or had, is passed over. Its format is
+  `numbering-format.ts`'s, held level with the client's `numbering.ts`
+  by tests.
+- **A former code is no other lot's:** `refuseFormerCode` before a typed
+  or corrected code is written, the variant locked first.
 - **`MovementLotDto` says what a lot is,** an id, a typed new code or
   one to make; `mustBeNew` comes from the route, never the reason.
 - **`lots.expiry` is `date`, `unknown` or `none`,** `expires_at` set

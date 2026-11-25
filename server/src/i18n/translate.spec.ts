@@ -1,5 +1,6 @@
 import { SUPPORTED_LOCALES } from '../common/locales';
 import {
+  calendarDay,
   joinList,
   languageName,
   languageWord,
@@ -258,6 +259,26 @@ describe('values', () => {
     expect(refused.message).toContain('Focus (FOCUS-60CT) has no English name');
     expect(translate(refused, 'fr-CA')).toContain('n’a pas de nom en anglais');
     expect(translate(refused, 'zh-Hans')).toContain('没有英文名称');
+  });
+
+  // ADR-094 amended, R11: a refusal saying until when an old code was a
+  // lot's, the day as each language writes one, never moved a day by the
+  // server's own zone.
+  it('writes a calendar day as the sentence’s language writes one', () => {
+    const refused = t(
+      {
+        id: 'stock.lotCodeFormer',
+        defaultMessage:
+          '{code} was the code of lot {lot} until {day}. A code is never given to a second lot.',
+      },
+      { code: 'ASH-06O1', lot: 'ASH-0601', day: calendarDay('2026-11-24') },
+    );
+
+    expect(refused.message).toBe(
+      'ASH-06O1 was the code of lot ASH-0601 until Nov 24, 2026. A code is never given to a second lot.',
+    );
+    expect(translate(refused, 'fr-CA')).toContain('jusqu’au 24 nov. 2026.');
+    expect(translate(refused, 'zh-Hans')).toContain('2026年11月24日');
   });
 
   // Chinese says the language a name is written in, 英文, as the exports'

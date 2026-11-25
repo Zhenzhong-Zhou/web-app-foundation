@@ -911,7 +911,7 @@ export type Person = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'never' | 'month' | 'today' | 'week' | 'older';
+  active: 'month' | 'never' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
@@ -927,7 +927,7 @@ export type PersonDetail = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'never' | 'month' | 'today' | 'week' | 'older';
+  active: 'month' | 'never' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
   recentActivity?: Array<AuditRecord>;
 };
@@ -954,7 +954,7 @@ export type Member = {
   name: string;
   roles: Array<RoleRef>;
   photoFileId?: string | null;
-  active: 'never' | 'month' | 'today' | 'week' | 'older';
+  active: 'month' | 'never' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
@@ -1942,6 +1942,7 @@ export type UpdateLotDto = {
   expiry?: 'date' | 'unknown' | 'none';
   madeHere?: true;
   code?: string;
+  reason?: string;
   supplierLot?: string;
   expiresAt?: string;
 };
@@ -4167,6 +4168,7 @@ export const ErrorCode = {
   PRODUCT_NAMES_CHANGED: 'product_names_changed',
   STOCK_NOT_USABLE: 'stock_not_usable',
   LOT_CODE_IN_USE: 'lot_code_in_use',
+  LOT_CODE_FORMER: 'lot_code_former',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -4185,6 +4187,8 @@ export type ErrorDetails = {
   at?: string;
   day?: string;
   productId?: string;
+  lotId?: string;
+  lotCode?: string;
 };
 
 export type ErrorBody = {

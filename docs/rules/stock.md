@@ -958,6 +958,32 @@ file is kept is in the [README](README.md).
   corrected code is kept, the old and the new.
   [test](../../server/test/stock.e2e-spec.ts) "keeps a corrected code in Lot updated, the old and the new, naming the lot and its item (#687)" ·
   [test](../../server/test/stock.e2e-spec.ts) "keeps only what a save changed in Lot updated: the expiry alone (#687)"
+- **A corrected code is kept as one of the lot's former codes,** with
+  until when, who corrected it and why, in the same save; a lot
+  corrected twice keeps both. Why is asked only when the code changes,
+  and a changed code with none is refused, saying so, nothing changed;
+  the why is free text, so it is never in the Activity log. A lot may
+  take its own former code back.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#a-lots-former-codes) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "keeps each code a lot is corrected from, with when, who and why, the why never in the Activity log (R8)" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses a changed code with no why, saying so, and changes nothing; a save that keeps the code asks none (R8, E2a)" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "lets a lot take its own former code back, and refuses the code it leaves to any other lot (R11)" ·
+  MC-334
+- **A former code is never given to another lot of the item:** typed in
+  Receive stock, an order's Receive, Count it in…, Move to another lot or
+  a run's Record output, for a new lot or one to add to, or in Edit lot
+  details for another lot, it is refused, naming the lot that had it and
+  until when, and nothing is written. Another item may carry the code,
+  as a code is unique within an item. A made code passes over a former
+  code of the item, and Numbering refuses a next number one carries.
+  [ADR-094, amended](../adr/0094-lots-at-receipt.md#an-old-code-is-never-given-to-another-lot) ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses another lot’s former code for a new lot or to add to, naming that lot, and writes nothing (R11)" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses another lot’s former code in Edit lot details, naming that lot, and changes nothing; another item takes the code (R11)" ·
+  [test](../../server/test/lots-at-receipt.e2e-spec.ts) "refuses another lot’s former code for a run’s Record output, naming that lot, and records nothing (R11)" ·
+  [test](../../server/test/lot-changes.e2e-spec.ts) "refuses another lot’s former code for the new lot, naming that lot, and moves nothing (R11)" ·
+  [test](../../server/test/numbering.e2e-spec.ts) "passes over a code a lot of the item had before its code was corrected, and not another item’s (ADR-094 amended, R11)" ·
+  [test](../../server/test/numbering.e2e-spec.ts) "refuses a next number a lot’s former code carries (ADR-094 amended, R11)" ·
+  MC-334
 
 ## Starting lot tracking
 

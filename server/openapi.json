@@ -12653,8 +12653,8 @@
           "active": {
             "type": "string",
             "enum": [
-              "never",
               "month",
+              "never",
               "today",
               "week",
               "older"
@@ -12743,8 +12743,8 @@
           },
           "active": {
             "enum": [
-              "never",
               "month",
+              "never",
               "today",
               "week",
               "older"
@@ -12891,8 +12891,8 @@
           "active": {
             "type": "string",
             "enum": [
-              "never",
               "month",
+              "never",
               "today",
               "week",
               "older"
@@ -17229,6 +17229,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
           },
           "supplierLot": {
             "type": "string",
@@ -26022,7 +26026,8 @@
           "item_name_missing",
           "product_names_changed",
           "stock_not_usable",
-          "lot_code_in_use"
+          "lot_code_in_use",
+          "lot_code_former"
         ]
       },
       "ApiVocabulary": {
@@ -26091,6 +26096,13 @@
           "productId": {
             "type": "string",
             "format": "uuid"
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lotCode": {
+            "type": "string"
           }
         }
       },

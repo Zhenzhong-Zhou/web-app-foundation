@@ -176,6 +176,14 @@ export const ERROR_CODES = {
    * code, where one of its lots can be chosen instead.
    */
   lotCodeInUse: 'lot_code_in_use',
+  /**
+   * A code another lot of the item had before Edit lot details corrected
+   * it (ADR-094 amended, R11), typed for a new lot or for another lot: the
+   * message names that lot and until when, and `details.lotId` and
+   * `details.lotCode` are it, which the receive dialogs offer as Use
+   * {code}.
+   */
+  lotCodeFormer: 'lot_code_former',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -203,6 +211,12 @@ export interface ErrorDetails {
    * one whose stock is not usable (ADR-093).
    */
   productId?: string;
+  /**
+   * The lot a refusal is about, with its code as it is now: the one that
+   * had a code typed again for another lot (ADR-094 amended, R11).
+   */
+  lotId?: string;
+  lotCode?: string;
 }
 
 /**
