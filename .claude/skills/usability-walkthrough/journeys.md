@@ -29,9 +29,10 @@ What needs doing today, from Home and one step past it.
   its trace.
 - **Sizes:** each persona at a width class of its own: the senior on a
   phone, 390 × 844; the outsider on the iPhone Duo, closed, about 466 ×
-  678, then open, about 890 × 626; the owner on a tablet, upright, 820 ×
-  1180, then held sideways, 1180 × 820; the operations lead on a laptop,
-  1366 × 768, where the rail first shows, then on a desktop, 1920 × 1080.
+  678, then open, about 890 × 626; the owner who learns fast on a
+  tablet, upright, 820 × 1180, then held sideways, 1180 × 820; the
+  operations lead on a laptop, 1366 × 768, where the rail first shows,
+  then on a desktop, 1920 × 1080.
 
 ## customise-home
 
@@ -45,14 +46,14 @@ Arranging Home for oneself, and finding it the same on another device.
   off; go back to how it was; open Home on another device and find it as
   you left it.
 - **For the senior:** by the buttons, not by dragging.
-- **For the owner:** by touch, dragging where they can.
+- **For the owner who learns fast:** by touch, dragging where they can.
 - **For the operations lead:** by mouse, then each task again by
   keyboard alone.
 - **Sizes:** the senior on a phone, 390 × 844, the other device a tablet
-  upright, 820 × 1180; the owner on a tablet held sideways, 1180 × 820,
-  the other device a phone, 390 × 844; the operations lead on a laptop,
-  1366 × 768, where the rail first shows, the other device a desktop,
-  1920 × 1080.
+  upright, 820 × 1180; the owner who learns fast on a tablet held
+  sideways, 1180 × 820, the other device a phone, 390 × 844; the
+  operations lead on a laptop, 1366 × 768, where the rail first shows,
+  the other device a desktop, 1920 × 1080.
 
 ## join
 
