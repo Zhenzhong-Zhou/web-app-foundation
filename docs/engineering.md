@@ -203,6 +203,23 @@ steps; this section stays the rule.
   `## For the chat`, printed at a stop for Bob to paste.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
+  A lid that has to close ends the run first: `touch tmp/<branch>/STOP`
+  ends it after its current step, and a step is not started with less
+  time left than its guess, a migration least of all (24 November 2026).
+- **A timed step runs on a quiet Mac, beside a control** (24 November
+  2026): no fix runner (`pgrep -f 'fix-issue/run[.]mjs'` finds nothing),
+  no container restarting (`docker ps --filter status=restarting`), the
+  dev server and the browser closed, and the same conditions before and
+  after. Its batch times two reads the branch does not touch, so a slow
+  machine shows as one: step 12 of ADR-094's branch after read 30 to 60 %
+  high beside another project's container restarting in a loop, and its
+  controls said so. `main` is brought into the branch before its first
+  timed step, not after it.
+- **The Linux browsers' part of the full verify runs on a Mac left
+  alone** (24 November 2026): a server compiling or a browser open beside
+  it times WebKit's pages out (#643). After a step that adds a route, the
+  dev server is started again before a look by hand: its watcher had not
+  taken a new route, and the screen read "Cannot GET".
 - **A second working folder,** for a branch built while another runs in
   the first: `git worktree add ../<folder> -b <branch> origin/main`, then
   `npm ci` in its `server/` and `client/` before any verify. Even
@@ -296,7 +313,11 @@ steps; this section stays the rule.
   only. Its last check is "CI — every browser, by hand", never the
   required "CI — all jobs", since it skips "Against main". A label starts
   no run: a label's run once passed "CI — all jobs" over a failure (#334,
-  ADR-008's amendment).
+  ADR-008's amendment). A pull request's own run splits its tests into
+  shards differently from this run and from `main`'s, so only this run
+  proves a fix that depends on the order tests run in (24 November 2026:
+  #679's test passed every pull request and failed on `main`, where it
+  led its shard).
 - **Every pull request** that changes what a person sees takes pictures
   before and after and compares them (`npm run screenshots:compare`), and
   its Claude Code Review comment is read before merging. The README's
@@ -348,8 +369,9 @@ steps; this section stays the rule.
   waiting for Bob, 📝 noted for later. One short sentence per bullet,
   the one thing Bob must act on in bold, arrows for a flow, a small
   table or diagram to compare, a new term in plain words the first time;
-  an empty section is left out, but Decisions needed never is. After any
-  new migration, the reply reminds Bob to run `npm run migrate:all`.
+  an empty section is left out, but Decisions needed never is. Next is
+  one list a reply, never spread over several (24 November 2026). After
+  any new migration, the reply reminds Bob to run `npm run migrate:all`.
 - **Every run or session the chat asks Bob to start comes with its rough
   time and cost** (6 November 2026): the minutes or hours, the cost on
   API credits, what it takes of his plan's usage, and what the figures
@@ -571,7 +593,11 @@ reports success.
   when the commit reaches `main`. A handoff note's "closed #225" closed
   #225 again on 29 October, after its reopen; "#225 was closed" names the
   event and closes nothing. A pull request's "Closes #N" is still how a
-  fix closes its issue ([Issues and labels](#issues-and-labels)).
+  fix closes its issue ([Issues and labels](#issues-and-labels)). The
+  same holds in a pull request's description for an issue that stays
+  open (24 November 2026): #676's line naming #664 as "not closed", the
+  word right before the number, closed it at the merge; "#664 stays open"
+  says it safely.
 - An alert is named "code scanning alert 9" or "Dependabot alert 4",
   never "#9", in commits, PRs and comments (27 October 2026): GitHub
   links "#9" to issue or PR 9.

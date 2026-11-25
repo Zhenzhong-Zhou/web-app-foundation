@@ -27,6 +27,13 @@ health.e2e-spec.ts         integration test, in test/
 One exported class per file, named to match the file. A file whose name doesn't
 predict its export is a file nobody can find.
 
+Scratch files, a timing script or a probe, live under `tmp/<branch>/`,
+which git ignores, never under `server/` or `client/`. A script there runs
+by `ts-node --project`, and nothing is compiled beside its source.
+ADR-094's timing left twelve compiled files in `server/perf/` and a folder
+of its own under `server/`, which stopped `scripts/verify.sh --docs` on the
+next branch (24 November 2026).
+
 ---
 
 ## Identifiers
@@ -511,6 +518,13 @@ committed, and neither is edited by hand.
   `lot-cost-panel.test.tsx` and `stock-value-page.test.tsx` do. A tab
   opened before the deploy then never misreads the next new value, and
   the revision is raised only when a known value changes its meaning.
+- **A paged list answers its rows alone** (24 November 2026): `entries`
+  and `nextCursor`. Its counts and totals are a read of their own, as
+  `GET /v1/stock/by-code/counts` and `GET /v1/costs/valuation/totals` are,
+  asked once for a search and never for a next page or a sort. Stock
+  value's pages first carried their totals: a next page took 413 ms at
+  large, and 120 once the totals moved (ADR-094's amendment, "Settled at
+  the stop").
 - **The e2e suite checks every response against the document** (ADR-068,
   amended): each object schema is closed, so a field the contract does
   not declare fails the test that made the request, as does a declared
@@ -757,6 +771,18 @@ The error tracker hears of real faults only (ADR-084).
   a server end-to-end test three times (`server/scripts/e2e-flake-hunt.sh 3
   <suite>`). A test that fails in any of them is not committed, and the
   commit's step gives the command and the result in its summary.
+- **A browser test makes what it reads** (24 November 2026): its own
+  organization (`freshOrg`), and each record it opens, added through the
+  API in the test, never one another test left behind. #679's keyboard
+  test opened an item an earlier test had added, and failed on `main` the
+  day a shard's split put it first.
+- **A generated test is shown failing first** (24 November 2026): a
+  property test, as `server/test/cost-follows.e2e-spec.ts` is with
+  fast-check, runs once against the code before the fix and fails there,
+  its shrunk case named in the commit. That spec's first generator passed
+  on the old code too, most of its events falling on empty lots; one price
+  a run, and stock taken only from a lot that holds some, made it fail on
+  #677's shape.
 - **CI burns in the browser specs a pull request changes** (ADR-089's
   amendments): after the browser job's run, the tests of the specs it
   changes and of those importing a file it changes run in Chromium, with
