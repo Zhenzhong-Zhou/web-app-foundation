@@ -27,17 +27,19 @@ export function latestFormerCode(
 
 /**
  * Every code a lot had, newest first, the codes alone; empty for a lot
- * never corrected.
+ * never corrected. Its code today is none of them, though a lot that
+ * took its own former code back once left it (review 84).
  */
 export function formerCodesOf(
-  lotId: SQL,
+  lot: { id: SQL; code: SQL },
   organizationId: string,
 ): SQL<string[]> {
   return sql<string[]>`coalesce((
     select array_agg(f.code order by f.changed_at desc)
     from lot_former_codes f
     where f.organization_id = ${organizationId}::uuid
-      and f.lot_id = ${lotId}
+      and f.lot_id = ${lot.id}
+      and f.code <> ${lot.code}
   ), '{}')`;
 }
 

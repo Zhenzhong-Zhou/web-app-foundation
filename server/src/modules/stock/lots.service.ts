@@ -61,7 +61,10 @@ export class LotsService {
           supplierLot: lots.supplierLot,
           // Each lot's former codes, so the field refuses another lot's
           // as it is typed (ADR-094 amended, R11, F2).
-          formerCodes: formerCodesOf(sql`lots.id`, organizationId),
+          formerCodes: formerCodesOf(
+            { id: sql`lots.id`, code: sql`lots.code` },
+            organizationId,
+          ),
         })
         .from(lots)
         .where(

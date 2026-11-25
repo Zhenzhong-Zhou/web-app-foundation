@@ -726,6 +726,15 @@ describe('A new lot at receipt (e2e)', () => {
         'ASH-0601',
         'ASH-06O1',
       ]);
+      // Its former codes as the lot fields read them name the code it left,
+      // never its code today (review 84).
+      const listed = body<{ id: string; formerCodes: string[] }[]>(
+        await w.org.agent
+          .get('/v1/stock/lots')
+          .query({ variantId: w.variantId })
+          .expect(200),
+      ).find((lot) => lot.id === lotId)!;
+      expect(listed.formerCodes).toEqual(['ASH-0601']);
 
       // Its code again: a receipt typed so adds to it, as to any lot's.
       const again = written(
