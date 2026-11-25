@@ -85,7 +85,7 @@ export async function takeLotCode(
  * whose code it is again, taken back, is found by its code instead, and
  * `except` leaves out the lot being renamed, which may take its own back.
  */
-export async function lotThatHad(
+async function lotThatHad(
   tx: Transaction,
   organizationId: string,
   variantId: string,

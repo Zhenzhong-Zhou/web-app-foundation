@@ -82,7 +82,7 @@ interface PagePoolRow extends PoolRow {
 }
 
 /** Every pool at once, as the export writes them (ADR-057). */
-export interface EveryPool {
+interface EveryPool {
   /** Null until the organization has a base currency. */
   currency: string | null;
   pools: {
@@ -297,9 +297,7 @@ export class CostsService {
                count(*)::int as pools,
                coalesce(bool_or(op.variant_id is not null), false) as provisional
         from ${poolsFrom(organizationId)}
-        left join open_pools op
-          on op.variant_id = p.variant_id
-         and op.lot_key = ${lotKey}
+        ${openPoolOf}
         where ${shownOnHand(organizationId)}
       `);
 
@@ -362,9 +360,7 @@ export class CostsService {
                round(p.value / p.quantity, 6) as unit_cost,
                (op.variant_id is not null) as provisional
         from ${poolsFrom(organizationId)}
-        left join open_pools op
-          on op.variant_id = p.variant_id
-         and op.lot_key = ${lotKey}
+        ${openPoolOf}
         where ${shownOnHand(organizationId)}
         order by ${productVariants.sku}, ${lots.code} nulls first
       `);
@@ -757,22 +753,30 @@ export class CostsService {
   }
 }
 
-/** A pool's lot, the nil uuid for none, as open_pools keys it. */
-const lotKey = sql`coalesce(p.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)`;
+/**
+ * "No lot", as open_pools keys a pool: the nil uuid, so the match is a
+ * plain equality, which a hash join can use; IS NOT DISTINCT FROM cannot.
+ */
+const NO_LOT = sql`'00000000-0000-0000-0000-000000000000'::uuid`;
 
 /**
  * The pools still waiting for a cost, from the statement's `open`, as a
- * set to join: the nil uuid stands in for "no lot" so the match is a
- * plain equality, which a hash join can use; IS NOT DISTINCT FROM cannot.
+ * set to join.
  */
 function openPools(): SQL {
   return sql`open_pools as (
-    select distinct
-      o.variant_id,
-      coalesce(o.lot_id, '00000000-0000-0000-0000-000000000000'::uuid) as lot_key
+    select distinct o.variant_id, coalesce(o.lot_id, ${NO_LOT}) as lot_key
     from open o
   )`;
 }
+
+/**
+ * Pool `p`'s row in open_pools, `op`, its variant null where none of it
+ * waits.
+ */
+const openPoolOf = sql`left join open_pools op
+  on op.variant_id = p.variant_id
+ and op.lot_key = coalesce(p.lot_id, ${NO_LOT})`;
 
 /**
  * A pool, `p`, with its variant, its item and its lot, each joined by
@@ -963,9 +967,7 @@ async function poolsIn(
            round(p.value / p.quantity, 6) as unit_cost,
            (op.variant_id is not null) as provisional
     from ${poolsFrom(organizationId)}
-    left join open_pools op
-      on op.variant_id = p.variant_id
-     and op.lot_key = ${lotKey}
+    ${openPoolOf}
     where p.organization_id = ${organizationId}::uuid
       and p.id in ${ids}
   `);

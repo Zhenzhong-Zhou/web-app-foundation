@@ -92,11 +92,11 @@ interface Rest {
   issued: string;
 }
 
-/** The pools a late value may reach. */
-interface Reach {
-  /** Each pool's id by its lot, locked in lot order. */
-  pools: Map<string | null, string>;
-}
+/**
+ * The pools a late value may reach: each pool's id by its lot, locked in
+ * lot order.
+ */
+type Reach = Map<string | null, string>;
 
 /** What a late value comes to in one pool, worked out before it is written. */
 interface Plan {
@@ -161,13 +161,12 @@ async function lockReach(
     select distinct lot_id from reach
   `);
 
-  const pools = await lockPools(
+  return lockPools(
     tx,
     late.organizationId,
     late.variantId,
     (found.rows as { lot_id: string | null }[]).map((row) => row.lot_id),
   );
-  return { pools };
 }
 
 /**
@@ -227,9 +226,9 @@ async function plan(
 ): Promise<Plan> {
   const { organizationId, variantId } = late;
   const poolId =
-    reach.pools.get(acquisition.lotId) ??
+    reach.get(acquisition.lotId) ??
     (await lockPool(tx, organizationId, variantId, acquisition.lotId));
-  reach.pools.set(acquisition.lotId, poolId);
+  reach.set(acquisition.lotId, poolId);
 
   const quantity = sql`${acquisition.quantity}::numeric`;
   const value = sql`${acquisition.value}::numeric`;
@@ -892,11 +891,6 @@ export function takesCost(row: CostTaker): boolean {
   return refusalOf(row) === null;
 }
 
-function assertAcquisition(target: Target): void {
-  const refusal = refusalOf(target);
-  if (refusal) throw new ConflictException(refusal);
-}
-
 /**
  * Sets or corrects what one acquisition cost (ADR-048).
  *
@@ -948,7 +942,8 @@ export async function correctCost(
       t({ id: 'stock.suchValuation', defaultMessage: 'No such valuation' }),
     );
 
-  assertAcquisition(target);
+  const refusal = refusalOf(target);
+  if (refusal) throw new ConflictException(refusal);
 
   // The day it arrived where the organization is (ADR-072): stock received
   // at 5 pm in Vancouver arrived that day, not the next.
