@@ -926,7 +926,11 @@ export async function correctCost(
            m.reason, m.to_location_id, v.quantity, v.needs_cost,
            v.reference_type, fl.code as from_lot_code
     from stock_valuations v
-    left join stock_movements m on m.id = v.movement_id
+    -- The organization in the join, as in every join (database.md;
+    -- review 88).
+    left join stock_movements m
+      on m.id = v.movement_id
+     and m.organization_id = ${organizationId}::uuid
     left join lots fl
       on fl.id = m.lot_id
      and fl.organization_id = ${organizationId}::uuid
