@@ -969,7 +969,7 @@ describe('LotSearchPage', () => {
       name: 'Lot code or supplier’s lot',
     });
     expect(field).toHaveAccessibleDescription(
-      'Any part of either works — the batch number is usually enough. Press Enter to search.',
+      'Any part of either works, or a code the lot had before — the batch number is usually enough. Press Enter to search.',
     );
     const cellOf = async (code: string) =>
       (await screen.findByRole('link', { name: code })).closest('td');

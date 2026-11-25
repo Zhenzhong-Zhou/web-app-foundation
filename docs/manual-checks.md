@@ -1455,7 +1455,7 @@ search to having the list of customers; the target is **under two minutes**.
   lot to add", and a lot that does not expire shows its item's code
   alone. Typed whole, `Hx-2609` puts Lots first. The same text finds
   the lot in Trace a lot, its field reading "Lot code or supplier's lot",
-  whose result names "Supplier's lot Hx-2609" under the code, or
+  its hint saying a code the lot had before works too, whose result names "Supplier's lot Hx-2609" under the code, or
   "Supplier's lot to add" for a code made here with none; in
   Inventory's search by item and by lot, and
   in Movements' Find an item, lot or order, where, typed whole, the lot
@@ -8089,3 +8089,5 @@ first.
 - 2026-11-25: The review's 3 and 78, Edit lot details names a code made
   here 批次编码 in Chinese, as Receive does, a printed one 批号: MC-329
   extended.
+- 2026-11-25: The review's 19, Trace a lot's hint says a code the lot had
+  before finds it too, in three languages: MC-909 extended.

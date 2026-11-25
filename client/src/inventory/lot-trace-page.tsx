@@ -156,10 +156,11 @@ export function LotSearchPage() {
           })}
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
+          // A former code finds its lot too (R10; review 19).
           helperText={intl.formatMessage({
             id: 'inventory.trace.lotOrSupplierLot.help',
             defaultMessage:
-              'Any part of either works — the batch number is usually enough. Press Enter to search.',
+              'Any part of either works, or a code the lot had before — the batch number is usually enough. Press Enter to search.',
           })}
           sx={{ maxWidth: rem(420) }}
           fullWidth

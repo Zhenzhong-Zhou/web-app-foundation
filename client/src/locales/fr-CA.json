@@ -1028,7 +1028,7 @@
   "inventory.trace.fromBefore": "Revenu d’avant le suivi par lot",
   "inventory.trace.leftOn": "Date",
   "inventory.trace.lotOrSupplierLot": "Code de lot ou lot du fournisseur",
-  "inventory.trace.lotOrSupplierLot.help": "Vous pouvez chercher avec n’importe quelle partie de l’un ou l’autre — le numéro de lot suffit généralement. Appuyez sur Entrée pour lancer la recherche.",
+  "inventory.trace.lotOrSupplierLot.help": "Vous pouvez chercher avec n’importe quelle partie de l’un ou l’autre, ou un ancien code du lot — le numéro de lot suffit généralement. Appuyez sur Entrée pour lancer la recherche.",
   "inventory.trace.madeFrom": "Fabriqué à partir de",
   "inventory.trace.madeFrom.empty": "Non fabriqué dans un ordre de fabrication ici : ce lot a été reçu, pas produit.",
   "inventory.trace.madeInRun": "Fabriqué dans l’ordre de fabrication <run>{reference}</run>",

@@ -1028,7 +1028,7 @@
   "inventory.trace.fromBefore": "Back from before lot tracking",
   "inventory.trace.leftOn": "Date",
   "inventory.trace.lotOrSupplierLot": "Lot code or supplier’s lot",
-  "inventory.trace.lotOrSupplierLot.help": "Any part of either works — the batch number is usually enough. Press Enter to search.",
+  "inventory.trace.lotOrSupplierLot.help": "Any part of either works, or a code the lot had before — the batch number is usually enough. Press Enter to search.",
   "inventory.trace.madeFrom": "Made from",
   "inventory.trace.madeFrom.empty": "Not made in a run here — received, not produced.",
   "inventory.trace.madeInRun": "Made in run <run>{reference}</run>",

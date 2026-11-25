@@ -1028,7 +1028,7 @@
   "inventory.trace.fromBefore": "开始按批次跟踪前的库存退回",
   "inventory.trace.leftOn": "日期",
   "inventory.trace.lotOrSupplierLot": "批次编码或供应商批号",
-  "inventory.trace.lotOrSupplierLot.help": "输入任一编码的任意部分即可——通常批号就足够了。按回车键搜索。",
+  "inventory.trace.lotOrSupplierLot.help": "输入任一编码的任意部分即可，也可以输入原编码——通常批号就足够了。按回车键搜索。",
   "inventory.trace.madeFrom": "所用物料",
   "inventory.trace.madeFrom.empty": "此批次不是通过这里的生产订单生产的，而是收货入库的。",
   "inventory.trace.madeInRun": "由生产订单 <run>{reference}</run> 生产",
