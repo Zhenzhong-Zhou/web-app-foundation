@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MARK, MARK_SHAPE } from './src/theme/tokens.ts';
 import viteConfig, {
@@ -299,5 +299,81 @@ describe("the browser suite's build", () => {
         name.includes('sentry'),
       ),
     ).toEqual([]);
+  });
+});
+
+/**
+ * en-XA by a setting of its own, __PSEUDO_LANGUAGE__ (ADR-054's amendment
+ * for #530): on in `npm run dev` and in the browser suite's build, which
+ * loads it in cut-text.spec.ts and languages.spec.ts, and off in every
+ * other build, which still stops when a chunk carries it.
+ */
+describe('the pseudo-language', () => {
+  const configFor = (command: 'build' | 'serve', mode: string) =>
+    viteConfig({ command, mode });
+  type BundleHook = (this: unknown, options: unknown, bundle: unknown) => void;
+  // Each plugin's generateBundle, a plugin being one or an array of them.
+  const bundleHooks = (plugins: unknown): BundleHook[] =>
+    Array.isArray(plugins)
+      ? plugins.flatMap(bundleHooks)
+      : plugins && typeof plugins === 'object' && 'generateBundle' in plugins
+        ? [plugins.generateBundle as BundleHook]
+        : [];
+
+  /** Why a build's end stops on a chunk that names en-XA, or null. */
+  const stopsOnPseudoLanguage = (mode: string): string | null => {
+    const bundle = {
+      'assets/index.js': {
+        type: 'chunk',
+        fileName: 'assets/index.js',
+        code: 'x=["en","fr-CA","zh-Hans","en-XA"]',
+        modules: {},
+      },
+    };
+    const context = {
+      emitFile: () => '',
+      error: (message: string) => {
+        throw new Error(message);
+      },
+    };
+    try {
+      for (const hook of bundleHooks(configFor('build', mode).plugins)) {
+        hook.call(context, {}, bundle);
+      }
+      return null;
+    } catch (error) {
+      return (error as Error).message;
+    }
+  };
+
+  beforeEach(() => {
+    // No upload's plugin, whose own end would reach the tracker.
+    vi.stubEnv('SENTRY_AUTH_TOKEN', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("is on in the dev server and the browser suite's build, and off in a production build", () => {
+    expect(configFor('serve', 'development').define).toMatchObject({
+      __PSEUDO_LANGUAGE__: 'true',
+    });
+    expect(configFor('build', 'e2e').define).toMatchObject({
+      __PSEUDO_LANGUAGE__: 'true',
+    });
+    expect(configFor('build', 'production').define).toMatchObject({
+      __PSEUDO_LANGUAGE__: 'false',
+    });
+  });
+
+  it('stops a production build whose chunks carry it, naming where', () => {
+    expect(stopsOnPseudoLanguage('production')).toMatch(
+      /carries the pseudo-language, .*: assets\/index\.js names en-XA\./,
+    );
+  });
+
+  it("lets the browser suite's build carry it", () => {
+    expect(stopsOnPseudoLanguage('e2e')).toBeNull();
   });
 });

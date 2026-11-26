@@ -422,10 +422,12 @@ function versionFile({ build, builtAt, version }: Build): Plugin {
 /**
  * The pseudo-language, en-XA, is for development and the browser tests
  * (ADR-054's November 2026 amendment, R9): a production build neither has
- * it nor offers it. Its code sits behind `import.meta.env.DEV`, which a
- * build makes false, so the picker's line for it goes and
- * src/i18n/pseudo.ts with it. Named here, not read from src/lib/locales.ts,
- * which reads import.meta.env as it loads.
+ * it nor offers it. Its code sits behind `__PSEUDO_LANGUAGE__`, compiled in
+ * below: true on the dev server and in the browser suite's build, which
+ * loads it (ADR-054's amendment for #530), false in every other build, so
+ * the picker's line for it goes and src/i18n/pseudo.ts with it. Named
+ * here, not read from src/lib/locales.ts, which reads that setting as it
+ * loads.
  */
 const PSEUDO_TAG = 'en-XA';
 const PSEUDO_MODULE = 'src/i18n/pseudo.ts';
@@ -450,7 +452,10 @@ export function pseudoLanguageIn(chunks: BuiltChunk[]): string[] {
   ]);
 }
 
-/** Stops a build whose chunks carry the pseudo-language, naming where. */
+/**
+ * Stops a build whose chunks carry the pseudo-language, naming where: every
+ * build but the browser suite's, which has it on purpose.
+ */
 function withoutPseudoLanguage(): Plugin {
   return {
     name: 'without-pseudo-language',
@@ -461,7 +466,7 @@ function withoutPseudoLanguage(): Plugin {
       );
       if (found.length > 0) {
         this.error(
-          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind import.meta.env.DEV.`,
+          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __PSEUDO_LANGUAGE__.`,
         );
       }
     },
@@ -542,6 +547,8 @@ const E2E_BUILD = {
 export default defineConfig(({ command, mode }) => {
   const build = thisBuild(command);
   const forTests = mode === E2E_MODE;
+  // en-XA: on the dev server and in the browser suite's build alone.
+  const pseudoLanguage = command === 'serve' || forTests;
   const upload =
     command === 'build' && !forTests
       ? sourceMapUpload(process.env, build)
@@ -558,9 +565,10 @@ export default defineConfig(({ command, mode }) => {
       fromTokens(),
       loadingScript(),
       versionFile(build),
-      withoutPseudoLanguage(),
+      !pseudoLanguage && withoutPseudoLanguage(),
       upload && sentryVitePlugin(upload),
     ],
+    define: { __PSEUDO_LANGUAGE__: JSON.stringify(pseudoLanguage) },
     resolve: {
       /**
        * In a production build, the ICU parser is swapped for its stub (ADR-054).

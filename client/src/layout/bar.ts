@@ -44,7 +44,7 @@ const WORDS_NEED: Record<Locale, number> &
   en: 316,
   'fr-CA': 340,
   'zh-Hans': 262,
-  ...(import.meta.env.DEV ? { [PSEUDO_LOCALE]: 497 } : {}),
+  ...(__PSEUDO_LANGUAGE__ ? { [PSEUDO_LOCALE]: 497 } : {}),
 };
 
 /** The container query under which the words of the screens' language show. */
