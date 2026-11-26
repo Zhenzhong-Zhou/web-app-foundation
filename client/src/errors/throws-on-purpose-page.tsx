@@ -9,7 +9,7 @@
  * In `npm run dev` and the browser suite's build alone, behind
  * `__DEV_AND_TESTS__` (src/dev-and-tests.d.ts): every other build drops
  * the page and its address, where a visitor meets Page not found, and
- * vite.config.ts's `withoutThrowsOnPurpose` stops one that carries either.
+ * vite.config.ts's `withoutDevAndTests` stops one that carries either.
  */
 export function ThrowsOnPurposePage(): never {
   throw new Error('This page throws on purpose, as it draws.');

@@ -37,7 +37,7 @@ const BAR_CONTAINER = 'bar';
  * since its words are about 40 % longer than English's (ADR-054's November
  * 2026 amendment, R9): with English's, its bar ran past a 390 px phone. In
  * development and the browser tests only, as the language is: a production
- * build drops the entry with it (vite.config.ts's `withoutPseudoLanguage`).
+ * build drops the entry with it (vite.config.ts's `withoutDevAndTests`).
  */
 const WORDS_NEED: Record<Locale, number> &
   Partial<Record<ScreenLocale, number>> = {

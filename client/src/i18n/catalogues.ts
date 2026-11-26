@@ -34,7 +34,7 @@ const LOADERS: Record<Exclude<Locale, 'en'>, () => Promise<unknown>> = {
  *
  * en-XA is made here from the English, in development and the browser
  * tests; a production build, which never offers it, drops the branch and
- * pseudo.ts with it (vite.config.ts's `withoutPseudoLanguage`).
+ * pseudo.ts with it (vite.config.ts's `withoutDevAndTests`).
  */
 export async function loadMessages(locale: ScreenLocale): Promise<Messages> {
   if (!isLocale(locale)) {

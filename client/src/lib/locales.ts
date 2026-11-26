@@ -20,7 +20,7 @@ export const DEFAULT_LOCALE: Locale = 'en';
  * a word the catalogue lacks, or a box too narrow for a longer language,
  * shows without waiting for a translation. In development and the browser
  * tests only: a production build neither has it nor offers it, which
- * vite.config.ts's `withoutPseudoLanguage` holds, so it is named only
+ * vite.config.ts's `withoutDevAndTests` holds, so it is named only
  * where `__DEV_AND_TESTS__` guards it (src/dev-and-tests.d.ts). To the
  * server, the account, the guides and anything else the screens ask for,
  * it is English.

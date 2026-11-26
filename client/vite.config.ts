@@ -464,27 +464,6 @@ export const pseudoLanguageIn = (chunks: BuiltChunk[]): string[] =>
   carrying(chunks, PSEUDO_TAG, PSEUDO_MODULE);
 
 /**
- * Stops a build whose chunks carry the pseudo-language, naming where: every
- * build but the browser suite's, which has it on purpose.
- */
-function withoutPseudoLanguage(): Plugin {
-  return {
-    name: 'without-pseudo-language',
-    apply: 'build',
-    generateBundle(_options, bundle) {
-      const found = pseudoLanguageIn(
-        Object.values(bundle).filter((output) => output.type === 'chunk'),
-      );
-      if (found.length > 0) {
-        this.error(
-          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __DEV_AND_TESTS__.`,
-        );
-      }
-    },
-  };
-}
-
-/**
  * The page that throws as it draws, on purpose, where the browser suite
  * reaches the crash page before sign-in (ADR-008's amendment for #530):
  * behind `__DEV_AND_TESTS__`, en-XA's own setting, compiled in below, so
@@ -498,23 +477,35 @@ const THROWS_ON_PURPOSE_MODULE = 'src/errors/throws-on-purpose-page.tsx';
 export const throwsOnPurposeIn = (chunks: BuiltChunk[]): string[] =>
   carrying(chunks, THROWS_ON_PURPOSE_PATH, THROWS_ON_PURPOSE_MODULE);
 
+/** What is for development and the browser tests alone, and its finder. */
+const DEV_AND_TESTS_ONLY = [
+  { what: 'the pseudo-language', find: pseudoLanguageIn },
+  { what: 'the page that throws on purpose', find: throwsOnPurposeIn },
+];
+
 /**
- * Stops a build whose chunks carry the page that throws on purpose, its
- * module or its address, naming where: every build but the browser
- * suite's, which has it on purpose.
+ * Stops a build whose chunks carry what is for development and the browser
+ * tests alone, en-XA or the page that throws on purpose, naming each and
+ * where: every build but the browser suite's, which has them on purpose.
  */
-function withoutThrowsOnPurpose(): Plugin {
+function withoutDevAndTests(): Plugin {
   return {
-    name: 'without-throws-on-purpose',
+    name: 'without-dev-and-tests',
     apply: 'build',
     generateBundle(_options, bundle) {
-      const found = throwsOnPurposeIn(
-        Object.values(bundle).filter((output) => output.type === 'chunk'),
+      const chunks = Object.values(bundle).filter(
+        (output) => output.type === 'chunk',
       );
+      const found = DEV_AND_TESTS_ONLY.flatMap(({ what, find }) => {
+        const where = find(chunks);
+        return where.length > 0
+          ? [
+              `The build carries ${what}, which is for development and the browser tests only: ${where.join('; ')}.`,
+            ]
+          : [];
+      });
       if (found.length > 0) {
-        this.error(
-          `The build carries the page that throws on purpose, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __DEV_AND_TESTS__.`,
-        );
+        this.error(`${found.join(' ')} Keep it behind __DEV_AND_TESTS__.`);
       }
     },
   };
@@ -613,8 +604,7 @@ export default defineConfig(({ command, mode }) => {
       fromTokens(),
       loadingScript(),
       versionFile(build),
-      !devAndTests && withoutPseudoLanguage(),
-      !devAndTests && withoutThrowsOnPurpose(),
+      !devAndTests && withoutDevAndTests(),
       upload && sentryVitePlugin(upload),
     ],
     define: {

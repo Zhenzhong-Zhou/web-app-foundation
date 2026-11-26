@@ -441,4 +441,15 @@ describe('the page that throws on purpose', () => {
     );
     expect(whyTheBuildStops('e2e', route)).toBeNull();
   });
+
+  it('stops once, naming both, a build whose chunks carry it and en-XA', () => {
+    expect(
+      whyTheBuildStops(
+        'production',
+        'x=["en-XA"];y={path:"/throws-on-purpose"}',
+      ),
+    ).toBe(
+      'The build carries the pseudo-language, which is for development and the browser tests only: assets/index.js names en-XA. The build carries the page that throws on purpose, which is for development and the browser tests only: assets/index.js names /throws-on-purpose. Keep it behind __DEV_AND_TESTS__.',
+    );
+  });
 });

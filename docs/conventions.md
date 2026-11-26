@@ -746,7 +746,7 @@ The error tracker hears of real faults only (ADR-084).
   `__DEV_AND_TESTS__`, the setting `en-XA` has too
   (`client/src/dev-and-tests.d.ts`); a production build has neither the
   page nor its address, where a visitor meets Page not found, and
-  `withoutThrowsOnPurpose` in `client/vite.config.ts` stops a build whose
+  `withoutDevAndTests` in `client/vite.config.ts` stops a build whose
   chunks carry it, as it stops `en-XA`.
 - **A limit the browser suite reaches is `limit(n)` in `@Throttle`**
   (`server/src/core/auth/throttle-limits.ts`), multiplied by
