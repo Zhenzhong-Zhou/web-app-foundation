@@ -9,6 +9,7 @@ import viteConfig, {
   brandSettings,
   pseudoLanguageIn,
   sourceMapUpload,
+  throwsOnPurposeIn,
   withTokens,
 } from './vite.config.ts';
 
@@ -302,6 +303,47 @@ describe("the browser suite's build", () => {
   });
 });
 
+type BundleHook = (this: unknown, options: unknown, bundle: unknown) => void;
+
+/** Each plugin's generateBundle, a plugin being one or an array of them. */
+const bundleHooks = (plugins: unknown): BundleHook[] =>
+  Array.isArray(plugins)
+    ? plugins.flatMap(bundleHooks)
+    : plugins && typeof plugins === 'object' && 'generateBundle' in plugins
+      ? [plugins.generateBundle as BundleHook]
+      : [];
+
+/**
+ * Why the end of a build in `mode` stops on one chunk of `code`, as each
+ * plugin's generateBundle runs over it, or null when it goes on.
+ */
+function whyTheBuildStops(mode: string, code: string): string | null {
+  const bundle = {
+    'assets/index.js': {
+      type: 'chunk',
+      fileName: 'assets/index.js',
+      code,
+      modules: {},
+    },
+  };
+  const context = {
+    emitFile: () => '',
+    error: (message: string) => {
+      throw new Error(message);
+    },
+  };
+  try {
+    for (const hook of bundleHooks(
+      viteConfig({ command: 'build', mode }).plugins,
+    )) {
+      hook.call(context, {}, bundle);
+    }
+    return null;
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+
 /**
  * en-XA by a setting of its own, __PSEUDO_LANGUAGE__ (ADR-054's amendment
  * for #530): on in `npm run dev` and in the browser suite's build, which
@@ -311,40 +353,10 @@ describe("the browser suite's build", () => {
 describe('the pseudo-language', () => {
   const configFor = (command: 'build' | 'serve', mode: string) =>
     viteConfig({ command, mode });
-  type BundleHook = (this: unknown, options: unknown, bundle: unknown) => void;
-  // Each plugin's generateBundle, a plugin being one or an array of them.
-  const bundleHooks = (plugins: unknown): BundleHook[] =>
-    Array.isArray(plugins)
-      ? plugins.flatMap(bundleHooks)
-      : plugins && typeof plugins === 'object' && 'generateBundle' in plugins
-        ? [plugins.generateBundle as BundleHook]
-        : [];
 
   /** Why a build's end stops on a chunk that names en-XA, or null. */
-  const stopsOnPseudoLanguage = (mode: string): string | null => {
-    const bundle = {
-      'assets/index.js': {
-        type: 'chunk',
-        fileName: 'assets/index.js',
-        code: 'x=["en","fr-CA","zh-Hans","en-XA"]',
-        modules: {},
-      },
-    };
-    const context = {
-      emitFile: () => '',
-      error: (message: string) => {
-        throw new Error(message);
-      },
-    };
-    try {
-      for (const hook of bundleHooks(configFor('build', mode).plugins)) {
-        hook.call(context, {}, bundle);
-      }
-      return null;
-    } catch (error) {
-      return (error as Error).message;
-    }
-  };
+  const stopsOnPseudoLanguage = (mode: string): string | null =>
+    whyTheBuildStops(mode, 'x=["en","fr-CA","zh-Hans","en-XA"]');
 
   beforeEach(() => {
     // No upload's plugin, whose own end would reach the tracker.
@@ -375,5 +387,69 @@ describe('the pseudo-language', () => {
 
   it("lets the browser suite's build carry it", () => {
     expect(stopsOnPseudoLanguage('e2e')).toBeNull();
+  });
+});
+
+/**
+ * The page that throws as it draws, on purpose, where the browser suite
+ * reaches the crash page before sign-in (ADR-008's amendment for #530):
+ * __THROWS_ON_PURPOSE__, on where en-XA is, and every other build stops
+ * when a chunk carries the page or its address.
+ */
+describe('the page that throws on purpose', () => {
+  const clean = {
+    fileName: 'assets/index.js',
+    code: 'const routes = ["/login", "/register"];',
+    modules: { '/app/client/src/App.tsx': { renderedLength: 40 } },
+  };
+  const page = '/app/client/src/errors/throws-on-purpose-page.tsx';
+
+  beforeEach(() => {
+    vi.stubEnv('SENTRY_AUTH_TOKEN', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('finds nothing in a build without it', () => {
+    expect(throwsOnPurposeIn([clean])).toEqual([]);
+  });
+
+  it('names a chunk that names its address, or holds its code, but not one that dropped it', () => {
+    expect(
+      throwsOnPurposeIn([{ ...clean, code: 'path:`/throws-on-purpose`' }]),
+    ).toEqual(['assets/index.js names /throws-on-purpose']);
+    expect(
+      throwsOnPurposeIn([
+        { ...clean, modules: { [page]: { renderedLength: 120 } } },
+      ]),
+    ).toEqual(['assets/index.js holds src/errors/throws-on-purpose-page.tsx']);
+    expect(
+      throwsOnPurposeIn([
+        { ...clean, modules: { [page]: { renderedLength: 0 } } },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("is on in the dev server and the browser suite's build, and off in a production build", () => {
+    expect(
+      viteConfig({ command: 'serve', mode: 'development' }).define,
+    ).toMatchObject({ __THROWS_ON_PURPOSE__: 'true' });
+    expect(viteConfig({ command: 'build', mode: 'e2e' }).define).toMatchObject({
+      __THROWS_ON_PURPOSE__: 'true',
+    });
+    expect(
+      viteConfig({ command: 'build', mode: 'production' }).define,
+    ).toMatchObject({ __THROWS_ON_PURPOSE__: 'false' });
+  });
+
+  it("stops a production build whose chunks carry it, naming where, and lets the browser suite's carry it", () => {
+    const route = 'x={path:"/throws-on-purpose"}';
+
+    expect(whyTheBuildStops('production', route)).toMatch(
+      /carries the page that throws on purpose, .*: assets\/index\.js names \/throws-on-purpose\./,
+    );
+    expect(whyTheBuildStops('e2e', route)).toBeNull();
   });
 });

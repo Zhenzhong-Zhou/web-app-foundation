@@ -174,18 +174,7 @@ async function expectRingOnRail(button: Locator, railGround: string) {
  * The screens before sign-in, the product's own (ADR-082): its mark and
  * name above, the © line below.
  */
-const SIGNED_OUT: {
-  name: string;
-  path: string;
-  title: string;
-  /**
-   * A page's module, served as one whose page throws as it draws: its code
-   * broken in this build (#244). The screens before sign-in load with the
-   * app, not split, so they cannot fail to load as `broken` makes a
-   * signed-in page's chunk do: the whole app would not start.
-   */
-  broken?: { module: string; page: string };
-}[] = [
+const SIGNED_OUT: { name: string; path: string; title: string }[] = [
   { name: 'sign-in', path: '/login', title: 'Sign in' },
   {
     name: 'a status page, signed out',
@@ -193,10 +182,15 @@ const SIGNED_OUT: {
     title: 'Page not found',
   },
   {
+    // A page that throws as it draws, its code broken (#244): there on
+    // purpose in the suite's build and on the dev server, never in a build
+    // that ships (src/errors/throws-on-purpose-page.tsx). The screens
+    // before sign-in load with the app, not split, so they cannot fail to
+    // load as `broken` makes a signed-in page's chunk do: the whole app
+    // would not start.
     name: 'the crash page before sign-in',
-    path: '/login',
+    path: '/throws-on-purpose',
     title: 'Something went wrong',
-    broken: { module: '**/src/auth/login-page.tsx*', page: 'LoginPage' },
   },
 ];
 
@@ -1325,15 +1319,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       for (const screen of SIGNED_OUT) {
         test(screen.name, async ({ page }) => {
-          const { broken } = screen;
-          if (broken) {
-            await page.route(broken.module, (route) =>
-              route.fulfill({
-                contentType: 'text/javascript',
-                body: `export function ${broken.page}() { throw new Error('${broken.page} broken in this build'); }`,
-              }),
-            );
-          }
           await page.goto(screen.path);
           await expect(
             page.getByRole('heading', { level: 1, name: screen.title }),

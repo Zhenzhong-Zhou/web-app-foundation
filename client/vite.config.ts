@@ -439,18 +439,29 @@ interface BuiltChunk {
   modules: Record<string, { renderedLength: number }>;
 }
 
-/** What of the pseudo-language a build's chunks carry, each a line. */
-export function pseudoLanguageIn(chunks: BuiltChunk[]): string[] {
+/**
+ * Where a build's chunks carry what is for development and the browser
+ * tests alone, each a line: a chunk that names `name`, or holds the code of
+ * `module`.
+ */
+function carrying(
+  chunks: BuiltChunk[],
+  name: string,
+  module: string,
+): string[] {
   return chunks.flatMap(({ fileName, code, modules }) => [
-    ...(code.includes(PSEUDO_TAG) ? [`${fileName} names ${PSEUDO_TAG}`] : []),
+    ...(code.includes(name) ? [`${fileName} names ${name}`] : []),
     ...Object.entries(modules)
       .filter(
-        ([id, { renderedLength }]) =>
-          renderedLength > 0 && id.endsWith(PSEUDO_MODULE),
+        ([id, { renderedLength }]) => renderedLength > 0 && id.endsWith(module),
       )
-      .map(() => `${fileName} holds ${PSEUDO_MODULE}`),
+      .map(() => `${fileName} holds ${module}`),
   ]);
 }
+
+/** What of the pseudo-language a build's chunks carry, each a line. */
+export const pseudoLanguageIn = (chunks: BuiltChunk[]): string[] =>
+  carrying(chunks, PSEUDO_TAG, PSEUDO_MODULE);
 
 /**
  * Stops a build whose chunks carry the pseudo-language, naming where: every
@@ -467,6 +478,42 @@ function withoutPseudoLanguage(): Plugin {
       if (found.length > 0) {
         this.error(
           `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __PSEUDO_LANGUAGE__.`,
+        );
+      }
+    },
+  };
+}
+
+/**
+ * The page that throws as it draws, on purpose, where the browser suite
+ * reaches the crash page before sign-in (ADR-008's amendment for #530):
+ * behind `__THROWS_ON_PURPOSE__`, compiled in below by en-XA's own rule, so
+ * every build but the suite's drops the page and its address, and a
+ * visitor there meets Page not found. Named here, not read from App.tsx.
+ */
+const THROWS_ON_PURPOSE_PATH = '/throws-on-purpose';
+const THROWS_ON_PURPOSE_MODULE = 'src/errors/throws-on-purpose-page.tsx';
+
+/** What of the page that throws on purpose a build's chunks carry, each a line. */
+export const throwsOnPurposeIn = (chunks: BuiltChunk[]): string[] =>
+  carrying(chunks, THROWS_ON_PURPOSE_PATH, THROWS_ON_PURPOSE_MODULE);
+
+/**
+ * Stops a build whose chunks carry the page that throws on purpose, its
+ * module or its address, naming where: every build but the browser
+ * suite's, which has it on purpose.
+ */
+function withoutThrowsOnPurpose(): Plugin {
+  return {
+    name: 'without-throws-on-purpose',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const found = throwsOnPurposeIn(
+        Object.values(bundle).filter((output) => output.type === 'chunk'),
+      );
+      if (found.length > 0) {
+        this.error(
+          `The build carries the page that throws on purpose, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __THROWS_ON_PURPOSE__.`,
         );
       }
     },
@@ -547,8 +594,10 @@ const E2E_BUILD = {
 export default defineConfig(({ command, mode }) => {
   const build = thisBuild(command);
   const forTests = mode === E2E_MODE;
-  // en-XA: on the dev server and in the browser suite's build alone.
+  // en-XA, and the page that throws on purpose: on the dev server and in
+  // the browser suite's build alone.
   const pseudoLanguage = command === 'serve' || forTests;
+  const throwsOnPurpose = pseudoLanguage;
   const upload =
     command === 'build' && !forTests
       ? sourceMapUpload(process.env, build)
@@ -566,9 +615,13 @@ export default defineConfig(({ command, mode }) => {
       loadingScript(),
       versionFile(build),
       !pseudoLanguage && withoutPseudoLanguage(),
+      !throwsOnPurpose && withoutThrowsOnPurpose(),
       upload && sentryVitePlugin(upload),
     ],
-    define: { __PSEUDO_LANGUAGE__: JSON.stringify(pseudoLanguage) },
+    define: {
+      __PSEUDO_LANGUAGE__: JSON.stringify(pseudoLanguage),
+      __THROWS_ON_PURPOSE__: JSON.stringify(throwsOnPurpose),
+    },
     resolve: {
       /**
        * In a production build, the ICU parser is swapped for its stub (ADR-054).

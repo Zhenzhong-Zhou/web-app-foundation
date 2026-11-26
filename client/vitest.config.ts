@@ -42,6 +42,9 @@ export default defineConfig({
     // en-XA, as on the dev server and in the browser suite's build
     // (ADR-054's amendment for #530).
     __PSEUDO_LANGUAGE__: JSON.stringify(true),
+    // The page that throws on purpose, as there too (ADR-008's amendment
+    // for #530).
+    __THROWS_ON_PURPOSE__: JSON.stringify(true),
   },
   test: {
     environment: 'jsdom',
