@@ -1,10 +1,11 @@
+// @vitest-environment node
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MARK, MARK_SHAPE } from './src/theme/tokens.ts';
-import {
+import viteConfig, {
   brandSettings,
   pseudoLanguageIn,
   sourceMapUpload,
@@ -247,5 +248,56 @@ describe('sourceMapUpload', () => {
     expect(warn).toHaveBeenCalledWith(
       'Source maps not uploaded to Sentry. 401 Unauthorized',
     );
+  });
+});
+
+/**
+ * The browser suite's own build, `vite build --mode e2e` (ADR-008's
+ * amendment for #530): a folder of its own, source maps and the build's
+ * manifest, none of which a production build has, so the files that ship
+ * are as they were.
+ */
+describe("the browser suite's build", () => {
+  // The whole config, as `vite build` reads it, in Node: it reads its
+  // files by their URL, which jsdom's would not give.
+  const configFor = (mode: string) => viteConfig({ command: 'build', mode });
+  // Its plugins' names, a plugin being one or an array of them.
+  const pluginNames = (plugins: unknown): string[] =>
+    Array.isArray(plugins)
+      ? plugins.flatMap(pluginNames)
+      : plugins && typeof plugins === 'object' && 'name' in plugins
+        ? [String(plugins.name)]
+        : [];
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('goes to a folder of its own, with source maps and the manifest', () => {
+    expect(configFor('e2e').build).toMatchObject({
+      outDir: 'dist-e2e',
+      sourcemap: true,
+      manifest: true,
+    });
+  });
+
+  it('leaves a production build in dist/, with neither maps nor a manifest', () => {
+    vi.stubEnv('SENTRY_AUTH_TOKEN', '');
+    const { build } = configFor('production');
+
+    // No outDir is Vite's own, dist/.
+    expect(build?.outDir).toBeUndefined();
+    expect(build?.sourcemap).toBe(false);
+    expect(build?.manifest).toBeUndefined();
+  });
+
+  it('uploads nothing to the error tracker, even where the upload is set up', () => {
+    vi.stubEnv('SENTRY_AUTH_TOKEN', 'sntrys_token');
+
+    expect(
+      pluginNames(configFor('e2e').plugins).filter((name) =>
+        name.includes('sentry'),
+      ),
+    ).toEqual([]);
   });
 });

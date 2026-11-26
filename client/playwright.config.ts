@@ -42,9 +42,31 @@ const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3100';
  */
 const FIREFOX = Boolean(process.env.CI || process.env.E2E_FIREFOX);
 
+/**
+ * The dev server in place of the built client (webServer, below), for one
+ * spec at a time: E2E_DEV_SERVER=1, as `npm run test:e2e:ui` sets. Nothing
+ * else sets it, CI and scripts/verify.sh among them.
+ */
+const DEV_SERVER = Boolean(process.env.E2E_DEV_SERVER);
+
 /** The specs WebKit and Firefox run besides Chromium (projects, below). */
 const EVERY_ENGINE =
   /(?:accessibility|document-refusals|page-frame|sign-in-return)\.spec\.ts/;
+
+/**
+ * What the client is given, built or on the dev server: vite.config.ts
+ * reads them as it starts or builds.
+ */
+const CLIENT_SETTINGS = {
+  VITE_API_TARGET: 'http://localhost:3100',
+  // A © line, so the screens before sign-in are checked with their
+  // footer, as on Render (ADR-082); ../.env's own, where it sets one.
+  VITE_COPYRIGHT_HOLDER:
+    process.env.VITE_COPYRIGHT_HOLDER || 'Zhenzhong (Bob) Zhou',
+  // A site's address, so a shared link's card has its picture, as on
+  // Render; ../.env's own, where it sets one.
+  VITE_SITE_URL: process.env.VITE_SITE_URL || CLIENT_URL,
+};
 
 const E2E_DATABASE_URL = process.env.DATABASE_URL_E2E;
 
@@ -161,13 +183,22 @@ export default defineConfig({
   ],
 
   /**
-   * `reuseExistingServer` means a normal day is unaffected: if the dev server
-   * and API are already up, Playwright attaches to them. CI starts both from
-   * scratch.
+   * The API, then the client the suite runs on.
    *
-   * The API is pointed at its own database. Sharing DATABASE_URL_TEST with the
-   * Jest e2e suite would let `npm run test:e2e` truncate tables underneath a
-   * Playwright run.
+   * The API is reused when it is already up on 3100, so a normal day is
+   * unaffected; CI starts it from scratch. It is pointed at its own
+   * database. Sharing DATABASE_URL_TEST with the Jest e2e suite would let
+   * `npm run test:e2e` truncate tables underneath a Playwright run.
+   *
+   * The client is built, then served (ADR-008's amendment for #530): each
+   * run builds it in the tests' own mode into dist-e2e/, never dist/
+   * (vite.config.ts), and Vite's preview server serves those files on 5273,
+   * passing /api on to the API as the dev server did. The dev server sent
+   * each module as it transformed it: Node aborted inside it (#530), and in
+   * Linux WebKit a page waited on the start screen for modules it never
+   * sent (#643). A built client is never reused, since a server already on
+   * 5273 would serve an earlier run's build: the run stops, saying the port
+   * is taken. Under E2E_DEV_SERVER, the dev server as before.
    */
   webServer: [
     {
@@ -200,28 +231,39 @@ export default defineConfig({
         CLIENT_URL,
       },
     },
-    {
-      command: 'npm run dev -- --port 5273 --strictPort',
-      url: CLIENT_URL,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-      env: {
-        VITE_API_TARGET: 'http://localhost:3100',
-        // No hot reload, which vite.config.ts reads (#183). A file under
-        // src/ saved during a run reloaded every open page, and a test in
-        // the middle of a form filled a field on one page and pressed its
-        // button on the next. A person's own `npm run dev` keeps it; a
-        // server already on 5273 is reused as it is, hot reload and all,
-        // so stop that one first.
-        VITE_HMR: 'off',
-        // A © line, so the screens before sign-in are checked with their
-        // footer, as on Render (ADR-082); ../.env's own, where it sets one.
-        VITE_COPYRIGHT_HOLDER:
-          process.env.VITE_COPYRIGHT_HOLDER || 'Zhenzhong (Bob) Zhou',
-        // A site's address, so a shared link's card has its picture, as on
-        // Render; ../.env's own, where it sets one.
-        VITE_SITE_URL: process.env.VITE_SITE_URL || CLIENT_URL,
-      },
-    },
+    DEV_SERVER
+      ? {
+          command: 'npm run dev -- --port 5273 --strictPort',
+          url: CLIENT_URL,
+          reuseExistingServer: !process.env.CI,
+          timeout: 120_000,
+          env: {
+            ...CLIENT_SETTINGS,
+            // No hot reload, which vite.config.ts reads (#183). A file
+            // under src/ saved during a run reloaded every open page, and a
+            // test in the middle of a form filled a field on one page and
+            // pressed its button on the next. A person's own `npm run dev`
+            // keeps it; a dev server already on 5273 is reused as it is,
+            // hot reload and all, so stop that one first.
+            VITE_HMR: 'off',
+          },
+        }
+      : {
+          command:
+            'npm run build:e2e && npm run preview:e2e -- --port 5273 --strictPort',
+          url: CLIENT_URL,
+          reuseExistingServer: false,
+          // The build and the server's start, about a second and a half on
+          // the Mac in November 2026.
+          timeout: 120_000,
+          env: {
+            ...CLIENT_SETTINGS,
+            // A production build's, as Vite gives a build where none is
+            // set. ../.env's development, or CI's test, which reach this
+            // process, would build React's development code and what
+            // import.meta.env.DEV guards.
+            NODE_ENV: 'production',
+          },
+        },
   ],
 });

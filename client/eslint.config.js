@@ -100,6 +100,7 @@ export default defineConfig([
   // src/api/ is generated from the server's OpenAPI document (ADR-068).
   globalIgnores([
     'dist',
+    'dist-e2e',
     'e2e/.output',
     'e2e/.auth',
     'playwright-report',

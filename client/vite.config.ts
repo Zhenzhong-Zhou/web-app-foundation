@@ -212,8 +212,8 @@ function appName(mode: string): Plugin {
    * The home screen's name and icons (ADR-082). It is there for those, so
    * `browser`: added to a home screen, the app still opens with the
    * browser's bar and its back button. Written here, as version.json is,
-   * since it holds the name; the dev server answers it too, since the
-   * end-to-end suite runs there.
+   * since it holds the name; the dev server answers it too, for a spec run
+   * on it (E2E_DEV_SERVER, playwright.config.ts) and the screenshots.
    */
   const manifest = JSON.stringify({
     name,
@@ -520,10 +520,32 @@ export function sourceMapUpload(
   };
 }
 
+/**
+ * The browser suite's own build (ADR-008's amendment for #530), `npm run
+ * build:e2e`, which playwright.config.ts runs and then serves with
+ * `npm run preview:e2e`. It is the production build, React's production
+ * code and the parser's stub among it, with NODE_ENV unset or production
+ * (playwright.config.ts sets it), but for what the tests need: a
+ * folder of its own, so a browser run leaves dist/, the files that ship,
+ * as it was; source maps, served, so a trace can name the source; and the
+ * build's manifest, .vite/manifest.json, which file each source became, so
+ * a test can find a page's chunk from disk. Nothing from it is uploaded to
+ * the error tracker.
+ */
+const E2E_MODE = 'e2e';
+const E2E_BUILD = {
+  outDir: 'dist-e2e',
+  sourcemap: true,
+  manifest: true,
+} as const;
+
 export default defineConfig(({ command, mode }) => {
   const build = thisBuild(command);
+  const forTests = mode === E2E_MODE;
   const upload =
-    command === 'build' ? sourceMapUpload(process.env, build) : null;
+    command === 'build' && !forTests
+      ? sourceMapUpload(process.env, build)
+      : null;
   // The CLI the plugin uploads with sends Sentry its own usage reports,
   // naming the organization and the project, unless its setting says not to.
   if (upload) process.env.SENTRY_CLI_NO_TELEMETRY = '1';
@@ -543,9 +565,10 @@ export default defineConfig(({ command, mode }) => {
       /**
        * In a production build, the ICU parser is swapped for its stub (ADR-054).
        * Every catalogue reaches the browser already parsed (npm run
-       * i18n:compile), so the parser would be weight with nothing to do. Dev
-       * and the tests keep it, so a message added in code and not yet
-       * extracted still renders from its English while someone works on it.
+       * i18n:compile), so the parser would be weight with nothing to do. The
+       * dev server keeps it, so a message added in code and not yet
+       * extracted still renders from its English while someone works on it;
+       * the browser suite's build has the stub, as what ships does.
        */
       alias:
         command === 'build'
@@ -561,18 +584,24 @@ export default defineConfig(({ command, mode }) => {
     // accepts that: this surface sits behind a login wall, where first paint is
     // not a conversion metric. Revisit when step 9 adds Refine — that is when
     // route-level lazy() starts to pay.
-    build: { chunkSizeWarningLimit: 700, sourcemap: upload ? 'hidden' : false },
+    build: {
+      chunkSizeWarningLimit: 700,
+      sourcemap: upload ? 'hidden' : false,
+      ...(forTests ? E2E_BUILD : {}),
+    },
     server: {
       port: 5173,
       // Fail rather than drift to 5174: CLIENT_URL is baked into every
       // verification and reset link (ADR-017), and a silently moved port turns
       // those into dead links with nothing in the logs.
       strictPort: true,
-      // Off for the browser suite's and the screenshots' own servers, which
-      // their Playwright configs start with VITE_HMR=off (#183): a file
-      // saved during a run reloaded a page in the middle of a form.
-      // `npm run dev` keeps hot reload.
+      // Off for the browser suite's dev server, under E2E_DEV_SERVER, and
+      // the screenshots', which their Playwright configs start with
+      // VITE_HMR=off (#183): a file saved during a run reloaded a page in
+      // the middle of a form. `npm run dev` keeps hot reload.
       hmr: process.env.VITE_HMR !== 'off',
+      // The preview server, which serves the browser suite's build, takes
+      // this proxy too: Vite's preview.proxy is server.proxy unless set.
       proxy: {
         '/api': {
           // Playwright sets this so the e2e stack runs on its own ports and
