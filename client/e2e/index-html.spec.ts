@@ -2,23 +2,16 @@ import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { OWNER_STATE_PATH } from './global-setup';
-import { type ClientFiles, ENTRY, holdRoute } from './support/client-files';
+import { ENTRY, holdRoute } from './support/client-files';
 
 /**
  * What index.html gives before the app starts (ADR-082): the home screen's
  * name and icons, the browser's bar, a shared link's card, and the loading
  * mark in the mode the app will open in. Signed out, as a first visit is;
- * reads only.
+ * reads only. A test holds the app's entry back, clientFiles.hold(ENTRY),
+ * so the page stays as index.html drew it.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
-
-/**
- * Holds the app's entry back, so the page stays as index.html drew it. The
- * suite runs on the built client, whose entry is a file in /assets/ named
- * by its content, which clientFiles finds from the build's manifest; under
- * E2E_DEV_SERVER, the dev server's src/main.tsx.
- */
-const holdTheApp = (clientFiles: ClientFiles) => clientFiles.hold(ENTRY);
 
 /** index.html's own title, VITE_APP_NAME: the app is held, so nothing has changed it. */
 async function indexTitle(page: Page): Promise<string> {
@@ -55,7 +48,7 @@ test("names the product for a home screen, and a shared link's card", async ({
   baseURL,
   clientFiles,
 }) => {
-  await holdTheApp(clientFiles);
+  await clientFiles.hold(ENTRY);
   await page.goto('/', { waitUntil: 'commit' });
   const name = await indexTitle(page);
 
@@ -159,7 +152,7 @@ for (const [stored, system] of [
     // The app's timers under the test's hand, so its spinner's 250 ms can
     // pass without waiting them out; the mark's CSS keeps its own time.
     await page.clock.install();
-    const app = await holdTheApp(clientFiles);
+    const app = await clientFiles.hold(ENTRY);
     const session = await holdRoute(page, /\/api\/v1\/auth\/me$/);
     await page.goto('/login', { waitUntil: 'commit' });
     const name = await indexTitle(page);
@@ -233,7 +226,7 @@ test('keeps the progress bar still under reduced motion', async ({
   clientFiles,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await holdTheApp(clientFiles);
+  await clientFiles.hold(ENTRY);
   await page.goto('/login', { waitUntil: 'commit' });
 
   const progress = page.locator('#loading-mark .bar');

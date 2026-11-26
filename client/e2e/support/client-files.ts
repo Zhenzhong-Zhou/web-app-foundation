@@ -30,8 +30,10 @@ const MANIFEST = path.join(BUILT, '.vite/manifest.json');
 const DEV_SERVER = Boolean(process.env.E2E_DEV_SERVER);
 
 /**
- * The app's entry, index.html's script. A build's manifest keys its file
- * by index.html, the entry chunk.
+ * The app's entry, index.html's script. On the built client it is a file
+ * in /assets/ named by its content, which the build's manifest keys by
+ * index.html, the entry chunk; under E2E_DEV_SERVER, the dev server's
+ * src/main.tsx.
  */
 export const ENTRY = 'src/main.tsx';
 
