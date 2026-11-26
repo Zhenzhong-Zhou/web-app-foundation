@@ -491,7 +491,6 @@ const DEV_AND_TESTS_ONLY = [
 function withoutDevAndTests(): Plugin {
   return {
     name: 'without-dev-and-tests',
-    apply: 'build',
     generateBundle(_options, bundle) {
       const chunks = Object.values(bundle).filter(
         (output) => output.type === 'chunk',
