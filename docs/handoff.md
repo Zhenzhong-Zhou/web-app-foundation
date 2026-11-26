@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 25 November 2026
+# web-app-foundation — handoff, 26 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,8 +13,22 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 25 November 2026:
+On 26 November 2026:
 
+- **The browser tests against the built client** ([#530]), with
+  [ADR-008's amendment](adr/0008-testing-scaffolding-lands-in-v1.md):
+  planned on 25 and 26 November on `fix-530-built-client`, from `main`
+  at 8b56ce82, its requirements confirmed before drafting and its
+  decisions chosen as recommended, its brief in the ignored
+  `tmp/fix-530-built-client/`. The browser suite's client is built once
+  a run and served by Vite's preview server, on the Mac and on CI, in
+  place of the dev server, whose abort ([#530]) and stall ([#643]) it
+  ends. A day's work on one spec keeps the dev server; `en-XA` stays in
+  the tests by a setting of its own; the tests' API runs with no
+  watcher. Its proof is five Linux WebKit runs of five at six workers
+  on a Mac left alone, then CI's every-browser run. No API change and
+  no migration. **Left:** the build. **Next:** the counts kept ready
+  ([#716]), an ADR of its own.
 - **The branch after ADR-094,** `fix-678-after-094`, with
   [ADR-094's amendment and its as-built](adr/0094-lots-at-receipt.md):
   planned on 24 November and built on 24 and 25 November from `main`
@@ -37,11 +51,16 @@ On 25 November 2026:
   commits, and [#695] to [#714] hold what they left, [#714] the small
   ones. Filed while building: [#693], a return made after its late
   cost. The full verify passed on 25 November at 6b6eb481, and so did
-  CI's every-browser run on the pushed branch. **Left:** the pull
-  request's pictures and its checks; the read-only check on the live
-  database before the merge, and the manual checks (Still to do, by
-  hand). **Next:** the merge, as a merge commit, at an hour when few
-  tabs are open.
+  CI's every-browser run on the pushed branch. Merged on 25 November as
+  a merge commit (8b56ce82) and deployed, Deploy 45723140621 passing,
+  `/api/health` saying `apiRevision: 7`; it closed [#678], [#677],
+  [#661], [#664], [#665], [#654], [#618] and [#627]. Read only on the
+  live database before the merge, after backup run 45720180879: no
+  code with two start lots, no round trip, 4 "Lot updated" entries, 3
+  late costs set, none at a run's close, and no pool at zero units
+  with a value. The three late costs are trial entries, none with
+  stock gone before its cost, so right under both rules. **Left:** its
+  manual checks (Still to do, by hand). **Next:** the branch above.
 - **Lots at receipt, ADR-094** ([#629]), with
   [its ADR and as-built](adr/0094-lots-at-receipt.md): planned on 21
   November and built from 21 to 23 November on
@@ -67,6 +86,13 @@ On 25 November 2026:
   (4a052090) fixed it on 24 November, and Deploy 45449156900 passed
   that morning, `/api/health` saying `apiRevision: 6`. **Left:** its
   manual checks (Still to do, by hand). **Next:** the branch above.
+- **The triage after [#717]'s merge,** 25 November, applied: 18
+  comments, 22 issues relabelled, and [#718] filed, a flaky text-size
+  test, Inventory at Larger text, `fix-now`. 208 open: 25 `fix-now`,
+  125 `when-touched` and 58 `later`. Open and named after it: [#716],
+  which needs an ADR; [#714], the reviews' small ones, the fifth check
+  for a lot at zero units among them; [#693]; [#643], its two workers
+  merged as [#715]; [#718]; and [#530].
 - **The triage after [#676]'s merge,** 24 November, applied as
   proposed: [#664] reopened, since [#676]'s description had closed it
   (its line "Named, not closed" put a closing word before the
@@ -403,7 +429,9 @@ On 25 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 25 November, [#715], the fix runner's, Linux
+- **The last merges:** on 25 November, [#717] (the branch after
+  ADR-094) as a merge commit (8b56ce82), deployed by Deploy
+  45723140621; before it, [#715], the fix runner's, Linux
   WebKit on CI's two workers in the full verify, part of [#643],
   squashed (a9c40326). On 24 November, after [#686]: [#688] ([#666]),
   [#689] ([#675]), [#690] ([#680]), [#691] ([#683]), [#692] ([#685])
@@ -489,7 +517,7 @@ On 25 November 2026:
   amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
-- **Migrations** through 0084 (a lot's expiry, in [#676]), 85 files in
+- **Migrations** through 0086 (a lot's former codes, in [#717]), 87 files in
   `server/src/database/migrations/`.
 - **Render:** a free database (`foundation-db`, created 5 November 2026,
   replacing the first, whose rows all went with it)
@@ -612,22 +640,20 @@ On 25 November 2026:
 
 ## Still to do, by hand
 
-- **Before and after [#717]'s merge:** before it, the read-only check
-  on the live database, `live-check.sql` and
-  `live-check-zero-units.sql` in the ignored
-  `tmp/fix-678-after-094/`: no code with two start lots, or migration
-  0086 stops the deploy, naming each; its count of round trips means
-  [#678] only before the merge, since the new walk writes such rows on
-  purpose. The merge as a merge commit, at an hour when few tabs are
-  open. After it: `/api/health` saying `apiRevision: 7`, and MC-3424
-  at the deploy; the manual checks, MC-334, MC-806, MC-807, MC-808,
-  MC-911, MC-1576 and MC-2907, new, and MC-329, MC-802, MC-803,
-  MC-805, MC-1556 and MC-R77, changed; the comments written for
-  [#626], [#630] and [#693]; `/triage`, which reads [#544], [#473],
-  [#296], [#308] and [#669] for what is left of each; the figures the
-  counts' ADR reads ([#716]) moved out of the branch's `tmp/` folder,
-  then the prune and the clean-up; Project knowledge re-synced; the
-  planning skill packed from `main` and uploaded.
+- **After [#717]'s merge,** done on 25 November: the read-only check
+  on the live database and a fresh backup before it (Where things
+  stand); the merge, as a merge commit; the deploy's check,
+  `/api/health` saying `apiRevision: 7`; `main` pulled; the branch's
+  working folder moved to the ignored `tmp/from-678/`, 467 MB, to trim
+  once [#716]'s ADR has read its figures, figures-before.md,
+  figures-costs.md and figures-lots.md there; the prune and the
+  clean-up; the planning skill packed from `main` and uploaded;
+  Project knowledge re-synced; and `/triage` (Where things stand).
+  Still to do: MC-334, MC-806, MC-807, MC-808, MC-911, MC-1576 and
+  MC-2907, new, and MC-329, MC-802, MC-803, MC-805, MC-1556 and
+  MC-R77, changed, walked by hand; MC-3424, not walked at this deploy
+  either; the planning skill's evals, after its upload of 25 November.
+  The session's lessons are `fix-530-built-client`'s second commit.
 - **After [#676]'s merge,** done on 23 and 24 November: the merge, as
   a merge commit, before its manual checks were walked; the deploy's
   check, `/api/health` saying `apiRevision: 6`; `/triage` (Where
@@ -908,12 +934,14 @@ request or a set of them:
       November; then [#629], lots at receipt,
       [ADR-094](adr/0094-lots-at-receipt.md), built from 21 to 23
       November as [#676]; then its next branch, `fix-678-after-094`,
-      built on 24 and 25 November as [#717] (Where things stand);
+      built on 24 and 25 November as [#717], merged on 25 November
+      (Where things stand);
       beside it, the fix runner's picks, [#679] done as [#682], [#672]
       as [#686], [#666] as [#688], [#675] as [#689], [#680] as [#690],
       [#683] as [#691], [#685] as [#692], [#687] as [#694], and
       [#643]'s two workers as [#715]; then the browser tests against
-      the built client ([#530]), a small branch of its own, which ends
+      the built client ([#530]), planned on 25 and 26 November on
+      `fix-530-built-client` (Where things stand), which ends
       [#643]'s stall; then the counts kept ready ([#716]), an ADR of
       its own; with the next branch that changes
       orders, [#671], [#674] and [#652], an orders rules file; waiting
@@ -1060,7 +1088,6 @@ Not repeated here; each list has one home:
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
 [#294]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/294
 [#295]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/295
-[#296]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/296
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#301]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/301
@@ -1221,7 +1248,6 @@ Not repeated here; each list has one home:
 [#534]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/534
 [#536]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/536
 [#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
-[#544]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/544
 [#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
 [#548]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/548
@@ -1274,6 +1300,7 @@ Not repeated here; each list has one home:
 [#620]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/620
 [#625]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/625
 [#626]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/626
+[#627]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/627
 [#628]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/628
 [#629]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/629
 [#630]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/630
@@ -1338,3 +1365,4 @@ Not repeated here; each list has one home:
 [#715]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/715
 [#716]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/716
 [#717]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/717
+[#718]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/718

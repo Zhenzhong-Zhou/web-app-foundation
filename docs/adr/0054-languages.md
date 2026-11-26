@@ -1287,3 +1287,19 @@ item is a product: `organizations.product_name_language`,
   line on a type's tab), #592 (the Documents tab's order and a helper's
   words), #593 (`subtitle2` to the five type sizes) and #594 (left from
   the reviews).
+
+## Amendment (November 2026) — `en-XA` in the browser tests' own build (#530)
+
+R9 kept `en-XA` "in development and the browser tests only, never in a
+production build". The browser tests now load a build
+([ADR-008's amendment of November 2026](0008-testing-scaffolding-lands-in-v1.md)),
+so "development" no longer covers them.
+
+- `en-XA` is on in `npm run dev` and in the browser tests' own build,
+  by one setting, which takes `import.meta.env.DEV`'s place wherever it
+  guarded the pseudo-language.
+- A production build still neither has it nor offers it, and
+  `withoutPseudoLanguage` still stops every build but the tests' whose
+  chunks carry it.
+- `cut-text.spec.ts` and `languages.spec.ts` are unchanged: `en-XA` is
+  where they look for it.

@@ -275,3 +275,321 @@ decisions above, this holds.
   and #233; step 8 cut off by the editor closing and run again; `main`
   merged in three times, the branch's regression checks renumbered each
   time.
+
+## Amendment (November 2026) — the browser tests against the built client (#530)
+
+The browser suite has loaded the client from Vite's dev server, on the
+Mac and on CI alike: `webServer` in `client/playwright.config.ts` runs
+`npm run dev`. Two faults are that server's, not the application's:
+
+- **Node aborts under it (#530).** While Vite's transform middleware
+  sends a module as one string of 350 KB to 3 MB, Node stops inside
+  `Buffer.byteLength` with "Lazy deopt after a fast API call with return
+  value is unsupported", and every test after it is refused its
+  connection. By #530's own entries: five times on CI from 9 to 24
+  November 2026, on Node 26.13.0 and 26.13.1, two of them on `main`, and
+  once on the Mac on 26.12.0, the version #530 first meant to pin. No
+  Node 26 has followed 26.13.1.
+- **It leaves requests unanswered in Linux WebKit (#643).** In the full
+  verify's Linux WebKit run, a page stops on the application's start
+  screen: 30 module requests never answered on 20 November, and 19 on
+  25 November, with 4 API reads sent through it failing after about
+  44 ms. With six workers, four full runs of four failed on 24 and 25
+  November; with CI's two (#715), one run of three still did.
+
+So a red run could say nothing about the change, and a stalled Linux
+WebKit run was run once more before it counted (`docs/engineering.md`).
+ADR-081 had deferred "Playwright against the built files"; this takes
+it. The maintainer confirmed the requirements on 25 November 2026 and
+chose the decisions below on 25 and 26 November, as recommended.
+
+### Requirements, as confirmed
+
+The maintainer confirmed these on 25 November 2026, before drafting,
+with the assumptions, what is not included and the questions' answers.
+Each names its step in the brief, and the as-built marks each met,
+changed or deferred.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | Docs first: the handoff tidied with 25 November's facts, and that day's seven lessons in `docs/engineering.md` and the planning skill | The handoff says #717 merged and what is still owed; each lesson has its line; `scripts/verify.sh --docs` passes | 1, 2 |
+| R2 | The suite's client is built once a Playwright run, then served by Vite's preview server on 5273, `/api` passed on as today, wherever a run starts: `npm run test:e2e`, a bare `npx playwright test`, CI's three shards and their burn-in, the full verify's suite and its three Linux runs, and the Firefox and Linux WebKit commands by hand | A test finds the application's entry in `/assets/`; a run asks for no `/src/` file | 4 |
+| R3 | The tests' build is its own: a folder of its own that git ignores, never `dist/`; the tests' own settings, the © line's holder and the site's address; source maps on | A browser run leaves `dist/` as it was; a production build's files are as before this branch | 4 |
+| R4 | An inventory before anything is mended: the suite run once against the built client, each failure listed by its cause | The list is in the step's summary; each item is fixed in a later step or filed | 6, 7 |
+| R5 | `en-XA` stays in the browser tests: kept in the tests' build by a setting of its own, at each place `import.meta.env.DEV` guards it today; a production build still refuses it | `cut-text.spec.ts` and `languages.spec.ts` pass against the built client; a production build that carries `en-XA` still stops | 5 |
+| R6 | A test that breaks one of the client's own files finds that file in a build: `status-pages.spec.ts`, `accessibility.spec.ts` and `index-html.spec.ts`; and a check keeps a `/src/` path from coming back | The three pass in every engine that runs them; the check fails on a spec that waits for, holds or answers a request by a `/src/` path | 8, 9 |
+| R7 | A day's work on one spec keeps the dev server | The command `docs/conventions.md` gives runs one spec against the dev server, hot reload off | 4, 13 |
+| R8 | The proof: five Linux WebKit runs of five on a Mac left alone, at six workers; then CI's every-browser run by hand, and the pull request's own run with its burn-in; the suite's minutes before and after | No test stops on the start screen, no request to the client's server goes unanswered and no API read through it fails; the figures are in the as-built | 12, 16 |
+| R9 | When the proof holds: the rule to run a stalled Linux WebKit run once more goes; Linux WebKit's workers are measured again and chosen from the figures; `scripts/verify.sh`'s comment and its test, `docs/conventions.md`, `docs/engineering.md` and the README say what the suite runs on | No doc says the suite runs on the dev server; `scripts/check-docs.mjs` passes | 13 |
+| R10 | The pull request closes #530 and #643 | Its `Closes` lines; both closed at the merge | 15, 17 |
+
+- **Assumptions:**
+  - A1: "once a run" is once a Playwright call, so a full verify builds
+    four times and a pull request's shard twice. If step 4 times a build
+    over 20 seconds on the Mac, the full verify builds once and its
+    three Linux runs reuse it.
+  - A2: the decision is this amendment. ADR-081 and ADR-054 each take a
+    dated amendment whose heading names no ADR, so no front matter
+    changes.
+  - A3: no migration and no API change; the API revision stays 7, so no
+    tab reloads at the deploy.
+  - A4: nothing a person sees changes, so the review step has no
+    walkthrough panel and no pictures, no manual check changes, and the
+    seeds add nothing, said in the pull request.
+  - A5: step 6 breaks a page on purpose and records what the kept trace
+    names. If it names only the built file's lines, the as-built says a
+    failure is read by running its spec on the dev server.
+  - A6: the dependencies taken are those 7 days old on the day; the
+    pins on Playwright 1.64.1 (#521) and jsdom 30.1.3 (#522) are kept.
+  - A7: the proof's pass rule is written here, before its runs.
+  - A8: after the merge, a test stopped on the start screen in any run
+    reopens #643.
+- **Not included:**
+  - N1: the screenshots' server (5373) and the walkthrough panel's stay
+    on the dev server.
+  - N2: what the host adds, its headers, caching and rewrites, which
+    the preview server does not serve; MC-3424 stays by hand.
+  - N3: a Node pin, Node 24 for CI's web server, or a report to Node,
+    unless the abort returns under the preview server.
+  - N4: which specs each engine runs, the retries and the shards.
+  - N5: #716, #714 and #693.
+  - N6: the API as it ships, built and run by Node alone (Q6).
+- **The questions' answers:** Q1a, the built client is the default on
+  the Mac and on CI, and one setting, with `npm run test:e2e:ui`, keeps
+  the dev server. Q2a, `en-XA` by a setting of its own. Q4a, #718 by its
+  own text. Q5a, the proof at six workers. Q6a, the tests' API with no
+  watcher, which replaces Q3a, the API left on `npm run start:dev`. Q7a,
+  a check against `/src/` paths.
+
+Checked before drafting, for the areas ops, i18n and ui, on 26 November
+2026, from `scripts/adr-check.mjs` (100 open issues, 71 read whole):
+
+- **Fired, and taken here:**
+  - #530, whole, with the five points of its comment of 25 November.
+  - #643: the stall this ends, and #715's two workers, measured again.
+  - ADR-081's Deferred, "Playwright against the built files". Its
+    trigger reads "a fault the dev server hides"; what fired is a fault
+    the dev server makes.
+  - `docs/engineering.md`'s rule of 25 November, a stalled Linux WebKit
+    run run once more, which names this branch as its end; and its line
+    that server files are not edited while Playwright runs against
+    `start:dev`.
+  - `docs/conventions.md`'s lines on the suite's server without hot
+    reload (#183) and on Linux WebKit's two workers.
+- **Not fired, and left:**
+  - #718 (`fix-now`): by its own text a table measured after the test's
+    read, at Larger text in Chromium on CI, not a stop on the start
+    screen. The fix runner's, beside this branch (Q4a).
+  - #585's 3 (`when-touched`), `cut-text.spec.ts` doing more than it
+    needs: the spec is not changed, since `en-XA` stays where it looks.
+  - #170's touch check and #565's keyboard test, each a new test:
+    `accessibility.spec.ts` changes only in how it breaks a page.
+  - #711's third point, `en-XA` met by a walker: the panel keeps the dev
+    server (N1), where `en-XA` is meant to be.
+  - #253, #226, #645, #656 and #659 (`when-touched`, ops): the review's
+    run is read on this pull request, as on each; the plan check, the
+    pictures' script, `perf.yml` and the fix runner are not changed.
+  - #263 and the other `fix-now` issues of these areas: branches of
+    their own.
+  - #284, #521, #522, #197 and #142 (`later`): no engine gains a
+    workflow (N4), the pins stay (A6) and no header is tested (N2).
+  - The other `when-touched` issues of ui and i18n: each is a screen's,
+    and no screen changes.
+  - This ADR's Deferred, the API's output kept on CI and the `full-e2e`
+    label: neither trigger is met. Open decisions: none bears on the
+    tests' server.
+- **Found while checking:**
+  - #530's entries count its aborts two ways: two are headed "second",
+    and the last calls 24 November "the first on `main`", where the
+    first, on 9 November, was `main`'s too. The dates above are the
+    entries' own.
+  - The preview server does not take the road that aborts: it sends
+    files from disk, with no transform. That is why #530 should end;
+    the proof is what shows it.
+  - What the proof cannot tell apart: in the full verify the Linux
+    browser reaches the Mac through the container's connection, and the
+    stall may be that connection under hundreds of small requests as
+    well as the dev server. The built client cuts a page's requests to
+    a handful either way. Should a stop on the start screen come back,
+    the connection is where to look (A8).
+  - Three specs name the client's source files, which only the dev
+    server serves (R6), and two need `en-XA`, which every build refuses
+    today (R5). Neither is among #530's five points.
+  - The sign-in page is part of the application's entry in a build, not
+    a file of its own (`client/src/App.tsx` imports it), so the test
+    that makes it throw cannot swap its file. Its way is chosen after
+    the inventory (step 7).
+  - Point 3 of #530's plan says source maps let a trace name the
+    source's lines. Whether Playwright's trace does so was not
+    confirmed, so step 6 looks (A5).
+
+### Decision — the suite's client is built, then served
+
+- Each Playwright run builds the client in a mode of its own, into a
+  folder of its own that git, ESLint and Prettier ignore, then serves it
+  with `vite preview` on 5273, the port held as the dev server's was.
+  `webServer` in `client/playwright.config.ts` starts both, so every
+  way a run starts takes it (R2).
+- The tests' build is the production build but for four things:
+  `en-XA` (below); source maps, served; the build's manifest, its list
+  of which file each source became, which the tests read from disk; and
+  the tests' own © holder and site address, as the dev server had them.
+  React's production code, the catalogues with the parser's stub and
+  files named by their content are as they ship.
+- The preview server passes `/api` on by the dev server's own proxy
+  rule, Vite's default, so the session cookies stay on `localhost` and
+  the Linux browsers reach 5273 and 3100 as before.
+- A built client is never reused from an earlier run: a server found on
+  5273 would serve yesterday's code. Each run builds and starts its own,
+  and says so when the port is taken.
+- A1's rule decides whether the full verify builds once.
+
+### Decision — one spec at a time keeps the dev server
+
+- One setting in the environment, named by step 4, makes a run start
+  the dev server as before, hot reload off (#183): for writing or
+  mending a spec, where an edit to the client shows at once.
+  `npm run test:e2e:ui` sets it.
+- CI and `scripts/verify.sh` never set it, so what passes there has
+  loaded built files. A spec passes against the built client before its
+  push, in the full verify.
+
+### Decision — `en-XA` by a setting of its own
+
+- `en-XA` is on in `npm run dev` and in the tests' build. One setting
+  takes `import.meta.env.DEV`'s place where it guards the
+  pseudo-language: `client/src/lib/locales.ts`,
+  `client/src/i18n/catalogues.ts`,
+  `client/src/i18n/language-provider.tsx`, `client/src/layout/bar.ts`
+  and the build's own check in `client/vite.config.ts`.
+- A production build neither has it nor offers it, and
+  `withoutPseudoLanguage` still stops every build but the tests' whose
+  chunks carry it. ADR-054's amendment of the same day says so there.
+
+### Decision — a test that breaks the client's own file finds it in a build
+
+- One helper in `client/e2e/support/` names a built file by its source,
+  from the build's manifest: a page's chunk, or the application's entry.
+  Under the dev-server setting it names the source's own path, so a
+  spec reads the same both ways.
+- `status-pages.spec.ts`, `accessibility.spec.ts` and
+  `index-html.spec.ts` take it. `new-version.spec.ts` and
+  `support/version.ts` say what the built client's `version.json`
+  names, in their comments.
+- The sign-in page made to throw waits for the inventory (Found while
+  checking).
+- A check, in the client's lint or its tests, fails when a spec waits
+  for, holds or answers a request by a `/src/` path. Comments, and files
+  a test reads from disk, are left alone.
+
+### Decision — the tests' API runs with no watcher
+
+- The suite's API starts with `npm run start`: compiled once, with
+  nothing restarting it under a run. It replaces Q3a, which left
+  `npm run start:dev`.
+- Its own commit, after the suite passes on the built client and before
+  the proof, so a failure names its cause.
+- The screenshots' API keeps `npm run start:dev` (N1).
+
+### Decision — the proof, its pass rule written first
+
+- **On the Mac,** left alone as `docs/engineering.md` asks of a timed
+  step: five Linux WebKit runs of the specs every browser runs, at
+  Playwright's own six workers, the load under which four runs of four
+  failed. Five passes at two workers would prove little: one run in
+  three stalled there, so five in a row pass by luck about 13 times in
+  100.
+- **It passes** with five of five. One test stopped on the start screen
+  fails it, with no rerun. Traces are kept for failed tests alone, as
+  the full verify keeps them, so the load is the one that failed; any
+  failure stops the step for the chat, with its trace.
+- **Then the two tests that stalled before,** `document-refusals`' way
+  back to the order and `page-frame`'s 1920 × 1080, are run once more
+  with their traces kept: no request to the client's server unanswered,
+  and no API read through it failed.
+- **Then two runs at CI's two workers,** for their minutes beside
+  #715's 6.0.
+- **Then, on the pushed branch:** CI's every-browser run by hand, once,
+  and the pull request's own run with its burn-in, each with no abort.
+- **The minutes before and after:** the Chromium suite on the Mac, one
+  of CI's shards, and the build's seconds.
+- **The workers chosen:** the full verify's Linux WebKit keeps CI's two,
+  so a local run and CI's differ in the machine alone, unless two fail
+  where six pass; then the choice is the chat's.
+
+### Decision — when the proof holds
+
+- The rule to run a stalled Linux WebKit run once more leaves
+  `docs/engineering.md`.
+- `scripts/verify.sh`'s comment, which gives the dev server as the
+  reason for two workers, and its test's name; `docs/conventions.md`'s
+  Tests and Supported browsers; the README's lines on the suite; and
+  `.github/workflows/ci.yml`'s comment on how the API starts: each says
+  what the suite runs on.
+- The pull request closes #530 and #643.
+
+### Decision — what rides along
+
+- The handoff, with 25 November's facts.
+- That day's seven lessons, in `docs/engineering.md` and the planning
+  skill, which is packed and uploaded again after the merge.
+- The dependencies, at the branch's start and before the reviews.
+- Not #718 (Q4a).
+
+### Considered and not done
+
+- **A Node pin, Node 24 for CI's web server, or waiting for a Node
+  release.** 26.12.0 aborts too; an older Node for one job is a second
+  runtime to keep; and none of them touches the stall.
+- **The dev server kept as the Mac's default,** CI alone building
+  (Q1c): a spec could pass on the Mac and fail on CI.
+- **The `en-XA` tests on a dev server of their own** (Q2b): two servers
+  a run, one of them the server this leaves. **`en-XA` out of the
+  browser tests** (Q2c): `cut-text.spec.ts` would lose its fourth
+  language.
+- **The API built too, in this branch** (Q6c): neither fault was the
+  API's, and two servers changed at once would share one proof.
+- **The proof at two workers alone** (Q5b): see the proof.
+- **A longer wait after a full page load:** no wait outlasts a request
+  that is never answered, as #643's own decision said.
+- **The tests' build left unminified,** for readable traces: one more
+  way it would differ from what ships.
+- **The sign-in page made a file of its own, for its test:** it would
+  change what ships for a test's sake.
+
+### Deferred — each with what brings it in
+
+- **The API as it ships:** `nest build`, then Node on the built files.
+  Trigger: a browser run that fails on the API's start, or on a
+  difference between the two.
+- **One build for CI's three shards,** handed over as an artifact.
+  Trigger: a shard's build over a minute.
+- **The screenshots' and the walkthrough panel's client built.**
+  Trigger: an abort or a stall in either.
+- **What the host adds, under test:** its headers, caching and
+  rewrites. Trigger: a Content-Security-Policy (#142).
+- **The very files that ship, tested:** built once and deployed as
+  built. Trigger: a fault that comes from a difference between the
+  tests' build and the host's.
+
+### Consequences
+
+- No migration and no API change: the revision stays 7. Nothing a
+  person sees changes, so no manual check changes and the seeds add
+  nothing.
+- `client/playwright.config.ts`, `client/vite.config.ts` with its test,
+  `client/package.json` and the client's ignore files; the five places
+  of `en-XA`; `client/e2e/support/` and four specs; the check against
+  `/src/` paths; `scripts/verify.sh` with its test, and
+  `.github/workflows/ci.yml`, in their comments.
+- `docs/engineering.md`, `docs/conventions.md` and the README change
+  with them; ADR-081 and ADR-054 each gain a dated amendment.
+- The planning skill changes with the lessons, so it is packed from
+  `main` and uploaded after the merge.
+- The build order, in the branch's brief: this amendment and the
+  handoff; the lessons; dependencies; the tests' build and the preview
+  server; `en-XA`'s setting; the inventory, read by the chat; the tests
+  that break the client's own files; the check against `/src/` paths;
+  the API with no watcher; the proof on the Mac; the docs; dependencies
+  again; the reviews; the pull request; CI's every-browser run by hand;
+  and the as-built.

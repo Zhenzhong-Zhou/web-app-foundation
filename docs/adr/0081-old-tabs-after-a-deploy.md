@@ -603,3 +603,18 @@ error tracker", whose trigger was the monitoring decision,
   before.
 - **The route the browser reports through** is version-neutral, so a
   tab older than the API still reports.
+
+## Amendment (November 2026) — Playwright against the built files, taken (#530)
+
+Deferred's "Playwright against the built files" is taken by
+[ADR-008's amendment of November 2026](0008-testing-scaffolding-lands-in-v1.md),
+"the browser tests against the built client". Its trigger read "a fault
+the dev server hides". What fired is a fault the dev server makes:
+Node's abort under its transform middleware (#530), and module requests
+it leaves unanswered in Linux WebKit (#643).
+
+- The dev server still answers `/version.json` with the build `dev`,
+  for a day's work. The browser tests' client is now a build, whose
+  `version.json` names its commit, so the suite checks the version file
+  a deploy writes, not the dev server's stand-in.
+- The decision, its proof and what it leaves are ADR-008's.
