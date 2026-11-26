@@ -13,7 +13,8 @@ each reply does.
   4. **Decisions needed:** each with its options and the one
      recommended; or "none". Never left out.
   5. **Next:** the exact commands or prompt, numbered, in order, as
-     one list a reply.
+     one list a reply, which says so when it replaces an earlier
+     reply's.
 - **Every bullet starts with its status:** ✅ done, ⏳ waiting for Bob,
   📝 noted for later.
 - **Style:** one short sentence per bullet; the one thing Bob must act
