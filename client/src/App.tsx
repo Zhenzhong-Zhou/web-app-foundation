@@ -59,22 +59,12 @@ function AuthOnly({ children }: { children: ReactNode }) {
  * own (#244): one that throws as it draws shows the crash page on its own,
  * in the product's frame, where it showed React Router's default error
  * page. Cleared by the address's path, as the signed-in pages' is.
- *
- * In `npm run dev` and the browser suite's build alone, /throws-on-purpose
- * draws a page that throws, for the suite's crash page before sign-in
- * (throws-on-purpose-page.tsx). Every other build drops the line whole, so
- * there the address is Page not found's, as any unknown one is, and the
- * build is as it was without it.
  */
 function SignedOut() {
   const location = useLocation();
   return (
     <ErrorBoundary resetKey={location.pathname} standalone>
-      {__DEV_AND_TESTS__ && location.pathname === '/throws-on-purpose' ? (
-        <ThrowsOnPurposePage />
-      ) : (
-        <Outlet />
-      )}
+      <Outlet />
     </ErrorBoundary>
   );
 }
@@ -194,6 +184,15 @@ export default function App() {
             </AuthOnly>
           }
         />
+
+        {/* A page that throws as it draws, for the browser suite's crash
+            page before sign-in (throws-on-purpose-page.tsx), in `npm run
+            dev` and the suite's build alone. Every other build drops the
+            route whole, so there the address is Page not found's, as any
+            unknown one is. */}
+        {__DEV_AND_TESTS__ && (
+          <Route path="/throws-on-purpose" element={<ThrowsOnPurposePage />} />
+        )}
 
         {/* Outside both guards deliberately. Inside Protected, a signed-out
             user following a bad link would sign in only to land on a 404 —
