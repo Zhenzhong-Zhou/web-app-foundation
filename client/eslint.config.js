@@ -96,6 +96,33 @@ const LISTS = [
   },
 ];
 
+/**
+ * A browser test never waits for, holds or answers a request by a /src/
+ * path (ADR-008's amendment for #530). Only the dev server serves the
+ * client's sources there; the suite runs on the built client, whose files
+ * are named by their content, so such a test matches nothing and passes
+ * testing nothing. It names the source to clientFiles
+ * (e2e/support/client-files.ts), which finds the file on either client.
+ *
+ * Refused in a string, a template or a pattern anywhere in e2e/, since one
+ * kept in a variable or passed to a helper reaches page.route as surely;
+ * and a bare src/ path given to Playwright's own route or wait, which it
+ * reads from the base URL. A comment is not code, and a file a test reads
+ * from disk is new URL(path, import.meta.url), which is left alone.
+ */
+const FROM_DISK =
+  "NewExpression[callee.name='URL'][arguments.1.object.type='MetaProperty']";
+const SOURCE_PATHS = [
+  String.raw`Literal[value=/\/src\//]:not(${FROM_DISK} > Literal)`,
+  String.raw`TemplateElement[value.raw=/\/src\//]:not(${FROM_DISK} > TemplateLiteral > TemplateElement)`,
+  String.raw`Literal[regex.pattern=/src\\?\//]`,
+  String.raw`CallExpression[callee.property.name=/^(route|unroute|waitForRequest|waitForResponse)$/][arguments.0.value=/^src\//]`,
+].map((selector) => ({
+  selector,
+  message:
+    'A browser test names a client file by its source to clientFiles (e2e/support/client-files.ts), never by a /src/ path, which only the dev server serves: the suite runs on the built client, where it matches nothing (ADR-008, #530). A file read from disk is new URL(path, import.meta.url).',
+}));
+
 export default defineConfig([
   // src/api/ is generated from the server's OpenAPI document (ADR-068).
   globalIgnores([
@@ -252,6 +279,13 @@ export default defineConfig([
        */
       'testing-library/no-node-access': 'off',
       'testing-library/no-container': 'off',
+    },
+  },
+  {
+    // SOURCE_PATHS, in the browser tests and their support.
+    files: ['e2e/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...RESTRICTED, ...SOURCE_PATHS],
     },
   },
   {
