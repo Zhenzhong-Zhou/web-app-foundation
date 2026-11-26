@@ -153,7 +153,11 @@ for (const [where, viewport] of [
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
         await expect(page.locator('html')).toHaveCSS('font-size', '20px');
         await page.waitForLoadState('networkidle');
-        expect(await overflowing(page)).toEqual([]);
+        // Read again until the page fits (#718): a list table measures
+        // itself after its rows arrive and marks its box a render later, so
+        // for that moment it can reach past the window. Polled only once the
+        // rows are in, so an empty table never passes for a full one.
+        await expect.poll(() => overflowing(page)).toEqual([]);
       });
     }
   });
