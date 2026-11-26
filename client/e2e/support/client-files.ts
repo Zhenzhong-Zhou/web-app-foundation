@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Page, Route, TestInfo } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 
 /**
  * The client's own files by their source (ADR-008's amendment for #530):
@@ -107,6 +107,32 @@ interface Routed {
   met: boolean;
 }
 
+/**
+ * Holds back each request `url` matches until `release` is called, slowed,
+ * never answered in its place; `asked` settles once the page has asked for
+ * it. `clientFiles.hold` for one of the client's own files; this for any
+ * other request, as index-html.spec.ts holds the API's session read.
+ */
+export async function holdRoute(
+  page: Page,
+  url: Parameters<Page['route']>[0],
+): Promise<{ asked: Promise<void>; release: () => void }> {
+  let release = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let asked = () => {};
+  const wasAsked = new Promise<void>((resolve) => {
+    asked = resolve;
+  });
+  await page.route(url, async (route) => {
+    asked();
+    await released;
+    await route.continue();
+  });
+  return { asked: wasAsked, release };
+}
+
 /** The `clientFiles` fixture's body, for `page`'s test. */
 export async function withClientFiles(
   page: Page,
@@ -115,45 +141,30 @@ export async function withClientFiles(
 ): Promise<void> {
   const routed: Routed[] = [];
 
-  /** Routes each request for `source`'s file to `handle`, noting it met. */
-  const route = async (
-    what: Routed['what'],
-    source: string,
-    handle: (route: Route) => Promise<void>,
-  ) => {
+  /** A hold or a refusal of `source`'s file, noted, and what matches it. */
+  const note = (what: Routed['what'], source: string) => {
     const entry: Routed = { what, source, path: pathOf(source), met: false };
     routed.push(entry);
-    const matches = (url: URL) => url.pathname === entry.path;
-    await page.route(matches, (request) => {
-      entry.met = true;
-      return handle(request);
-    });
-    return matches;
+    return { entry, matches: (url: URL) => url.pathname === entry.path };
   };
 
   await use({
     path: pathOf,
     sources: sourcesOf,
     async hold(source) {
-      let release = () => {};
-      const released = new Promise<void>((resolve) => {
-        release = resolve;
+      const { entry, matches } = note('held', source);
+      const held = await holdRoute(page, matches);
+      void held.asked.then(() => {
+        entry.met = true;
       });
-      let asked = () => {};
-      const wasAsked = new Promise<void>((resolve) => {
-        asked = resolve;
-      });
-      await route('held', source, async (request) => {
-        asked();
-        await released;
-        await request.continue();
-      });
-      return { asked: wasAsked, release };
+      return held;
     },
     async refuse(source, reason = 'failed') {
-      const matches = await route('refused', source, (request) =>
-        request.abort(reason),
-      );
+      const { entry, matches } = note('refused', source);
+      await page.route(matches, (route) => {
+        entry.met = true;
+        return route.abort(reason);
+      });
       return { lift: () => page.unroute(matches) };
     },
   });

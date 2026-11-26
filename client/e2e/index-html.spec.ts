@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { OWNER_STATE_PATH } from './global-setup';
-import { type ClientFiles, ENTRY } from './support/client-files';
+import { type ClientFiles, ENTRY, holdRoute } from './support/client-files';
 
 /**
  * What index.html gives before the app starts (ADR-082): the home screen's
@@ -11,28 +11,6 @@ import { type ClientFiles, ENTRY } from './support/client-files';
  * reads only.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
-
-/**
- * Holds back each request to `url` until `release` is called, slowed, never
- * answered in its place; `asked` settles once the page has asked for it.
- * The API's session read here; the client's own files by clientFiles.
- */
-async function hold(page: Page, url: RegExp) {
-  let release = () => {};
-  const released = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  let asked = () => {};
-  const wasAsked = new Promise<void>((resolve) => {
-    asked = resolve;
-  });
-  await page.route(url, async (route) => {
-    asked();
-    await released;
-    await route.continue();
-  });
-  return { asked: wasAsked, release };
-}
 
 /**
  * Holds the app's entry back, so the page stays as index.html drew it. The
@@ -182,7 +160,7 @@ for (const [stored, system] of [
     // pass without waiting them out; the mark's CSS keeps its own time.
     await page.clock.install();
     const app = await holdTheApp(clientFiles);
-    const session = await hold(page, /\/api\/v1\/auth\/me$/);
+    const session = await holdRoute(page, /\/api\/v1\/auth\/me$/);
     await page.goto('/login', { waitUntil: 'commit' });
     const name = await indexTitle(page);
 
