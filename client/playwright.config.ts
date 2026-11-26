@@ -186,9 +186,14 @@ export default defineConfig({
    * The API, then the client the suite runs on.
    *
    * The API is reused when it is already up on 3100, so a normal day is
-   * unaffected; CI starts it from scratch. It is pointed at its own
-   * database. Sharing DATABASE_URL_TEST with the Jest e2e suite would let
-   * `npm run test:e2e` truncate tables underneath a Playwright run.
+   * unaffected; CI starts it from scratch. It starts with `npm run start`,
+   * compiled once, not `npm run start:dev`: a watcher recompiles and
+   * restarts the API whenever a file under server/ is saved, and every
+   * request in flight during that restart fails, so nothing restarts it
+   * under a run (ADR-008's amendment for #530). The screenshots' config
+   * keeps `start:dev`. The API is pointed at its own database. Sharing
+   * DATABASE_URL_TEST with the Jest e2e suite would let `npm run test:e2e`
+   * truncate tables underneath a Playwright run.
    *
    * The client is built, then served (ADR-008's amendment for #530): each
    * run builds it in the tests' own mode into dist-e2e/, never dist/
@@ -202,7 +207,7 @@ export default defineConfig({
    */
   webServer: [
     {
-      command: 'npm run start:dev',
+      command: 'npm run start',
       cwd: '../server',
       url: `${API_URL}/health`,
       reuseExistingServer: !process.env.CI,
