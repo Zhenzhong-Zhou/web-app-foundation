@@ -196,7 +196,9 @@ gets:
   fixes, riders included, and `Part of #N` for one fixed in part. The
   issues its commits name are the list to check, with the issues its
   ADR names, since #665 was in no commit's subject:
-  `git log --format=%s origin/main..HEAD | grep -oE '#[0-9]+' | sort -u`.
+  `git log --format=%s origin/main..HEAD | grep -oE '#[0-9]+' | sort -u`,
+  on a clone of the branch with its whole history and `main`'s, since
+  section 0's shallow clone has neither.
 - The pull request opens first, since the as-built names it. When a
   fixes prompt is told to stop before the push, the pictures and the
   pull request are still the review step's to do.
