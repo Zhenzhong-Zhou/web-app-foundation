@@ -143,11 +143,17 @@ export async function withClientFiles(
 ): Promise<void> {
   const routed: Routed[] = [];
 
-  /** A hold or a refusal of `source`'s file, noted, and what matches it. */
+  /**
+   * A hold or a refusal of `source`'s file, noted, and what matches it: a
+   * pattern, not a function, so Playwright's driver passes every other
+   * request on itself, where a function would bring each one to the test
+   * and back.
+   */
   const note = (what: Routed['what'], source: string) => {
     const entry: Routed = { what, source, path: pathOf(source), met: false };
     routed.push(entry);
-    return { entry, matches: (url: URL) => url.pathname === entry.path };
+    const escaped = entry.path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return { entry, matches: new RegExp(`^[a-z]+://[^/]+${escaped}([?#]|$)`) };
   };
 
   await use({
