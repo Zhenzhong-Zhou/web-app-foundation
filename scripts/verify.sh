@@ -233,10 +233,12 @@ against_main() {
 # explains (#521), so the next miss is read from what its page showed.
 # Linux WebKit also records a trace of each test and keeps a failed one's,
 # which says what the page was still waiting for when the test gave up.
-# It runs on CI's two workers, not Playwright's default of one per core:
-# six WebKit pages starting at once each ask Vite's dev server for every
-# module, and under that load a full page load's start outlasted its
-# 5 seconds (#643).
+# It runs on CI's two workers, not Playwright's default of one per core, so
+# a local run and CI's differ in the machine alone. The suite runs on the
+# built client (#530), where six workers pass as well, five runs of five on
+# the Mac at 2.5 minutes against 4.7 at two. Before it, six WebKit pages
+# starting at once each asked Vite's dev server for every module, and
+# under that load a full page load's start outlasted its 5 seconds (#643).
 BROWSERS_CONTAINER=verify-linux-browsers
 
 linux_browsers() {

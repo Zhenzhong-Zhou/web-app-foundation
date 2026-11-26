@@ -219,10 +219,13 @@ steps; this section stays the rule.
   timed step, not after it.
 - **The Linux browsers' part of the full verify runs on a Mac left
   alone** (24 November 2026): a server compiling or a browser open beside
-  it times WebKit's pages out (#643). A Linux WebKit run whose failed
-  tests all show the application's start screen alone in their kept
-  snapshot is run once more before it counts (25 November 2026), until
-  the browser tests run against the built client (#530):
+  it times WebKit's pages out (#643). They run on the built client, as
+  the whole browser suite does (26 November 2026, #530): five Linux
+  WebKit runs of five passed at six workers on the Mac, none stopping on
+  the start screen, so a failed test is read from its kept trace as any
+  other is, and a run is not run again to see whether it counts. A test
+  that stops on the start screen, in any run, reopens #643. To run that
+  part alone:
   `node scripts/one-at-a-time.mjs linux-browsers -- bash scripts/verify.sh --linux-browsers`.
   After a step that adds a route, the
   dev server is started again before a look by hand: its watcher had not
@@ -694,8 +697,12 @@ reports success.
 - Server e2e: always `npm run test:e2e`. Two runs never overlap, even from
   two working folders: the second waits for the first
   (`scripts/one-at-a-time.mjs`), and one started without that wrapper
-  refuses. Don't edit server files while Playwright runs against
-  `start:dev`.
+  refuses. The browser suite starts its API with `npm run start`,
+  compiled once, with no watcher (ADR-008's amendment for #530), so a
+  server file edited during a run restarts nothing and shows from the
+  next run. An API already on port 3100 is reused as it is: one started
+  by hand with `start:dev` still restarts on a save, so stop it before a
+  run.
 - **`npm run api` is the truth about the document.** An enum written from
   a TypeScript union can change order when the code around it changes,
   since TypeScript orders a union by when it first meets each member.
