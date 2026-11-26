@@ -265,8 +265,10 @@ and trigger rather than proposing code.
 
 Then **By hand**: numbered steps for Bob, each saying where to click or
 what to run, and what result counts as done. Then **Sound**: one line per
-section with nothing to report. If nothing is wrong, say so plainly
-rather than inventing findings.
+section with nothing to report; the last line is `DONE: <why>` or
+`BLOCKED: <what is needed>`, as `CLAUDE.md`'s "Report for a quick
+read" says. If nothing is wrong, say so plainly rather than inventing
+findings.
 
 ## 5. When asked
 
