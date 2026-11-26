@@ -195,6 +195,12 @@ export default function App() {
           }
         />
 
+        {/* /throws-on-purpose, the browser suite's crash page before
+            sign-in, is drawn by SignedOut's path check, in `npm run dev`
+            and the suite's build alone, not by a route here: a route
+            behind __DEV_AND_TESTS__ would leave its slot in a production
+            build, which ships as it was without the page. */}
+
         {/* Outside both guards deliberately. Inside Protected, a signed-out
             user following a bad link would sign in only to land on a 404 —
             two steps to learn the link was wrong. Nothing leaks: every route
