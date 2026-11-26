@@ -53,9 +53,10 @@ interface Screen {
   /** A new version out before the screen loads (ADR-081). */
   version?: 'newer' | 'urgent';
   /**
-   * A page's chunk that will not load while version.json still names this
-   * build: a real failure, so the crash page (ADR-081). Both are the static
-   * host's files, never the API's.
+   * A page's source, whose chunk will not load while version.json still
+   * names this build: a real failure, so the crash page (ADR-081). Both
+   * are the static host's files, never the API's; clientFiles finds the
+   * chunk.
    */
   broken?: string;
   /** The rail folded on this device, as a person may keep it. */
@@ -651,7 +652,7 @@ const SCREENS: Screen[] = [
   },
   {
     name: 'the crash page',
-    broken: '**/src/inventory/inventory-page.tsx*',
+    broken: 'src/inventory/inventory-page.tsx',
     path: () => '/inventory',
     ready: (page) =>
       page.getByRole('heading', { level: 1, name: 'Something went wrong' }),
@@ -1233,7 +1234,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // screen to fix in one run.
     test.describe('the main screens meet WCAG 2.2 AA', () => {
       for (const screen of SCREENS) {
-        test(screen.name, async ({ page, freshOrg }) => {
+        test(screen.name, async ({ page, freshOrg, clientFiles }) => {
           // A seed, a screen and an axe pass: longer than one flow.
           test.setTimeout(60_000);
 
@@ -1247,9 +1248,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.version) {
             await deploy(page, { urgent: screen.version === 'urgent' });
           }
-          if (screen.broken) {
-            await page.route(screen.broken, (route) => route.abort('failed'));
-          }
+          const broken = screen.broken
+            ? await clientFiles.refuse(screen.broken)
+            : undefined;
           if (screen.folded) {
             await page.addInitScript(() =>
               localStorage.setItem('nav.folded', 'true'),
@@ -1264,7 +1265,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
           const list = await violations(page);
           if (screen.version) await page.unroute('**/version.json?*');
-          if (screen.broken) await page.unroute(screen.broken);
+          await broken?.lift();
           expect(list).toEqual([]);
         });
       }

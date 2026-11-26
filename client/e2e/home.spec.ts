@@ -814,27 +814,40 @@ test('Done saved but Home not read again closes Customise Home, nothing left uns
 });
 
 // Few open Customise Home, so its code and the dragging library come only
-// once its button is pressed, not with every Home (#505's review, 46).
+// once its button is pressed, not with every Home (#505's review, 46). The
+// library is read in each script's sources, from its map: a build puts it
+// inside Customise Home's chunk, the dev server in files of its own.
 test('Customise Home and its dragging load only once it is pressed', async ({
   page,
   freshOrg,
+  clientFiles,
 }) => {
   await freshOrg.api.post('/v1/home/getting-started/dismiss');
   const loaded: string[] = [];
   page.on('request', (request) => {
-    if (/customise-home|dnd-kit/.test(request.url())) {
-      loaded.push(request.url());
-    }
+    if (request.resourceType() === 'script') loaded.push(request.url());
   });
+  const customise = clientFiles.path('src/home/customise-home.tsx');
+  const asksForCustomise = (urls: string[]) =>
+    urls.some((url) => new URL(url).pathname === customise);
+  const dragging = (url: string) =>
+    clientFiles
+      .sources(url)
+      .some((source) => source.startsWith('node_modules/@dnd-kit/'));
+
   await signInAs(page, freshOrg.api);
   await page.goto('/');
   await expect(homeTiles(page).first()).toBeVisible();
-  expect(loaded).toEqual([]);
+  // What Home loaded; from here, `loaded` holds what the press loads.
+  const before = loaded.splice(0);
+  expect(before).not.toEqual([]);
+  expect(asksForCustomise(before)).toBe(false);
+  expect(before.filter(dragging)).toEqual([]);
 
   await page.getByRole('button', { name: 'Customise Home' }).click();
   await expect(customising(page)).toBeVisible();
-  expect(loaded.some((url) => url.includes('customise-home'))).toBe(true);
-  expect(loaded.some((url) => url.includes('dnd-kit'))).toBe(true);
+  expect(asksForCustomise(loaded)).toBe(true);
+  expect(loaded.some(dragging)).toBe(true);
 });
 
 // The welcome's Undo, in the greeting that Customise Home fades and puts

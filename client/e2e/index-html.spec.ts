@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { OWNER_STATE_PATH } from './global-setup';
+import { type ClientFiles, ENTRY } from './support/client-files';
 
 /**
  * What index.html gives before the app starts (ADR-082): the home screen's
@@ -14,6 +15,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 /**
  * Holds back each request to `url` until `release` is called, slowed, never
  * answered in its place; `asked` settles once the page has asked for it.
+ * The API's session read here; the client's own files by clientFiles.
  */
 async function hold(page: Page, url: RegExp) {
   let release = () => {};
@@ -33,13 +35,12 @@ async function hold(page: Page, url: RegExp) {
 }
 
 /**
- * The app's entry. The suite runs on Vite's dev server, whose entry is
- * src/main.tsx; a build's is a hashed file in /assets/.
+ * Holds the app's entry back, so the page stays as index.html drew it. The
+ * suite runs on the built client, whose entry is a file in /assets/ named
+ * by its content, which clientFiles finds from the build's manifest; under
+ * E2E_DEV_SERVER, the dev server's src/main.tsx.
  */
-const theApp = /\/src\/main\.tsx(\?|$)/;
-
-/** Holds the app's entry back, so the page stays as index.html drew it. */
-const holdTheApp = (page: Page) => hold(page, theApp);
+const holdTheApp = (clientFiles: ClientFiles) => clientFiles.hold(ENTRY);
 
 /** index.html's own title, VITE_APP_NAME: the app is held, so nothing has changed it. */
 async function indexTitle(page: Page): Promise<string> {
@@ -74,8 +75,9 @@ test("names the product for a home screen, and a shared link's card", async ({
   page,
   request,
   baseURL,
+  clientFiles,
 }) => {
-  await holdTheApp(page);
+  await holdTheApp(clientFiles);
   await page.goto('/', { waitUntil: 'commit' });
   const name = await indexTitle(page);
 
@@ -130,7 +132,7 @@ test("names the product for a home screen, and a shared link's card", async ({
     'summary_large_image',
   );
   // The picture, in full at the site's own address: VITE_SITE_URL, which
-  // playwright.config.ts gives the dev server, ../.env's or this one's.
+  // playwright.config.ts gives the client, ../.env's or this one's.
   const site = process.env.VITE_SITE_URL || baseURL;
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',
@@ -170,6 +172,7 @@ for (const [stored, system] of [
 ] as const) {
   test(`draws the loading mark in ${stored}, chosen, with the system ${system}`, async ({
     page,
+    clientFiles,
   }) => {
     await page.emulateMedia({ colorScheme: system });
     await page.addInitScript((mode) => {
@@ -178,7 +181,7 @@ for (const [stored, system] of [
     // The app's timers under the test's hand, so its spinner's 250 ms can
     // pass without waiting them out; the mark's CSS keeps its own time.
     await page.clock.install();
-    const app = await holdTheApp(page);
+    const app = await holdTheApp(clientFiles);
     const session = await hold(page, /\/api\/v1\/auth\/me$/);
     await page.goto('/login', { waitUntil: 'commit' });
     const name = await indexTitle(page);
@@ -247,9 +250,12 @@ for (const [stored, system] of [
 }
 
 // Under reduced motion the progress bar shows, standing still.
-test('keeps the progress bar still under reduced motion', async ({ page }) => {
+test('keeps the progress bar still under reduced motion', async ({
+  page,
+  clientFiles,
+}) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await holdTheApp(page);
+  await holdTheApp(clientFiles);
   await page.goto('/login', { waitUntil: 'commit' });
 
   const progress = page.locator('#loading-mark .bar');
@@ -265,9 +271,10 @@ test('keeps the progress bar still under reduced motion', async ({ page }) => {
  */
 test("puts one line and Reload in the mark's place when the app does not load", async ({
   page,
+  clientFiles,
 }) => {
   await page.addInitScript(() => localStorage.setItem('language', 'zh-Hans'));
-  await page.route(theApp, (route) => route.abort());
+  const app = await clientFiles.refuse(ENTRY);
   await page.goto('/login', { waitUntil: 'commit' });
 
   const failed = page.locator('#loading-mark').getByRole('alert');
@@ -282,7 +289,7 @@ test("puts one line and Reload in the mark's place when the app does not load", 
 
   // Reload asks for the page again, and with the entry let through the
   // app starts.
-  await page.unroute(theApp);
+  await app.lift();
   await reload.click();
   await expect(page.getByRole('heading', { name: '登录' })).toBeVisible();
 });
@@ -292,8 +299,9 @@ test.describe("in the browser's language", () => {
 
   test('says so in French with nothing chosen on the device', async ({
     page,
+    clientFiles,
   }) => {
-    await page.route(theApp, (route) => route.abort());
+    await clientFiles.refuse(ENTRY);
     await page.goto('/login', { waitUntil: 'commit' });
 
     await expect(page.getByRole('alert')).toContainText(
@@ -312,8 +320,9 @@ test.describe('signed in', () => {
 
   test('keeps the loading mark until the first page has drawn', async ({
     page,
+    clientFiles,
   }) => {
-    const home = await hold(page, /\/src\/home\/home-page\.tsx(\?|$)/);
+    const home = await clientFiles.hold('src/home/home-page.tsx');
     await page.goto('/', { waitUntil: 'commit' });
     const name = await indexTitle(page);
     await home.asked;
