@@ -44,7 +44,7 @@ const WORDS_NEED: Record<Locale, number> &
   en: 316,
   'fr-CA': 340,
   'zh-Hans': 262,
-  ...(__PSEUDO_LANGUAGE__ ? { [PSEUDO_LOCALE]: 497 } : {}),
+  ...(__DEV_AND_TESTS__ ? { [PSEUDO_LOCALE]: 497 } : {}),
 };
 
 /** The container query under which the words of the screens' language show. */

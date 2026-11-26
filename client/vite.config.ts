@@ -422,7 +422,7 @@ function versionFile({ build, builtAt, version }: Build): Plugin {
 /**
  * The pseudo-language, en-XA, is for development and the browser tests
  * (ADR-054's November 2026 amendment, R9): a production build neither has
- * it nor offers it. Its code sits behind `__PSEUDO_LANGUAGE__`, compiled in
+ * it nor offers it. Its code sits behind `__DEV_AND_TESTS__`, compiled in
  * below: true on the dev server and in the browser suite's build, which
  * loads it (ADR-054's amendment for #530), false in every other build, so
  * the picker's line for it goes and src/i18n/pseudo.ts with it. Named
@@ -477,7 +477,7 @@ function withoutPseudoLanguage(): Plugin {
       );
       if (found.length > 0) {
         this.error(
-          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __PSEUDO_LANGUAGE__.`,
+          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __DEV_AND_TESTS__.`,
         );
       }
     },
@@ -487,7 +487,7 @@ function withoutPseudoLanguage(): Plugin {
 /**
  * The page that throws as it draws, on purpose, where the browser suite
  * reaches the crash page before sign-in (ADR-008's amendment for #530):
- * behind `__THROWS_ON_PURPOSE__`, compiled in below by en-XA's own rule, so
+ * behind `__DEV_AND_TESTS__`, en-XA's own setting, compiled in below, so
  * every build but the suite's drops the page and its address, and a
  * visitor there meets Page not found. Named here, not read from App.tsx.
  */
@@ -513,7 +513,7 @@ function withoutThrowsOnPurpose(): Plugin {
       );
       if (found.length > 0) {
         this.error(
-          `The build carries the page that throws on purpose, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __THROWS_ON_PURPOSE__.`,
+          `The build carries the page that throws on purpose, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind __DEV_AND_TESTS__.`,
         );
       }
     },
@@ -595,9 +595,8 @@ export default defineConfig(({ command, mode }) => {
   const build = thisBuild(command);
   const forTests = mode === E2E_MODE;
   // en-XA, and the page that throws on purpose: on the dev server and in
-  // the browser suite's build alone.
-  const pseudoLanguage = command === 'serve' || forTests;
-  const throwsOnPurpose = pseudoLanguage;
+  // the browser suite's build alone (src/dev-and-tests.d.ts).
+  const devAndTests = command === 'serve' || forTests;
   const upload =
     command === 'build' && !forTests
       ? sourceMapUpload(process.env, build)
@@ -614,13 +613,12 @@ export default defineConfig(({ command, mode }) => {
       fromTokens(),
       loadingScript(),
       versionFile(build),
-      !pseudoLanguage && withoutPseudoLanguage(),
-      !throwsOnPurpose && withoutThrowsOnPurpose(),
+      !devAndTests && withoutPseudoLanguage(),
+      !devAndTests && withoutThrowsOnPurpose(),
       upload && sentryVitePlugin(upload),
     ],
     define: {
-      __PSEUDO_LANGUAGE__: JSON.stringify(pseudoLanguage),
-      __THROWS_ON_PURPOSE__: JSON.stringify(throwsOnPurpose),
+      __DEV_AND_TESTS__: JSON.stringify(devAndTests),
     },
     resolve: {
       /**

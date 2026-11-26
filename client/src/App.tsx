@@ -70,7 +70,7 @@ function SignedOut() {
   const location = useLocation();
   return (
     <ErrorBoundary resetKey={location.pathname} standalone>
-      {__THROWS_ON_PURPOSE__ && location.pathname === '/throws-on-purpose' ? (
+      {__DEV_AND_TESTS__ && location.pathname === '/throws-on-purpose' ? (
         <ThrowsOnPurposePage />
       ) : (
         <Outlet />

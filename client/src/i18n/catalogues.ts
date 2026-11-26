@@ -38,7 +38,7 @@ const LOADERS: Record<Exclude<Locale, 'en'>, () => Promise<unknown>> = {
  */
 export async function loadMessages(locale: ScreenLocale): Promise<Messages> {
   if (!isLocale(locale)) {
-    return __PSEUDO_LANGUAGE__ ? pseudoMessages(ENGLISH) : ENGLISH;
+    return __DEV_AND_TESTS__ ? pseudoMessages(ENGLISH) : ENGLISH;
   }
   if (locale === 'en') return ENGLISH;
   return {

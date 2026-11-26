@@ -743,8 +743,9 @@ The error tracker hears of real faults only (ADR-084).
   `accessibility.spec.ts`'s crash page before sign-in, since that screen
   is part of the built entry and a test cannot swap its file to break it.
   It is in `npm run dev` and the tests' build alone, behind
-  `__THROWS_ON_PURPOSE__`; a production build has neither the page nor
-  its address, where a visitor meets Page not found, and
+  `__DEV_AND_TESTS__`, the setting `en-XA` has too
+  (`client/src/dev-and-tests.d.ts`); a production build has neither the
+  page nor its address, where a visitor meets Page not found, and
   `withoutThrowsOnPurpose` in `client/vite.config.ts` stops a build whose
   chunks carry it, as it stops `en-XA`.
 - **A limit the browser suite reaches is `limit(n)` in `@Throttle`**

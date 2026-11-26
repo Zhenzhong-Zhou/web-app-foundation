@@ -21,26 +21,17 @@ export const DEFAULT_LOCALE: Locale = 'en';
  * shows without waiting for a translation. In development and the browser
  * tests only: a production build neither has it nor offers it, which
  * vite.config.ts's `withoutPseudoLanguage` holds, so it is named only
- * where `__PSEUDO_LANGUAGE__` guards it. To the server, the account, the
- * guides and anything else the screens ask for, it is English.
+ * where `__DEV_AND_TESTS__` guards it (src/dev-and-tests.d.ts). To the
+ * server, the account, the guides and anything else the screens ask for,
+ * it is English.
  */
 export const PSEUDO_LOCALE = 'en-XA';
-
-declare global {
-  /**
-   * Whether the screens have en-XA (ADR-054's amendment for #530): true in
-   * `npm run dev` and in the browser suite's build, false in every other
-   * build, which drops what it guards. Compiled in by vite.config.ts, and
-   * by vitest.config.ts for the component tests.
-   */
-  const __PSEUDO_LANGUAGE__: boolean;
-}
 
 /** A language the screens can be in: one of the app's, or en-XA. */
 export type ScreenLocale = Locale | typeof PSEUDO_LOCALE;
 
 /** What the language picker offers: the app's, and en-XA where it is on. */
-export const SCREEN_LOCALES: readonly ScreenLocale[] = __PSEUDO_LANGUAGE__
+export const SCREEN_LOCALES: readonly ScreenLocale[] = __DEV_AND_TESTS__
   ? [...SUPPORTED_LOCALES, PSEUDO_LOCALE]
   : SUPPORTED_LOCALES;
 

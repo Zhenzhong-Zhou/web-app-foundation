@@ -345,10 +345,11 @@ function whyTheBuildStops(mode: string, code: string): string | null {
 }
 
 /**
- * en-XA by a setting of its own, __PSEUDO_LANGUAGE__ (ADR-054's amendment
- * for #530): on in `npm run dev` and in the browser suite's build, which
- * loads it in cut-text.spec.ts and languages.spec.ts, and off in every
- * other build, which still stops when a chunk carries it.
+ * en-XA by a setting of its own, __DEV_AND_TESTS__ (ADR-054's amendment
+ * for #530), which the page that throws on purpose has too: on in
+ * `npm run dev` and in the browser suite's build, which loads it in
+ * cut-text.spec.ts and languages.spec.ts, and off in every other build,
+ * which still stops when a chunk carries it.
  */
 describe('the pseudo-language', () => {
   const configFor = (command: 'build' | 'serve', mode: string) =>
@@ -369,13 +370,13 @@ describe('the pseudo-language', () => {
 
   it("is on in the dev server and the browser suite's build, and off in a production build", () => {
     expect(configFor('serve', 'development').define).toMatchObject({
-      __PSEUDO_LANGUAGE__: 'true',
+      __DEV_AND_TESTS__: 'true',
     });
     expect(configFor('build', 'e2e').define).toMatchObject({
-      __PSEUDO_LANGUAGE__: 'true',
+      __DEV_AND_TESTS__: 'true',
     });
     expect(configFor('build', 'production').define).toMatchObject({
-      __PSEUDO_LANGUAGE__: 'false',
+      __DEV_AND_TESTS__: 'false',
     });
   });
 
@@ -393,7 +394,7 @@ describe('the pseudo-language', () => {
 /**
  * The page that throws as it draws, on purpose, where the browser suite
  * reaches the crash page before sign-in (ADR-008's amendment for #530):
- * __THROWS_ON_PURPOSE__, on where en-XA is, and every other build stops
+ * behind en-XA's setting, __DEV_AND_TESTS__, and every other build stops
  * when a chunk carries the page or its address.
  */
 describe('the page that throws on purpose', () => {
@@ -430,18 +431,6 @@ describe('the page that throws on purpose', () => {
         { ...clean, modules: { [page]: { renderedLength: 0 } } },
       ]),
     ).toEqual([]);
-  });
-
-  it("is on in the dev server and the browser suite's build, and off in a production build", () => {
-    expect(
-      viteConfig({ command: 'serve', mode: 'development' }).define,
-    ).toMatchObject({ __THROWS_ON_PURPOSE__: 'true' });
-    expect(viteConfig({ command: 'build', mode: 'e2e' }).define).toMatchObject({
-      __THROWS_ON_PURPOSE__: 'true',
-    });
-    expect(
-      viteConfig({ command: 'build', mode: 'production' }).define,
-    ).toMatchObject({ __THROWS_ON_PURPOSE__: 'false' });
   });
 
   it("stops a production build whose chunks carry it, naming where, and lets the browser suite's carry it", () => {

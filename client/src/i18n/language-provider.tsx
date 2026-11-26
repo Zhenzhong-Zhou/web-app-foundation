@@ -207,7 +207,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const follow = useCallback(
     (locale: Locale) =>
       setLocale(
-        __PSEUDO_LANGUAGE__ &&
+        __DEV_AND_TESTS__ &&
           locale === DEFAULT_LOCALE &&
           shown.current === PSEUDO_LOCALE
           ? PSEUDO_LOCALE
