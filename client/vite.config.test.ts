@@ -13,6 +13,16 @@ import viteConfig, {
   withTokens,
 } from './vite.config.ts';
 
+// No upload's plugin, whose own end would reach the tracker, unless a test
+// sets the token itself; every setting a test stubs is put back after it.
+beforeEach(() => {
+  vi.stubEnv('SENTRY_AUTH_TOKEN', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 /**
  * ADR-082's settings as a build reads them, each with what it falls back
  * to, so a fork that sets none of them builds as it did.
@@ -252,6 +262,19 @@ describe('sourceMapUpload', () => {
   });
 });
 
+// The whole config, as `vite build` or the dev server reads it, in Node:
+// it reads its files by their URL, which jsdom's would not give.
+const configFor = (command: 'build' | 'serve', mode: string) =>
+  viteConfig({ command, mode });
+
+/** A config's plugins, flat: a plugin is one or an array of them. */
+const flatPlugins = (plugins: unknown): object[] =>
+  Array.isArray(plugins)
+    ? plugins.flatMap(flatPlugins)
+    : plugins && typeof plugins === 'object'
+      ? [plugins]
+      : [];
+
 /**
  * The browser suite's own build, `vite build --mode e2e` (ADR-008's
  * amendment for #530): a folder of its own, source maps and the build's
@@ -259,23 +282,8 @@ describe('sourceMapUpload', () => {
  * are as they were.
  */
 describe("the browser suite's build", () => {
-  // The whole config, as `vite build` reads it, in Node: it reads its
-  // files by their URL, which jsdom's would not give.
-  const configFor = (mode: string) => viteConfig({ command: 'build', mode });
-  // Its plugins' names, a plugin being one or an array of them.
-  const pluginNames = (plugins: unknown): string[] =>
-    Array.isArray(plugins)
-      ? plugins.flatMap(pluginNames)
-      : plugins && typeof plugins === 'object' && 'name' in plugins
-        ? [String(plugins.name)]
-        : [];
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
   it('goes to a folder of its own, with source maps and the manifest', () => {
-    expect(configFor('e2e').build).toMatchObject({
+    expect(configFor('build', 'e2e').build).toMatchObject({
       outDir: 'dist-e2e',
       sourcemap: true,
       manifest: true,
@@ -283,8 +291,7 @@ describe("the browser suite's build", () => {
   });
 
   it('leaves a production build in dist/, with neither maps nor a manifest', () => {
-    vi.stubEnv('SENTRY_AUTH_TOKEN', '');
-    const { build } = configFor('production');
+    const { build } = configFor('build', 'production');
 
     // No outDir is Vite's own, dist/.
     expect(build?.outDir).toBeUndefined();
@@ -296,22 +303,14 @@ describe("the browser suite's build", () => {
     vi.stubEnv('SENTRY_AUTH_TOKEN', 'sntrys_token');
 
     expect(
-      pluginNames(configFor('e2e').plugins).filter((name) =>
-        name.includes('sentry'),
+      flatPlugins(configFor('build', 'e2e').plugins).filter(
+        (plugin) => 'name' in plugin && String(plugin.name).includes('sentry'),
       ),
     ).toEqual([]);
   });
 });
 
 type BundleHook = (this: unknown, options: unknown, bundle: unknown) => void;
-
-/** Each plugin's generateBundle, a plugin being one or an array of them. */
-const bundleHooks = (plugins: unknown): BundleHook[] =>
-  Array.isArray(plugins)
-    ? plugins.flatMap(bundleHooks)
-    : plugins && typeof plugins === 'object' && 'generateBundle' in plugins
-      ? [plugins.generateBundle as BundleHook]
-      : [];
 
 /**
  * Why the end of a build in `mode` stops on one chunk of `code`, as each
@@ -333,10 +332,10 @@ function whyTheBuildStops(mode: string, code: string): string | null {
     },
   };
   try {
-    for (const hook of bundleHooks(
-      viteConfig({ command: 'build', mode }).plugins,
-    )) {
-      hook.call(context, {}, bundle);
+    for (const plugin of flatPlugins(configFor('build', mode).plugins)) {
+      if ('generateBundle' in plugin) {
+        (plugin.generateBundle as BundleHook).call(context, {}, bundle);
+      }
     }
     return null;
   } catch (error) {
@@ -345,40 +344,31 @@ function whyTheBuildStops(mode: string, code: string): string | null {
 }
 
 /**
- * en-XA by a setting of its own, __DEV_AND_TESTS__ (ADR-054's amendment
- * for #530), which the page that throws on purpose has too: on in
- * `npm run dev` and in the browser suite's build, which loads it in
- * cut-text.spec.ts and languages.spec.ts, and off in every other build,
- * which still stops when a chunk carries it.
+ * en-XA and the page that throws on purpose, behind one setting,
+ * __DEV_AND_TESTS__ (ADR-054's and ADR-008's amendments for #530): on in
+ * `npm run dev` and in the browser suite's build, which loads them, and
+ * off in every other build, which still stops when a chunk carries either.
+ */
+describe('__DEV_AND_TESTS__', () => {
+  it.each([
+    ['serve', 'development', 'true'],
+    ['build', 'e2e', 'true'],
+    ['build', 'production', 'false'],
+  ] as const)('is %s in %s mode: %s', (command, mode, on) => {
+    expect(configFor(command, mode).define).toMatchObject({
+      __DEV_AND_TESTS__: on,
+    });
+  });
+});
+
+/**
+ * en-XA, which the browser suite's build loads in cut-text.spec.ts and
+ * languages.spec.ts.
  */
 describe('the pseudo-language', () => {
-  const configFor = (command: 'build' | 'serve', mode: string) =>
-    viteConfig({ command, mode });
-
   /** Why a build's end stops on a chunk that names en-XA, or null. */
   const stopsOnPseudoLanguage = (mode: string): string | null =>
     whyTheBuildStops(mode, 'x=["en","fr-CA","zh-Hans","en-XA"]');
-
-  beforeEach(() => {
-    // No upload's plugin, whose own end would reach the tracker.
-    vi.stubEnv('SENTRY_AUTH_TOKEN', '');
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it("is on in the dev server and the browser suite's build, and off in a production build", () => {
-    expect(configFor('serve', 'development').define).toMatchObject({
-      __DEV_AND_TESTS__: 'true',
-    });
-    expect(configFor('build', 'e2e').define).toMatchObject({
-      __DEV_AND_TESTS__: 'true',
-    });
-    expect(configFor('build', 'production').define).toMatchObject({
-      __DEV_AND_TESTS__: 'false',
-    });
-  });
 
   it('stops a production build whose chunks carry it, naming where', () => {
     expect(stopsOnPseudoLanguage('production')).toMatch(
@@ -394,8 +384,8 @@ describe('the pseudo-language', () => {
 /**
  * The page that throws as it draws, on purpose, where the browser suite
  * reaches the crash page before sign-in (ADR-008's amendment for #530):
- * behind en-XA's setting, __DEV_AND_TESTS__, and every other build stops
- * when a chunk carries the page or its address.
+ * every build but the suite's stops when a chunk carries the page or its
+ * address.
  */
 describe('the page that throws on purpose', () => {
   const clean = {
@@ -404,14 +394,6 @@ describe('the page that throws on purpose', () => {
     modules: { '/app/client/src/App.tsx': { renderedLength: 40 } },
   };
   const page = '/app/client/src/errors/throws-on-purpose-page.tsx';
-
-  beforeEach(() => {
-    vi.stubEnv('SENTRY_AUTH_TOKEN', '');
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
 
   it('finds nothing in a build without it', () => {
     expect(throwsOnPurposeIn([clean])).toEqual([]);
