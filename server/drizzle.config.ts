@@ -7,9 +7,11 @@ import { defineConfig } from 'drizzle-kit';
 // already in the process.
 config({ path: '../.env', quiet: true });
 
-// Migrations must be applied to every database. Selected by an env flag rather
-// than by overriding DATABASE_URL on the command line, because dotenv above
-// would win and silently migrate the dev database instead.
+// Migrations must be applied to every database. The test and e2e ones are
+// selected by an env flag naming their own setting in ../.env. A DATABASE_URL
+// given on the command line wins over ../.env's, since dotenv keeps a variable
+// already set: that is how a volume database is migrated (docs/engineering.md,
+// "Adding a migration").
 //
 // A lookup table rather than a chain of ternaries, and deliberately no ??
 // fallback on the lookup: a typo'd target resolving to DATABASE_URL migrates
