@@ -299,7 +299,7 @@ test("the full run stops at once, with the container's logs, when the browsers' 
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
 });
 
-test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit on CI's two workers (#643), keeping a failed test's trace (#521), then the cut-text spec in its Chromium", (t) => {
+test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit on CI's two workers, keeping a failed test's trace (#521), then the cut-text spec in its Chromium", (t) => {
   const root = fixture(t);
   withPlaywright(root);
   const run = verify(t, root, OLD, {

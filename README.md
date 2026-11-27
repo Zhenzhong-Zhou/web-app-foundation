@@ -195,8 +195,11 @@ three. A failing schema-invariant test is usually one of them left behind.
 
 From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npm test`
 (Vitest), `npm run test:e2e` for the browser suite (Playwright, on its own stack on
-ports 3100/5273, never the dev server; it migrates and seeds the e2e database
-first), and `npm run verify`.
+ports 3100/5273: the API compiled and started once, and the client built into
+`client/dist-e2e/` and served by Vite's preview server; it migrates and seeds the e2e
+database first), and `npm run verify`. One spec on the dev server, where an
+edit to the client shows at once, is
+`E2E_DEV_SERVER=1 npm run test:e2e -- e2e/<spec>.spec.ts --project=chromium`.
 
 `scripts/verify.sh`, from the repo root, runs both sides in CI's order and stops
 at the first failure; `--quick` leaves out the two end-to-end suites.
@@ -253,7 +256,7 @@ work under updates it.
 | After a merge, now and then            | `scripts/clean-local.sh`, then `--yes`; `--docker` for Docker's space                                                                           |
 | A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day ([conventions.md, "Tests"](docs/conventions.md#tests))                                 |
 | A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                                                                               |
-| A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                                                                                    |
+| A browser test fails                   | `npm run test:e2e:ui` in `client/` (on the dev server), to watch it step by step                                                                |
 | Looking inside the dev database        | `npm run db:studio` in `server/`                                                                                                                |
 | Before a release tag                   | `/production-readiness` on the whole app; Actions → Performance; `perf:plans` at large                                                          |
 | Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                                                                           |

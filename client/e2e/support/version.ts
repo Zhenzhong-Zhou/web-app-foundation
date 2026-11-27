@@ -2,8 +2,9 @@ import type { Page } from '@playwright/test';
 
 /**
  * A deploy, as a tab sees it (ADR-081): the static host's version.json
- * names another build than the one the tab runs, which on the dev server
- * is `dev`. The file is the static host's, never the API's, so the rule
+ * names another build than the one the tab runs, which in the suite's
+ * build is its commit and the time it was built, and on the dev server
+ * `dev`. The file is the static host's, never the API's, so the rule
  * that nothing in a spec mocks the API holds. `urgent` gives the new build
  * an API revision above the one the API serves, and the client was built
  * for: one whose saves this tab would be refused.

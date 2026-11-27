@@ -53,9 +53,10 @@ interface Screen {
   /** A new version out before the screen loads (ADR-081). */
   version?: 'newer' | 'urgent';
   /**
-   * A page's chunk that will not load while version.json still names this
-   * build: a real failure, so the crash page (ADR-081). Both are the static
-   * host's files, never the API's.
+   * A page's source, whose chunk will not load while version.json still
+   * names this build: a real failure, so the crash page (ADR-081). Both
+   * are the static host's files, never the API's; clientFiles finds the
+   * chunk.
    */
   broken?: string;
   /** The rail folded on this device, as a person may keep it. */
@@ -174,18 +175,7 @@ async function expectRingOnRail(button: Locator, railGround: string) {
  * The screens before sign-in, the product's own (ADR-082): its mark and
  * name above, the © line below.
  */
-const SIGNED_OUT: {
-  name: string;
-  path: string;
-  title: string;
-  /**
-   * A page's module, served as one whose page throws as it draws: its code
-   * broken in this build (#244). The screens before sign-in load with the
-   * app, not split, so they cannot fail to load as `broken` makes a
-   * signed-in page's chunk do: the whole app would not start.
-   */
-  broken?: { module: string; page: string };
-}[] = [
+const SIGNED_OUT: { name: string; path: string; title: string }[] = [
   { name: 'sign-in', path: '/login', title: 'Sign in' },
   {
     name: 'a status page, signed out',
@@ -193,10 +183,15 @@ const SIGNED_OUT: {
     title: 'Page not found',
   },
   {
+    // A page that throws as it draws, its code broken (#244): there on
+    // purpose in the suite's build and on the dev server, never in a build
+    // that ships (src/errors/throws-on-purpose-page.tsx). The screens
+    // before sign-in load with the app, not split, so they cannot fail to
+    // load as `broken` makes a signed-in page's chunk do: the whole app
+    // would not start.
     name: 'the crash page before sign-in',
-    path: '/login',
+    path: '/throws-on-purpose',
     title: 'Something went wrong',
-    broken: { module: '**/src/auth/login-page.tsx*', page: 'LoginPage' },
   },
 ];
 
@@ -657,7 +652,7 @@ const SCREENS: Screen[] = [
   },
   {
     name: 'the crash page',
-    broken: '**/src/inventory/inventory-page.tsx*',
+    broken: 'src/inventory/inventory-page.tsx',
     path: () => '/inventory',
     ready: (page) =>
       page.getByRole('heading', { level: 1, name: 'Something went wrong' }),
@@ -1239,7 +1234,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // screen to fix in one run.
     test.describe('the main screens meet WCAG 2.2 AA', () => {
       for (const screen of SCREENS) {
-        test(screen.name, async ({ page, freshOrg }) => {
+        test(screen.name, async ({ page, freshOrg, clientFiles }) => {
           // A seed, a screen and an axe pass: longer than one flow.
           test.setTimeout(60_000);
 
@@ -1253,9 +1248,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.version) {
             await deploy(page, { urgent: screen.version === 'urgent' });
           }
-          if (screen.broken) {
-            await page.route(screen.broken, (route) => route.abort('failed'));
-          }
+          const broken = screen.broken
+            ? await clientFiles.refuse(screen.broken)
+            : undefined;
           if (screen.folded) {
             await page.addInitScript(() =>
               localStorage.setItem('nav.folded', 'true'),
@@ -1270,7 +1265,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
           const list = await violations(page);
           if (screen.version) await page.unroute('**/version.json?*');
-          if (screen.broken) await page.unroute(screen.broken);
+          await broken?.lift();
           expect(list).toEqual([]);
         });
       }
@@ -1325,15 +1320,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       for (const screen of SIGNED_OUT) {
         test(screen.name, async ({ page }) => {
-          const { broken } = screen;
-          if (broken) {
-            await page.route(broken.module, (route) =>
-              route.fulfill({
-                contentType: 'text/javascript',
-                body: `export function ${broken.page}() { throw new Error('${broken.page} broken in this build'); }`,
-              }),
-            );
-          }
           await page.goto(screen.path);
           await expect(
             page.getByRole('heading', { level: 1, name: screen.title }),

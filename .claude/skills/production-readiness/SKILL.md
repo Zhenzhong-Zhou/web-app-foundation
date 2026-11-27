@@ -94,7 +94,8 @@ done; a check older than a change of host, plan or region is stale.
 
 ### Backups and a restore tried (ADR-053, ADR-059)
 
-- **Runs.** `gh run list --workflow backup.yml -L 7` and
+- **Runs.** `gh run list --workflow backup.yml -L 14`, a week, since it
+  runs twice a day, the backup and then the check that it exists; and
   `--workflow restore-drill.yml -L 3`: the nightly backups green, and a
   drill within the last month that restored and checked rows.
 - **Where they go.** `BACKUP_DESTINATION` must be `s3`, to the Canadian
@@ -265,8 +266,10 @@ and trigger rather than proposing code.
 
 Then **By hand**: numbered steps for Bob, each saying where to click or
 what to run, and what result counts as done. Then **Sound**: one line per
-section with nothing to report. If nothing is wrong, say so plainly
-rather than inventing findings.
+section with nothing to report; the last line is `DONE: <why>` or
+`BLOCKED: <what is needed>`, as `CLAUDE.md`'s "Report for a quick
+read" says. If nothing is wrong, say so plainly rather than inventing
+findings.
 
 ## 5. When asked
 

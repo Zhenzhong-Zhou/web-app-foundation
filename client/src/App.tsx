@@ -13,6 +13,7 @@ import { ErrorBoundary } from './components/error-boundary';
 import { NotFoundRoute } from './errors/not-found-page';
 import { OfflinePage } from './errors/offline-page';
 import { RevisionRefusalPage } from './errors/revision-refusal-page';
+import { ThrowsOnPurposePage } from './errors/throws-on-purpose-page';
 import { AppLayout } from './layout/app-layout';
 import { isRevisionRefusal } from './lib/api';
 import { ScreenShown } from './lib/loading-mark';
@@ -58,12 +59,22 @@ function AuthOnly({ children }: { children: ReactNode }) {
  * own (#244): one that throws as it draws shows the crash page on its own,
  * in the product's frame, where it showed React Router's default error
  * page. Cleared by the address's path, as the signed-in pages' is.
+ *
+ * In `npm run dev` and the browser suite's build alone, /throws-on-purpose
+ * draws a page that throws, for the suite's crash page before sign-in
+ * (throws-on-purpose-page.tsx). Every other build drops the line whole, so
+ * there the address is Page not found's, as any unknown one is, and the
+ * build is as it was without it.
  */
 function SignedOut() {
   const location = useLocation();
   return (
     <ErrorBoundary resetKey={location.pathname} standalone>
-      <Outlet />
+      {__DEV_AND_TESTS__ && location.pathname === '/throws-on-purpose' ? (
+        <ThrowsOnPurposePage />
+      ) : (
+        <Outlet />
+      )}
     </ErrorBoundary>
   );
 }
@@ -183,6 +194,12 @@ export default function App() {
             </AuthOnly>
           }
         />
+
+        {/* /throws-on-purpose, the browser suite's crash page before
+            sign-in, is drawn by SignedOut's path check, in `npm run dev`
+            and the suite's build alone, not by a route here: a route
+            behind __DEV_AND_TESTS__ would leave its slot in a production
+            build, which ships as it was without the page. */}
 
         {/* Outside both guards deliberately. Inside Protected, a signed-out
             user following a bad link would sign in only to land on a 404 —

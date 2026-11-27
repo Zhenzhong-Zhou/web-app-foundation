@@ -20,7 +20,8 @@ test('a deploy: New version in the top bar, and the next page loads in full', as
     page.getByRole('heading', { level: 1, name: 'Orders' }),
   ).toBeVisible();
   const bar = page.getByRole('banner');
-  // The dev server's own file names `dev`: nothing to say.
+  // version.json names the build the tab runs, the suite's own, or `dev`
+  // on the dev server: nothing to say.
   await expect(bar.getByRole('button', { name: 'Help' })).toBeVisible();
   await expect(bar.getByRole('button', { name: 'New version' })).toHaveCount(0);
 

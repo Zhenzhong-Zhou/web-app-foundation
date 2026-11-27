@@ -704,13 +704,50 @@ The error tracker hears of real faults only (ADR-084).
   `sid` from storageState, and a second cookie of the same name for the
   same host leaves it unspecified which one the browser sends, a coin flip
   that shows up as an unrelated test failing now and then.
-- **The browser suite's own client server runs without hot reload**
-  (#183), and so does the screenshots suite's: `client/playwright.config.ts`
+- **The browser suite runs on the built client** (ADR-008's amendment for
+  #530). Each Playwright call, whether `npm run test:e2e`, a bare `npx
+  playwright test`, CI's or the full verify's, builds the client in the
+  tests' own mode into `client/dist-e2e/`, which git ignores and which
+  leaves `dist/` as it was, and serves it with Vite's preview server on
+  5273, passing `/api` on to the API on 3100 as the dev server did. The
+  tests' build is the production build but for `en-XA`, source maps, the
+  build's manifest and the © holder and site address the dev server had;
+  it takes about a second. The dev server's Node abort (#530) and its
+  requests left unanswered in Linux WebKit (#643) are why. A server
+  already on 5273 is never reused, since it would serve an earlier run's
+  files: the run stops, saying the port is taken. A spec names one of the
+  client's own files, to hold it back or refuse it, by its source to the
+  `clientFiles` fixture (`client/e2e/support/client-files.ts`), never by
+  a `/src/` path, which only the dev server serves and which lint
+  refuses.
+- **One spec at a time keeps the dev server,** for writing or mending a
+  spec, where an edit to the client shows at once: in `client/`,
+  `E2E_DEV_SERVER=1 npm run test:e2e -- e2e/<spec>.spec.ts --project=chromium`,
+  or `npm run test:e2e:ui`, which sets it. CI and `scripts/verify.sh`
+  never do, so what passes there has loaded built files, and a spec
+  passes against the built client before its push. A built trace names
+  only the built file's position, not the source's line, so a failure is
+  read by running its spec on the dev server.
+- **The dev server, where a suite starts one, runs without hot reload**
+  (#183): the browser suite's under `E2E_DEV_SERVER`, and the screenshots
+  suite's, which stays on the dev server. `client/playwright.config.ts`
   and `client/playwright.screenshots.config.ts` start theirs with
   `VITE_HMR=off`, so a file saved during a run cannot reload a page in the
   middle of a form. A client server already running on port 5273, or 5373
   for the screenshots, is reused as it is, with hot reload, so stop it
   before a run.
+- **A page that throws on purpose** (ADR-008's amendment for #530):
+  `/throws-on-purpose`, drawn by
+  `client/src/errors/throws-on-purpose-page.tsx` inside the boundary of
+  the screens before sign-in (`SignedOut` in `client/src/App.tsx`), for
+  `accessibility.spec.ts`'s crash page before sign-in, since that screen
+  is part of the built entry and a test cannot swap its file to break it.
+  It is in `npm run dev` and the tests' build alone, behind
+  `__DEV_AND_TESTS__`, the setting `en-XA` has too
+  (`client/src/dev-and-tests.d.ts`); a production build has neither the
+  page nor its address, where a visitor meets Page not found, and
+  `withoutDevAndTests` in `client/vite.config.ts` stops a build whose
+  chunks carry it, as it stops `en-XA`.
 - **A limit the browser suite reaches is `limit(n)` in `@Throttle`**
   (`server/src/core/auth/throttle-limits.ts`), multiplied by
   `THROTTLE_FACTOR`. A decorator's arguments are evaluated when its class
@@ -1256,10 +1293,17 @@ Internet Explorer, and any browser's IE mode, is not supported.
   `e2e/cut-text.spec.ts` in Linux Chromium, whose measures depend on the
   fonts, CI's being Linux's (ADR-054's as-built), from one
   container of its own on a free port, stopped whatever the result; the
-  commands above are for a run by hand. Linux WebKit runs there on two
-  workers, CI's number, where Playwright's own on a 12-core Mac is six
-  (#715): it makes the dev server's stall rarer and does not end it
-  (#643). A failed run's
+  commands above are for a run by hand, and each builds the client and
+  serves it on 5273 first, as any run does (Tests). A whole Linux WebKit
+  run, as the full verify makes it, is the same call with `--project=webkit
+  --workers=2 --trace=retain-on-failure` and no spec named. Linux WebKit
+  runs there on two workers, CI's number, where Playwright's own on a
+  12-core Mac is six (#715), so a local run and CI's differ in the
+  machine alone. On the built client both pass (November 2026, #530, on a
+  Mac not fully quiet): five runs of 181 tests at six workers took 2.5
+  to 2.6 minutes each with none stopping on the start screen, and two
+  runs at two workers 4.7 minutes, where the dev server's took 6.0 and
+  one run in three stalled (#643). A failed run's
   `client/e2e/.output/` is kept in `tmp/linux-browsers/`, and Linux
   WebKit's holds the failed test's trace, opened with
   `npx playwright show-trace` (#521).

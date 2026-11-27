@@ -1287,3 +1287,36 @@ item is a product: `organizations.product_name_language`,
   line on a type's tab), #592 (the Documents tab's order and a helper's
   words), #593 (`subtitle2` to the five type sizes) and #594 (left from
   the reviews).
+
+## Amendment (November 2026) — `en-XA` in the browser tests' own build (#530)
+
+R9 kept `en-XA` "in development and the browser tests only, never in a
+production build". The browser tests now load a build
+([ADR-008's amendment of November 2026](0008-testing-scaffolding-lands-in-v1.md)),
+so "development" no longer covers them.
+
+- `en-XA` is on in `npm run dev` and in the browser tests' own build,
+  by one setting, which takes `import.meta.env.DEV`'s place wherever it
+  guarded the pseudo-language.
+- A production build still neither has it nor offers it, and
+  `withoutPseudoLanguage` still stops every build but the tests' whose
+  chunks carry it.
+- `cut-text.spec.ts` and `languages.spec.ts` are unchanged: `en-XA` is
+  where they look for it.
+
+### As built (#721, 26 November 2026)
+
+- The setting is `__DEV_AND_TESTS__`, compiled in by
+  `client/vite.config.ts`: on in `npm run dev`, in the browser tests'
+  build and in the component tests, off in every other build. It took
+  `import.meta.env.DEV`'s place in `client/src/lib/locales.ts`,
+  `client/src/i18n/catalogues.ts`,
+  `client/src/i18n/language-provider.tsx` and
+  `client/src/layout/bar.ts`; the warning for a missing message keeps
+  `import.meta.env.DEV`.
+- It is not `en-XA`'s alone: the page that throws on purpose, which the
+  browser tests open to reach the crash page before sign-in, shares it
+  (ADR-008's as-built for #721).
+- `withoutDevAndTests` took `withoutPseudoLanguage`'s place: one check
+  stops every build but the tests' that carries either, naming each
+  and where.

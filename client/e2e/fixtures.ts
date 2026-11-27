@@ -9,6 +9,7 @@ import {
   type SeededOrganization,
   uniqueEmail,
 } from './support/api';
+import { type ClientFiles, withClientFiles } from './support/client-files';
 
 /**
  * Three fixtures, and the choice between them is the whole point:
@@ -28,11 +29,16 @@ import {
  * Reaching for `freshOrg` when `api` would do costs a registration (argon2 +
  * a multi-statement transaction) per test. Reaching for `api` when the test
  * counts rows produces a suite that passes alone and fails in parallel.
+ *
+ * Beside them, `clientFiles`: the client's own files by their source, for
+ * a test that holds one back, refuses one, or reads what a loaded one
+ * holds, in the built client or on the dev server (support/client-files.ts).
  */
 interface Fixtures {
   api: APIRequestContext;
   freshOrg: SeededOrganization;
   viewerApi: APIRequestContext;
+  clientFiles: ClientFiles;
 }
 
 export const test = base.extend<Fixtures>({
@@ -56,6 +62,10 @@ export const test = base.extend<Fixtures>({
 
     await use(context);
     await context.dispose();
+  },
+
+  clientFiles: async ({ page }, use, testInfo) => {
+    await withClientFiles(page, testInfo, use);
   },
 });
 

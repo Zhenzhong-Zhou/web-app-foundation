@@ -61,7 +61,9 @@
 - **The fix-up stage is the "Fix-ups" milestone.**
 - **Every pull request says "Closes #N" for each issue it fixes,** a
   rider included: the issues its commits name are the list checked before
-  it opens (2 November 2026: #361 fixed seven and closed none).
+  it opens (2 November 2026: #361 fixed seven and closed none), with the
+  issues its ADR names (25 November 2026: #717 fixed #665, which no
+  commit's subject named).
 - **A review files an issue only for what a person meets, or for a rule
   that is wrong** (6 November 2026): every smaller tidy-up from the same
   reviews goes into one issue, "Left from ADR-NNN's reviews",
@@ -217,10 +219,13 @@ steps; this section stays the rule.
   timed step, not after it.
 - **The Linux browsers' part of the full verify runs on a Mac left
   alone** (24 November 2026): a server compiling or a browser open beside
-  it times WebKit's pages out (#643). A Linux WebKit run whose failed
-  tests all show the application's start screen alone in their kept
-  snapshot is run once more before it counts (25 November 2026), until
-  the browser tests run against the built client (#530):
+  it times WebKit's pages out (#643). They run on the built client, as
+  the whole browser suite does (26 November 2026, #530): five Linux
+  WebKit runs of five passed at six workers on the Mac, none stopping on
+  the start screen, so a failed test is read from its kept trace as any
+  other is, and a run is not run again to see whether it counts. A test
+  that stops on the start screen, in any run, reopens #643. To run that
+  part alone:
   `node scripts/one-at-a-time.mjs linux-browsers -- bash scripts/verify.sh --linux-browsers`.
   After a step that adds a route, the
   dev server is started again before a look by hand: its watcher had not
@@ -247,7 +252,9 @@ steps; this section stays the rule.
 - **Never switch branches in a folder a Claude Code session is working
   in** (6 November 2026): a `git switch main` there, while a session
   committed, put its commit on the local `main`. A job on `main` waits for
-  the session, or runs in a second working folder.
+  the session, or runs in a second working folder. One writer in a
+  folder at a time (25 November 2026): nothing is applied or committed
+  there while a session works in it, a patch from the chat included.
 - **Small fixes on the API credit** (November 2026, ADR-089's amendment):
   the credit covers the Agent SDK, not Claude Code, so a runner in the
   repository, `scripts/fix-issue/run.mjs`, runs `/fix-issue <N>` through
@@ -375,7 +382,8 @@ steps; this section stays the rule.
   the one thing Bob must act on in bold, arrows for a flow, a small
   table or diagram to compare, a new term in plain words the first time;
   an empty section is left out, but Decisions needed never is. Next is
-  one list a reply, never spread over several (24 November 2026). After
+  one list a reply, never spread over several (24 November 2026), and
+  says so when it replaces an earlier reply's (25 November 2026). After
   any new migration, the reply reminds Bob to run `npm run migrate:all`.
 - **Every run or session the chat asks Bob to start comes with its rough
   time and cost** (6 November 2026): the minutes or hours, the cost on
@@ -460,7 +468,10 @@ twice:
    finding left is filed as an issue ([Issues and
    labels](#issues-and-labels)) or said in the PR. Then
    `scripts/verify.sh` in full, the push and the PR, whose description
-   names the journeys walked and their personas. Pictures the brief asks
+   names the journeys walked and their personas. The pull request opens
+   before the as-built is written, since an as-built names it; and when
+   a fixes prompt is told to stop before the push, the pictures and the
+   pull request are still this step's to do (25 November 2026). Pictures the brief asks
    for are left in `tmp/<branch>/pictures/`, the description naming each
    pair in a table, a row a pair. The pairs the table names are also
    copied into `tmp/<branch>/pictures/pr/before/` and
@@ -471,7 +482,10 @@ twice:
    2026, #676). `gh` cannot upload an image, so the maintainer drags
    file N into row N's two cells from Finder, never from the editor's
    file tree, which pastes the file's path instead (10 November 2026,
-   #556), and saves the description. It is then read back, `gh pr view
+   #556), and saves the description. Each picture goes into its cell,
+   never into the text around the table; the chat cannot see GitHub's
+   pictures, so where the links alone do not say which block is Before,
+   it asks (25 November 2026). It is then read back, `gh pr view
    <PR> --json body --jq .body`, and attached in the chat, which returns
    it whole with the as-built in it and every picture's link kept. After
    the drag the description is never set from a file written before it,
@@ -509,7 +523,15 @@ twice:
   it; fill it in, its `areas` from the list in `scripts/adr-index.mjs`;
   list in its `amends` each ADR it changes; in each of those, add it to
   `amended-by` and write the change as a dated amendment at the end,
-  naming this ADR; then run `node scripts/adr-index.mjs`.
+  naming this ADR; then run `node scripts/adr-index.mjs`. An amendment
+  that is no new ADR names no ADR in its heading (25 November 2026): a
+  heading that names one must have it in both front matters, which the
+  index's check holds, so such an amendment names its issue or its pull
+  request, as ADR-051's for #717 does.
+- **A read-only check on the live database before a merge lists what it
+  counts** (25 November 2026): each row found, with what decides whether
+  it is right, such as whether stock had left before a late cost was
+  set, not the counts alone, as #717's needed for its three late costs.
 - **The seeds grow with every feature** (from ADR-081): `seed:demo`, so
   its screens, manual checks and walkthroughs need no setup; `seed:volume`,
   realistic rows for any new table or hot query, timed against ADR-051's
@@ -675,8 +697,12 @@ reports success.
 - Server e2e: always `npm run test:e2e`. Two runs never overlap, even from
   two working folders: the second waits for the first
   (`scripts/one-at-a-time.mjs`), and one started without that wrapper
-  refuses. Don't edit server files while Playwright runs against
-  `start:dev`.
+  refuses. The browser suite starts its API with `npm run start`,
+  compiled once, with no watcher (ADR-008's amendment for #530), so a
+  server file edited during a run restarts nothing and shows from the
+  next run. An API already on port 3100 is reused as it is: one started
+  by hand with `start:dev` still restarts on a save, so stop it before a
+  run.
 - **`npm run api` is the truth about the document.** An enum written from
   a TypeScript union can change order when the code around it changes,
   since TypeScript orders a union by when it first meets each member.

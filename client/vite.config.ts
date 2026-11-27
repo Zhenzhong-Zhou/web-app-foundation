@@ -212,8 +212,8 @@ function appName(mode: string): Plugin {
    * The home screen's name and icons (ADR-082). It is there for those, so
    * `browser`: added to a home screen, the app still opens with the
    * browser's bar and its back button. Written here, as version.json is,
-   * since it holds the name; the dev server answers it too, since the
-   * end-to-end suite runs there.
+   * since it holds the name; the dev server answers it too, for a spec run
+   * on it (E2E_DEV_SERVER, playwright.config.ts) and the screenshots.
    */
   const manifest = JSON.stringify({
     name,
@@ -422,10 +422,12 @@ function versionFile({ build, builtAt, version }: Build): Plugin {
 /**
  * The pseudo-language, en-XA, is for development and the browser tests
  * (ADR-054's November 2026 amendment, R9): a production build neither has
- * it nor offers it. Its code sits behind `import.meta.env.DEV`, which a
- * build makes false, so the picker's line for it goes and
- * src/i18n/pseudo.ts with it. Named here, not read from src/lib/locales.ts,
- * which reads import.meta.env as it loads.
+ * it nor offers it. Its code sits behind `__DEV_AND_TESTS__`, compiled in
+ * below: true on the dev server and in the browser suite's build, which
+ * loads it (ADR-054's amendment for #530), false in every other build, so
+ * the picker's line for it goes and src/i18n/pseudo.ts with it. Named
+ * here, not read from src/lib/locales.ts, which reads that setting as it
+ * loads.
  */
 const PSEUDO_TAG = 'en-XA';
 const PSEUDO_MODULE = 'src/i18n/pseudo.ts';
@@ -437,32 +439,72 @@ interface BuiltChunk {
   modules: Record<string, { renderedLength: number }>;
 }
 
-/** What of the pseudo-language a build's chunks carry, each a line. */
-export function pseudoLanguageIn(chunks: BuiltChunk[]): string[] {
+/**
+ * Where a build's chunks carry what is for development and the browser
+ * tests alone, each a line: a chunk that names `name`, or holds the code of
+ * `module`.
+ */
+function carrying(
+  chunks: BuiltChunk[],
+  name: string,
+  module: string,
+): string[] {
   return chunks.flatMap(({ fileName, code, modules }) => [
-    ...(code.includes(PSEUDO_TAG) ? [`${fileName} names ${PSEUDO_TAG}`] : []),
+    ...(code.includes(name) ? [`${fileName} names ${name}`] : []),
     ...Object.entries(modules)
       .filter(
-        ([id, { renderedLength }]) =>
-          renderedLength > 0 && id.endsWith(PSEUDO_MODULE),
+        ([id, { renderedLength }]) => renderedLength > 0 && id.endsWith(module),
       )
-      .map(() => `${fileName} holds ${PSEUDO_MODULE}`),
+      .map(() => `${fileName} holds ${module}`),
   ]);
 }
 
-/** Stops a build whose chunks carry the pseudo-language, naming where. */
-function withoutPseudoLanguage(): Plugin {
+/** What of the pseudo-language a build's chunks carry, each a line. */
+export const pseudoLanguageIn = (chunks: BuiltChunk[]): string[] =>
+  carrying(chunks, PSEUDO_TAG, PSEUDO_MODULE);
+
+/**
+ * The page that throws as it draws, on purpose, where the browser suite
+ * reaches the crash page before sign-in (ADR-008's amendment for #530):
+ * behind `__DEV_AND_TESTS__`, en-XA's own setting, compiled in below, so
+ * every build but the suite's drops the page and its address, and a
+ * visitor there meets Page not found. Named here, not read from App.tsx.
+ */
+const THROWS_ON_PURPOSE_PATH = '/throws-on-purpose';
+const THROWS_ON_PURPOSE_MODULE = 'src/errors/throws-on-purpose-page.tsx';
+
+/** What of the page that throws on purpose a build's chunks carry, each a line. */
+export const throwsOnPurposeIn = (chunks: BuiltChunk[]): string[] =>
+  carrying(chunks, THROWS_ON_PURPOSE_PATH, THROWS_ON_PURPOSE_MODULE);
+
+/** What is for development and the browser tests alone, and its finder. */
+const DEV_AND_TESTS_ONLY = [
+  { what: 'the pseudo-language', find: pseudoLanguageIn },
+  { what: 'the page that throws on purpose', find: throwsOnPurposeIn },
+];
+
+/**
+ * Stops a build whose chunks carry what is for development and the browser
+ * tests alone, en-XA or the page that throws on purpose, naming each and
+ * where: every build but the browser suite's, which has them on purpose.
+ */
+function withoutDevAndTests(): Plugin {
   return {
-    name: 'without-pseudo-language',
-    apply: 'build',
+    name: 'without-dev-and-tests',
     generateBundle(_options, bundle) {
-      const found = pseudoLanguageIn(
-        Object.values(bundle).filter((output) => output.type === 'chunk'),
+      const chunks = Object.values(bundle).filter(
+        (output) => output.type === 'chunk',
       );
+      const found = DEV_AND_TESTS_ONLY.flatMap(({ what, find }) => {
+        const where = find(chunks);
+        return where.length > 0
+          ? [
+              `The build carries ${what}, which is for development and the browser tests only: ${where.join('; ')}.`,
+            ]
+          : [];
+      });
       if (found.length > 0) {
-        this.error(
-          `The build carries the pseudo-language, which is for development and the browser tests only: ${found.join('; ')}. Keep it behind import.meta.env.DEV.`,
-        );
+        this.error(`${found.join(' ')} Keep it behind __DEV_AND_TESTS__.`);
       }
     },
   };
@@ -520,10 +562,35 @@ export function sourceMapUpload(
   };
 }
 
+/**
+ * The browser suite's own build (ADR-008's amendment for #530), `npm run
+ * build:e2e`, which playwright.config.ts runs and then serves with
+ * `npm run preview:e2e`. It is the production build, React's production
+ * code and the parser's stub among it, with NODE_ENV unset or production
+ * (playwright.config.ts sets it), but for what the tests need: a
+ * folder of its own, so a browser run leaves dist/, the files that ship,
+ * as it was; source maps, served, so a trace can name the source; and the
+ * build's manifest, .vite/manifest.json, which file each source became, so
+ * a test can find a page's chunk from disk. Nothing from it is uploaded to
+ * the error tracker.
+ */
+const E2E_MODE = 'e2e';
+const E2E_BUILD = {
+  outDir: 'dist-e2e',
+  sourcemap: true,
+  manifest: true,
+} as const;
+
 export default defineConfig(({ command, mode }) => {
   const build = thisBuild(command);
+  const forTests = mode === E2E_MODE;
+  // en-XA, and the page that throws on purpose: on the dev server and in
+  // the browser suite's build alone (src/dev-and-tests.d.ts).
+  const devAndTests = command === 'serve' || forTests;
   const upload =
-    command === 'build' ? sourceMapUpload(process.env, build) : null;
+    command === 'build' && !forTests
+      ? sourceMapUpload(process.env, build)
+      : null;
   // The CLI the plugin uploads with sends Sentry its own usage reports,
   // naming the organization and the project, unless its setting says not to.
   if (upload) process.env.SENTRY_CLI_NO_TELEMETRY = '1';
@@ -536,16 +603,20 @@ export default defineConfig(({ command, mode }) => {
       fromTokens(),
       loadingScript(),
       versionFile(build),
-      withoutPseudoLanguage(),
+      !devAndTests && withoutDevAndTests(),
       upload && sentryVitePlugin(upload),
     ],
+    define: {
+      __DEV_AND_TESTS__: JSON.stringify(devAndTests),
+    },
     resolve: {
       /**
        * In a production build, the ICU parser is swapped for its stub (ADR-054).
        * Every catalogue reaches the browser already parsed (npm run
-       * i18n:compile), so the parser would be weight with nothing to do. Dev
-       * and the tests keep it, so a message added in code and not yet
-       * extracted still renders from its English while someone works on it.
+       * i18n:compile), so the parser would be weight with nothing to do. The
+       * dev server keeps it, so a message added in code and not yet
+       * extracted still renders from its English while someone works on it;
+       * the browser suite's build has the stub, as what ships does.
        */
       alias:
         command === 'build'
@@ -561,18 +632,24 @@ export default defineConfig(({ command, mode }) => {
     // accepts that: this surface sits behind a login wall, where first paint is
     // not a conversion metric. Revisit when step 9 adds Refine — that is when
     // route-level lazy() starts to pay.
-    build: { chunkSizeWarningLimit: 700, sourcemap: upload ? 'hidden' : false },
+    build: {
+      chunkSizeWarningLimit: 700,
+      sourcemap: upload ? 'hidden' : false,
+      ...(forTests ? E2E_BUILD : {}),
+    },
     server: {
       port: 5173,
       // Fail rather than drift to 5174: CLIENT_URL is baked into every
       // verification and reset link (ADR-017), and a silently moved port turns
       // those into dead links with nothing in the logs.
       strictPort: true,
-      // Off for the browser suite's and the screenshots' own servers, which
-      // their Playwright configs start with VITE_HMR=off (#183): a file
-      // saved during a run reloaded a page in the middle of a form.
-      // `npm run dev` keeps hot reload.
+      // Off for the browser suite's dev server, under E2E_DEV_SERVER, and
+      // the screenshots', which their Playwright configs start with
+      // VITE_HMR=off (#183): a file saved during a run reloaded a page in
+      // the middle of a form. `npm run dev` keeps hot reload.
       hmr: process.env.VITE_HMR !== 'off',
+      // The preview server, which serves the browser suite's build, takes
+      // this proxy too: Vite's preview.proxy is server.proxy unless set.
       proxy: {
         '/api': {
           // Playwright sets this so the e2e stack runs on its own ports and

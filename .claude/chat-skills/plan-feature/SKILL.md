@@ -112,7 +112,10 @@ checking**. Each item names its issue or ADR.
 - A new file from `docs/adr/template.md`: `docs/adr/NNNN-<slug>.md`, the
   slug from the title before its first colon. Front matter: `status`,
   `date`, `areas` (one to three, in `AREAS`' order) and `amends`; each
-  amended ADR gains `amended-by` and a dated amendment at its end.
+  amended ADR gains `amended-by` and a dated amendment at its end. An
+  amendment that is no new ADR names no ADR in its heading, since a
+  heading that names one must have it in both front matters: it names
+  its issue or its pull request.
 - Its Context ends with the requirements as confirmed and the check;
   then a Decision heading per decision, Considered and not done, Deferred with each trigger, and
   Consequences ending in the build order.
@@ -174,6 +177,9 @@ gets:
 - Nothing is asked of Bob's Mac while a step or a check that needs it
   quiet runs there: a timed step, or the Linux browsers' part of the
   full verify.
+- One writer in a folder at a time: nothing is applied or committed in
+  a folder while a Claude Code session works there, a patch from the
+  chat included.
 - A step added while a brief runs takes the next free number, its row
   placed where it runs in the steps table, and is run alone by its
   number; no step already named is renumbered.
@@ -188,8 +194,20 @@ gets:
 - When work ends in a pull request: its title, and its description as
   plain Markdown, unasked, with `Closes #N` for each issue the branch
   fixes, riders included, and `Part of #N` for one fixed in part. The
-  issues its commits name are the list to check:
-  `git log --format=%s origin/main..HEAD | grep -oE '#[0-9]+' | sort -u`.
+  issues its commits name are the list to check, with the issues its
+  ADR names, since #665 was in no commit's subject:
+  `git log --format=%s origin/main..HEAD | grep -oE '#[0-9]+' | sort -u`,
+  on a clone of the branch with its whole history and `main`'s, since
+  section 0's shallow clone has neither.
+- The pull request opens first, since the as-built names it. When a
+  fixes prompt is told to stop before the push, the pictures and the
+  pull request are still the review step's to do.
+- Pictures are dragged each into its table cell, never into the text.
+  The chat cannot see GitHub's pictures, so it asks which block is
+  Before where the links do not say.
+- A read-only check on the live database before a merge lists the rows
+  it counts, each with what decides whether it is right (for a late
+  cost, whether stock had left before it), not the counts alone.
 - After the merge: `scripts/prune-branches.sh --yes`, then
   `scripts/clean-local.sh` (a dry run, then `--yes`), the checks the
   runbook names for the deploy, and Project knowledge re-synced. Before

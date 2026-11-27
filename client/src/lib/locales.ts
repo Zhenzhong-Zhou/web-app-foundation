@@ -20,17 +20,18 @@ export const DEFAULT_LOCALE: Locale = 'en';
  * a word the catalogue lacks, or a box too narrow for a longer language,
  * shows without waiting for a translation. In development and the browser
  * tests only: a production build neither has it nor offers it, which
- * vite.config.ts's `withoutPseudoLanguage` holds, so it is named only
- * where `import.meta.env.DEV` guards it. To the server, the account, the
- * guides and anything else the screens ask for, it is English.
+ * vite.config.ts's `withoutDevAndTests` holds, so it is named only
+ * where `__DEV_AND_TESTS__` guards it (src/dev-and-tests.d.ts). To the
+ * server, the account, the guides and anything else the screens ask for,
+ * it is English.
  */
 export const PSEUDO_LOCALE = 'en-XA';
 
 /** A language the screens can be in: one of the app's, or en-XA. */
 export type ScreenLocale = Locale | typeof PSEUDO_LOCALE;
 
-/** What the language picker offers: the app's, and en-XA in development. */
-export const SCREEN_LOCALES: readonly ScreenLocale[] = import.meta.env.DEV
+/** What the language picker offers: the app's, and en-XA where it is on. */
+export const SCREEN_LOCALES: readonly ScreenLocale[] = __DEV_AND_TESTS__
   ? [...SUPPORTED_LOCALES, PSEUDO_LOCALE]
   : SUPPORTED_LOCALES;
 

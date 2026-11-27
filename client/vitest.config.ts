@@ -39,6 +39,9 @@ export default defineConfig({
     // and no © line. A test sets its own with vi.stubGlobal.
     __APP_NAMES__: JSON.stringify(brandSettings({}, 2026).names),
     __COPYRIGHT__: JSON.stringify(null),
+    // en-XA and the page that throws on purpose, as on the dev server and
+    // in the browser suite's build (src/dev-and-tests.d.ts).
+    __DEV_AND_TESTS__: JSON.stringify(true),
   },
   test: {
     environment: 'jsdom',

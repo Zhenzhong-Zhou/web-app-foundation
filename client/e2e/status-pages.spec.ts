@@ -39,12 +39,12 @@ test('an order that does not exist says so, with the way to Orders', async ({
 });
 
 /**
- * A page whose chunk won't load says why (ADR-081). The chunk on the dev
- * server is the page's own source file; both it and version.json are the
- * static host's, never the API's, so nothing here mocks the API.
+ * A page whose chunk won't load says why (ADR-081): Inventory's, which
+ * clientFiles finds by its source. Both it and version.json are the static
+ * host's, never the API's, so nothing here mocks the API.
  */
 test.describe('a page that won’t load', () => {
-  const chunk = '**/src/inventory/inventory-page.tsx*';
+  const inventory = 'src/inventory/inventory-page.tsx';
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/orders');
@@ -55,10 +55,11 @@ test.describe('a page that won’t load', () => {
 
   test('offline: says so, and loads by itself when the connection is back', async ({
     page,
+    clientFiles,
   }) => {
     // The connection dropped: the page's chunk and the version file alike.
     const file = '**/version.json?*';
-    await page.route(chunk, (route) => route.abort('internetdisconnected'));
+    const chunk = await clientFiles.refuse(inventory, 'internetdisconnected');
     await page.route(file, (route) => route.abort('internetdisconnected'));
 
     await openInventory(page);
@@ -74,7 +75,7 @@ test.describe('a page that won’t load', () => {
     await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
 
     // The browser says the connection is back: the page loads in full.
-    await page.unroute(chunk);
+    await chunk.lift();
     await page.unroute(file);
     await markDocument(page);
     const loaded = page.waitForEvent('load');
@@ -89,10 +90,11 @@ test.describe('a page that won’t load', () => {
 
   test('after a deploy: loads in full from the new version, once', async ({
     page,
+    clientFiles,
   }) => {
     // A deploy this tab has not read yet, and the page's chunk out of reach.
     await deploy(page);
-    await page.route(chunk, (route) => route.abort('internetdisconnected'));
+    await clientFiles.refuse(inventory, 'internetdisconnected');
 
     await markDocument(page);
     const loaded = page.waitForEvent('load');

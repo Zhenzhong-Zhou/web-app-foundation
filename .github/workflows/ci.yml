@@ -517,7 +517,9 @@ jobs:
           ENVFILE
 
       # The server tree too: playwright.config.ts starts the API itself with
-      # `npm run start:dev`, and e2e:prepare runs drizzle-kit from there.
+      # `npm run start`, which compiles it first with the Nest CLI, a dev
+      # dependency, so this install keeps them, and e2e:prepare runs
+      # drizzle-kit from there.
       - run: npm ci
         working-directory: server
 

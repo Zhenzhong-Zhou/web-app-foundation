@@ -37,14 +37,14 @@ const BAR_CONTAINER = 'bar';
  * since its words are about 40 % longer than English's (ADR-054's November
  * 2026 amendment, R9): with English's, its bar ran past a 390 px phone. In
  * development and the browser tests only, as the language is: a production
- * build drops the entry with it (vite.config.ts's `withoutPseudoLanguage`).
+ * build drops the entry with it (vite.config.ts's `withoutDevAndTests`).
  */
 const WORDS_NEED: Record<Locale, number> &
   Partial<Record<ScreenLocale, number>> = {
   en: 316,
   'fr-CA': 340,
   'zh-Hans': 262,
-  ...(import.meta.env.DEV ? { [PSEUDO_LOCALE]: 497 } : {}),
+  ...(__DEV_AND_TESTS__ ? { [PSEUDO_LOCALE]: 497 } : {}),
 };
 
 /** The container query under which the words of the screens' language show. */
