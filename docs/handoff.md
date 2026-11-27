@@ -16,19 +16,35 @@ as-built amendments, [the working agreements](engineering.md),
 On 26 November 2026:
 
 - **The browser tests against the built client** ([#530]), with
-  [ADR-008's amendment](adr/0008-testing-scaffolding-lands-in-v1.md):
-  planned on 25 and 26 November on `fix-530-built-client`, from `main`
-  at 8b56ce82, its requirements confirmed before drafting and its
-  decisions chosen as recommended, its brief in the ignored
-  `tmp/fix-530-built-client/`. The browser suite's client is built once
-  a run and served by Vite's preview server, on the Mac and on CI, in
-  place of the dev server, whose abort ([#530]) and stall ([#643]) it
-  ends. A day's work on one spec keeps the dev server; `en-XA` stays in
-  the tests by a setting of its own; the tests' API runs with no
-  watcher. Its proof is five Linux WebKit runs of five at six workers
-  on a Mac left alone, then CI's every-browser run. No API change and
-  no migration. **Left:** the build. **Next:** the counts kept ready
-  ([#716]), an ADR of its own.
+  [ADR-008's amendment and its as-built](adr/0008-testing-scaffolding-lands-in-v1.md):
+  planned on 25 and 26 November and built on 26 November on
+  `fix-530-built-client`, from `main` at 8b56ce82, `main` at e195386e
+  merged in before its proof, by its brief, versions 1 and 2, in the
+  ignored `tmp/fix-530-built-client/`: 26 commits, that merge and its
+  as-built, pull request [#721]. The browser suite's client is built
+  once a run into `client/dist-e2e/` and served by Vite's preview
+  server, on the Mac and on CI, in place of the dev server, whose abort
+  ([#530]) and stall ([#643]) it ends. `E2E_DEV_SERVER=1` keeps the dev
+  server for one spec at a time. `en-XA`, and a page that throws on
+  purpose for the crash page before sign-in, are in `npm run dev` and
+  the tests' build alone, by one setting, and a production build that
+  carries either stops. A test breaks one of the client's own files
+  through the `clientFiles` fixture, and lint refuses a `/src/` path in
+  a spec. The tests' API runs with no watcher. The proof passed on 26
+  November: five Linux WebKit runs of five at six workers, 181 of 181
+  each, on a Mac not fully quiet; the full verify at 3f4ef330; CI's
+  every-browser run by hand (45912836889); and [#721]'s own run with
+  its burn-in. On the Mac the whole suite takes about 6.5 minutes where
+  it took 11, and Linux WebKit at two workers 4.7 where it took 6.0;
+  CI's shards are not shown faster yet. While it was built, the dev
+  server aborted once more on `main`, [#530]'s sixth on CI (run
+  45868304881, passing when run again), and stalled once more at two
+  workers ([#643]). No API change and no migration: the revision stays
+  7, and no manual check changes. The reviews found 22, none a
+  must-fix; the branch fixed 12, and its as-built names the rest.
+  **Left:** the merge, and what follows it (Still to do, by hand).
+  **Next:** the counts kept ready ([#716]), an ADR of its own, with its
+  rider ([#720]).
 - **The branch after ADR-094,** `fix-678-after-094`, with
   [ADR-094's amendment and its as-built](adr/0094-lots-at-receipt.md):
   planned on 24 November and built on 24 and 25 November from `main`
@@ -92,7 +108,7 @@ On 26 November 2026:
   125 `when-touched` and 58 `later`. Open and named after it: [#716],
   which needs an ADR; [#714], the reviews' small ones, the fifth check
   for a lot at zero units among them; [#693]; [#643], its two workers
-  merged as [#715]; [#718]; and [#530].
+  merged as [#715]; [#718], fixed the next day by [#719]; and [#530].
 - **The triage after [#676]'s merge,** 24 November, applied as
   proposed: [#664] reopened, since [#676]'s description had closed it
   (its line "Named, not closed" put a closing word before the
@@ -429,7 +445,11 @@ On 26 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 25 November, [#717] (the branch after
+- **The last merges:** on 26 November, [#719] ([#718]), the fix
+  runner's, the text-size test reading again until the page fits,
+  squashed (e195386e); `main`'s CI then failed once on the dev server's
+  abort ([#530]), run 45868304881, and passed when its failed job was
+  run again. On 25 November, [#717] (the branch after
   ADR-094) as a merge commit (8b56ce82), deployed by Deploy
   45723140621; before it, [#715], the fix runner's, Linux
   WebKit on CI's two workers in the full verify, part of [#643],
@@ -587,7 +607,15 @@ On 26 November 2026:
   `@playwright/test` at 1.64.1, pinned, its Firefox 159
   crashing in the Linux image ([#521]); `jsdom` at 30.1.3, pinned, 17
   unit tests failing on 31 ([#522]); TypeScript 7 ([#336]); fontkit 3,
-  outside its range.
+  outside its range. `fix-530-built-client` took, on 26 November,
+  `@aws-sdk/client-s3` 3.1172.0 and then 3.1173.0 and Sentry 11.15.0 in
+  `server/`, and Sentry 11.15.0, `user-event` 14.6.13 and
+  react-router-dom 7.18.6 in the client (ebc17eb9, 9a61170e); the
+  second commit's message lists what comes of age next, from 27
+  November. In `server/` a dependency step runs plain `npm ci`: with
+  `--ignore-scripts` argon2's install script is skipped. A second
+  one-time exception to the 7-day rule was considered on 26 November
+  and not taken; each branch's dependency step goes on as before.
 - **The translation review:** done on 2 November with the API credits,
   against the glossary: the catalogues' findings in [#371] to [#397],
   one area each, and the Help guides' in [#398]. A second pass, for how
@@ -640,6 +668,23 @@ On 26 November 2026:
 
 ## Still to do, by hand
 
+- **After [#721]'s merge,** to do: the merge, as a merge commit, which
+  closes [#530] and [#643]; `main`'s CI and its Deploy read, the first
+  on the built client, `/api/health` still saying `apiRevision: 7`;
+  that push run's three shards' minutes noted beside run 45868304881's,
+  the first figures like for like (ADR-008's as-built); `main` pulled;
+  the prune and the clean-up, no later ADR reading
+  `tmp/fix-530-built-client/`; the planning skill packed from `main`
+  and uploaded, the branch having changed it twice (3198cba7,
+  d5fe0ee4), then its evals walked; Project knowledge re-synced; and
+  `/triage` over ops, i18n and ui, with one finding for it, a check
+  that a production build is React's production code (ADR-008's
+  as-built). From the merge on, a test stopped on the application's
+  start screen in any run reopens [#643]. No issue was filed for a
+  machine's check after each deploy, though the chat first advised
+  one: Deploy's own "Check the live site" already reads the build's
+  commit, the database and the files, so MC-3424 at a deploy is its
+  open tabs alone, by hand.
 - **After [#717]'s merge,** done on 25 November: the read-only check
   on the live database and a fresh backup before it (Where things
   stand); the merge, as a merge commit; the deploy's check,
@@ -939,17 +984,29 @@ request or a set of them:
       beside it, the fix runner's picks, [#679] done as [#682], [#672]
       as [#686], [#666] as [#688], [#675] as [#689], [#680] as [#690],
       [#683] as [#691], [#685] as [#692], [#687] as [#694], and
-      [#643]'s two workers as [#715]; then the browser tests against
-      the built client ([#530]), planned on 25 and 26 November on
-      `fix-530-built-client` (Where things stand), which ends
-      [#643]'s stall; then the counts kept ready ([#716]), an ADR of
-      its own; with the next branch that changes
+      [#643]'s two workers as [#715], and [#718] as [#719]; then the
+      browser tests against the built client ([#530]), built on 26
+      November on `fix-530-built-client` as [#721] (Where things
+      stand), which ends [#643]'s stall; then the counts kept ready
+      ([#716]), an ADR of its own, with its rider, each part a commit
+      of its own ([#720]): the client's lint refuses an effect in a
+      component, today's recorded in ESLint's own suppressions file;
+      `lint:ci` fails on any warning; `useResource` gains a quiet read;
+      then products renamed to items in the code, the API and the
+      database ([#553]), ADR-092 amended, as two pull requests: first,
+      a name of its own for each other thing the code calls an item;
+      then the rename, the API revision raised, the tables renamed
+      expand then contract, over two deploys. No fix runner pull
+      request merges while the second is open;
+      with the next branch that changes
       orders, [#671], [#674] and [#652], an orders rules file; waiting
       on a trigger or a decision, [#667], [#668] and [#670]'s stages;
       each person choosing their main
       action and More's order, later; then [#310]'s
-      nine dialogs with [#295], one shared hook, on the Mac; then Orders,
-      built to the design language, its findings from ADR-091's panel,
+      nine dialogs with [#295], one shared hook, their effects into
+      the shared hook, on the Mac; then Orders,
+      built to the design language, its ten hand-written reads moved to
+      `useResource`, its findings from ADR-091's panel,
       [#159] among them;
    7. expired lots: [#333] with [#331] and [#442], a new lot's expiry
       and its batch code, and [#670]'s pick list, Ship taking from a
@@ -958,7 +1015,8 @@ request or a set of them:
       10 November, demo data from an earlier inventory project through
       the app's own CSV import ([#552]), its own ADR: items, partners,
       locations, then opening stock by lot, the data anonymized and kept
-      out of the repository;
+      out of the repository; it comes after the rename ([#553]), so its
+      file's columns are named for items from the start;
    8. the audit log: [#133] with [#168] ([#339] was fixed on 2
       November);
    9. then TypeScript 7 ([#336]).
@@ -968,6 +1026,12 @@ request or a set of them:
    with [#258], [#324] and [#326], since all four
    change the security emails' lines and their text parts
    (`npm run mail:text -- --update`).
+
+   Then the sweep: the effects still recorded as exceptions are moved
+   until the suppressions file is empty, and every open bug and
+   accessibility issue is fixed, or closed "not planned" with its
+   reason. The clean-up's order, the rider to the sweep, was decided on
+   26 November.
 8. **One docs PR for the remaining rules files,** then **the review of
    the whole app**, once, after the fix-ups, so it judges the app with the
    known issues fixed and finds what nobody has filed:
@@ -1366,3 +1430,6 @@ Not repeated here; each list has one home:
 [#716]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/716
 [#717]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/717
 [#718]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/718
+[#719]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/719
+[#720]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/720
+[#721]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/721

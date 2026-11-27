@@ -1303,3 +1303,20 @@ so "development" no longer covers them.
   chunks carry it.
 - `cut-text.spec.ts` and `languages.spec.ts` are unchanged: `en-XA` is
   where they look for it.
+
+### As built (#721, 26 November 2026)
+
+- The setting is `__DEV_AND_TESTS__`, compiled in by
+  `client/vite.config.ts`: on in `npm run dev`, in the browser tests'
+  build and in the component tests, off in every other build. It took
+  `import.meta.env.DEV`'s place in `client/src/lib/locales.ts`,
+  `client/src/i18n/catalogues.ts`,
+  `client/src/i18n/language-provider.tsx` and
+  `client/src/layout/bar.ts`; the warning for a missing message keeps
+  `import.meta.env.DEV`.
+- It is not `en-XA`'s alone: the page that throws on purpose, which the
+  browser tests open to reach the crash page before sign-in, shares it
+  (ADR-008's as-built for #721).
+- `withoutDevAndTests` took `withoutPseudoLanguage`'s place: one check
+  stops every build but the tests' that carries either, naming each
+  and where.

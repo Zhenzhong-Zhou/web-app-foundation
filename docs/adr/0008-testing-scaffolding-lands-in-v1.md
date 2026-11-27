@@ -593,3 +593,201 @@ Checked before drafting, for the areas ops, i18n and ui, on 26 November
   the API with no watcher; the proof on the Mac; the docs; dependencies
   again; the reviews; the pull request; CI's every-browser run by hand;
   and the as-built.
+
+## Amendment (November 2026) — as built (#721)
+
+The branch, `fix-530-built-client`, built on 26 November 2026 by its
+brief, versions 1 and 2, in the ignored `tmp/fix-530-built-client/`,
+from `main` at 8b56ce82, with `main` at e195386e merged in before the
+proof: 26 commits and that merge at its push (3f4ef330), then this
+as-built, pull request #721. Where building settled or changed the
+amendment above:
+
+### The built client's requirements, each marked
+
+| R | Now |
+| --- | --- |
+| R1 | Met (884dc113, 3198cba7): the handoff and the seven lessons, `scripts/verify.sh --docs` passing before each |
+| R2 | Met (b4f79482): `webServer` runs `npm run build:e2e`, then `npm run preview:e2e` on 5273 with `--strictPort`, never reused, so every way a run starts takes it; a server already on 5273 stops the run, saying the port is used. `auth.spec.ts` in Chromium asked the client's server for 59 files, none under `/src/` and 46 under `/assets/`, where the dev server was asked for 554, 335 of them under `/src/` |
+| R3 | Changed (b4f79482, 531afcf7): the mode is `e2e` and the folder `client/dist-e2e/`, with source maps and the build's manifest; the tests' build uploads nothing to the error tracker, a token set or not. It differs from a production build by five things, not four: the page that throws on purpose is the fifth (R6). It also sets `NODE_ENV` to `production` itself: the `development` of the repository's `.env`, or CI's `test`, reached the build through Playwright and made it a development build. A production build writes the same files as before the branch, byte for byte once the build's time and the hashes it feeds are set aside, checked at each step that changed the client and after the reviews' fixes |
+| R4 | Met (step 6, no commit): on the dev server 800 of 800 passed; on the built client 784 passed and 16 failed, each trace showing no `/src/` request and none left unanswered. By cause: 11 a `/src/` path; 4 the sign-in page, part of the entry; 1 the Customise Home test of `home.spec.ts`, which looked for the dragging library by a file's name, where a build puts it inside Customise Home's own file. Two more passed without testing what they say: the loading mark's, in `index-html.spec.ts`, whose hold matched no request. Step 8 mended all 18; none was filed |
+| R5 | Changed (07aa6337, c9f92f88, 1121ed79): the setting is `__DEV_AND_TESTS__`, compiled in by `client/vite.config.ts` and declared in `client/src/dev-and-tests.d.ts`: on in `npm run dev`, in the tests' build and in the component tests, off in every other build. It is not `en-XA`'s alone: the page that throws on purpose shares it (Decided while it was built). It guards `en-XA` at the four places named; `withoutDevAndTests` took `withoutPseudoLanguage`'s place as the build's check, naming each thing a build carries and where. The warning for a missing message keeps `import.meta.env.DEV`. On the built client `languages.spec.ts`' `en-XA` test failed before the setting, and the two specs passed 44 of 44 after; a production build forced to carry `en-XA` stopped, naming the chunks |
+| R6 | Changed (531afcf7, f185d42b, 909c646b, 8c75ca6e, 8babfe97, 2f8d738d): four specs, not three, `home.spec.ts` with them. The fixture is `clientFiles`, in `client/e2e/support/client-files.ts`: it holds or refuses a file named by its source, and lists the sources a loaded file holds, from its map. A hold or a refusal that no request met fails its test, naming the file. The sign-in page is made to throw by a page of its own (Decided while it was built). The check is the client's lint, `SOURCE_PATHS` in `client/eslint.config.js`, on in every file of `client/e2e/`, with 16 cases in `client/src/e2e-lint.test.ts`; the two specs put back as they were failed it at their three paths. The changed specs passed five times of five in Chromium and the Mac's WebKit on the built client, and once on the dev server |
+| R7 | Met (b4f79482, a96f0487): `E2E_DEV_SERVER=1` starts the dev server as before, hot reload off; `npm run test:e2e:ui` sets it and nothing else does. The command `docs/conventions.md` gives was run as written, 2 of 2 |
+| R8 | Met, on a Mac not fully quiet (The proof's figures): five of five, no test stopped on the start screen, every request to the client's server answered in the two traces, and no API read failed but the test's own two refusals; CI's every-browser run by hand and the pull request's own run with its burn-in passed, with no abort. Of the minutes asked, the Chromium suite alone was timed on the built client only, 611 in 4.8 min; the whole suite stands for it, timed both ways |
+| R9 | Met (a96f0487): the rule to run a stalled Linux WebKit run once more is gone; the workers stay at CI's two, both runs at two passing; the files named say what the suite runs on, and no doc says the dev server |
+| R10 | Met so far: #721's description carries both `Closes` lines; the two issues close at its merge |
+
+### Decided while it was built
+
+- **The sign-in page is made to throw by a page of its own (step 7,
+  S1b).** `/throws-on-purpose` draws
+  `client/src/errors/throws-on-purpose-page.tsx`, which throws as it
+  draws, inside the boundary of the screens before sign-in, in
+  `npm run dev` and the tests' build alone. Not chosen: the built entry
+  rewritten where its map places the sign-in page, which leans on a
+  minified name; and the test kept to the dev server, which the suite
+  then never runs. "Considered and not done" above refused a change to
+  what ships for a test's sake, and this is none: a production build
+  drops the page and its address, where a visitor meets Page not found,
+  and the build's check stops one that carries either.
+- **The page is drawn by a path check, not by a route (26 November).**
+  A route behind the setting kept its slot in a production build's
+  route list, 3 bytes, against R3. The reviews' finding 4 asked for the
+  route all the same, the chat recommended it, and it was built
+  (da40cdcc); the production build then differed, so it was taken back
+  (3cbeb4f5), and a comment in the routes list says why (45a28a23).
+  The recommendation was wrong: step 8's own summary had said it.
+- **One setting for both (the reviews' finding 2).** The page first had
+  a setting of its own, which always had `en-XA`'s value, with a second
+  check and a second test; c9f92f88 made them one, and 1121ed79 one
+  check. "A setting of its own" in the decision above and in ADR-054's
+  amendment now reads "one setting, for what is in development and the
+  tests alone".
+- **`home.spec.ts` joined step 8 (S2a), and a hold that meets no request
+  fails (S3a):** shown once with the loading mark's hold pointed at
+  Home's chunk, which the sign-in page never loads.
+- **Every run builds (A1).** The tests' build takes 1.0 to 1.3 s on the
+  Mac through `npm run`, about half a second in Vite itself, so
+  `scripts/verify.sh` builds nothing of its own and reuses nothing.
+- **The workers stay at CI's two.** Both runs at two passed, so "unless
+  two fail where six pass" did not apply.
+- **`clientFiles` matches by a pattern, not a function (2f8d738d),** so
+  Playwright passes every other request on itself, where a function
+  sent each one through the test.
+
+### The proof's figures
+
+On the Mac on 26 November, every run on the built client, the five
+under one hold of the suite's lock. Chrome stayed open and macOS's own
+services ran, so the Mac was not left alone as the decision asked. More
+load makes a stall likelier, so the passes hold; the minutes rest on
+the two controls, 10 % apart.
+
+| Run | Workers | Passed | WebKit's minutes |
+| --- | --- | --- | --- |
+| The Mac's WebKit, the control before | 6 | 181 of 181 | 2.3 |
+| Linux WebKit, 1 to 5 | 6 | 181 of 181 each | 2.6, 2.5, 2.5, 2.5, 2.5 |
+| The Mac's WebKit, the control after | 6 | 181 of 181 | 2.1 |
+| The two tests that stalled before, traces kept | | 2 of 2 | 0.7 |
+| Linux WebKit, 6 and 7 | 2 | 181 of 181 each | 4.7, 4.7 |
+
+- **No failure, no flaky test and no retry** in the five; no rerun was
+  needed.
+- **The two traces:** `document-refusals`' way back to the order asked
+  the client's server for 146 files and `page-frame`'s 1920 × 1080 for
+  1,913, each one answered. Of 218 API reads through it, two were the
+  first test's own refused PDFs (409), and one was cancelled by the
+  second test's own next page load, 82 ms later. None failed.
+- **On the pushed branch, at 3f4ef330:** CI's every-browser run by
+  hand, 45912836889, passed in 12m3s; the pull request's own run,
+  45912014404, with its burn-in, in 11m23s; all 15 of #721's checks
+  passed. No abort in either.
+- **The full verify,** at 3f4ef330: all passed in 25 minutes. Built,
+  800 of 800 in 6.5 min; Linux Firefox 181 of 181; Linux WebKit 181 of
+  181 at two workers in 4.8 min; Linux Chromium's cut-text 42 of 42.
+  The client's unit tests are 1,789 in 220 files, 1,763 before.
+
+The minutes before and after:
+
+| What | The dev server | The built client |
+| --- | --- | --- |
+| The whole suite on the Mac, 800 tests, one after the other, the Mac busy | 11.1 min | 7.1; later 6.7 and 6.5 |
+| Linux WebKit, 181 tests, two workers | 6.0 (#715) | 4.7 and 4.7 |
+| Linux WebKit, six workers | about 5 (#715) | 2.5 to 2.6 |
+| `auth.spec.ts`, files asked of the client's server | 554 | 59 |
+| CI's every-browser run, one each | 16m35s, `main`'s scheduled run | 12m3s, by hand |
+| A pull request's three shards on CI | 10m4s, 10m15s, 9m3s (#719) | 10m29s, 11m4s, 9m24s (#721) |
+
+- **CI's shards are not shown faster.** The two pull requests are not
+  like for like: each shard's burn-in repeats what its own pull request
+  changed, one spec for #719 and, since #721 changes the fixtures every
+  spec imports, the whole Chromium suite for #721. A shard also builds
+  the client and compiles the API twice now, once for its run and once
+  for its burn-in. The first like-for-like figures are `main`'s push
+  run after the merge, beside 45868304881's.
+- **The build's seconds:** 1.0 to 1.3 through `npm run`, the catalogues
+  compiled first; the API's cold compile, 9.8.
+
+### Seen on the dev server while the branch was built
+
+- **#530, a sixth abort on CI, the third on `main`:** run 45868304881,
+  on `main` at e195386e on 26 November, shard 3 of 3, 163 tests failed
+  after it; the failed job, run again, passed.
+- **#643, a second full run stalled at two workers:** on 26 November,
+  in the fix runner's folder, two tests stopped on the start screen,
+  their kept snapshots holding the application's mark and nothing else.
+  With 25 November's, two runs of four at two workers.
+
+### The built client, built differently in small
+
+- The manifest names the application's entry by `index.html`; the
+  fixture's `ENTRY` is `src/main.tsx`, and it reads the manifest when a
+  test asks, since a built file's name changes with every build, the
+  build's time being compiled in.
+- The Customise Home test reads each loaded file's sources from its map:
+  none holds the dragging library before the press, and one does after.
+- The loading mark's built script has no map, so it is its own source.
+- `npm run test:e2e:ui` sets the dev-server setting through `dotenv`'s
+  `-v`.
+- `client/vite.config.test.ts` runs in Node's environment and calls the
+  real config, its setup written once (7be380ff).
+- `docs/conventions.md` names `clientFiles` and lint's refusal of a
+  `/src/` path in its Tests, a clause the brief's list did not have.
+- `docs/engineering.md`'s Server says an API already on 3100 is reused
+  as it is, so one started by hand with its watcher still restarts.
+- Rode along, from the reviews' prompt audit, a commit each:
+  `/code-review` checks `Closes #N` for the issues an ADR names too
+  (f3414e5f); `/production-readiness` ends with DONE or BLOCKED
+  (020b02ba) and reads 14 backup runs, a week of two a day (9f7acd6d);
+  the planning skill reads a branch's issues from a clone with its
+  history (d5fe0ee4); and a comment in `server/drizzle.config.ts`
+  (3f4ef330).
+- The dependencies, twice (ebc17eb9, 9a61170e), each package by its own
+  publish time, the pins on Playwright and jsdom kept (A6).
+
+### Found by the built client's branch, and left
+
+- **A built trace names only the built file's position (A5),** with
+  minified names, and holds no map. The maps in `client/dist-e2e/` give
+  the source's line by hand until the next run builds again; CI keeps
+  the report alone, so a CI trace cannot be mapped afterwards. A
+  failure is read by running its spec on the dev server, as
+  `docs/conventions.md` now says.
+- **A production build made with `NODE_ENV` as `development` no longer
+  stops by accident.** Before, such a build carried `en-XA`, and the
+  check for it stopped the build as a side effect. The config still
+  drops the `.env` file's `NODE_ENV`, and the tests' build sets its own.
+  A check of its own would be a new rule: for the triage after the
+  merge.
+- **CI compiles the API twice a shard,** about 10 s each on the Mac,
+  inside the entry's 120 s.
+- **`page-frame.spec.ts`' 1920 × 1080 test is the longest in every
+  run,** 25 to 31 s, a floor under the minutes at any number of workers.
+- **The lint check misses a `/src/` path built from pieces,** which no
+  spec has written.
+- **What the proof cannot tell apart stays so:** the dev server and the
+  container's connection under hundreds of small requests. A page now
+  asks for a handful of files either way (A8).
+- **The reviews found 22, none a must-fix.** Fixed: 1 to 3, 5 to 8, 13
+  to 15, 18 and 22, a commit each; 4 built and taken back. Left: the
+  manifest and each map read again at each call (9, 10), a millisecond
+  and some tens of milliseconds a run; a test that already failed
+  given the fixture's second line (11), kept, since on a stop at the
+  start screen that line says which file never came; three low flags
+  of the prompt audit (16, 17, 19); and two in files that are not the
+  repository's (20, 21).
+- **The steps took about three fifths of the brief's guesses,** step 8
+  alone running past its 30-minute stop rule, at 37, with nothing left
+  over.
+
+### Deferred, added by the built client's as-built
+
+- **The tests' maps kept with CI's report,** so a CI trace can be read
+  to its source. Trigger: a failure on CI that its spec does not show
+  on the dev server.
+- **A check that a production build is React's production code.**
+  Trigger: a second way `NODE_ENV` reaches a build, or the triage
+  choosing it.
+- **The manifest and the maps read once a run.** Trigger: the fixture's
+  reads showing in a spec's time.
